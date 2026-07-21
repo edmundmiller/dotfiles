@@ -179,6 +179,7 @@
         obsidian-sync.enable = false;
         docker.enable = true;
         ssh.enable = true;
+        mosh.enable = true;
         moshi.enable = true;
       };
 
