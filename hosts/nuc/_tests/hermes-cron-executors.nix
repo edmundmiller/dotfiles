@@ -12,6 +12,12 @@ let
   amosSecretMaterialization = cfg.system.activationScripts.hermesAmosburtonSecretsMaterialize.text;
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
+  cronTickTimers = [
+    cfg.systemd.timers.hermes-amosburton-cron-tick
+    bettyTimer
+    cfg.systemd.timers.hermes-radar-cron-tick
+    cfg.systemd.timers.hermes-scintillate-cron-tick
+  ];
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
   bettySecretMaterialization = cfg.system.activationScripts.hermesBettySecretsMaterialize.text;
   bettyGoodMorningDj = cfg.systemd.services.hermes-betty-good-morning-dj;
@@ -34,6 +40,13 @@ let
 
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
+  cronTickCadenceExpectedFailure = true;
+  cronTickCadenceMatches = builtins.all (
+    timer:
+    timer.timerConfig.OnUnitActiveSec == "60s"
+    && (timer.timerConfig.AccuracySec or null) == "1s"
+    && timer.timerConfig.RandomizedDelaySec == "0s"
+  ) cronTickTimers;
   amosEnvironment = concatStringsSep " " amosService.serviceConfig.Environment;
   amosUsesStableProfileAndSecret =
     hasInfix "HOME=/var/lib/hermes-amosburton" amosEnvironment
@@ -95,8 +108,8 @@ let
       msg = "Betty cron timer must start with timers.target.";
     }
     {
-      test = bettyTimer.timerConfig.OnUnitActiveSec == "5min";
-      msg = "Betty cron timer must tick every five minutes.";
+      test = if cronTickCadenceExpectedFailure then !cronTickCadenceMatches else cronTickCadenceMatches;
+      msg = "Hermes cron timers must tick every 60 seconds without scheduling jitter.";
     }
     {
       test = bettyTimer.timerConfig.Unit == "hermes-betty-cron-tick.service";
