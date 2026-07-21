@@ -1,5 +1,6 @@
 ---
 name: batch
+compatibility: portable
 description: Coordinate a sweeping mechanical change across independent work units and pull requests.
 ---
 
@@ -11,26 +12,26 @@ You are orchestrating a large, parallelizable change across this codebase.
 
 (The user's instruction goes here — passed as the skill argument.)
 
-## Phase 1: Research and Plan (Plan Mode)
+## Phase 1: Research and Plan
 
-Call the `EnterPlanMode` tool now to enter plan mode, then:
+Use the runtime's planning surface when available.
 
-1. **Understand the scope.** Launch one or more Explore agents (in the foreground — you need their results) to deeply research what this instruction touches. Find all the files, patterns, and call sites that need to change. Understand the existing conventions so the migration is consistent.
+1. **Understand the scope.** Inspect the repository, patterns, call sites, and applicable conventions. Use research agents only when the user authorized delegation and the runtime supports it.
 
-2. **Decompose into independent units.** Break the work into 5–30 self-contained units. Each unit must:
+2. **Decompose into independent units.** Break the work into the smallest useful set of self-contained units. Each unit must:
    - Be independently implementable in an isolated git worktree (no shared state with sibling units)
    - Be mergeable on its own without depending on another unit's PR landing first
    - Be roughly uniform in size (split large units, merge trivial ones)
 
-   Scale the count to the actual work: few files → closer to 5; hundreds of files → closer to 30. Prefer per-directory or per-module slicing over arbitrary file lists.
+   Scale the count to the work and the runtime's concurrency limit. Prefer per-directory or per-module slicing over arbitrary file lists.
 
 3. **Determine the e2e test recipe.** Figure out how a worker can verify its change actually works end-to-end — not just that unit tests pass. Look for:
-   - A `claude-in-chrome` skill or browser-automation tool (for UI changes: click through the affected flow, screenshot the result)
+   - An available browser-automation tool (for UI changes: click through the affected flow, screenshot the result)
    - A `tmux` or CLI-verifier skill (for CLI changes: launch the app interactively, exercise the changed behavior)
    - A dev-server + curl pattern (for API changes: start the server, hit the affected endpoints)
    - An existing e2e/integration test suite the worker can run
 
-   If you cannot find a concrete e2e path, use the `AskUserQuestion` tool to ask the user how to verify this change end-to-end. Offer 2–3 specific options based on what you found (e.g., "Screenshot via chrome extension", "Run `bun run dev` and curl the endpoint", "No e2e — unit tests are sufficient"). Do not skip this — the workers cannot ask the user themselves.
+   If no concrete e2e path exists, ask the user with 2–3 repository-grounded options. Do not invent a verification claim.
 
    Write the recipe as a short, concrete set of steps that a worker can execute autonomously. Include any setup (start a dev server, build first) and the exact command/interaction to verify.
 
@@ -40,11 +41,11 @@ Call the `EnterPlanMode` tool now to enter plan mode, then:
    - The e2e test recipe (or "skip e2e because …" if the user chose that)
    - The exact worker instructions you will give each agent (the shared template)
 
-5. Call `ExitPlanMode` to present the plan for approval.
+5. Present the plan for approval before creating workers or external pull requests.
 
 ## Phase 2: Spawn Workers (After Plan Approval)
 
-Once the plan is approved, spawn one background agent per work unit using the `Agent` tool. **All agents must use `isolation: "worktree"` and `run_in_background: true`.** Launch them all in a single message block so they run in parallel.
+Once the plan is approved, use the runtime's isolated worktree or thread mechanism. Keep active workers within the runtime's concurrency limit. If isolated workers are unavailable, process units sequentially in isolated worktrees.
 
 For each agent, the prompt must be fully self-contained. Include:
 
@@ -56,14 +57,12 @@ For each agent, the prompt must be fully self-contained. Include:
 
 ```
 After you finish implementing the change:
-1. **Simplify** — Invoke the `Skill` tool with `skill: "simplify"` to review and clean up your changes.
+1. **Simplify** — Follow the `simplify` skill to review and clean up your changes.
 2. **Run unit tests** — Run the project's test suite (check for package.json scripts, Makefile targets, or common commands like `npm test`, `bun test`, `pytest`, `go test`). If tests fail, fix them.
 3. **Test end-to-end** — Follow the e2e test recipe from the coordinator's prompt (below). If the recipe says to skip e2e for this unit, skip it.
-4. **Commit and push** — Commit all changes with a clear message, push the branch, and create a PR with `gh pr create`. Use a descriptive title. If `gh` is not available or the push fails, note it in your final message.
-5. **Report** — End with a single line: `PR: <url>` so the coordinator can track it. If no PR was created, end with `PR: none — <reason>`.
+4. **Land only as authorized** — Commit, push, or create a PR only when the user authorized those actions. Otherwise report the isolated branch or worktree.
+5. **Report** — End with the unit status, verification evidence, and PR URL or branch when applicable.
 ```
-
-Use `subagent_type: "general-purpose"` unless a more specific agent type fits.
 
 ## Phase 3: Track Progress
 
@@ -74,6 +73,6 @@ After launching all workers, render an initial status table:
 | 1   | <title> | running | —   |
 | 2   | <title> | running | —   |
 
-As background-agent completion notifications arrive, parse the `PR: <url>` line from each agent's result and re-render the table with updated status (`done` / `failed`) and PR links. Keep a brief failure note for any agent that did not produce a PR.
+As worker results arrive, re-render the table with updated status and PR or branch links. Keep a brief failure note for incomplete units.
 
 When all agents have reported, render the final table and a one-line summary (e.g., "22/24 units landed as PRs").

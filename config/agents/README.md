@@ -8,7 +8,7 @@ update_when: Supported runtimes, paths, or deployment behavior changes.
 
 # Agents Configuration
 
-Shared rules and modes for AI coding agents. Global skills live in `skills/catalog/`.
+Shared rules and modes for AI coding agents. Global skills live in `skills/catalog/`; validate them with `skills/catalog/skill-quality/scripts/validate.py`.
 
 ## Directory Structure
 
@@ -58,18 +58,13 @@ license: MIT
 Skill content...
 ```
 
-### Current Skills
+### Discover Skills
 
-- **ast-grep** - Structural code search and refactoring
-- **beads** - Multi-session task tracking with dependency graphs
-- **code-search** - When to use ast-grep vs ripgrep
-- **find-skills** - Discover and install skills from skills.sh
-- **ghostty-config** - Ghostty terminal configuration
-- **jj-merge-repos** - Merge git repositories with jj
-- **python-scripts** - Python scripting guidelines
-- **skill-quality** - Guidelines for writing high-quality skills
-- **mdream** - HTML to Markdown converter (skilld-generated, for LLM/llm.txt workflows)
-- **ui-skills** - Frontend design and UI development
+Query live sources instead of maintaining an inventory:
+
+```bash
+find skills/catalog .agents/skills skills/conditional -name SKILL.md -type f | sort
+```
 
 ## Modes
 
@@ -83,16 +78,11 @@ Agent modes are specialized configurations for different tasks:
 
 ## Rules
 
-Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGENTS.md` for Pi, symlinked for OpenCode):
+Rules are concatenated for Codex, Claude, and Pi and exposed individually to OpenCode. Query their live metadata:
 
-1. `01-tone-and-style.md` - Communication style
-2. `02-critical-instructions.md` - File editing, output format
-3. `03-version-control.md` - Worktrees, selective staging
-4. `04-code-search.md` - ast-grep over text search
-5. `05-testing-philosophy.md` - Spec + regression tests
-6. `06-development-preferences.md` - Persistence, philosophy
-7. `07-skill-locations.md` - Where to create skills
-8. `08-context-efficiency.md` - Filter at the source
+```bash
+python3 bin/check-agent-rules --json
+```
 
 ## Adding a New Skill
 
@@ -132,6 +122,4 @@ Rules are concatenated to build the system prompt (`CLAUDE.md` for Claude, `AGEN
 
 ## Related Files
 
-- `modules/agents/claude/default.nix` - Claude agent nix module
-- `modules/agents/opencode/default.nix` - OpenCode agent nix module
-- `modules/agents/pi/default.nix` - Pi agent nix module
+Runtime ownership and deployment routes live in `modules/agents/AGENTS.md`.
