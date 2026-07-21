@@ -14,6 +14,7 @@ let
     paths = [
       pkgs.my.herdr-plugins
       pkgs.my.herdr-plugin-jj-workspace
+      pkgs.my.herdr-tab-smart-rename
     ];
   };
   launchPath = concatStringsSep ":" [
@@ -1074,6 +1075,19 @@ in
           done
         '';
 
+        home.activation.herdr-smart-rename = lib.hm.dag.entryAfter [ "herdr-plugin-registry" ] ''
+          export PATH=$PATH:${escapeShellArg launchPath}
+          herdr_cmd=${escapeShellArg cfg.command}
+          if ! start_output=$("$herdr_cmd" plugin action invoke start --plugin tab-smart-rename 2>&1); then
+            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Fqi "Connection refused"; then
+              echo "herdr: warning: runtime unavailable; deferring smart rename worker start" >&2
+            else
+              printf '%s\n' "$start_output" >&2
+              exit 1
+            fi
+          fi
+        '';
+
         home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           export PATH=$PATH:${escapeShellArg launchPath}
           herdr_cmd=${escapeShellArg cfg.command}
@@ -1115,7 +1129,7 @@ in
           JJ_WORKSPACE_NAME_PREFIXES=issue-,pr-,task-
           EOF
 
-          # jj-workspace is registered from the Nix-managed local package.
+          # Patched plugins are registered from Nix-managed local packages.
           install_plugin smarzban herdr-file-viewer
           install_plugin dutifuldev ghzinga plugins/herdr
           install_plugin dcolinmorgan herdr-remote relay
@@ -1127,7 +1141,6 @@ in
           install_plugin kkckkc herdr-plugin-gh-workflow
           install_plugin alon-z herdr-command-palette
           install_plugin 0x5c0f herdr-insight
-          install_plugin iurysza herdr-tab-smart-rename
           install_plugin persiyanov herdr-reviewr
           install_plugin edmundmiller herdr-which-key "" optional
         '';

@@ -79,7 +79,7 @@ Custom/current mappings:
 | `prefix+a`                        | New jj workspace                                   |
 | `prefix+d`                        | Remove clean closed-PR jj workspace                |
 | `prefix+D`                        | Abandon clean jj workspace with typed confirmation |
-| `prefix+t`                        | Smart rename current Pi or OMP tab                  |
+| `prefix+t`                        | Smart rename current Pi or OMP tab                 |
 | `prefix+T`                        | Agent timeline                                     |
 | `prefix+R`                        | Refresh GitHub PR status                           |
 | `prefix+I`                        | Start GitHub issue workflow                        |
@@ -95,6 +95,7 @@ Repo-owned plugins are composed into a local package and registered by `modules/
 - `dotfiles.dev-layout` — provides Hunk actions plus the idempotent two-tab checkout bootstrap.
 - `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
 - `nathanflurry.jj-workspace` — built from a pinned upstream revision plus the ordered safety patch under `packages/herdr-plugin-jj-workspace/`.
+- `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
 
 Marketplace/GitHub plugins are installed by activation when missing:
 
@@ -109,7 +110,8 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `kkckkc/herdr-plugin-gh-workflow`
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
-- `iurysza/herdr-tab-smart-rename`
+
+The smart-rename worker starts idempotently during activation and on `workspace.created` or `tab.created`. `prefix+t` remains the explicit current-tab override.
 
 ## Reloading after edits
 
