@@ -1,0 +1,10 @@
+{
+  "source": "https://github.com/iurysza/herdr-tab-smart-rename.git",
+  "ref": "2db0c157c4ff9e7b6b8a7e15ccdbc62c5bd7a109",
+  "patches": ["patches/0001-use-omp-provider.patch"],
+  "checks": [
+    ["bun", "install", "--frozen-lockfile"],
+    ["bun", "test"],
+    ["bun", "run", "check"]
+  ]
+}
