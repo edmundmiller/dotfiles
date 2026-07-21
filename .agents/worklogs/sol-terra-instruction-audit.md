@@ -1,6 +1,6 @@
 # Worklog: sol-terra-instruction-audit
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -35,6 +35,7 @@ Review every shared rule and locally owned skill for GPT-5.6 Sol and Terra. Stop
 - Live skill source: `~/.agents/skills/skill-quality/SKILL.md` resolves to the deployed catalog and its shipped validator passes.
 - Deployed launcher proof: `agent-quality` preserves caller `AGENT_QUALITY_ROOT` and bundles Jujutsu `jj 0.43.0`, not the unrelated JSON stream editor.
 - Deployed `hey agent-finish --worklog .agents/worklogs/sol-terra-instruction-audit.md`: PASS for repository quality, 30 agent tests, instruction lint, test-confidence, and inventory drift; UI and zsh checks were not applicable.
+- Pre-push hooks passed and `codex/sol-terra-instruction-audit` was created on `origin`; final equality is verified after this completion commit.
 
 ## Reviews
 
@@ -48,11 +49,12 @@ Review every shared rule and locally owned skill for GPT-5.6 Sol and Terra. Stop
 
 ## Remaining work
 
-- Inventory and audit current rules and skills.
-- Push branch, record remote equality, and tag the final evidence commit.
+None.
 
 ## Commits
 
 - `559b3d0173` — `feat(agents): validate portable instructions`
 - `1ffa0437f3` — `test(agents): capture active-root finish regression`
 - `1a958e5c39` — `fix(agents): run finish gates in active worktree`
+- `b7cbb8d19` — `chore(agents): record instruction audit evidence`
+- Final completion evidence is this worklog commit.
