@@ -1611,8 +1611,9 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "2min";
-      OnUnitActiveSec = "5min";
-      RandomizedDelaySec = "30s";
+      OnUnitActiveSec = "60s";
+      AccuracySec = "1s";
+      RandomizedDelaySec = "0s";
       Unit = "hermes-amosburton-cron-tick.service";
     };
   };
@@ -1727,8 +1728,9 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "2min";
-      OnUnitActiveSec = "5min";
-      RandomizedDelaySec = "30s";
+      OnUnitActiveSec = "60s";
+      AccuracySec = "1s";
+      RandomizedDelaySec = "0s";
       Unit = "hermes-betty-cron-tick.service";
     };
   };
@@ -1786,8 +1788,9 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "2min";
-      OnUnitActiveSec = "5min";
-      RandomizedDelaySec = "30s";
+      OnUnitActiveSec = "60s";
+      AccuracySec = "1s";
+      RandomizedDelaySec = "0s";
       Unit = "hermes-radar-cron-tick.service";
     };
   };
@@ -1851,8 +1854,9 @@ in
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "2min";
-      OnUnitActiveSec = "5min";
-      RandomizedDelaySec = "30s";
+      OnUnitActiveSec = "60s";
+      AccuracySec = "1s";
+      RandomizedDelaySec = "0s";
       Unit = "hermes-scintillate-cron-tick.service";
     };
   };
