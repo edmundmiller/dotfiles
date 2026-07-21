@@ -1,0 +1,526 @@
+diff --git a/README.md b/README.md
+index 7cb16a4..db8c22d 100644
+--- a/README.md
++++ b/README.md
+@@ -6,7 +6,7 @@
+ 
+ <p align="center"><strong>Tabs that say what the work is.</strong></p>
+ 
+-Smart Rename turns numbered Herdr tabs into short task labels. Known processes get instant names such as `Run Tests`, `Dev Server`, and `View Logs`; ambiguous work uses an OpenAI-compatible model. Manual names always win.
++Smart Rename turns numbered Herdr tabs into short task labels. Known processes get instant names such as `Run Tests`, `Dev Server`, and `View Logs`; ambiguous work uses OMP or an OpenAI-compatible model. Manual names always win.
+ 
+ ## Demo
+ 
+@@ -18,18 +18,11 @@ Requires Herdr 0.7.0+ and Bun 1.1.34+.
+ 
+ ```sh
+ herdr plugin install iurysza/herdr-tab-smart-rename
+-herdr plugin action invoke configure-ai --plugin tab-smart-rename
+ herdr plugin action invoke check-ai --plugin tab-smart-rename
+ herdr plugin action invoke start --plugin tab-smart-rename
+ ```
+ 
+-`configure-ai` opens `~/.config/herdr/plugins/config/tab-smart-rename/provider.env`. For the default OpenAI GPT-5.6 Luna setup, add:
+-
+-```dotenv
+-OPENAI_API_KEY=...
+-```
+-
+-Without a key, deterministic names still work.
++The default OMP backend reuses OMP's provider selection and authentication. No separate key is required.
+ 
+ ## Keybindings
+ 
+@@ -79,14 +72,14 @@ See the [naming policy](docs/naming-policy.md) for the full contract.
+ Provider defaults live in [`provider.env.example`](provider.env.example):
+ 
+ ```dotenv
+-SMART_RENAME_PROVIDER=openai
+-SMART_RENAME_BASE_URL=https://api.openai.com/v1
+-SMART_RENAME_MODEL=gpt-5.6-luna
+-SMART_RENAME_REASONING_EFFORT=medium
++SMART_RENAME_PROVIDER=omp
++SMART_RENAME_OMP_COMMAND=omp
++SMART_RENAME_MODEL=smol
++SMART_RENAME_REASONING_EFFORT=low
+ SMART_RENAME_TIMEOUT_MS=45000
+ ```
+ 
+-Use `SMART_RENAME_API_KEY` for another OpenAI-compatible provider. `OPENAI_API_KEY` and Kimi's `KIMI_API_KEY` are also supported when their provider is selected. Config reloads before every model request.
++OMP runs in ephemeral print mode with tools, extensions, skills, rules, session persistence, and title generation disabled. Set `SMART_RENAME_PROVIDER` plus the HTTP settings and key to use an OpenAI-compatible provider instead. Config reloads before every model request.
+ 
+ ### Custom prompt
+ 
+@@ -111,13 +104,14 @@ Set `SMART_RENAME_PROMPT_PATH` to use another file. Prompts reload per request;
+ 
+ Model requests contain bounded, sanitized evidence from the dominant pane. Pi panes may contribute short user-request excerpts; sibling panes contribute process summaries only. Smart Rename removes terminal formatting, common secret shapes, and the local home path before sending context.
+ 
+-Provider keys stay in Herdr's private plugin config and never enter Smart Rename state or logs.
++OMP resolves its own provider credentials. Smart Rename neither reads nor copies them. Direct HTTP provider keys stay in Herdr's private plugin config and never enter Smart Rename state or logs.
+ 
+ ## Troubleshooting
+ 
+ - Worker stopped: `herdr plugin action invoke start --plugin tab-smart-rename`
+ - Config invalid: run `configure-ai`, then `check-ai`.
+-- Authentication fails: ensure the key matches the configured endpoint and model; `check-ai` does not make an API request.
++- OMP fails: verify `omp -p --no-session --no-tools --model smol 'say ok'` succeeds.
++- HTTP authentication fails: ensure the key matches the configured endpoint and model; `check-ai` does not make a request.
+ - Bun is outside Herdr's server `PATH`: runtime actions also check standard Bun and Homebrew locations.
+ - Manual label stays: use `reset-tab` or an explicit rename.
+ - Logs: `herdr plugin log list --plugin tab-smart-rename --limit 10`
+diff --git a/provider.env.example b/provider.env.example
+index 4b0af26..72a3293 100644
+--- a/provider.env.example
++++ b/provider.env.example
+@@ -1,13 +1,18 @@
+-# Smart Rename AI provider
+-# Copy this file to Herdr's private plugin config, then add your key.
+-OPENAI_API_KEY=
+-
+-SMART_RENAME_PROVIDER=openai
+-SMART_RENAME_BASE_URL=https://api.openai.com/v1
+-SMART_RENAME_MODEL=gpt-5.6-luna
+-SMART_RENAME_REASONING_EFFORT=medium
++# Smart Rename provider
++# OMP reuses its configured provider and auth without another key.
++SMART_RENAME_PROVIDER=omp
++SMART_RENAME_OMP_COMMAND=omp
++SMART_RENAME_MODEL=smol
++SMART_RENAME_REASONING_EFFORT=low
+ SMART_RENAME_TIMEOUT_MS=45000
+ 
++# To use an OpenAI-compatible HTTP provider instead:
++# SMART_RENAME_PROVIDER=openai
++# SMART_RENAME_BASE_URL=https://api.openai.com/v1
++# SMART_RENAME_MODEL=gpt-5.6-luna
++# SMART_RENAME_REASONING_EFFORT=medium
++# OPENAI_API_KEY=
++
+ # Optional generic key for another OpenAI-compatible provider:
+ # SMART_RENAME_API_KEY=
+ 
+diff --git a/src/provider.ts b/src/provider.ts
+index bd93ddc..784bc92 100644
+--- a/src/provider.ts
++++ b/src/provider.ts
+@@ -13,6 +13,7 @@ import { sanitizeText } from "./text.ts";
+ 
+ const PROVIDER_ENV_BYTES = 16 * 1024;
+ const NAMING_PROMPT_BYTES = 32 * 1024;
++const OMP_OUTPUT_BYTES = 64 * 1024;
+ const PROVIDER_EXAMPLE_URL = new URL("../provider.env.example", import.meta.url);
+ const BUNDLED_NAMING_PROMPT = fileURLToPath(
+   new URL("../docs/naming-policy.md", import.meta.url),
+@@ -20,8 +21,16 @@ const BUNDLED_NAMING_PROMPT = fileURLToPath(
+ export const PROVIDER_ENV_NAME = "provider.env";
+ export const NAMING_PROMPT_NAME = "naming-prompt.md";
+ 
+-const ProviderConfigSchema = z.object({
++const CommonProviderConfigSchema = z.object({
+   provider: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/),
++  model: z.string().min(1).refine((value) => !/[\r\n]/.test(value)),
++  timeoutMs: z.number().int().min(1_000).max(300_000),
++  reasoningEffort: z.enum(["low", "medium", "high"]).optional(),
++  promptPath: z.string().min(1).optional(),
++});
++
++const HttpProviderConfigSchema = CommonProviderConfigSchema.extend({
++  kind: z.literal("http"),
+   baseURL: z
+     .url()
+     .refine((value) => {
+@@ -29,13 +38,20 @@ const ProviderConfigSchema = z.object({
+       return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
+     })
+     .transform((value) => value.replace(/\/$/, "")),
+-  model: z.string().min(1).refine((value) => !/[\r\n]/.test(value)),
+-  timeoutMs: z.number().int().min(1_000).max(300_000),
+-  reasoningEffort: z.enum(["low", "medium", "high"]).optional(),
+-  promptPath: z.string().min(1).optional(),
+   apiKey: z.string().min(1),
+ });
+ 
++const OmpProviderConfigSchema = CommonProviderConfigSchema.extend({
++  kind: z.literal("omp"),
++  provider: z.literal("omp"),
++  command: z.string().min(1).refine((value) => !/[\r\n]/.test(value)),
++});
++
++const ProviderConfigSchema = z.discriminatedUnion("kind", [
++  HttpProviderConfigSchema,
++  OmpProviderConfigSchema,
++]);
++
+ const ModelOutputSchema = z.object({
+   tab: z.string().nullable(),
+   reason: z.string(),
+@@ -164,6 +180,7 @@ function configError(error: z.ZodError): Error {
+     timeoutMs: "SMART_RENAME_TIMEOUT_MS must be 1000-300000",
+     reasoningEffort: "SMART_RENAME_REASONING_EFFORT must be low, medium, or high",
+     promptPath: "SMART_RENAME_PROMPT_PATH is invalid",
++    command: "SMART_RENAME_OMP_COMMAND is invalid",
+     apiKey: `AI key missing. Run configure-ai or set a provider key in ${PROVIDER_ENV_NAME}`,
+   };
+   return new Error(messages[field ?? ""] ?? "AI provider configuration is invalid");
+@@ -186,17 +203,28 @@ export async function loadProviderConfig(
+       : "");
+   const configuredPrompt =
+     env.SMART_RENAME_PROMPT_PATH || fileEnv.SMART_RENAME_PROMPT_PATH;
+-  const input = {
++  const common = {
+     provider,
+-    baseURL: pick(env, fileEnv, defaults, "SMART_RENAME_BASE_URL"),
+     model: pick(env, fileEnv, defaults, "SMART_RENAME_MODEL"),
+     timeoutMs: Number(pick(env, fileEnv, defaults, "SMART_RENAME_TIMEOUT_MS")),
+     ...(reasoningEffort ? { reasoningEffort } : {}),
+     ...(configuredPrompt
+       ? { promptPath: resolvePromptPath(configuredPrompt, env) }
+       : {}),
+-    apiKey: providerApiKey(provider, env, fileEnv),
+   };
++  const input =
++    provider === "omp"
++      ? {
++          ...common,
++          kind: "omp" as const,
++          command: pick(env, fileEnv, defaults, "SMART_RENAME_OMP_COMMAND"),
++        }
++      : {
++          ...common,
++          kind: "http" as const,
++          baseURL: pick(env, fileEnv, defaults, "SMART_RENAME_BASE_URL"),
++          apiKey: providerApiKey(provider, env, fileEnv),
++        };
+   const parsed = ProviderConfigSchema.safeParse(input);
+   if (!parsed.success) throw configError(parsed.error);
+   return parsed.data;
+@@ -242,7 +270,7 @@ function parseSuggestion(text: string): NameSuggestion {
+ 
+ function safeProviderError(error: unknown, config: ProviderConfig): string {
+   let message = error instanceof Error ? error.message : String(error || "provider request failed");
+-  message = message.replaceAll(config.apiKey, "[redacted]");
++  if (config.kind === "http") message = message.replaceAll(config.apiKey, "[redacted]");
+   return sanitizeText(message).slice(0, 400) || "provider request failed";
+ }
+ 
+@@ -253,11 +281,15 @@ export interface CompletionRequest {
+   maxOutputTokens: 32_768;
+   maxRetries: 1;
+   abortSignal: AbortSignal;
++  env: NodeJS.ProcessEnv;
+ }
+ 
+ type Complete = (request: CompletionRequest) => Promise<string>;
+ 
+ async function completeWithAiSdk(request: CompletionRequest): Promise<string> {
++  if (request.config.kind !== "http") {
++    throw new Error("HTTP completion requires an HTTP provider");
++  }
+   const provider = createOpenAICompatible({
+     name: request.config.provider,
+     baseURL: request.config.baseURL,
+@@ -283,13 +315,68 @@ async function completeWithAiSdk(request: CompletionRequest): Promise<string> {
+   return result.text;
+ }
+ 
+-export class AiSdkNamer implements Namer {
++async function completeWithOmp(request: CompletionRequest): Promise<string> {
++  if (request.config.kind !== "omp") {
++    throw new Error("OMP completion requires the OMP provider");
++  }
++  const child = Bun.spawn(
++    [
++      request.config.command,
++      "-p",
++      "--mode",
++      "text",
++      "--no-session",
++      "--no-tools",
++      "--no-skills",
++      "--no-rules",
++      "--no-extensions",
++      "--no-title",
++      "--model",
++      request.config.model,
++      "--thinking",
++      request.config.reasoningEffort ?? "low",
++      "--max-time",
++      `${Math.ceil(request.config.timeoutMs / 1_000)}s`,
++      "--system-prompt",
++      request.system,
++      `Suggest one label from this sanitized context:\n${JSON.stringify(request.context)}`,
++    ],
++    {
++      env: request.env,
++      stdin: "ignore",
++      stdout: "pipe",
++      stderr: "pipe",
++    },
++  );
++  const abort = () => child.kill();
++  request.abortSignal.addEventListener("abort", abort, { once: true });
++  if (request.abortSignal.aborted) abort();
++  try {
++    const [stdout, stderr, exitCode] = await Promise.all([
++      new Response(child.stdout).text(),
++      new Response(child.stderr).text(),
++      child.exited,
++    ]);
++    if (request.abortSignal.aborted) throw new Error("OMP request timed out");
++    if (Buffer.byteLength(stdout) > OMP_OUTPUT_BYTES) {
++      throw new Error("OMP output exceeded 64 KiB");
++    }
++    if (exitCode !== 0) {
++      throw new Error(stderr.trim() || `OMP exited ${exitCode}`);
++    }
++    return stdout.trim();
++  } finally {
++    request.abortSignal.removeEventListener("abort", abort);
++  }
++}
++
++export class ProviderNamer implements Namer {
+   readonly #env: NodeJS.ProcessEnv;
+-  readonly #complete: Complete;
++  readonly #complete: Complete | undefined;
+ 
+   constructor(
+     env: NodeJS.ProcessEnv = process.env,
+-    complete: Complete = completeWithAiSdk,
++    complete?: Complete,
+   ) {
+     this.#env = env;
+     this.#complete = complete;
+@@ -299,13 +386,17 @@ export class AiSdkNamer implements Namer {
+     const config = await loadProviderConfig(this.#env);
+     const system = await loadNamingPrompt(config, this.#env);
+     try {
+-      const text = await this.#complete({
++      const complete =
++        this.#complete ??
++        (config.kind === "omp" ? completeWithOmp : completeWithAiSdk);
++      const text = await complete({
+         config,
+         context,
+         system,
+         maxOutputTokens: 32_768,
+         maxRetries: 1,
+         abortSignal: AbortSignal.timeout(config.timeoutMs),
++        env: this.#env,
+       });
+       return parseSuggestion(text);
+     } catch (error) {
+diff --git a/src/service.ts b/src/service.ts
+index 3a81cda..2607e65 100644
+--- a/src/service.ts
++++ b/src/service.ts
+@@ -27,7 +27,7 @@ import {
+   type HerdrTab,
+   type HerdrWorkspace,
+ } from "./herdr.ts";
+-import { AiSdkNamer, type Namer } from "./provider.ts";
++import { ProviderNamer, type Namer } from "./provider.ts";
+ import {
+   loadState,
+   statePaths,
+@@ -427,7 +427,7 @@ export function createService({
+   stateDir = null,
+   env = process.env,
+   dryRun = false,
+-  namer = new AiSdkNamer(env),
++  namer = new ProviderNamer(env),
+   modelActivity,
+   dependencies = {},
+ }: CompositionOptions = {}): AutoNameService {
+diff --git a/test/provider.test.ts b/test/provider.test.ts
+index d5ea2c5..840cacd 100644
+--- a/test/provider.test.ts
++++ b/test/provider.test.ts
+@@ -1,6 +1,7 @@
+ import { test } from "bun:test";
+ import assert from "node:assert/strict";
+ import {
++  chmod,
+   mkdtemp,
+   readFile,
+   readdir,
+@@ -15,7 +16,7 @@ import {
+   ensureProviderFile,
+ } from "../src/configure.ts";
+ import {
+-  AiSdkNamer,
++  ProviderNamer,
+   loadProviderConfig,
+   type CompletionRequest,
+ } from "../src/provider.ts";
+@@ -38,20 +39,22 @@ async function tempConfig() {
+ test("provider config preserves defaults and process-over-file precedence", async () => {
+   const fixture = await tempConfig();
+   try {
+-    const defaults = await loadProviderConfig({
+-      ...fixture.env,
+-      OPENAI_API_KEY: "standalone-key",
+-    });
++    const defaults = await loadProviderConfig(fixture.env);
+     assert.deepEqual(defaults, {
+-      provider: "openai",
+-      baseURL: "https://api.openai.com/v1",
+-      model: "gpt-5.6-luna",
++      kind: "omp",
++      provider: "omp",
++      command: "omp",
++      model: "smol",
+       timeoutMs: 45_000,
+-      reasoningEffort: "medium",
+-      apiKey: "standalone-key",
++      reasoningEffort: "low",
+     });
+     await assert.rejects(
+-      loadProviderConfig({ ...fixture.env, KIMI_API_KEY: "wrong-provider-key" }),
++      loadProviderConfig({
++        ...fixture.env,
++        SMART_RENAME_PROVIDER: "openai",
++        SMART_RENAME_BASE_URL: "https://api.openai.com/v1",
++        SMART_RENAME_MODEL: "gpt-5.6-luna",
++      }),
+       /AI key missing/,
+     );
+ 
+@@ -75,6 +78,7 @@ test("provider config preserves defaults and process-over-file precedence", asyn
+       SMART_RENAME_API_KEY: "process-key",
+     });
+     assert.deepEqual(config, {
++      kind: "http",
+       provider: "process-provider",
+       baseURL: "https://process.example/v1",
+       model: "process-model",
+@@ -96,9 +100,9 @@ test("private provider and prompt config enforce templates, permissions, and bou
+     assert.equal((await stat(fixture.root)).mode & 0o777, 0o700);
+     assert.equal((await stat(file)).mode & 0o777, 0o600);
+     assert.equal((await stat(prompt)).mode & 0o777, 0o600);
+-    assert.match(await readFile(file, "utf8"), /SMART_RENAME_MODEL=gpt-5\.6-luna/);
++    assert.match(await readFile(file, "utf8"), /SMART_RENAME_MODEL=smol/);
+     assert.match(await readFile(prompt, "utf8"), /^# Naming policy/);
+-    await assert.rejects(loadProviderConfig(fixture.env), /AI key missing.*provider\.env/i);
++    assert.equal((await loadProviderConfig(fixture.env)).provider, "omp");
+     await writeFile(file, "x".repeat(16 * 1024 + 1));
+     await assert.rejects(loadProviderConfig(fixture.env), /exceeds 16 KiB/);
+   } finally {
+@@ -108,7 +112,7 @@ test("private provider and prompt config enforce templates, permissions, and bou
+ 
+ test("namer sends one bounded completion and validates model output", async () => {
+   const requests: CompletionRequest[] = [];
+-  const namer = new AiSdkNamer(
++  const namer = new ProviderNamer(
+     { SMART_RENAME_API_KEY: "standalone-key" },
+     async (request) => {
+       requests.push(request);
+@@ -120,14 +124,14 @@ test("namer sends one bounded completion and validates model output", async () =
+     reason: "current task",
+   });
+   assert.equal(requests.length, 1);
+-  assert.equal(requests[0]?.config.model, "gpt-5.6-luna");
++  assert.equal(requests[0]?.config.model, "smol");
+   assert.equal(requests[0]?.maxOutputTokens, 32_768);
+-  assert.equal(requests[0]?.config.reasoningEffort, "medium");
++  assert.equal(requests[0]?.config.reasoningEffort, "low");
+   assert.match(requests[0]?.system || "", /^# Naming policy/);
+   assert.match(requests[0]?.system || "", /return exactly one JSON object/i);
+   assert.ok(requests[0]?.abortSignal instanceof AbortSignal);
+ 
+-  const abstain = new AiSdkNamer(
++  const abstain = new ProviderNamer(
+     { SMART_RENAME_API_KEY: "standalone-key" },
+     async () => '{"tab":null,"reason":"no meaningful task"}',
+   );
+@@ -135,7 +139,7 @@ test("namer sends one bounded completion and validates model output", async () =
+     tab: null,
+     reason: "no meaningful task",
+   });
+-  const invalid = new AiSdkNamer(
++  const invalid = new ProviderNamer(
+     { SMART_RENAME_API_KEY: "standalone-key" },
+     async () => '{"tab":"bad","reason":"bad"}',
+   );
+@@ -153,7 +157,7 @@ test("namer reloads provider.env and naming-prompt.md, then redacts failures", a
+       "SMART_RENAME_API_KEY=first-key\nSMART_RENAME_MODEL=first-model\n",
+     );
+     await writeFile(promptFile, "First naming prompt");
+-    const namer = new AiSdkNamer(fixture.env, async (request) => {
++    const namer = new ProviderNamer(fixture.env, async (request) => {
+       models.push(request.config.model);
+       systems.push(request.system);
+       return '{"tab":"First Task Name","reason":"task"}';
+@@ -169,8 +173,13 @@ test("namer reloads provider.env and naming-prompt.md, then redacts failures", a
+     assert.deepEqual(systems, ["First naming prompt", "Second naming prompt"]);
+ 
+     const key = "standalone-secret-value";
+-    const failing = new AiSdkNamer(
+-      { SMART_RENAME_API_KEY: key },
++    const failing = new ProviderNamer(
++      {
++        SMART_RENAME_PROVIDER: "openai",
++        SMART_RENAME_BASE_URL: "https://api.openai.com/v1",
++        SMART_RENAME_MODEL: "gpt-5.6-luna",
++        SMART_RENAME_API_KEY: key,
++      },
+       async () => {
+         throw new Error(`401 Authorization: Bearer ${key}`);
+       },
+@@ -187,6 +196,49 @@ test("namer reloads provider.env and naming-prompt.md, then redacts failures", a
+   }
+ });
+ 
++test("OMP provider uses an ephemeral tool-free smol invocation", async () => {
++  const fixture = await tempConfig();
++  const command = path.join(fixture.root, "omp");
++  const argsFile = path.join(fixture.root, "args.txt");
++  try {
++    await writeFile(
++      command,
++      [
++        "#!/bin/sh",
++        'printf "%s\\n" "$@" > "$OMP_ARGS_FILE"',
++        'printf \'{"tab":"OMP Provider Backend","reason":"backend test"}\\n\'',
++      ].join("\n"),
++    );
++    await chmod(command, 0o755);
++
++    const namer = new ProviderNamer({
++      ...fixture.env,
++      SMART_RENAME_OMP_COMMAND: command,
++      OMP_ARGS_FILE: argsFile,
++    });
++    assert.deepEqual(await namer.suggest(context), {
++      tab: "OMP Provider Backend",
++      reason: "backend test",
++    });
++
++    const args = (await readFile(argsFile, "utf8")).trim().split("\n");
++    for (const flag of [
++      "--no-session",
++      "--no-tools",
++      "--no-skills",
++      "--no-rules",
++      "--no-extensions",
++      "--no-title",
++    ]) {
++      assert.ok(args.includes(flag), flag);
++    }
++    assert.equal(args[args.indexOf("--model") + 1], "smol");
++    assert.match(args.at(-1) || "", /Fix socket reconnect/);
++  } finally {
++    await rm(fixture.root, { recursive: true, force: true });
++  }
++});
++
+ test("manifest uses portable Bun runtime without Pi model coupling", async () => {
+   const manifest = await readFile(
+     new URL("../herdr-plugin.toml", import.meta.url),
+@@ -217,4 +269,6 @@ test("manifest uses portable Bun runtime without Pi model coupling", async () =>
+   for (const forbidden of ["PiRpc", 'spawn("pi")', '"--mode", "rpc"', "kimi-coding/"]) {
+     assert.equal(source.includes(forbidden), false, forbidden);
+   }
++  assert.match(source, /--no-session/);
++  assert.match(source, /--no-tools/);
+ });
