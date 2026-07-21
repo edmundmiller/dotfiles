@@ -1,6 +1,6 @@
 # Worklog: herdr-smart-rename-omp
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -22,20 +22,25 @@ Package `iurysza/herdr-tab-smart-rename` under `packages/`, patch its model back
 - Lifecycle GREEN: both patches passed 24 upstream tests plus TypeScript check; the Nix package built with both lifecycle events and no runtime build step.
 - TDD integration RED: the focused repository test failed because the managed package was absent from the Herdr module.
 - Integration GREEN: 4 focused packaging tests passed; `ast-grep` and focused `hey check` passed, including Darwin evaluation and package policy.
+- Darwin rebuild succeeded and activation registered the plugin from `/nix/store/...-herdr-tab-smart-rename-0.1.1-omp` as a local source.
+- Live provider and worker checks succeeded: `check-ai` returned `omp/smol`; status reported PID 91566 running.
+- Live lifecycle smoke: disposable tab `wM:tS` changed automatically from `4` to `Run Smart Rename Smoke` without invoking `rename-now`, then closed successfully.
 
 ## Reviews
 
 - Plan gate attempted with `hey agent-review plan --active-model-family openai`; blocked by `RUNTIME: Authentication required` before review output.
-- Landing review pending.
+- Landing review attempted with `hey agent-review landing --active-model-family openai`; blocked by `RUNTIME: Authentication required` before review output.
 
 ## Feedback
 
-None.
+- Installed `agent-quality` resolves its repository root to the Nix-store source, causing `hey agent-finish` to run Git/jj checks outside the active worktree. The source-tree command `python3 bin/agent-quality finish --worklog ...` passed every applicable gate.
 
 ## Remaining work
 
-- Rebuild and complete live registry, provider, worker, and automatic-rename smoke tests.
+- None.
 
 ## Commits
 
-Pending.
+- `00da1eee5 feat(herdr): package OMP smart rename provider`
+- `3bc9d534c feat(herdr): autostart packaged smart rename worker`
+- `8cd974606 feat(herdr): deploy managed smart rename plugin`
