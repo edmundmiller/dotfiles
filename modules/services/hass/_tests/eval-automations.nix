@@ -393,6 +393,34 @@ let
     }
     {
       test =
+        getReadyForBedScript != null
+        && any (
+          action:
+          (action.action or null) == "media_player.volume_set"
+          && (action.continue_on_error or false)
+          && (action.data.volume_level or null) == 0.45
+          && (action.target.entity_id or null) == "media_player.bedtime"
+        ) (toList (getReadyForBedScript.sequence or [ ]));
+      msg = "script.get_ready_for_bed must set Bedtime volume to 45 percent";
+    }
+    {
+      test =
+        goodNightScript != null
+        && any (
+          action:
+          builtins.hasAttr "if" action
+          && any (
+            fallback:
+            (fallback.action or null) == "media_player.volume_set"
+            && (fallback.continue_on_error or false)
+            && (fallback.data.volume_level or null) == 0.45
+            && (fallback.target.entity_id or null) == "media_player.bedtime"
+          ) (toList (action."then" or [ ]))
+        ) (toList (goodNightScript.sequence or [ ]));
+      msg = "script.goodnight fallback must set Bedtime volume to 45 percent";
+    }
+    {
+      test =
         goodNightScript != null
         && any (
           action:
