@@ -30,6 +30,12 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("^agent-quality ...$args", wrapper)
         self.assertNotIn("python3 bin/agent-quality", wrapper)
 
+    @unittest.expectedFailure
+    def test_hey_points_packaged_agent_quality_at_active_flake(self) -> None:
+        wrapper = HEY_WRAPPER.read_text()
+        self.assertIn("let ctx = (context)", wrapper)
+        self.assertIn("AGENT_QUALITY_ROOT: $ctx.flake_dir", wrapper)
+
     def test_worklog_validation_accepts_complete_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / "worklog.md"
