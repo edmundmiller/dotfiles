@@ -23,7 +23,7 @@ waiver_path: .agents/waivers/AGENT-03.md
   - `git hunks list` + `git hunks add <hunk-id>` (not `git add -p`)
   - `git commit -m "..."` or `git commit --amend --no-edit`
   - `git commit --fixup <sha>` + `git rebase --autosquash <base>` for history cleanup
-- If truly interactive flow needed, use `interactive_shell` (supervised) instead of `bash`
+- If an interactive flow is truly required, use the runtime's supervised interactive shell; otherwise ask the user to perform it.
 
 ## Hunk ID Format
 

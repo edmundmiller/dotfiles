@@ -1,6 +1,6 @@
 # Skill Troubleshooting Guide
 
-Common issues when creating Claude Code skills and how to fix them. Referenced from SKILL.md.
+Common issues when creating portable agent skills and how to fix them. Referenced from SKILL.md.
 
 ## Contents
 
@@ -17,7 +17,7 @@ Common issues when creating Claude Code skills and how to fix them. Referenced f
 
 ## Skill Not Being Invoked
 
-**Problem:** Skill exists but Claude doesn't use it
+**Problem:** Skill exists but the active model does not use it
 
 ### Diagnosis
 
@@ -31,20 +31,14 @@ Check these areas:
    # Problem: Too vague, no specific triggers
    ```
 
-2. **Priority too low**
-
-   ```yaml
-   priority: 1 # Rarely invoked
-   ```
-
-3. **Wrong file location**
+2. **Wrong file location**
 
    ```
    skills/catalog/my-skill/README.md  # ❌ Wrong
    skills/catalog/my-skill/SKILL.md   # ✅ Correct
    ```
 
-4. **Missing or malformed frontmatter**
+3. **Missing or malformed frontmatter**
 
    ```markdown
    # Missing the YAML frontmatter entirely
@@ -63,11 +57,10 @@ Check these areas:
 ```yaml
 # Before
 description: "Help with Python"
-priority: 3
 
 # After
+name: python-scripts
 description: "Generate UV shebang templates for standalone Python scripts with dependency management"
-priority: 7
 ```
 
 **What changed:**
@@ -75,7 +68,6 @@ priority: 7
 - Added "UV shebang" (technical term users will say)
 - Added "standalone Python scripts" (common phrase)
 - Added "dependency management" (key use case)
-- Increased priority to 7 (important skill)
 
 **Fix 2: Verify file structure**
 
@@ -87,14 +79,14 @@ ls -la skills/catalog/my-skill/SKILL.md
 head -n 5 skills/catalog/my-skill/SKILL.md
 # Should show:
 # ---
+# name: my-skill
 # description: "..."
-# priority: N
 # ---
 ```
 
 **Fix 3: Test invocation**
 
-Ask Claude questions that should trigger the skill:
+Ask the active model questions that should trigger the skill:
 
 ```
 # Test 1: Direct technical term
@@ -111,7 +103,7 @@ If skill still not invoked:
 
 - Check spelling in description
 - Try more common/natural phrases
-- Increase priority to 8 or 9
+- Verify the runtime actually discovers the skill directory
 
 ## Skill Too Broad
 
@@ -121,7 +113,7 @@ If skill still not invoked:
 
 Signs of too-broad skill:
 
-- SKILL.md exceeds 1000 lines
+- SKILL.md exceeds the 500-line limit
 - Covers multiple unrelated topics
 - User confusion about when to use it
 - Frequent updates needed for unrelated reasons

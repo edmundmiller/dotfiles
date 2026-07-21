@@ -315,11 +315,11 @@ def validate_plugin_json(path: Path) -> list[str]:
     return errors
 ````
 
-#### Bad - Punts to Claude
+#### Bad - Punts to the Model
 
 ```python
 def validate_plugin_json(path: Path):
-    """Validate plugin.json - Claude should figure out what's wrong."""
+    """Validate plugin.json - the model should figure out what's wrong."""
     with open(path) as f:
         data = json.load(f)
 
@@ -385,7 +385,7 @@ def run_jj_command(args: list[str]) -> str:
 #### Good - Justified Constants
 
 ```python
-# Timeout for Claude API requests
+# Timeout for model API requests
 # Typical requests: 5-10 seconds
 # Allow 3x buffer for slow connections
 TIMEOUT_SECONDS = 30
@@ -400,7 +400,7 @@ MAX_RETRIES = 3
 # Buffer size for streaming responses
 # Large enough to avoid excessive syscalls
 # Small enough to show progress quickly
-# Based on typical Claude response chunk size
+# Based on the observed response chunk size
 BUFFER_SIZE = 4096
 ```
 
@@ -615,7 +615,7 @@ git log -1 --pretty=%s | grep -E '^(feat|fix|docs|style|refactor|test|chore):'
 ```markdown
 ## Writing Commit Messages
 
-Claude will generate a good commit message.
+The model will generate a good commit message.
 ```
 
 ## Workflow Quality
