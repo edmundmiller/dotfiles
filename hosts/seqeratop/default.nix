@@ -104,20 +104,16 @@
         omp = {
           enable = true;
           # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic).
-          # No xai-oauth here — do not pin xai-oauth/* fallbacks.
-          # Anthropic-first: primary roles run on the VibeProxy Claude subscription,
-          # falling back to openai-codex (GPT), then cursor/composer-2.5 last.
-          # Opus is the workhorse; sonnet handles vision + fan-out subtasks (cost
-          # guard); haiku covers smol/commit/tiny. Fallbacks cover both VibeProxy
-          # being down (:8317 proxy not running) and hitting the Anthropic plan
-          # usage cap: the role cools down and fails over to the next chain entry,
-          # reverting when the cap window resets (retry.fallbackRevertPolicy:
-          # cooldown-expiry in config.yml). Never cursor/* Claude — the cursor tier
-          # is composer-2.5 only; vision falls to codex (GPT models support images).
-          smolModel = "vibeproxy/claude-haiku-4-5-20251001";
+          # Prewalk hands implementation to smol, so Sonnet is the coding handoff;
+          # Haiku stays on commit/tiny metadata work. Opus remains the primary and
+          # slow planner. Codex models provide the first provider-diverse fallback:
+          # Sol for strongest work, Terra for routine fan-out, Luna for cheap work.
+          # Cursor Grok and Composer fast variants are last-resort low-latency
+          # fallbacks. VibeProxy exposes Claude only; do not invent xai-oauth ids.
+          smolModel = "vibeproxy/claude-sonnet-5:low";
           modelRoles = {
             default = "vibeproxy/claude-opus-4-8:low";
-            smol = "vibeproxy/claude-haiku-4-5-20251001";
+            smol = "vibeproxy/claude-sonnet-5:low";
             slow = "vibeproxy/claude-opus-4-8:high";
             plan = "vibeproxy/claude-opus-4-8:high";
             vision = "vibeproxy/claude-sonnet-5:medium";
@@ -129,25 +125,42 @@
           retry.fallbackChains = {
             default = [
               "openai-codex/gpt-5.6-sol:low"
-              "openai-codex/gpt-5.6-terra:low"
-              "cursor/composer-2.5"
+              "cursor/cursor-grok-4.5-low-fast"
+              "cursor/composer-2.5-fast"
             ];
             smol = [
-              "cursor/composer-2.5"
+              "openai-codex/gpt-5.6-terra:low"
+              "cursor/cursor-grok-4.5-low-fast"
+              "cursor/composer-2.5-fast"
             ];
             slow = [
               "openai-codex/gpt-5.6-sol:high"
               "openai-codex/gpt-5.6-terra:high"
+              "openai-codex/gpt-5.6-luna:high"
             ];
             plan = [
               "openai-codex/gpt-5.6-sol:high"
+              "openai-codex/gpt-5.6-luna:high"
             ];
             task = [
-              "openai-codex/gpt-5.6-sol:low"
-              "cursor/composer-2.5"
+              "openai-codex/gpt-5.6-terra:low"
+              "cursor/cursor-grok-4.5-low-fast"
+              "cursor/composer-2.5-fast"
             ];
             vision = [
-              "openai-codex/gpt-5.6-sol:high"
+              "openai-codex/gpt-5.6-sol:medium"
+              "openai-codex/gpt-5.6-luna:medium"
+            ];
+            designer = [
+              "openai-codex/gpt-5.6-sol:medium"
+            ];
+            commit = [
+              "openai-codex/gpt-5.6-luna:low"
+              "cursor/composer-2.5-fast"
+            ];
+            tiny = [
+              "cursor/composer-2.5-fast"
+              "openai-codex/gpt-5.6-luna:low"
             ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
