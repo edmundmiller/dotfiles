@@ -65,10 +65,11 @@ back to the model as the failed tool result.
 ## Per-host model roles and providers
 
 `modules.agents.omp.smolModel` sets `PI_SMOL_MODEL` in the wrapper for a
-declarative per-host smol/fast model (also drives commit, which falls back to
-smol). `modules.agents.omp.modelRoles` overlays host-specific role selectors
-into the rendered `config.yml`. Use it only for real host auth or quota
-differences; keep shared defaults in `config/omp/config.yml`. Precedence:
+declarative per-host smol/fast override. The explicit `modelRoles.commit` wins
+for commits; commit falls back to smol only when that role is unset.
+`modules.agents.omp.modelRoles` overlays host-specific role selectors into the
+rendered `config.yml`. Use it only for real host auth or quota differences; keep
+shared defaults in `config/omp/config.yml`. Smol precedence:
 `--smol` flag > `PI_SMOL_MODEL` > rendered `config.yml`.
 
 **Providers are host-specific.** Do not cross-wire prefixes across laptops.
