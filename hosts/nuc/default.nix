@@ -172,6 +172,14 @@ let
     export HERMES_HOME=/var/lib/hermes-scintillate/.hermes
     export HERMES_REAL_HOME=/var/lib/hermes-scintillate
   '';
+  amosburtonTerminalInit = pkgs.writeText "amosburton-terminal-init.sh" ''
+    export HOME=/var/lib/hermes-amosburton
+    export HERMES_HOME=/var/lib/hermes-amosburton/.hermes
+    export HERMES_REAL_HOME=/var/lib/hermes-amosburton
+  '';
+  amosburtonHermesConfigOverlay = (pkgs.formats.yaml { }).generate "amosburton-hermes-host-overlay.yaml" {
+    terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
+  };
   hermesSharedProfileNames = [
     "amosburton"
     "anne"
@@ -276,10 +284,7 @@ let
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
   amosburtonCronExecutor = pkgs.writeShellScript "hermes-amosburton-cron-executor" ''
     set -euo pipefail
-    export OP_SERVICE_ACCOUNT_TOKEN="$(${pkgs.coreutils}/bin/cat /etc/opnix-token)"
-    LINEAR_API_KEY="$(${pkgs._1password-cli}/bin/op read ${lib.escapeShellArg amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY})"
-    export LINEAR_API_KEY
-    unset HERMES_MCP_BEARER_TOKEN_LINEAR OP_SERVICE_ACCOUNT_TOKEN
+    unset HERMES_MCP_BEARER_TOKEN_LINEAR
     exec ${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick
   '';
   mkAgentSecret = envVar: secretName: {
@@ -299,7 +304,32 @@ let
     (mkAgentSecret "OPENROUTER_API_KEY" "openrouter-api-key")
     (mkAgentSecret "PERPLEXITY_API_KEY" "perplexity-api-key")
   ];
-  hermesAmosburtonSecrets = hermesProviderSecrets;
+  hermesAmosburtonSecrets = hermesProviderSecrets ++ [
+    {
+      envVar = "LINEAR_API_KEY";
+      path = "/var/lib/opnix/secrets/amosburtonLinearApiKey";
+    }
+  ];
+  hermesAmosburtonSecretsMaterializeText = ''
+    ENV_DIR="/run/hermes-amosburton-env"
+    ENV_FILE="$ENV_DIR/secrets.env"
+
+    mkdir -p "$ENV_DIR"
+    : > "$ENV_FILE"
+    chmod 600 "$ENV_FILE"
+    chown emiller:users "$ENV_FILE"
+
+    printf 'HERMES_HONCHO_HOST=%s\n' "amosburton" >> "$ENV_FILE"
+
+    ${lib.concatMapStringsSep "\n" (secret: ''
+      if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
+        secret_value="$(< ${lib.escapeShellArg (toString secret.path)})"
+        printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
+      fi
+    '') hermesAmosburtonSecrets}
+  '';
+  hermesAmosburtonSecretsMaterialize =
+    pkgs.writeShellScript "hermes-amosburton-secrets-materialize" hermesAmosburtonSecretsMaterializeText;
   hermesScintillateSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     {
@@ -670,24 +700,7 @@ in
         "agenixInstall"
         "agenixChown"
       ];
-      text = ''
-        ENV_DIR="/run/hermes-amosburton-env"
-        ENV_FILE="$ENV_DIR/secrets.env"
-
-        mkdir -p "$ENV_DIR"
-        : > "$ENV_FILE"
-        chmod 600 "$ENV_FILE"
-        chown emiller:users "$ENV_FILE"
-
-        printf 'HERMES_HONCHO_HOST=%s\n' "amosburton" >> "$ENV_FILE"
-
-        ${lib.concatMapStringsSep "\n" (secret: ''
-          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-            secret_value="$(< ${lib.escapeShellArg (toString secret.path)})"
-            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
-          fi
-        '') hermesAmosburtonSecrets}
-      '';
+      text = hermesAmosburtonSecretsMaterializeText;
     };
 
     hermesScintillateSecretsMaterialize = {
@@ -1238,6 +1251,7 @@ in
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
+        settings.terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
           HERMES_KANBAN_HOME = hermesSharedHome;
@@ -1527,10 +1541,29 @@ in
     };
   };
 
+  systemd.services.hermes-amosburton-secrets-materialize = {
+    description = "Materialize Amos Burton cron secrets after OpNix";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "opnix-secrets.service" ];
+    requires = [ "opnix-secrets.service" ];
+    before = [ "hermes-amosburton-cron-tick.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${hermesAmosburtonSecretsMaterialize}";
+    };
+  };
+
   systemd.services.hermes-amosburton-cron-tick = {
     description = "Run Amos Burton cron jobs without an interactive gateway";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+    after = [
+      "hermes-amosburton-secrets-materialize.service"
+      "network-online.target"
+    ];
+    requires = [ "hermes-amosburton-secrets-materialize.service" ];
+    wants = [
+      "network-online.target"
+    ];
     path = [
       amosburtonHermesLauncher
       hermesAgentBase
@@ -1544,14 +1577,17 @@ in
       Type = "oneshot";
       User = "emiller";
       Group = "users";
-      SupplementaryGroups = [ "onepassword-secrets" ];
-      WorkingDirectory = "/var/lib/hermes-amosburton";
+      WorkingDirectory = "/var/lib/hermes-amosburton/workspace";
       EnvironmentFile = [ "/run/hermes-amosburton-env/secrets.env" ];
       Environment = [
         "HOME=/var/lib/hermes-amosburton"
         "HERMES_HOME=/var/lib/hermes-amosburton/.hermes"
+        "HERMES_REAL_HOME=/var/lib/hermes-amosburton"
         "HERMES_KANBAN_HOME=${hermesSharedHome}"
         "HERMES_PROFILE=amosburton"
+        "HERMES_CONFIG_OVERLAY=${amosburtonHermesConfigOverlay}"
+        "TERMINAL_HOME_MODE=real"
+        "MESSAGING_CWD=/var/lib/hermes-amosburton/workspace"
         "CODEX_HOME=/home/emiller/.codex"
       ];
       ExecStart = "${amosburtonCronExecutor}";
@@ -1784,14 +1820,16 @@ in
       HERMES_KANBAN_HOME = hermesSharedHome;
       HERMES_PROFILE = "scintillate";
       TERMINAL_HOME_MODE = "real";
-      MESSAGING_CWD = "/home/hermes/repos/obsidian-vault";
+      MESSAGING_CWD = "/home/emiller/obsidian-vault";
+      TN_VAULT_PATH = "/home/emiller/obsidian-vault";
+      WIKI_PATH = "/home/emiller/obsidian-vault/03_Areas/Personal";
       CODEX_HOME = "/home/emiller/.codex";
     };
     serviceConfig = {
       Type = "oneshot";
       User = "emiller";
       Group = "users";
-      WorkingDirectory = "/home/hermes/repos/obsidian-vault";
+      WorkingDirectory = "/home/emiller/obsidian-vault";
       EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
       ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
       NoNewPrivileges = true;
@@ -2238,6 +2276,9 @@ in
       };
       radarAgentmailCredential = {
         reference = "op://Agents/Radar Agentmail/credential";
+      };
+      amosburtonLinearApiKey = {
+        reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;
       };
     };
   };

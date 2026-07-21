@@ -89,11 +89,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784516632,
-        "narHash": "sha256-/7o3rXT+lG2KguFrozbEe4t2aTrUFHVpiCKfhyV2D0E=",
+        "lastModified": 1784603630,
+        "narHash": "sha256-e3dRGsI8DVjzGa4wmggKpUJgUJc2u+Zn7CuaAP75L3I=",
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "19c923419e8b908b664217e3b5852ac8336ee320",
+        "rev": "a1f2b9f86a18358400e4c67f3a1f59d36c497a7f",
         "type": "github"
       },
       "original": {
@@ -2199,17 +2199,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1778981531,
-        "narHash": "sha256-n/1dECQoqj7+daULRHImOMlJYnHFiqgyNQFX//FotqU=",
+        "lastModified": 1784581248,
+        "narHash": "sha256-GUUi7HjcuslM7U1FLpzK5062grzNHP4Wu9txJVBK5uI=",
         "owner": "edmundmiller",
         "repo": "tnote",
-        "rev": "32b9fbc2d6b04acdabab47c7b6155691aea8aa8c",
+        "rev": "f968abc0c6f65b82666485383f9086d27e04ac9a",
         "type": "github"
       },
       "original": {
         "owner": "edmundmiller",
-        "ref": "v0.3.0",
         "repo": "tnote",
+        "rev": "f968abc0c6f65b82666485383f9086d27e04ac9a",
         "type": "github"
       }
     },
