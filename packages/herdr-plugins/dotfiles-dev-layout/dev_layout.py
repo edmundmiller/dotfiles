@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Dotfiles Herdr dev-layout plugin."""
+
 from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -16,13 +18,19 @@ def herdr_bin() -> str:
 
 
 def run_json(args: list[str]) -> dict[str, Any]:
-    result = subprocess.run([herdr_bin(), *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(
+        [herdr_bin(), *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     if result.returncode != 0:
-        raise SystemExit(result.stderr or result.stdout or f"herdr {' '.join(args)} failed")
+        raise SystemExit(
+            result.stderr or result.stdout or f"herdr {' '.join(args)} failed"
+        )
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as err:
-        raise SystemExit(f"herdr {' '.join(args)} did not return JSON: {err}\n{result.stdout}") from err
+        raise SystemExit(
+            f"herdr {' '.join(args)} did not return JSON: {err}\n{result.stdout}"
+        ) from err
     if "error" in payload:
         raise SystemExit(json.dumps(payload["error"], indent=2))
     return payload
@@ -57,7 +65,13 @@ def main_coding_agent() -> str:
 
 
 def git_output(cwd: str, args: list[str]) -> str | None:
-    result = subprocess.run(["git", *args], cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    result = subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
     if result.returncode != 0:
         return None
     value = result.stdout.strip()
@@ -108,7 +122,9 @@ def hunk_theme_args() -> list[str]:
     return args
 
 
-def hunk_command(cwd: str, mode: str = "worktree", passthrough: list[str] | None = None) -> str:
+def hunk_command(
+    cwd: str, mode: str = "worktree", passthrough: list[str] | None = None
+) -> str:
     executable = "hunk" if command_exists("hunk") else "bunx hunkdiff"
     passthrough = passthrough or []
     args: list[str]
@@ -116,7 +132,14 @@ def hunk_command(cwd: str, mode: str = "worktree", passthrough: list[str] | None
         args = ["diff", "--staged"]
     elif mode == "branch-committed":
         branch = git_output(cwd, ["branch", "--show-current"]) or "HEAD"
-        upstream = git_output(cwd, ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"]) or default_base_ref(cwd) or "origin/main"
+        upstream = (
+            git_output(
+                cwd,
+                ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
+            )
+            or default_base_ref(cwd)
+            or "origin/main"
+        )
         args = ["diff", f"{upstream}..{branch}"]
     else:
         args = ["diff"]
@@ -133,7 +156,19 @@ def response_path(payload: dict[str, Any], *path: str) -> Any:
 
 
 def tab_create(workspace_id: str, cwd: str, label: str) -> str:
-    payload = run_json(["tab", "create", "--workspace", workspace_id, "--cwd", cwd, "--label", label, "--focus"])
+    payload = run_json(
+        [
+            "tab",
+            "create",
+            "--workspace",
+            workspace_id,
+            "--cwd",
+            cwd,
+            "--label",
+            label,
+            "--focus",
+        ]
+    )
     return response_path(payload, "result", "root_pane", "pane_id")
 
 
@@ -141,11 +176,32 @@ def pane_run(pane_id: str, command: str) -> None:
     run_json(["pane", "run", pane_id, command])
 
 
+def agent_name_for_pane(pane_id: str, kind: str) -> str:
+    suffix = re.sub(r"[^a-z0-9_-]+", "-", pane_id.lower()).strip("-_")
+    return f"{kind}-{suffix}"[:32].rstrip("-_")
+
+
+def agent_start(pane_id: str, kind: str) -> None:
+    run_json(
+        [
+            "agent",
+            "start",
+            agent_name_for_pane(pane_id, kind),
+            "--kind",
+            kind,
+            "--pane",
+            pane_id,
+        ]
+    )
+
+
 def pane_rename(pane_id: str, label: str) -> None:
     run_json(["pane", "rename", pane_id, label])
 
 
-def hunk(open_tab: bool, mode: str = "worktree", passthrough: list[str] | None = None) -> None:
+def hunk(
+    open_tab: bool, mode: str = "worktree", passthrough: list[str] | None = None
+) -> None:
     ctx = context()
     cwd = ctx.get("focused_pane_cwd") or ctx.get("workspace_cwd") or os.getcwd()
     workspace_id = ctx.get("workspace_id") or os.environ.get("HERDR_WORKSPACE_ID")
@@ -157,7 +213,9 @@ def hunk(open_tab: bool, mode: str = "worktree", passthrough: list[str] | None =
     else:
         if not pane_id:
             raise SystemExit("missing Herdr pane id in plugin context")
-        payload = run_json(["pane", "split", pane_id, "--direction", "right", "--cwd", cwd, "--focus"])
+        payload = run_json(
+            ["pane", "split", pane_id, "--direction", "right", "--cwd", cwd, "--focus"]
+        )
         target_pane = response_path(payload, "result", "pane", "pane_id")
     pane_rename(target_pane, "hunk")
     pane_run(target_pane, hunk_command(cwd, mode, passthrough))
@@ -174,7 +232,7 @@ def bootstrap() -> None:
     if command_exists(agent):
         pane = tab_create(workspace_id, cwd, agent)
         pane_rename(pane, agent)
-        pane_run(pane, agent)
+        agent_start(pane, agent)
     pane = tab_create(workspace_id, cwd, "hunk")
     pane_rename(pane, "hunk")
     pane_run(pane, hunk_command(cwd))
@@ -192,9 +250,17 @@ def bootstrap() -> None:
         tab_id = ctx.get("tab_id") or os.environ.get("HERDR_TAB_ID")
         pane_id = ctx.get("focused_pane_id") or os.environ.get("HERDR_PANE_ID")
         if tab_id:
-            subprocess.run([herdr_bin(), "tab", "close", tab_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(
+                [herdr_bin(), "tab", "close", tab_id],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         elif pane_id:
-            subprocess.run([herdr_bin(), "pane", "close", pane_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(
+                [herdr_bin(), "pane", "close", pane_id],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
     run_json(["workspace", "focus", workspace_id])
 
@@ -203,7 +269,13 @@ def main() -> None:
     args = sys.argv[1:]
     if args and args[0] == "hunk":
         open_tab = "--tab" in args
-        mode = "branch-committed" if "--branch-committed" in args else "staged" if any(a in args for a in ("--staged", "--cached")) else "worktree"
+        mode = (
+            "branch-committed"
+            if "--branch-committed" in args
+            else "staged"
+            if any(a in args for a in ("--staged", "--cached"))
+            else "worktree"
+        )
         passthrough = args[args.index("--") + 1 :] if "--" in args else []
         hunk(open_tab=open_tab, mode=mode, passthrough=passthrough)
     else:

@@ -13,7 +13,9 @@ import sys
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Extract ids from Herdr JSON output read on stdin.")
+    parser = argparse.ArgumentParser(
+        description="Extract ids from Herdr JSON output read on stdin."
+    )
     parser.add_argument(
         "field",
         choices=["workspace", "tab", "pane"],
@@ -29,10 +31,17 @@ def main() -> int:
     elif args.field == "tab":
         print(result["tab"]["tab_id"])
     else:
-        # workspace create/tab create call this root_pane; pane split calls it pane.
-        pane = result.get("root_pane") or result.get("pane")
+        # Creation calls this root_pane, split calls it pane, and move nests the
+        # new workspace-qualified ID under move_result.pane.
+        pane = (
+            result.get("root_pane")
+            or result.get("pane")
+            or result.get("move_result", {}).get("pane")
+        )
         if pane is None:
-            raise KeyError("result did not contain root_pane or pane")
+            raise KeyError(
+                "result did not contain root_pane, pane, or move_result.pane"
+            )
         print(pane["pane_id"])
     return 0
 

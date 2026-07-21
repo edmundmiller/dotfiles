@@ -16,10 +16,13 @@ class Completed:
 
 
 class BootstrapAgentSelectionTest(unittest.TestCase):
-    def run_bootstrap(self, env: dict[str, str] | None = None, commands: set[str] | None = None):
+    def run_bootstrap(
+        self, env: dict[str, str] | None = None, commands: set[str] | None = None
+    ):
         created: list[tuple[str, str]] = []
         renamed: list[tuple[str, str]] = []
         ran: list[tuple[str, str]] = []
+        started: list[tuple[str, str, str]] = []
 
         def fake_tab_create(workspace_id: str, cwd: str, label: str) -> str:
             self.assertEqual(workspace_id, "workspace-1")
@@ -28,80 +31,137 @@ class BootstrapAgentSelectionTest(unittest.TestCase):
             created.append((label, pane))
             return pane
 
-        with patch.dict(os.environ, env or {}, clear=True), patch.object(
-            dev_layout,
-            "context",
-            return_value={"workspace_id": "workspace-1", "workspace_cwd": "/repo"},
-        ), patch.object(dev_layout, "command_exists", side_effect=(commands or set()).__contains__), patch.object(
-            dev_layout, "tab_create", side_effect=fake_tab_create
-        ), patch.object(
-            dev_layout, "pane_rename", side_effect=lambda pane, label: renamed.append((pane, label))
-        ), patch.object(
-            dev_layout, "pane_run", side_effect=lambda pane, command: ran.append((pane, command))
-        ), patch.object(
-            dev_layout, "hunk_command", return_value="hunk --worktree"
-        ), patch.object(
-            dev_layout, "run_json"
+        with (
+            patch.dict(os.environ, env or {}, clear=True),
+            patch.object(
+                dev_layout,
+                "context",
+                return_value={"workspace_id": "workspace-1", "workspace_cwd": "/repo"},
+            ),
+            patch.object(
+                dev_layout,
+                "command_exists",
+                side_effect=(commands or set()).__contains__,
+            ),
+            patch.object(dev_layout, "tab_create", side_effect=fake_tab_create),
+            patch.object(
+                dev_layout,
+                "pane_rename",
+                side_effect=lambda pane, label: renamed.append((pane, label)),
+            ),
+            patch.object(
+                dev_layout,
+                "pane_run",
+                side_effect=lambda pane, command: ran.append((pane, command)),
+            ),
+            patch.object(
+                dev_layout,
+                "agent_start",
+                side_effect=lambda pane, kind: started.append(
+                    (pane, kind, dev_layout.agent_name_for_pane(pane, kind))
+                ),
+            ),
+            patch.object(dev_layout, "hunk_command", return_value="hunk --worktree"),
+            patch.object(dev_layout, "run_json"),
         ):
             dev_layout.bootstrap()
 
-        return created, renamed, ran
+        return created, renamed, ran, started
 
     def test_bootstrap_uses_pi_when_no_main_agent_is_selected(self) -> None:
-        created, renamed, ran = self.run_bootstrap(commands={"pi"})
+        created, renamed, ran, started = self.run_bootstrap(commands={"pi"})
 
         self.assertEqual([label for label, _ in created], ["pi", "hunk", "shell"])
         self.assertEqual(renamed[0], ("pane-1", "pi"))
-        self.assertEqual(ran[0], ("pane-1", "pi"))
+        self.assertEqual(started, [("pane-1", "pi", "pi-pane-1")])
+        self.assertNotIn(("pane-1", "pi"), ran)
 
     def test_bootstrap_uses_omp_when_selected(self) -> None:
-        created, renamed, ran = self.run_bootstrap(env={"HERDR_MAIN_CODING_AGENT": "omp"}, commands={"pi", "omp"})
+        created, renamed, ran, started = self.run_bootstrap(
+            env={"HERDR_MAIN_CODING_AGENT": "omp"}, commands={"pi", "omp"}
+        )
 
         self.assertEqual([label for label, _ in created], ["omp", "hunk", "shell"])
         self.assertEqual(renamed[0], ("pane-1", "omp"))
-        self.assertEqual(ran[0], ("pane-1", "omp"))
+        self.assertEqual(started, [("pane-1", "omp", "omp-pane-1")])
+        self.assertNotIn(("pane-1", "omp"), ran)
 
     def test_bootstrap_skips_selected_agent_when_command_is_missing(self) -> None:
-        created, renamed, ran = self.run_bootstrap(env={"HERDR_MAIN_CODING_AGENT": "omp"}, commands={"pi"})
+        created, renamed, ran, started = self.run_bootstrap(
+            env={"HERDR_MAIN_CODING_AGENT": "omp"}, commands={"pi"}
+        )
 
         self.assertEqual([label for label, _ in created], ["hunk", "shell"])
         self.assertNotIn(("pane-1", "pi"), renamed)
         self.assertNotIn(("pane-1", "pi"), ran)
+        self.assertEqual(started, [])
+
+    def test_agent_name_is_strict_and_workspace_qualified(self) -> None:
+        self.assertEqual(dev_layout.agent_name_for_pane("w7:p3", "omp"), "omp-w7-p3")
+
+    def test_manifest_requires_agent_facade_release(self) -> None:
+        manifest = (Path(__file__).resolve().parent / "herdr-plugin.toml").read_text()
+        self.assertIn('min_herdr_version = "0.7.5"', manifest)
 
 
 class HunkThemeArgsTest(unittest.TestCase):
     def test_hunk_theme_override_wins_over_stack_theme(self) -> None:
-        with patch.object(sys, "platform", "darwin"), patch.dict(
-            os.environ,
-            {
-                "HUNK_THEME": "catppuccin-frappe",
-                "HUNK_THEME_DARK": "stack-dark",
-                "HUNK_THEME_LIGHT": "stack-light",
-            },
-            clear=True,
-        ), patch("dev_layout.subprocess.run", return_value=Completed(0, "true\n")):
-            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "catppuccin-frappe", "--no-transparent-bg"])
+        with (
+            patch.object(sys, "platform", "darwin"),
+            patch.dict(
+                os.environ,
+                {
+                    "HUNK_THEME": "catppuccin-frappe",
+                    "HUNK_THEME_DARK": "stack-dark",
+                    "HUNK_THEME_LIGHT": "stack-light",
+                },
+                clear=True,
+            ),
+            patch("dev_layout.subprocess.run", return_value=Completed(0, "true\n")),
+        ):
+            self.assertEqual(
+                dev_layout.hunk_theme_args(),
+                ["--theme", "catppuccin-frappe", "--no-transparent-bg"],
+            )
 
     def test_macos_dark_uses_stack_dark_theme(self) -> None:
-        with patch.object(sys, "platform", "darwin"), patch.dict(
-            os.environ,
-            {"HUNK_THEME_DARK": "stack-dark", "HUNK_THEME_LIGHT": "stack-light"},
-            clear=True,
-        ), patch("dev_layout.subprocess.run", return_value=Completed(0, "true\n")):
-            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "stack-dark", "--no-transparent-bg"])
+        with (
+            patch.object(sys, "platform", "darwin"),
+            patch.dict(
+                os.environ,
+                {"HUNK_THEME_DARK": "stack-dark", "HUNK_THEME_LIGHT": "stack-light"},
+                clear=True,
+            ),
+            patch("dev_layout.subprocess.run", return_value=Completed(0, "true\n")),
+        ):
+            self.assertEqual(
+                dev_layout.hunk_theme_args(),
+                ["--theme", "stack-dark", "--no-transparent-bg"],
+            )
 
     def test_macos_light_uses_stack_light_theme(self) -> None:
-        with patch.object(sys, "platform", "darwin"), patch.dict(
-            os.environ,
-            {"HUNK_THEME_DARK": "stack-dark", "HUNK_THEME_LIGHT": "stack-light"},
-            clear=True,
-        ), patch("dev_layout.subprocess.run", return_value=Completed(0, "false\n")):
-            self.assertEqual(dev_layout.hunk_theme_args(), ["--theme", "stack-light", "--no-transparent-bg"])
+        with (
+            patch.object(sys, "platform", "darwin"),
+            patch.dict(
+                os.environ,
+                {"HUNK_THEME_DARK": "stack-dark", "HUNK_THEME_LIGHT": "stack-light"},
+                clear=True,
+            ),
+            patch("dev_layout.subprocess.run", return_value=Completed(0, "false\n")),
+        ):
+            self.assertEqual(
+                dev_layout.hunk_theme_args(),
+                ["--theme", "stack-light", "--no-transparent-bg"],
+            )
 
     def test_no_theme_when_stack_theme_and_detection_are_missing(self) -> None:
-        with patch.object(sys, "platform", "darwin"), patch.dict(os.environ, {}, clear=True), patch(
-            "dev_layout.subprocess.run",
-            return_value=Completed(1),
+        with (
+            patch.object(sys, "platform", "darwin"),
+            patch.dict(os.environ, {}, clear=True),
+            patch(
+                "dev_layout.subprocess.run",
+                return_value=Completed(1),
+            ),
         ):
             self.assertEqual(dev_layout.hunk_theme_args(), ["--no-transparent-bg"])
 

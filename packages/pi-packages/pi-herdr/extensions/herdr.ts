@@ -190,13 +190,55 @@ export const buildApprovalCommand = (prUrl: string): string =>
     "exec ${SHELL:-/bin/zsh} -l",
   ].join("; ");
 
-const createTabAndRun = async (
-  pi: ExtensionAPI,
-  workspaceId: string,
-  cwd: string,
-  label: string,
-  command: string
-) => {
+type WaitParams = {
+  kind: "output" | "agent-status";
+  paneId: string;
+  match?: string;
+  regex?: boolean;
+  status?: "idle" | "working" | "blocked" | "done" | "unknown";
+  timeoutMs?: number;
+  lines?: number;
+};
+
+type ReadSource = "visible" | "recent" | "recent-unwrapped" | "detection";
+
+export const buildReadArgs = (
+  paneId: string,
+  source: ReadSource,
+  lines: number,
+  ansi: boolean
+): string[] => {
+  const args = [source === "detection" ? "agent" : "pane", "read", paneId, "--source", source];
+  args.push("--lines", String(lines));
+  if (ansi) args.push("--ansi");
+  return args;
+};
+
+export const buildWaitArgs = (params: WaitParams): string[] => {
+  const timeout = String(params.timeoutMs ?? 60_000);
+  if (params.kind === "output") {
+    if (!params.match) throw new Error("match is required for output waits");
+    const args = [
+      "pane",
+      "wait-output",
+      params.paneId,
+      params.regex ? "--regex" : "--match",
+      params.match,
+      "--timeout",
+      timeout,
+    ];
+    if (params.lines) args.push("--lines", String(params.lines));
+    return args;
+  }
+
+  if (!params.status) throw new Error("status is required for agent-status waits");
+  return ["agent", "wait", params.paneId, "--until", params.status, "--timeout", timeout];
+};
+
+export const buildReviewAgentName = (prNumber: number, workspaceId: string): string =>
+  truncate(slugify(`review-pr-${prNumber}-${workspaceId}`) || `review-pr-${prNumber}`, 32);
+
+const createTab = async (pi: ExtensionAPI, workspaceId: string, cwd: string, label: string) => {
   const tab = await runHerdr(pi, [
     "tab",
     "create",
@@ -211,7 +253,37 @@ const createTabAndRun = async (
   const paneId = findStringKey(parseJson(tab.stdout), new Set(["pane_id"]));
   if (!paneId) throw new Error(`could not find pane_id for ${label} tab`);
   await runHerdr(pi, ["pane", "rename", paneId, label]);
+  return paneId;
+};
+
+const createTabAndRun = async (
+  pi: ExtensionAPI,
+  workspaceId: string,
+  cwd: string,
+  label: string,
+  command: string
+) => {
+  const paneId = await createTab(pi, workspaceId, cwd, label);
   await runHerdr(pi, ["pane", "run", paneId, command]);
+  return paneId;
+};
+
+const createTabAndStartAgent = async (
+  pi: ExtensionAPI,
+  workspaceId: string,
+  cwd: string,
+  label: string,
+  kind: string,
+  agentName: string,
+  prompt: string
+) => {
+  const paneId = await createTab(pi, workspaceId, cwd, label);
+  await runHerdr(
+    pi,
+    ["agent", "start", agentName, "--kind", kind, "--pane", paneId, "--timeout", "30000"],
+    { timeout: 32_000 }
+  );
+  await runHerdr(pi, ["agent", "prompt", agentName, prompt]);
   return paneId;
 };
 
@@ -263,10 +335,15 @@ export default function herdrExtension(pi: ExtensionAPI) {
     label: "Herdr Read Pane",
     description: "Read visible or recent output from a herdr pane.",
     parameters: Type.Object({
-      paneId: Type.String({ description: "Stable herdr pane id, e.g. w...-1 or positional 1-1." }),
+      paneId: Type.String({ description: "Live Herdr pane id, e.g. w1:p1." }),
       source: Type.Optional(
         Type.Union(
-          [Type.Literal("visible"), Type.Literal("recent"), Type.Literal("recent-unwrapped")],
+          [
+            Type.Literal("visible"),
+            Type.Literal("recent"),
+            Type.Literal("recent-unwrapped"),
+            Type.Literal("detection"),
+          ],
           { description: "Output source. Defaults to recent." }
         )
       ),
@@ -276,9 +353,12 @@ export default function herdrExtension(pi: ExtensionAPI) {
       ansi: Type.Optional(Type.Boolean({ description: "Preserve ANSI formatting." })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const args = ["pane", "read", params.paneId, "--source", params.source ?? "recent"];
-      if (params.lines) args.push("--lines", String(params.lines));
-      if (params.ansi) args.push("--ansi");
+      const args = buildReadArgs(
+        params.paneId,
+        params.source ?? "recent",
+        params.lines ?? 80,
+        params.ansi ?? false
+      );
       const result = await runHerdr(pi, args);
       return textResult(result.stdout || "(pane output empty)", result);
     },
@@ -329,20 +409,8 @@ export default function herdrExtension(pi: ExtensionAPI) {
       lines: Type.Optional(Type.Number({ description: "Lines to scan for output waits." })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const timeout = String(params.timeoutMs ?? 60_000);
-      const args = ["wait", params.kind, params.paneId];
-
-      if (params.kind === "output") {
-        if (!params.match) throw new Error("match is required for output waits");
-        args.push("--match", params.match, "--timeout", timeout);
-        if (params.regex) args.push("--regex");
-        if (params.lines) args.push("--lines", String(params.lines));
-      } else {
-        if (!params.status) throw new Error("status is required for agent-status waits");
-        args.push("--status", params.status, "--timeout", timeout);
-      }
-
-      const result = await runHerdr(pi, args, { timeout: Number(timeout) + 2_000 });
+      const timeout = params.timeoutMs ?? 60_000;
+      const result = await runHerdr(pi, buildWaitArgs(params), { timeout: timeout + 2_000 });
       const parsed = parseJson(result.stdout);
       return textResult(stringify(parsed), { ...result, parsed });
     },
@@ -451,10 +519,18 @@ export default function herdrExtension(pi: ExtensionAPI) {
         diffTarget,
         hunkTab: "Hunk",
       })}${params.prompt ? `\n\nExtra instruction:\n${params.prompt}` : ""}`;
-      const ompCommand = `omp --cwd ${shellQuote(worktreePath)} ${shellQuote(reviewPrompt)}`;
+      const reviewAgentName = buildReviewAgentName(pr.number, workspaceId);
 
       await createTabAndRun(pi, workspaceId, worktreePath, "Hunk", hunkCommand);
-      await createTabAndRun(pi, workspaceId, worktreePath, "OMP Review", ompCommand);
+      await createTabAndStartAgent(
+        pi,
+        workspaceId,
+        worktreePath,
+        "OMP Review",
+        "omp",
+        reviewAgentName,
+        reviewPrompt
+      );
       await createTabAndRun(pi, workspaceId, worktreePath, "Approve", buildApprovalCommand(pr.url));
       await runHerdr(pi, ["workspace", "focus", workspaceId]);
 
@@ -463,9 +539,10 @@ export default function herdrExtension(pi: ExtensionAPI) {
           `Created Herdr PR review workspace ${workspaceLabel}.`,
           `Worktree: ${worktreePath}`,
           `Diff: ${diffTarget}`,
+          `Agent: ${reviewAgentName}`,
           "Tabs: Hunk, OMP Review, Approve",
         ].join("\n"),
-        { pr, worktreePath, workspaceId, diffTarget }
+        { pr, worktreePath, workspaceId, reviewAgentName, diffTarget }
       );
     },
   });
@@ -475,7 +552,7 @@ export default function herdrExtension(pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const argv = args.trim().split(/\s+/).filter(Boolean);
       if (argv.length === 0) {
-        ctx.ui.notify("Usage: /herdr <status|workspace|tab|pane|wait ...>", "info");
+        ctx.ui.notify("Usage: /herdr <status|workspace|tab|pane|agent ...>", "info");
         return;
       }
       try {

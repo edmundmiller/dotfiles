@@ -20,7 +20,6 @@ def bootstrap_program() -> str:
 
 
 class HerdrConfigBootstrapTest(unittest.TestCase):
-    @unittest.expectedFailure
     def test_duplicate_unmanaged_command_keys_are_deduplicated(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             config = Path(tempdir) / "config.toml"

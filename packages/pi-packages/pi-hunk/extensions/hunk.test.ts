@@ -62,7 +62,7 @@ describe("pi-hunk", () => {
     expect(calls).toEqual([]);
   });
 
-  test.failing("hunk_diff uses the supported Herdr pane API after helper removal", async () => {
+  test("hunk_diff uses the supported Herdr pane API after helper removal", async () => {
     const repo = mkdtempSync(join(tmpdir(), "pi-hunk-marker-"));
     const { calls, tools } = createPiMock();
     const previousEnv = {
@@ -79,6 +79,7 @@ describe("pi-hunk", () => {
         repo,
         target: "origin/main",
         staged: true,
+        watch: true,
         pathspecs: ["src"],
       });
 

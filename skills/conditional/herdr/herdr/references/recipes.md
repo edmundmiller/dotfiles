@@ -1,93 +1,81 @@
 # Herdr recipes and recovery
 
-These patterns come from official CLI behavior and recurring session-trace failures.
+These patterns follow Herdr 0.7.5's official agent-automation contract.
 
 ## Delegate to a sibling agent
 
-1. Inspect current repo state and define a bounded handoff.
-2. Start the agent with `herdr agent start`; keep focus with `--no-focus`.
-3. Wait for `idle` before sending a long prompt.
-4. Send literal prompt text with `herdr agent send`, then submit Enter to the returned pane ID.
-5. Wait for `done` with `herdr wait agent-status`, then read recent unwrapped output.
-6. Review the child's changes before applying or landing them.
+1. Confirm `HERDR_ENV=1`, inspect repo state, and define a bounded handoff.
+2. Inspect pane geometry, split without taking focus, and parse the returned pane ID.
+3. Start the supported agent in that existing shell pane.
+4. Submit the prompt atomically with `agent prompt`.
+5. Inspect the returned settled state and recent unwrapped output.
+6. Review the child's work before applying, merging, or landing it.
 
 ```bash
-START=$(herdr agent start audit --cwd "$PWD" --split right --no-focus -- omp)
-PANE_ID=$(printf '%s' "$START" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["agent"]["pane_id"])')
-herdr agent wait "$PANE_ID" --status idle --timeout 30000
-herdr agent send "$PANE_ID" "Inspect the touched tests. Report gaps; do not edit."
-herdr pane send-keys "$PANE_ID" enter
-herdr wait agent-status "$PANE_ID" --status done --timeout 120000
-herdr agent read "$PANE_ID" --source recent-unwrapped --lines 120
+split=$(herdr pane split --current --direction right --cwd "$PWD" --no-focus)
+pane_id=$(printf '%s\n' "$split" | python3 ~/.agents/skills/herdr/scripts/extract_ids.py pane)
+herdr agent start audit --kind codex --pane "$pane_id"
+herdr agent prompt audit "Inspect the touched tests. Report gaps; do not edit." --wait --timeout 120000
+herdr agent read audit --source recent-unwrapped --lines 120
 ```
 
-If the name is ambiguous, use the returned pane ID.
+`agent start` already waits for the agent to become ready. Do not add an idle wait before the first prompt.
 
 ## Run and observe a service
 
 ```bash
-CREATE=$(herdr pane split --current --direction right --no-focus)
-# Extract pane_id from CREATE.
-herdr pane run <pane-id> "npm run dev"
-herdr wait output <pane-id> --match "ready" --timeout 30000
-herdr pane read <pane-id> --source recent-unwrapped --lines 40
+split=$(herdr pane split --current --direction right --cwd "$PWD" --no-focus)
+pane_id=$(printf '%s\n' "$split" | python3 ~/.agents/skills/herdr/scripts/extract_ids.py pane)
+herdr pane run "$pane_id" "npm run dev"
+herdr pane wait-output "$pane_id" --match "ready" --timeout 30000
+herdr pane read "$pane_id" --source recent-unwrapped --lines 40
 ```
 
-On timeout, read output before waiting again. The process may have failed before emitting the marker.
+On timeout, read output before waiting again. The process may have failed before emitting the marker, or the marker may differ.
 
-## Debug incorrect agent status
+## Debug incorrect agent state
 
 ```bash
 python3 ~/.agents/skills/herdr/scripts/agent_context.py <target> --lines 100
 ```
 
-Interpret the combined output:
+Metadata identifies the resolved agent and pane, recent output shows visible behavior, and explain output shows lifecycle authority and matching evidence. Fix detection only when explanation proves the rule is wrong.
 
-- Metadata identifies the selected agent/pane.
-- Recent output shows visible behavior.
-- Explanation shows the manifest, rule evidence, lifecycle authority, and skip reason.
+## Interact with a blocked agent
 
-Fix detection only when explanation proves the rule is wrong. Do not infer status solely from prompts or spinners.
+```bash
+herdr agent wait reviewer --until blocked --timeout 120000
+herdr agent read reviewer --source recent-unwrapped --lines 80
+herdr agent send-keys reviewer esc
+```
+
+Never infer which answer or approval to send from `blocked` alone. Read the visible prompt and preserve the user's authority boundary.
 
 ## Recover after stale examples
 
-Symptoms from traces include `unknown option: --focus`, missing required `--direction`, and guessed pane IDs selecting the wrong pane.
-
-Recovery:
+Symptoms include `unknown option`, missing `--kind` or `--pane`, use of removed `agent send`, and top-level `wait` commands.
 
 1. Stop issuing variants.
-2. Run the installed command's `--help`.
-3. Re-list/snapshot resources.
-4. Use current flags and parse returned IDs.
-5. Verify the resulting pane/tab/workspace, not merely command exit status.
+2. Print the installed command group.
+3. Re-list live resources.
+4. Use current flags and returned IDs.
+5. Verify the resulting agent, pane, or output—not only exit status.
 
 ## Reload configuration safely
-
-After changing Herdr config:
 
 ```bash
 herdr server reload-config
 ```
 
-Inspect returned diagnostics and then exercise the changed behavior. A file write or `reload_needed` field alone is not proof.
+Inspect diagnostics, then exercise the changed behavior. A file write or `reload_needed` field alone is not proof.
 
-## Use pane input only as fallback
+## Use raw pane input only intentionally
 
-For a TUI that has no Herdr agent adapter:
+For a non-agent TUI with no semantic adapter:
 
 ```bash
 herdr pane send-text <pane-id> "literal text"
 herdr pane send-keys <pane-id> enter
 ```
 
-For shell commands, use `pane run`; it submits text and Enter together. For semantic agent prompts, use `agent send`.
-
-## Preserve long-lived layouts
-
-Export a good live layout instead of reconstructing it through sequential split assumptions:
-
-```bash
-herdr layout export
-```
-
-Apply layouts only after inspecting installed help. Layout restoration recreates structure and commands; it does not preserve live PTYs, running processes, or scrollback.
+For a shell command use `pane run`. For a recognized coding agent use `agent prompt` or `agent send-keys`.

@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Run self-tests for Herdr helper scripts."""
+"""Run the maintained dotfiles Herdr integration tests."""
 
 from __future__ import annotations
 
@@ -11,25 +11,55 @@ import subprocess
 import sys
 
 
-SCRIPTS = (
-    "herdr-hunk",
-    "herdr-tab",
-    "herdr-workspace",
+CHECKS = (
+    (
+        "agent automation",
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "tests.test_herdr_agent_automation",
+            "tests.test_herdr_config_bootstrap",
+        ],
+    ),
+    (
+        "dev-layout plugin",
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "packages/herdr-plugins/dotfiles-dev-layout/dev_layout_test.py",
+        ],
+    ),
+    (
+        "agent-read plugin",
+        [
+            "python3",
+            "-m",
+            "unittest",
+            "packages/herdr-plugins/dotfiles-agent-read-command/agent_read_command_test.py",
+        ],
+    ),
+    (
+        "Pi integrations",
+        [
+            "bun",
+            "test",
+            "packages/pi-packages/pi-herdr/extensions/herdr.test.ts",
+            "packages/pi-packages/pi-hunk/extensions/hunk.test.ts",
+        ],
+    ),
 )
 
 
 def main() -> int:
-    root = Path(__file__).resolve().parent
+    root = Path(__file__).resolve().parent.parent
     failures: list[str] = []
-    for script in SCRIPTS:
-        path = root / script
-        print(f"==> {script} --self-test", flush=True)
-        result = subprocess.run(
-            ["uv", "run", "--with", "pytest", "--script", str(path), "--self-test"],
-            check=False,
-        )
+    for label, command in CHECKS:
+        print(f"==> {label}", flush=True)
+        result = subprocess.run(command, cwd=root, check=False)
         if result.returncode != 0:
-            failures.append(script)
+            failures.append(label)
     if failures:
         print(f"herdr-self-test: failed: {', '.join(failures)}", file=sys.stderr)
         return 1

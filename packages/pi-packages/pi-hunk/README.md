@@ -1,3 +1,11 @@
+---
+purpose: Provide Pi tools for Hunk review sessions inside Herdr.
+applies_to: Installing, using, or changing the pi-hunk package.
+entrypoint: Use hunk_diff to open a review, then hunk_review or hunk_comments for feedback.
+verification: Run bun test and bun run check in packages/pi-packages/pi-hunk.
+update_when: Hunk session commands, Herdr pane APIs, or Pi tool behavior changes.
+---
+
 # pi-hunk
 
 Pi tools for human-in-the-loop code review with [Hunk](https://github.com/ogulcancelik/hunk).
@@ -10,7 +18,7 @@ Pi changes code → Hunk shows diff → user reviews/comments → Pi reads comme
 
 ## Tools
 
-- `hunk_diff` — open a Hunk diff review in Herdr via `herdr-hunk`, optionally watching changes.
+- `hunk_diff` — open a Hunk diff review through Herdr's supported pane API, optionally watching changes.
 - `hunk_reload` — reload the active Hunk session for the repo.
 - `hunk_review` — read Hunk's session review/context, including patch and notes when requested.
 - `hunk_comments` — list/apply/clear/remove Hunk comments for the repo.
@@ -22,4 +30,4 @@ Most tools default to the Pi cwd as the repo anchor and use `hunk session ... --
 
 ## Notes
 
-`hunk_diff` intentionally delegates to the existing `herdr-hunk` helper instead of running `hunk diff` directly, because the Hunk diff UI is interactive and should live in its own Herdr pane/tab rather than block Pi's tool call.
+`hunk_diff` requires `HERDR_ENV=1`. It creates a pane or tab first, extracts the returned live pane ID, and then runs Hunk there. This keeps the interactive UI out of Pi's tool call without relying on removed compatibility helpers.

@@ -9,12 +9,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 
-def run(args: list[str], *, input_text: str | None = None, capture: bool = False) -> subprocess.CompletedProcess[str]:
+def run(
+    args: list[str], *, input_text: str | None = None, capture: bool = False
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         args,
         input=input_text,
@@ -25,46 +29,51 @@ def run(args: list[str], *, input_text: str | None = None, capture: bool = False
     )
 
 
-def wait_for_pi_ready(pane_id: str, *, idle_timeout_ms: int) -> None:
-    """Best-effort wait for Herdr's semantic Pi idle state."""
+def timeout_ms(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 3_000 or parsed > 300_000:
+        raise argparse.ArgumentTypeError(
+            "timeout must be greater than 3000 and at most 300000 ms"
+        )
+    return parsed
 
-    subprocess.run(
-        [
-            "herdr",
-            "agent",
-            "wait",
-            pane_id,
-            "--status",
-            "idle",
-            "--timeout",
-            str(idle_timeout_ms),
-        ],
-        text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
+
+def agent_name_for_pane(pane_id: str) -> str:
+    suffix = re.sub(r"[^a-z0-9_-]+", "-", pane_id.lower()).strip("-_")
+    return f"pi-{suffix}"[:32].rstrip("-_") or "pi-helper"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Create a Herdr workspace for a repo, launch Pi, and submit a handoff prompt.",
     )
-    parser.add_argument("--cwd", required=True, help="Repository/directory for the Herdr workspace")
-    parser.add_argument("--label", required=True, help="Herdr workspace label")
-    parser.add_argument("--prompt-file", required=True, help="Markdown/text file containing the Pi handoff prompt")
     parser.add_argument(
-        "--no-focus",
-        action="store_true",
-        help="Create the workspace without focusing it",
+        "--cwd", required=True, help="Repository/directory for the Herdr workspace"
+    )
+    parser.add_argument("--label", required=True, help="Herdr workspace label")
+    parser.add_argument(
+        "--prompt-file",
+        required=True,
+        help="Markdown/text file containing the Pi handoff prompt",
     )
     parser.add_argument(
-        "--idle-timeout-ms",
-        type=int,
+        "--agent-name", help="Unique Herdr agent name (default: derived from pane ID)"
+    )
+    parser.add_argument("--focus", action="store_true", help="Focus the new workspace")
+    parser.add_argument(
+        "--startup-timeout-ms",
+        type=timeout_ms,
         default=30_000,
-        help="How long to wait for Pi to become idle before sending the prompt",
+        help="How long Herdr may wait for Pi startup (default: 30000)",
     )
     args = parser.parse_args()
+
+    if os.environ.get("HERDR_ENV") != "1":
+        print(
+            "error: this helper requires HERDR_ENV=1 in a Herdr-managed pane",
+            file=sys.stderr,
+        )
+        return 2
 
     cwd = Path(args.cwd).expanduser().resolve()
     prompt_file = Path(args.prompt_file).expanduser().resolve()
@@ -89,21 +98,56 @@ def main() -> int:
         str(cwd),
         "--label",
         args.label,
-        "--no-focus" if args.no_focus else "--focus",
+        "--focus" if args.focus else "--no-focus",
     ]
-    created = run(create_cmd, capture=True)
-    payload = json.loads(created.stdout)
-    result = payload["result"]
-    pane_id = result["root_pane"]["pane_id"]
-    workspace_id = result["workspace"]["workspace_id"]
+    try:
+        created = run(create_cmd, capture=True)
+        payload = json.loads(created.stdout)
+        result = payload["result"]
+        pane_id = result["root_pane"]["pane_id"]
+        workspace_id = result["workspace"]["workspace_id"]
+        agent_name = args.agent_name or agent_name_for_pane(pane_id)
 
-    run(["herdr", "pane", "run", pane_id, "pi"])
-    wait_for_pi_ready(pane_id, idle_timeout_ms=args.idle_timeout_ms)
+        run(
+            [
+                "herdr",
+                "agent",
+                "start",
+                agent_name,
+                "--kind",
+                "pi",
+                "--pane",
+                pane_id,
+                "--timeout",
+                str(args.startup_timeout_ms),
+            ],
+            capture=True,
+        )
+        run(["herdr", "agent", "prompt", agent_name, prompt], capture=True)
+    except FileNotFoundError:
+        print("error: herdr is not installed or not in PATH", file=sys.stderr)
+        return 127
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or error.stdout or f"exit {error.returncode}").strip()
+        print(f"error: herdr command failed: {detail}", file=sys.stderr)
+        return error.returncode
+    except (json.JSONDecodeError, KeyError) as error:
+        print(
+            f"error: Herdr returned an unexpected workspace response: {error}",
+            file=sys.stderr,
+        )
+        return 2
 
-    run(["herdr", "pane", "send-text", pane_id, prompt])
-    run(["herdr", "pane", "send-keys", pane_id, "Enter"])
-
-    print(json.dumps({"workspace_id": workspace_id, "pane_id": pane_id}, indent=2))
+    print(
+        json.dumps(
+            {
+                "workspace_id": workspace_id,
+                "pane_id": pane_id,
+                "agent_name": agent_name,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
