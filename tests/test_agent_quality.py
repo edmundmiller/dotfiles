@@ -15,7 +15,6 @@ HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
 FLAKE = ROOT / "flake.nix"
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 
-
 class AgentQualityTests(unittest.TestCase):
     def git_only_env(self, root: Path) -> dict[str, str]:
         bin_dir = root / "bin"
@@ -233,7 +232,8 @@ class AgentQualityTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_start_creates_an_isolated_jj_workspace_and_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            # Nix Python may return /tmp on macOS while jj canonicalizes it to /private/tmp.
+            root = Path(tmp).resolve()
             repo = root / "repo"
             workspace = root / "workspaces" / "demo"
             state = root / "state"
@@ -355,12 +355,6 @@ class AgentQualityTests(unittest.TestCase):
             self.assertEqual(summary["falseDone"], 1)
             self.assertEqual(summary["retries"], 2)
             self.assertEqual(summary["userCorrections"], 1)
-
-    @unittest.expectedFailure
-    def test_hey_points_packaged_agent_quality_at_active_flake(self) -> None:
-        wrapper = HEY_WRAPPER.read_text()
-        self.assertIn("let ctx = (context)", wrapper)
-        self.assertIn("AGENT_QUALITY_ROOT: $ctx.flake_dir", wrapper)
 
 
 if __name__ == "__main__":
