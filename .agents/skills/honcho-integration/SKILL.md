@@ -1,7 +1,7 @@
 ---
 name: honcho-integration
+compatibility: portable
 description: Integrate Honcho memory and social cognition into existing Python or TypeScript codebases. Use when adding Honcho SDK, setting up peers, configuring sessions, implementing the dialectic chat endpoint for AI agents, or wiring Honcho into bot frameworks (nanobot, openclaw, picoclaw, etc).
-allowed-tools: Read, Glob, Grep, Bash(uv:*), Bash(bun:*), Bash(npm:*), Edit, Write, WebFetch, AskUserQuestion
 ---
 
 # Honcho Integration Guide
@@ -38,45 +38,12 @@ Use Glob and Grep to find:
 
 ### Phase 2: Interview (REQUIRED)
 
-After exploring the codebase, use the **AskUserQuestion** tool to clarify integration requirements. Ask these questions (adapt based on what you learned in Phase 1):
+After exploring, ask only the choices that materially change the implementation. Use a structured input tool when available, or ask concise questions directly:
 
-#### Question Set 1 - Entities & Peers
-
-Ask about which entities should be Honcho peers:
-
-- header: "Peers"
-- question: "Which entities should Honcho track and build representations for?"
-- options based on what you found (e.g., "End users only", "Users + AI assistant", "Users + multiple AI agents", "All participants including third-party services")
-- Include a follow-up if they have multiple AI agents: should any AI peers be observed?
-
-#### Question Set 2 - Integration Pattern
-
-Ask how they want to use Honcho context:
-
-- header: "Pattern"
-- question: "How should your AI access Honcho's user context?"
-- options:
-  - "Tool call (Recommended)" - "Agent queries Honcho on-demand via function calling"
-  - "Pre-fetch" - "Fetch user context before each LLM call with predefined queries"
-  - "context()" - "Include conversation history and representations in prompt"
-  - "Multiple patterns" - "Combine approaches for different use cases"
-
-#### Question Set 3 - Session Structure
-
-Ask about conversation structure:
-
-- header: "Sessions"
-- question: "How should conversations map to Honcho sessions?"
-- options based on their app (e.g., "One session per chat thread", "One session per user", "Multiple users per session (group chat)", "Custom session logic")
-
-#### Question Set 4 - Specific Queries (if using pre-fetch pattern)
-
-If they chose pre-fetch, ask what context matters:
-
-- header: "Context"
-- question: "What user context should be fetched for the AI?"
-- multiSelect: true
-- options: "Communication style", "Expertise level", "Goals/priorities", "Preferences", "Recent activity summary", "Custom queries"
+1. **Peers:** Which humans, assistants, and services should become peers? Should any AI peer be observed?
+2. **Pattern:** Should the agent query Honcho on demand, pre-fetch fixed context, call `context()`, or combine these?
+3. **Sessions:** Does one Honcho session map to a chat thread, a user, a group, or custom application state?
+4. **Pre-fetch context:** If selected, which attributes matter: communication style, expertise, goals, preferences, recent activity, or custom queries?
 
 ### Phase 3: Implementation
 
@@ -487,27 +454,6 @@ await session.addMessages([
   user.message("What should I focus on today?"),
   assistant.message(response.choices[0].message.content!),
 ]);
-```
-
-## Streaming Responses
-
-**Python:**
-
-```python
-stream = peer.chat_stream("What do we know about this user?")
-
-for chunk in stream:
-    print(chunk, end="", flush=True)
-```
-
-**TypeScript:**
-
-```typescript
-const stream = await peer.chatStream("What do we know about this user?");
-
-for await (const chunk of stream) {
-  process.stdout.write(chunk);
-}
 ```
 
 ## Integration Checklist
