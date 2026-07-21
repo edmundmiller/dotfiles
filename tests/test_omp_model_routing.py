@@ -92,6 +92,42 @@ class OmpModelRoutingTests(unittest.TestCase):
                     ],
                 )
 
+    def test_seqeratop_routes_prewalk_and_metadata_roles_separately(self) -> None:
+        result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--json",
+                ".#darwinConfigurations.Seqeratop.config.modules.agents.omp",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        omp = json.loads(result.stdout)
+        self.assertIsNone(omp["smolModel"])
+        self.assertEqual(omp["modelRoles"]["smol"], "vibeproxy/claude-sonnet-5:low")
+        self.assertEqual(
+            omp["modelRoles"]["commit"],
+            "vibeproxy/claude-haiku-4-5-20251001",
+        )
+        self.assertEqual(
+            omp["modelRoles"]["tiny"],
+            "vibeproxy/claude-haiku-4-5-20251001",
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["smol"],
+            [
+                "openai-codex/gpt-5.6-terra:low",
+                "cursor/cursor-grok-4.5-low-fast",
+                "cursor/composer-2.5-fast",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
