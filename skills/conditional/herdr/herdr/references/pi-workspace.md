@@ -1,215 +1,144 @@
 # Pi workspace delegation
 
-Delegate work to a sibling Pi session through Herdr. Use this workflow when a dedicated Pi workspace is preferable to the current pane or when a tmux-based side-agent launcher is unavailable.
+Use this workflow only when the user explicitly asks for a new Herdr workspace or Pi session. It requires `HERDR_ENV=1`; do not use it as an implicit substitute for ordinary local work or generic parallelism.
 
-## When to use
+## Contract
 
-- The user asks to "start a new Herdr workspace/space" for a task.
-- The user asks to "kick off a Pi session" in a repo.
-- `agent-start` or another tmux side-agent launcher cannot find a tmux session.
-- You want a sibling Pi agent to implement or investigate work while preserving your current context.
+1. Inspect the parent repo and identify unrelated dirty files.
+2. Write a bounded handoff prompt without secrets.
+3. Create the requested workspace; use its returned root pane.
+4. Start Pi in that existing shell pane through `agent start`.
+5. Submit the prompt atomically through `agent prompt`.
+6. Record the returned workspace, pane, and agent name.
+7. Monitor lifecycle and output through agent commands.
+8. Review child output and changes before applying or landing them.
 
-## Preferred Herdr-backed delegation pattern
+`agent start` waits for Pi to be detected and ready. Do not run Pi with `pane run`, add a redundant idle wait, or submit a prompt as raw terminal text.
 
-1. Inspect the parent repo state (`git status --short`) and identify unrelated dirty files.
-2. Write a structured handoff prompt to a temp file.
-3. Create a Herdr workspace (or reuse/split an existing pane) in the target repo.
-4. Start `pi` in that pane.
-5. Wait for the Pi agent status to become `idle` (best effort).
-6. Send the handoff prompt into the Pi TUI and press Enter.
-7. Record the returned `workspace_id`/`pane_id` and monitor that pane until the child reports back.
-8. Review child output before applying/merging/committing any work.
+## Helpers
 
-Use a two-step launch for long prompts: start `pi`, wait until it is ready, then send the prompt. Avoid `pi "$(cat prompt.md)"` for large handoffs because TUI startup prompt submission can be unreliable.
+The skill ships dependency-free helpers:
 
-## Principles
+- `write_handoff_prompt.py` builds a structured prompt file.
+- `start_pi_workspace.py` creates a workspace, starts Pi in the returned root pane, and prompts it.
+- `send_prompt_to_pane.py` starts or prompts Pi in an existing available pane.
+- `monitor_pane.py` waits for semantic state and prints bounded output.
+- `extract_ids.py` parses workspace, tab, split-pane, and moved-pane IDs.
 
-- Create a concise but complete handoff prompt before launching Pi.
-- Include repo path, goal, known context, constraints, guardrails, and expected final summary.
-- Tell the child Pi to inspect `git status --short` before editing.
-- Warn about unrelated dirty files when you know they exist.
-- Tell the child how to report back: changed files, validation, risks/TODOs, and whether it needs parent review.
-- Avoid putting secrets or tokens in the prompt.
-- Prefer small, reviewable child tasks; do not let the child commit unless the user asked for that explicitly.
-
-## Scripts
-
-The skill includes small dependency-free Python helpers in `scripts/`:
-
-- `write_handoff_prompt.py` — generate a structured handoff prompt file from arguments.
-- `start_pi_workspace.py` — create a Herdr workspace, launch Pi, wait until ready, and submit a prompt file.
-- `send_prompt_to_pane.py` — submit a prompt file to an existing Herdr pane, optionally starting Pi first.
-- `monitor_pane.py` — inspect a pane, optionally wait for an agent status, and print recent output.
-- `extract_ids.py` — parse Herdr JSON from stdin and print workspace/tab/pane ids for shell pipelines.
-
-## Preferred script workflow
-
-Use the included helpers when available. They handle workspace creation, pane-id parsing, Pi startup, prompt submission, and monitoring.
+Create a prompt and launch Pi without stealing focus:
 
 ```bash
-PROMPT_FILE=$(mktemp -t pi-handoff.XXXXXX.md)
+prompt_file=$(mktemp -t pi-handoff.XXXXXX.md)
 python3 ~/.agents/skills/herdr/scripts/write_handoff_prompt.py \
   --cwd /path/to/repo \
-  --goal "Implement/investigate ..." \
-  --context "Known fact ..." \
+  --goal "Implement or investigate the bounded task." \
+  --context "Known fact." \
   --read-first "docs/adr/example.md" \
   --guardrail "Keep changes small and reviewable." \
   --guardrail "Do not commit unless explicitly asked." \
-  --validation "Run the relevant tests if practical." \
+  --validation "Run focused tests." \
   --dirty-worktree-warning \
-  --output "$PROMPT_FILE"
+  --output "$prompt_file"
 
-LAUNCH_JSON=$(python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
+launch_json=$(python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
   --cwd /path/to/repo \
   --label "Short task label" \
-  --prompt-file "$PROMPT_FILE")
+  --prompt-file "$prompt_file")
 
-PANE_ID=$(printf '%s' "$LAUNCH_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pane_id"])')
+pane_id=$(printf '%s\n' "$launch_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["pane_id"])')
+agent_name=$(printf '%s\n' "$launch_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["agent_name"])')
 ```
 
-`start_pi_workspace.py` waits for Herdr's semantic Pi `idle` status before sending the prompt, then prints JSON with `workspace_id` and `pane_id`. Use `--idle-timeout-ms` if startup is slow.
+The helper defaults to `--no-focus` and derives a unique Pi name from the returned pane ID. Use `--focus` only when the user asked to switch context. Use `--agent-name` when a human-readable unique name is important and `--startup-timeout-ms` when startup needs more than 30 seconds.
 
-To send a prompt to an already-open pane, or to a pane you created with `herdr pane split`:
-
-```bash
-python3 ~/.agents/skills/herdr/scripts/send_prompt_to_pane.py \
-  --pane "$PANE_ID" \
-  --start-pi \
-  --prompt-file "$PROMPT_FILE"
-```
-
-To monitor the child session:
+Monitor the child:
 
 ```bash
 python3 ~/.agents/skills/herdr/scripts/monitor_pane.py \
-  --pane "$PANE_ID" \
+  --pane "$pane_id" \
   --wait-status done \
+  --source recent-unwrapped \
   --lines 100
 ```
 
-## Fallback from tmux `agent-start` failure
+If the child becomes `blocked`, read its output before steering. If the wait times out, the helper still reads recent output and returns nonzero.
 
-If `agent-start` fails with `Failed to determine current tmux session`, do **not** create a duplicate issue or abandon delegation. Use Herdr:
+## Existing-pane variant
+
+The target pane must be an available interactive shell:
 
 ```bash
-# 1. Preserve the failed task as a handoff prompt.
-PROMPT_FILE=$(mktemp -t pi-handoff.XXXXXX.md)
-python3 ~/.agents/skills/herdr/scripts/write_handoff_prompt.py \
-  --cwd "$PWD" \
-  --goal "<same task you would have given agent-start>" \
-  --context "tmux side-agent launch failed: Failed to determine current tmux session." \
-  --guardrail "Inspect git status first and avoid unrelated dirty files." \
-  --done "Report changed files, validation, blockers, and next steps." \
-  --output "$PROMPT_FILE"
-
-# 2. Launch the child in Herdr instead.
-python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
-  --cwd "$PWD" \
-  --label "fallback subagent" \
-  --prompt-file "$PROMPT_FILE"
+split=$(herdr pane split --current --direction right --cwd /path/to/repo --no-focus)
+pane_id=$(printf '%s\n' "$split" | python3 ~/.agents/skills/herdr/scripts/extract_ids.py pane)
+python3 ~/.agents/skills/herdr/scripts/send_prompt_to_pane.py \
+  --pane "$pane_id" \
+  --start-pi \
+  --prompt-file "$prompt_file"
 ```
 
-If Herdr itself is not running, launch/attach it with `herdr` first, then rerun the helper. If the target repo should be isolated, create a git worktree manually before launch and use that path as `--cwd`.
+Without `--start-pi`, the helper resolves the current live agent by pane ID and submits the prompt. Pass `--agent-name` when the pane's agent already has a unique name you want to preserve in logs.
 
-## Manual launch recipe
+## Manual recipe
 
-If the scripts are unavailable, use raw Herdr commands:
+If the helpers are unavailable:
 
 ```bash
-CREATE_JSON=$(herdr workspace create \
+created=$(herdr workspace create \
   --cwd /path/to/repo \
   --label "Short task label" \
-  --focus)
+  --no-focus)
 
-PANE_ID=$(printf '%s' "$CREATE_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])')
+pane_id=$(printf '%s\n' "$created" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])')
+agent_name="pi-$(printf '%s' "$pane_id" | tr ':.' '--')"
 
-herdr pane run "$PANE_ID" "pi"
-herdr wait agent-status "$PANE_ID" --status idle --timeout 30000 || true
-herdr pane send-text "$PANE_ID" "$(cat "$PROMPT_FILE")"
-herdr pane send-keys "$PANE_ID" Enter
-herdr pane get "$PANE_ID"
+herdr agent start "$agent_name" --kind pi --pane "$pane_id"
+herdr agent prompt "$agent_name" "$(<"$prompt_file")"
+herdr agent get "$agent_name"
 ```
 
-## Existing-pane / split-pane variant
-
-Use this when you are already in a Herdr workspace and want a sibling pane instead of a new workspace:
+Monitor later with exact lifecycle state only when needed:
 
 ```bash
-SPLIT_JSON=$(herdr pane split --current --direction right --cwd /path/to/repo --focus)
-PANE_ID=$(printf '%s' "$SPLIT_JSON" | python3 ~/.agents/skills/herdr/scripts/extract_ids.py pane)
-python3 ~/.agents/skills/herdr/scripts/send_prompt_to_pane.py \
-  --pane "$PANE_ID" \
-  --start-pi \
-  --prompt-file "$PROMPT_FILE"
+herdr agent wait "$agent_name" --until done --timeout 120000
+herdr agent read "$agent_name" --source recent-unwrapped --lines 120
 ```
 
-Use `--no-focus` when the current pane should remain active.
+## Fallback after a tmux launcher failure
 
-## Monitor the child Pi
+If a tmux side-agent launcher cannot find a tmux session and the current pane already has `HERDR_ENV=1`, preserve the same bounded prompt and use the helper above. Do not create a duplicate issue or silently broaden the task.
 
-```bash
-herdr pane get "$PANE_ID"
-herdr pane read "$PANE_ID" --source recent --lines 80
-herdr wait agent-status "$PANE_ID" --status done --timeout 120000
-```
-
-Agent statuses include `idle`, `working`, `blocked`, `done`, and `unknown`. If `done` never arrives, read recent output and decide whether to wait, steer the child, or close the pane.
+If `HERDR_ENV` is absent, stop and report that the current pane is not Herdr-managed. Launching or targeting an unrelated Herdr session from outside would violate the session boundary.
 
 ## Smoke test
 
-A minimal smoke test should prove that Herdr can launch Pi, receive a prompt, and produce visible output:
+Run a smoke test only in a disposable workspace and only when creating that workspace is authorized:
 
 ```bash
-TMP_REPO=$(mktemp -d)
-git -C "$TMP_REPO" init -q
-PROMPT_FILE="$TMP_REPO/smoke-prompt.md"
-cat > "$PROMPT_FILE" <<'PROMPT'
-You are a Herdr/Pi delegation smoke test.
-Do not edit files.
-Reply with the marker made by joining HERDR_PI_SMOKE and RECEIVED with one underscore.
-Then summarize the current directory and stop.
-PROMPT
+tmp_repo=$(mktemp -d)
+git -C "$tmp_repo" init -q
+prompt_file="$tmp_repo/smoke-prompt.md"
+printf '%s\n' \
+  'Do not edit files.' \
+  'Reply with HERDR_PI_SMOKE_RECEIVED, then stop.' >"$prompt_file"
 
-LAUNCH_JSON=$(python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
-  --cwd "$TMP_REPO" \
+launch_json=$(python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
+  --cwd "$tmp_repo" \
   --label "pi smoke" \
-  --prompt-file "$PROMPT_FILE")
-PANE_ID=$(printf '%s' "$LAUNCH_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pane_id"])')
-herdr wait output "$PANE_ID" --match HERDR_PI_SMOKE_RECEIVED --source recent --lines 120 --timeout 180000
-herdr pane read "$PANE_ID" --source recent --lines 120
+  --prompt-file "$prompt_file")
+pane_id=$(printf '%s\n' "$launch_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["pane_id"])')
+
+herdr pane wait-output "$pane_id" --match HERDR_PI_SMOKE_RECEIVED --lines 120 --timeout 180000
+herdr agent read "$pane_id" --source recent-unwrapped --lines 120
 ```
 
-Close the smoke-test workspace/pane after reviewing the output.
+Close only the disposable workspace or pane you created, and only after reviewing the output.
 
-## Handoff prompt checklist
-
-Include:
+## Handoff checklist
 
 - Exact repo path and branch/worktree assumptions.
 - Specific goal and non-goals.
-- Links/paths to ADRs, docs, or files to read first.
-- Existing decisions already made.
-- Safety constraints and files not to touch.
-- Validation commands to run if known.
-- Expected final response format.
-
-## Example: implementation spike
-
-```text
-You are working in `/Users/emiller/src/personal/finances`.
-
-Goal: scaffold a Cloudflare Python Workflow compatibility spike for Beancount sync.
-
-Read first:
-- `docs/adr/2026-05-11-cloudflare-python-workflow-for-beancount-sync.md`
-
-Guardrails:
-- Dry-run only; do not mutate ledger data.
-- Do not enable cron yet.
-- Inspect `git status --short`; avoid unrelated dirty files.
-
-When done:
-- Summarize changed files.
-- Explain what remains before production.
-- Mention Cloudflare Python compatibility risks.
-```
+- Files or docs to read first.
+- Existing decisions and unrelated dirt.
+- Safety constraints and forbidden mutations.
+- Focused validation commands.
+- Expected final report: files changed, checks, blockers, and remaining risks.

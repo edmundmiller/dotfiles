@@ -1,3 +1,11 @@
+---
+purpose: Define ownership and verification for the Herdr shell module.
+applies_to: Changes under modules/shell/herdr/.
+entrypoint: Read default.nix and the tracked Herdr config before editing.
+verification: Run focused module checks, activate Darwin, and inspect the live Herdr CLI and registry.
+update_when: Package wiring, activation behavior, integrations, or runtime ownership changes.
+---
+
 # Herdr Shell Module
 
 This directory owns the `modules.shell.herdr` Nix module.
@@ -23,6 +31,7 @@ This directory owns the `modules.shell.herdr` Nix module.
 - When Herdr is enabled, this module automatically installs Herdr integrations for enabled agent modules (`pi`, `claude`, `codex`, `opencode`, and local `hermes`) during Home Manager activation.
 - On NixOS, this module also installs Herdr's Hermes Agent integration into every declared `services.hermes-agent.profiles` profile during system activation when `services.hermes-agent` is enabled.
 - `config/herdr/config.toml` is the default template configured by this module.
+- Local and marketplace plugins are registered through Herdr's user-global CLI registry with an intentionally offline socket during activation, so a still-running older server cannot cause a protocol mismatch. Do not hand-serialize `plugins.json`.
 
 ## Editing Guidelines
 

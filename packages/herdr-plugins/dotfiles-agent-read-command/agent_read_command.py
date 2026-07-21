@@ -28,13 +28,19 @@ def herdr_bin() -> str:
 
 
 def run_json(args: list[str]) -> dict[str, Any]:
-    result = subprocess.run([herdr_bin(), *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(
+        [herdr_bin(), *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     if result.returncode != 0:
-        raise SystemExit(result.stderr or result.stdout or f"herdr {' '.join(args)} failed")
+        raise SystemExit(
+            result.stderr or result.stdout or f"herdr {' '.join(args)} failed"
+        )
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as err:
-        raise SystemExit(f"herdr {' '.join(args)} did not return JSON: {err}\n{result.stdout}") from err
+        raise SystemExit(
+            f"herdr {' '.join(args)} did not return JSON: {err}\n{result.stdout}"
+        ) from err
     if "error" in payload:
         raise SystemExit(json.dumps(payload["error"], indent=2))
     return payload
@@ -58,8 +64,6 @@ def nested_string(data: dict[str, Any], *path: str) -> str | None:
 
 def pane_target(ctx: dict[str, Any]) -> str | None:
     return first_string(
-        nested_string(ctx, "agent", "terminal_id"),
-        nested_string(ctx, "pane", "terminal_id"),
         nested_string(ctx, "agent", "pane_id"),
         nested_string(ctx, "pane", "pane_id"),
         nested_string(ctx, "pane", "id"),
@@ -81,12 +85,14 @@ def tab_id(ctx: dict[str, Any]) -> str | None:
 def tab_context_target(ctx: dict[str, Any]) -> str | None:
     agent = ctx.get("agent")
     if isinstance(agent, dict):
-        target = first_string(agent.get("terminal_id"), agent.get("pane_id"), agent.get("name"), agent.get("agent"))
+        target = first_string(agent.get("pane_id"), agent.get("name"))
         if target:
             return target
     tab = ctx.get("tab")
     if isinstance(tab, dict):
-        target = first_string(tab.get("active_pane_id"), tab.get("root_pane_id"), tab.get("pane_id"))
+        target = first_string(
+            tab.get("active_pane_id"), tab.get("root_pane_id"), tab.get("pane_id")
+        )
         if target:
             return target
     return None
@@ -94,7 +100,9 @@ def tab_context_target(ctx: dict[str, Any]) -> str | None:
 
 def agent_sort_key(agent: dict[str, Any]) -> tuple[int, str]:
     status = str(agent.get("agent_status") or "")
-    priority = {"blocked": 0, "working": 1, "done": 2, "idle": 3, "unknown": 4}.get(status, 5)
+    priority = {"blocked": 0, "working": 1, "done": 2, "idle": 3, "unknown": 4}.get(
+        status, 5
+    )
     return (priority, str(agent.get("pane_id") or ""))
 
 
@@ -109,15 +117,35 @@ def tab_target(ctx: dict[str, Any]) -> str | None:
     agents = payload.get("result", {}).get("agents", [])
     if not isinstance(agents, list):
         return None
-    matches = [agent for agent in agents if isinstance(agent, dict) and agent.get("tab_id") == current_tab_id]
+    matches = [
+        agent
+        for agent in agents
+        if isinstance(agent, dict) and agent.get("tab_id") == current_tab_id
+    ]
     if not matches:
         return None
     matches.sort(key=agent_sort_key)
-    return first_string(matches[0].get("terminal_id"), matches[0].get("pane_id"), matches[0].get("agent"))
+    return first_string(matches[0].get("pane_id"), matches[0].get("name"))
 
 
-def build_command(target: str, source: str = DEFAULT_SOURCE, lines: int = DEFAULT_LINES, output_format: str = DEFAULT_FORMAT) -> str:
-    args = ["herdr", "agent", "read", target, "--source", source, "--lines", str(lines), "--format", output_format]
+def build_command(
+    target: str,
+    source: str = DEFAULT_SOURCE,
+    lines: int = DEFAULT_LINES,
+    output_format: str = DEFAULT_FORMAT,
+) -> str:
+    args = [
+        "herdr",
+        "agent",
+        "read",
+        target,
+        "--source",
+        source,
+        "--lines",
+        str(lines),
+        "--format",
+        output_format,
+    ]
     return " ".join(shlex.quote(arg) for arg in args)
 
 
@@ -129,7 +157,13 @@ def copy_command(command: str) -> bool:
     ]
     for executable, args in candidates:
         if shutil.which(executable):
-            result = subprocess.run(args, input=command, text=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            result = subprocess.run(
+                args,
+                input=command,
+                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
             return result.returncode == 0
     return False
 
@@ -137,7 +171,18 @@ def copy_command(command: str) -> bool:
 def notify(command: str, copied: bool) -> None:
     title = "Copied agent read command" if copied else "Agent read command"
     subprocess.run(
-        [herdr_bin(), "notification", "show", title, "--body", command, "--position", "top-right", "--sound", "none"],
+        [
+            herdr_bin(),
+            "notification",
+            "show",
+            title,
+            "--body",
+            command,
+            "--position",
+            "top-right",
+            "--sound",
+            "none",
+        ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )

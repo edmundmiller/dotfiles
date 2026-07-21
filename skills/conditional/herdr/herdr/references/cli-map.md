@@ -1,77 +1,66 @@
 # Herdr CLI map
 
-Use the installed CLI as the versioned source of truth. Run `<area> --help` before uncommon operations and `herdr api schema --json` before raw protocol work.
+Use the installed CLI as the versioned source of truth. Print the relevant command group before uncommon operations and run `herdr api schema --json` before raw protocol work.
 
 ## Selection guide
 
 | Intent                      | Preferred command                                               |
 | --------------------------- | --------------------------------------------------------------- |
 | Inspect all detected agents | `herdr agent list`                                              |
-| Inspect one agent           | `herdr agent get <target>`                                      |
+| Inspect one live agent      | `herdr agent get <name-or-pane>`                                |
 | Read an agent transcript    | `herdr agent read <target> --source recent-unwrapped --lines N` |
 | Understand status detection | `herdr agent explain <target> --json`                           |
-| Prompt an agent             | `herdr agent send <target> <text>`                              |
-| Wait for agent state        | `herdr agent wait <target> --status <state> --timeout MS`       |
-| Start an agent              | `herdr agent start <name> … -- <argv…>`                         |
-| Inspect current pane        | `herdr pane current`                                            |
+| Start in an existing pane   | `herdr agent start <name> --kind <kind> --pane <pane>`          |
+| Submit a prompt             | `herdr agent prompt <target> <text> [--wait]`                   |
+| Send logical UI keys        | `herdr agent send-keys <target> <key...>`                       |
+| Wait for lifecycle state    | `herdr agent wait <target> --until <state> --timeout MS`        |
 | Run a shell command         | `herdr pane run <pane> <command>`                               |
-| Wait for process output     | `herdr wait output <pane> --match <text> --timeout MS`          |
-| Bootstrap full live state   | `herdr api snapshot`                                            |
-| Inspect API types           | `herdr api schema --json`                                       |
+| Wait for process output     | `herdr pane wait-output <pane> --match <text> --timeout MS`     |
+| Inspect current pane        | `herdr pane current --current`                                  |
+| Bootstrap full state        | `herdr api snapshot`                                            |
 
-## Output and ID rules
+## Response and ID rules
 
-List/create/split/start commands return structured data. Consume the returned ID instead of predicting it. IDs can use current public syntax such as `w1:p1`, while older servers and traces contain legacy forms. Both are opaque handles.
+Creation, split, move, start, prompt, and wait commands return structured data. Consume returned IDs instead of predicting them.
 
-Prefer:
+- `workspace create` returns `.result.workspace`, `.result.tab`, and `.result.root_pane`.
+- `tab create` returns `.result.tab` and `.result.root_pane`.
+- `pane split` returns `.result.pane`.
+- `pane move` returns the new ID at `.result.move_result.pane.pane_id` and the old value at `.result.move_result.previous_pane_id`.
+- Successful `agent start`, `agent prompt`, and `agent wait` return the current agent at `.result.agent`.
+- `pane wait-output` returns `.result.pane_id`, `.result.matched_line`, and `.result.read`.
 
-- `--current` when the operation supports it.
-- Unique agent names for human-facing coordination.
-- Returned pane IDs when names collide.
-- A fresh list/snapshot after closing, moving, reconnecting, or replacing resources.
+Use a unique live agent name for human-facing coordination and a returned pane ID when ambiguity exists. After closes, moves, reconnects, or replacements, list state again.
 
-## Agent states
+## Lifecycle waits
 
-- `idle`: ready for input.
-- `working`: actively processing.
-- `blocked`: waiting on external input or permission.
-- `done`: finished and not yet viewed.
-- `unknown`: no authoritative state.
+`agent prompt --wait` submits immediately and then waits. From a non-working state it first requires a lifecycle change within five seconds; otherwise it returns `agent_prompt_stalled`.
 
-Agent waits observe semantic state. For a server/test process, wait on output or inspect process info instead.
+`agent prompt --wait` and bare `agent wait` settle on `idle`, `done`, or `blocked` by default. Repeat `--until` only when a workflow requires exact states. `unknown` is never success unless explicitly requested for diagnosis.
 
-## Pane reads
+Wait commands have no default timeout. On timeout or another server error, commands print JSON to stderr and exit 1. Invalid syntax exits 2.
 
-- `visible`: current viewport only.
-- `recent`: rendered scrollback; may contain soft wraps.
-- `recent-unwrapped`: joins terminal soft wraps; prefer for matching, copying, and agent transcripts.
-- `--format ansi` / `--ansi`: rendered TUI feedback loops only.
+## Read sources
+
+- `visible`: current viewport.
+- `recent`: rendered screen and available scrollback with soft wraps.
+- `recent-unwrapped`: soft wraps joined; prefer for logs and transcripts.
+- `detection`: plain-text bottom-buffer snapshot used for agent detection; available through `agent read`, not `pane read`.
+
+Reads default to 80 rendered rows for recent sources. Use `--format ansi` only when styling is evidence.
 
 ## Topology
 
 - Workspace: project context and optional worktree provenance.
 - Tab: related subcontext within a workspace.
 - Pane: one PTY/process.
-- Layout: portable split tree; export/apply for repeatable setups.
+- Agent: the recognized process currently occupying a pane.
 
 Inspect topology before mutation:
 
 ```bash
 herdr workspace list
-herdr tab list
-herdr pane layout --current
-herdr pane edges --current
+herdr tab list --workspace "$HERDR_WORKSPACE_ID"
+herdr pane layout --pane "$HERDR_PANE_ID"
+herdr pane edges --pane "$HERDR_PANE_ID"
 ```
-
-## Advanced areas
-
-Use installed help rather than copied flag inventories:
-
-```bash
-herdr worktree --help
-herdr layout --help
-herdr plugin --help
-herdr integration --help
-```
-
-Use raw socket methods only when CLI wrappers cannot express the operation or a long-lived event subscription is required.

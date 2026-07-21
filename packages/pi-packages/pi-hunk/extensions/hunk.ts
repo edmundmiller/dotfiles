@@ -23,6 +23,39 @@ const parseJson = (text: string): unknown => {
 const stringify = (value: unknown): string =>
   typeof value === "string" ? value : JSON.stringify(value, null, 2);
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const findStringKey = (value: unknown, key: string): string | undefined => {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findStringKey(item, key);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (!isRecord(value)) return undefined;
+  for (const [candidate, item] of Object.entries(value)) {
+    if (candidate === key && typeof item === "string" && item) return item;
+    const found = findStringKey(item, key);
+    if (found) return found;
+  }
+  return undefined;
+};
+
+const shellWord = (value: string): string =>
+  /^[A-Za-z0-9_./:@%+=,-]+$/.test(value) ? value : `'${value.replace(/'/g, "'\\''")}'`;
+
+export const buildHunkCommand = (args: string[]): string => {
+  const rendered = args.map(shellWord).join(" ");
+  return [
+    "if command -v hunk >/dev/null 2>&1; then",
+    `exec hunk ${rendered};`,
+    "fi;",
+    `exec bunx hunkdiff ${rendered}`,
+  ].join(" ");
+};
+
 async function runCommand(
   pi: ExtensionAPI,
   command: string,
@@ -85,6 +118,53 @@ async function writePiLastTurnMarker(
   return markerPath;
 }
 
+async function openHunkInHerdr(
+  pi: ExtensionAPI,
+  repo: string,
+  placement: "pane" | "tab",
+  hunkArgs: string[]
+) {
+  if (process.env.HERDR_ENV !== "1") {
+    throw new Error("hunk_diff requires HERDR_ENV=1 in a Herdr-managed pane");
+  }
+
+  const herdr = process.env.HERDR_BIN_PATH || "herdr";
+  const createArgs =
+    placement === "tab"
+      ? (() => {
+          const workspaceId = process.env.HERDR_WORKSPACE_ID;
+          if (!workspaceId)
+            throw new Error("hunk_diff requires HERDR_WORKSPACE_ID for tab placement");
+          return [
+            "tab",
+            "create",
+            "--workspace",
+            workspaceId,
+            "--cwd",
+            repo,
+            "--label",
+            "hunk",
+            "--focus",
+          ];
+        })()
+      : (() => {
+          const paneId = process.env.HERDR_PANE_ID;
+          if (!paneId) throw new Error("hunk_diff requires HERDR_PANE_ID for pane placement");
+          return ["pane", "split", paneId, "--direction", "right", "--cwd", repo, "--focus"];
+        })();
+
+  const created = await runCommand(pi, herdr, createArgs, { cwd: repo, timeout: 10_000 });
+  const targetPaneId = findStringKey(parseJson(created.stdout), "pane_id");
+  if (!targetPaneId) throw new Error("could not find pane_id in Herdr create response");
+
+  const command = buildHunkCommand(hunkArgs);
+  await runCommand(pi, herdr, ["pane", "rename", targetPaneId, "hunk"], { cwd: repo });
+  const result = await runCommand(pi, herdr, ["pane", "run", targetPaneId, command], {
+    cwd: repo,
+  });
+  return { ...result, command, paneId: targetPaneId };
+}
+
 export default function hunkExtension(pi: ExtensionAPI) {
   pi.registerTool({
     name: "hunk_diff",
@@ -113,19 +193,14 @@ export default function hunkExtension(pi: ExtensionAPI) {
       ),
     }),
     async execute(_id, params) {
-      const args = [];
-      if (params.placement === "tab") args.push("--tab");
+      const repo = repoArg(params.repo);
+      const args = ["diff"];
       if (params.staged) args.push("--staged");
-      args.push("--");
       if (params.watch) args.push("--watch");
       if (params.excludeUntracked) args.push("--exclude-untracked");
       if (params.target) args.push(params.target);
       if (params.pathspecs?.length) args.push("--", ...params.pathspecs);
-      const result = await runCommand(pi, "herdr-hunk", args, {
-        cwd: repoArg(params.repo),
-        timeout: 10_000,
-      });
-      const repo = repoArg(params.repo);
+      const result = await openHunkInHerdr(pi, repo, params.placement ?? "pane", args);
       const markerPath = await writePiLastTurnMarker(pi, repo, {
         range: params.target,
         staged: params.staged,
@@ -133,10 +208,10 @@ export default function hunkExtension(pi: ExtensionAPI) {
       });
       return textResult(result.stdout || "Opened Hunk diff review in Herdr.", {
         action: "diff",
-        command: "herdr-hunk",
         args,
         markerPath,
         ...result,
+        transport: "herdr pane run",
       });
     },
   });

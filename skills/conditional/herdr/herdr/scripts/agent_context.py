@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from typing import Any
@@ -24,9 +25,18 @@ def run(*args: str, json_output: bool = False) -> Any:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("target", help="Unique agent name, label, or pane ID")
-    parser.add_argument("--lines", type=int, default=80, help="Recent transcript lines (default: 80)")
+    parser.add_argument("target", help="Unique live agent name or current pane ID")
+    parser.add_argument(
+        "--lines", type=int, default=80, help="Recent transcript lines (default: 80)"
+    )
     args = parser.parse_args()
+
+    if os.environ.get("HERDR_ENV") != "1":
+        print(
+            "error: this helper requires HERDR_ENV=1 in a Herdr-managed pane",
+            file=sys.stderr,
+        )
+        return 2
 
     if args.lines < 1 or args.lines > 500:
         parser.error("--lines must be between 1 and 500")
@@ -49,7 +59,9 @@ def main() -> int:
         print("error: herdr is not installed or not in PATH", file=sys.stderr)
         return 127
     except subprocess.CalledProcessError as error:
-        detail = error.stderr.strip() or error.stdout.strip() or f"exit {error.returncode}"
+        detail = (
+            error.stderr.strip() or error.stdout.strip() or f"exit {error.returncode}"
+        )
         print(f"error: herdr command failed: {detail}", file=sys.stderr)
         return error.returncode
     except json.JSONDecodeError as error:

@@ -1,6 +1,6 @@
 {
   "name": "pi-hunk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pi extension tools for opening and inspecting Hunk review sessions.",
   "type": "module",
   "keywords": [

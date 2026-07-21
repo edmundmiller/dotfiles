@@ -1,6 +1,6 @@
 {
   "name": "pi-herdr",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pi extension tools for controlling and inspecting Herdr workspaces, tabs, and panes.",
   "type": "module",
   "keywords": [

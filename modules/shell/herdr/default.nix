@@ -624,6 +624,7 @@ in
           # This keeps activation idempotent and cleans up stale direct-key
           # bindings from older configs.
           filtered = []
+          seen_command_keys = set()
           i = 0
           while i < len(lines):
               if lines[i].strip() == "[[keys.command]]":
@@ -634,14 +635,23 @@ in
                       i += 1
 
                   command = None
+                  command_key = None
                   for block_line in block:
                       stripped = block_line.strip()
-                      if stripped.startswith("command") and "=" in stripped:
-                          command = stripped.split("=", 1)[1].strip().strip('"')
-                          break
+                      if "=" not in stripped:
+                          continue
+                      field, value = (part.strip() for part in stripped.split("=", 1))
+                      if field == "command":
+                          command = value.strip('"')
+                      elif field == "key":
+                          command_key = value.strip('"')
 
                   if command in managed_commands:
                       continue
+                  if command_key:
+                      if command_key in seen_command_keys:
+                          continue
+                      seen_command_keys.add(command_key)
 
                   filtered.extend(block)
                   continue
@@ -972,71 +982,21 @@ in
         '';
 
         home.activation.herdr-plugin-registry = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          export PATH=$PATH:${escapeShellArg launchPath}
           plugins_root=${escapeShellArg "${cfg.localPluginsPackage}/share/herdr/plugins"}
-          registry="$HOME/.config/herdr/plugins.json"
-          ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$registry")"
+          herdr_cmd=${escapeShellArg cfg.command}
+          # Herdr 0.7.5 owns a locked, user-global registry and can link while
+          # no server is running. Force that offline path so activation remains
+          # safe when an older live server has a different protocol version.
+          offline_socket="''${TMPDIR:-/tmp}/herdr-activation-$$.sock"
 
-          ${pkgs.python3}/bin/python3 - "$registry" "$plugins_root" <<'PY'
-          import json
-          import pathlib
-          import sys
-          import tomllib
-
-          registry = pathlib.Path(sys.argv[1])
-          plugins_root = pathlib.Path(sys.argv[2])
-          managed_roots = sorted(
-              root for root in plugins_root.iterdir()
-              if root.is_dir() and (root / "herdr-plugin.toml").exists()
-          )
-
-          def load_existing():
-              if not registry.exists():
-                  return []
-              try:
-                  data = json.loads(registry.read_text())
-                  return data if isinstance(data, list) else []
-              except Exception:
-                  return []
-
-          def manifest_entry(root):
-              manifest_path = root / "herdr-plugin.toml"
-              manifest = tomllib.loads(manifest_path.read_text())
-              plugin_id = manifest["id"]
-              source = {
-                  "kind": "local",
-                  "owner": None,
-                  "repo": None,
-                  "subdir": None,
-                  "requested_ref": None,
-                  "resolved_commit": None,
-                  "managed_path": None,
-                  "installed_unix_ms": None,
-              }
-              return {
-                  "plugin_id": plugin_id,
-                  "name": manifest["name"],
-                  "version": manifest["version"],
-                  "min_herdr_version": manifest["min_herdr_version"],
-                  "description": manifest.get("description"),
-                  "manifest_path": str(manifest_path),
-                  "plugin_root": str(root),
-                  "enabled": True,
-                  "platforms": manifest.get("platforms"),
-                  "build": manifest.get("build", []),
-                  "actions": manifest.get("actions", []),
-                  "events": manifest.get("events", []),
-                  "panes": manifest.get("panes", []),
-                  "link_handlers": manifest.get("link_handlers", []),
-                  "source": source,
-                  "warnings": [],
-              }
-
-          existing = load_existing()
-          managed = {entry["plugin_id"]: entry for entry in map(manifest_entry, managed_roots)}
-          merged = [entry for entry in existing if entry.get("plugin_id") not in managed]
-          merged.extend(managed[plugin_id] for plugin_id in sorted(managed))
-          registry.write_text(json.dumps(merged, indent=2) + "\n")
-          PY
+          for plugin_root in "$plugins_root"/*; do
+            if [ ! -f "$plugin_root/herdr-plugin.toml" ]; then
+              continue
+            fi
+            echo "herdr: linking managed plugin $plugin_root"
+            HERDR_SOCKET_PATH="$offline_socket" "$herdr_cmd" plugin link "$plugin_root" >/dev/null
+          done
         '';
 
         home.activation.herdr-marketplace-plugins =
@@ -1048,6 +1008,9 @@ in
             ''
               export PATH=$PATH:${escapeShellArg launchPath}
               herdr_cmd=${escapeShellArg cfg.command}
+              # Use the 0.7.5 offline registry path so a still-running older
+              # server cannot turn a package upgrade into a protocol mismatch.
+              export HERDR_SOCKET_PATH="''${TMPDIR:-/tmp}/herdr-activation-$$.sock"
 
               install_plugin() {
                 owner="$1"
