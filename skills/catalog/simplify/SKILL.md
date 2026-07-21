@@ -1,5 +1,6 @@
 ---
 name: simplify
+compatibility: portable
 description: Review changed code for reuse, quality, and efficiency, then fix worthwhile issues.
 ---
 
@@ -11,9 +12,9 @@ Review all changed files for reuse, quality, and efficiency. Fix any issues foun
 
 Run `diffs` (or `diffs --commit HEAD` when you need a specific commit baseline) to see what changed. Fallback to `git diff` only if diffs cannot express the needed flag/output. If there are no git changes, review the most recently modified files that the user mentioned or that you edited earlier in this conversation.
 
-## Phase 2: Launch Three Review Agents in Parallel
+## Phase 2: Review Three Vectors
 
-Use the subagent tool to launch all three agents concurrently in a single call. Pass each agent the full diff so it has the complete context.
+Review all three vectors. When the user has authorized delegation and the runtime supports it, run them concurrently with the same full diff. Otherwise review them sequentially in the current agent.
 
 ### Agent 1: Code Reuse Review
 
@@ -46,6 +47,6 @@ Review the same changes for efficiency:
 
 ## Phase 3: Fix Issues
 
-Wait for all three agents to complete. Aggregate their findings and fix each issue directly. If a finding is a false positive or not worth addressing, note it and move on — do not argue with the finding, just skip it.
+Aggregate the three reviews and fix worthwhile issues directly. If a finding is a false positive or out of scope, note it and move on.
 
 When done, briefly summarize what was fixed (or confirm the code was already clean).

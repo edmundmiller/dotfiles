@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Validate shared agent-rule metadata and identity invariants."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+
+FILENAME_PATTERN = re.compile(r"^(\d{2})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
+FIELD_PATTERN = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$")
+REQUIRED_FIELDS = ("purpose", "rule_id", "enforced_by", "severity", "waiver_path")
+SEVERITIES = {"info", "warn", "error"}
+
+
+@dataclass(frozen=True)
+class Finding:
+    path: str
+    code: str
+    message: str
+
+
+def frontmatter(path: Path) -> tuple[dict[str, str], list[Finding]]:
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}, [Finding(str(path), "frontmatter", "rule must start with YAML frontmatter")]
+    try:
+        end = next(index for index, line in enumerate(lines[1:], start=1) if line.strip() == "---")
+    except StopIteration:
+        return {}, [Finding(str(path), "frontmatter", "frontmatter has no closing delimiter")]
+    if end > 7:
+        return {}, [Finding(str(path), "frontmatter", "frontmatter must close by line 8")]
+    fields: dict[str, str] = {}
+    for line in lines[1:end]:
+        match = FIELD_PATTERN.match(line)
+        if match:
+            fields[match.group(1)] = match.group(2).strip().strip("\"'")
+    return fields, []
+
+
+def validate_rule(path: Path) -> tuple[str | None, list[Finding]]:
+    findings: list[Finding] = []
+    filename = FILENAME_PATTERN.fullmatch(path.name)
+    if not filename:
+        return None, [Finding(str(path), "filename", "use NN-lowercase-hyphenated.md")]
+
+    fields, metadata_findings = frontmatter(path)
+    findings.extend(metadata_findings)
+    if metadata_findings:
+        return None, findings
+
+    for field in REQUIRED_FIELDS:
+        if not fields.get(field):
+            findings.append(Finding(str(path), "metadata", f"missing non-empty {field}"))
+
+    expected_id = f"AGENT-{filename.group(1)}"
+    rule_id = fields.get("rule_id")
+    if rule_id and rule_id != expected_id:
+        findings.append(
+            Finding(str(path), "rule-id", f"rule_id {rule_id!r} must match filename as {expected_id}")
+        )
+    severity = fields.get("severity")
+    if severity and severity not in SEVERITIES:
+        findings.append(
+            Finding(str(path), "severity", f"severity must be one of {sorted(SEVERITIES)}")
+        )
+    expected_waiver = f".agents/waivers/{expected_id}.md"
+    waiver = fields.get("waiver_path")
+    if waiver and waiver != expected_waiver:
+        findings.append(
+            Finding(str(path), "waiver", f"waiver_path must be {expected_waiver}")
+        )
+    return rule_id, findings
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--json", action="store_true", help="emit a machine-readable summary")
+    parser.add_argument("rules", nargs="?", type=Path, default=Path("config/agents/rules"))
+    args = parser.parse_args(argv)
+
+    findings: list[Finding] = []
+    paths = sorted(path for path in args.rules.glob("*.md") if path.name != "AGENTS.md")
+    if not paths:
+        findings.append(Finding(str(args.rules), "input", "no rule files found"))
+
+    by_id: dict[str, list[Path]] = {}
+    for path in paths:
+        rule_id, rule_findings = validate_rule(path)
+        findings.extend(rule_findings)
+        if rule_id:
+            by_id.setdefault(rule_id, []).append(path)
+    for rule_id, duplicates in by_id.items():
+        if len(duplicates) > 1:
+            joined = ", ".join(str(path) for path in duplicates)
+            findings.append(
+                Finding(joined, "duplicate", f"duplicate rule_id {rule_id}")
+            )
+
+    findings.sort(key=lambda finding: (finding.path, finding.code, finding.message))
+    if args.json:
+        print(json.dumps({"checked": len(paths), "findings": [asdict(item) for item in findings]}))
+    else:
+        for finding in findings:
+            print(f"{finding.path}: {finding.code}: {finding.message}")
+        status = "PASS" if not findings else "FAIL"
+        print(f"{status} agent-rules checked={len(paths)} findings={len(findings)}")
+    return 1 if findings else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

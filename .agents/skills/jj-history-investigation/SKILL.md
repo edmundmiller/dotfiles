@@ -1,6 +1,6 @@
 ---
 name: jj-history-investigation
-description: Investigate jj commit history, split commits, annotate file changes, and clean up redundant commits. Use when debugging history, splitting large commits, or rewriting shared history.
+description: Investigate jj commit history, split commits, annotate file changes, and clean up redundant commits. Use when debugging history, splitting large commits, or explicitly authorized history rewrites.
 ---
 
 # Jujutsu (jj) History Investigation and Manipulation
@@ -12,7 +12,7 @@ When working with complex jj repositories, you may need to investigate historica
 - **Investigating commit history**: Finding when changes were made and why
 - **Using jj annotate**: Tracking down who/when specific lines were added
 - **Splitting commits**: Breaking large commits into focused, reviewable pieces
-- **Handling immutability**: Overriding protections when rewriting shared history
+- **Handling immutability**: Overriding protections only for authorized local history rewrites
 - **Cleaning up redundancy**: Removing duplicate or empty commits
 - **Resolving conflicts**: Fixing merge conflicts after rebases
 
@@ -215,6 +215,9 @@ Commits are immutable when:
 - ✅ Local-only history (not pushed)
 - ✅ You own all descendant commits
 - ✅ No collaborators affected
+- ✅ The user explicitly authorized the rewrite target
+
+Do not use `--ignore-immutable` on pushed or shared history without explicit authorization. Resolve the exact revisions and remote state first.
 
 **How to override:**
 
@@ -428,99 +431,18 @@ After split/rebase/cleanup:
 - [ ] Bookmarks (main, feature, etc.) point correctly
 - [ ] TODO.org or similar files are consistent
 
-## Real-World Example
-
-**Scenario:** Historical commit `trsozpwy` contains 6 different changes mixed together. Need to split for review.
-
-**Investigation phase:**
+## Compact Example
 
 ```bash
-# 1. Find the commit
-jj log -r 'description(post-defense)' --no-graph
-# Found: trsozpwy
-
-# 2. Check what's in it
 jj show trsozpwy --stat
-# Shows: 10 files changed
-
-# 3. Check if immutable
-jj edit trsozpwy
-# Error: Commit is immutable (16 descendants)
-
-# 4. Verify we can override
 jj log -r 'trsozpwy::@' --limit 20
-# Shows descendant commits, all owned by us
-```
-
-**Split phase:**
-
-```bash
-# 1. Override immutability
-jj edit trsozpwy --ignore-immutable
-
-# 2. Split out Python scripts
 jj split --ignore-immutable src/figures/modules/
-jj describe @- -m "feat(ch3): Add core overlap Venn diagram scripts"
-
-# 3. Split out appendix fix
-jj split --ignore-immutable src/chapters/appendix-*.tex
-jj describe @- -m "fix(appendix): Remove 'A' label from solo appendix"
-
-# 4. Split frontmatter pieces incrementally
-# (Copyright page)
-# Edit src/main.tex to add only copyright
-jj commit -m "feat(frontmatter): Enable copyright page (2025)"
-
-# (Acknowledgments)
-# Edit src/main.tex to add acknowledgments
-jj commit -m "feat(frontmatter): Add acknowledgments section"
-
-# (And so on for biographical sketch, CV)
-```
-
-**Cleanup phase:**
-
-```bash
-# 1. Check for redundant descendants
-jj log -r 'trsozpwy::@' | grep "Mark post-defense"
-# Found: kqkm (redundant - duplicates our split work)
-
-# 2. Abandon redundant commits
-jj abandon kqkm lkto qqkq srls
-
-# 3. Rebase main branch onto splits
-jj rebase -b main -d last-split-commit
-
-# 4. Resolve conflicts
-jj new conflicted-commit
-# Edit TODO.org to pick correct side
-jj squash
-```
-
-**Verification phase:**
-
-```bash
-# 1. Check final structure
-jj log -r 'first-split::@' --limit 30
-
-# 2. Verify each split commit
-jj show trso --stat  # Core overlap scripts
-jj show nlnr --stat  # Appendix fix
-jj show zspm --stat  # Copyright page
-jj show mrpk --stat  # Acknowledgments
-jj show wqrn --stat  # Biographical sketch
-jj show ynom --stat  # CV
-
-# 3. Confirm no conflicts
+jj describe @- -m "feat(figures): split focused change"
 jj status
-# (should be clean)
-
-# 4. Check bookmarks
-jj log -r 'bookmarks()'
-# main and Cleanup should be on correct commits
+jj log -r 'trsozpwy::@' --limit 30
 ```
 
-**Result:** Successfully split 1 monolithic commit into 6 focused commits, each with clear intent and proper TODO.org updates.
+Use this only after the authorization and remote-state checks above.
 
 ## Tips and Tricks
 
@@ -549,7 +471,7 @@ jj log -r 'description(frontmatter) & description(copyright)'
 ### Avoid Common Pitfalls
 
 1. **Don't split without investigation**: Always `jj show` first to understand what's in a commit
-2. **Save state before split**: `cp important-file /tmp/` before major history rewrites
+2. **Save state before split**: create a named bookmark or a validated `mktemp -d` backup before major rewrites
 3. **Split incrementally**: Don't try to split everything at once; do one logical piece at a time
 4. **Update TODO immediately**: Mark TODO items in the same commit that does the work
 5. **Verify after each step**: Check `jj log` frequently during split/rebase operations
@@ -569,6 +491,5 @@ jj log -r 'description(frontmatter) & description(copyright)'
 
 ## Related Skills
 
-- `jj:jj-workflow` - Basic jj operations and workflow
-- `jj:commit-messages` - Writing good commit messages
-- `jj:commit-curation` - Organizing commits for sharing
+- `using-jj-workspaces` - Isolated jj agent workspaces
+- `writing-git-commits` - Focused commit messages and commit splitting

@@ -9,8 +9,14 @@
     {
       "id": "agent-quality-tests",
       "kind": "test",
-      "command": "python3 -m unittest tests/test_agent_quality.py",
+      "command": "python3 -m unittest tests/test_agent_quality.py tests/test_agent_rules.py tests/test_skill_quality_validator.py tests/test_agent_instruction_wiring.py",
       "description": "Agent workflow engine behavior"
+    },
+    {
+      "id": "agent-instructions",
+      "kind": "lint",
+      "command": "python3 bin/check-agent-rules && python3 skills/catalog/skill-quality/scripts/validate.py skills/catalog .agents/skills skills/conditional",
+      "description": "Shared rule metadata and portable skill structure"
     },
     {
       "id": "test-confidence",

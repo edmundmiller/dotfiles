@@ -1,356 +1,116 @@
 # Skill Testing Guidelines
 
-Complete testing guidelines for validating Claude Code skills. Referenced from SKILL.md.
+Test structure deterministically, then test model behavior with observable scenarios.
 
-## Contents
+## Test Layers
 
-- [Overview](#overview) - Three dimensions of testing
-- [Create Evaluation Scenarios](#create-evaluation-scenarios) - Test case templates
-- [Model Testing](#model-testing) - Testing across Haiku, Sonnet, and Opus
-  - [Haiku (Fast, Basic Reasoning)](#haiku-fast-basic-reasoning)
-  - [Sonnet (Balanced)](#sonnet-balanced)
-  - [Opus (Complex Reasoning)](#opus-complex-reasoning)
-- [Real Usage Testing](#real-usage-testing) - Actual workflow testing
-- [Testing Checklist](#testing-checklist) - Complete verification checklist
-- [Continuous Testing](#continuous-testing) - Ongoing improvement
-- [Testing Anti-Patterns](#testing-anti-patterns) - What to avoid
+1. **Structure:** metadata, size, links, and portability markers
+2. **Invocation:** positive and negative trigger phrases
+3. **Execution:** common path, failure path, and verification behavior
+4. **Models:** Terra and Sol follow the same contract
+5. **Real usage:** a fresh task without hidden author context
 
-## Overview
+## Evaluation Case
 
-Every skill must be tested across three dimensions:
-
-1. **Models** - Haiku, Sonnet, Opus
-2. **Scenarios** - Simple, edge case, complex
-3. **Real usage** - Actual workflows without external help
-
-## Create Evaluation Scenarios
-
-Every skill needs at least 3 test cases covering different complexity levels.
-
-### Test Case Template
+Record cases in a form another reviewer can rerun:
 
 ```markdown
-## Skill Evaluation Scenarios
+### Case: <name>
 
-Test this skill with:
-
-1. **Simple case:** [Common user request]
-   - **Input**: User asks "[specific request]"
-   - **Expected**: Skill [expected behavior]
-   - **Verify**: [How to check success]
-
-2. **Edge case:** [Unusual but valid request]
-   - **Input**: User asks "[edge case request]"
-   - **Expected**: Skill [expected behavior]
-   - **Verify**: [How to check success]
-
-3. **Complex case:** [Advanced scenario]
-   - **Input**: User asks "[complex request]"
-   - **Expected**: Skill [expected behavior]
-   - **Verify**: [How to check success]
+- Model: Terra | Sol
+- Input: <exact user request>
+- Setup: <repository state, files, permissions, and available tools>
+- Expected invocation: yes | no
+- Required actions: <observable behavior>
+- Forbidden actions: <scope or authority boundaries>
+- Verification: <command, artifact, or state reread>
+- Result: pass | fail
+- Evidence: <short transcript, paths, or output>
 ```
 
-### Example: Python Scripts Skill
+Do not score writing style when the contract is about files, commands, or state. Prefer exact artifacts and exit codes.
 
-```markdown
-## Skill Evaluation Scenarios
+## Minimum Scenario Set
 
-Test this skill with:
+### 1. Common path
 
-1. **Simple case:** User asks "create a Python script"
-   - **Input**: "Create a Python script to fetch a URL"
-   - **Expected**: Skill provides UV shebang template with requests dependency
-   - **Verify**:
-     - Template includes `#!/usr/bin/env -S uv run --script`
-     - Dependencies section lists "requests"
-     - Script is executable and runs
+Use the request most likely to trigger the skill. Verify:
 
-2. **Edge case:** User asks "script without dependencies"
-   - **Input**: "Create a Python script using only stdlib"
-   - **Expected**: Skill provides minimal UV shebang without dependencies
-   - **Verify**:
-     - Template includes shebang
-     - No dependencies array OR empty dependencies array
-     - Script uses only stdlib imports
+- the skill activates
+- prerequisites appear before action
+- the shortest valid workflow is followed
+- the stated success check is exercised
 
-3. **Complex case:** User asks "async script with multiple dependencies"
-   - **Input**: "Create async script that fetches multiple URLs concurrently"
-   - **Expected**: Skill provides UV shebang with httpx and asyncio
-   - **Verify**:
-     - Dependencies include async-compatible library (httpx, aiohttp)
-     - Code uses async/await correctly
-     - Script demonstrates concurrent fetching
-```
+### 2. Negative invocation
 
-## Model Testing
+Use a nearby request owned by another skill or ordinary reasoning. Verify that this skill does not activate or distort the response.
 
-Test your skill with all three Claude models to ensure consistent behavior.
+### 3. Failure path
 
-### Haiku (Fast, Basic Reasoning)
+Remove a dependency, provide malformed input, or deny an expected permission. Verify:
 
-**Focus:** Simple, common scenarios
+- the failure is identified accurately
+- no destructive workaround is invented
+- the recovery instruction is actionable
+- the task is not falsely reported complete
 
-**Test for:**
+### 4. Ambiguous or high-risk path
 
-- ✅ Skill is correctly invoked
-- ✅ Basic guidance is followed
-- ✅ Response quality is acceptable
-- ✅ Examples are used appropriately
+Provide a case with multiple plausible interpretations or consequential mutations. Verify that authority and scope stay explicit.
 
-**Common issues:**
+## Terra Pass
 
-- Skill not invoked (description lacks keywords)
-- Oversimplified responses (missing detail)
-- Doesn't follow complex instructions
+Terra is the balanced default for everyday tool-heavy work. Test the common and failure paths first.
 
-**Test procedure:**
+Common Terra regressions to watch:
 
-```markdown
-1. Set model to Haiku
-2. Ask simple case question
-3. Verify skill is invoked
-4. Check response follows skill guidance
-5. Verify examples are copy-pasteable
-```
+- a late prerequisite is missed
+- a long paragraph hides a branch
+- verification is summarized instead of run
+- runtime-specific tool language is treated as universally available
 
-**Example test:**
+Fix these with earlier constraints, shorter steps, explicit decision points, or scripts. Do not add redundant prose.
 
-```
-User: "Create a Python script to read a file"
-Haiku: Should invoke python-scripts skill and provide UV shebang
-Verify: Check shebang format, dependencies (if any), runnable code
-```
+## Sol Pass
 
-### Sonnet (Balanced)
+Sol is the frontier choice for hard debugging, implementation, and synthesis. Test the ambiguous or high-risk path.
 
-**Focus:** Moderate complexity scenarios
+Common Sol regressions to watch:
 
-**Test for:**
+- expanding scope to produce a more elegant system
+- adding abstractions not required by the request
+- replacing an explicit workflow with a plausible alternative
+- treating broad reasoning as stronger evidence than runtime state
 
-- ✅ Detailed guidance is followed
-- ✅ Examples are used correctly
-- ✅ Edge cases are handled
-- ✅ Response shows understanding of context
+Fix these with clear stopping conditions, protected boundaries, and direct evidence requirements.
 
-**Common issues:**
+## Cross-Model Comparison
 
-- Skips verification steps
-- Doesn't use decision trees
-- Misses subtleties in guidance
+Run one identical case on Terra and Sol. The wording may differ; these must not:
 
-**Test procedure:**
+- invocation decision
+- authorization boundary
+- files or systems in scope
+- required validation
+- completion threshold
 
-```markdown
-1. Set model to Sonnet
-2. Ask moderate complexity question
-3. Verify skill is invoked
-4. Check response follows detailed guidance
-5. Verify decision trees are used correctly
-6. Check verification steps are included
-```
+If behavior differs, first remove ambiguity from the skill. Add model-specific wording only when the capability difference is genuinely part of the workflow.
 
-**Example test:**
+## Testing Scripts
 
-```
-User: "Create a Python script that handles errors gracefully"
-Sonnet: Should invoke python-scripts skill and include try/except with helpful messages
-Verify: Error handling exists, messages are actionable, follows skill patterns
-```
-
-### Opus (Complex Reasoning)
+For a skill with executable helpers, cover:
 
-**Focus:** Edge cases and complex scenarios
+- valid input returns zero
+- each supported invalid class returns nonzero
+- errors name the file or input and explain recovery
+- structured output parses successfully
+- repeated runs are deterministic
+- no secret value is printed
 
-**Test for:**
+Keep model evaluation out of Git hooks. Hooks should run deterministic checks only.
 
-- ✅ Advanced guidance is applied
-- ✅ Creative solutions are appropriate
-- ✅ Edge cases are handled correctly
-- ✅ Explanations are thorough
-
-**Common issues:**
+## Real-Usage Check
 
-- Over-complicates simple tasks
-- Adds unnecessary abstractions
-- Deviates from skill guidance
+Use the skill from a fresh task or repository state. Record where the agent needed information not present in `SKILL.md` or its direct references. Add only durable, reusable guidance.
 
-**Test procedure:**
-
-```markdown
-1. Set model to Opus
-2. Ask complex/edge case question
-3. Verify skill is invoked
-4. Check response applies advanced patterns
-5. Verify creativity stays within skill bounds
-6. Check explanations are clear and justified
-```
-
-**Example test:**
-
-```
-User: "Create a Python script with multiple commands and shared options"
-Opus: Should invoke python-scripts skill and provide typer-based CLI
-Verify: Uses Typer correctly, shared options implemented, follows UV shebang pattern
-```
-
-## Real Usage Testing
-
-Test the skill in actual workflows without external help.
-
-### Test Procedure
-
-1. **Fresh start test:**
-   - Start a new project
-   - Use only the skill guidance (no external docs)
-   - Complete a real task
-   - Note any gaps or unclear instructions
-
-2. **Colleague test:**
-   - Ask a colleague to use the skill
-   - Don't explain anything beforehand
-   - Observe where they get stuck
-   - Fix unclear sections
-
-3. **Different project test:**
-   - Try the skill in a different codebase
-   - Verify guidance is project-agnostic
-   - Check examples work in new context
-   - Update if project-specific assumptions found
-
-4. **Error path test:**
-   - Intentionally trigger failure scenarios
-   - Verify error messages are helpful
-   - Check recovery steps are clear
-   - Add missing error handling guidance
-
-### Example: Testing Python Scripts Skill
-
-```markdown
-## Real Usage Test Log
-
-**Test 1: Fresh start**
-
-- Task: Create CLI tool for processing CSV files
-- Result: ✅ Successfully created using only skill guidance
-- Issues found:
-  - Unclear how to add multiple dependencies
-  - Missing example for file I/O
-- Fixes: Added multi-dependency example, added file operations section
-
-**Test 2: Colleague test**
-
-- Tester: Junior developer, unfamiliar with UV
-- Task: Create script to fetch GitHub issues
-- Result: ⚠️ Got stuck on UV installation
-- Issues found:
-  - No UV installation instructions
-  - Unclear if UV is required or optional
-- Fixes: Added UV installation section, clarified requirements
-
-**Test 3: Different project**
-
-- Project: Internal automation tools
-- Task: Create script to sync databases
-- Result: ✅ Worked with minor adjustments
-- Issues found:
-  - Example used public APIs (company uses internal)
-  - Pattern assumed single-file scripts (needed package structure)
-- Fixes: Made examples more generic, added note about multi-file projects
-
-**Test 4: Error paths**
-
-- Scenario: Wrong shebang format
-- Result: ❌ Error message not helpful
-- Issues found:
-  - UV error: "invalid script" (cryptic)
-  - Skill didn't explain common shebang errors
-- Fixes: Added troubleshooting section for shebang errors
-```
-
-## Testing Checklist
-
-Before finalizing a skill, verify:
-
-### Description and Invocation
-
-- [ ] Skill is invoked with simple trigger phrase
-- [ ] Skill is invoked with technical term
-- [ ] Skill is NOT invoked for unrelated queries
-- [ ] Priority is set appropriately (not too high/low)
-
-### Content Quality
-
-- [ ] All examples are copy-pasteable
-- [ ] Examples work on first try
-- [ ] Terminology is consistent across all examples
-- [ ] File references are one level deep
-- [ ] No time-sensitive information (or properly isolated)
-
-### Code and Scripts
-
-- [ ] Scripts have helpful error messages
-- [ ] Scripts handle edge cases
-- [ ] All constants are justified
-- [ ] Dependencies are listed and verified
-- [ ] Paths use forward slashes
-
-### Model Testing
-
-- [ ] Tested with Haiku (simple case works)
-- [ ] Tested with Sonnet (moderate case works)
-- [ ] Tested with Opus (complex case works)
-- [ ] Responses consistent across models
-- [ ] Skill guidance is followed in all cases
-
-### Real Usage
-
-- [ ] Fresh start test completed
-- [ ] Colleague test completed
-- [ ] Different project test completed
-- [ ] Error path test completed
-- [ ] All issues found have been fixed
-
-### Documentation
-
-- [ ] README explains when to use skill
-- [ ] Examples show common use cases
-- [ ] Troubleshooting section exists
-- [ ] Links to related skills/docs
-
-## Continuous Testing
-
-After initial testing:
-
-1. **Monitor usage:**
-   - Track when skill is invoked
-   - Note if invocation matches intent
-   - Identify missing trigger words
-
-2. **Collect feedback:**
-   - Ask users if skill was helpful
-   - Note common questions after using skill
-   - Track modifications users make to examples
-
-3. **Update regularly:**
-   - Add newly discovered patterns
-   - Update examples based on feedback
-   - Remove outdated information
-   - Clarify confusing sections
-
-## Testing Anti-Patterns
-
-**❌ Don't:**
-
-- Test only simple cases
-- Skip model comparison
-- Test only in original project
-- Ignore error scenarios
-- Test once and never again
-
-**✅ Do:**
-
-- Test full range of complexity
-- Compare all models
-- Test in fresh environments
-- Intentionally break things
-- Re-test after updates
+Re-run relevant cases after trigger, workflow, script, or safety-boundary changes.

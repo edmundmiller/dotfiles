@@ -1,485 +1,131 @@
 ---
 name: skill-quality
-description: "Validates Claude Code skills against best practices for structure, content quality, and effectiveness. Use when creating new skills, reviewing existing skills, debugging skill invocation issues, or preparing skills for publication."
+compatibility: portable
+description: Validate and review agent skills for portable structure, clear triggers, executable helpers, and reliable behavior across Terra and Sol.
 ---
 
-# Skill Quality Validation
+# Skill Quality
 
-Ensures Claude Code skills follow best practices for discoverability, structure, content quality, and effectiveness. This skill provides checklists, patterns, and validation criteria for creating high-quality skills.
+Use this skill when creating or revising a skill, debugging invocation, reviewing a skill catalog, or moving repeatable prose into a script.
 
-## When to Use This Skill
+## Start with the Deterministic Gate
 
-Use this skill when you see these patterns:
+Run the shipped validator before model review:
 
-### ✅ Yes, use this skill for:
-
-- "Create a new skill for [topic]"
-- "Review this skill for quality"
-- "Why isn't my skill being invoked?"
-- "Improve this skill's structure"
-- "Prepare this skill for sharing"
-- "Debug skill invocation issues"
-- "Make this skill more effective"
-
-### ❌ No, use different skills for:
-
-- Writing skill content (use topic-specific skills)
-- Testing specific functionality (use testing skills)
-- Code review (use code-review skills)
-
-## Quick Reference
-
-### Core Principles
-
-**Every skill must have:**
-
-- ✅ Specific description with trigger keywords (< 100 chars)
-- ✅ Under 500 lines (split into directory if longer)
-- ✅ Concrete examples (not abstract)
-- ✅ Consistent terminology
-- ✅ Progressive disclosure (most important first)
-
-**Red flags:**
-
-- ❌ Vague description like "Help with Python"
-- ❌ Single file over 500 lines
-- ❌ Abstract guidance without examples
-- ❌ Mixing terminology (e.g., "commit" and "change" without explanation)
-- ❌ Time-sensitive info (e.g., "new tool just released")
-
-### Quality Checklist Workflow
-
-When creating or reviewing a skill, copy this checklist and follow the steps:
-
-```
-Skill Quality Review Progress:
-- [ ] Step 1: Verify description and metadata
-- [ ] Step 2: Check structure and organization
-- [ ] Step 3: Validate content quality
-- [ ] Step 4: Review code and scripts (if applicable)
-- [ ] Step 5: Test across models
-- [ ] Step 6: Perform real usage testing
+```bash
+python3 ~/.agents/skills/skill-quality/scripts/validate.py path/to/skill
 ```
 
-#### Step 1: Verify Description and Metadata
+In this dotfiles repository:
 
-Check the YAML frontmatter:
-
-- [ ] Description includes specific trigger keywords (what users will say)
-- [ ] Description explains WHAT the skill does and WHEN to use it
-- [ ] Description is in third person ("Validates...", not "Apply...")
-- [ ] Description under 1024 characters
-- [ ] Priority is set appropriately (5-7 for most skills)
-- [ ] Name uses lowercase, hyphens, no reserved words
-
-**If checks fail:** Update frontmatter before proceeding.
-
-#### Step 2: Check Structure and Organization
-
-Review file organization:
-
-- [ ] SKILL.md is under 500 lines
-- [ ] Uses directory structure if over 500 lines
-- [ ] "When to Use This Skill" section exists and is clear
-- [ ] Progressive disclosure: most important content first
-- [ ] Headers are descriptive and scannable
-- [ ] File references are one level deep maximum
-
-**If checks fail:** Reorganize content or split into supporting files.
-
-#### Step 3: Validate Content Quality
-
-Review the skill content:
-
-- [ ] Examples are concrete and copy-pasteable
-- [ ] All code examples are runnable
-- [ ] Terminology is consistent throughout
-- [ ] No time-sensitive information (or properly isolated)
-- [ ] Workflows have clear numbered steps
-- [ ] Decision trees for complex choices
-- [ ] All placeholders are explained or replaced
-
-**If checks fail:** Add missing examples or clarify instructions.
-
-#### Step 4: Review Code and Scripts
-
-If skill includes executable code:
-
-- [ ] Scripts solve problems (don't punt to Claude)
-- [ ] Error handling is explicit with helpful messages
-- [ ] All constants are justified (no "voodoo constants")
-- [ ] Dependencies are listed with install instructions
-- [ ] Paths use forward slashes (not backslashes)
-- [ ] Validation/feedback loops for critical operations
-
-**If checks fail:** Improve error handling and documentation.
-
-#### Step 5: Test Across Models
-
-Test with all Claude models:
-
-- [ ] Tested with Haiku (simple case works)
-- [ ] Tested with Sonnet (moderate complexity works)
-- [ ] Tested with Opus (complex case works)
-- [ ] Skill invoked correctly in all cases
-- [ ] Responses follow skill guidance consistently
-
-**If checks fail:** Adjust description or add more explicit guidance.
-
-#### Step 6: Perform Real Usage Testing
-
-Test in actual workflows:
-
-- [ ] Fresh start test (new project, no external docs)
-- [ ] Colleague test (someone else uses it)
-- [ ] Different project test (verify it's project-agnostic)
-- [ ] Error path test (intentionally trigger failures)
-
-**If checks fail:** Update skill based on observed issues.
-
-## File Structure
-
-**For skills under 500 lines:**
-
-```
-my-skill.md                # Single file
+```bash
+python3 skills/catalog/skill-quality/scripts/validate.py \
+  skills/catalog .agents/skills skills/conditional
 ```
 
-**For skills over 500 lines:**
+Use `--json` for structured output. Fix every reported finding before judging prose quality.
 
-```
-my-skill/
-├── SKILL.md              # Main instructions (< 500 lines)
-├── examples.md           # Detailed examples
-├── reference.md          # API/command reference (optional)
-└── scripts/              # Helper scripts (optional)
-    └── validate.py
-```
+The validator enforces:
 
-**Key principles:**
+- `SKILL.md` with closed YAML frontmatter
+- non-empty `name` and `description`
+- lowercase hyphenated name matching the skill directory
+- description length at most 1024 characters
+- `SKILL.md` at most 500 lines
+- existing local Markdown references
+- no known runtime-specific tool names when `compatibility: portable` is declared
 
-- SKILL.md always under 500 lines
-- Related files use UPPERCASE for visibility (FORMS.md, EXAMPLES.md)
-- Scripts in subdirectory, executed not loaded as context
-- Each file has single, clear purpose
+These are structural requirements. They do not prove that instructions are correct or useful.
 
-**Example from real skill:**
+## Choose the Directory Shape
 
-```
-pdf/
-├── SKILL.md              # Core PDF guidance
-├── FORMS.md              # Form-filling specific guidance
-├── examples.md           # Extended examples
-└── scripts/
-    ├── analyze_form.py   # Utility script
-    └── fill_form.py      # Form processor
-```
+- **`SKILL.md` only:** short trigger and workflow guidance
+- **`references/`:** longer examples, troubleshooting, or command reference
+- **`scripts/`:** repeatable validation, generation, migration, or inspection
+- **`assets/`:** templates, fixtures, or static inputs
 
-## Core Quality Standards
+Keep the entrypoint focused on decisions and the shortest successful workflow. Supporting files should be reachable directly from `SKILL.md`; avoid reference chains.
 
-### 1. Description Quality
+## Review the Judgment Layer
 
-**Format:** Frontmatter YAML at top of SKILL.md
+### Trigger quality
 
-```yaml
----
-description: "Specific action + key terms + when to use"
-priority: 5
----
-```
+- Say what the skill does and when it should activate.
+- Use phrases users naturally say.
+- State important exclusions when adjacent skills overlap.
+- Keep the description specific enough to avoid accidental invocation.
 
-**Requirements:**
+### Workflow quality
 
-- Include key terms that trigger the skill
-- Explain both WHAT and WHEN
-- Keep under 100 characters
-- Use terms users naturally say
+- Put prerequisites and authority boundaries before mutations.
+- Use numbered steps for sequences and decision points for branches.
+- Include exact verification for consequential actions.
+- Distinguish local checks, deployed state, and user-visible proof.
+- Do not assume a tool exists unless the skill is intentionally runtime-specific.
 
-📖 See [EXAMPLES.md](./EXAMPLES.md#description-quality) for good/bad examples
+### Example quality
 
-### 2. Content Structure
+- Make examples runnable or label them as pseudocode.
+- Show expected output or a concrete success condition.
+- Explain placeholders.
+- Prefer one representative example over repeated variants.
 
-**SKILL.md must be:**
+### Script quality
 
-- Under 500 lines total
-- Well-organized with clear sections
-- Using progressive disclosure
-- Focused on one coherent topic
+- Solve the repeatable problem instead of asking the model to reinterpret prose.
+- Return nonzero on findings and print actionable file-scoped errors.
+- Offer structured output when another tool may consume results.
+- Keep dependencies explicit, paths portable, and secrets out of output.
+- Test success, failure, and malformed-input paths.
 
-**If exceeding 500 lines:**
+Move checks into scripts when the result depends only on parseable state. Keep tradeoffs, intent, and exception handling in prose.
 
-1. Split into directory structure
-2. Keep core guidance in SKILL.md
-3. Move detailed examples to examples.md
-4. Move reference material to reference.md
-5. Move scripts to scripts/ subdirectory
+## Test on Terra and Sol
 
-**Progressive disclosure pattern:**
+Both models should obey the same safety, scope, and verification contract. Test different failure tendencies, not different requirements.
 
-```markdown
-# Skill Name
+### Terra: balanced default
 
-Brief intro (1-2 sentences)
+Use common and moderately complex cases. Look for:
 
-## When to Use
+- missed prerequisites hidden late in the skill
+- ambiguous branches that require excessive inference
+- skipped verification or premature stopping
+- instructions that depend on unavailable runtime tools
 
-Quick bullet list
+### Sol: frontier reasoning
 
-## Quick Reference
+Use ambiguous, high-risk, or cross-system cases. Look for:
 
-Most common cases with examples
+- speculative abstraction or scope expansion
+- overriding explicit authority boundaries with a clever alternative
+- unnecessary delegation or process overhead
+- plausible claims supported only by indirect checks
 
-## Detailed Guidance
+### Cross-model invariant
 
-(Or link to examples.md)
+Run at least one identical scenario on both models. Compare observable behavior:
 
-## Advanced Patterns
+- correct invocation
+- same protected boundaries
+- same required artifacts
+- same verification threshold
+- no model-specific tool assumption for portable skills
 
-(Or link to patterns.md)
-```
+Broad shared skills need both model passes. Narrow mechanical skills may use one shared scenario plus deterministic script tests. Record evidence; do not claim cross-model compatibility from prose inspection alone.
 
-### 3. Terminology Consistency
+See [TESTING.md](./TESTING.md) for the evaluation template and scoring guidance.
 
-**Rules:**
+## Review Checklist
 
-- Use consistent terms throughout all files
-- Establish vocabulary early
-- Explain synonyms when first used
-- Don't mix related terms without explanation
+1. Run `scripts/validate.py`.
+2. Confirm trigger, scope, exclusions, and authority boundaries.
+3. Exercise the common path and one real failure path.
+4. Test Terra and Sol in proportion to skill breadth and risk.
+5. Move any newly discovered deterministic invariant into the validator or a skill-local script.
 
-📖 See [EXAMPLES.md](./EXAMPLES.md#terminology-consistency) for patterns
+## Resources
 
-### 4. Concrete Examples
-
-**Every pattern needs a real, runnable example.**
-
-Examples must:
-
-- Be copy-pasteable
-- Show actual code/commands
-- Include expected output
-- Demonstrate the principle
-
-📖 See [EXAMPLES.md](./EXAMPLES.md#concrete-examples) for good/bad examples
-
-### 5. File Reference Depth
-
-**Keep references one level deep:**
-
-```markdown
-See examples.md for detailed patterns # ✅ Good
-```
-
-```markdown
-See examples.md which references patterns.md
-which has code in scripts/ # ❌ Bad - too deep
-```
-
-### 6. Time-Sensitive Information
-
-**Isolate or avoid time-sensitive content:**
-
-```markdown
-## Current Best Practice (as of 2024)
-
-Use ast-grep for syntax-aware searches
-
-## Legacy Patterns
-
-Previously, ripgrep was used...
-```
-
-📖 See [EXAMPLES.md](./EXAMPLES.md#time-sensitive-information) for deprecation patterns
-
-## Code and Script Quality
-
-### Scripts Should Solve Problems
-
-**Don't punt to Claude - solve the problem in the script:**
-
-- ✅ Validate and return specific errors
-- ✅ Handle edge cases explicitly
-- ✅ Provide actionable error messages
-- ❌ Leave TODOs for Claude to figure out
-- ❌ Generic "check this" functions
-
-### Error Handling
-
-**Every error path needs helpful messages:**
-
-```python
-except FileNotFoundError:
-    print("Error: jj not found. Install with: brew install jj")
-    sys.exit(1)
-```
-
-### No Voodoo Constants
-
-**Justify all magic numbers:**
-
-```python
-TIMEOUT_SECONDS = 30  # API requests take 5-10s, allow 3x buffer
-```
-
-### Package Verification
-
-**List all dependencies with install instructions:**
-
-```markdown
-## Dependencies
-
-Required:
-
-- `ast-grep` - Install: `brew install ast-grep`
-
-Verify: `which ast-grep`
-```
-
-📖 See [EXAMPLES.md](./EXAMPLES.md#code-and-script-quality) for detailed patterns
-
-## Workflow Quality
-
-### Clear Steps
-
-**Use numbered steps with verification:**
-
-````markdown
-1. **Create directory:**
-   ```bash
-   mkdir my-dir
-   ```
-````
-
-Verify: `ls my-dir`
-
-2. **Create file:**
-   ...
-
-````
-
-### Decision Trees
-
-**Complex workflows need decision points:**
-
-```markdown
-**Need X?** → Use tool A
-**Need Y?** → Use tool B
-**Need both?** → Use A then B
-````
-
-📖 See [EXAMPLES.md](./EXAMPLES.md#workflow-quality) for patterns
-
-## Testing
-
-Every skill needs testing across:
-
-- **Models**: Haiku, Sonnet, Opus
-- **Scenarios**: Simple, edge case, complex
-- **Real usage**: New project, no external help
-
-📖 See [TESTING.md](./TESTING.md) for detailed testing guidelines
-
-## Troubleshooting
-
-Common issues:
-
-- Skill not being invoked → Check description keywords
-- Too broad → Split into focused skills
-- Too abstract → Add concrete examples
-
-📖 See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for complete guide
-
-## Quality Self-Check
-
-Before considering a skill complete, copy this checklist and verify each item:
-
-```
-Skill Quality Verification:
-- [ ] Can someone use this without follow-up questions?
-- [ ] Would this work in 6 months?
-- [ ] Are examples copy-pasteable and runnable?
-- [ ] Can you find guidance in < 30 seconds?
-- [ ] Are error messages helpful enough?
-- [ ] Does the description include key trigger terms?
-- [ ] Is SKILL.md under 500 lines?
-- [ ] Are file references one level deep?
-- [ ] Is terminology consistent throughout?
-```
-
-**If any check fails:**
-
-1. **Can't use without follow-up questions** → Add more concrete examples
-2. **Won't work in 6 months** → Isolate time-sensitive info in "Current Best Practice" sections
-3. **Examples not copy-pasteable** → Complete all placeholders and add setup steps
-4. **Can't find guidance quickly** → Improve headers and add table of contents
-5. **Error messages unclear** → Add context, hints, and recovery steps
-6. **Description lacks triggers** → Add specific terms users naturally say
-7. **SKILL.md too long** → Split into directory with reference files
-8. **Deep file references** → Consolidate or flatten structure
-9. **Inconsistent terminology** → Choose one term and use everywhere
-
-## Evaluation Scenarios
-
-Test this skill with these scenarios to ensure it works effectively:
-
-### Scenario 1: Simple Case - New Skill Creation
-
-**Input:** "Help me create a new skill for managing Docker containers"
-
-**Expected behavior:**
-
-- Skill is invoked and recognized
-- Provides description template with trigger keywords
-- Suggests file structure (single file vs directory)
-- Offers checklist for required sections
-- Reminds about concrete examples requirement
-
-**Verify:**
-
-- Skill invocation happens automatically
-- Response includes specific checklist items
-- Guidance is actionable and clear
-
-### Scenario 2: Edge Case - Skill Not Being Invoked
-
-**Input:** "My skill exists but Claude never uses it"
-
-**Expected behavior:**
-
-- Skill is invoked and recognized
-- Diagnoses common invocation issues
-- Checks description for trigger keywords
-- Verifies file location and frontmatter format
-- Suggests testing phrases
-
-**Verify:**
-
-- Troubleshooting steps are provided
-- Specific fixes offered for each issue
-- Testing methodology explained
-
-### Scenario 3: Complex Case - Comprehensive Skill Review
-
-**Input:** "Review my python-scripts skill for quality and best practices"
-
-**Expected behavior:**
-
-- Skill is invoked and recognized
-- Provides complete quality checklist
-- Reviews description, structure, examples, and testing
-- Identifies specific gaps or issues
-- Suggests prioritized improvements
-- References relevant sections of examples.md
-
-**Verify:**
-
-- All quality dimensions covered
-- Specific, actionable feedback provided
-- Prioritization of issues clear
-- References to supporting documentation included
-
-## Additional Resources
-
-- [EXAMPLES.md](./EXAMPLES.md) - Detailed good/bad examples for all principles
-- [TESTING.md](./TESTING.md) - Complete testing guidelines
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and fixes
+- [EXAMPLES.md](./EXAMPLES.md) — concrete content and script patterns
+- [TESTING.md](./TESTING.md) — Terra/Sol evaluation design
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — invocation and structure failures

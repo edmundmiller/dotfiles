@@ -465,6 +465,23 @@
                 args = [ "--assume-in-merge" ];
                 stages = [ "pre-commit" ];
               };
+              agent-instructions = {
+                enable = true;
+                name = "agent-instructions";
+                description = "Validate shared rule metadata and portable skill structure";
+                entry = toString (
+                  pkgs.writeShellScript "agent-instructions" ''
+                    set -eu
+                    ${pkgs.python3}/bin/python3 ${./bin/check-agent-rules} ${./config/agents/rules}
+                    ${pkgs.python3}/bin/python3 ${./skills/catalog/skill-quality/scripts/validate.py} \
+                      ${./skills/catalog} ${./.agents/skills} ${./skills/conditional}
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "^(config/agents/rules/|skills/(catalog|conditional)/|\\.agents/skills/)";
+                stages = [ "pre-commit" ];
+              };
               check-flake-portability = {
                 enable = true;
                 name = "reject absolute local flake inputs";
