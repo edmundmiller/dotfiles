@@ -42,7 +42,7 @@ set -euo pipefail
 workdir=$(mktemp -d)
 git clone https://github.com/ogulcancelik/herdr "$workdir/herdr"
 cd "$workdir/herdr"
-git checkout 50aaa2ec046ee26ff407c20f49de496f522512a8
+git checkout ef4c23f5775bb8cfec05f05d0844226ff959a07a
 git apply /Users/emiller/.config/dotfiles/overlays/herdr/patches/*.patch
 cargo test \
   detect::tests::hermes \

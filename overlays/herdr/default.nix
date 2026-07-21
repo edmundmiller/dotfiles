@@ -7,8 +7,8 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "50aaa2ec046ee26ff407c20f49de496f522512a8";
-      hash = "sha256-dBOQYLFitJ+E3XNz44Ag3CIrBxFj16CmVPp7qil0ssg=";
+      rev = "ef4c23f5775bb8cfec05f05d0844226ff959a07a";
+      hash = "sha256-3BA8eredGku+vsL2Af7sUf43QiArR5XTHNrI+X11vFM=";
     };
     patches = [
       ./patches/0001-libghostty-bench-gated.patch # bead: dotfiles-lq7y
@@ -16,7 +16,6 @@ let
       ./patches/0007-worktree-actions-use-focused-pane-cwd.patch # bead: dotfiles-y5ag
       ./patches/0008-ignore-zero-terminal-resize.patch # bead: dotfiles-1t6d
       ./patches/0009-defer-background-tab-resize.patch # bead: dotfiles-0qcg
-      ./patches/0010-guard-resize-cursor-scrollback.patch # bead: dotfiles-h89w
       ./patches/0011-grapheme-crash-diagnostics.patch # temporary crash forensics
       ./patches/0012-grapheme-crash-diagnostics.patch # temporary crash forensics: error-path state
     ];
