@@ -1054,6 +1054,7 @@ in
                 repo="$2"
                 subdir="''${3:-}"
                 mode="''${4:-required}"
+                plugin_id="''${5:-}"
                 spec="$owner/$repo"
                 if [ -n "$subdir" ]; then
                   spec="$spec/$subdir"
@@ -1064,7 +1065,12 @@ in
                   return 1
                 fi
 
-                if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
+                if printf '%s\n' "$installed_json" | ${pkgs.jq}/bin/jq -e \
+                  --arg owner "$owner" \
+                  --arg repo "$repo" \
+                  --arg plugin_id "$plugin_id" \
+                  'any(.result.plugins[]?; (.source.owner == $owner and .source.repo == $repo) or ($plugin_id != "" and .plugin_id == $plugin_id))' \
+                  >/dev/null; then
                   echo "herdr: $spec plugin already installed"
                 else
                   echo "herdr: installing $spec plugin"
@@ -1079,7 +1085,7 @@ in
                 fi
               }
 
-              install_plugin NathanFlurry herdr-plugin-jj-workspace
+              install_plugin NathanFlurry herdr-plugin-jj-workspace "" required nathanflurry.jj-workspace
               install_plugin smarzban herdr-file-viewer
               install_plugin dutifuldev ghzinga plugins/herdr
               install_plugin dcolinmorgan herdr-remote relay

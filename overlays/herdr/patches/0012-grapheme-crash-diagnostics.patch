@@ -1,0 +1,41 @@
+--- a/vendor/libghostty-vt/src/terminal/PageList.zig
++++ b/vendor/libghostty-vt/src/terminal/PageList.zig
+@@ -1597,6 +1597,19 @@
+                 // though we choose to recover by corrupting the cell
+                 // to a non-grapheme codepoint.
+                 log.err("setGraphemes failed after capacity increase err={}", .{err});
++                // Diagnostic: capture the full grapheme allocator/map state
++                // before the safe-build unreachable fires. The probe above
++                // only exercises grapheme_alloc; a map-capacity mismatch or
++                // bitmap fragmentation would surface here.
++                log.err("setGraphemes diagnostic count={} cap={} alloc_cap={} alloc_used={} cps_len={} content_tag={} codepoint={}", .{
++                    self.page.graphemeCount(),
++                    self.page.graphemeCapacity(),
++                    self.page.grapheme_alloc.capacityBytes(),
++                    self.page.grapheme_alloc.usedBytes(self.page.memory),
++                    cps.len,
++                    self.page_cell.content_tag,
++                    self.page_cell.content.codepoint,
++                });
+                 if (comptime std.debug.runtime_safety) {
+                     // Force a crash with safe builds.
+                     unreachable;
+@@ -3362,6 +3375,18 @@
+         // this should never be possible. If it happens, we should crash
+         // because we're in no man's land and can't safely recover.
+         log.err("increaseCapacity clone failed err={}", .{err});
++        // Diagnostic: capture old/new capacity and grapheme state
++        // before the panic. cloneFrom's internal setGraphemes can
++        // fail if the doubled capacity still can't fit the source
++        // page's graphemes after fragmentation.
++        log.err("increaseCapacity diagnostic old_grapheme_bytes={} new_grapheme_bytes={} count={} cap={} alloc_cap={} alloc_used={}", .{
++            page.capacity.grapheme_bytes,
++            new_page.capacity.grapheme_bytes,
++            page.graphemeCount(),
++            page.graphemeCapacity(),
++            page.grapheme_alloc.capacityBytes(),
++            page.grapheme_alloc.usedBytes(page.memory),
++        });
+         @panic("unexpected clone failure");
+     };
+ 

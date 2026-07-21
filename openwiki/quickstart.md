@@ -61,4 +61,4 @@ Recent Git history adds corruption tripwires for NUC Obsidian Headless Sync and 
 
 - **Package and overlay development** — `packages/`, `overlays/`; many independent package policies were deferred to keep this first map centered on system configuration and operating safety.
 - **Desktop, shell, editor, and theme modules** — `modules/{desktop,shell,editors,themes}/`; broad user-environment domains need their own focused change map.
-- **Individual service runbooks** — `modules/services/*/`; only cross-cutting service integration and the recently changed Obsidian workflow are included here.
+- **Individual service runbooks** — `modules/services/*/`; cross-cutting integration plus the Home Assistant/Music Assistant seam and Obsidian workflow are included, but most service-specific operations remain deferred.
