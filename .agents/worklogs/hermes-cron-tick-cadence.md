@@ -1,6 +1,6 @@
 # Worklog: hermes-cron-tick-cadence
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -57,6 +57,10 @@ are current on the upstream branch.
   failed only because both its treefmt and hook commands route through Prek,
   while this repository has neither `prek.toml` nor
   `.pre-commit-config.yaml`.
+- Direct landing was verified at `170a7d0a53`: local `main` and
+  `origin/main` were equal, and the task tip was an ancestor of both.
+- `br sync --flush-only` reported no dirty issues and produced no tracked
+  changes.
 
 ## Reviews
 
@@ -82,10 +86,10 @@ are current on the upstream branch.
 
 ## Remaining work
 
-- Commit this worklog, reconcile and publish to `origin/main`, verify remote
-  equality, sync Beads, tag the completed run, and close the receipt.
+None.
 
 ## Commits
 
 - `aa12264dd9 test(nuc): capture Hermes cron ticker drift`
 - `318e7aee0b fix(nuc): poll Hermes cron every minute`
+- `170a7d0a53 docs(worklog): record Hermes cron tick rollout`
