@@ -416,6 +416,12 @@ in
             action = "script.tv_off_if_on";
           }
           {
+            action = "media_player.volume_set";
+            continue_on_error = true;
+            data.volume_level = 0.45;
+            target.entity_id = "media_player.bedtime";
+          }
+          {
             action = "script.book_player_start";
             continue_on_error = true;
             data = {
@@ -449,6 +455,12 @@ in
               }
             ];
             "then" = [
+              {
+                action = "media_player.volume_set";
+                continue_on_error = true;
+                data.volume_level = 0.45;
+                target.entity_id = "media_player.bedtime";
+              }
               {
                 action = "script.book_player_start";
                 continue_on_error = true;
