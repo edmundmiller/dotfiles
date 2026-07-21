@@ -1,7 +1,10 @@
 use ./common.nu *
 
 def agent-quality [...args: string] {
-  ^agent-quality ...$args
+  let ctx = (context)
+  with-env { AGENT_QUALITY_ROOT: $ctx.flake_dir } {
+    ^agent-quality ...$args
+  }
 }
 
 def --wrapped "main agent-review" [stage: string, ...args: string] {

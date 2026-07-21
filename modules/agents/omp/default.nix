@@ -77,11 +77,11 @@ let
     name = "agent-quality";
     runtimeInputs = [
       pkgs.git
-      pkgs.jj
+      pkgs.jujutsu
       pkgs.python3
     ];
     text = ''
-      export AGENT_QUALITY_ROOT=${../../..}
+      export AGENT_QUALITY_ROOT="''${AGENT_QUALITY_ROOT:-${../../..}}"
       exec python3 ${../../../bin/agent-quality} "$@"
     '';
   };
