@@ -105,16 +105,16 @@
           enable = true;
           # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic).
           # Prewalk hands implementation to smol, so Sonnet is the coding handoff;
-          # Haiku stays on commit/tiny metadata work. Opus remains the primary and
-          # slow planner. Codex models provide the first provider-diverse fallback:
-          # Cursor Grok and Composer fast variants are last-resort low-latency
+          # Haiku stays on commit/tiny metadata work. Fable is the slow
+          # default, with Codex Sol as its first fallback. Opus remains the
+          # primary and plan model. Cursor Grok and Composer fast variants are
           # fallbacks. VibeProxy exposes Claude only; do not invent xai-oauth ids.
           # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
           # rendered smol and can confuse commit/tiny vs prewalk handoff.
           modelRoles = {
             default = "vibeproxy/claude-opus-4-8:low";
             smol = "vibeproxy/claude-sonnet-5:low";
-            slow = "vibeproxy/claude-opus-4-8:high";
+            slow = "vibeproxy/claude-fable-5:high";
             plan = "vibeproxy/claude-opus-4-8:high";
             vision = "vibeproxy/claude-sonnet-5:medium";
             designer = "vibeproxy/claude-opus-4-8:medium";
@@ -135,8 +135,6 @@
             ];
             slow = [
               "openai-codex/gpt-5.6-sol:high"
-              "openai-codex/gpt-5.6-terra:high"
-              "openai-codex/gpt-5.6-luna:high"
             ];
             plan = [
               "openai-codex/gpt-5.6-sol:high"

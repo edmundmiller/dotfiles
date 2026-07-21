@@ -119,6 +119,11 @@ class OmpModelRoutingTests(unittest.TestCase):
             omp["modelRoles"]["tiny"],
             "vibeproxy/claude-haiku-4-5-20251001",
         )
+        self.assertEqual(omp["modelRoles"]["slow"], "vibeproxy/claude-fable-5:high")
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["slow"],
+            ["openai-codex/gpt-5.6-sol:high"],
+        )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["smol"],
             [
