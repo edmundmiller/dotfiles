@@ -33,12 +33,21 @@ def test_local_plugin_link_defers_only_connection_refusal() -> None:
     assert "deferring local plugin link" in module
 
 
-def test_smart_rename_is_installed_and_bound() -> None:
+def test_smart_rename_is_packaged_started_and_bound() -> None:
+    package = ROOT / "packages" / "herdr-tab-smart-rename"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
     commands = config["keys"]["command"]
 
-    assert "install_plugin iurysza herdr-tab-smart-rename" in module
+    assert (package / "default.nix").is_file()
+    assert (package / "package-harness.json").is_file()
+    assert len(list((package / "patches").glob("*.patch"))) == 2
+    assert "pkgs.my.herdr-tab-smart-rename" in module
+    assert "install_plugin iurysza herdr-tab-smart-rename" not in module
+    assert "home.activation.herdr-smart-rename" in module
+    assert 'entryAfter [ "herdr-plugin-registry" ]' in module
+    assert "plugin action invoke start --plugin tab-smart-rename" in module
+    assert "deferring smart rename worker start" in module
     assert {
         "key": "prefix+t",
         "type": "plugin_action",
