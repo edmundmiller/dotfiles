@@ -6,6 +6,10 @@
 }:
 let
   cfg = nixosConfig.config;
+  amosService = cfg.systemd.services.hermes-amosburton-cron-tick;
+  amosSecretsService = cfg.systemd.services.hermes-amosburton-secrets-materialize;
+  amosProfile = cfg.services.hermes-agent.profiles.amosburton;
+  amosSecretMaterialization = cfg.system.activationScripts.hermesAmosburtonSecretsMaterialize.text;
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
@@ -28,7 +32,52 @@ let
 
   inherit (pkgs.lib) concatStringsSep hasInfix;
 
+  amosFixExpectedFailure = false;
+  amosOverlaysHostConfigExpectedFailure = false;
+  amosEnvironment = concatStringsSep " " amosService.serviceConfig.Environment;
+  amosUsesStableProfileAndSecret =
+    hasInfix "HOME=/var/lib/hermes-amosburton" amosEnvironment
+    && hasInfix "HERMES_HOME=/var/lib/hermes-amosburton/.hermes" amosEnvironment
+    && hasInfix "HERMES_REAL_HOME=/var/lib/hermes-amosburton" amosEnvironment
+    && hasInfix "TERMINAL_HOME_MODE=real" amosEnvironment
+    && hasInfix "MESSAGING_CWD=/var/lib/hermes-amosburton/workspace" amosEnvironment
+    && amosService.serviceConfig.WorkingDirectory == "/var/lib/hermes-amosburton/workspace"
+    && hasInfix "LINEAR_API_KEY" amosSecretMaterialization
+    && amosSecretsService.after == [ "opnix-secrets.service" ]
+    && amosSecretsService.serviceConfig.Type == "oneshot"
+    && builtins.elem "hermes-amosburton-secrets-materialize.service" amosService.requires
+    && builtins.length amosProfile.settings.terminal.shell_init_files == 1
+    && hasInfix "HERMES_HOME=/var/lib/hermes-amosburton/.hermes" (
+      builtins.readFile (builtins.head amosProfile.settings.terminal.shell_init_files)
+    )
+    && (amosService.serviceConfig.SupplementaryGroups or [ ]) == [ ];
+  amosConfigOverlay = builtins.head (
+    builtins.filter (entry: hasInfix "HERMES_CONFIG_OVERLAY=" entry) amosService.serviceConfig.Environment
+  );
+  amosConfigOverlayPath = pkgs.lib.removePrefix "HERMES_CONFIG_OVERLAY=" amosConfigOverlay;
+  amosOverlaysHostConfig =
+    hasInfix "shell_init_files" (builtins.readFile amosConfigOverlayPath)
+    && hasInfix "HERMES_HOME=/var/lib/hermes-amosburton/.hermes" (
+      builtins.readFile (builtins.head amosProfile.settings.terminal.shell_init_files)
+    );
+
   assertions = [
+    {
+      test =
+        if amosFixExpectedFailure then
+          !amosUsesStableProfileAndSecret
+        else
+          amosUsesStableProfileAndSecret;
+      msg = "Amos cron must use its profile home and a pre-materialized Linear secret.";
+    }
+    {
+      test =
+        if amosOverlaysHostConfigExpectedFailure then
+          !amosOverlaysHostConfig
+        else
+          amosOverlaysHostConfig;
+      msg = "Amos cron launcher must overlay host shell init onto canonical host paths.";
+    }
     {
       test = !bettyGateway.enable;
       msg = "Betty's interactive gateway must remain disabled for isolated cron execution.";

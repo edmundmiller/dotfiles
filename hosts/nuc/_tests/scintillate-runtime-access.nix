@@ -27,6 +27,12 @@ let
   packageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
   systemPackageStrings = map (pkg: stripContext (toString pkg)) cfg.environment.systemPackages;
   cronTickPathStrings = map (pkg: stripContext (toString pkg)) cronTickService.path;
+  hostCronVaultFixExpectedFailure = false;
+  hostCronUsesLiveVault =
+    cronTickService.serviceConfig.WorkingDirectory == "/home/emiller/obsidian-vault"
+    && cronTickService.environment.MESSAGING_CWD == "/home/emiller/obsidian-vault"
+    && cronTickService.environment.TN_VAULT_PATH == "/home/emiller/obsidian-vault"
+    && cronTickService.environment.WIKI_PATH == "/home/emiller/obsidian-vault/03_Areas/Personal";
 
   hostMounts = mapAttrsToList (source: target: { inherit source target; }) profile.hostPathMounts;
   hasMount = source: target: any (mount: mount.source == source && mount.target == target) hostMounts;
@@ -34,6 +40,14 @@ let
   hasSystemPackageNamed = name: any (pkg: hasInfix name pkg) systemPackageStrings;
 
   assertions = [
+    {
+      test =
+        if hostCronVaultFixExpectedFailure then
+          !hostCronUsesLiveVault
+        else
+          hostCronUsesLiveVault;
+      msg = "Scintillate host cron must use the live NUC vault for cwd, TaskNotes, and wiki data.";
+    }
     {
       test = hermesAgent.providers.obsidianVault.hostPath == "/home/emiller/obsidian-vault";
       msg = "NUC must provide Scintillate's Obsidian vault provider.";
