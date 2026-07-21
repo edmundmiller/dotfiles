@@ -19,6 +19,7 @@ buildNpmPackage {
 
   patches = [
     ./patches/0001-use-omp-provider.patch
+    ./patches/0002-autostart-packaged-worker.patch
   ];
 
   postPatch = ''
