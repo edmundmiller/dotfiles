@@ -356,6 +356,12 @@ class AgentQualityTests(unittest.TestCase):
             self.assertEqual(summary["retries"], 2)
             self.assertEqual(summary["userCorrections"], 1)
 
+    @unittest.expectedFailure
+    def test_hey_points_packaged_agent_quality_at_active_flake(self) -> None:
+        wrapper = HEY_WRAPPER.read_text()
+        self.assertIn("let ctx = (context)", wrapper)
+        self.assertIn("AGENT_QUALITY_ROOT: $ctx.flake_dir", wrapper)
+
 
 if __name__ == "__main__":
     unittest.main()
