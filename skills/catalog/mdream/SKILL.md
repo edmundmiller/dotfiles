@@ -13,7 +13,7 @@ metadata:
 **Deps:** cac@^6.7.14, pathe@^2.0.3, tinyglobby@^0.2.15
 **Tags:** latest: 0.16.0 (Feb 2026)
 
-**References:** [package.json](./.skilld/pkg/package.json) — exports, entry points • [README](./.skilld/pkg/README.md) — setup, basic usage • [GitHub Issues](./.skilld/issues/_INDEX.md) — bugs, workarounds, edge cases • [Releases](./.skilld/releases/_INDEX.md) — changelog, breaking changes, new APIs
+**Runtime indexes:** `.skilld/pkg/package.json`, `.skilld/pkg/README.md`, `.skilld/issues/_INDEX.md`, and `.skilld/releases/_INDEX.md`. These are skilld cache paths, not checked-in local references.
 
 ## Search
 
