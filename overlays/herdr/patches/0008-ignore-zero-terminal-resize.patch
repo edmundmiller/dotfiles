@@ -1,6 +1,8 @@
---- i/src/ghostty/mod.rs
-+++ w/src/ghostty/mod.rs
-@@ -604,6 +604,15 @@
+diff --git a/src/ghostty/mod.rs b/src/ghostty/mod.rs
+index a664ee0..ca169fe 100644
+--- a/src/ghostty/mod.rs
++++ b/src/ghostty/mod.rs
+@@ -686,6 +686,15 @@ impl Terminal {
      ) -> Result<(), Error> {
          let cell_width_px = cell_width_px.max(1);
          let cell_height_px = cell_height_px.max(1);
@@ -16,10 +18,11 @@
          // SAFETY: self.raw is valid and sizes are plain values.
          unsafe {
              ffi::ghostty_terminal_resize(self.raw, cols, rows, cell_width_px, cell_height_px)
-@@ -3053,6 +3062,19 @@
+@@ -3024,6 +3033,19 @@ mod tests {
+         out
      }
  
-     #[test]
++    #[test]
 +    fn terminal_resize_ignores_unsafe_tiny_dimensions() {
 +        let mut terminal = Terminal::new(8, 3, 100).unwrap();
 +
@@ -32,7 +35,6 @@
 +        assert_eq!(terminal.rows().unwrap(), 3);
 +    }
 +
-+    #[test]
-     fn render_cells_handle_issue_453_unicode_payload() {
-         let mut terminal = Terminal::new(80, 3, 100).unwrap();
-         terminal.write("README 👨‍👩‍👧‍👦 🧑‍💻 ✅ ⚡ 漢字 café é 🏳️‍🌈 🚀\r\n".as_bytes());
+     #[test]
+     fn kitty_image_fingerprint_covers_full_payload() {
+         let mut data = vec![1u8; 4096 * 4];
