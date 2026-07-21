@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "agent-quality"
 HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
+OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 
 
 class AgentQualityTests(unittest.TestCase):
@@ -30,11 +31,16 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("^agent-quality ...$args", wrapper)
         self.assertNotIn("python3 bin/agent-quality", wrapper)
 
-    @unittest.expectedFailure
     def test_hey_points_packaged_agent_quality_at_active_flake(self) -> None:
         wrapper = HEY_WRAPPER.read_text()
         self.assertIn("let ctx = (context)", wrapper)
         self.assertIn("AGENT_QUALITY_ROOT: $ctx.flake_dir", wrapper)
+        self.assertIn(
+            'export AGENT_QUALITY_ROOT="\'\'${AGENT_QUALITY_ROOT:-${../../..}}"',
+            OMP_MODULE.read_text(),
+        )
+        self.assertIn("pkgs.jujutsu", OMP_MODULE.read_text())
+        self.assertNotIn("pkgs.jj\n", OMP_MODULE.read_text())
 
     def test_worklog_validation_accepts_complete_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -189,7 +195,8 @@ class AgentQualityTests(unittest.TestCase):
 
     def test_start_creates_an_isolated_jj_workspace_and_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            # Nix Python may return /tmp on macOS while jj canonicalizes it to /private/tmp.
+            root = Path(tmp).resolve()
             repo = root / "repo"
             workspace = root / "workspaces" / "demo"
             state = root / "state"
