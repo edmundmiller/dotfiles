@@ -7,6 +7,7 @@ Numbered markdown files concatenated into each agent's system prompt at build ti
 Nix reads `*.md` files (excluding `AGENTS.md`), sorts by filename, concatenates with `\n\n` separators:
 
 - `~/.claude/CLAUDE.md` — via `modules/agents/claude/default.nix`
+- `~/.codex/AGENTS.md` — via `modules/agents/codex/default.nix`
 - `~/.pi/agent/AGENTS.md` — via `modules/agents/pi/default.nix`
 - `~/.config/opencode/rules/` — via `modules/agents/opencode/default.nix` (symlinked as individual files)
 
@@ -25,5 +26,5 @@ Each rule file has YAML frontmatter with a `purpose:` field. List them: `head -3
 
 1. Pick next number: `<NN>-<name>.md`
 2. Add YAML frontmatter with `purpose:` field
-3. Keep it short — if >500B, ask whether a skill would be better
+3. Keep behavioral directives short; move procedures, examples, and reference material into a skill
 4. Rebuild: `hey re`

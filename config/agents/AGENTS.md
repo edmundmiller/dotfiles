@@ -8,7 +8,7 @@ update_when: Shared agent ownership, targets, or workflows change.
 
 # Agents Configuration - AI Context
 
-Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
+Unified skills, modes, and rules for Codex, Claude, OpenCode, Pi, and Hermes agents.
 
 ## Quick Reference
 
@@ -19,7 +19,7 @@ Unified skills, modes, and rules for Claude, OpenCode, and Pi agents.
 - **Install gating**: target dirs are synced only when the matching local agent module is enabled; `~/.claude/skills` is intentionally removed
 - **Project-local skills**: `.agents/skills/` (dotfiles-only; never global)
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`, `~/.config/opencode/agent`
-- **Rules**: `config/agents/rules/` → Concatenated into `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, symlinked to `~/.config/opencode/rules`
+- **Rules**: `config/agents/rules/` → Concatenated into Codex, Claude, and Pi instructions; symlinked to OpenCode rules
 
 ## Key Facts
 
@@ -47,6 +47,10 @@ description: When to trigger this skill
 ## Nix Modules
 
 - `modules/agents/claude/default.nix` - Concatenates rules → CLAUDE.md
-- `modules/agents/plannotator/default.nix` - Installs Plannotator and configures supported agents
+  <<<<<<< ours — heading `Nix Modules` (F, confidence: medium)
+  // hint: Logic changed on both sides. Requires understanding intent of each change.
+- # `modules/agents/plannotator/default.nix` - Installs Plannotator and configures supported agents
+- `modules/agents/codex/default.nix` - Concatenates rules → AGENTS.md
+  > > > > > > > theirs — heading `Nix Modules` (F, confidence: medium)
 - `modules/agents/opencode/default.nix` - Symlinks all directories
 - `modules/agents/pi/default.nix` - Symlinks Pi config; global skills come from agent-skills-nix
