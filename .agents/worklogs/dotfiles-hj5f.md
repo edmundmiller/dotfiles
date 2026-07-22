@@ -29,28 +29,32 @@ Deploy canonical `tnote` and Scintillate wrapper fixes to the NUC. Stop only aft
 - Minimal backport A/B against identical temporary vault copies: deployed binary 2,994,832 KiB/57.29 s versus backport 1,462,024 KiB/7.46 s. JSON bytes/SHA, resulting binary Git diff SHA, and status SHA were identical; only the deployed binary rewrote `.mdbase/cache.sqlite`.
 - Fixed wrapper against an exact temporary vault copy and no-op fake `tnote`: `env PATH=<fake-bin> TNOTE_SCHEDULE_VAULT=<copy> /run/current-system/sw/bin/time -v bun run tnote-schedule-safe.ts`; 44,156 KiB/0.29 s. Pre/post status and binary-diff SHAs matched; stash count remained zero.
 - Every vault copy was created beneath `/tmp` and deleted by an exit trap; no profile command targeted the live vault for writes.
-- Upstream verification: `git ls-remote` reports canonical `tnote` fix `984117b` and wrapper `d5c92ca` on `main`; deploy backport `3dc5771` is pushed at `refs/heads/codex/tnote-schedule-memory-backport`.
+- Upstream verification: `git ls-remote` reports canonical `tnote` fix `984117b` on the tnote `main`, wrapper `d5c92ca` on the agents-workspace `main`, and deploy backport `3dc5771` on the tnote `refs/heads/codex/tnote-schedule-memory-backport`.
 - Test ownership: upstream `tnote` regression tests assert cache bypass/output behavior and upstream wrapper tests assert no-op sync skipping; this repo's Nix checks assert package/provider/runtime wiring after the pins change.
 - Config proof: `hey nuc-wt build` produced `/nix/store/w9s8s52zsfv7svwcyxp02l6s8ldldk2s-nixos-system-nuc-26.11.20260714.18b9261`; `hey nuc dry-activate` succeeded. NUC builds of `nuc-scintillate-runtime-access` and `nuc-hermes-cron-executors` passed.
+- Deployment proof: NUC generation 1219 (`/nix/store/vikz1xc22h3al05xawgnykn6dd9s4w59-nixos-system-nuc-26.11.20260714.18b9261`) is current. Live wrapper SHA matches `d5c92ca`; the live `tnote` bundle contains `MDBASE_OPEN_OPTIONS` and both `cache: false` calls. Pre/post-deploy vault fingerprints matched exactly.
+- Natural acceptance, 2026-07-21 20:28 CDT: cron status `ok`; the artifact remained 149 bytes with the same metadata schema, silent status, and no error/failure marker. The service used 1.1 GiB peak over 12.863 s, versus the preceding natural run's 2.3 GiB/64.481 s. Cache mtime remained 19:27. All 299 dirt entries, binary unstaged/staged diff SHAs, stash SHA/count, and two untracked-content hashes matched the 20:25 pre-run fingerprint. No scheduler commit was created; the wrapper only fast-forwarded three already-remote commits dated before the run and ended equal to `origin/main`.
+- Landing checks: `hey agent-audit-tests` passed; `nixfmt --check flake.nix` passed; filtered lock inspection resolved exactly tnote `3dc5771` and agents-workspace `d5c92ca`; the tnote remote resolves the backport branch to `3dc5771` and `main` to the canonical fix lineage.
 - Run receipt: `/Users/emiller/.local/state/dotfiles-agent-runs/a1169ef3c1f1/20260722T002052Z-34e101cbe1da.json`.
 
 ## Reviews
 
 - Plan review: default reviewer was auth-blocked; heterogeneous OpenCode review completed with active family `gpt-5`. The run receipt started at `b074d5b`, and both review passes ran while Git showed only the issue/worklog changes and no Nix diff, proving the gate preceded implementation. Resolved provenance, implementation-description, current/target-pin, success-criteria, rollback, ephemeral-copy, and test-scope findings above.
-- Landing review: pending.
+- Landing review: heterogeneous OpenCode review found no correctness, maintainability, security, performance, or code-smell blocker. Its documentation finding was resolved by scoping upstream commit references to their source repositories; `hey agent-audit-tests` and the Nix ownership checks already passed.
 
 ## Feedback
 
 - `hey update` does not currently inject the local GitHub credential for private `github:` inputs, although rebuild paths do. The unauthenticated attempt changed no state; the retry supplied the existing `gh` credential through `NIX_CONFIG` without printing it.
+- `hey agent-finish` passed agent-quality tests, test-confidence, inventory, and worklog checks. Its `repo-quality` subcheck stops before inspecting task files because this repository has no `prek.toml` or `.pre-commit-config.yaml`; focused source tests, NUC checks/build, deployment proof, and natural acceptance remain the exercised gates.
 
 ## Remaining work
 
-- Update inputs, build, deploy, verify canonical runtime paths.
-- Observe and verify the next natural hourly run.
+- Close the dotfiles issue, publish the default branch/tag, and verify remote equality.
 
 ## Commits
 
-- `34f4d66` regression test on the deployed `tnote` base.
-- `3dc5771` minimal `tnote` cache-bypass backport.
-- `d5c92ca` Scintillate no-op Git sync fix.
-- `cf3bb81` deployment issue and plan record.
+- tnote `34f4d66`: regression test on the deployed base.
+- tnote `3dc5771`: minimal cache-bypass backport.
+- agents-workspace `d5c92ca`: Scintillate no-op Git sync fix.
+- dotfiles `cf3bb81`: deployment issue and plan record.
+- dotfiles `398222a`: NUC input pins and deployment evidence.
