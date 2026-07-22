@@ -112,12 +112,12 @@
           # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
           # rendered smol and can confuse commit/tiny vs prewalk handoff.
           modelRoles = {
-            default = "vibeproxy/claude-opus-4-8:low";
+            default = "vibeproxy/claude-opus-5:low";
             smol = "vibeproxy/claude-sonnet-5:low";
             slow = "vibeproxy/claude-fable-5:high";
-            plan = "vibeproxy/claude-opus-4-8:high";
+            plan = "vibeproxy/claude-opus-5:high";
             vision = "vibeproxy/claude-sonnet-5:medium";
-            designer = "vibeproxy/claude-opus-4-8:medium";
+            designer = "vibeproxy/claude-opus-5:medium";
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
             task = "vibeproxy/claude-sonnet-5:low";
@@ -267,7 +267,7 @@
         home.file.".omp/agent/WATCHDOG.yml".text = ''
           advisors:
             - name: Opus
-              model: vibeproxy/claude-opus-4-8:high
+              model: vibeproxy/claude-opus-5:high
             - name: Codex backup
               model: openai-codex/gpt-5.6-sol:high
         '';
