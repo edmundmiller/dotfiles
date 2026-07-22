@@ -92,10 +92,12 @@ in
       # Remote Login restricts SSH to members of the com.apple.access_ssh
       # group. Ensure our user is enrolled so Moshi/mosh SSH bootstrap is not
       # blocked by the PAM service ACL (pam_sacl).
-      system.activationScripts.sshAccessGroup.text = ''
+      # nix-darwin only runs a fixed set of activation phases; a custom-named
+      # script would be silently ignored, so append to postActivation.
+      system.activationScripts.postActivation.text = mkAfter ''
         echo "ensuring ${config.user.name} has SSH access (com.apple.access_ssh)..." >&2
-        if ! /usr/sbin/dseditgroup -o checkmember -m ${config.user.name} com.apple.access_ssh >/dev/null 2>&1; then
-          /usr/sbin/dseditgroup -o edit -a ${config.user.name} -t user com.apple.access_ssh || true
+        if ! /usr/sbin/dseditgroup -o checkmember -m ${config.user.name} com.apple.access_ssh 2>/dev/null | grep -q '^yes'; then
+          /usr/sbin/dseditgroup -o edit -a ${config.user.name} -t user com.apple.access_ssh
         fi
       '';
     })
