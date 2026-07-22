@@ -418,7 +418,7 @@ in
           {
             action = "media_player.volume_set";
             continue_on_error = true;
-            data.volume_level = 0.45;
+            data.volume_level = 0.48;
             target.entity_id = "media_player.bedtime";
           }
           {
@@ -458,7 +458,7 @@ in
               {
                 action = "media_player.volume_set";
                 continue_on_error = true;
-                data.volume_level = 0.45;
+                data.volume_level = 0.48;
                 target.entity_id = "media_player.bedtime";
               }
               {
