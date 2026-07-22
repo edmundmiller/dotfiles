@@ -16,7 +16,7 @@
 #
 # `auth: none` because the local proxy needs no key. Reached over the
 # OpenAI-compatible surface (/v1), which serves the Claude models too. Select
-# with `--model vibeproxy/<id>` or Ctrl+P; `plan` uses Claude Opus 4.8 from
+# with `--model vibeproxy/<id>` or Ctrl+P; `plan` uses Claude Opus 5 from
 # here while default/smol/slow stay on direct Codex/xai logins (config.yml).
 providers:
   vibeproxy:
@@ -24,8 +24,8 @@ providers:
     api: openai-completions
     auth: none
     models:
-      - id: claude-opus-4-8
-        name: VibeProxy Claude Opus 4.8
+      - id: claude-opus-5
+        name: VibeProxy Claude Opus 5
         contextWindow: 200000
         reasoning: true
       - id: claude-sonnet-5
