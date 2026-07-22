@@ -1,6 +1,6 @@
 # Worklog: dotfiles-hj5f
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -49,7 +49,7 @@ Deploy canonical `tnote` and Scintillate wrapper fixes to the NUC. Stop only aft
 
 ## Remaining work
 
-- Close the dotfiles issue, publish the default branch/tag, and verify remote equality.
+None.
 
 ## Commits
 
