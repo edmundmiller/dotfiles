@@ -86,7 +86,19 @@ in
     }
 
     # Darwin: enable Remote Login for Moshi/SSH over Tailscale.
-    (optionalAttrs isDarwin { services.openssh.enable = true; })
+    (optionalAttrs isDarwin {
+      services.openssh.enable = true;
+
+      # Remote Login restricts SSH to members of the com.apple.access_ssh
+      # group. Ensure our user is enrolled so Moshi/mosh SSH bootstrap is not
+      # blocked by the PAM service ACL (pam_sacl).
+      system.activationScripts.sshAccessGroup.text = ''
+        echo "ensuring ${config.user.name} has SSH access (com.apple.access_ssh)..." >&2
+        if ! /usr/sbin/dseditgroup -o checkmember -m ${config.user.name} com.apple.access_ssh >/dev/null 2>&1; then
+          /usr/sbin/dseditgroup -o edit -a ${config.user.name} -t user com.apple.access_ssh || true
+        fi
+      '';
+    })
 
     # NixOS-specific openssh configuration
     (optionalAttrs (!isDarwin) {
