@@ -54,13 +54,13 @@ post-turn follow-ups one at a time.
 default openai-codex/gpt-5.6-sol:medium        # shared executor; hosts may override
 smol    xai-oauth/grok-composer-2.5-fast       # shared fast/mechanical slot
 slow    openai-codex/gpt-5.6-sol:xhigh         # heavier direct-sub reasoning
-plan    vibeproxy/claude-opus-4-8:high         # strong planning via VibeProxy
+plan    vibeproxy/claude-opus-5:high           # strong planning via VibeProxy
 commit  xai-oauth/grok-composer-2.5-fast       # falls back through smol
 ```
 
 Direct-login providers (Codex on ChatGPT sub, xai-oauth) beat kilo credits for
 the same model. VibeProxy is used where it adds a distinct role (`plan` on
-Claude Opus 4.8); kilo/Claude remains only a fallback. There is no separate
+Claude Opus 5); kilo/Claude remains only a fallback. There is no separate
 "fast" role — `smol` is the fast slot.
 
 ### Per-host overrides
@@ -164,11 +164,12 @@ enables it.
   explicitly (unlike built-in providers, `omp models refresh` won't populate
   them). Curated subset of `curl localhost:8317/v1/models`; add more there.
 - **Mostly additive** — direct Codex/xai/Cursor logins carry default/smol/slow, while
-  `plan` uses `vibeproxy/claude-opus-4-8:high`. Select other proxied models
+  `plan` uses `vibeproxy/claude-opus-5:high`. Select other proxied models
   with `--model vibeproxy/<id>` or Ctrl+P cycling.
 - **The app must be running** (menu bar → Running) and the relevant provider
-  authed, or `vibeproxy/*` calls hit a dead port. Verified round-trip:
-  `omp -p --no-session --no-tools --model vibeproxy/claude-opus-4-8 "say ok"`.
+  authed, or `vibeproxy/*` calls hit a dead port. Round-trip (verified against
+  `claude-opus-4-8`; re-verify after bumping the id):
+  `omp -p --no-session --no-tools --model vibeproxy/claude-opus-5 "say ok"`.
 - **Cask vs. manual install** — if the app is already in `/Applications` from a
   manual download, `brew`/`hey re` may refuse to overwrite it; run
   `brew install --cask vibeproxy --adopt` once so homebrew adopts it.
