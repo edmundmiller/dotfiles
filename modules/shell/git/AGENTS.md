@@ -15,10 +15,10 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 
 git-open, difftastic, git-ai (when `ai.enable`), hunk (when `hunk.enable`), sem, inspect, weave, LGTM, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (Darwin Homebrew: `kitlangton/tap/ghui`)
 
-## Config files symlinked
+## Config files
 
 - `config/git/{config,config-seqera,config-nfcore,ignore,allowed_signers}` → `~/.config/git/`
-- `config/gh/{config.yml,hosts.yml}` → `~/.config/gh/`
+- `config/gh/config.yml` seeds a mutable `~/.config/gh/config.yml` once; GitHub CLI owns it thereafter
 - `config/gh-dash/config.yml` → `~/.config/gh-dash/`
 - `config/lazygit/config.yml` → `~/.config/lazygit/` (force-overwrite)
 - `config/git/aliases.zsh` → zsh rcFiles
