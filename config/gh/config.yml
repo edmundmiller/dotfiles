@@ -1,6 +1,6 @@
-# GitHub CLI Configuration
-# This file is managed by nix-darwin and symlinked from ~/.config/dotfiles/config/gh/
-# Changes here will persist across system rebuilds
+# GitHub CLI defaults, seeded once by nix-darwin when absent.
+# GitHub CLI owns the resulting ~/.config/gh/config.yml so authentication and
+# `gh config set` can update it.
 
 # The current version of the config schema
 version: 1

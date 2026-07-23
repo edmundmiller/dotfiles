@@ -147,6 +147,16 @@ in
             fi
           '';
 
+          home.activation.gh-config-seed = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            config="$HOME/.config/gh/config.yml"
+            if [ -L "$config" ] && ${pkgs.coreutils}/bin/readlink "$config" | ${pkgs.gnugrep}/bin/grep -q '^/nix/store/'; then
+              ${pkgs.coreutils}/bin/rm "$config"
+            fi
+            if [ ! -e "$config" ]; then
+              ${pkgs.coreutils}/bin/install -Dm600 "${configDir}/gh/config.yml" "$config"
+            fi
+          '';
+
           home.activation.git-ai-agent-hook-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${pkgs.python3}/bin/python3 - "$HOME/.factory/settings.json" <<'PY'
             import json
@@ -225,9 +235,8 @@ in
             "git/config-nfcore".source = "${configDir}/git/config-nfcore";
             "git/ignore".source = "${configDir}/git/ignore";
             "git/allowed_signers".source = "${configDir}/git/allowed_signers";
-            # GitHub CLI config (hosts.yml intentionally NOT managed — gh writes
-            # token/scope metadata to it after auth; Nix store symlink would block that)
-            "gh/config.yml".source = "${configDir}/gh/config.yml";
+            # GitHub CLI owns these after `gh auth login` and `gh config set`.
+            # They must remain mutable, unlike Nix-managed defaults.
             # GitHub Dashboard config
             "gh-dash/config.yml".source = "${configDir}/gh-dash/config.yml";
             # Lazygit config
