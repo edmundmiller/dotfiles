@@ -1,11 +1,20 @@
+---
+purpose: Explain GitHub CLI defaults and their runtime ownership.
+applies_to: Changing or recovering `gh` configuration.
+entrypoint: Edit `config.yml`, then remove the runtime copy and run `hey re` to reseed it.
+verification: Run `gh config get git_protocol` and `gh auth status`.
+update_when: GitHub CLI defaults, ownership, or recovery behavior changes.
+---
+
 # GitHub CLI Configuration
 
-This directory contains the GitHub CLI (`gh`) configuration files that are symlinked to `~/.config/gh/`.
+`config.yml` supplies defaults once. Nix seeds it to `~/.config/gh/config.yml`
+when that file is absent; GitHub CLI owns the resulting mutable file.
 
 ## Files
 
-- `config.yml` - Main configuration file with settings and aliases
-- `hosts.yml` - Authentication tokens (not tracked in git)
+- `config.yml` - Seed defaults. Remove `~/.config/gh/config.yml`, then run `hey re` to apply changed defaults.
+- `hosts.yml` - Authentication tokens (not tracked in git; owned by `gh`)
 
 ## Aliases
 
@@ -111,10 +120,10 @@ gh notify -r      # Clear all notifications
 
 ## Configuration
 
-The configuration is managed through nix-darwin and will be symlinked on system rebuild:
+Change `config.yml` for new-machine defaults. Existing machines retain their
+mutable runtime configuration. To reset it to the repository defaults:
 
 ```bash
-hey rebuild       # Rebuild system with new config
+rm ~/.config/gh/config.yml
+hey re
 ```
-
-Settings can be modified in `config.yml` and will take effect immediately.
