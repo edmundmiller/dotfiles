@@ -1,13 +1,12 @@
 # Worklog: rosie-squirty-schedule
 
-Status: deployed-disabled
+Status: deployed-enabled
 
 ## Objective
 
-Replace departure-triggered Roomba starts with disabled-by-default, interval-based
-mapped-room dispatch. Stop after source, tests, documentation, deployment gating,
-and live evidence are recorded; do not activate without fresh Monica phone
-presence and verified map identifiers.
+Replace departure-triggered Roomba starts with interval-based mapped-room
+dispatch that fails closed when presence, map identity, or readiness is
+uncertain.
 
 ## Decisions
 
@@ -40,6 +39,11 @@ presence and verified map identifiers.
 - Initial 2026-07-23 live state: scheduler and arrival automations on;
   scheduler-enabled and two-job helpers off; legacy departure automation absent.
 - All seven map/version/region helpers are `unknown`; no robot command ran.
+- On 2026-07-24 the pilot counter and pilot-only chaining gate were removed at
+  the user's direction. The scheduler and two-job helper are both `on`, the
+  pilot counter is absent, and Home Assistant reports no warnings after reload.
+- Current deployed generation:
+  `/nix/store/diqp59ipkmpmhlayj19kiik8cx2b7kpj-nixos-system-nuc-26.11.20260714.18b9261`.
 
 ## Reviews
 
@@ -57,11 +61,8 @@ presence and verified map identifiers.
 
 None.
 
-## Rollout gates
+## Follow-up
 
-- Prove Monica and Edmund home → away → home transitions.
-- Populate and verify saved-map/version/region helpers.
-- Empty Rosie's bin, then run one controlled mapped-room smoke test per robot.
 - Review one week of recorder history on July 31, 2026.
 
 ## Commits
