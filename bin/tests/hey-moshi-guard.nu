@@ -11,7 +11,7 @@ let blocked = (with-env { MOSHI_CLIENT: "1" } {
     fail-if-moshi-client-rebuild $macos_ctx "switch"
     false
   } catch {|err|
-    ($err.msg | str contains "MOSHI_CLIENT=1") and ($err.msg | str contains "launchctl managername=Background")
+    $err.msg | str contains "Moshi/mosh cannot activate macOS apps"
   }
 })
 assert $blocked
