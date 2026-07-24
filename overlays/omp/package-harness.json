@@ -1,0 +1,12 @@
+{
+  "source": "https://github.com/can1357/oh-my-pi.git",
+  "ref": "v17.1.0",
+  "patches": [
+    "patches/0001-add-herdr-hunk-internal-urls.patch",
+    "patches/0002-add-nextflow-ast-grep-language.patch"
+  ],
+  "checks": [
+    ["bun", "install", "--frozen-lockfile", "--ignore-scripts"],
+    ["bun", "test", "packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts"]
+  ]
+}
