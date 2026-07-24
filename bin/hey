@@ -1,5 +1,7 @@
-#!/usr/bin/env nix
+#!/run/current-system/sw/bin/nix
 #! nix shell nixpkgs#nushell --command nu
+
+$env.PATH = ["/run/current-system/sw/bin"] ++ $env.PATH
 
 source ./hey.d/common.nu
 source ./hey.d/opencode.nu
