@@ -10,12 +10,17 @@
     "patches/0006-links-connector.patch",
     "patches/0007-discrawl-connector.patch",
     "patches/0008-rss-connector-regression.patch",
-    "patches/0009-rss-connector.patch"
+    "patches/0009-rss-connector.patch",
+    "patches/0010-relative-raw-tool-paths.patch"
   ],
   "checks": [
     ["pnpm", "install", "--frozen-lockfile"],
+    ["node", "scripts/patch-deepagents-path-guard.mjs"],
     ["pnpm", "typecheck"],
     [
+      "env",
+      "-u",
+      "OPENWIKI_WIKI_DIR",
       "pnpm",
       "test",
       "test/openwiki-home.test.ts",
@@ -24,6 +29,7 @@
       "test/links-connector.test.ts",
       "test/rss-connector.test.ts",
       "test/ingestion.test.ts",
+      "test/index-middleware.test.ts",
       "test/onboarding.test.ts",
       "test/schedules.test.ts",
       "test/prompt.test.ts",
