@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root=$(cd "$(dirname "$0")/../.." && pwd)
+repo_root=$(git rev-parse --show-toplevel)
 fake_dir=$(mktemp -d)
 trap 'rm -rf "$fake_dir"' EXIT
 
