@@ -136,6 +136,35 @@ let
       )
     ) actions;
 
+  hasActionContinueOnErrorDeep =
+    actions: actionName:
+    any (
+      a:
+      (
+        ((a.action or null) == actionName || (a.service or null) == actionName)
+        && (a.continue_on_error or false)
+      )
+      || (
+        if a ? choose then
+          any (c: hasActionContinueOnErrorDeep (toList (c.sequence or [ ])) actionName) a.choose
+        else
+          false
+      )
+      || (if a ? default then hasActionContinueOnErrorDeep (toList a.default) actionName else false)
+      || (
+        if builtins.hasAttr "then" a then
+          hasActionContinueOnErrorDeep (toList a."then") actionName
+        else
+          false
+      )
+      || (
+        if builtins.hasAttr "else" a then
+          hasActionContinueOnErrorDeep (toList a."else") actionName
+        else
+          false
+      )
+    ) actions;
+
   countActionCallDeep =
     actions: actionName:
     builtins.foldl' (
@@ -342,6 +371,10 @@ let
     if robotCleaningDispatch == null then "" else builtins.toJSON robotCleaningDispatch;
   robotCleaningRunJobJson =
     if robotCleaningRunJob == null then "" else builtins.toJSON robotCleaningRunJob;
+  robotCleaningDispatchSequence =
+    if robotCleaningDispatch == null then [ ] else toList (robotCleaningDispatch.sequence or [ ]);
+  robotCleaningRunJobSequence =
+    if robotCleaningRunJob == null then [ ] else toList (robotCleaningRunJob.sequence or [ ]);
   robotCleaningArrivalActions =
     if robotCleaningArrivalDock == null then [ ] else toList (robotCleaningArrivalDock.action or [ ]);
 
@@ -419,11 +452,12 @@ let
       test =
         robotCleaningRunJob != null
         && hasActionCallDeep (toList (robotCleaningRunJob.sequence or [ ])) "vacuum.send_command"
+        && hasActionContinueOnErrorDeep (toList (robotCleaningRunJob.sequence or [ ])) "vacuum.send_command"
         && hasInfix "pmap_id" robotCleaningRunJobJson
         && hasInfix "user_pmapv_id" robotCleaningRunJobJson
         && hasInfix "regions" robotCleaningRunJobJson
-        && hasInfix "01:30:00" robotCleaningRunJobJson;
-      msg = "robot job runner must send mapped-room commands with a 90-minute watchdog";
+        && hasInfix "01:28:00" robotCleaningRunJobJson;
+      msg = "robot job runner must handle mapped-room command errors within a 90-minute watchdog";
     }
     {
       test =
@@ -432,8 +466,36 @@ let
         && hasInfix "sensor.squirty_battery" robotCleaningRunJobJson
         && hasInfix "tank_level" robotCleaningRunJobJson
         && hasInfix "detected_pad" robotCleaningRunJobJson
-        && hasInfix "successful_missions" robotCleaningRunJobJson;
-      msg = "robot job runner must guard readiness and require successful mission evidence";
+        && hasInfix "successful_missions" robotCleaningRunJobJson
+        && hasInfix "is_number" robotCleaningRunJobJson;
+      msg = "robot job runner must guard readiness and require numeric successful mission evidence";
+    }
+    {
+      test =
+        robotCleaningDispatchSequence != [ ]
+        && ((head robotCleaningDispatchSequence).condition or null) == "template"
+        && hasInfix "09:00:00" ((head robotCleaningDispatchSequence).value_template or "")
+        && hasInfix "600" ((head robotCleaningDispatchSequence).value_template or "")
+        && hasInfix "input_datetime.robot_cleaning_last_dispatch" (
+          (head robotCleaningDispatchSequence).value_template or ""
+        )
+        && length robotCleaningRunJobSequence > 1
+        && ((head robotCleaningRunJobSequence).condition or null) == "template"
+        && hasInfix "rosie_high_traffic" ((head robotCleaningRunJobSequence).value_template or "")
+        && hasInfix "rosie_remaining" ((head robotCleaningRunJobSequence).value_template or "")
+        && hasInfix "squirty_high_traffic" ((head robotCleaningRunJobSequence).value_template or "")
+        && hasInfix "manual_test" ((builtins.elemAt robotCleaningRunJobSequence 1).value_template or "")
+        && hasInfix "from_dispatch" ((builtins.elemAt robotCleaningRunJobSequence 1).value_template or "")
+        && hasInfix "input_datetime.robot_cleaning_last_dispatch" (
+          (builtins.elemAt robotCleaningRunJobSequence 1).value_template or ""
+        );
+      msg = "job scripts must whitelist job IDs and require explicit internal-dispatch or manual-test authorization";
+    }
+    {
+      test =
+        hasInfix "00:15:00" robotCleaningDispatchJson
+        && hasInfix "selected_robot" robotCleaningDispatchJson;
+      msg = "two-job chaining must wait boundedly for the first robot to dock";
     }
     {
       test =
