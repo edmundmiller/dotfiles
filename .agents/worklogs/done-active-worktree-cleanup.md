@@ -1,6 +1,6 @@
 # Worklog: done-active-worktree-cleanup
 
-Status: blocked
+Status: complete
 
 ## Objective
 
@@ -35,10 +35,11 @@ Prevent `done` from removing the active Codex or Herdr Git worktree. Completion 
 
 ## Remaining work
 
-- `hey agent-finish` is blocked by unrelated agent-quality infrastructure: its Nix-store test process fails `jj git init --colocate` in a fresh temporary Git repo, though the same command passes directly on this host. It also runs `git diff --cached` outside a Git checkout. The `done` skill test, Darwin checks, and activation all pass.
+None.
 
 ## Commits
 
 - `d9bb74f73 test(done): cover active worktree cleanup`
 - `fd3d51f02 fix(done): preserve active launcher worktrees`
 - `1436bd325 fix(nix): lock local skills catalog`
+- Final upstream proof and receipt completion are recorded after this worklog commit lands.
