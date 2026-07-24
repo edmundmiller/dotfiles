@@ -1,0 +1,170 @@
+:root {
+  color-scheme: light dark;
+  --paper: #f7f4ed;
+  --ink: #24231f;
+  --muted: #67645b;
+  --line: #d7d0c3;
+  --accent: #a63d2f;
+  --accent-soft: #f1ded7;
+  --correct: #235d3a;
+  --correct-soft: #dcebdd;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.58;
+}
+
+main {
+  width: min(46rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 4rem 0 6rem;
+}
+
+h1,
+h2 {
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: clamp(2.4rem, 8vw, 4.6rem);
+  margin: 0 0 0.4rem;
+}
+
+h2 {
+  margin-top: 2.6rem;
+}
+
+.kicker,
+.meta {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lede {
+  font-size: 1.35rem;
+  max-width: 38rem;
+}
+
+.model {
+  border-left: 0.28rem solid var(--accent);
+  margin: 2rem 0;
+  padding: 0.4rem 0 0.4rem 1.2rem;
+}
+
+.model strong {
+  color: var(--accent);
+}
+
+.flow {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 2rem 0;
+}
+
+.flow div {
+  border-top: 2px solid var(--ink);
+  padding-top: 0.6rem;
+}
+
+.flow small {
+  color: var(--muted);
+  display: block;
+}
+
+.quiz {
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  margin-top: 2rem;
+  padding: 1.2rem;
+}
+
+.answers {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0;
+}
+
+button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+button:hover,
+button:focus-visible {
+  border-color: var(--accent);
+}
+
+button.correct {
+  background: var(--correct-soft);
+  border-color: var(--correct);
+}
+
+button.incorrect {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.feedback {
+  min-height: 3rem;
+}
+
+.callout {
+  background: color-mix(in srgb, var(--paper), var(--accent) 6%);
+  border: 1px solid var(--line);
+  padding: 1rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  margin-top: 3rem;
+  padding-top: 1rem;
+}
+
+@media (max-width: 42rem) {
+  main {
+    padding-top: 2rem;
+  }
+
+  .flow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  .quiz {
+    break-inside: avoid;
+  }
+}

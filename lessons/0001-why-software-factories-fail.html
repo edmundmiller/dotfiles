@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Why Software Factories Fail</title>
+    <link rel="stylesheet" href="../assets/course.css" />
+    <script src="../assets/quiz.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <p class="kicker">Lesson 0001 · about 6 minutes</p>
+      <h1>Why software factories fail</h1>
+      <p class="lede">
+        Not because agents cannot produce working code. Because the factory rewards what it can
+        measure quickly—and maintainability is not one of those things.
+      </p>
+
+      <h2>The mechanism</h2>
+      <div class="flow" aria-label="Failure mechanism">
+        <div><strong>1. Generate</strong><small>Code arrives cheaply</small></div>
+        <div><strong>2. Verify</strong><small>Tests pass quickly</small></div>
+        <div><strong>3. Accumulate</strong><small>Design debt stays hidden</small></div>
+        <div><strong>4. Pay</strong><small>Future changes become costly</small></div>
+      </div>
+
+      <div class="model">
+        <strong>Factory throughput is a local metric.</strong><br />
+        Maintainability is a delayed system property.
+      </div>
+
+      <p>
+        A benchmark such as SWE-bench asks whether a patch resolves an issue without breaking known
+        tests. That is useful evidence. It does not answer whether the patch preserves clear
+        boundaries, keeps one concept in one place, or makes the next unknown requirement cheap.
+        Those costs may surface months later as “shotgun surgery”: one conceptual change requiring
+        edits in many places.
+      </p>
+
+      <p>
+        Harness engineering genuinely helps. Better tools, context, sandboxes, tests, and review
+        loops raise the floor. But a harness cannot optimize a property for which it has no timely,
+        reliable signal. More loops around an incomplete verifier optimize the incompleteness
+        harder.
+      </p>
+
+      <h2>Retrieve before revealing</h2>
+      <section class="quiz" data-quiz>
+        <p>
+          <strong>Scenario:</strong> An agent ships ten passing PRs per day. Three months later,
+          every feature requires edits across six modules. Which capability was never verified?
+        </p>
+        <div class="answers">
+          <button
+            data-answer="wrong"
+            data-feedback="Throughput was measured directly and improved."
+          >
+            Increase agent task throughput
+          </button>
+          <button
+            data-answer="correct"
+            data-feedback="Correct. Change locality is a maintainability property whose failure appears later."
+          >
+            Preserve future change locality
+          </button>
+          <button
+            data-answer="wrong"
+            data-feedback="Test speed affects feedback cost, not the spreading design damage."
+          >
+            Reduce current test runtime
+          </button>
+        </div>
+        <p class="feedback" data-feedback aria-live="polite">Choose an answer.</p>
+      </section>
+
+      <h2>The practical response</h2>
+      <p>
+        Keep humans at the high-leverage decision points: product intent, architecture, program
+        shape, and review of small vertical slices. The goal is not to supervise every keystroke. It
+        is to catch expensive design errors while the diff is still small.
+      </p>
+
+      <div class="callout">
+        <strong>Your diagnostic:</strong> identify the reward, its blind spot, the delay before harm
+        appears, and the cheapest human steering point.
+      </div>
+
+      <h2>Apply it now</h2>
+      <p>Pick one agent workflow you use. Without reopening this lesson, answer:</p>
+      <ol>
+        <li>What fast signal declares success?</li>
+        <li>What important quality can that signal miss?</li>
+        <li>Where would you insert the cheapest human judgment?</li>
+      </ol>
+
+      <p>
+        Reply with your three answers. I’ll give immediate feedback and record the learning only
+        after you demonstrate it.
+      </p>
+
+      <footer>
+        Primary reading:
+        <a
+          href="https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/wsff.md"
+          >Why Software Factories Fail</a
+        >. Supporting evidence:
+        <a href="https://openreview.net/forum?id=VTF8yNQM66">SWE-bench</a> and
+        <a href="https://arxiv.org/abs/2405.15793">SWE-agent</a>. Keep the
+        <a href="../reference/software-factory-diagnostic.html">diagnostic card</a> nearby. Ask your
+        teaching agent about anything unclear.
+      </footer>
+    </main>
+  </body>
+</html>
