@@ -1,6 +1,6 @@
 # Worklog: nuc-llm-agents-update
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -22,6 +22,9 @@ Update the `llm-agents` flake input if its pinned revision is behind upstream, d
 - `hey nuc-wt build` re-synced and successfully built the final worktree as `/nix/store/mld1dc8iz2gcdy21qkm9gll0s40gn2nv-nixos-system-nuc-26.11.20260714.18b9261`.
 - `nix develop -c pkg-check omp` fresh-cloned OMP v17.1.0, applied both retained patches, and passed all 10 tests in `herdr-hunk-protocol.test.ts`.
 - On NUC, the exact overridden Nix package ran `cargo test -p pi-natives`: 178 passed, including `ast::tests::nextflow_process_pattern_matches_inferred_nf_file`.
+- `hey nuc dry-activate` succeeded, then `hey nuc` activated NUC generation 1226 at 2026-07-24 00:37:09.
+- Deployed CLI smoke: `codex-cli 0.145.0` passed `--help` and reports `Logged in using ChatGPT`; `omp/17.1.0` passed `--help` and `--smoke-test`.
+- The deployed Codex CLI exposes `codex remote-control start` and `codex remote-control pair` for phone pairing.
 
 ## Reviews
 
@@ -32,11 +35,12 @@ Update the `llm-agents` flake input if its pinned revision is behind upstream, d
 
 - `hey agent-start` dispatches incorrectly; `python3 bin/agent-quality start` produced the required run receipt.
 - Raw `cargo test -p pi-natives` is not a portable harness check on this Darwin host: it fails even with `RUSTC_BOOTSTRAP=1` while resolving `const_random_macro`; the canonical Nix build sets the complete Rust environment and already compiled the patched package.
+- Codex emits a non-fatal stale-`arg0` temporary-directory cleanup permission warning; its version, help, and authenticated status all succeeded.
 
 ## Remaining work
 
-Land the reviewed change, dry-activate, deploy, and smoke-test NUC.
+None.
 
 ## Commits
 
-Pending.
+Configuration: `b6eda31af047055f2cd8eca6fd588234e7a560fb` on `main`.
