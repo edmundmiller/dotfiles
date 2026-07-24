@@ -107,6 +107,11 @@
       flake = false;
     };
 
+    modem-skills = {
+      url = "github:modem-dev/skills";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -517,6 +522,12 @@
                   filter.maxDepth = 1;
                 };
 
+                modem = {
+                  path = inputs.modem-skills.outPath;
+                  subdir = ".";
+                  filter.maxDepth = 1;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -590,6 +601,9 @@
 
                   browser-control.from = "browser-control";
                   browser-control.path = "browser-control";
+
+                  write-discoverable-code.from = "modem";
+                  write-discoverable-code.path = "write-discoverable-code";
 
                   animation-vocabulary.from = "emilkowalski";
                   animation-vocabulary.path = "animation-vocabulary";
