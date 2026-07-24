@@ -2236,6 +2236,8 @@ in
       # Replay Echo / NIOSSH compatibility: avoid bleeding-edge-only defaults
       # that some mobile SSH stacks currently choke on.
       KexAlgorithms = [
+        "mlkem768x25519-sha256"
+        "sntrup761x25519-sha512"
         "curve25519-sha256"
         "curve25519-sha256@libssh.org"
         "ecdh-sha2-nistp256"
