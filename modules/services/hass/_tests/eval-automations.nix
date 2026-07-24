@@ -445,8 +445,9 @@ let
           countActionCallDeep (toList (robotCleaningDispatch.sequence or [ ])) "script.robot_cleaning_run_job"
           == 2
         && hasInfix "input_boolean.robot_cleaning_two_job_enabled" robotCleaningDispatchJson
-        && hasInfix "counter.robot_cleaning_pilot_successes" robotCleaningDispatchJson;
-      msg = "robot cleaning dispatcher must cap work at two jobs and gate chaining on pilot approval";
+        && !hasInfix "counter.robot_cleaning_pilot_successes" robotCleaningDispatchJson
+        && !hasInfix "pilot" robotCleaningRunJobJson;
+      msg = "robot cleaning dispatcher must cap work at two jobs without pilot gating";
     }
     {
       test =
@@ -514,11 +515,11 @@ let
         &&
           (haConfig.input_boolean.robot_cleaning_two_job_enabled.name or null)
           == "Robot Cleaning Two-job Chaining"
-        && (haConfig.counter.robot_cleaning_pilot_successes.maximum or null) == 3
+        && !((haConfig.counter or { }) ? robot_cleaning_pilot_successes)
         && haConfig.input_datetime ? robot_cleaning_rosie_high_traffic_last_success
         && haConfig.input_datetime ? robot_cleaning_rosie_remaining_last_success
         && haConfig.input_datetime ? robot_cleaning_squirty_high_traffic_last_success;
-      msg = "robot cleaning must expose persistent enablement, pilot, and last-success helpers";
+      msg = "robot cleaning must expose persistent enablement and last-success helpers without a pilot counter";
     }
 
     {

@@ -143,15 +143,6 @@ in
       };
     };
 
-    counter.robot_cleaning_pilot_successes = {
-      name = "Robot Cleaning Pilot Successes";
-      icon = "mdi:counter";
-      minimum = 0;
-      maximum = 3;
-      step = 1;
-      restore = true;
-    };
-
     script = {
       robot_cleaning_run_job = {
         alias = "Run one mapped robot cleaning job";
@@ -173,7 +164,6 @@ in
               success_sensor = "{{ 'sensor.squirty_successful_missions' if job == 'squirty_high_traffic' else 'sensor.rosie_successful_missions' }}";
               failed_sensor = "{{ 'sensor.squirty_failed_missions' if job == 'squirty_high_traffic' else 'sensor.rosie_failed_missions' }}";
               canceled_sensor = "{{ 'sensor.squirty_canceled_missions' if job == 'squirty_high_traffic' else 'sensor.rosie_canceled_missions' }}";
-              pilot_run = "{{ count_pilot | default(false) | bool(false) }}";
               last_success_entity = "{{ 'input_datetime.robot_cleaning_rosie_high_traffic_last_success' if job == 'rosie_high_traffic' else ('input_datetime.robot_cleaning_rosie_remaining_last_success' if job == 'rosie_remaining' else 'input_datetime.robot_cleaning_squirty_high_traffic_last_success') }}";
               pmap_entity = "{{ 'input_text.robot_cleaning_squirty_pmap_id' if job == 'squirty_high_traffic' else 'input_text.robot_cleaning_rosie_pmap_id' }}";
               map_version_entity = "{{ 'input_text.robot_cleaning_squirty_user_pmapv_id' if job == 'squirty_high_traffic' else 'input_text.robot_cleaning_rosie_user_pmapv_id' }}";
@@ -224,7 +214,6 @@ in
               success_before = "{{ states(success_sensor) | int(0) }}";
               failed_before = "{{ states(failed_sensor) | int(0) }}";
               canceled_before = "{{ states(canceled_sensor) | int(0) }}";
-              pilot_before = "{{ states('counter.robot_cleaning_pilot_successes') | int(0) }}";
             };
           }
           {
@@ -323,31 +312,6 @@ in
                     target.entity_id = "{{ last_success_entity | trim }}";
                     data.datetime = "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}";
                   }
-                  {
-                    "if" = [
-                      {
-                        condition = "template";
-                        value_template = "{{ pilot_run | bool(false) and pilot_before | int(0) < 3 }}";
-                      }
-                    ];
-                    "then" = [
-                      {
-                        action = "counter.increment";
-                        target.entity_id = "counter.robot_cleaning_pilot_successes";
-                      }
-                    ];
-                  }
-                  {
-                    "if" = [
-                      {
-                        condition = "template";
-                        value_template = "{{ pilot_run | bool(false) and pilot_before | int(0) == 2 }}";
-                      }
-                    ];
-                    "then" = [
-                      (notifyException "Three pilot jobs completed. Review Phoebe's response before enabling two-job chaining.")
-                    ];
-                  }
                 ];
               }
             ];
@@ -404,7 +368,6 @@ in
             action = "script.robot_cleaning_run_job";
             data = {
               job = "{{ selected_job | trim }}";
-              count_pilot = true;
               from_dispatch = true;
             };
           }
@@ -414,11 +377,6 @@ in
                 condition = "state";
                 entity_id = "input_boolean.robot_cleaning_two_job_enabled";
                 state = "on";
-              }
-              {
-                condition = "numeric_state";
-                entity_id = "counter.robot_cleaning_pilot_successes";
-                above = 2;
               }
               {
                 condition = "template";
@@ -514,7 +472,6 @@ in
                         action = "script.robot_cleaning_run_job";
                         data = {
                           job = "{{ second_job | trim }}";
-                          count_pilot = false;
                           from_dispatch = true;
                         };
                       }
