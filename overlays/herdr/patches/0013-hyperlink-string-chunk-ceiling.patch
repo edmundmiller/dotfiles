@@ -1,0 +1,97 @@
+diff --git i/vendor/libghostty-vt/src/terminal/PageList.zig w/vendor/libghostty-vt/src/terminal/PageList.zig
+index 6315596..b178996 100644
+--- i/vendor/libghostty-vt/src/terminal/PageList.zig
++++ w/vendor/libghostty-vt/src/terminal/PageList.zig
+@@ -1613,10 +1613,15 @@ const ReflowCursor = struct {
+ 
+             // Ensure that the string alloc has sufficient capacity
+             // to dupe the link (and the ID if it's not implicit).
++            // PageEntry.dupe allocates URI and explicit ID separately; each is
++            // chunk-rounded. Cost is ceil(uri)+ceil(id), not ceil(uri+id).
++            // Under-probing lets dupe OOM after a "successful" check and
++            // ReleaseSafe hits unreachable (herdr-2026-07-19-182341.ips).
++            const StringAlloc = @TypeOf(self.page.string_alloc);
+             const additional_required_string_capacity =
+-                src_link.uri.len +
++                StringAlloc.bytesRequired(u8, src_link.uri.len) +
+                 switch (src_link.id) {
+-                    .explicit => |v| v.len,
++                    .explicit => |v| StringAlloc.bytesRequired(u8, v.len),
+                     .implicit => 0,
+                 };
+             // Keep trying until we have enough capacity.
+@@ -11914,6 +11919,74 @@ test "PageList resize reflow exceeds hyperlink memory forcing capacity increase"
+     try s.resize(.{ .cols = s.cols + 1, .reflow = true });
+ }
+ 
++test "PageList chunk_ceiling_repro hyperlink explicit id" {
++    // herdr-2026-07-19-182341.ips: resizeCols → "link dupe failed with capacity check"
++    // → ReleaseSafe unreachable.
++    //
++    // PageEntry.dupe does two chunk-rounded string allocs. Old writeCell probed
++    // one alloc of uri+id. Reflow two links onto one page so the second lands
++    // with free in [wrong_probe, dupe_need) and must grow capacity first.
++    const testing = std.testing;
++    const alloc = testing.allocator;
++
++    // 33-byte URI/ID each round to two 32-byte chunks (64). Summed length 66
++    // rounds to 96. Two separate allocs need 128.
++    const uri2 = "u" ** 33;
++    const id2 = "i" ** 33;
++    // string_chunk=32: bytesRequired(66)=96, bytesRequired(33)*2=128
++    const wrong_probe: usize = 96;
++    const dupe_need: usize = 128;
++    try testing.expect(wrong_probe < dupe_need);
++    const filler_len = pagepkg.string_bytes_default - wrong_probe;
++
++    var s = try init(alloc, 2, 10, 0);
++    defer s.deinit();
++
++    {
++        const page = &s.pages.first.?.data;
++        page.pauseIntegrityChecks(true);
++        for (page.size.rows..page.capacity.rows) |_| {
++            _ = try s.grow();
++        }
++        page.pauseIntegrityChecks(false);
++        try s.growRows(1);
++        try testing.expectEqual(@as(usize, 2), s.totalPages());
++    }
++
++    {
++        const page = &s.pages.first.?.data;
++        const id = try page.insertHyperlink(.{
++            .id = .{ .implicit = 0 },
++            .uri = "a" ** filler_len,
++        });
++        const rac = page.getRowAndCell(page.size.cols - 1, page.size.rows - 1);
++        rac.row.wrap = true;
++        rac.cell.* = .{
++            .content_tag = .codepoint,
++            .content = .{ .codepoint = 'A' },
++        };
++        try page.setHyperlink(rac.row, rac.cell, id);
++    }
++
++    {
++        const page = &s.pages.last.?.data;
++        const id = try page.insertHyperlink(.{
++            .id = .{ .explicit = id2 },
++            .uri = uri2,
++        });
++        const rac = page.getRowAndCell(0, 0);
++        rac.row.wrap_continuation = true;
++        rac.cell.* = .{
++            .content_tag = .codepoint,
++            .content = .{ .codepoint = 'B' },
++        };
++        try page.setHyperlink(rac.row, rac.cell, id);
++    }
++
++    try s.resize(.{ .cols = s.cols + 1, .reflow = true });
++}
++
++
+ test "PageList resize reflow exceeds grapheme memory forcing capacity increase" {
+     const testing = std.testing;
+     const alloc = testing.allocator;
