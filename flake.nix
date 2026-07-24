@@ -729,6 +729,16 @@
                 files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
                 stages = [ "pre-commit" ];
               };
+              hey-active-nix = {
+                enable = pkgs.stdenv.hostPlatform.isDarwin;
+                name = "hey-active-nix";
+                description = "Keep hey independent of stale inherited Nix paths";
+                entry = "${pkgs.bash}/bin/bash ${./bin/tests/hey-active-nix.bash}";
+                language = "system";
+                pass_filenames = false;
+                files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix)$";
+                stages = [ "pre-commit" ];
+              };
               omp-config-yml =
                 let
                   # Plain llm-agents omp is unsigned; Darwin kills it (SIGKILL).
