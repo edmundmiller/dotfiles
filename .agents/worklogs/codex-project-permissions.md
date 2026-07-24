@@ -22,6 +22,7 @@ Make NUC Codex remote sessions in `/home/emiller/mill-docs` write the repository
 - Recent `codex_chatgpt_ios_remote` sessions in MilDocs used inherited read-only defaults, confirming Litter did not supply a broader sandbox override.
 - `hey nuc-wt build` completed on the NUC; task-scoped `nix fmt -- --ci` reported zero changes.
 - The source `agent-quality-tests` suite passed all 15 tests.
+- `darwin-rebuild switch --flake .` activated the landed configuration on `MacTraitor-Pro`.
 
 ## Reviews
 
