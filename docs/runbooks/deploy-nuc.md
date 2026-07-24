@@ -84,6 +84,49 @@ ssh nuc "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system 
 hey nuc-logs home-assistant.service 30
 ```
 
+## Codex Remote Control
+
+Codex remote control deliberately splits ownership. The foreground `codex` command remains
+Nix-managed, while the daemon runs the official installer's mutable binary at
+`$HOME/.codex/packages/standalone/current/codex`. The source of truth for this boundary is
+`modules/agents/codex/AGENTS.md`.
+
+The standalone installer is a one-time bootstrap for each NUC home directory; `hey nuc` does
+not install it. On a new home, connect to the NUC and bootstrap remote control:
+
+```bash
+ssh nuc
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+codex remote-control start
+codex remote-control pair
+```
+
+`pair` prints a short-lived code for the phone. Keep the Nix profile before
+`$HOME/.local/bin` in `PATH`; do not remove the Nix Codex package.
+
+Dotfiles do not install a systemd unit for this daemon. After a NUC reboot, run
+`codex remote-control start` before pairing if daemon status is not `running`.
+
+Verify both sides of the ownership boundary:
+
+```bash
+command -v codex
+codex app-server daemon version
+```
+
+`command -v` must resolve to `/etc/profiles/per-user/$USER/bin/codex`. Daemon status must
+report `running` and a `managedCodexPath` under
+`$HOME/.codex/packages/standalone/current/`.
+
+Recovery:
+
+- Missing managed standalone install: rerun the official installer, then
+  `codex remote-control start`.
+- Missing `app-server-control.sock`: the daemon did not start; run
+  `codex remote-control start` before `pair`.
+- `failed to clean up stale arg0 temp dirs`: restore ownership with
+  `sudo chown -R "$USER:users" "$HOME/.codex/tmp/arg0"`.
+
 ## Rollback
 
 If the deployment causes issues:
