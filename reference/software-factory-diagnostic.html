@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Software Factory Failure Diagnostic</title>
+    <link rel="stylesheet" href="../assets/course.css" />
+  </head>
+  <body>
+    <main>
+      <p class="kicker">Quick reference</p>
+      <h1>Factory failure diagnostic</h1>
+      <p class="lede">
+        A factory fails when its fast feedback rewards output while its delayed feedback hides
+        damage.
+      </p>
+
+      <h2>Ask four questions</h2>
+      <ol>
+        <li><strong>Reward:</strong> What observable signal tells the agent it succeeded?</li>
+        <li><strong>Blind spot:</strong> What important quality is absent from that signal?</li>
+        <li><strong>Delay:</strong> When will the missing quality become costly?</li>
+        <li>
+          <strong>Steering:</strong> Where can a human cheaply catch it before code volume
+          multiplies?
+        </li>
+      </ol>
+
+      <div class="callout">
+        <strong>Canonical pattern</strong><br />
+        Tests pass now → design debt is invisible → future changes spread → diagnosis and repair
+        erase the throughput gain.
+      </div>
+
+      <h2>Use automation confidently when</h2>
+      <p>
+        The task is bounded, the verifier closely matches the real outcome, failure is reversible,
+        and the diff is cheap to inspect.
+      </p>
+
+      <h2>Increase human steering when</h2>
+      <p>
+        The change establishes patterns, crosses subsystem boundaries, has delayed failure modes, or
+        produces a large diff before anything can be exercised.
+      </p>
+
+      <footer>
+        Companion to <a href="../lessons/0001-why-software-factories-fail.html">Lesson 0001</a>.
+      </footer>
+    </main>
+  </body>
+</html>
