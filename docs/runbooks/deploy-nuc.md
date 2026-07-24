@@ -120,32 +120,43 @@ report `running` and a `managedCodexPath` under
 
 ### Project permission profiles
 
-The project's trusted `.codex/config.toml` owns its named permission profile.
-MilDocs uses `mill-docs`: commands may write `~/mill-docs` and its Git metadata,
-read `~/obsidian-vault` and the standalone Codex runtime, and cannot read other
-host files or persist writes there. Command network is disabled, so fetch and
-push remain host-side operations.
+Each trusted project's `.codex/config.toml` owns its named profile:
 
-The writable `~/.codex/config.toml` must trust `/home/emiller/mill-docs`. The
-bootstrap source is `config/codex/config.toml`, but existing homes retain local
-Codex edits. Never add a legacy `sandbox_mode`; it overrides named profiles.
+- `mill-docs` may write `~/mill-docs` and its Git metadata, read
+  `~/obsidian-vault`, and cannot read other host files or persist writes there.
+- `obsidian-vault` may write `~/obsidian-vault` and its Git metadata. Its
+  `.agents`, `.codex`, and `.qmd` policy directories remain read-only.
 
-Litter must start the thread in `/home/emiller/mill-docs` with `permissions` set
-to `mill-docs` or omitted so the project default applies. A legacy `sandbox`
-request overrides the project profile.
+Both profiles may read the standalone Codex runtime and disable command network,
+so fetch and push remain host-side operations.
+
+The writable `~/.codex/config.toml` must trust `/home/emiller/mill-docs` and
+`/home/emiller/obsidian-vault`. The bootstrap source is
+`config/codex/config.toml`, but existing homes retain local Codex edits. Never
+add a legacy `sandbox_mode`; it overrides named profiles.
+
+Litter must start the thread in the target repository with `permissions` omitted
+so the project default applies, or set to that project's named profile. A legacy
+`sandbox` request overrides the project profile.
 
 Smoke-test the command boundary:
 
 ```bash
 codex sandbox -C "$HOME/mill-docs" -P mill-docs test -w "$HOME/mill-docs"
 codex sandbox -C "$HOME/mill-docs" -P mill-docs test -r "$HOME/obsidian-vault/AGENTS.md"
-codex sandbox -C "$HOME/mill-docs" -P mill-docs test -r "$HOME/.codex/config.toml"
+codex sandbox -C "$HOME/obsidian-vault" -P obsidian-vault test -w "$HOME/obsidian-vault"
+codex sandbox -C "$HOME/obsidian-vault" -P obsidian-vault test -w "$HOME/obsidian-vault/.git"
+codex sandbox -C "$HOME/obsidian-vault" -P obsidian-vault test -r "$HOME/.codex/config.toml"
+(cd "$HOME/obsidian-vault" && qmd status)
 ```
 
-The first two commands must exit zero; the final command must exit nonzero.
-Permission profiles do not constrain hooks, plugins, browser tools, or remote
-MCP services. MilDocs disables inherited `fff` separately while retaining its
-explicit Granola and Linear integrations.
+The repository checks must exit zero, the host-config check must exit nonzero,
+and qmd must report `$HOME/obsidian-vault/.qmd/index.sqlite`.
+
+Permission profiles do not constrain hooks, plugins, browser tools, or MCP
+services. Both profiles disable inherited `fff`. The vault retains qmd because
+the app-server starts it in the vault and `.qmd` is read-only; its explicit
+remote MCP services remain independent capabilities.
 
 Recovery:
 
