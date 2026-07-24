@@ -29,6 +29,10 @@ presence and verified map identifiers.
 - Focused HA assertion evaluation returned `[]`.
 - `hey agent-audit-tests` returned `PASS test-confidence`.
 - `hey agent-finish` passed applicable repository quality checks.
+- Review regressions first failed on command-error handling, numeric mission
+  counters, direct-call guards, and bounded docking. The repaired assertions
+  return `[]`; final NUC build:
+  `/nix/store/n7ydvlhvhl30p6rgff7f2qfi0lzvshgb-nixos-system-nuc-26.11.20260714.18b9261`.
 - Live recorder confirms expected readiness entities; Rosie is currently blocked
   by a full bin. Robot entity attributes do not expose saved-map IDs.
 
@@ -37,6 +41,11 @@ presence and verified map identifiers.
 - Plan source: user-approved Rosie + Squirty Adaptive Cleaning Schedule.
 - Automated plan review was unavailable because the configured reviewer returned
   `Authentication required`; no retry was made.
+- Independent standards and specification reviews found command exceptions
+  aborting notifications, unavailable counters permitting false success, direct
+  calls bypassing guards, a 92-minute watchdog, and premature chaining before
+  docking. Re-review also found unvalidated job IDs and ambiguous direct job
+  authorization. All were repaired with regression assertions.
 
 ## Feedback
 
