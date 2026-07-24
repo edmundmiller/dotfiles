@@ -216,6 +216,22 @@
         "type": "github"
       }
     },
+    "modem-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784555544,
+        "narHash": "sha256-xLUM5Wg168xFn/55WFOrnXvoiVuyUVPDPk52ITEldmA=",
+        "owner": "modem-dev",
+        "repo": "skills",
+        "rev": "edcdedb38a545f67c065f4084b3627517f0d79cf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "modem-dev",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1781577229,
@@ -340,6 +356,7 @@
         "markit-repo": "markit-repo",
         "mattpocock-skills": "mattpocock-skills",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
+        "modem-skills": "modem-skills",
         "nixpkgs": "nixpkgs_2",
         "openai-skills": "openai-skills",
         "pi-extension-skills": "pi-extension-skills",
