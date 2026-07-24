@@ -98,7 +98,7 @@
 
     # Agent skills catalog (child flake). Owns agent-skills-nix + remote skill source pins.
     skills-catalog = {
-      url = "./skills";
+      url = "path:./skills";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
