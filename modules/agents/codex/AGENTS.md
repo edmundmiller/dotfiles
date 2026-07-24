@@ -24,6 +24,19 @@ Remote control deliberately uses a second, installer-managed Codex binary for it
 - `config.toml` after bootstrap — user-managed and writable
 - `packages/standalone/` — mutable daemon runtime installed and updated by the official Codex installer
 
+## Project Permissions
+
+Put repository-specific policies in the repository's trusted `.codex/config.toml`.
+Use a named `default_permissions` profile with `:minimal = "read"` and explicit
+absolute or `~/...` roots when reads must be confined. Legacy `sandbox_mode`
+settings take precedence over named profiles and must not remain in loaded config.
+On the NUC, grant read access to `~/.codex/packages/standalone` so bundled
+Bubblewrap can launch the installer-managed command runtime.
+
+Permission profiles constrain local command filesystem and network access only.
+Scope or disable filesystem-capable MCP servers separately. Hooks, plugins, browser
+tools, and remote MCP services remain independent capabilities.
+
 ## NUC Remote Control
 
 Keep both installations: the foreground CLI remains Nix-managed, while the daemon uses the

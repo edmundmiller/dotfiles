@@ -118,6 +118,35 @@ codex app-server daemon version
 report `running` and a `managedCodexPath` under
 `$HOME/.codex/packages/standalone/current/`.
 
+### Project permission profiles
+
+The project's trusted `.codex/config.toml` owns its named permission profile.
+MilDocs uses `mill-docs`: commands may write `~/mill-docs` and its Git metadata,
+read `~/obsidian-vault` and the standalone Codex runtime, and cannot read other
+host files or persist writes there. Command network is disabled, so fetch and
+push remain host-side operations.
+
+The writable `~/.codex/config.toml` must trust `/home/emiller/mill-docs`. The
+bootstrap source is `config/codex/config.toml`, but existing homes retain local
+Codex edits. Never add a legacy `sandbox_mode`; it overrides named profiles.
+
+Litter must start the thread in `/home/emiller/mill-docs` with `permissions` set
+to `mill-docs` or omitted so the project default applies. A legacy `sandbox`
+request overrides the project profile.
+
+Smoke-test the command boundary:
+
+```bash
+codex sandbox -C "$HOME/mill-docs" -P mill-docs test -w "$HOME/mill-docs"
+codex sandbox -C "$HOME/mill-docs" -P mill-docs test -r "$HOME/obsidian-vault/AGENTS.md"
+codex sandbox -C "$HOME/mill-docs" -P mill-docs test -r "$HOME/.codex/config.toml"
+```
+
+The first two commands must exit zero; the final command must exit nonzero.
+Permission profiles do not constrain hooks, plugins, browser tools, or remote
+MCP services. MilDocs disables inherited `fff` separately while retaining its
+explicit Granola and Linear integrations.
+
 Recovery:
 
 - Missing managed standalone install: rerun the official installer, then
