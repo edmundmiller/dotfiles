@@ -121,6 +121,7 @@ in
     ./_domains/airpurifier.nix
     ./_domains/ambient.nix
     ./_domains/aranet.nix
+    ./_domains/cleaning.nix
     ./_domains/climate.nix
     ./_domains/conversation.nix
     ./_domains/pura.nix

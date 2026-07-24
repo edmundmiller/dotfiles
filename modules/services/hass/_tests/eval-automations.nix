@@ -136,6 +136,35 @@ let
       )
     ) actions;
 
+  countActionCallDeep =
+    actions: actionName:
+    builtins.foldl' (
+      total: action:
+      total
+      + (if (action.action or null) == actionName || (action.service or null) == actionName then 1 else 0)
+      + (
+        if action ? choose then
+          builtins.foldl' (
+            choiceTotal: choice: choiceTotal + countActionCallDeep (toList (choice.sequence or [ ])) actionName
+          ) 0 action.choose
+        else
+          0
+      )
+      + (if action ? default then countActionCallDeep (toList action.default) actionName else 0)
+      + (
+        if builtins.hasAttr "then" action then countActionCallDeep (toList action."then") actionName else 0
+      )
+      + (
+        if builtins.hasAttr "else" action then countActionCallDeep (toList action."else") actionName else 0
+      )
+      + (
+        if action ? repeat && action.repeat ? sequence then
+          countActionCallDeep (toList action.repeat.sequence) actionName
+        else
+          0
+      )
+    ) 0 actions;
+
   hasWaitForStateDeep =
     actions: entityId: state:
     any (
@@ -260,6 +289,11 @@ let
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
+  legacyRoombaStart = findAutomation "roomba_start_last_person_leaves";
+  robotCleaningScheduler = findAutomation "robot_cleaning_scheduler";
+  robotCleaningArrivalDock = findAutomation "robot_cleaning_arrival_dock";
+  robotCleaningDispatch = scripts.robot_cleaning_dispatch or null;
+  robotCleaningRunJob = scripts.robot_cleaning_run_job or null;
   getReadyForBedScript = scripts.get_ready_for_bed or null;
   goodNightScript = scripts.goodnight or null;
   sleepScript = scripts.sleep or null;
@@ -302,6 +336,14 @@ let
       toList ((builtins.elemAt activeClimatePolicyActions 1)."then" or [ ]);
   climateDoorOpenActions =
     if climateDoorOpen == null then [ ] else toList (climateDoorOpen.action or [ ]);
+  robotCleaningSchedulerJson =
+    if robotCleaningScheduler == null then "" else builtins.toJSON robotCleaningScheduler;
+  robotCleaningDispatchJson =
+    if robotCleaningDispatch == null then "" else builtins.toJSON robotCleaningDispatch;
+  robotCleaningRunJobJson =
+    if robotCleaningRunJob == null then "" else builtins.toJSON robotCleaningRunJob;
+  robotCleaningArrivalActions =
+    if robotCleaningArrivalDock == null then [ ] else toList (robotCleaningArrivalDock.action or [ ]);
 
   # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
@@ -328,6 +370,93 @@ let
     {
       test = goodMorningBothAwake == null;
       msg = "automation 'good_morning_both_awake' should be removed";
+    }
+    {
+      test = legacyRoombaStart == null;
+      msg = "legacy departure-triggered Roomba start must be removed";
+    }
+    {
+      test = robotCleaningScheduler != null && hasTimePatternTrigger robotCleaningScheduler "/5";
+      msg = "robot cleaning scheduler must evaluate due work every 5 minutes";
+    }
+    {
+      test =
+        hasInfix "09:00:00" robotCleaningSchedulerJson
+        && hasInfix "20:00:00" robotCleaningSchedulerJson
+        && hasInfix "device_tracker.edmunds_iphone" robotCleaningSchedulerJson
+        && hasInfix "device_tracker.monicas_iphone" robotCleaningSchedulerJson
+        && hasInfix "600" robotCleaningSchedulerJson
+        && hasInfix "7200" robotCleaningSchedulerJson;
+      msg = "robot cleaning scheduler must use the 9am-8pm window and fresh 10-minute phone absence";
+    }
+    {
+      test =
+        hasInfix "input_boolean.robot_cleaning_enabled" robotCleaningSchedulerJson
+        && hasInfix "input_boolean.vacation_mode" robotCleaningSchedulerJson
+        && hasInfix "input_boolean.guest_mode" robotCleaningSchedulerJson
+        && hasInfix "input_boolean.goodnight" robotCleaningSchedulerJson
+        && hasInfix "input_datetime.robot_cleaning_last_dispatch" robotCleaningSchedulerJson;
+      msg = "robot cleaning scheduler must fail closed on enablement, household modes, and same-day retry";
+    }
+    {
+      test =
+        hasInfix "48 * 60 * 60" robotCleaningDispatchJson
+        && hasInfix "7 * 24 * 60 * 60" robotCleaningDispatchJson
+        && hasInfix "3 * 24 * 60 * 60" robotCleaningDispatchJson;
+      msg = "robot cleaning dispatcher must encode the approved due intervals";
+    }
+    {
+      test =
+        robotCleaningDispatch != null
+        &&
+          countActionCallDeep (toList (robotCleaningDispatch.sequence or [ ])) "script.robot_cleaning_run_job"
+          == 2
+        && hasInfix "input_boolean.robot_cleaning_two_job_enabled" robotCleaningDispatchJson
+        && hasInfix "counter.robot_cleaning_pilot_successes" robotCleaningDispatchJson;
+      msg = "robot cleaning dispatcher must cap work at two jobs and gate chaining on pilot approval";
+    }
+    {
+      test =
+        robotCleaningRunJob != null
+        && hasActionCallDeep (toList (robotCleaningRunJob.sequence or [ ])) "vacuum.send_command"
+        && hasInfix "pmap_id" robotCleaningRunJobJson
+        && hasInfix "user_pmapv_id" robotCleaningRunJobJson
+        && hasInfix "regions" robotCleaningRunJobJson
+        && hasInfix "01:30:00" robotCleaningRunJobJson;
+      msg = "robot job runner must send mapped-room commands with a 90-minute watchdog";
+    }
+    {
+      test =
+        hasInfix "sensor.rosie_battery" robotCleaningRunJobJson
+        && hasInfix "binary_sensor.rosie_bin_full" robotCleaningRunJobJson
+        && hasInfix "sensor.squirty_battery" robotCleaningRunJobJson
+        && hasInfix "tank_level" robotCleaningRunJobJson
+        && hasInfix "detected_pad" robotCleaningRunJobJson
+        && hasInfix "successful_missions" robotCleaningRunJobJson;
+      msg = "robot job runner must guard readiness and require successful mission evidence";
+    }
+    {
+      test =
+        robotCleaningArrivalDock != null
+        && hasStateTrigger robotCleaningArrivalDock "device_tracker.edmunds_iphone" "home"
+        && hasStateTrigger robotCleaningArrivalDock "device_tracker.monicas_iphone" "home"
+        && hasActionTarget robotCleaningArrivalActions "vacuum.return_to_base" [
+          "vacuum.rosie"
+          "vacuum.squirty"
+        ];
+      msg = "phone arrival must dock Rosie and Squirty directly";
+    }
+    {
+      test =
+        (haConfig.input_boolean.robot_cleaning_enabled.name or null) == "Robot Cleaning Enabled"
+        &&
+          (haConfig.input_boolean.robot_cleaning_two_job_enabled.name or null)
+          == "Robot Cleaning Two-job Chaining"
+        && (haConfig.counter.robot_cleaning_pilot_successes.maximum or null) == 3
+        && haConfig.input_datetime ? robot_cleaning_rosie_high_traffic_last_success
+        && haConfig.input_datetime ? robot_cleaning_rosie_remaining_last_success
+        && haConfig.input_datetime ? robot_cleaning_squirty_high_traffic_last_success;
+      msg = "robot cleaning must expose persistent enablement, pilot, and last-success helpers";
     }
 
     {
