@@ -2,7 +2,6 @@ model = "gpt-5.6-sol"
 enabled-reasoning-efforts = ["medium", "xhigh"]
 model_reasoning_effort = "xhigh"
 approval_policy = "never"
-sandbox_mode = "danger-full-access"
 personality = "pragmatic"
 model_verbosity = "low"
 model_reasoning_summary = "concise"
@@ -16,6 +15,9 @@ Runtime defaults:
 """
 
 [projects."/home/emiller/.config/dotfiles"]
+trust_level = "trusted"
+
+[projects."/home/emiller/mill-docs"]
 trust_level = "trusted"
 
 [projects."/home/emiller/obsidian-vault"]
