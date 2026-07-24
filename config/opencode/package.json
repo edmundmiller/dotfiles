@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@opencode-ai/plugin": "1.17.13",
+    "@opencode-ai/plugin": "1.18.4",
     "@tarquinen/opencode-smart-title": "latest"
   }
 }
