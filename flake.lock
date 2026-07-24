@@ -1895,14 +1895,15 @@
         "zele-repo": "zele-repo"
       },
       "locked": {
+        "lastModified": 1,
+        "narHash": "sha256-VO/0MXQ06Dj12+Gb9hSIl/MVnyXbf2Yjati90lH1ztI=",
         "path": "./skills",
         "type": "path"
       },
       "original": {
         "path": "./skills",
         "type": "path"
-      },
-      "parent": []
+      }
     },
     "stack-repo": {
       "flake": false,
