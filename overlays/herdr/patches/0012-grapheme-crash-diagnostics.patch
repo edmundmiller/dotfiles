@@ -1,0 +1,33 @@
+diff --git i/vendor/libghostty-vt/src/terminal/PageList.zig w/vendor/libghostty-vt/src/terminal/PageList.zig
+index 8fd5388..3cbaec2 100644
+--- i/vendor/libghostty-vt/src/terminal/PageList.zig
++++ w/vendor/libghostty-vt/src/terminal/PageList.zig
+@@ -1597,6 +1597,15 @@ const ReflowCursor = struct {
+                 // though we choose to recover by corrupting the cell
+                 // to a non-grapheme codepoint.
+                 log.err("setGraphemes failed after capacity increase err={}", .{err});
++                log.err("setGraphemes diagnostic count={} cap={} alloc_cap={} alloc_used={} cps_len={} content_tag={} codepoint={}", .{
++                    self.page.graphemeCount(),
++                    self.page.graphemeCapacity(),
++                    self.page.grapheme_alloc.capacityBytes(),
++                    self.page.grapheme_alloc.usedBytes(self.page.memory),
++                    cps.len,
++                    self.page_cell.content_tag,
++                    self.page_cell.content.codepoint,
++                });
+                 if (comptime std.debug.runtime_safety) {
+                     // Force a crash with safe builds.
+                     unreachable;
+@@ -3362,4 +3371,12 @@ pub fn increaseCapacity(
+         // this should never be possible. If it happens, we should crash
+         // because we're in no man's land and can't safely recover.
+         log.err("increaseCapacity clone failed err={}", .{err});
++        log.err("increaseCapacity diagnostic old_grapheme_bytes={} new_grapheme_bytes={} count={} cap={} alloc_cap={} alloc_used={}", .{
++            page.capacity.grapheme_bytes,
++            new_page.capacity.grapheme_bytes,
++            page.graphemeCount(),
++            page.graphemeCapacity(),
++            page.grapheme_alloc.capacityBytes(),
++            page.grapheme_alloc.usedBytes(page.memory),
++        });
+         @panic("unexpected clone failure");
