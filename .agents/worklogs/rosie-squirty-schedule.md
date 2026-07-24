@@ -37,8 +37,8 @@ presence and verified map identifiers.
   by a full bin. Robot entity attributes do not expose saved-map IDs.
 - Dry activation and deployment succeeded. `/run/current-system` is
   `/nix/store/8frgwib79p8ydgrn3pbkjm3prlf1ia8j-nixos-system-nuc-26.11.20260714.18b9261`.
-- Live HA state: scheduler and arrival automations on; scheduler-enabled and
-  two-job helpers off; pilot count zero; legacy departure automation absent.
+- Initial 2026-07-23 live state: scheduler and arrival automations on;
+  scheduler-enabled and two-job helpers off; legacy departure automation absent.
 - All seven map/version/region helpers are `unknown`; no robot command ran.
 
 ## Reviews
@@ -62,7 +62,7 @@ None.
 - Prove Monica and Edmund home → away → home transitions.
 - Populate and verify saved-map/version/region helpers.
 - Empty Rosie's bin, then run one controlled mapped-room smoke test per robot.
-- Complete three one-job pilot absences before explicit two-job approval.
+- Review one week of recorder history on July 31, 2026.
 
 ## Commits
 
