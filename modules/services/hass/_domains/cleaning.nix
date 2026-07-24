@@ -32,6 +32,27 @@ let
        and now_ts - as_timestamp(monica.last_updated, 0) <= 7200 }}
   '';
 
+  dispatchGuardTemplate = manualExpression: dailyExpression: ''
+    {% set now_ts = as_timestamp(now()) %}
+    {% set edmund = states.device_tracker.edmunds_iphone %}
+    {% set monica = states.device_tracker.monicas_iphone %}
+    {{ (${manualExpression})
+       or (
+         today_at('09:00:00') <= now() < today_at('20:00:00')
+         and is_state('input_boolean.robot_cleaning_enabled', 'on')
+         and is_state('input_boolean.vacation_mode', 'off')
+         and is_state('input_boolean.guest_mode', 'off')
+         and is_state('input_boolean.goodnight', 'off')
+         and (${dailyExpression})
+         and states('device_tracker.edmunds_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
+         and states('device_tracker.monicas_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
+         and now_ts - as_timestamp(edmund.last_changed, 0) >= 600
+         and now_ts - as_timestamp(monica.last_changed, 0) >= 600
+         and now_ts - as_timestamp(edmund.last_updated, 0) <= 7200
+         and now_ts - as_timestamp(monica.last_updated, 0) <= 7200
+       ) }}
+  '';
+
   selectDueJobTemplate = excludedExpression: ''
     {% set now_ts = as_timestamp(now()) %}
     {% set excluded = ${excludedExpression} %}
@@ -134,9 +155,17 @@ in
     script = {
       robot_cleaning_run_job = {
         alias = "Run one mapped robot cleaning job";
-        description = "Fail-closed mapped-room mission with readiness, arrival, mission-counter, and watchdog guards";
+        description = "Fail-closed mapped-room mission; manual smoke tests require explicit manual_test=true";
         mode = "single";
         sequence = [
+          {
+            condition = "template";
+            value_template = "{{ job in ['rosie_high_traffic', 'rosie_remaining', 'squirty_high_traffic'] }}";
+          }
+          {
+            condition = "template";
+            value_template = dispatchGuardTemplate "manual_test | default(false) | bool(false)" "from_dispatch | default(false) | bool(false) and states('input_datetime.robot_cleaning_last_dispatch')[:10] == now().date().isoformat()";
+          }
           {
             variables = {
               robot = "{{ 'vacuum.squirty' if job == 'squirty_high_traffic' else 'vacuum.rosie' }}";
@@ -154,7 +183,10 @@ in
                    and states(map_version_entity) not in ["", "unknown", "unavailable"]
                    and states(region_ids_entity) not in ["", "unknown", "unavailable"] %}
                 {% set base_ready = is_state(robot, 'docked')
-                   and states(battery_sensor) | int(0) >= 50 %}
+                   and states(battery_sensor) | int(0) >= 50
+                   and is_number(states(success_sensor))
+                   and is_number(states(failed_sensor))
+                   and is_number(states(canceled_sensor)) %}
                 {% if job == 'squirty_high_traffic' %}
                   {{ map_ready and base_ready
                      and state_attr('vacuum.squirty', 'tank_present') == true
@@ -197,6 +229,7 @@ in
           }
           {
             action = "vacuum.send_command";
+            continue_on_error = true;
             target.entity_id = "{{ robot }}";
             data = {
               command = "start";
@@ -272,7 +305,7 @@ in
                  or states('device_tracker.edmunds_iphone') in ['home', 'Parking Lot']
                  or states('device_tracker.monicas_iphone') in ['home', 'Parking Lot'] }}
             '';
-            timeout = "01:30:00";
+            timeout = "01:28:00";
             continue_on_timeout = true;
           }
           {
@@ -345,12 +378,17 @@ in
         mode = "single";
         sequence = [
           {
+            condition = "template";
+            value_template = dispatchGuardTemplate "false" "states('input_datetime.robot_cleaning_last_dispatch')[:10] != now().date().isoformat()";
+          }
+          {
             variables = {
               rosie_high_interval = "{{ 48 * 60 * 60 }}";
               rosie_remaining_interval = "{{ 7 * 24 * 60 * 60 }}";
               squirty_high_interval = "{{ 3 * 24 * 60 * 60 }}";
               selected_job = selectDueJobTemplate "''";
               selected_last_success_entity = "{{ 'input_datetime.robot_cleaning_rosie_high_traffic_last_success' if selected_job | trim == 'rosie_high_traffic' else ('input_datetime.robot_cleaning_rosie_remaining_last_success' if selected_job | trim == 'rosie_remaining' else 'input_datetime.robot_cleaning_squirty_high_traffic_last_success') }}";
+              selected_robot = "{{ 'vacuum.squirty' if selected_job | trim == 'squirty_high_traffic' else 'vacuum.rosie' }}";
             };
           }
           {
@@ -367,6 +405,7 @@ in
             data = {
               job = "{{ selected_job | trim }}";
               count_pilot = true;
+              from_dispatch = true;
             };
           }
           {
@@ -417,18 +456,84 @@ in
             ];
             "then" = [
               {
-                variables.second_job = selectDueJobTemplate "selected_job";
+                wait_template = ''
+                  {{ is_state(selected_robot, 'docked')
+                     or states('device_tracker.edmunds_iphone') in ['home', 'Parking Lot']
+                     or states('device_tracker.monicas_iphone') in ['home', 'Parking Lot'] }}
+                '';
+                timeout = "00:15:00";
+                continue_on_timeout = true;
               }
               {
-                condition = "template";
-                value_template = "{{ second_job | trim != '' }}";
-              }
-              {
-                action = "script.robot_cleaning_run_job";
-                data = {
-                  job = "{{ second_job | trim }}";
-                  count_pilot = false;
-                };
+                choose = [
+                  {
+                    conditions = [
+                      {
+                        condition = "template";
+                        value_template = "{{ is_state(selected_robot, 'docked') }}";
+                      }
+                      {
+                        condition = "time";
+                        after = "09:00:00";
+                        before = "20:00:00";
+                      }
+                      {
+                        condition = "template";
+                        value_template = freshStableAbsenceTemplate;
+                      }
+                      {
+                        condition = "state";
+                        entity_id = "input_boolean.robot_cleaning_enabled";
+                        state = "on";
+                      }
+                      {
+                        condition = "state";
+                        entity_id = "input_boolean.vacation_mode";
+                        state = "off";
+                      }
+                      {
+                        condition = "state";
+                        entity_id = "input_boolean.guest_mode";
+                        state = "off";
+                      }
+                      {
+                        condition = "state";
+                        entity_id = "input_boolean.goodnight";
+                        state = "off";
+                      }
+                    ];
+                    sequence = [
+                      {
+                        variables.second_job = selectDueJobTemplate "selected_job | trim";
+                      }
+                      {
+                        condition = "template";
+                        value_template = "{{ second_job | trim != '' }}";
+                      }
+                      {
+                        action = "script.robot_cleaning_run_job";
+                        data = {
+                          job = "{{ second_job | trim }}";
+                          count_pilot = false;
+                          from_dispatch = true;
+                        };
+                      }
+                    ];
+                  }
+                ];
+                default = [
+                  {
+                    "if" = [
+                      {
+                        condition = "template";
+                        value_template = freshStableAbsenceTemplate;
+                      }
+                    ];
+                    "then" = [
+                      (notifyException "The approved follow-up job was skipped because the first robot did not dock within 15 minutes or a safety guard changed.")
+                    ];
+                  }
+                ];
               }
             ];
           }
