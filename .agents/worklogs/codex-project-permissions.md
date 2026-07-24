@@ -1,6 +1,6 @@
 # Worklog: codex-project-permissions
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -30,11 +30,13 @@ Plan and landing reviews were attempted with `hey agent-review`; ACP session cre
 ## Feedback
 
 The installed `hey agent-finish` closure resolves `pkgs.jj` to the unrelated JSON stream editor, so its Jujutsu workspace test fails before exercising this change. The same 15-test suite passes from source with Jujutsu 0.37. This pre-existing package dependency belongs in a separate fix.
+The repository has a stale Prek hook but no `prek.toml` or `.pre-commit-config.yaml`; commit and push required Prek's documented missing-config allowance after focused checks passed.
 
 ## Remaining work
 
-Land and publish both repositories, then complete the run receipt.
+None.
 
 ## Commits
 
-Pending.
+- MilDocs `dfcb4f38513980c4454790e2d04d6ba6544cb2e8` adds the active project profile.
+- Dotfiles `025fe78f4a` adds trust, source guidance, deployment documentation, and this worklog.
