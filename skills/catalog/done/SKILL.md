@@ -107,4 +107,8 @@ A mismatch records `false_done` and fails. Do not edit the receipt to turn it gr
 
 ## Final report
 
-Report backend, default destination, task revision, local/remote tip, checks, linked work, completed or deferred cleanup with its reason, receipt, and unrelated files preserved. If any landing invariant is unproved, say `blocked` or `local only`, keep recovery state, and give the exact next action.
+Lead with the user-visible result in plain language: what changed, whether it works, and whether the user needs to act. For a bare `done` after an earlier completion report, say explicitly that no additional product change was made; only closeout was re-verified.
+
+Follow with one compact proof line: `Landed on <destination>; remote verified; <checks> passed.` Include hashes, local/remote tip equality, worktree, branch, receipt, and unrelated-file details only when the user asks or they require user action. Otherwise say only that unrelated work was preserved. Never lead with backend, branch cleanup, raw hashes, or other repository mechanics.
+
+If any landing invariant is unproved, lead with `Blocked:` or `Local only:` and give the exact next action.
