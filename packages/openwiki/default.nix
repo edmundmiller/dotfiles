@@ -194,6 +194,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0007-discrawl-connector.patch
     ./patches/0008-rss-connector-regression.patch
     ./patches/0009-rss-connector.patch
+    ./patches/0010-relative-raw-tool-paths.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -229,6 +230,7 @@ stdenv.mkDerivation (finalAttrs: {
     popd
 
     pnpm rebuild esbuild
+    node scripts/patch-deepagents-path-guard.mjs
     pnpm build
     runHook postBuild
   '';
