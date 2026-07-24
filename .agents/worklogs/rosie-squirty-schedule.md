@@ -1,6 +1,6 @@
 # Worklog: rosie-squirty-schedule
 
-Status: active
+Status: deployed-disabled
 
 ## Objective
 
@@ -35,6 +35,11 @@ presence and verified map identifiers.
   `/nix/store/n7ydvlhvhl30p6rgff7f2qfi0lzvshgb-nixos-system-nuc-26.11.20260714.18b9261`.
 - Live recorder confirms expected readiness entities; Rosie is currently blocked
   by a full bin. Robot entity attributes do not expose saved-map IDs.
+- Dry activation and deployment succeeded. `/run/current-system` is
+  `/nix/store/8frgwib79p8ydgrn3pbkjm3prlf1ia8j-nixos-system-nuc-26.11.20260714.18b9261`.
+- Live HA state: scheduler and arrival automations on; scheduler-enabled and
+  two-job helpers off; pilot count zero; legacy departure automation absent.
+- All seven map/version/region helpers are `unknown`; no robot command ran.
 
 ## Reviews
 
@@ -46,15 +51,21 @@ presence and verified map identifiers.
   calls bypassing guards, a 92-minute watchdog, and premature chaining before
   docking. Re-review also found unvalidated job IDs and ambiguous direct job
   authorization. All were repaired with regression assertions.
+- Final standards and specification re-reviews reported no findings.
 
 ## Feedback
 
 None.
 
-## Remaining work
+## Rollout gates
 
-- Review, commit, land, deploy disabled configuration, and record live boundaries.
+- Prove Monica and Edmund home → away → home transitions.
+- Populate and verify saved-map/version/region helpers.
+- Empty Rosie's bin, then run one controlled mapped-room smoke test per robot.
+- Complete three one-job pilot absences before explicit two-job approval.
 
 ## Commits
 
-None.
+- `8cf727face` — adaptive cleaning scheduler and regression/spec assertions.
+- `86fdd60e2a` — command, counter, direct-call, watchdog, docking, and job-ID hardening.
+- `572e7a22` in mill-docs — canonical household cleaning policy.
