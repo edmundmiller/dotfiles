@@ -1,6 +1,6 @@
 # Worklog: done-active-worktree-cleanup
 
-Status: active
+Status: blocked
 
 ## Objective
 
@@ -19,6 +19,9 @@ Prevent `done` from removing the active Codex or Herdr Git worktree. Completion 
 - Receipt: `/Users/emiller/.local/state/dotfiles-agent-runs/53e298a49a4b/20260724T035731Z-9e0a912f4224.json`.
 - `/run/current-system/sw/bin/moshi-hook --version` → `moshi-hook version 0.2.51`; the configured absolute executable exists.
 - `bash skills/catalog/done/scripts/test-verify-workspace-cleanup.sh` passes: Codex- and Herdr-shaped Git worktrees remain accessible after guarded cleanup; a separate safe worktree is removed.
+- `hey check` passes all Darwin checks: child-lock sync, configuration evaluation, formatting, pre-commit, tmux, package harness/policy, and ast-grep.
+- `hey re` succeeds after preserving stale `~/.config/gh/config.yml.bkup` as `config.yml.bkup.pre-20260724`; deployed `~/.agents/skills/done` runs the same Codex/Herdr smoke test.
+- `flake.nix` now declares the nested skills catalog as `path:./skills`; regenerated `flake.lock` pins its `narHash`, resolving the prior unlocked-local-input check failure.
 
 ## Reviews
 
@@ -32,9 +35,10 @@ Prevent `done` from removing the active Codex or Herdr Git worktree. Completion 
 
 ## Remaining work
 
-- Commit the strict expected-failure regression test and its green implementation separately.
-- Run focused skill validation, host activation, runtime smoke, landing gate, and publish.
+- `hey agent-finish` is blocked by unrelated agent-quality infrastructure: its Nix-store test process fails `jj git init --colocate` in a fresh temporary Git repo, though the same command passes directly on this host. It also runs `git diff --cached` outside a Git checkout. The `done` skill test, Darwin checks, and activation all pass.
 
 ## Commits
 
-- Pending.
+- `d9bb74f73 test(done): cover active worktree cleanup`
+- `fd3d51f02 fix(done): preserve active launcher worktrees`
+- `1436bd325 fix(nix): lock local skills catalog`
