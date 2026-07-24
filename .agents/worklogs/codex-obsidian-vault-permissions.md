@@ -1,6 +1,6 @@
 # Worklog: codex-obsidian-vault-permissions
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -20,6 +20,7 @@ Make NUC Codex sessions in `/home/emiller/obsidian-vault` write that repository,
 - Command network access failed at DNS. The remote-control daemon restarted and reports `running`.
 - A standalone app-server process launched qmd from `/home/emiller/obsidian-vault`; its project-local index contains nine vault collections, while `qmd://memory-root` from the global index is unavailable.
 - Vault preflight, TOML parsing, patch hygiene, task-scoped `nix fmt -- --ci`, `hey agent-audit-tests`, and all 15 source agent-quality tests passed.
+- The deployed profile hash matched the landed vault source; both task tips matched `origin/main` before this completion update.
 
 ## Reviews
 
@@ -31,9 +32,9 @@ The installed `hey agent-finish` closure still resolves `pkgs.jj` to the unrelat
 
 ## Remaining work
 
-- Commit, publish, verify remote equality, and clean both task worktrees.
+None.
 
 ## Commits
 
-- Vault `6597e665f3d1a61e7da77be10dd89b6afaab46d1` adds the active project profile and ownership policy.
-- Dotfiles documentation commit pending.
+- Vault `558713052b2065f73f574c28266d85055860a883` adds the active project profile and ownership policy.
+- Dotfiles runbook, worklog, and completion evidence are this change.
