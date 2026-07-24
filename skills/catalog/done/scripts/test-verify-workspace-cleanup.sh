@@ -4,15 +4,6 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 verifier="$script_dir/verify-workspace-cleanup.sh"
 
-expected_failure=1
-if (( expected_failure )); then
-  if [[ -x "$verifier" ]]; then
-    echo "unexpected pass: active-worktree cleanup guard is already implemented" >&2
-    exit 1
-  fi
-  echo "expected failure: active-worktree cleanup guard is not implemented"
-  exit 0
-fi
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -35,6 +26,12 @@ if output=$("$verifier" "$tmpdir/missing" "$safe_candidate" 2>&1); then
   exit 1
 fi
 [[ "$output" == *"active directory is inaccessible"* ]]
+
+if output=$("$verifier" "$active" / 2>&1); then
+  echo "expected root directory cleanup to be refused" >&2
+  exit 1
+fi
+[[ "$output" == *"candidate directory is root"* ]]
 
 repo="$tmpdir/repo"
 git init -q -b main "$repo"
