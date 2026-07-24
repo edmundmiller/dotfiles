@@ -1132,6 +1132,11 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
+
+              nuc-openssh-pq-kex = import ./hosts/nuc/_tests/openssh-pq-kex.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
