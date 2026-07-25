@@ -1,8 +1,9 @@
 {
   "source": "https://github.com/anthrofract/majjit.git",
   "ref": "e90aca245752a10af70b79308e038f8988b39661",
-  "patches": [],
+  "patches": ["patches/0001-disable-word-wrap-for-structured-log.patch"],
   "checks": [
+    ["nix", "develop", "-c", "cargo", "test", "--locked"],
     [
       "nix",
       "shell",

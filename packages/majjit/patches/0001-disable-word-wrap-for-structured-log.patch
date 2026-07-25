@@ -1,0 +1,42 @@
+diff --git a/src/shell_out.rs b/src/shell_out.rs
+index 28fe5e8..131141c 100644
+--- a/src/shell_out.rs
++++ b/src/shell_out.rs
+@@ -213,3 +213,11 @@ impl JjCommand {
+         );
+-        let args = ["log", "--template", &template, "--revisions", revset];
++        let args = [
++            "--config",
++            "ui.log-word-wrap=false",
++            "log",
++            "--template",
++            &template,
++            "--revisions",
++            revset,
++        ];
+         Self::new(&args, global_args, None, ReturnOutput::Stdout)
+@@ -910 +918,24 @@ fn strip_non_style_ansi(str: &str) -> String {
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn jj_log_disables_word_wrapping() {
++        let command = JjCommand::jj_log(
++            "@",
++            GlobalArgs {
++                repository: ".".to_string(),
++                ignore_immutable: false,
++            },
++        );
++
++        assert!(
++            command
++                .args
++                .windows(2)
++                .any(|args| args == ["--config", "ui.log-word-wrap=false"])
++        );
++    }
++}
