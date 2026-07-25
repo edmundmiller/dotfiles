@@ -1,6 +1,6 @@
 ---
 name: agent-ci
-description: Run GitHub Actions CI locally with Agent CI to validate changes before pushing. Use when testing, running checks, or validating code changes.
+description: Run GitHub Actions CI locally with Agent CI only when the user explicitly asks to run Agent CI or validate GitHub Actions locally.
 license: MIT
 compatibility: Requires Node.js 18+ and Docker
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 # Agent CI
 
-Run the full CI pipeline locally before pushing. CI was green before you started — any failure is caused by your changes.
+Run the full CI pipeline locally only after an explicit user request. For ordinary testing, validation, or pre-push work, use the repository's focused checks instead.
 
 ## Run
 
