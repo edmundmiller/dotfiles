@@ -17,6 +17,7 @@
       "packages/**/*.nix",
       "packages/*.nix",
       "overlays/herdr/default.nix",
+      "overlays/herdr/package-harness.json",
       "flake.nix",
       "flake.lock"
     ],
@@ -44,6 +45,16 @@
       ],
       "datasourceTemplate": "github-tags",
       "packageNameTemplate": "{{{owner}}}/{{{repo}}}",
+      "depNameTemplate": "herdr",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep Herdr's fresh-source package harness aligned with its overlay.",
+      "managerFilePatterns": ["/(^|/)overlays/herdr/package-harness\\.json$/"],
+      "matchStrings": ["\"ref\"\\s*:\\s*\"(?<currentValue>v[^\"]+)\""],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "ogulcancelik/herdr",
       "depNameTemplate": "herdr",
       "versioningTemplate": "loose"
     },
@@ -121,20 +132,21 @@
       "labels": ["dependencies", "nix", "packages"]
     },
     {
-      "description": "Require review for Herdr overlay releases because the local patch stack must apply.",
+      "description": "Let the patch-repair workflow validate Herdr before enabling platform automerge.",
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["herdr"],
       "groupName": "Herdr",
       "groupSlug": "herdr",
+      "labels": ["dependencies", "nix", "packages", "flue-review"],
       "automerge": false
     },
     {
-      "description": "Update Hunk's flake input and fresh-source package harness in one branch.",
+      "description": "Let the patch-repair workflow validate Hunk before enabling platform automerge.",
       "matchManagers": ["nix", "custom.regex"],
       "matchDepNames": ["hunk"],
       "groupName": "Hunk",
       "groupSlug": "hunk",
-      "labels": ["dependencies", "nix", "packages"],
+      "labels": ["dependencies", "nix", "packages", "flue-review"],
       "automerge": false
     }
   ],
