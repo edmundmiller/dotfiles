@@ -87,6 +87,8 @@ Custom/current mappings:
 
 Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes the `workspace.created` and `worktree.created` hooks per workspace, creating exactly OMP and Hunk tabs and focusing OMP.
 
+Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
+
 ## Plugins
 
 Repo-owned plugins are composed into a local package and registered by `modules/shell/herdr/default.nix`:
