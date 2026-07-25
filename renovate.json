@@ -13,7 +13,13 @@
   },
   "postUpgradeTasks": {
     "commands": ["nix run .#renovate-update-nix-hashes"],
-    "fileFilters": ["packages/**/*.nix", "packages/*.nix"],
+    "fileFilters": [
+      "packages/**/*.nix",
+      "packages/*.nix",
+      "overlays/herdr/default.nix",
+      "flake.nix",
+      "flake.lock"
+    ],
     "executionMode": "branch"
   },
   "customManagers": [
@@ -27,6 +33,40 @@
       "datasourceTemplate": "github-tags",
       "packageNameTemplate": "{{{owner}}}/{{{repo}}}",
       "depNameTemplate": "{{{owner}}}/{{{repo}}}",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the patched Herdr overlay on the latest upstream GitHub release tag.",
+      "managerFilePatterns": ["/(^|/)overlays/herdr/default\\.nix$/"],
+      "matchStrings": [
+        "owner\\s*=\\s*\"(?<owner>ogulcancelik)\";[\\s\\S]*?repo\\s*=\\s*\"(?<repo>herdr)\";[\\s\\S]*?rev\\s*=\\s*\"(?<currentValue>v[^\"]+)\";"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "{{{owner}}}/{{{repo}}}",
+      "depNameTemplate": "herdr",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep Hunk's flake input release tag current.",
+      "managerFilePatterns": ["/(^|/)flake\\.nix$/"],
+      "matchStrings": [
+        "hunk\\s*=\\s*\\{[\\s\\S]*?url\\s*=\\s*\"github:modem-dev/hunk/(?<currentValue>v[^\"]+)\";"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "modem-dev/hunk",
+      "depNameTemplate": "hunk",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep Hunk's fresh-source package harness aligned with its flake input.",
+      "managerFilePatterns": ["/(^|/)overlays/hunk/package-harness\\.json$/"],
+      "matchStrings": ["\"ref\"\\s*:\\s*\"(?<currentValue>v[^\"]+)\""],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "modem-dev/hunk",
+      "depNameTemplate": "hunk",
       "versioningTemplate": "loose"
     }
   ],
@@ -79,6 +119,23 @@
       "matchManagers": ["custom.regex"],
       "groupName": "repo-local Nix packages",
       "labels": ["dependencies", "nix", "packages"]
+    },
+    {
+      "description": "Require review for Herdr overlay releases because the local patch stack must apply.",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["herdr"],
+      "groupName": "Herdr",
+      "groupSlug": "herdr",
+      "automerge": false
+    },
+    {
+      "description": "Update Hunk's flake input and fresh-source package harness in one branch.",
+      "matchManagers": ["nix", "custom.regex"],
+      "matchDepNames": ["hunk"],
+      "groupName": "Hunk",
+      "groupSlug": "hunk",
+      "labels": ["dependencies", "nix", "packages"],
+      "automerge": false
     }
   ],
   "osvVulnerabilityAlerts": true,

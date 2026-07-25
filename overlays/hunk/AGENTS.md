@@ -1,6 +1,18 @@
+---
+purpose: Define Hunk overlay patch and source-pin maintenance.
+applies_to: Changes under overlays/hunk/ or the Hunk flake input.
+entrypoint: Read package-harness.json and the target patch.
+verification: Run pkg-check hunk and hey check.
+update_when: Hunk source pins, patch stack, or package checks change.
+---
+
 # Hunk overlay instructions
 
 This directory patches the upstream `modem-dev/hunk` input used by `modules/shell/git/default.nix`.
+
+## Source pins
+
+`flake.nix` Hunk input tag and `package-harness.json` `ref` must match. Renovate updates both in one non-automerge branch and regenerates `flake.lock`; never bump one pin alone.
 
 When changing any Hunk patch:
 

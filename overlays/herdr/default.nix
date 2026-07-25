@@ -7,7 +7,7 @@ let
     src = final.fetchFromGitHub {
       owner = "ogulcancelik";
       repo = "herdr";
-      rev = "50aaa2ec046ee26ff407c20f49de496f522512a8";
+      rev = "v0.7.4";
       hash = "sha256-dBOQYLFitJ+E3XNz44Ag3CIrBxFj16CmVPp7qil0ssg=";
     };
     patches = [
