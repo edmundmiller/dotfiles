@@ -130,6 +130,13 @@ class PackagePolicyTest(unittest.TestCase):
                 )
                 self.assertIn(offending_path, rejected.stderr)
 
+    @unittest.expectedFailure
+    def test_renovate_patch_repair_uses_trusted_agent_shell(self):
+        agent = (ROOT / ".flue/agents/renovate-patch-repair.ts").read_text()
+        command = "nix develop /trusted#agent --command pkg-check <target>"
+        self.assertIn(command, agent)
+        self.assertNotIn("nix develop --command pkg-check <target>", agent)
+
     def test_renovate_patch_repair_path_guard(self):
         script = ROOT / "bin/check-renovate-patch-paths"
         allowed = {
