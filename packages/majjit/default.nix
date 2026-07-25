@@ -17,6 +17,12 @@ rustPlatform.buildRustPackage {
 
   cargoHash = "sha256-/AAzzFZ8htv6bkoABJEKPsn61O5LWJiwmaUEjVQ0NX0=";
 
+  patches = [
+    ./patches/0001-disable-word-wrap-for-structured-log.patch
+  ];
+
+  doCheck = true;
+
   meta = with lib; {
     description = "Magit-inspired TUI for manipulating the Jujutsu DAG";
     homepage = "https://github.com/anthrofract/majjit";
