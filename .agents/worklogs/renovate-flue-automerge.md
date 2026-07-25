@@ -8,7 +8,7 @@ update_when: The workflow, Flue agent, patch allowlist, or required checks chang
 
 # Worklog: renovate-flue-automerge
 
-Status: blocked on repository credentials and pre-existing formatting drift
+Status: blocked on repository credentials
 
 ## Objective
 
@@ -40,6 +40,8 @@ Herdr and Hunk release PRs are opened by Renovate, repaired by Flue only when th
 - Remote run `30162974926` confirmed the landed workflow but exposed two pre-existing Linux CI prerequisites: unauthenticated FlakeHub access in `magic-nix-cache-action` and `flake-checker-action` assuming a root `nixpkgs` input. The follow-up disables FlakeHub use in every workflow while retaining GitHub Actions caching and removes the checker as explicitly selected; the real Linux Nix builds remain.
 - The Flue repair prompt now names the trusted `/trusted#agent` shell instead of the PR-controlled default shell.
 - The package-policy regression test first passed as an expected failure against the default shell, then passed normally after the prompt moved to `/trusted#agent`.
+- User-approved repository formatting removed the pre-existing full-tree drift. CI run `30165164552` then passed `Flake Check (Linux)`, `Flake Check (Darwin)`, and `Check Formatting`; Security run `30165164463` also passed.
+- The formatting commit exposed that changed-package QA expected Bun without installing it. Both CI jobs now install Bun first, and the exact `qa-changed` package path passes locally and remotely.
 
 ## Reviews
 
@@ -60,11 +62,13 @@ Herdr and Hunk release PRs are opened by Renovate, repaired by Flue only when th
 
 ## Remaining work
 
-Land the CI prerequisite repair, verify its remote run, configure dedicated `RENOVATE_TOKEN` and `OPENROUTER_API_KEY` secrets, then resolve the repository's unrelated full-tree formatting drift before required checks can turn green.
+Configure dedicated `RENOVATE_TOKEN` and `OPENROUTER_API_KEY` repository secrets. GitHub sudo-mode was presented through Browser Control, but the handoff expired without reauthentication.
 
 ## Commits
 
 - `e9d8ae49178e6b027eefca678ff6131f155868cc` — `feat(renovate): repair and automerge patch updates`
 - `fc0baf9df` — `test(renovate): capture trusted shell regression`
 - `a19c47dea` — `fix(renovate): use trusted repair shell`
-- Follow-up — `fix(ci): remove broken flake checker`
+- `4628ecb5b` — `fix(ci): remove broken flake checker`
+- `0bb850e94` — `style: apply repository formatter`
+- `4a79e10a3` — `fix(ci): install Bun before package QA`
