@@ -1,0 +1,10 @@
+{
+  "source": "https://github.com/agentclientprotocol/codex-acp.git",
+  "ref": "v1.1.7",
+  "patches": [],
+  "checks": [
+    ["npm", "ci"],
+    ["npm", "test"],
+    ["npm", "run", "typecheck"]
+  ]
+}
