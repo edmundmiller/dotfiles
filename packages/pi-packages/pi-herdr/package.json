@@ -13,7 +13,7 @@
   "author": "Edmund Miller",
   "pi": {
     "extensions": [
-      "./extensions"
+      "./extensions/herdr.ts"
     ]
   },
   "scripts": {
