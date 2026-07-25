@@ -40,18 +40,19 @@ outside the dotfiles repo and run Cargo there. Example for detector/pane tests:
 ```sh
 set -euo pipefail
 workdir=$(mktemp -d)
+repo=$(git rev-parse --show-toplevel)
 git clone https://github.com/ogulcancelik/herdr "$workdir/herdr"
 cd "$workdir/herdr"
-git checkout 50aaa2ec046ee26ff407c20f49de496f522512a8
-git apply /Users/emiller/.config/dotfiles/overlays/herdr/patches/*.patch
+git checkout "$(sed -nE 's/^[[:space:]]*rev = "([^"]+)";/\1/p' "$repo/overlays/herdr/default.nix")"
+git apply "$repo"/overlays/herdr/patches/*.patch
 cargo test \
   detect::tests::hermes \
   pane::tests::screen_chrome_overrides_codex_backend_to_hermes \
   pane::tests::screen_chrome_does_not_override_pi_process_agent
+```
 
 For plugin migrations, prefer local Herdr plugins under `config/herdr/plugins/`
 over dotfiles-only patches to Herdr CLI/config behavior.
-```
 
 On macOS outside the Nix build, `cargo test` may fail before tests run while the
 vendored `libghostty-vt` Zig build links against the SDK. In that case, at least
