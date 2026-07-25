@@ -36,11 +36,11 @@
   -webkit-filter: hue-rotate(180deg) invert(100%) !important;
 }
 [qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/stargazing.png"],
-  [qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/flashlights.png"],
-  [qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/google_maps.png"],
-  [qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/alternative_energy_revolution.jpg"],
-  [qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/man_page.png"]
-{
+[qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/flashlights.png"],
+[qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/google_maps.png"],
+[qb-domain="imgs.xkcd.com"]
+  img[alt="https://imgs.xkcd.com/comics/alternative_energy_revolution.jpg"],
+[qb-domain="imgs.xkcd.com"] img[alt="https://imgs.xkcd.com/comics/man_page.png"] {
   filter: invert(0%) !important;
   -webkit-filter: invert(0%) !important;
 }

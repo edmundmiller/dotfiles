@@ -65,7 +65,9 @@ let
     )
     && (amosService.serviceConfig.SupplementaryGroups or [ ]) == [ ];
   amosConfigOverlay = builtins.head (
-    builtins.filter (entry: hasInfix "HERMES_CONFIG_OVERLAY=" entry) amosService.serviceConfig.Environment
+    builtins.filter (
+      entry: hasInfix "HERMES_CONFIG_OVERLAY=" entry
+    ) amosService.serviceConfig.Environment
   );
   amosConfigOverlayPath = pkgs.lib.removePrefix "HERMES_CONFIG_OVERLAY=" amosConfigOverlay;
   amosOverlaysHostConfig =
@@ -77,18 +79,12 @@ let
   assertions = [
     {
       test =
-        if amosFixExpectedFailure then
-          !amosUsesStableProfileAndSecret
-        else
-          amosUsesStableProfileAndSecret;
+        if amosFixExpectedFailure then !amosUsesStableProfileAndSecret else amosUsesStableProfileAndSecret;
       msg = "Amos cron must use its profile home and a pre-materialized Linear secret.";
     }
     {
       test =
-        if amosOverlaysHostConfigExpectedFailure then
-          !amosOverlaysHostConfig
-        else
-          amosOverlaysHostConfig;
+        if amosOverlaysHostConfigExpectedFailure then !amosOverlaysHostConfig else amosOverlaysHostConfig;
       msg = "Amos cron launcher must overlay host shell init onto canonical host paths.";
     }
     {

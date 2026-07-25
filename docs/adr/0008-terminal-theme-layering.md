@@ -76,7 +76,7 @@ MacTraitor-Pro target:
 - `modules.desktop.term.themeStack.variant = "catppuccin"` is the host-level
   owner for the terminal stack.
 - The stack writes Ghostty's active `theme = light:Catppuccin
-  Latte,dark:Catppuccin Mocha` line; `config/ghostty/ui.conf` only owns
+Latte,dark:Catppuccin Mocha` line; `config/ghostty/ui.conf` only owns
   non-theme UI settings.
 - Herdr uses terminal-derived chrome instead of hard-coded Latte colors.
 - Pi keeps the source `theme = "terminal"` instead of being forced to

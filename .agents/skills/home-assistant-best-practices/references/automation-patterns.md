@@ -3,6 +3,7 @@
 This document covers native Home Assistant automation constructs that should be used instead of templates.
 
 ## Table of Contents
+
 1. [Native Conditions](#native-conditions)
 2. [Trigger Types](#trigger-types)
 3. [Wait Actions](#wait-actions)
@@ -208,11 +209,11 @@ conditions:
 
 ### Trigger Condition
 
-Matches *which* trigger started the run, by trigger `id` — the clean way to branch on the trigger (see [Trigger IDs](#trigger-ids)) instead of templating `trigger.id`. Only true when the run was started by a trigger (false in scripts and manual runs).
+Matches _which_ trigger started the run, by trigger `id` — the clean way to branch on the trigger (see [Trigger IDs](#trigger-ids)) instead of templating `trigger.id`. Only true when the run was started by a trigger (false in scripts and manual runs).
 
 ```yaml
 condition: trigger
-id: motion_on        # a single id, or a list (OR semantics):
+id: motion_on # a single id, or a list (OR semantics):
 # id:
 #   - motion_on
 #   - motion_off
@@ -227,6 +228,7 @@ id: motion_on        # a single id, or a list (OR semantics):
 The HA visual automation editor offers **purpose-specific triggers and conditions** organized by real-world concepts (door opened, motion detected, temperature threshold, battery low, etc.) rather than by technical entity domain. These work across entity types — e.g., "when a door opens" fires whether the door is a contact sensor or a motorized cover.
 
 **Key points:**
+
 - **Most** are a UI-editor convenience — under the hood they generate standard `state`, `numeric_state`, etc., so the YAML output uses the same triggers documented below
 - **Exceptions (2026.6, Labs):** the native zone trigger/condition family serializes as new YAML (see [Native Zone Triggers & Conditions](#native-zone-triggers--conditions-20266-labs)), and the step-level `note:` field is new additive syntax (see [Documenting Automations & Scripts](#documenting-automations--scripts)).
 - Available concepts: door/window/gate open/close, motion/occupancy detection, temperature/humidity/illuminance thresholds, power consumption, battery status, air quality, climate, and more
@@ -325,7 +327,7 @@ Fires at sunrise/sunset with optional offset.
 triggers:
   - trigger: sun
     event: sunset
-    offset: "-00:30:00"  # 30 minutes before sunset
+    offset: "-00:30:00" # 30 minutes before sunset
 ```
 
 ### Event Trigger
@@ -366,7 +368,7 @@ actions:
   - event: my_custom_event
     event_data:
       source: kitchen
-      value: "{{ states('sensor.power') }}"   # templates work directly; event_data_template is no longer needed
+      value: "{{ states('sensor.power') }}" # templates work directly; event_data_template is no longer needed
 ```
 
 ### MQTT Trigger
@@ -405,14 +407,14 @@ triggers:
   - trigger: zone
     entity_id: person.john
     zone: zone.home
-    event: enter   # "enter" or "leave"
+    event: enter # "enter" or "leave"
 ```
 
-To *check* zone membership in a condition rather than trigger on the transition, see [Zone Condition](#zone-condition).
+To _check_ zone membership in a condition rather than trigger on the transition, see [Zone Condition](#zone-condition).
 
 ### Native Zone Triggers & Conditions (2026.6, Labs)
 
-2026.6 adds native, **any-zone** zone primitives (not just home). They are **Labs-gated** in the editor (Settings → System → Labs) but use the standard core config schema, so they round-trip through the config API regardless of the Labs toggle. Unlike most purpose-specific triggers, these serialize as a *new* `<domain>.<subtype>` YAML shape with `options:` and `target:` blocks:
+2026.6 adds native, **any-zone** zone primitives (not just home). They are **Labs-gated** in the editor (Settings → System → Labs) but use the standard core config schema, so they round-trip through the config API regardless of the Labs toggle. Unlike most purpose-specific triggers, these serialize as a _new_ `<domain>.<subtype>` YAML shape with `options:` and `target:` blocks:
 
 - **Triggers:** `zone.entered`, `zone.left`, `zone.occupancy_detected`, `zone.occupancy_cleared`
 - **Conditions:** `zone.in_zone`, `zone.not_in_zone`, `zone.occupancy_is_detected`, `zone.occupancy_is_not_detected`
@@ -422,16 +424,16 @@ To *check* zone membership in a condition rather than trigger on the transition,
 triggers:
   - trigger: zone.entered
     target:
-      entity_id: person.john      # person or device_tracker
+      entity_id: person.john # person or device_tracker
     options:
       zone: zone.office
-      behavior: each              # "each" (default), "all", or "first"
+      behavior: each # "each" (default), "all", or "first"
       # for: "00:05:00"           # optional dwell time
 ```
 
-Triggers take `behavior: each` (default), `all`, or `first`; the matching **conditions** use a *different* enum — `behavior: any` (default) or `all`. These are Labs keys and may change before they stabilize, so verify against the current schema. The classic flat [Zone Trigger](#zone-trigger) / [Zone Condition](#zone-condition) and plain `state` triggers remain the stable, non-Labs fallback.
+Triggers take `behavior: each` (default), `all`, or `first`; the matching **conditions** use a _different_ enum — `behavior: any` (default) or `all`. These are Labs keys and may change before they stabilize, so verify against the current schema. The classic flat [Zone Trigger](#zone-trigger) / [Zone Condition](#zone-condition) and plain `state` triggers remain the stable, non-Labs fallback.
 
-> The `entered_home`/`left_home`/`is_home`/`is_not_home` device automations were removed in **2026.5** (see [below](#presence-and-person-triggers-and-conditions-removed-in-20265)) — 2026.6 only *adds* these any-zone primitives as the native successor.
+> The `entered_home`/`left_home`/`is_home`/`is_not_home` device automations were removed in **2026.5** (see [below](#presence-and-person-triggers-and-conditions-removed-in-20265)) — 2026.6 only _adds_ these any-zone primitives as the native successor.
 
 ### Template Trigger
 
@@ -441,7 +443,7 @@ Fires when a Jinja template renders truthy. Prefer `state`/`numeric_state` whene
 triggers:
   - trigger: template
     value_template: "{{ states('sensor.temp') | float > 25 and is_state('binary_sensor.window', 'on') }}"
-    for: "00:05:00"   # optional: template must stay true this long before firing
+    for: "00:05:00" # optional: template must stay true this long before firing
 ```
 
 ### Calendar Trigger
@@ -452,8 +454,8 @@ Fires at the start or end of a calendar event, with an optional offset. Prefer t
 triggers:
   - trigger: calendar
     entity_id: calendar.work
-    event: start          # "start" or "end"
-    offset: "-00:15:00"   # optional: fire 15 min before the event
+    event: start # "start" or "end"
+    offset: "-00:15:00" # optional: fire 15 min before the event
 ```
 
 Exposes `trigger.calendar_event` with `.summary`, `.start`, `.end`, `.description`, `.location` for filtering by event details.
@@ -466,8 +468,8 @@ Fires when an HTTP request hits `/api/webhook/<webhook_id>`. The canonical way t
 triggers:
   - trigger: webhook
     webhook_id: "my-secret-hook-id"
-    allowed_methods: [POST, PUT]   # optional; default POST + PUT
-    local_only: true               # optional; default true — set false for external callers
+    allowed_methods: [POST, PUT] # optional; default POST + PUT
+    local_only: true # optional; default true — set false for external callers
 ```
 
 Read the payload via `trigger.json`, `trigger.data` (form-encoded), `trigger.query`, or `trigger.headers`.
@@ -479,7 +481,7 @@ Fires when HA finishes starting or begins shutting down.
 ```yaml
 triggers:
   - trigger: homeassistant
-    event: start   # "start" or "shutdown"
+    event: start # "start" or "shutdown"
 ```
 
 Use `start` for boot-time setup (restore state, resync devices). `shutdown` handlers get only ~20 seconds before HA stops — keep them short.
@@ -506,7 +508,7 @@ Fires when an NFC/QR tag is scanned.
 triggers:
   - trigger: tag
     tag_id: "A7-6B-90-5F"
-    device_id: 0e19cd3c...   # optional: limit to one specific scanner device
+    device_id: 0e19cd3c... # optional: limit to one specific scanner device
 ```
 
 ### Geolocation Trigger
@@ -518,7 +520,7 @@ triggers:
   - trigger: geo_location
     source: nsw_rural_fire_service_feed
     zone: zone.fire_alert
-    event: enter   # "enter" or "leave"
+    event: enter # "enter" or "leave"
 ```
 
 ### Persistent Notification Trigger
@@ -528,8 +530,8 @@ Fires on persistent-notification lifecycle changes (e.g. react to an integration
 ```yaml
 triggers:
   - trigger: persistent_notification
-    update_type: [added, removed]     # any of: added, removed, updated, current; omit for all
-    notification_id: invalid_config   # optional: filter to one notification
+    update_type: [added, removed] # any of: added, removed, updated, current; omit for all
+    notification_id: invalid_config # optional: filter to one notification
 ```
 
 ### Presence and Person Triggers and Conditions (Removed in 2026.5)
@@ -606,7 +608,7 @@ Event-driven wait. More efficient than polling.
       to: "off"
   timeout:
     minutes: 5
-  continue_on_timeout: false  # Stop automation if timeout
+  continue_on_timeout: false # Stop automation if timeout
 
 # Wait for any of multiple triggers
 - wait_for_trigger:
@@ -631,6 +633,7 @@ Polls until template is true. **Immediately continues if already true.**
 ```
 
 **Key difference:**
+
 - `wait_for_trigger` waits for a **change** to occur
 - `wait_template` waits for a **condition** to be true (passes immediately if already true)
 
@@ -656,12 +659,12 @@ Both waits set `wait.completed` and `wait.remaining`:
 
 ### delay
 
-Pauses the sequence for a fixed time. Accepts a time string, a units dict, or a template. Prefer `wait_for_trigger` when waiting for an *event* rather than a fixed duration.
+Pauses the sequence for a fixed time. Accepts a time string, a units dict, or a template. Prefer `wait_for_trigger` when waiting for an _event_ rather than a fixed duration.
 
 ```yaml
-- delay: "00:01:30"                 # HH:MM:SS
-- delay: {minutes: 1, seconds: 30}  # units dict (combinable)
-- delay: "{{ states('input_number.delay_seconds') | int }}"   # template → seconds
+- delay: "00:01:30" # HH:MM:SS
+- delay: { minutes: 1, seconds: 30 } # units dict (combinable)
+- delay: "{{ states('input_number.delay_seconds') | int }}" # template → seconds
 ```
 
 ---
@@ -697,7 +700,7 @@ Stops the current run and starts fresh. Timer-based actions are reset.
 **Best for:** Motion-activated lights with timeout, retriggerable delays.
 
 ```yaml
-mode: restart  # Re-trigger resets the timer
+mode: restart # Re-trigger resets the timer
 ```
 
 See `references/examples.yaml` Example 1 for a complete motion-light automation using restart + wait_for_trigger.
@@ -712,7 +715,7 @@ Queues new triggers to run after current run completes.
 automation:
   - alias: "Garage door controller"
     mode: queued
-    max: 5  # Maximum queue size
+    max: 5 # Maximum queue size
     triggers:
       - trigger: state
         entity_id: input_boolean.garage_door_trigger
@@ -722,7 +725,7 @@ automation:
         target:
           entity_id: cover.garage_door
       - delay:
-          seconds: 20  # Wait for door to fully open/close
+          seconds: 20 # Wait for door to fully open/close
 ```
 
 ### parallel
@@ -735,7 +738,7 @@ Runs multiple instances simultaneously.
 automation:
   - alias: "Window open too long"
     mode: parallel
-    max: 10  # Maximum parallel runs
+    max: 10 # Maximum parallel runs
     triggers:
       - trigger: state
         entity_id:
@@ -759,7 +762,7 @@ Control logging when max runs are exceeded:
 automation:
   - alias: "Quiet automation"
     mode: single
-    max_exceeded: silent  # No warning logged
+    max_exceeded: silent # No warning logged
 ```
 
 ---
@@ -773,7 +776,7 @@ actions:
   - action: light.turn_on
     target:
       entity_id: light.patio
-    continue_on_error: true  # Automation proceeds even if this fails
+    continue_on_error: true # Automation proceeds even if this fails
   - action: notify.mobile_app
     data:
       message: "Light action attempted"
@@ -947,7 +950,7 @@ actions:
 
 ## Parallel Actions
 
-The `parallel:` action runs a group of actions **concurrently** within one sequence. This is distinct from `mode: parallel` (see [Automation Modes](#automation-modes)), which controls concurrency of whole automation *runs*. Steps inside a nested `sequence:` still run in order.
+The `parallel:` action runs a group of actions **concurrently** within one sequence. This is distinct from `mode: parallel` (see [Automation Modes](#automation-modes)), which controls concurrency of whole automation _runs_. Steps inside a nested `sequence:` still run in order.
 
 ```yaml
 actions:
@@ -1010,7 +1013,7 @@ Access trigger info in templates with `trigger.id`, `trigger.entity_id`, `trigge
 
 ## Documenting Automations & Scripts
 
-Two fields document *intent* (the why, not the what):
+Two fields document _intent_ (the why, not the what):
 
 - **`description:`** — a top-level automation/script field for the overall purpose.
 - **`note:`** (2026.6) — a per-block annotation on any individual trigger, condition, or action (including `wait_*`, `choose` branches, `if`/`then`/`else`, `parallel`, `repeat`, and nested `sequence` steps). Scripts have no triggers, so notes there apply to sequence steps and conditions only. The YAML key is the **singular `note:`** (not `notes:`) — the editor surfaces it as a "Notes" field, but the docs never show the key string, so don't guess the plural.
@@ -1045,39 +1048,39 @@ Home Assistant provides two distinct ways to disable an automation, with differe
   target:
     entity_id: automation.my_automation
   data:
-    stop_actions: true  # default: true — stops currently running actions
+    stop_actions: true # default: true — stops currently running actions
 ```
 
-| Attribute | Value |
-| --- | --- |
-| `stop_actions` | Optional. Stops currently active action runs. **Defaults to `true`.** |
-| Survives reload? | Yes — state is stored in `core.restore_state` |
-| Survives restart? | Only if the automation has an `id:` field — `core.restore_state` matches by `entity_id`, which is derived from `alias:` without `id:` and is unstable if automations are added, removed, or have conflicting aliases |
-| Entity in state machine? | Yes — state is `off` |
-| Re-enable via | `automation.turn_on` |
+| Attribute                | Value                                                                                                                                                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stop_actions`           | Optional. Stops currently active action runs. **Defaults to `true`.**                                                                                                                                                |
+| Survives reload?         | Yes — state is stored in `core.restore_state`                                                                                                                                                                        |
+| Survives restart?        | Only if the automation has an `id:` field — `core.restore_state` matches by `entity_id`, which is derived from `alias:` without `id:` and is unstable if automations are added, removed, or have conflicting aliases |
+| Entity in state machine? | Yes — state is `off`                                                                                                                                                                                                 |
+| Re-enable via            | `automation.turn_on`                                                                                                                                                                                                 |
 
 **`initial_state` override:** If the automation YAML contains an explicit `initial_state` value, it overrides the stored state after a restart (`true` forces on, `false` forces off regardless of stored state).
 
 ### Method 2: Registry Disable (Permanent, via Entity Registry)
 
-Disabling an automation via *Settings → Automations → open automation → ⋮ → Settings → Enabled toggle* sets `disabled_by: user` in `core.entity_registry`. The entity is removed from the state machine entirely.
+Disabling an automation via _Settings → Automations → open automation → ⋮ → Settings → Enabled toggle_ sets `disabled_by: user` in `core.entity_registry`. The entity is removed from the state machine entirely.
 
-| Attribute | Value |
-| --- | --- |
-| Survives reload? | Yes — stored in `core.entity_registry` |
-| Survives restart? | Yes |
-| Entity in state machine? | **No** — `GET /api/states/<entity_id>` returns 404 |
-| Requires `id:` field? | Yes — the `id:` field in `automations.yaml` becomes the automation's `unique_id`, which is required for an entity registry entry |
-| Re-enable via | UI toggle (*Settings → Automations → open automation → ⋮ → Settings → Enabled toggle*) or WebSocket API (`config/entity_registry/update` with `{"disabled_by": null}`) |
+| Attribute                | Value                                                                                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Survives reload?         | Yes — stored in `core.entity_registry`                                                                                                                                 |
+| Survives restart?        | Yes                                                                                                                                                                    |
+| Entity in state machine? | **No** — `GET /api/states/<entity_id>` returns 404                                                                                                                     |
+| Requires `id:` field?    | Yes — the `id:` field in `automations.yaml` becomes the automation's `unique_id`, which is required for an entity registry entry                                       |
+| Re-enable via            | UI toggle (_Settings → Automations → open automation → ⋮ → Settings → Enabled toggle_) or WebSocket API (`config/entity_registry/update` with `{"disabled_by": null}`) |
 
-**Note:** The list toggle on the Automations page (`/config/automation/dashboard`) calls `automation.turn_on`/`turn_off` (Method 1). The *Enabled toggle* under *Settings → Automations → open automation → ⋮ → Settings → Enabled toggle* modifies the entity registry (Method 2). Both can be active simultaneously — an automation can be registry-enabled but in state `off`, or registry-disabled but with a stored `on` state.
+**Note:** The list toggle on the Automations page (`/config/automation/dashboard`) calls `automation.turn_on`/`turn_off` (Method 1). The _Enabled toggle_ under _Settings → Automations → open automation → ⋮ → Settings → Enabled toggle_ modifies the entity registry (Method 2). Both can be active simultaneously — an automation can be registry-enabled but in state `off`, or registry-disabled but with a stored `on` state.
 
 ### AVOID: `enabled: false` in automations.yaml
 
 ```yaml
 # AVOID — enabled: is not a valid top-level key
 - alias: My Automation
-  enabled: false       # not a valid top-level key
+  enabled: false # not a valid top-level key
   triggers: ...
 ```
 
@@ -1088,7 +1091,6 @@ Disabling an automation via *Settings → Automations → open automation → �
 - action: automation.turn_off
   target:
     entity_id: automation.my_automation
-
 # CORRECT — disable permanently via entity registry (Method 2)
 # UI: Settings → Automations → open automation → ⋮ → Settings → Enabled toggle
 # Or via WebSocket API: config/entity_registry/update (disabled_by: user)
@@ -1096,16 +1098,16 @@ Disabling an automation via *Settings → Automations → open automation → �
 
 ### `enabled:` on individual triggers, conditions, and actions
 
-While `enabled:` is not valid as a *top-level* automation key (above), it **is** valid on any individual trigger, condition, or action — as a boolean or a blueprint `!input`. A disabled element is skipped without disabling the whole automation. It also accepts a **limited template** (variables / blueprint inputs only — no `states()`), evaluated **once when the automation loads**.
+While `enabled:` is not valid as a _top-level_ automation key (above), it **is** valid on any individual trigger, condition, or action — as a boolean or a blueprint `!input`. A disabled element is skipped without disabling the whole automation. It also accepts a **limited template** (variables / blueprint inputs only — no `states()`), evaluated **once when the automation loads**.
 
 ```yaml
 triggers:
   - trigger: sun
     event: sunset
-    enabled: false                       # statically disabled
+    enabled: false # statically disabled
   - trigger: time
     at: "15:30:00"
-    enabled: "{{ enable_afternoon }}"    # limited template over a variable/!input; evaluated once at load
+    enabled: "{{ enable_afternoon }}" # limited template over a variable/!input; evaluated once at load
 actions:
   - action: notify.notify
     enabled: false
