@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/anomalyco/rift.git",
+  "ref": "18ca9d199cfa0033e1adf63b1eb6625fab89478a",
+  "patches": [],
+  "checks": [["cargo", "test", "--workspace", "--locked"]]
+}
