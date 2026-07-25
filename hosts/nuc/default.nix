@@ -419,6 +419,12 @@ let
     tokenFile = "/etc/opnix-token";
   };
   millDocsVaultPath = "/home/emiller/mill-docs";
+  buzzMillDocsOwnerPubkey = "fdb266e13b8a216bcb47132c5451fa4cac6b70730bd6d9952b9609362cc84d4c";
+  buzzMillDocsAllowedPubkeys = [ buzzMillDocsOwnerPubkey ];
+  buzzMillDocsChannelId = "ebe6fa65-e776-46e6-9c79-7dae679ad1de";
+  buzzMillDocsCodexAcp = pkgs.writeShellScriptBin "mill-docs-codex-acp" ''
+    exec ${pkgs.my.codex-acp}/bin/codex-acp "$@"
+  '';
   legacyMillDocsPath = "/home/emiller/sync/mill-docs";
   millDocsDeviceName = "nuc-mill-docs";
   obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT,.mdbase,.amp,scripts,.trash,.obsidian/plugins-disabled-20260505-160148,.obsidian/plugins-disabled-20260505-162506,.obsidian/plugins-disabled-all-20260505-164607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082626,06_Attachments/YouTube,src";
@@ -1171,6 +1177,8 @@ in
     radarBlogwatcherCli # Radar terminal login-shell runtime
     rtk # Hermes terminal command rewriting after login-shell snapshot
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
+    my.buzz
+    my.codex-acp
     my.zele # packaged upstream+patches zele CLI
     my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
   ];
@@ -2135,6 +2143,73 @@ in
     "d ${millDocsVaultPath} 0755 emiller users -"
 
   ];
+
+  age.secrets.buzz-mill-docs-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+
+  systemd.services.buzz-mill-docs-codex = {
+    description = "Buzz mention worker for mill-docs";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    environment = {
+      HOME = "/home/emiller";
+      CODEX_HOME = "/home/emiller/.codex";
+      NO_BROWSER = "1";
+      BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
+      BUZZ_ACP_AGENT_OWNER = buzzMillDocsOwnerPubkey;
+      BUZZ_ACP_AGENT_COMMAND = "${buzzMillDocsCodexAcp}/bin/mill-docs-codex-acp";
+      BUZZ_ACP_AGENT_ARGS = "";
+      BUZZ_ACP_AGENTS = "1";
+      BUZZ_ACP_SUBSCRIBE = "mentions";
+      BUZZ_ACP_CHANNELS = buzzMillDocsChannelId;
+      BUZZ_ACP_RESPOND_TO = "allowlist";
+      BUZZ_ACP_RESPOND_TO_ALLOWLIST = lib.concatStringsSep "," buzzMillDocsAllowedPubkeys;
+      BUZZ_ACP_ALLOWED_RESPOND_TO = "allowlist";
+      BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
+      BUZZ_ACP_MEMORY = "false";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = millDocsVaultPath;
+      ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
+      EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;
+      Restart = "always";
+      RestartSec = "10s";
+      UMask = "0077";
+      ProtectSystem = "strict";
+      ProtectHome = "tmpfs";
+      BindPaths = [
+        millDocsVaultPath
+        "/home/emiller/.codex"
+      ];
+      BindReadOnlyPaths = [ "/home/emiller/obsidian-vault" ];
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      PrivateDevices = true;
+      CapabilityBoundingSet = "";
+      LockPersonality = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      RestrictAddressFamilies = [
+        "AF_UNIX"
+        "AF_INET"
+        "AF_INET6"
+      ];
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      SystemCallArchitectures = "native";
+    };
+  };
 
   systemd.services.obsidian-sync-mill-docs = {
     description = "Obsidian Headless Sync (mill-docs)";
