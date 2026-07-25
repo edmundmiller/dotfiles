@@ -21,15 +21,15 @@ Answer three questions before touching anything:
 
 Search every component type that references entity IDs. Do not limit searches to the component you are editing.
 
-| Component | How to search |
-|-----------|---------------|
-| Automations | Search automations for the entity ID via the HA API or grep `automations.yaml` |
-| Dashboards | Search dashboard configs for the entity ID via the HA API or grep `.storage/lovelace*`, `ui-lovelace.yaml` |
-| Scripts | grep `scripts.yaml` |
-| Scenes | grep `scenes.yaml` |
-| Config-Entry-based groups | `GET /api/config/config_entries/entry?type=config&domain=group` — members in `options.entities`; entity registry renames do NOT update these automatically (→ see Config-Entry-Groups section) |
+| Component                                                                                                              | How to search                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Automations                                                                                                            | Search automations for the entity ID via the HA API or grep `automations.yaml`                                                                                                                      |
+| Dashboards                                                                                                             | Search dashboard configs for the entity ID via the HA API or grep `.storage/lovelace*`, `ui-lovelace.yaml`                                                                                          |
+| Scripts                                                                                                                | grep `scripts.yaml`                                                                                                                                                                                 |
+| Scenes                                                                                                                 | grep `scenes.yaml`                                                                                                                                                                                  |
+| Config-Entry-based groups                                                                                              | `GET /api/config/config_entries/entry?type=config&domain=group` — members in `options.entities`; entity registry renames do NOT update these automatically (→ see Config-Entry-Groups section)      |
 | Config-Entry integrations (Better Thermostat, Generic Thermostat, Generic Hygrostat, Threshold Helper, Min/Max Helper) | `GET /api/config/config_entries/entry` — scan `data` and `options` fields for the old entity ID; entity registry renames do NOT update these fields automatically (→ see Config-Entry-Data section) |
-| Other | Check AppDaemon apps, Node-RED flows, Pyscript scripts, or any custom integration that references entity IDs |
+| Other                                                                                                                  | Check AppDaemon apps, Node-RED flows, Pyscript scripts, or any custom integration that references entity IDs                                                                                        |
 
 Record every location found. This list becomes your update checklist for Step 4.
 
@@ -60,11 +60,11 @@ HA devices bundle multiple entities. A smart plug might expose `switch.*`, `sens
 
 Example — renaming a smart plug's entities from manufacturer defaults to room-based names:
 
-| Domain | Old entity ID | New entity ID |
-|---|---|---|
-| switch | `switch.shellyplug_s_a1b2c3d4e5f6` | `switch.office_heater` |
+| Domain | Old entity ID                             | New entity ID                 |
+| ------ | ----------------------------------------- | ----------------------------- |
+| switch | `switch.shellyplug_s_a1b2c3d4e5f6`        | `switch.office_heater`        |
 | sensor | `sensor.shellyplug_s_a1b2c3d4e5f6_energy` | `sensor.office_heater_energy` |
-| update | `update.shellyplug_s_a1b2c3d4e5f6` | `update.office_heater` |
+| update | `update.shellyplug_s_a1b2c3d4e5f6`        | `update.office_heater`        |
 
 **Dashboard reference locations (Step 2):**
 Dashboard cards reference entities in multiple places. Search all of these:
@@ -95,7 +95,7 @@ Verify the new helper produces the same values as the old template sensor. Check
 When converting `device_id` triggers to `entity_id` triggers, or replacing `wait_template` with `wait_for_trigger`:
 
 **Behavioral equivalence (Step 1):**
-`wait_for_trigger` waits for a state *change*; `wait_template` polls for *current state*. These differ when the target state is already true at wait start: `wait_for_trigger` blocks indefinitely, `wait_template` returns immediately.
+`wait_for_trigger` waits for a state _change_; `wait_template` polls for _current state_. These differ when the target state is already true at wait start: `wait_for_trigger` blocks indefinitely, `wait_template` returns immediately.
 
 **Automation callers (Step 2):**
 Search for scripts or other automations that call the automation you are restructuring via `automation.trigger` or `automation.turn_on`. Renaming or splitting an automation changes its entity_id and breaks these callers.
@@ -158,7 +158,7 @@ POST /api/config/config_entries/options/flow/<flow_id>
 {"entities": ["new.entity_id_1", "new.entity_id_2"], "hide_members": <suggested_value>}
 ```
 
-   If the group type supports `all`, add it explicitly:
+If the group type supports `all`, add it explicitly:
 
 ```http
 POST /api/config/config_entries/options/flow/<flow_id>
@@ -174,29 +174,30 @@ for `entities` contains only the updated entity IDs. The REST endpoint
 `GET /api/config/config_entries/entry` does not expose `options.entities` — the Options
 Flow is the only way to read current group members.
 
-
 ## Config-Entry Data — Blind Spots for entity registry renames
 
 **Entity registry renames only update the Entity Registry.** Integrations that collect entity_ids during their setup flow store them in the Config Entry — not in YAML and not in the Entity Registry. A registry rename leaves these references pointing to the old (now non-existent) entity ID.
 
 **Affected integrations and storage fields:**
 
-| Integration | Storage field | Fields containing entity_ids |
-|---|---|---|
+| Integration           | Storage field                                     | Fields containing entity_ids                                                |
+| --------------------- | ------------------------------------------------- | --------------------------------------------------------------------------- |
 | **Better Thermostat** | `data` (not accessible via REST — see note below) | `temperature_sensor`, `humidity_sensor`, `outdoor_sensor`, `window_sensors` |
-| Generic Thermostat | `options` | `heater`, `target_sensor` |
-| Generic Hygrostat | `options` | `humidifier`, `target_sensor` |
-| Threshold Helper | `options` | `entity_id` |
-| Min/Max Helper | `options` | `entity_ids` |
+| Generic Thermostat    | `options`                                         | `heater`, `target_sensor`                                                   |
+| Generic Hygrostat     | `options`                                         | `humidifier`, `target_sensor`                                               |
+| Threshold Helper      | `options`                                         | `entity_id`                                                                 |
+| Min/Max Helper        | `options`                                         | `entity_ids`                                                                |
 
 **Symptom:** Integration reports "associated entity missing" or behaves incorrectly after restart.
 
 **Timing:** Patch Config-Entry data fields **before the HA restart**. An integration that starts with stale entity_ids can cause integration setup failures on restart.
 
 **Scan via REST API:**
+
 ```http
 GET /api/config/config_entries/entry
 ```
+
 Iterate the returned entries and check `data` and `options` fields for the old entity ID.
 
 > **Note:** Some custom integrations (including Better Thermostat) do not expose their entity references in `data` or `options` via this endpoint — the fields may appear empty even when the integration is configured. For these integrations, the REST scan will return no matches; the Fix section below documents whether an alternative fix path exists.
@@ -208,7 +209,6 @@ For integrations that store entity_ids in `options` (Generic Thermostat, Generic
 For integrations that store entity_ids in `data` (Better Thermostat): `data` fields written during the initial Config Flow setup have no standard API for post-setup mutation — the Options Flow updates `options` only. No API-based fix path exists. Document this limitation to the user before proceeding with a rename.
 
 ---
-
 
 ## Storage-Mode-Dashboards (`.storage/lovelace.*`)
 
@@ -239,8 +239,6 @@ Use the Lovelace WebSocket API (`lovelace/config` to read, `lovelace/config/save
    Note: use `"url_path": null` for the default (Overview) dashboard; use the string path for custom dashboards.
    → takes effect immediately, no restart required
 ```
-
-
 
 **List all storage dashboards:**
 WebSocket: `{"type": "lovelace/dashboards/list"}` → returns all dashboards with their url_path.

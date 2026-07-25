@@ -145,7 +145,7 @@ Interactive search within the selected collection. Available only when a specifi
 | -------- | ------------------------------ |
 | Type     | Debounced lex search           |
 | `enter`  | Execute search (active mode)   |
-| `ctrl+t` | Cycle mode (lex ↔ hybrid)     |
+| `ctrl+t` | Cycle mode (lex ↔ hybrid)      |
 | `tab`    | Focus results                  |
 | `ctrl+u` | Clear query                    |
 | `esc`    | Clear text or back to overview |

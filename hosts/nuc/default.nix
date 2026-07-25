@@ -177,9 +177,11 @@ let
     export HERMES_HOME=/var/lib/hermes-amosburton/.hermes
     export HERMES_REAL_HOME=/var/lib/hermes-amosburton
   '';
-  amosburtonHermesConfigOverlay = (pkgs.formats.yaml { }).generate "amosburton-hermes-host-overlay.yaml" {
-    terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
-  };
+  amosburtonHermesConfigOverlay =
+    (pkgs.formats.yaml { }).generate "amosburton-hermes-host-overlay.yaml"
+      {
+        terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
+      };
   hermesSharedProfileNames = [
     "amosburton"
     "anne"
@@ -328,8 +330,7 @@ let
       fi
     '') hermesAmosburtonSecrets}
   '';
-  hermesAmosburtonSecretsMaterialize =
-    pkgs.writeShellScript "hermes-amosburton-secrets-materialize" hermesAmosburtonSecretsMaterializeText;
+  hermesAmosburtonSecretsMaterialize = pkgs.writeShellScript "hermes-amosburton-secrets-materialize" hermesAmosburtonSecretsMaterializeText;
   hermesScintillateSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     {

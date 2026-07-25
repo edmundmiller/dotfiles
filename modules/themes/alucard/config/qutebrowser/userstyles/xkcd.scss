@@ -41,11 +41,10 @@
 
   /*Exceptions*/
   img[alt="https://imgs.xkcd.com/comics/stargazing.png"],
-    img[alt="https://imgs.xkcd.com/comics/flashlights.png"],
-    img[alt="https://imgs.xkcd.com/comics/google_maps.png"],
-    img[alt="https://imgs.xkcd.com/comics/alternative_energy_revolution.jpg"],
-    img[alt="https://imgs.xkcd.com/comics/man_page.png"]
-  {
+  img[alt="https://imgs.xkcd.com/comics/flashlights.png"],
+  img[alt="https://imgs.xkcd.com/comics/google_maps.png"],
+  img[alt="https://imgs.xkcd.com/comics/alternative_energy_revolution.jpg"],
+  img[alt="https://imgs.xkcd.com/comics/man_page.png"] {
     filter: invert(0%) !important;
     -webkit-filter: invert(0%) !important;
   }

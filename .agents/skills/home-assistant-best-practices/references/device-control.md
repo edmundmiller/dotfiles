@@ -56,11 +56,11 @@ actions:
 
 ### Target Types
 
-| Type | Use case | Persistence |
-|------|----------|-------------|
-| `entity_id` | Specific entities | ✅ Stable (recommended) |
-| `area_id` | All entities in a room | ✅ Stable |
-| `device_id` | All entities on a device | ❌ Changes on re-add |
+| Type        | Use case                 | Persistence             |
+| ----------- | ------------------------ | ----------------------- |
+| `entity_id` | Specific entities        | ✅ Stable (recommended) |
+| `area_id`   | All entities in a room   | ✅ Stable               |
+| `device_id` | All entities on a device | ❌ Changes on re-add    |
 
 ### Multiple Targets
 
@@ -155,12 +155,12 @@ triggers:
 
 ### Z2M vs ZHA Comparison
 
-| Aspect | ZHA | Zigbee2MQTT |
-|--------|-----|-------------|
-| Trigger type | `event` trigger | `device` trigger or `mqtt` trigger |
-| Identifier | `device_ieee` (persistent) | `device_id` (autodiscovered) |
-| Event name | `zha_event` | MQTT device trigger |
-| Button actions | `command` field | `type` and `subtype` |
+| Aspect         | ZHA                        | Zigbee2MQTT                        |
+| -------------- | -------------------------- | ---------------------------------- |
+| Trigger type   | `event` trigger            | `device` trigger or `mqtt` trigger |
+| Identifier     | `device_ieee` (persistent) | `device_id` (autodiscovered)       |
+| Event name     | `zha_event`                | MQTT device trigger                |
+| Button actions | `command` field            | `type` and `subtype`               |
 
 ---
 
@@ -327,7 +327,7 @@ actions:
     data:
       command: app_segment_clean
       params:
-        - 16  # Vendor-specific room ID
+        - 16 # Vendor-specific room ID
         - 17
 ```
 
@@ -416,24 +416,24 @@ actions:
 
 ```yaml
 actions:
-  - action: domain.service_name   # Required
-    target:                       # Optional but recommended
-      entity_id: entity.id        # Single or list
-      area_id: area_name          # Single or list
-      device_id: device_id        # Avoid except for Z2M
-    data:                         # Service-specific parameters
+  - action: domain.service_name # Required
+    target: # Optional but recommended
+      entity_id: entity.id # Single or list
+      area_id: area_name # Single or list
+      device_id: device_id # Avoid except for Z2M
+    data: # Service-specific parameters
       parameter: value
-    response_variable: result     # Capture response (if needed)
+    response_variable: result # Capture response (if needed)
 ```
 
 ## Quick Reference: Trigger Types for Devices
 
-| Device Type | ZHA | Zigbee2MQTT | Generic |
-|-------------|-----|-------------|---------|
-| Button/Remote | `event` (zha_event) | `device` or `mqtt` | `state` |
-| Motion sensor | `state` | `state` | `state` |
-| Door/Window | `state` | `state` | `state` |
-| Temperature | `state` or `numeric_state` | `state` or `numeric_state` | `state` or `numeric_state` |
-| Switch | `state` | `state` | `state` |
+| Device Type   | ZHA                        | Zigbee2MQTT                | Generic                    |
+| ------------- | -------------------------- | -------------------------- | -------------------------- |
+| Button/Remote | `event` (zha_event)        | `device` or `mqtt`         | `state`                    |
+| Motion sensor | `state`                    | `state`                    | `state`                    |
+| Door/Window   | `state`                    | `state`                    | `state`                    |
+| Temperature   | `state` or `numeric_state` | `state` or `numeric_state` | `state` or `numeric_state` |
+| Switch        | `state`                    | `state`                    | `state`                    |
 
 Always prefer `state` triggers with `entity_id` for sensors and switches. Only use event/device triggers for stateless devices (buttons, remotes).

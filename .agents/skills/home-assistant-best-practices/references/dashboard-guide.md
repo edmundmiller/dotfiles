@@ -45,6 +45,7 @@ Patterns and decisions for designing Home Assistant Lovelace dashboards.
 ```
 
 **url_path rules:**
+
 - New dashboards must contain a hyphen: `my-dashboard` (not `mydashboard`)
 - Use `lovelace` to target the built-in default dashboard
 - `dashboard_id`: internal identifier (returned on create, used for update/delete)
@@ -54,12 +55,12 @@ Patterns and decisions for designing Home Assistant Lovelace dashboards.
 
 ## View Types
 
-| Type | Use for |
-|------|---------|
+| Type       | Use for                                                |
+| ---------- | ------------------------------------------------------ |
 | `sections` | Most dashboards (RECOMMENDED) — grid-based, responsive |
-| `panel` | Full-screen single cards (maps, cameras, iframes) |
-| `sidebar` | Two-column layouts with primary/secondary content |
-| `masonry` | Legacy — auto-arranges cards, less control |
+| `panel`    | Full-screen single cards (maps, cameras, iframes)      |
+| `sidebar`  | Two-column layouts with primary/secondary content      |
+| `masonry`  | Legacy — auto-arranges cards, less control             |
 
 ### View Configuration
 
@@ -81,8 +82,12 @@ A `sections` view also supports a `header` (a markdown card plus badge positioni
 
 ```json
 {
-  "header": {"layout": "responsive", "badges_position": "top", "card": {"type": "markdown", "content": "# Welcome home"}},
-  "footer": {"max_width": 600}
+  "header": {
+    "layout": "responsive",
+    "badges_position": "top",
+    "card": { "type": "markdown", "content": "# Welcome home" }
+  },
+  "footer": { "max_width": 600 }
 }
 ```
 
@@ -96,7 +101,7 @@ A **strategy** generates a dashboard (or a single view) from code instead of a s
 
 ```yaml
 strategy:
-  type: original-states   # built-in strategy; auto-generates views from current entities/areas
+  type: original-states # built-in strategy; auto-generates views from current entities/areas
 views: []
 ```
 
@@ -115,13 +120,13 @@ views: []
 
 ## Built-in Cards
 
-| Category | Cards |
-|----------|-------|
-| **Modern Primary** | tile, area, button, grid |
-| **Container** | vertical-stack, horizontal-stack, grid |
-| **Logic** | conditional, entity-filter |
-| **Display** | sensor, history-graph, statistics-graph, gauge, energy, calendar, distribution |
-| **Legacy Control** | entity, entities, light, thermostat (use tile instead) |
+| Category           | Cards                                                                          |
+| ------------------ | ------------------------------------------------------------------------------ |
+| **Modern Primary** | tile, area, button, grid                                                       |
+| **Container**      | vertical-stack, horizontal-stack, grid                                         |
+| **Logic**          | conditional, entity-filter                                                     |
+| **Display**        | sensor, history-graph, statistics-graph, gauge, energy, calendar, distribution |
+| **Legacy Control** | entity, entities, light, thermostat (use tile instead)                         |
 
 **Default:** Use `tile` card for most entities. Use `references/dashboard-cards.md` to look up all card types or fetch card-specific docs.
 
@@ -134,10 +139,10 @@ views: []
   "name": "Master Bedroom",
   "icon": "mdi:thermostat",
   "features": [
-    {"type": "target-temperature"},
-    {"type": "climate-hvac-modes", "style": "dropdown"}
+    { "type": "target-temperature" },
+    { "type": "climate-hvac-modes", "style": "dropdown" }
   ],
-  "tap_action": {"action": "more-info"}
+  "tap_action": { "action": "more-info" }
 }
 ```
 
@@ -149,9 +154,9 @@ views: []
   "columns": 3,
   "square": false,
   "cards": [
-    {"type": "tile", "entity": "light.kitchen"},
-    {"type": "tile", "entity": "light.dining"},
-    {"type": "tile", "entity": "light.hallway"}
+    { "type": "tile", "entity": "light.kitchen" },
+    { "type": "tile", "entity": "light.dining" },
+    { "type": "tile", "entity": "light.hallway" }
   ]
 }
 ```
@@ -166,10 +171,14 @@ The official way to label a section, replacing a bare section `title`. Supports 
   "heading": "Kitchen",
   "heading_style": "title",
   "icon": "mdi:fridge",
-  "tap_action": {"action": "navigate", "navigation_path": "/lovelace/kitchen"},
+  "tap_action": { "action": "navigate", "navigation_path": "/lovelace/kitchen" },
   "badges": [
-    {"type": "entity", "entity": "sensor.kitchen_temperature", "show_state": true},
-    {"type": "button", "icon": "mdi:lightbulb-off", "tap_action": {"action": "perform-action", "perform_action": "light.turn_off"}}
+    { "type": "entity", "entity": "sensor.kitchen_temperature", "show_state": true },
+    {
+      "type": "button",
+      "icon": "mdi:lightbulb-off",
+      "tap_action": { "action": "perform-action", "perform_action": "light.turn_off" }
+    }
   ]
 }
 ```
@@ -198,7 +207,7 @@ In a `sections` view each section is a 12-column grid. Size or span any card wit
 {
   "type": "tile",
   "entity": "light.kitchen",
-  "grid_options": {"columns": 6, "rows": "auto"}
+  "grid_options": { "columns": 6, "rows": "auto" }
 }
 ```
 
@@ -212,8 +221,8 @@ In a `sections` view each section is a 12-column grid. Size or span any card wit
 {
   "type": "history-graph",
   "entities": [
-    {"entity": "sensor.living_room_temp", "name": "Living Room", "color": "red"},
-    {"entity": "sensor.bedroom_temp", "color": "#1f77b4"}
+    { "entity": "sensor.living_room_temp", "name": "Living Room", "color": "red" },
+    { "entity": "sensor.bedroom_temp", "color": "#1f77b4" }
   ]
 }
 ```
@@ -226,26 +235,26 @@ In a `sections` view each section is a 12-column grid. Size or span any card wit
 
 Quick controls available on tile, area, humidifier, and thermostat cards.
 
-| Domain | Feature types |
-|--------|--------------|
-| Climate | `climate-hvac-modes`, `climate-fan-modes`, `climate-preset-modes`, `climate-swing-modes`, `target-temperature` |
-| Light | `light-brightness`, `light-color-temp` |
-| Cover | `cover-open-close`, `cover-position`, `cover-tilt` |
-| Fan | `fan-speed`, `fan-direction`, `fan-oscillate` |
-| Media | `media-player-playback`, `media-player-volume-slider`, `media-player-volume-buttons`, `media-player-source`, `media-player-sound-mode` |
-| Weather | `temperature-forecast`, `precipitation-forecast` |
-| Valve | `valve-open-close`, `valve-position` |
-| Lock | `lock-commands`, `lock-open-door` |
-| Humidifier | `humidifier-modes`, `humidifier-toggle` |
-| Water heater | `water-heater-operation-modes` |
-| Select | `select-options` |
-| Update | `update-actions` |
-| Counter | `counter-actions` |
-| Date | `date-set` |
-| Lawn mower | `lawn-mower-commands` |
-| Area card | `area-controls` |
-| Favorites | `light-color-favorites`, `cover-position-favorite`, `cover-tilt-favorite`, `valve-position-favorite` |
-| Other | `toggle`, `button`, `alarm-modes`, `numeric-input` |
+| Domain       | Feature types                                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Climate      | `climate-hvac-modes`, `climate-fan-modes`, `climate-preset-modes`, `climate-swing-modes`, `target-temperature`                         |
+| Light        | `light-brightness`, `light-color-temp`                                                                                                 |
+| Cover        | `cover-open-close`, `cover-position`, `cover-tilt`                                                                                     |
+| Fan          | `fan-speed`, `fan-direction`, `fan-oscillate`                                                                                          |
+| Media        | `media-player-playback`, `media-player-volume-slider`, `media-player-volume-buttons`, `media-player-source`, `media-player-sound-mode` |
+| Weather      | `temperature-forecast`, `precipitation-forecast`                                                                                       |
+| Valve        | `valve-open-close`, `valve-position`                                                                                                   |
+| Lock         | `lock-commands`, `lock-open-door`                                                                                                      |
+| Humidifier   | `humidifier-modes`, `humidifier-toggle`                                                                                                |
+| Water heater | `water-heater-operation-modes`                                                                                                         |
+| Select       | `select-options`                                                                                                                       |
+| Update       | `update-actions`                                                                                                                       |
+| Counter      | `counter-actions`                                                                                                                      |
+| Date         | `date-set`                                                                                                                             |
+| Lawn mower   | `lawn-mower-commands`                                                                                                                  |
+| Area card    | `area-controls`                                                                                                                        |
+| Favorites    | `light-color-favorites`, `cover-position-favorite`, `cover-tilt-favorite`, `valve-position-favorite`                                   |
+| Other        | `toggle`, `button`, `alarm-modes`, `numeric-input`                                                                                     |
 
 **Weather features (2026.6):** `forecast_type` (`daily`/`twice_daily`/`hourly`), `days_to_show`/`hours_to_show`, `show_labels`; `precipitation-forecast` also takes `precipitation_type` (`amount`/`probability`).
 
@@ -254,6 +263,7 @@ Quick controls available on tile, area, humidifier, and thermostat cards.
 ### Tile Card Extras
 
 Additional tile feature types beyond controls:
+
 - `trend-graph` — 24-hour history sparkline for numeric entities
 - `bar-gauge` — percentage bar for numeric entities
 - `button` — a `perform-action` tap action runs automations/scripts directly from the tile
@@ -293,7 +303,7 @@ A **`type: shortcut`** badge (2026.5) is the badge-row counterpart of the shortc
   "text": "Good night",
   "icon": "mdi:weather-night",
   "color": "indigo",
-  "tap_action": {"action": "perform-action", "perform_action": "script.good_night"}
+  "tap_action": { "action": "perform-action", "perform_action": "script.good_night" }
 }
 ```
 
@@ -303,9 +313,9 @@ A **`type: shortcut`** badge (2026.5) is the badge-row counterpart of the shortc
 
 ```json
 {
-  "tap_action": {"action": "toggle"},
-  "hold_action": {"action": "more-info"},
-  "double_tap_action": {"action": "navigate", "navigation_path": "/lovelace/lights"}
+  "tap_action": { "action": "toggle" },
+  "hold_action": { "action": "more-info" },
+  "double_tap_action": { "action": "navigate", "navigation_path": "/lovelace/lights" }
 }
 ```
 
@@ -320,12 +330,15 @@ Any card or badge accepts a `visibility` list (all conditions must pass to show)
 ```json
 {
   "visibility": [
-    {"condition": "screen", "media_query": "(min-width: 1280px)"},
-    {"condition": "numeric_state", "entity": "sensor.temperature", "above": 20},
-    {"condition": "and", "conditions": [
-      {"condition": "state", "entity": "sun.sun", "state": "above_horizon"},
-      {"condition": "user", "users": ["user_id_hex"]}
-    ]}
+    { "condition": "screen", "media_query": "(min-width: 1280px)" },
+    { "condition": "numeric_state", "entity": "sensor.temperature", "above": 20 },
+    {
+      "condition": "and",
+      "conditions": [
+        { "condition": "state", "entity": "sun.sun", "state": "above_horizon" },
+        { "condition": "user", "users": ["user_id_hex"] }
+      ]
+    }
   ]
 }
 ```
@@ -348,7 +361,7 @@ class MyCard extends HTMLElement {
   }
   set hass(hass) {
     if (!this.content) {
-      this.innerHTML = `<ha-card header="${this.config.title || 'My Card'}">
+      this.innerHTML = `<ha-card header="${this.config.title || "My Card"}">
         <div class="card-content"></div>
       </ha-card>`;
       this.content = this.querySelector(".card-content");
@@ -356,7 +369,9 @@ class MyCard extends HTMLElement {
     const state = hass.states[this.config.entity];
     this.content.innerHTML = state ? `State: ${state.state}` : "Entity not found";
   }
-  getCardSize() { return 2; }
+  getCardSize() {
+    return 2;
+  }
 }
 customElements.define("my-card", MyCard);
 window.customCards = window.customCards || [];
@@ -420,12 +435,12 @@ entities:
 
 ## HACS Integration
 
-| Use case | Solution |
-|----------|----------|
-| Popular community card | HACS — search and install via HACS API |
-| Small custom styling | Inline CSS — register via HA dashboard resource API |
-| One-off custom card | Inline module — register via HA dashboard resource API |
-| Large/complex card | HACS or filesystem (`/config/www/`) |
+| Use case               | Solution                                               |
+| ---------------------- | ------------------------------------------------------ |
+| Popular community card | HACS — search and install via HACS API                 |
+| Small custom styling   | Inline CSS — register via HA dashboard resource API    |
+| One-off custom card    | Inline module — register via HA dashboard resource API |
+| Large/complex card     | HACS or filesystem (`/config/www/`)                    |
 
 ### Finding and Installing Cards
 
@@ -456,30 +471,62 @@ Search HACS for community cards by name/category, review repository details, the
       "sections": [
         {
           "title": "Quick Actions",
-          "cards": [{
-            "type": "grid",
-            "columns": 4,
-            "square": false,
-            "cards": [
-              {"type": "button", "name": "Lights", "icon": "mdi:lightbulb", "tap_action": {"action": "navigate", "navigation_path": "/lovelace/lights"}},
-              {"type": "button", "name": "Climate", "icon": "mdi:thermostat", "tap_action": {"action": "navigate", "navigation_path": "/lovelace/climate"}},
-              {"type": "button", "name": "Security", "icon": "mdi:shield-home", "tap_action": {"action": "navigate", "navigation_path": "/lovelace/security"}},
-              {"type": "button", "name": "Energy", "icon": "mdi:lightning-bolt", "tap_action": {"action": "navigate", "navigation_path": "/lovelace/energy"}}
-            ]
-          }]
+          "cards": [
+            {
+              "type": "grid",
+              "columns": 4,
+              "square": false,
+              "cards": [
+                {
+                  "type": "button",
+                  "name": "Lights",
+                  "icon": "mdi:lightbulb",
+                  "tap_action": { "action": "navigate", "navigation_path": "/lovelace/lights" }
+                },
+                {
+                  "type": "button",
+                  "name": "Climate",
+                  "icon": "mdi:thermostat",
+                  "tap_action": { "action": "navigate", "navigation_path": "/lovelace/climate" }
+                },
+                {
+                  "type": "button",
+                  "name": "Security",
+                  "icon": "mdi:shield-home",
+                  "tap_action": { "action": "navigate", "navigation_path": "/lovelace/security" }
+                },
+                {
+                  "type": "button",
+                  "name": "Energy",
+                  "icon": "mdi:lightning-bolt",
+                  "tap_action": { "action": "navigate", "navigation_path": "/lovelace/energy" }
+                }
+              ]
+            }
+          ]
         },
         {
           "title": "Favorites",
-          "cards": [{
-            "type": "grid",
-            "columns": 3,
-            "square": false,
-            "cards": [
-              {"type": "tile", "entity": "light.living_room", "features": [{"type": "light-brightness"}]},
-              {"type": "tile", "entity": "climate.bedroom", "features": [{"type": "target-temperature"}]},
-              {"type": "tile", "entity": "lock.front_door"}
-            ]
-          }]
+          "cards": [
+            {
+              "type": "grid",
+              "columns": 3,
+              "square": false,
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "light.living_room",
+                  "features": [{ "type": "light-brightness" }]
+                },
+                {
+                  "type": "tile",
+                  "entity": "climate.bedroom",
+                  "features": [{ "type": "target-temperature" }]
+                },
+                { "type": "tile", "entity": "lock.front_door" }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -492,15 +539,29 @@ Search HACS for community cards by name/category, review repository details, the
       "sections": [
         {
           "title": "Living Room",
-          "cards": [{
-            "type": "grid",
-            "columns": 3,
-            "cards": [
-              {"type": "tile", "entity": "light.overhead", "features": [{"type": "light-brightness"}]},
-              {"type": "tile", "entity": "light.lamp", "features": [{"type": "light-brightness"}]},
-              {"type": "tile", "entity": "light.accent", "features": [{"type": "light-color-temp"}]}
-            ]
-          }]
+          "cards": [
+            {
+              "type": "grid",
+              "columns": 3,
+              "cards": [
+                {
+                  "type": "tile",
+                  "entity": "light.overhead",
+                  "features": [{ "type": "light-brightness" }]
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.lamp",
+                  "features": [{ "type": "light-brightness" }]
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.accent",
+                  "features": [{ "type": "light-color-temp" }]
+                }
+              ]
+            }
+          ]
         }
       ]
     }
@@ -512,13 +573,13 @@ Search HACS for community cards by name/category, review repository details, the
 
 ## Common Pitfalls
 
-| Issue | Solution |
-|-------|----------|
-| url_path rejected | New dashboards need a hyphen: `my-dashboard` not `mydashboard`. Use `lovelace` for the default dashboard. |
-| Entity not found | Use full entity ID: `light.living_room` not `living_room` |
-| Features not working | Match feature type to entity domain (e.g., `light-brightness` only works on `light.*`) |
-| Custom card not loading | Check resource type is `module` and verify URL is accessible |
-| Card too large for inline | Use HACS or filesystem instead |
+| Issue                     | Solution                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| url_path rejected         | New dashboards need a hyphen: `my-dashboard` not `mydashboard`. Use `lovelace` for the default dashboard. |
+| Entity not found          | Use full entity ID: `light.living_room` not `living_room`                                                 |
+| Features not working      | Match feature type to entity domain (e.g., `light-brightness` only works on `light.*`)                    |
+| Custom card not loading   | Check resource type is `module` and verify URL is accessible                                              |
+| Card too large for inline | Use HACS or filesystem instead                                                                            |
 
 ---
 
@@ -532,19 +593,20 @@ Search HACS for community cards by name/category, review repository details, the
 
 ### Recent Dashboard Features (2026.2–2026.6)
 
-| Feature | Version | Details |
-|---------|---------|---------|
-| **Distribution card** | 2026.2 | Proportional horizontal bars across multiple entities (power monitoring, storage usage) |
-| **Heading-card button badges** | 2026.2 | Inline `button` badges in heading cards for quick actions |
-| **Section background colors** | 2026.4 | Sections support custom `background_color` with adjustable opacity |
-| **Card favorites** | 2026.4 | Light color and cover/valve position favorites on tile/light cards (see the Favorites row in the Features table) |
-| **Auto-height cards** | 2026.4 | Cards auto-adjust height based on content via the layout editor |
-| **Shortcut badge** | 2026.5 | `type: shortcut` action chip in the badge row |
-| **Media source / sound-mode features** | 2026.5 | `media-player-source`, `media-player-sound-mode` tile features |
-| **Weather forecast features** | 2026.6 | `temperature-forecast`, `precipitation-forecast` tile features |
-| **Per-entity graph color** | 2026.6 | `color` on each entity of `history-graph` / `statistics-graph` |
+| Feature                                | Version | Details                                                                                                          |
+| -------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Distribution card**                  | 2026.2  | Proportional horizontal bars across multiple entities (power monitoring, storage usage)                          |
+| **Heading-card button badges**         | 2026.2  | Inline `button` badges in heading cards for quick actions                                                        |
+| **Section background colors**          | 2026.4  | Sections support custom `background_color` with adjustable opacity                                               |
+| **Card favorites**                     | 2026.4  | Light color and cover/valve position favorites on tile/light cards (see the Favorites row in the Features table) |
+| **Auto-height cards**                  | 2026.4  | Cards auto-adjust height based on content via the layout editor                                                  |
+| **Shortcut badge**                     | 2026.5  | `type: shortcut` action chip in the badge row                                                                    |
+| **Media source / sound-mode features** | 2026.5  | `media-player-source`, `media-player-sound-mode` tile features                                                   |
+| **Weather forecast features**          | 2026.6  | `temperature-forecast`, `precipitation-forecast` tile features                                                   |
+| **Per-entity graph color**             | 2026.6  | `color` on each entity of `history-graph` / `statistics-graph`                                                   |
 
 **Legacy patterns to avoid:**
+
 - Single-view dashboards with all cards in one long scroll
 - Excessive use of vertical-stack/horizontal-stack instead of grid
 - Masonry view (auto-layout) — use sections for precise control
