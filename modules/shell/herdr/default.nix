@@ -628,6 +628,7 @@ in
               "nathanflurry.jj-workspace.new-tab",
               "nathanflurry.jj-workspace.remove",
               "nathanflurry.jj-workspace.abandon",
+              "tab-smart-rename.rename-now",
               "herdr-insight.open-timeline-right",
               "gh-pr.refresh",
               "dutifuldev.ghzinga.open",
