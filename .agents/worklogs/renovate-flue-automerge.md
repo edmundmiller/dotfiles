@@ -8,7 +8,7 @@ update_when: The workflow, Flue agent, patch allowlist, or required checks chang
 
 # Worklog: renovate-flue-automerge
 
-Status: blocked on repository credentials
+Status: complete
 
 ## Objective
 
@@ -28,7 +28,7 @@ Herdr and Hunk release PRs are opened by Renovate, repaired by Flue only when th
 ## Evidence
 
 - GitHub ruleset requires `Flake Check (Linux)` and `Check Formatting`; repository auto-merge is enabled and was re-read from the API.
-- Repository Actions secrets still contain only `NPM_TOKEN`; live automation needs dedicated `RENOVATE_TOKEN` and `OPENROUTER_API_KEY` secrets.
+- Repository Actions secrets were re-read as `NPM_TOKEN`, `RENOVATE_TOKEN`, and `OPENROUTER_API_KEY`. The dedicated GitHub token is scoped to `edmundmiller/dotfiles`, has the seven required least-privilege repository permissions, and expires July 25, 2027. The dedicated `dotfiles-renovate-flue` OpenRouter key expires after one year and resets a $5 credit limit weekly.
 - Renovate documents fine-grained PAT support with repository-scoped Contents, Issues, Pull requests, Workflows, and Commit statuses access. A GitHub App remains preferable if this expands beyond one repository.
 - Flue `1.0.0-beta.9` builds and reaches the pinned `openrouter/anthropic/claude-sonnet-4.6` provider through the Docker-backed sandbox. The model command process cannot inherit host credentials.
 - Renovate strict validation and extraction found both Herdr manifests plus the Hunk manifest in a temporary Git checkout containing the new files.
@@ -62,7 +62,7 @@ Herdr and Hunk release PRs are opened by Renovate, repaired by Flue only when th
 
 ## Remaining work
 
-Configure dedicated `RENOVATE_TOKEN` and `OPENROUTER_API_KEY` repository secrets. GitHub sudo-mode was presented through Browser Control, but the handoff expired without reauthentication.
+None.
 
 ## Commits
 
