@@ -7,7 +7,7 @@ implementation), **shallow** (interface ≈ implementation), **seam**, **leverag
 just move it?).
 
 Existing ADRs (`docs/adr/`) were respected; nothing below contradicts one. #1
-*completes* ADR-0004.
+_completes_ ADR-0004.
 
 ## Candidates (ranked)
 
@@ -100,14 +100,14 @@ opencode rejoins the single source of truth.
 
 All pass the deletion test cleanly — nothing concentrates, nothing lost:
 
-| Target | Why |
-| --- | --- |
-| `darwin.nix` (36) | never imported; AGENTS.md carries a warning-label instead of a delete |
-| `bin/rebuild-darwin.sh` (14) | stale fork of `system-rebuild`'s fallback; hardcodes MacTraitor-Pro → wrong host on Seqeratop |
-| `debug-p10k.sh` · `fix-p10k.sh` | referenced by nothing |
-| `autoresearch.jsonl` · `autoresearch.md` | committed research output, wired to nothing |
-| `bootstrap` skill-link loop (`:73-78`) | targets `config/agents/skills/` — path gone; silent no-op |
-| `zbench.nu:11-19` fallback | points at `$flake_dir/zsh-bench`, which isn't there; repoint at `benchmarks/zsh-bench` or drop |
+| Target                                   | Why                                                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `darwin.nix` (36)                        | never imported; AGENTS.md carries a warning-label instead of a delete                          |
+| `bin/rebuild-darwin.sh` (14)             | stale fork of `system-rebuild`'s fallback; hardcodes MacTraitor-Pro → wrong host on Seqeratop  |
+| `debug-p10k.sh` · `fix-p10k.sh`          | referenced by nothing                                                                          |
+| `autoresearch.jsonl` · `autoresearch.md` | committed research output, wired to nothing                                                    |
+| `bootstrap` skill-link loop (`:73-78`)   | targets `config/agents/skills/` — path gone; silent no-op                                      |
+| `zbench.nu:11-19` fallback               | points at `$flake_dir/zsh-bench`, which isn't there; repoint at `benchmarks/zsh-bench` or drop |
 
 Also drop the AGENTS.md warning that exists only to fence off `darwin.nix`.
 

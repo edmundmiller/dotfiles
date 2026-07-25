@@ -3,12 +3,18 @@
 let
   service = nixosConfig.config.systemd.services.hermes-radar-cron-tick;
   pathStrings = map (pkg: builtins.unsafeDiscardStringContext (toString pkg)) service.path;
-  systemPackageStrings = map (pkg: builtins.unsafeDiscardStringContext (toString pkg)) nixosConfig.config.environment.systemPackages;
+  systemPackageStrings = map (
+    pkg: builtins.unsafeDiscardStringContext (toString pkg)
+  ) nixosConfig.config.environment.systemPackages;
   execStartPreStrings = map builtins.toString (service.serviceConfig.ExecStartPre or [ ]);
   hasBlogwatcher = builtins.any (pkg: pkgs.lib.hasInfix "blogwatcher-cli" pkg) pathStrings;
-  hasShellBlogwatcher = builtins.any (pkg: pkgs.lib.hasInfix "blogwatcher-cli" pkg) systemPackageStrings;
+  hasShellBlogwatcher = builtins.any (
+    pkg: pkgs.lib.hasInfix "blogwatcher-cli" pkg
+  ) systemPackageStrings;
   hasShellRtk = builtins.any (pkg: pkgs.lib.hasInfix "rtk-" pkg) systemPackageStrings;
-  repairsStateOwnership = builtins.any (command: pkgs.lib.hasInfix "chown -hR emiller:users /var/lib/hermes-radar" command) execStartPreStrings;
+  repairsStateOwnership = builtins.any (
+    command: pkgs.lib.hasInfix "chown -hR emiller:users /var/lib/hermes-radar" command
+  ) execStartPreStrings;
 in
 pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
   if [ "${if hasBlogwatcher then "1" else "0"}" -ne 1 ]; then

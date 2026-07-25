@@ -42,8 +42,8 @@ Toggle with `ctrl+x` or `/beads-tasks`.
 
 **Edit view**
 
-| Key     | Action                              |
-| ------- | ----------------------------------- |
+| Key     | Action                             |
+| ------- | ---------------------------------- |
 | `tab`   | Switch focus (title ↔ description) |
-| `enter` | Save                                |
-| `esc`   | Back to nav                         |
+| `enter` | Save                               |
+| `esc`   | Back to nav                        |

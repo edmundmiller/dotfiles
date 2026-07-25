@@ -22,16 +22,16 @@ If the MCP server registers resource URI templates for card docs, prefer those o
 
 ## Quick Card Selection Guide
 
-| Need | Card |
-|------|------|
-| Control any entity | `tile` (modern default) |
-| Layout multiple cards in columns | `grid` |
+| Need                                 | Card                                                         |
+| ------------------------------------ | ------------------------------------------------------------ |
+| Control any entity                   | `tile` (modern default)                                      |
+| Layout multiple cards in columns     | `grid`                                                       |
 | Navigation button or Assist launcher | `shortcut` (2026.5+) or `button` with `tap_action: navigate` |
-| Room overview with controls | `area` |
-| Historical data graph | `history-graph` or `statistics-graph` |
-| Sensor value display | `sensor` or `gauge` |
-| Proportional data across entities | `distribution` |
-| Show/hide cards conditionally | `conditional` |
-| Embed external page | `iframe` |
-| Rich text / instructions | `markdown` |
-| Camera or image with overlays | `picture-elements` |
+| Room overview with controls          | `area`                                                       |
+| Historical data graph                | `history-graph` or `statistics-graph`                        |
+| Sensor value display                 | `sensor` or `gauge`                                          |
+| Proportional data across entities    | `distribution`                                               |
+| Show/hide cards conditionally        | `conditional`                                                |
+| Embed external page                  | `iframe`                                                     |
+| Rich text / instructions             | `markdown`                                                   |
+| Camera or image with overlays        | `picture-elements`                                           |

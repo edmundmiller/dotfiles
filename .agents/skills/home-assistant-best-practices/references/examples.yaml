@@ -15,7 +15,7 @@ automation:
   - id: motion_light_hallway
     alias: "Hallway Motion Light"
     description: "Turn on hallway light when motion detected, auto-off after 3 minutes"
-    mode: restart  # Re-trigger resets the timer
+    mode: restart # Re-trigger resets the timer
 
     triggers:
       - trigger: state
@@ -53,12 +53,11 @@ automation:
         data:
           transition: 3
 
-
-# -----------------------------------------------------------------------------
-# EXAMPLE 2: Multi-Button Remote with trigger_id
-# -----------------------------------------------------------------------------
-# Demonstrates: ZHA event trigger, device_ieee (persistent), trigger_id, choose
-# Best practice: Use device_ieee instead of device_id for ZHA
+  # -----------------------------------------------------------------------------
+  # EXAMPLE 2: Multi-Button Remote with trigger_id
+  # -----------------------------------------------------------------------------
+  # Demonstrates: ZHA event trigger, device_ieee (persistent), trigger_id, choose
+  # Best practice: Use device_ieee instead of device_id for ZHA
 
   - id: bedroom_remote_control
     alias: "Bedroom Remote Control"
@@ -69,7 +68,7 @@ automation:
       - trigger: event
         event_type: zha_event
         event_data:
-          device_ieee: "00:15:8d:00:07:26:f2:8a"  # Replace with your device
+          device_ieee: "00:15:8d:00:07:26:f2:8a" # Replace with your device
           command: "single"
         id: single_press
 
@@ -115,17 +114,16 @@ automation:
                 target:
                   area_id: bedroom
 
-
-# -----------------------------------------------------------------------------
-# EXAMPLE 3: Door Lock Notification with Queued Mode
-# -----------------------------------------------------------------------------
-# Demonstrates: queued mode, state condition with attribute, not condition, template message
-# Best practice: Use queued mode when order matters
+  # -----------------------------------------------------------------------------
+  # EXAMPLE 3: Door Lock Notification with Queued Mode
+  # -----------------------------------------------------------------------------
+  # Demonstrates: queued mode, state condition with attribute, not condition, template message
+  # Best practice: Use queued mode when order matters
 
   - id: door_unlock_notification
     alias: "Door Unlock Notification"
     description: "Notify when door is unlocked, show who unlocked it"
-    mode: queued  # Process each unlock event in order
+    mode: queued # Process each unlock event in order
     max: 10
 
     triggers:
@@ -150,17 +148,16 @@ automation:
           data:
             tag: "door-unlock"
 
-
-# -----------------------------------------------------------------------------
-# EXAMPLE 4: Parallel Mode for Per-Entity Actions
-# -----------------------------------------------------------------------------
-# Demonstrates: parallel mode, multi-entity trigger, trigger variable in template target
-# Best practice: Use parallel mode when actions are independent per-entity
+  # -----------------------------------------------------------------------------
+  # EXAMPLE 4: Parallel Mode for Per-Entity Actions
+  # -----------------------------------------------------------------------------
+  # Demonstrates: parallel mode, multi-entity trigger, trigger variable in template target
+  # Best practice: Use parallel mode when actions are independent per-entity
 
   - id: window_open_climate_off
     alias: "Turn Off Climate When Window Opens"
     description: "Turn off climate in room when window is opened"
-    mode: parallel  # Handle multiple windows independently
+    mode: parallel # Handle multiple windows independently
     max: 10
 
     triggers:
@@ -179,12 +176,11 @@ automation:
             {% set room = trigger.entity_id.split('.')[1].replace('_window', '') %}
             climate.{{ room }}
 
-
-# -----------------------------------------------------------------------------
-# EXAMPLE 5: Doorbell with if/then and Native Time Condition
-# -----------------------------------------------------------------------------
-# Demonstrates: if/then action, native time condition, quiet hours logic
-# Best practice: Use if/then for simple binary, choose for multiple branches
+  # -----------------------------------------------------------------------------
+  # EXAMPLE 5: Doorbell with if/then and Native Time Condition
+  # -----------------------------------------------------------------------------
+  # Demonstrates: if/then action, native time condition, quiet hours logic
+  # Best practice: Use if/then for simple binary, choose for multiple branches
 
   - id: doorbell_announcement
     alias: "Doorbell Announcement"
@@ -219,7 +215,6 @@ automation:
             data:
               title: "Doorbell"
               message: "Someone is at the door"
-
 
 # -----------------------------------------------------------------------------
 # EXAMPLE 6: Script with fields, sequence, and mode
@@ -269,7 +264,6 @@ script:
       - action: notify.mobile_app_phone
         data:
           message: "Good night! Lights off, doors locked, thermostat set to {{ sleep_temp }}°F."
-
 
 # -----------------------------------------------------------------------------
 # EXAMPLE 7: MQTT entity configuration
