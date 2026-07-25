@@ -26,6 +26,8 @@ jobs:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
       - name: Run statix on changed Nix files
         shell: bash
         run: |
