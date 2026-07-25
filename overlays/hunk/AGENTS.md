@@ -12,7 +12,19 @@ This directory patches the upstream `modem-dev/hunk` input used by `modules/shel
 
 ## Source pins
 
-`flake.nix` Hunk input tag and `package-harness.json` `ref` must match. Renovate updates both in one non-automerge branch and regenerates `flake.lock`; never bump one pin alone.
+`flake.nix` Hunk input tag and `package-harness.json` `ref` must match. Renovate
+owns both pins, regenerates `flake.lock`, and labels the PR `flue-review`; never
+bump one pin alone.
+
+`.github/workflows/renovate-patch-repair.yml` runs the trusted base revision's
+`pkg-check hunk` against the PR snapshot, invokes Flue only when that
+deterministic check fails, then enables platform automerge. All PR code executes
+in no-secret containers. The isolated agent may change only `patches/*.patch`;
+the trusted importer regenerates the harness patch list without accepting source
+pins or lockfiles from the agent. Required GitHub checks remain the final merge
+authority. The workflow needs `OPENROUTER_API_KEY` and a dedicated
+`RENOVATE_TOKEN` repository secret plus a `RENOVATE_LOGIN` repository variable
+matching the token owner.
 
 When changing any Hunk patch:
 

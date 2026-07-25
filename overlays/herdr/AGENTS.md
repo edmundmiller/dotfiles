@@ -2,7 +2,7 @@
 purpose: Define Herdr overlay ownership, patch policy, and validation.
 applies_to: Changes under overlays/herdr/.
 entrypoint: Read default.nix and the relevant patch.
-verification: Build .#herdr and smoke-test the resulting binary.
+verification: Run pkg-check herdr, build .#herdr, and smoke-test the binary.
 update_when: The Herdr pin, overlay API, patch stack, or test workflow changes.
 ---
 
@@ -31,6 +31,20 @@ Keep source changes in `patches/*.patch`, applied in order from
 `default.nix`. Prefer small single-purpose patches. If adding command behavior,
 keep the command implementation and its CLI wiring together unless there is a
 shared implementation Module that clearly earns its locality.
+
+## Renovate releases
+
+Renovate owns the Herdr `rev`, source hash, and matching
+`package-harness.json` `ref`. It labels release PRs `flue-review` but leaves
+automerge disabled. `.github/workflows/renovate-patch-repair.yml` runs the
+trusted base revision's `pkg-check herdr` against the PR snapshot, invokes Flue
+only when that deterministic check fails, then enables platform automerge. All
+PR code executes in no-secret containers. The isolated agent may change only
+`patches/*.patch`; the trusted importer regenerates both patch manifests without
+accepting source pins from the agent. Required GitHub checks remain the final
+merge authority. The workflow needs `OPENROUTER_API_KEY` and a dedicated
+`RENOVATE_TOKEN` repository secret plus a `RENOVATE_LOGIN` repository variable
+matching the token owner.
 
 ## Testing patched Herdr sources
 

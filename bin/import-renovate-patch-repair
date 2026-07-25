@@ -1,0 +1,222 @@
+#!/usr/bin/env -S uv run --script
+#
+# /// script
+# dependencies = []
+# [tool.uv]
+# exclude-newer = "2026-07-25T00:00:00Z"
+# ///
+
+import json
+import re
+import shutil
+import sys
+from pathlib import Path
+
+PATCH_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.patch$")
+HERDR_BLOCK = re.compile(r"(?ms)^(    patches = \[\n)(.*?)(^    \];)$")
+HERDR_REVISION = re.compile(r'(?m)^\s+rev = "([^"]+)";$')
+HERDR_LINE = re.compile(
+    r"^      \./patches/([A-Za-z0-9][A-Za-z0-9._-]*\.patch)( #[^\n]*)?\n",
+    re.MULTILINE,
+)
+MAX_PATCH_BYTES = 5_000_000
+
+
+def fail(message: str) -> None:
+    raise ValueError(message)
+
+
+def require_regular(path: Path) -> None:
+    if not path.is_file() or path.is_symlink():
+        fail(f"Expected regular file: {path}")
+
+
+def patch_names(root: Path, target: str) -> list[str]:
+    directory = root / "overlays" / target / "patches"
+    if not directory.is_dir() or directory.is_symlink():
+        fail(f"Expected patch directory: {directory}")
+
+    names: list[str] = []
+    for path in directory.iterdir():
+        if (
+            not path.is_file()
+            or path.is_symlink()
+            or not PATCH_NAME.fullmatch(path.name)
+            or path.stat().st_size > MAX_PATCH_BYTES
+        ):
+            fail(f"Invalid patch artifact: {path}")
+        names.append(path.name)
+    return sorted(names)
+
+
+def herdr_manifest(root: Path, names: list[str]) -> tuple[str, re.Match[str]]:
+    path = root / "overlays/herdr/default.nix"
+    require_regular(path)
+    text = path.read_text()
+    matches = list(HERDR_BLOCK.finditer(text))
+    if len(matches) != 1:
+        fail(f"Expected one Herdr patch manifest: {path}")
+
+    listed: list[str] = []
+    body = matches[0].group(2)
+    offset = 0
+    while offset < len(body):
+        line = HERDR_LINE.match(body, offset)
+        if not line:
+            fail(f"Invalid Herdr patch manifest: {path}")
+        listed.append(line.group(1))
+        offset = line.end()
+    if listed != names:
+        fail(f"Herdr patch manifest does not match patches/: {path}")
+    return text, matches[0]
+
+
+def package_manifest(
+    root: Path, target: str, names: list[str]
+) -> tuple[Path, dict[str, object]]:
+    path = root / "overlays" / target / "package-harness.json"
+    if target == "hunk":
+        require_regular(root / "flake.nix")
+        require_regular(root / "flake.lock")
+    require_regular(path)
+    data = json.loads(path.read_text())
+    if not isinstance(data, dict):
+        fail(f"Expected {target} package harness object: {path}")
+    expected = [f"patches/{name}" for name in names]
+    if data.get("patches") != expected:
+        fail(f"{target} patch manifest does not match patches/: {path}")
+    return path, data
+
+
+def hunk_lock_pin(root: Path) -> tuple[str, str]:
+    path = root / "flake.lock"
+    require_regular(path)
+    data = json.loads(path.read_text())
+    if not isinstance(data, dict):
+        fail(f"Expected flake lock object: {path}")
+    nodes = data.get("nodes")
+    root_id = data.get("root")
+    if not isinstance(nodes, dict) or not isinstance(root_id, str):
+        fail(f"Invalid flake lock metadata: {path}")
+    root_node = nodes.get(root_id)
+    if not isinstance(root_node, dict):
+        fail(f"Invalid flake lock root: {path}")
+    inputs = root_node.get("inputs")
+    if not isinstance(inputs, dict):
+        fail(f"Invalid flake lock inputs: {path}")
+    hunk_id = inputs.get("hunk")
+    hunk_node = nodes.get(hunk_id) if isinstance(hunk_id, str) else None
+    original = hunk_node.get("original") if isinstance(hunk_node, dict) else None
+    if not isinstance(original, dict):
+        fail(f"Invalid Hunk lock metadata: {path}")
+    owner = original.get("owner")
+    repo = original.get("repo")
+    ref = original.get("ref")
+    if not all(isinstance(value, str) and value for value in (owner, repo, ref)):
+        fail(f"Invalid Hunk lock pin: {path}")
+    return f"https://github.com/{owner}/{repo}.git", ref
+
+
+def validate(
+    root: Path,
+    target: str,
+    names: list[str],
+    trusted_metadata: Path | None = None,
+) -> None:
+    overlay = None
+    if target == "herdr":
+        overlay, _ = herdr_manifest(root, names)
+    path, data = package_manifest(root, target, names)
+
+    if trusted_metadata is not None:
+        require_regular(trusted_metadata)
+        trusted = json.loads(trusted_metadata.read_text())
+        if not isinstance(trusted, dict):
+            fail(f"Expected trusted {target} package harness object: {trusted_metadata}")
+        for field in ("source", "checks"):
+            if data.get(field) != trusted.get(field):
+                fail(f"{target} package harness {field} differs from trusted base: {path}")
+
+    if target == "herdr":
+        revisions = HERDR_REVISION.findall(overlay or "")
+        if len(revisions) != 1 or data.get("ref") != revisions[0]:
+            fail(f"Herdr package harness ref does not match overlay: {path}")
+    else:
+        source, ref = hunk_lock_pin(root)
+        if data.get("source") != source or data.get("ref") != ref:
+            fail(f"Hunk package harness pin does not match flake.lock: {path}")
+
+
+def sync_patches(source: Path, destination: Path, target: str, names: list[str]) -> None:
+    source_directory = source / "overlays" / target / "patches"
+    destination_directory = destination / "overlays" / target / "patches"
+    destination_directory.mkdir(parents=True, exist_ok=True)
+
+    for path in destination_directory.glob("*.patch"):
+        if path.name not in names:
+            path.unlink()
+    for name in names:
+        destination_path = destination_directory / name
+        shutil.copyfile(source_directory / name, destination_path)
+        destination_path.chmod(0o644)
+
+
+def update_herdr_manifest(root: Path, names: list[str]) -> None:
+    path = root / "overlays/herdr/default.nix"
+    old_names = patch_names(root, "herdr")
+    text, match = herdr_manifest(root, old_names)
+    old_comments = {
+        line.group(1): line.group(2) or ""
+        for line in HERDR_LINE.finditer(match.group(2))
+    }
+    body = "".join(f"      ./patches/{name}{old_comments.get(name, '')}\n" for name in names)
+    path.write_text(text[: match.start(2)] + body + text[match.end(2) :])
+
+
+def update_package_manifest(root: Path, target: str, names: list[str]) -> None:
+    old_names = patch_names(root, target)
+    path, data = package_manifest(root, target, old_names)
+    data["patches"] = [f"patches/{name}" for name in names]
+    path.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def main() -> int:
+    if len(sys.argv) < 3 or sys.argv[1] not in ("herdr", "hunk"):
+        print(
+            "usage: import-renovate-patch-repair <herdr|hunk> <source> "
+            "[destination | --trusted-metadata <file>]",
+            file=sys.stderr,
+        )
+        return 2
+
+    target = sys.argv[1]
+    source = Path(sys.argv[2])
+    names = patch_names(source, target)
+    if len(sys.argv) == 3:
+        validate(source, target, names)
+        return 0
+    if len(sys.argv) == 5 and sys.argv[3] == "--trusted-metadata":
+        validate(source, target, names, Path(sys.argv[4]))
+        return 0
+    if len(sys.argv) != 4:
+        print(
+            "usage: import-renovate-patch-repair <herdr|hunk> <source> "
+            "[destination | --trusted-metadata <file>]",
+            file=sys.stderr,
+        )
+        return 2
+
+    destination = Path(sys.argv[3])
+    if target == "herdr":
+        update_herdr_manifest(destination, names)
+    update_package_manifest(destination, target, names)
+    sync_patches(source, destination, target, names)
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(1) from error
