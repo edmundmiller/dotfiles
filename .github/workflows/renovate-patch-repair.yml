@@ -1,0 +1,246 @@
+name: Renovate patch repair
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: renovate-patch-repair-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    name: Validate and repair patch stack
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login == vars.RENOVATE_LOGIN &&
+      github.actor == vars.RENOVATE_LOGIN &&
+      contains(github.event.pull_request.labels.*.name, 'flue-review') &&
+      (github.event.pull_request.head.ref == 'renovate/herdr' ||
+       github.event.pull_request.head.ref == 'renovate/hunk')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select patch stack
+        id: target
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          case "$HEAD_REF" in
+            renovate/herdr) target=herdr ;;
+            renovate/hunk) target=hunk ;;
+            *) exit 1 ;;
+          esac
+          echo "name=$target" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Load trusted base tooling
+        id: trusted
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          workspace="$RUNNER_TEMP/trusted-base"
+          mkdir "$workspace"
+          git archive "$BASE_SHA" | tar -x -C "$workspace"
+          for script in check-renovate-patch-paths import-renovate-patch-repair; do
+            git show "$BASE_SHA:bin/$script" > "$RUNNER_TEMP/$script"
+            chmod +x "$RUNNER_TEMP/$script"
+          done
+          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Renovate changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TARGET: ${{ steps.target.outputs.name }}
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t paths < <(
+            git diff --name-only -z "$BASE_SHA" --
+            git ls-files --others --exclude-standard -z
+          )
+          "$RUNNER_TEMP/check-renovate-patch-paths" "$TARGET" "${paths[@]}"
+          python3 "$RUNNER_TEMP/import-renovate-patch-repair" "$TARGET" "$GITHUB_WORKSPACE" \
+            --trusted-metadata "$TRUSTED_WORKSPACE/overlays/$TARGET/package-harness.json"
+
+      - name: Start isolated patch-check sandbox
+        id: sandbox
+        env:
+          CONTAINER: flue-renovate-${{ github.run_id }}-${{ github.run_attempt }}
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
+        run: |
+          set -euo pipefail
+          workspace="$RUNNER_TEMP/flue-workspace"
+          mkdir "$workspace"
+          git archive HEAD | tar -x -C "$workspace"
+          docker run --detach --rm \
+            --name "$CONTAINER" \
+            --security-opt no-new-privileges \
+            --volume "$workspace:/workspace" \
+            --volume "$TRUSTED_WORKSPACE:/trusted:ro" \
+            --workdir /workspace \
+            --env $'NIX_CONFIG=experimental-features = nix-command flakes\nsandbox = false' \
+            --entrypoint /bin/sh \
+            nixos/nix:2.35.1@sha256:377d4887aca98f0dfa12971c1ea6d6a625a435d8b610d4c95a436843da6fbfd1 \
+            -c 'exec tail -f /dev/null'
+          echo "name=$CONTAINER" >> "$GITHUB_OUTPUT"
+          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
+
+      - name: Check updated patch stack
+        id: initial-check
+        continue-on-error: true
+        env:
+          CONTAINER: ${{ steps.sandbox.outputs.name }}
+          TARGET: ${{ steps.target.outputs.name }}
+        run: >-
+          docker exec --workdir /workspace "$CONTAINER"
+          nix develop /trusted#agent --command pkg-check "$TARGET"
+
+      - uses: actions/setup-node@v4
+        if: steps.initial-check.outcome == 'failure'
+        with:
+          node-version: "22.19.0"
+          cache: npm
+          cache-dependency-path: .flue/package-lock.json
+
+      - name: Install pinned Flue runtime
+        if: steps.initial-check.outcome == 'failure'
+        run: npm ci --prefix .flue --ignore-scripts
+
+      - name: Repair patch stack with Flue
+        if: steps.initial-check.outcome == 'failure'
+        env:
+          FLUE_MODEL: ${{ vars.FLUE_MODEL }}
+          FLUE_SANDBOX_CONTAINER: ${{ steps.sandbox.outputs.name }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TARGET: ${{ steps.target.outputs.name }}
+        run: |
+          set -euo pipefail
+          test -n "$OPENROUTER_API_KEY" || {
+            echo "OPENROUTER_API_KEY repository secret is required" >&2
+            exit 1
+          }
+          npm exec --prefix .flue -- flue run renovate-patch-repair --root .flue --target node \
+            --id "renovate-$PR_NUMBER-$TARGET" \
+            --input "{\"message\":\"Repair the $TARGET patch stack for Renovate PR #$PR_NUMBER. Its fresh-source pkg-check failed in this runner.\"}"
+
+      - name: Stop isolated agent sandbox
+        if: always() && steps.sandbox.outputs.name != ''
+        env:
+          CONTAINER: ${{ steps.sandbox.outputs.name }}
+        run: docker rm --force "$CONTAINER"
+
+      - name: Prepare isolated validation sandbox
+        id: validation
+        if: success() && steps.initial-check.outcome == 'failure'
+        env:
+          AGENT_WORKSPACE: ${{ steps.sandbox.outputs.workspace }}
+          CONTAINER: flue-renovate-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          TARGET: ${{ steps.target.outputs.name }}
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
+        run: |
+          set -euo pipefail
+          workspace="$RUNNER_TEMP/flue-validation-workspace"
+          mkdir "$workspace"
+          git archive HEAD | tar -x -C "$workspace"
+          python3 "$RUNNER_TEMP/import-renovate-patch-repair" \
+            "$TARGET" "$AGENT_WORKSPACE" "$workspace"
+          docker run --detach --rm \
+            --name "$CONTAINER" \
+            --security-opt no-new-privileges \
+            --volume "$workspace:/workspace:ro" \
+            --volume "$TRUSTED_WORKSPACE:/trusted:ro" \
+            --workdir /workspace \
+            --env $'NIX_CONFIG=experimental-features = nix-command flakes\nsandbox = false' \
+            --entrypoint /bin/sh \
+            nixos/nix:2.35.1@sha256:377d4887aca98f0dfa12971c1ea6d6a625a435d8b610d4c95a436843da6fbfd1 \
+            -c 'exec tail -f /dev/null'
+          echo "name=$CONTAINER" >> "$GITHUB_OUTPUT"
+          echo "workspace=$workspace" >> "$GITHUB_OUTPUT"
+
+      - name: Recheck repaired patch stack
+        if: steps.initial-check.outcome == 'failure'
+        env:
+          CONTAINER: ${{ steps.validation.outputs.name }}
+          TARGET: ${{ steps.target.outputs.name }}
+        run: >-
+          docker exec --workdir /workspace "$CONTAINER"
+          nix develop /trusted#agent --command pkg-check "$TARGET"
+
+      - name: Stop isolated validation sandbox
+        if: always() && steps.validation.outputs.name != ''
+        env:
+          CONTAINER: ${{ steps.validation.outputs.name }}
+        run: docker rm --force "$CONTAINER"
+
+      - name: Import allowed agent repairs
+        if: success() && steps.initial-check.outcome == 'failure'
+        env:
+          VALIDATION_WORKSPACE: ${{ steps.validation.outputs.workspace }}
+          TARGET: ${{ steps.target.outputs.name }}
+        run: >-
+          python3 "$RUNNER_TEMP/import-renovate-patch-repair"
+          "$TARGET" "$VALIDATION_WORKSPACE" "$GITHUB_WORKSPACE"
+
+      - name: Validate agent changes
+        id: agent-changes
+        if: steps.initial-check.outcome == 'failure'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TARGET: ${{ steps.target.outputs.name }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t paths < <(
+            git diff --name-only -z "$BASE_SHA" --
+            git ls-files --others --exclude-standard -z
+          )
+          "$RUNNER_TEMP/check-renovate-patch-paths" "$TARGET" "${paths[@]}"
+
+          if git diff --quiet HEAD -- && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push repair
+        if: steps.agent-changes.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          TARGET: ${{ steps.target.outputs.name }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || {
+            echo "RENOVATE_TOKEN repository secret is required" >&2
+            exit 1
+          }
+          git config user.name "renovate-patch-agent[bot]"
+          git config user.email "renovate-patch-agent[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix($TARGET): rebase patches for Renovate update"
+          gh auth setup-git
+          git push origin "HEAD:refs/heads/$HEAD_REF"
+
+      - name: Enable auto-merge after patch validation
+        env:
+          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || {
+            echo "RENOVATE_TOKEN repository secret is required" >&2
+            exit 1
+          }
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash

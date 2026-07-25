@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 1 || ("$1" != "herdr" && "$1" != "hunk") ]]; then
+  echo "usage: check-renovate-patch-paths <herdr|hunk> [path ...]" >&2
+  exit 2
+fi
+
+target="$1"
+shift
+
+case "$target" in
+  herdr)
+    allowed='^(overlays/herdr/(default\.nix|package-harness\.json|patches/[^/]+\.patch))$'
+    ;;
+  hunk)
+    allowed='^(flake\.(nix|lock)|overlays/hunk/(package-harness\.json|patches/[^/]+\.patch))$'
+    ;;
+esac
+
+invalid=0
+for path in "$@"; do
+  if [[ ! "$path" =~ $allowed ]]; then
+    echo "Renovate $target repair cannot change: $path" >&2
+    invalid=1
+  fi
+done
+
+exit "$invalid"
