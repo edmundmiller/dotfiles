@@ -18,6 +18,7 @@ let
     ];
   };
   launchPath = concatStringsSep ":" [
+    "${pkgs.my.rift}/bin"
     "/etc/profiles/per-user/${config.user.name}/bin"
     "/run/current-system/sw/bin"
     "${config.user.home}/.nix-profile/bin"
@@ -497,6 +498,7 @@ in
     environment.systemPackages = optional (cfg.package != null) cfg.package;
     env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
 
+    home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
     home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;
 
     home.configFile = {
