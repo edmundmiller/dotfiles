@@ -1,3 +1,5 @@
+import pytest
+
 import tomllib
 from pathlib import Path
 
@@ -55,3 +57,13 @@ def test_smart_rename_is_packaged_started_and_bound() -> None:
         "description": "smart rename current tab",
     } in commands
     assert 'command = "tab-smart-rename.rename-now"' in module
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="smart-rename binding is not removed during Herdr config bootstrap",
+)
+def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    assert '"tab-smart-rename.rename-now",' in module
