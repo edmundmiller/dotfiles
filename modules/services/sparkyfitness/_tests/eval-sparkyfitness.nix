@@ -100,7 +100,9 @@ let
       msg = "SparkyFitness backup must restart the stack after snapshotting";
     }
     {
-      test = hasInfix "start sparkyfitness.service sparkyfitness-tailscale-serve.service" (backup.backupCleanupCommand or "");
+      test = hasInfix "start sparkyfitness.service sparkyfitness-tailscale-serve.service" (
+        backup.backupCleanupCommand or ""
+      );
       msg = "SparkyFitness backup must restore the Tailscale ingress";
     }
   ];

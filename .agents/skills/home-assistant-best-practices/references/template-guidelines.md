@@ -8,6 +8,7 @@
 This document covers when templates ARE the right choice in Home Assistant, and best practices for writing reliable templates.
 
 ## Table of Contents
+
 1. [When Templates Are Appropriate](#when-templates-are-appropriate)
 2. [When to Avoid Templates](#when-to-avoid-templates)
 3. [Template Sensor Best Practices](#template-sensor-best-practices)
@@ -162,16 +163,16 @@ template:
 
 Do NOT use templates when a native alternative exists:
 
-| Don't Use Template | Use Native |
-|-------------------|------------|
-| `{{ states('x') in ['a', 'b'] }}` | `condition: state` with `state: ["a", "b"]` |
-| `{{ states('x') \| float > 25 }}` | `condition: numeric_state` with `above: 25` |
-| `{{ now().hour >= 9 }}` | `condition: time` with `after: "09:00:00"` |
-| `{{ is_state('sun.sun', 'below_horizon') }}` | `condition: sun` with `after: sunset` |
-| `wait_template: "{{ is_state(...) }}"` | `wait_for_trigger` with state trigger |
-| Template sensor summing values | `min_max` helper with `type: sum` |
-| Template binary sensor with threshold | `threshold` helper |
-| Template sensor averaging over time | `statistics` helper |
+| Don't Use Template                           | Use Native                                  |
+| -------------------------------------------- | ------------------------------------------- |
+| `{{ states('x') in ['a', 'b'] }}`            | `condition: state` with `state: ["a", "b"]` |
+| `{{ states('x') \| float > 25 }}`            | `condition: numeric_state` with `above: 25` |
+| `{{ now().hour >= 9 }}`                      | `condition: time` with `after: "09:00:00"`  |
+| `{{ is_state('sun.sun', 'below_horizon') }}` | `condition: sun` with `after: sunset`       |
+| `wait_template: "{{ is_state(...) }}"`       | `wait_for_trigger` with state trigger       |
+| Template sensor summing values               | `min_max` helper with `type: sum`           |
+| Template binary sensor with threshold        | `threshold` helper                          |
+| Template sensor averaging over time          | `statistics` helper                         |
 
 See `automation-patterns.md` and `helper-selection.md` for comprehensive alternatives.
 
@@ -185,7 +186,7 @@ See `automation-patterns.md` and `helper-selection.md` for comprehensive alterna
 template:
   - sensor:
       - name: "My Sensor"
-        unique_id: my_custom_sensor  # Enables UI customization
+        unique_id: my_custom_sensor # Enables UI customization
         state: "{{ states('sensor.source') }}"
 ```
 
@@ -240,7 +241,7 @@ template:
       - name: "Power Usage"
         device_class: power
         unit_of_measurement: "W"
-        state_class: measurement  # enables long-term statistics (omit if not needed)
+        state_class: measurement # enables long-term statistics (omit if not needed)
         state: "{{ states('sensor.amps') | float * 230 }}"
 ```
 
@@ -250,7 +251,7 @@ Trigger-based templates only update when sources change:
 
 ```yaml
 template:
-  - triggers:                    # Recommended plural form (HA 2024.10+)
+  - triggers: # Recommended plural form (HA 2024.10+)
       - trigger: state
         entity_id:
           - sensor.temp_bedroom
@@ -268,6 +269,7 @@ template:
 ```
 
 **Benefits of trigger-based:**
+
 - Only evaluates when trigger fires (not on every state change)
 - Access to `trigger` variable
 - More efficient for complex templates
@@ -320,7 +322,7 @@ template:
 
 # Non-standard — compact notation (valid YAML, but absent from official HA docs):
 - binary_sensor:
-  - name: "My Sensor"
+    - name: "My Sensor"
 ```
 
 ---
@@ -545,7 +547,7 @@ template:
 template:
   - triggers:
       - trigger: time_pattern
-        minutes: "/5"  # Every 5 minutes
+        minutes: "/5" # Every 5 minutes
     sensor:
       - name: "Complex Calculation"
         state: >
@@ -594,49 +596,49 @@ automation:
 
 ### State Functions
 
-| Function | Purpose |
-|----------|---------|
-| `states('entity_id')` | Get entity state (string) |
-| `state_attr('entity_id', 'attr')` | Get attribute value |
-| `is_state('entity_id', 'state')` | Check if entity has state |
-| `is_state_attr('entity_id', 'attr', 'value')` | Check attribute value |
-| `has_value('entity_id')` | True if not unknown/unavailable |
-| `entity_name('entity_id')` | Get entity display name; preferred over `friendly_name` attribute (2026.4+) |
-| `state_attr_translated('entity_id', 'attr')` | Get translated attribute value, e.g., fan modes, HVAC actions (2026.4+) |
+| Function                                      | Purpose                                                                     |
+| --------------------------------------------- | --------------------------------------------------------------------------- |
+| `states('entity_id')`                         | Get entity state (string)                                                   |
+| `state_attr('entity_id', 'attr')`             | Get attribute value                                                         |
+| `is_state('entity_id', 'state')`              | Check if entity has state                                                   |
+| `is_state_attr('entity_id', 'attr', 'value')` | Check attribute value                                                       |
+| `has_value('entity_id')`                      | True if not unknown/unavailable                                             |
+| `entity_name('entity_id')`                    | Get entity display name; preferred over `friendly_name` attribute (2026.4+) |
+| `state_attr_translated('entity_id', 'attr')`  | Get translated attribute value, e.g., fan modes, HVAC actions (2026.4+)     |
 
 ### Common Filters
 
-| Filter | Purpose |
-|--------|---------|
-| `float(default)` | Convert to float |
-| `int(default)` | Convert to int |
-| `round(precision)` | Round number |
-| `default(value)` | Provide fallback |
-| `timestamp_custom(format)` | Format timestamp |
-| `from_json` | Parse JSON string |
-| `to_json` | Convert to JSON string |
-| `regex_match(pattern)` | Regex match |
-| `regex_replace(find, replace)` | Regex replace |
+| Filter                         | Purpose                |
+| ------------------------------ | ---------------------- |
+| `float(default)`               | Convert to float       |
+| `int(default)`                 | Convert to int         |
+| `round(precision)`             | Round number           |
+| `default(value)`               | Provide fallback       |
+| `timestamp_custom(format)`     | Format timestamp       |
+| `from_json`                    | Parse JSON string      |
+| `to_json`                      | Convert to JSON string |
+| `regex_match(pattern)`         | Regex match            |
+| `regex_replace(find, replace)` | Regex replace          |
 
 ### Time Functions
 
-| Function | Purpose |
-|----------|---------|
-| `now()` | Current datetime |
-| `utcnow()` | Current UTC datetime |
-| `today_at('HH:MM')` | Today at specific time |
-| `as_timestamp(dt)` | Convert to Unix timestamp |
-| `as_datetime(ts)` | Convert from timestamp |
-| `as_timedelta(string)` | Parse duration string |
+| Function               | Purpose                   |
+| ---------------------- | ------------------------- |
+| `now()`                | Current datetime          |
+| `utcnow()`             | Current UTC datetime      |
+| `today_at('HH:MM')`    | Today at specific time    |
+| `as_timestamp(dt)`     | Convert to Unix timestamp |
+| `as_datetime(ts)`      | Convert from timestamp    |
+| `as_timedelta(string)` | Parse duration string     |
 
 ### Collection Filters
 
-| Filter | Purpose |
-|--------|---------|
-| `selectattr('attr', 'eq', 'value')` | Filter by attribute |
-| `rejectattr('attr', 'eq', 'value')` | Exclude by attribute |
-| `map(attribute='state')` | Extract attribute from list |
-| `list` | Convert to list |
-| `count` | Count items |
-| `first` / `last` | Get first/last item |
-| `sum` / `min` / `max` | Aggregate values |
+| Filter                              | Purpose                     |
+| ----------------------------------- | --------------------------- |
+| `selectattr('attr', 'eq', 'value')` | Filter by attribute         |
+| `rejectattr('attr', 'eq', 'value')` | Exclude by attribute        |
+| `map(attribute='state')`            | Extract attribute from list |
+| `list`                              | Convert to list             |
+| `count`                             | Count items                 |
+| `first` / `last`                    | Get first/last item         |
+| `sum` / `min` / `max`               | Aggregate values            |

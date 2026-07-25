@@ -3,6 +3,7 @@
 This document covers Home Assistant's built-in helpers and integrations that should be used instead of YAML template sensors or complex automations. When no dedicated helper covers your need, the **template helper** (created via the UI / config-entry flow, not YAML `template:`) is the right escape hatch — see [Template Helpers](#template-helpers).
 
 ## Table of Contents
+
 1. [Numeric Aggregation](#numeric-aggregation) - min_max, statistics
 2. [Rate and Change](#rate-and-change) - derivative, threshold, trend
 3. [Time-Based Tracking](#time-based-tracking) - utility_meter, history_stats, integration (Riemann sum)
@@ -28,11 +29,11 @@ Helpers reach Home Assistant through two different creation mechanisms — which
 
 Several helper integrations — most prominently **`template`**, **`group`**, and **`random`** — start with a sub-type menu before showing fields. The field set isn't known until a sub-type is picked.
 
-| Helper | Sub-types (pick one first) |
-|--------|---------------------------|
+| Helper     | Sub-types (pick one first)                                                                                                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `template` | `sensor`, `binary_sensor`, `button`, `switch`, `light`, `cover`, `fan`, `lock`, `select`, `number`, `image`, `vacuum`, `weather`, `alarm_control_panel`, `event`, `update`, `device_tracker` |
-| `group` | `binary_sensor`, `button`, `cover`, `event`, `fan`, `light`, `lock`, `media_player`, `notify`, `sensor`, `switch`, `valve` |
-| `random` | `sensor`, `binary_sensor` |
+| `group`    | `binary_sensor`, `button`, `cover`, `event`, `fan`, `light`, `lock`, `media_player`, `notify`, `sensor`, `switch`, `valve`                                                                   |
+| `random`   | `sensor`, `binary_sensor`                                                                                                                                                                    |
 
 Advance the menu by submitting `{"next_step_id": "<sub-type>"}` to the first step; the resulting form's fields become available in the next step. The chosen sub-type is then written into the stored config entry as `template_type` / `group_type` etc. by the integration's validator — those are storage keys, not inputs the caller submits.
 
@@ -45,6 +46,7 @@ Advance the menu by submitting `{"next_step_id": "<sub-type>"}` to the first ste
 **Use for:** Combining multiple sensors to get min, max, mean, median, sum, or last value across all of them.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template sensor for averaging
 template:
@@ -57,6 +59,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - min_max helper
 sensor:
@@ -72,11 +75,13 @@ sensor:
 **Available types:** `min`, `max`, `mean`, `median`, `last`, `sum`
 
 **Key behaviors:**
+
 - Ignores `unknown` states (except `sum` which goes to unknown)
 - Returns error if unit of measurement differs between sensors
 - For spiky values, filter with statistics sensor first
 
 **Common uses:**
+
 - Average house temperature from multiple room sensors
 - Maximum power consumption across circuits
 - Sum of all solar panel production sensors
@@ -88,6 +93,7 @@ sensor:
 **Use for:** Statistical analysis over time for a single sensor (mean, median, stdev, change, variance, etc.).
 
 **Instead of:**
+
 ```yaml
 # WRONG - Complex template tracking history
 template:
@@ -97,6 +103,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Statistics helper
 sensor:
@@ -110,6 +117,7 @@ sensor:
 ```
 
 **Available characteristics:**
+
 - `mean`, `median`, `average_linear`, `average_step`, `average_timeless`
 - `standard_deviation`, `variance`
 - `change`, `change_second`, `change_sample`
@@ -119,11 +127,13 @@ sensor:
 - `value_max`, `value_min`, `quantiles`
 
 **Key behaviors:**
+
 - Time-based (`max_age`) vs count-based (`sampling_size`) buffering
 - If using `max_age`, ensure frequent enough readings to cover the period
 - Different from Long-Term Statistics (which is automatic for sensors with `state_class`)
 
 **Common uses:**
+
 - Humidity change over last hour
 - Standard deviation of power readings (detect anomalies)
 - Count of motion sensor activations in last 24 hours
@@ -137,6 +147,7 @@ sensor:
 **Use for:** Calculating rate of change over time.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template calculating delta manually
 template:
@@ -146,6 +157,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Derivative helper
 sensor:
@@ -158,16 +170,19 @@ sensor:
 ```
 
 **Parameters:**
+
 - `unit_time`: s, min, h, d - determines output unit (e.g., W/min)
 - `time_window`: Smoothing window using Simple Moving Average
 - `round`: Decimal places for output
 
 **Key behaviors:**
+
 - Without `time_window`, calculates between consecutive updates only
 - Can show large negative spikes when source resets to 0 (total_increasing sensors)
 - Use `force_update` option if source updates infrequently
 
 **Common uses:**
+
 - Energy production rate (kW from kWh sensor)
 - Temperature change rate (detect HVAC efficiency)
 - Water flow rate from cumulative meter
@@ -179,6 +194,7 @@ sensor:
 **Use for:** Creating a binary sensor that turns on/off when a numeric sensor crosses a threshold.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template binary sensor
 template:
@@ -188,6 +204,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Threshold helper
 binary_sensor:
@@ -199,11 +216,13 @@ binary_sensor:
 ```
 
 **Parameters:**
+
 - `upper`: Threshold for "on" when value exceeds
 - `lower`: Threshold for "on" when value drops below
 - `hysteresis`: Buffer zone to prevent rapid toggling
 
 **Hysteresis explained:**
+
 ```
 With upper: 25 and hysteresis: 1:
 - Turns ON when value rises ABOVE 26 (25 + 1)
@@ -211,6 +230,7 @@ With upper: 25 and hysteresis: 1:
 ```
 
 **Common uses:**
+
 - Low battery warning (lower threshold)
 - High humidity alert
 - Air quality threshold alerts
@@ -223,6 +243,7 @@ With upper: 25 and hysteresis: 1:
 **Use for:** A binary sensor that turns on when a numeric sensor is trending up (or down) over time — directly, without chaining `derivative` → `threshold`.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template comparing against a stored previous value
 template:
@@ -232,6 +253,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Trend helper. NOTE: `sensors:` is a MAPPING keyed by a slug (not a list)
 binary_sensor:
@@ -239,18 +261,20 @@ binary_sensor:
     sensors:
       temp_rising:
         entity_id: sensor.temperature
-        sample_duration: 1800    # seconds of history to consider
-        min_gradient: 0.001      # units per SECOND to count as a trend
-        max_samples: 120        # cap on samples kept (independent of sample_duration)
-        invert: false            # true = detect a downward trend
+        sample_duration: 1800 # seconds of history to consider
+        min_gradient: 0.001 # units per SECOND to count as a trend
+        max_samples: 120 # cap on samples kept (independent of sample_duration)
+        invert: false # true = detect a downward trend
 ```
 
 **Key behaviors:**
+
 - `min_gradient` is units **per second** (0.001 °/s ≈ 3.6 °/h).
-- `invert: true` detects a *downward* trend.
+- `invert: true` detects a _downward_ trend.
 - `sensors:` is a slug-keyed mapping (not a list), unlike most other `binary_sensor` platforms.
 
 **Common uses:**
+
 - Temperature/pressure rising or falling
 - Battery draining
 - A value drifting before it crosses a hard threshold
@@ -264,6 +288,7 @@ binary_sensor:
 **Use for:** Tracking consumption with periodic resets (energy, water, gas billing cycles).
 
 **Instead of:**
+
 ```yaml
 # WRONG - Automation with counter tracking monthly usage
 automation:
@@ -282,6 +307,7 @@ automation:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Utility meter
 utility_meter:
@@ -296,6 +322,7 @@ utility_meter:
 **Cycle options:** `quarter-hourly`, `hourly`, `daily`, `weekly`, `monthly`, `bimonthly`, `quarterly`, `yearly`
 
 **Advanced features:**
+
 - **Tariffs:** Track peak/off-peak separately
 - **Offset:** Start cycle on specific day (e.g., billing date)
 - **Cron:** Custom reset schedules
@@ -313,6 +340,7 @@ utility_meter:
 ```
 
 Then use automation to switch tariffs:
+
 ```yaml
 automation:
   - alias: "Switch to peak tariff"
@@ -328,6 +356,7 @@ automation:
 ```
 
 **Common uses:**
+
 - Daily/monthly energy consumption
 - Water usage per billing cycle
 - Gas consumption tracking
@@ -350,15 +379,18 @@ sensor:
 ```
 
 **Types:**
+
 - `time`: Duration in hours
 - `ratio`: Percentage of time
 - `count`: Number of state changes to the monitored state
 
 **Key behaviors:**
+
 - Limited by recorder's `purge_keep_days`
 - Updates when source changes or once per minute
 
 **Common uses:**
+
 - How long lights were on today
 - Percentage of time home was occupied
 - Count of door openings per day
@@ -381,15 +413,18 @@ sensor:
 ```
 
 **Methods:**
+
 - `left`: Uses previous value for interval (recommended for sparse data)
 - `right`: Uses new value for interval
 - `trapezoidal`: Averages previous and new (can overestimate with gaps)
 
 **Key behaviors:**
+
 - For solar/sensors with gaps, use `left` method
 - `max_sub_interval` forces updates even when source doesn't change
 
 **Common uses:**
+
 - Convert solar power (W) to energy production (kWh)
 - Convert water flow rate to total consumption
 - Convert gas flow to total usage
@@ -399,6 +434,7 @@ sensor:
 ## State Storage
 
 **Pitfall — `initial` resets state on every restart:** `input_boolean`, `input_number`, `input_select`, `input_text`, and `input_datetime` all accept an `initial` field. If `initial` is present in the config, HA forces that value on every restart instead of restoring the last saved state.
+
 - Omit `initial` to preserve state across restarts.
 - Use `initial` only when the helper must always start at a fixed value.
 
@@ -417,6 +453,7 @@ input_boolean:
 ```
 
 **Common uses:**
+
 - Guest mode (disable certain automations)
 - Vacation mode
 - Manual override flags
@@ -440,6 +477,7 @@ input_number:
 **Modes:** `slider`, `box`
 
 **Common uses:**
+
 - User-adjustable thresholds
 - Target temperatures
 - Timer durations
@@ -462,6 +500,7 @@ input_select:
 ```
 
 **Common uses:**
+
 - Scene selection
 - Mode selection
 - Status tracking
@@ -483,6 +522,7 @@ input_text:
 **Modes:** `text`, `password`
 
 **Common uses:**
+
 - Custom messages
 - Temporary storage
 - User notes
@@ -504,6 +544,7 @@ input_datetime:
 ```
 
 **Common uses:**
+
 - Alarm times
 - Schedule times (wake-up, lights off)
 - Future dates (vacation, events)
@@ -520,6 +561,7 @@ input_button:
 ```
 
 **Common uses:**
+
 - Manual triggers for automations
 - Dashboard buttons
 - Test triggers
@@ -533,6 +575,7 @@ input_button:
 **Use for:** Tracking counts with increment/decrement/reset.
 
 **Instead of:**
+
 ```yaml
 # WRONG - input_number with automation
 input_number:
@@ -549,6 +592,7 @@ automation:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Counter helper
 counter:
@@ -564,10 +608,12 @@ counter:
 **Actions:** `counter.increment`, `counter.decrement`, `counter.reset`, `counter.set_value`
 
 **Key behaviors:**
+
 - `restore: true` preserves value across restarts
 - Respects min/max boundaries
 
 **Common uses:**
+
 - Daily counts (coffees, workouts)
 - Usage tracking
 - Sequential numbering
@@ -579,6 +625,7 @@ counter:
 **Use for:** Countdown timers that fire events when finished.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Delay in automation
 actions:
@@ -590,6 +637,7 @@ actions:
 ```
 
 **Use this for pausable/restartable timers:**
+
 ```yaml
 # RIGHT - Timer helper
 timer:
@@ -602,6 +650,7 @@ timer:
 **Actions:** `timer.start`, `timer.pause`, `timer.cancel`, `timer.finish`, `timer.change`
 
 **Events fired:**
+
 - `timer.started`
 - `timer.paused`
 - `timer.cancelled`
@@ -609,11 +658,13 @@ timer:
 - `timer.restarted`
 
 **Key behaviors:**
+
 - Can be started with custom duration: `timer.start` with `duration: "00:30:00"`
 - `restore: true` continues timer after restart
 - Can be controlled from dashboard
 
 **Common uses:**
+
 - Laundry/dryer reminders
 - Cooking timers
 - Activity timers with pause/resume
@@ -640,11 +691,13 @@ schedule:
 ```
 
 **Key behaviors:**
+
 - Creates a binary sensor that's `on` during scheduled times
 - Can have multiple blocks per day
 - Editable via UI
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template with weekday checks
 template:
@@ -657,6 +710,7 @@ template:
 ```
 
 **Common uses:**
+
 - Work hours / business hours
 - Quiet hours
 - HVAC schedules
@@ -683,6 +737,7 @@ binary_sensor:
 ```
 
 **Common uses:**
+
 - Time-of-day modes (morning, afternoon, evening, night)
 - Daylight/darkness detection
 - Simple time-based conditions
@@ -703,7 +758,7 @@ group:
       - light.living_room
       - light.bedroom
       - light.kitchen
-    all: false  # ON if ANY member is on
+    all: false # ON if ANY member is on
 
   security_sensors:
     name: "Security Sensors"
@@ -711,20 +766,23 @@ group:
       - binary_sensor.front_door
       - binary_sensor.back_door
       - binary_sensor.window
-    all: true  # ON only if ALL members are on
+    all: true # ON only if ALL members are on
 ```
 
 **Parameters:**
+
 - `all: false` (default): Group is ON if ANY member is ON (OR logic)
 - `all: true`: Group is ON only if ALL members are ON (AND logic)
 
 **Key behaviors:**
+
 - Groups inherit the domain of their members
 - Light groups can be controlled as a single entity
 - Binary sensor groups useful for "any door open" logic
 - Created via the config-entry flow API, `group` is **menu-based**: submit `{"next_step_id": "<sub-type>"}` first (sub-types: `binary_sensor`, `button`, `cover`, `event`, `fan`, `light`, `lock`, `media_player`, `notify`, `sensor`, `switch`, `valve`), then provide `entities`. Sensor groups additionally require `type` (one of `last`, `first_available`, `max`, `mean`, `median`, `min`, `product`, `range`, `stdev`, `sum`). The stored config entry then carries `group_type` as a storage key.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template binary sensor for any-on logic
 template:
@@ -736,6 +794,7 @@ template:
 ```
 
 **Common uses:**
+
 - All lights in an area
 - Any motion sensor active
 - All doors/windows closed
@@ -750,15 +809,16 @@ template:
 **Use for:** Inferring an unmeasurable state (someone cooking, showering, room occupied) from several probabilistic signals — instead of hand-tuning a template with stacked `and`/`or`/threshold logic.
 
 **Use this:**
+
 ```yaml
 binary_sensor:
   - platform: bayesian
     name: "Kitchen In Use"
-    prior: 0.3                  # baseline probability before any observation
-    probability_threshold: 0.5  # turns on when posterior probability exceeds this
+    prior: 0.3 # baseline probability before any observation
+    probability_threshold: 0.5 # turns on when posterior probability exceeds this
     observations:
       - entity_id: binary_sensor.kitchen_motion
-        platform: state         # or numeric_state / template
+        platform: state # or numeric_state / template
         to_state: "on"
         prob_given_true: 0.95
         prob_given_false: 0.33
@@ -770,11 +830,13 @@ binary_sensor:
 ```
 
 **Key behaviors:**
+
 - Each observation contributes `prob_given_true` / `prob_given_false`; the sensor turns on when the combined posterior probability exceeds `probability_threshold`.
 - Observation `platform` is `state`, `numeric_state` (uses `above`/`below`), or `template` (uses `value_template`).
 - **YAML uses probabilities `0..1`; the UI config flow uses percentages `0..100`** — a common mismatch.
 
 **Common uses:**
+
 - "Someone is cooking" / "shower running" from motion + power + humidity
 - Occupancy inference from several weak presence signals
 
@@ -787,6 +849,7 @@ binary_sensor:
 **Use for:** Smoothing noisy sensor data, throttling update frequency, or rejecting out-of-range values.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template sensor doing manual smoothing math
 template:
@@ -798,6 +861,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Filter helper (UI creates one filter per entry; YAML supports chains)
 sensor:
@@ -819,14 +883,14 @@ sensor:
 
 **Filter types** (one per UI entry, or multiple in a YAML list):
 
-| Filter | Required | Optional | Notes |
-|--------|----------|----------|-------|
-| `lowpass` | — | `window_size` (int, default 1), `time_constant` (int, default 10) | Suppresses high-frequency noise. |
-| `outlier` | — | `window_size` (int, default 1), `radius` (float, default 2.0) | Drops samples > `radius` standard deviations from the window mean. |
-| `range` | — | `lower_bound` (float), `upper_bound` (float) | Clamps to bounds. Supply at least one. |
-| `throttle` | — | `window_size` (int, default 1) | Sample-count throttle: emit every Nth value. |
-| `time_throttle` | `window_size` (duration) | — | Time-based throttle. UI picker disables days; YAML accepts standard `cv.time_period` syntax including days. |
-| `time_simple_moving_average` | `window_size` (duration) | `type` (`last`, default) | Time-windowed SMA. Same UI-vs-YAML duration distinction as `time_throttle`. |
+| Filter                       | Required                 | Optional                                                          | Notes                                                                                                       |
+| ---------------------------- | ------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `lowpass`                    | —                        | `window_size` (int, default 1), `time_constant` (int, default 10) | Suppresses high-frequency noise.                                                                            |
+| `outlier`                    | —                        | `window_size` (int, default 1), `radius` (float, default 2.0)     | Drops samples > `radius` standard deviations from the window mean.                                          |
+| `range`                      | —                        | `lower_bound` (float), `upper_bound` (float)                      | Clamps to bounds. Supply at least one.                                                                      |
+| `throttle`                   | —                        | `window_size` (int, default 1)                                    | Sample-count throttle: emit every Nth value.                                                                |
+| `time_throttle`              | `window_size` (duration) | —                                                                 | Time-based throttle. UI picker disables days; YAML accepts standard `cv.time_period` syntax including days. |
+| `time_simple_moving_average` | `window_size` (duration) | `type` (`last`, default)                                          | Time-windowed SMA. Same UI-vs-YAML duration distinction as `time_throttle`.                                 |
 
 All filters accept optional `precision` (default `2`).
 
@@ -839,6 +903,7 @@ All filters accept optional `precision` (default `2`).
 **Use for:** Generating random numeric or boolean values (for testing, demos, or simulated occupancy).
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template with range() / random()
 template:
@@ -848,6 +913,7 @@ template:
 ```
 
 **Use this:**
+
 ```yaml
 # RIGHT - Random helper (proper entity with state class, history, etc.)
 sensor:
@@ -861,14 +927,17 @@ sensor:
 Menu-based — pick `sensor` (numeric) or `binary_sensor` (boolean).
 
 **random → sensor**
+
 - Required: `name`
 - Optional: `minimum` (default `0`), `maximum` (default `20`), `device_class`, `unit_of_measurement`
 
 **random → binary_sensor**
+
 - Required: `name`
 - Optional: `device_class`
 
 Binary-sensor variant (boolean coin-flip — no min/max needed):
+
 ```yaml
 binary_sensor:
   - platform: random
@@ -898,10 +967,12 @@ climate:
 ```
 
 **Parameters (config flow):**
+
 - Required: `name`, `heater` (switch or fan entity), `target_sensor` (temperature sensor), `ac_mode` (bool — set `true` to invert for cooling).
 - Optional: `cold_tolerance` (default `0.3`), `hot_tolerance` (default `0.3`), `min_cycle_duration`, `max_cycle_duration`, `cycle_cooldown`, `keep_alive`, `min_temp`, `max_temp`, plus a presets step (`away_temp`, `comfort_temp`, `eco_temp`, `home_temp`, `sleep_temp`, `activity_temp`).
 
 **Key behaviors:**
+
 - `ac_mode: true` inverts logic (heater output activates for cooling)
 - Tolerances prevent rapid cycling near the target
 - YAML platform supports `initial_hvac_mode`, `precision`, `target_temp_step` — not exposed by the UI flow
@@ -925,6 +996,7 @@ humidifier:
 ```
 
 **Parameters (config flow):**
+
 - Required: `name`, `device_class` (`humidifier` or `dehumidifier`), `humidifier` (switch or fan entity), `target_sensor` (humidity sensor).
 - Optional: `dry_tolerance` (default `3`), `wet_tolerance` (default `3`), `min_cycle_duration`.
 
@@ -954,6 +1026,7 @@ Outputs an estimated humidity-at-cold-surface percentage; mold risk rises above 
 **Use for:** Exposing a `switch.*` entity as a different domain so it integrates correctly with voice assistants, dashboards, and HVAC logic.
 
 **Instead of:**
+
 ```yaml
 # WRONG - Template light wrapping a switch
 template:
@@ -971,12 +1044,14 @@ template:
 ```
 
 **Use this** (UI / config flow — no YAML equivalent):
+
 - `entity_id: switch.lamp_plug`
 - `target_domain: light`
 
 `switch_as_x` hides the original switch and registers a proper `light.*` entity that voice assistants and dashboards treat correctly.
 
 **Parameters:**
+
 - Required: `entity_id` (must be a `switch.*` entity), `target_domain` (one of `cover`, `fan`, `light`, `lock`, `siren`, `valve`).
 - Optional: `invert` (bool, default `false`) — reverses on/off semantics (useful for normally-closed contacts).
 
@@ -995,14 +1070,17 @@ When no dedicated helper covers your need, use the **template helper** — creat
 Menu-based — pick a sub-type first (see [Menu-Based Helpers](#menu-based-helpers) for the full sub-type list), then configure fields.
 
 **template → sensor**
+
 - Required: `name`, `state` (Jinja template returning the sensor value)
 - Optional: `unit_of_measurement`, `device_class`, `state_class`, `device_id`, `availability` (template)
 
 **template → binary_sensor**
+
 - Required: `name`, `state` (Jinja template returning truthy/falsy)
 - Optional: `device_class`, `device_id`, `availability` (template)
 
 **template → device_tracker** (the native replacement for the legacy `device_tracker.see` action)
+
 - Required: **either** `in_zones` (a list of zone entity_ids the device is considered in) **or** both `latitude` and `longitude` (templates)
 - Optional: `location_accuracy`, plus the common `name`/`unique_id`/`icon`/`picture`/`availability`/`attributes`
 - Not valid here: `location_name`, `battery_level`, `source_type`, `host_name`, `mac_address`, `gps_accuracy`
@@ -1010,6 +1088,7 @@ Menu-based — pick a sub-type first (see [Menu-Based Helpers](#menu-based-helpe
 Other sub-types follow the same shape — a `state` template plus domain-appropriate metadata.
 
 **Equivalent YAML platform** (for reference; prefer the helper):
+
 ```yaml
 template:
   - sensor:
@@ -1030,32 +1109,32 @@ See the [Decision Matrix](#decision-matrix) for when the template helper is the 
 
 ## Decision Matrix
 
-| Need | Helper | Not |
-|------|--------|-----|
-| Average of multiple sensors | `min_max` (type: mean) | Template with math |
-| Sum of multiple sensors | `min_max` (type: sum) | Template with math |
-| Average over time | `statistics` | Template tracking history |
-| Rate of change | `derivative` | Template calculating delta |
-| On/off at threshold | `threshold` | Template binary sensor |
-| Sensor trending up/down | `trend` | Template with derivative + threshold |
-| Consumption per period | `utility_meter` | Counter with reset automation |
-| Time in state | `history_stats` | Template tracking timestamps |
-| Power to energy | `integration` | Template approximating |
-| User toggle | `input_boolean` | - |
-| User number | `input_number` | - |
-| User selection | `input_select` | - |
-| Count events | `counter` | input_number + automation |
-| Countdown timer | `timer` | delay + input_datetime |
-| Weekly schedule | `schedule` | Template with weekday checks |
-| Time of day mode | `tod` | Template with time checks |
-| Any-on / all-on | `group` | Template binary sensor |
-| Smooth noisy sensor | `filter` | Statistics with `mean` (filter is purpose-built for this) |
-| Throttle update rate | `filter` (`throttle`/`time_throttle`) | Custom automation with delays |
-| Reject out-of-range values | `filter` (`range`) | Template with bounds check |
-| Thermostat from switch + temp sensor | `generic_thermostat` | Automation with hysteresis logic |
-| Humidifier from switch + humidity sensor | `generic_hygrostat` | Automation with hysteresis logic |
-| Mold/condensation risk from temp + humidity | `mold_indicator` | Dew-point template |
-| Infer an unmeasurable state from several signals | `bayesian` | Template with stacked and/or logic |
-| Switch presented as light/cover/lock | `switch_as_x` | Template light/cover/lock |
-| Random sensor value | `random` | Template with `range()` |
-| Custom logic no other helper covers | `template` helper (via UI flow) | YAML `template:` platform sensor |
+| Need                                             | Helper                                | Not                                                       |
+| ------------------------------------------------ | ------------------------------------- | --------------------------------------------------------- |
+| Average of multiple sensors                      | `min_max` (type: mean)                | Template with math                                        |
+| Sum of multiple sensors                          | `min_max` (type: sum)                 | Template with math                                        |
+| Average over time                                | `statistics`                          | Template tracking history                                 |
+| Rate of change                                   | `derivative`                          | Template calculating delta                                |
+| On/off at threshold                              | `threshold`                           | Template binary sensor                                    |
+| Sensor trending up/down                          | `trend`                               | Template with derivative + threshold                      |
+| Consumption per period                           | `utility_meter`                       | Counter with reset automation                             |
+| Time in state                                    | `history_stats`                       | Template tracking timestamps                              |
+| Power to energy                                  | `integration`                         | Template approximating                                    |
+| User toggle                                      | `input_boolean`                       | -                                                         |
+| User number                                      | `input_number`                        | -                                                         |
+| User selection                                   | `input_select`                        | -                                                         |
+| Count events                                     | `counter`                             | input_number + automation                                 |
+| Countdown timer                                  | `timer`                               | delay + input_datetime                                    |
+| Weekly schedule                                  | `schedule`                            | Template with weekday checks                              |
+| Time of day mode                                 | `tod`                                 | Template with time checks                                 |
+| Any-on / all-on                                  | `group`                               | Template binary sensor                                    |
+| Smooth noisy sensor                              | `filter`                              | Statistics with `mean` (filter is purpose-built for this) |
+| Throttle update rate                             | `filter` (`throttle`/`time_throttle`) | Custom automation with delays                             |
+| Reject out-of-range values                       | `filter` (`range`)                    | Template with bounds check                                |
+| Thermostat from switch + temp sensor             | `generic_thermostat`                  | Automation with hysteresis logic                          |
+| Humidifier from switch + humidity sensor         | `generic_hygrostat`                   | Automation with hysteresis logic                          |
+| Mold/condensation risk from temp + humidity      | `mold_indicator`                      | Dew-point template                                        |
+| Infer an unmeasurable state from several signals | `bayesian`                            | Template with stacked and/or logic                        |
+| Switch presented as light/cover/lock             | `switch_as_x`                         | Template light/cover/lock                                 |
+| Random sensor value                              | `random`                              | Template with `range()`                                   |
+| Custom logic no other helper covers              | `template` helper (via UI flow)       | YAML `template:` platform sensor                          |

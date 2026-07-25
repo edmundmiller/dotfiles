@@ -101,7 +101,8 @@ in
             entity_id = tvRemote;
             state = "on";
           }
-        ] ++ tvOff;
+        ]
+        ++ tvOff;
       };
     };
 

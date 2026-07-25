@@ -5,7 +5,6 @@ multi-step logic, stateful workflows, external API orchestration, or anything th
 benefits from a real programming language. It is **not** a replacement for HA
 automations in general — use it only when native tools are genuinely insufficient.
 
-
 ## Table of Contents
 
 1. [When to Use AppDaemon (vs. Native HA)](#when-to-use-appdaemon-vs-native-ha)
@@ -21,20 +20,19 @@ automations in general — use it only when native tools are genuinely insuffici
 11. [Impact on Safe Refactoring](#impact-on-safe-refactoring)
 12. [Post-Edit Actions](#post-edit-actions)
 
-
 ## When to Use AppDaemon (vs. Native HA)
 
-| Situation | Recommended tool |
-| --------- | ---------------- |
-| Simple trigger → action | Native automation |
-| Condition chains, choose/if-then | Native automation |
-| Multi-step stateful logic (e.g. presence simulation)  | AppDaemon |
-| Looping, retries with backoff | AppDaemon |
-| External API orchestration (REST, polling, WebSocket) | AppDaemon |
-| Mathematical/statistical processing at runtime | AppDaemon |
-| Cross-entity coordination with shared in-memory state | AppDaemon |
-| Reusable logic applied to multiple entity groups | AppDaemon (parameterized class) |
-| Debugging complex timing issues with detailed logging | AppDaemon |
+| Situation                                             | Recommended tool                |
+| ----------------------------------------------------- | ------------------------------- |
+| Simple trigger → action                               | Native automation               |
+| Condition chains, choose/if-then                      | Native automation               |
+| Multi-step stateful logic (e.g. presence simulation)  | AppDaemon                       |
+| Looping, retries with backoff                         | AppDaemon                       |
+| External API orchestration (REST, polling, WebSocket) | AppDaemon                       |
+| Mathematical/statistical processing at runtime        | AppDaemon                       |
+| Cross-entity coordination with shared in-memory state | AppDaemon                       |
+| Reusable logic applied to multiple entity groups      | AppDaemon (parameterized class) |
+| Debugging complex timing issues with detailed logging | AppDaemon                       |
 
 **Anti-pattern:** Rewriting working HA automations in AppDaemon "for cleanliness."
 AppDaemon adds operational complexity (separate process, Python dependency, restart
@@ -62,10 +60,10 @@ class MyApp(Hass):
 **Rules:**
 
 - **Always register callbacks in `initialize()`**, never in `__init__()`. AppDaemon
-    calls `initialize()` after the plugin connection is established; `__init__()` runs
-    before that and HA API calls will fail silently.
+  calls `initialize()` after the plugin connection is established; `__init__()` runs
+  before that and HA API calls will fail silently.
 
-    Store handles from `listen_state()`, `listen_event()`, or `run_*()` only if you need to cancel a specific listener or timer during runtime (e.g., for one-shot listeners). For reload safety, this is not required—AppDaemon automatically cleans up all listeners and timers on reload.
+  Store handles from `listen_state()`, `listen_event()`, or `run_*()` only if you need to cancel a specific listener or timer during runtime (e.g., for one-shot listeners). For reload safety, this is not required—AppDaemon automatically cleans up all listeners and timers on reload.
 
 ## Listening to State Changes
 
@@ -494,17 +492,17 @@ def verify_thermostat(self, **kwargs):
 
 ## AppDaemon-Specific Anti-Patterns
 
-| Anti-pattern | Use instead | Why |
-| ------------ | ----------- | --- |
-| Calling `self.turn_on()` / `self.get_state()` in `__init__()` | Register everything in `initialize()` | Plugin connection not established during `__init__` — calls fail silently |
-| Calling `run_in` on repeated triggers without cancelling the previous handle | `cancel_timer(self._off_handle)` before each new `run_in` | Every trigger stacks an independent timer — devices toggle unpredictably |
-| Storing persistent state in instance variables | Use HA `input_number`, `input_boolean`, or `input_text` helpers  | Instance variables reset on app reload or daemon restart |
-| Hardcoding entity IDs inside the class body | Pass entity IDs via `self.args` in `apps.yaml` | Hardcoded IDs prevent reuse and require code edits per installation |
-| Accessing `self.get_state()` result without guarding for `"unavailable"` / `"unknown"` | `if new not in (None, "unavailable", "unknown")` | Unavailable sensors cause `float()` / `int()` to raise `ValueError` |
-| Polling state with a tight `run_every` loop | `listen_state` with `duration` parameter | Polling wastes CPU and bloats the log; `listen_state(duration=N)` is event-driven |
-| call_service("light.turn_on", ...) — dot notation | call_service("light/turn_on", ...) — slash notation | AppDaemon requires domain/service format; dot notation will cause the call to silently do nothing or log a warning, depending on the version. |
-| `self.args["key"]` without `.get()` | `self.args.get("key", default)` | Missing key in `apps.yaml` raises `KeyError` at startup with no useful error message |
-| Writing a new AppDaemon app for logic that native HA can express | Use native automation, `choose`, `repeat`, or `wait_for_trigger` | AppDaemon adds a separate process, Python dependency, and longer restart cycle |
+| Anti-pattern                                                                           | Use instead                                                      | Why                                                                                                                                           |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Calling `self.turn_on()` / `self.get_state()` in `__init__()`                          | Register everything in `initialize()`                            | Plugin connection not established during `__init__` — calls fail silently                                                                     |
+| Calling `run_in` on repeated triggers without cancelling the previous handle           | `cancel_timer(self._off_handle)` before each new `run_in`        | Every trigger stacks an independent timer — devices toggle unpredictably                                                                      |
+| Storing persistent state in instance variables                                         | Use HA `input_number`, `input_boolean`, or `input_text` helpers  | Instance variables reset on app reload or daemon restart                                                                                      |
+| Hardcoding entity IDs inside the class body                                            | Pass entity IDs via `self.args` in `apps.yaml`                   | Hardcoded IDs prevent reuse and require code edits per installation                                                                           |
+| Accessing `self.get_state()` result without guarding for `"unavailable"` / `"unknown"` | `if new not in (None, "unavailable", "unknown")`                 | Unavailable sensors cause `float()` / `int()` to raise `ValueError`                                                                           |
+| Polling state with a tight `run_every` loop                                            | `listen_state` with `duration` parameter                         | Polling wastes CPU and bloats the log; `listen_state(duration=N)` is event-driven                                                             |
+| call_service("light.turn_on", ...) — dot notation                                      | call_service("light/turn_on", ...) — slash notation              | AppDaemon requires domain/service format; dot notation will cause the call to silently do nothing or log a warning, depending on the version. |
+| `self.args["key"]` without `.get()`                                                    | `self.args.get("key", default)`                                  | Missing key in `apps.yaml` raises `KeyError` at startup with no useful error message                                                          |
+| Writing a new AppDaemon app for logic that native HA can express                       | Use native automation, `choose`, `repeat`, or `wait_for_trigger` | AppDaemon adds a separate process, Python dependency, and longer restart cycle                                                                |
 
 ## Impact on Safe Refactoring
 
@@ -515,23 +513,23 @@ sources in addition to the standard HA config components listed in
 
 **Additional locations to include in the Step 2 checklist:**
 
-| Location | What to search |
-| -------- | -------------- |
-| `/config/appdaemon/apps/**/*.py` | Old entity ID as a string literal or default in `self.args.get(...)` |
-| `/config/appdaemon/apps/apps.yaml` | Old entity ID as a value in any app argument |
+| Location                           | What to search                                                       |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| `/config/appdaemon/apps/**/*.py`   | Old entity ID as a string literal or default in `self.args.get(...)` |
+| `/config/appdaemon/apps/apps.yaml` | Old entity ID as a value in any app argument                         |
 
 After updating, hot-reload is automatic (AppDaemon watches file changes). Confirm
 in `appdaemon.log` that the app reloaded without errors.
 
 ## Post-Edit Actions
 
-| Change type | Required action |
-| ----------- | --------------- |
-| New or edited `.py` app file | AppDaemon hot-reloads automatically on file save (requires `production_mode: false`, which is the default) |
-| Edit to `apps.yaml` | Hot-reload automatic; verify in `appdaemon.log` |
-| Edit to `appdaemon.yaml` (daemon config) | Restart the AppDaemon App — **Settings → Apps → AppDaemon → Restart** |
-| HA entity rename consumed by an app | Update all `.py` files and `apps.yaml`; hot-reload triggers automatically |
-| New Python package dependency | Add to AppDaemon App configuration (`python_packages` list) and restart the App |
+| Change type                              | Required action                                                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| New or edited `.py` app file             | AppDaemon hot-reloads automatically on file save (requires `production_mode: false`, which is the default) |
+| Edit to `apps.yaml`                      | Hot-reload automatic; verify in `appdaemon.log`                                                            |
+| Edit to `appdaemon.yaml` (daemon config) | Restart the AppDaemon App — **Settings → Apps → AppDaemon → Restart**                                      |
+| HA entity rename consumed by an app      | Update all `.py` files and `apps.yaml`; hot-reload triggers automatically                                  |
+| New Python package dependency            | Add to AppDaemon App configuration (`python_packages` list) and restart the App                            |
 
 **Note:** In HA 2026.2+, add-ons are referred to as **Apps**. The AppDaemon add-on
 appears under **Settings → Apps**.

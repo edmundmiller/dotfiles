@@ -41,11 +41,7 @@ let
 
   assertions = [
     {
-      test =
-        if hostCronVaultFixExpectedFailure then
-          !hostCronUsesLiveVault
-        else
-          hostCronUsesLiveVault;
+      test = if hostCronVaultFixExpectedFailure then !hostCronUsesLiveVault else hostCronUsesLiveVault;
       msg = "Scintillate host cron must use the live NUC vault for cwd, TaskNotes, and wiki data.";
     }
     {

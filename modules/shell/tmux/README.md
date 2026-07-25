@@ -112,14 +112,14 @@ Enable with `modules.shell.sesh.enable = true;`.
 
 ## Plugins
 
-| Plugin                  | Description                                                        |
-| ----------------------- | ------------------------------------------------------------------ |
-| **copycat**             | Enhanced search (regex, files, URLs, git hashes)                   |
-| **prefix-highlight**    | Visual prefix key indicator in status bar                          |
-| **yank**                | System clipboard integration                                       |
+| Plugin                  | Description                                                       |
+| ----------------------- | ----------------------------------------------------------------- |
+| **copycat**             | Enhanced search (regex, files, URLs, git hashes)                  |
+| **prefix-highlight**    | Visual prefix key indicator in status bar                         |
+| **yank**                | System clipboard integration                                      |
 | **opencode-status**     | AI agent activity: ○ idle, ● busy, ◉ waiting, ✗ error, ✔ finished |
-| **opencode-integrated** | Smart naming + OpenCode status                                     |
-| **opensessions**        | Sidebar + command-table session switcher                           |
+| **opencode-integrated** | Smart naming + OpenCode status                                    |
+| **opensessions**        | Sidebar + command-table session switcher                          |
 
 ## tmux-opencode-integrated Behavior
 
