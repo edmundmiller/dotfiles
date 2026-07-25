@@ -35,7 +35,8 @@ jobs:
           ./bin/qa-changed --base-ref "$base_sha" --head-ref "${{ github.sha }}"
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
+        with:
+          use-flakehub: false
 
       - name: Run flake checks
         run: |
@@ -107,6 +108,8 @@ jobs:
           ./bin/qa-changed --base-ref "$base_sha" --head-ref "${{ github.sha }}"
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Run flake checks
         run: |
@@ -131,6 +134,8 @@ jobs:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Check formatting
         run: time nix build .#checks.x86_64-linux.treefmt --no-link
