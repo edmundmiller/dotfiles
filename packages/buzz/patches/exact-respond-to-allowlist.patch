@@ -1,11 +1,54 @@
 --- a/crates/buzz-acp/src/lib.rs
 +++ b/crates/buzz-acp/src/lib.rs
-@@ -4397,11 +4397,12 @@
+@@ -224,14 +224,12 @@
+ /// # DM hardening (`is_dm`)
+ ///
+ /// Clients auto-p-tag every DM participant, so in a DM *any* participant's
+-/// message looks like a mention and would fire a turn. Combined with
+-/// agent-initiated DMs (the agent can be asked to DM a third party), that
+-/// turns `anyone`/`allowlist` modes into transitive access grants: whoever
+-/// lands in a DM with the agent can prompt it. To close that hole, when
+-/// `is_dm` is true only the owner and cryptographically verified same-owner
+-/// siblings may fire a turn — the explicit allowlist and `anyone` mode do
+-/// NOT apply inside DMs. `Nobody` still drops everything. Callers must
+-/// resolve `is_dm` fail-closed: unknown channel type ⇒ treat as DM.
++/// message looks like a mention and would fire a turn. To avoid turning
++/// `Anyone` into a transitive access grant, DMs restrict it to the owner and
++/// cryptographically verified same-owner siblings. `OwnerOnly` has that same
++/// scope, `Allowlist` remains the exact explicit set, and `Nobody` drops
++/// everything. Callers must resolve `is_dm` fail-closed: unknown channel type
++/// ⇒ treat as DM.
+ async fn author_allowed(
+     respond_to: &RespondTo,
+     allowlist: &HashSet<String>,
+@@ -243,17 +241,17 @@
+     if is_dm {
+         return match respond_to {
+             RespondTo::Nobody => false,
+-            _ => is_owner_or_sibling(author, owner_cache, rest_client).await,
++            RespondTo::Allowlist => allowlist.contains(author),
++            RespondTo::OwnerOnly | RespondTo::Anyone => {
++                is_owner_or_sibling(author, owner_cache, rest_client).await
++            }
+         };
+     }
+     match respond_to {
+         RespondTo::Anyone => true,
+         RespondTo::Nobody => false,
+         RespondTo::OwnerOnly => is_owner_or_sibling(author, owner_cache, rest_client).await,
+-        RespondTo::Allowlist => {
+-            allowlist.contains(author)
+-                || is_owner_or_sibling(author, owner_cache, rest_client).await
+-        }
++        RespondTo::Allowlist => allowlist.contains(author),
+     }
+ }
+ 
+@@ -4397,11 +4395,11 @@
      }
  
      #[tokio::test]
 -    async fn test_allowlist_accepts_sibling_not_in_allowlist() {
-+    #[should_panic(expected = "a same-owner sibling absent from the explicit allowlist must be dropped")]
 +    async fn test_allowlist_rejects_sibling_not_in_allowlist() {
          let cache = cache_with_sibling();
          let allowlist = HashSet::from([EXTERNAL.to_string()]);
@@ -15,7 +58,7 @@
                  &RespondTo::Allowlist,
                  &allowlist,
                  SIBLING,
-@@ -4410,7 +4411,7 @@
+@@ -4410,7 +4408,7 @@
                  &dummy_rest_client()
              )
              .await,
@@ -24,12 +67,11 @@
          );
      }
  
-@@ -4451,11 +4452,12 @@
+@@ -4451,11 +4449,11 @@
      }
  
      #[tokio::test]
 -    async fn test_allowlist_accepts_owner() {
-+    #[should_panic(expected = "the owner must be dropped when absent from the explicit allowlist")]
 +    async fn test_allowlist_rejects_unlisted_owner() {
          let cache = cache_with_sibling();
          let allowlist = HashSet::new();
@@ -39,7 +81,7 @@
                  &RespondTo::Allowlist,
                  &allowlist,
                  OWNER,
-@@ -4464,7 +4466,7 @@
+@@ -4464,7 +4462,7 @@
                  &dummy_rest_client()
              )
              .await,
@@ -48,12 +90,18 @@
          );
      }
  
-@@ -4516,11 +4518,12 @@
-     // siblings fire turns.
+@@ -4511,16 +4509,15 @@
+     // ── DM hardening ──────────────────────────────────────────────────────
+     //
+     // In a DM, clients auto-p-tag every participant, and an agent can be
+-    // asked to open a DM with a third party. The gate must therefore ignore
+-    // the allowlist and `anyone` mode inside DMs: only owner + verified
+-    // siblings fire turns.
++    // asked to open a DM with a third party. `Anyone` must therefore narrow
++    // to the owner and verified siblings. `Allowlist` remains exact.
  
      #[tokio::test]
 -    async fn test_dm_rejects_allowlisted_external_pubkey() {
-+    #[should_panic(expected = "an explicitly allowlisted pubkey must fire a turn inside a DM")]
 +    async fn test_dm_accepts_allowlisted_external_pubkey() {
          let cache = cache_with_sibling();
          let allowlist = HashSet::from([EXTERNAL.to_string()]);
@@ -63,12 +111,76 @@
                  &RespondTo::Allowlist,
                  &allowlist,
                  EXTERNAL,
-@@ -4529,7 +4532,7 @@
+@@ -4529,8 +4526,27 @@
                  &dummy_rest_client()
              )
              .await,
 -            "an allowlisted external pubkey must NOT fire a turn inside a DM"
+-        );
 +            "an explicitly allowlisted pubkey must fire a turn inside a DM"
++        );
++    }
++
++    #[tokio::test]
++    async fn test_dm_allowlist_rejects_unlisted_owner_and_sibling() {
++        let cache = cache_with_sibling();
++        for (who, label) in [(OWNER, "owner"), (SIBLING, "sibling")] {
++            assert!(
++                !author_allowed(
++                    &RespondTo::Allowlist,
++                    &HashSet::new(),
++                    who,
++                    true,
++                    &cache,
++                    &dummy_rest_client()
++                )
++                .await,
++                "an unlisted {label} must be dropped under Allowlist in a DM"
++            );
++        }
+     }
+ 
+     #[tokio::test]
+@@ -4551,13 +4567,9 @@
+     }
+ 
+     #[tokio::test]
+-    async fn test_dm_admits_owner_and_sibling_in_every_responding_mode() {
++    async fn test_dm_admits_owner_and_sibling_under_owner_only_and_anyone() {
+         let cache = cache_with_sibling();
+-        for mode in [
+-            RespondTo::OwnerOnly,
+-            RespondTo::Allowlist,
+-            RespondTo::Anyone,
+-        ] {
++        for mode in [RespondTo::OwnerOnly, RespondTo::Anyone] {
+             for (who, label) in [(OWNER, "owner"), (SIBLING, "sibling")] {
+                 assert!(
+                     author_allowed(
+@@ -4706,7 +4718,7 @@
+     }
+ 
+     #[tokio::test]
+-    async fn test_discovery_without_metadata_stays_fail_closed_at_author_gate() {
++    async fn test_discovery_without_metadata_preserves_explicit_allowlist() {
+         let id = Uuid::new_v4();
+         let discovered = relay::merge_discovered_channels(vec![id], &serde_json::json!([]));
+         let channel_info = resolver(discovered);
+@@ -4716,7 +4728,7 @@
+         let is_dm = is_dm_channel(id, &channel_info).await;
+         assert!(is_dm, "unknown startup metadata must fail closed as DM");
+         assert!(
+-            !author_allowed(
++            author_allowed(
+                 &RespondTo::Allowlist,
+                 &allowlist,
+                 EXTERNAL,
+@@ -4725,7 +4737,7 @@
+                 &dummy_rest_client(),
+             )
+             .await,
+-            "an external author must not pass when startup discovery omitted metadata"
++            "an explicitly allowlisted author must pass despite missing startup metadata"
          );
      }
  
