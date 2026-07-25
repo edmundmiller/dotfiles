@@ -14,7 +14,7 @@
   "author": "Edmund Miller",
   "pi": {
     "extensions": [
-      "./extensions"
+      "./extensions/hunk.ts"
     ]
   },
   "scripts": {
