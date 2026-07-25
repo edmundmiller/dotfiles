@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: oven-sh/setup-bun@v2
       - name: Run changed packages/pi-packages QA
         shell: bash
         run: |
@@ -90,6 +91,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: oven-sh/setup-bun@v2
       - name: Run changed packages/pi-packages QA
         shell: bash
         run: |
