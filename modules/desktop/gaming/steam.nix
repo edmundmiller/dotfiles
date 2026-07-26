@@ -33,7 +33,7 @@ in
         # for running GOG and humble bundle games
         (writeScriptBin "steam-run" ''
           #!${stdenv.shell}
-          HOME="${cfg.libDir}" exec ${steam-run-native}/bin/steam-run "$@"
+          HOME="${cfg.libDir}" exec ${steam-run}/bin/steam-run "$@"
         '')
         # So a rofi entry exists
         (makeDesktopItem {

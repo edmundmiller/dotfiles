@@ -42,7 +42,7 @@ nixosTesting.runTest {
 
       nixpkgs = {
         config.allowUnfree = true;
-        overlays = [ inputs.llm-agents.overlays.default ];
+        overlays = [ inputs.llm-agents.overlays."shared-nixpkgs" ];
       };
 
       users.users.alice = {
