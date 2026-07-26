@@ -25,3 +25,8 @@ FINDER_METADATA
 # Added: antidote plugin repositories.
 ~/Library/Caches/antidote*
 ~/.local/share/antidote*
+
+# Preserve Codex session traces and diagnostic logs.
+~/.codex/sessions/*
+~/.codex/archived_sessions/*
+~/Library/Logs/com.openai.codex/*
