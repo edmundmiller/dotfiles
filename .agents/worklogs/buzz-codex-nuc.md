@@ -53,8 +53,4 @@ The NUC deployment guard correctly rejected dry activation after `origin/main` a
 
 ## Commits
 
-- `97b4d71f8` `chore(packages): pin Codex ACP runtime`
-- `a39a402cb` `test(buzz): cover exact respond-to allowlists`
-- `9ef149ff9` `fix(buzz): enforce exact respond-to allowlists`
-- `bcf8893d4` `feat(nuc): add owner-restricted Buzz Codex worker`
-- `cd42fb45a` `fix(nuc): correct Buzz worker secret`
+See `git log --oneline origin/main..HEAD` for the rebased task commits.
