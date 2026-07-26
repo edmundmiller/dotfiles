@@ -479,9 +479,32 @@
             programs = {
               deadnix.enable = true;
               nixfmt.enable = true;
+              oxfmt = {
+                enable = true;
+                includes = [
+                  "*.cjs"
+                  "*.cts"
+                  "*.js"
+                  "*.jsx"
+                  "*.mjs"
+                  "*.mts"
+                  "*.ts"
+                  "*.tsx"
+                ];
+              };
               prettier.enable = true;
               statix.enable = true;
             };
+            settings.formatter.prettier.excludes = [
+              "*.cjs"
+              "*.cts"
+              "*.js"
+              "*.jsx"
+              "*.mjs"
+              "*.mts"
+              "*.ts"
+              "*.tsx"
+            ];
             settings.global.excludes = [
               "packages/*/dist/**"
               "packages/*/node_modules/**"

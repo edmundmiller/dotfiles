@@ -19,7 +19,7 @@ function H(e) {
 function D(e) {
   let t = "",
     n = 0;
-  for (; n < e.length; ) {
+  for (; n < e.length;) {
     if (e[n] === "\\") {
       if (n + 1 >= e.length)
         throw new SyntaxError("Invalid escape sequence: backslash at end of string");
@@ -54,7 +54,7 @@ function D(e) {
 }
 function N(e, t) {
   let n = t + 1;
-  for (; n < e.length; ) {
+  for (; n < e.length;) {
     if (e[n] === "\\" && n + 1 < e.length) {
       n += 2;
       continue;
@@ -67,7 +67,7 @@ function N(e, t) {
 function F(e, t, n = 0) {
   let r = !1,
     i = n;
-  for (; i < e.length; ) {
+  for (; i < e.length;) {
     if (e[i] === "\\" && i + 1 < e.length && r) {
       i += 2;
       continue;
@@ -140,7 +140,7 @@ function B(e, t) {
     r = "",
     i = !1,
     s = 0;
-  for (; s < e.length; ) {
+  for (; s < e.length;) {
     let f = e[s];
     if (f === "\\" && s + 1 < e.length && i) {
       ((r += f + e[s + 1]), (s += 2));
@@ -184,7 +184,7 @@ function V(e) {
 }
 function oe(e, t) {
   let n = t;
-  for (; n < e.length && e[n] !== ":"; ) n++;
+  for (; n < e.length && e[n] !== ":";) n++;
   if (n >= e.length || e[n] !== ":") throw new SyntaxError("Missing colon after key");
   let r = e.slice(t, n).trim();
   return (n++, { key: r, end: n });
@@ -252,7 +252,7 @@ function ye(e) {
 }
 function X(e, t, n) {
   let r = {};
-  for (; !e.atEnd(); ) {
+  for (; !e.atEnd();) {
     let i = e.peek();
     if (!i || i.depth < t) break;
     if (i.depth === t) {
@@ -296,7 +296,7 @@ function Ae(e, t, n, r) {
     s = n + 1,
     f,
     c;
-  for (; !t.atEnd() && i.length < e.length; ) {
+  for (; !t.atEnd() && i.length < e.length;) {
     let l = t.peek();
     if (!l || l.depth < s) break;
     if (l.depth === s && l.content.startsWith("- ")) {
@@ -319,7 +319,7 @@ function Ie(e, t, n, r) {
     s = n + 1,
     f,
     c;
-  for (; !t.atEnd() && i.length < e.length; ) {
+  for (; !t.atEnd() && i.length < e.length;) {
     let l = t.peek();
     if (!l || l.depth < s) break;
     if (l.depth === s) {
@@ -355,7 +355,7 @@ function Se(e, t, n, r) {
 function be(e, t, n, r) {
   let { key: i, value: s, followDepth: f } = G(e.content.slice(2), t, n, r),
     c = { [i]: s };
-  for (; !t.atEnd(); ) {
+  for (; !t.atEnd();) {
     let l = t.peek();
     if (!l || l.depth < f) break;
     if (l.depth === f && !l.content.startsWith("- ")) {
@@ -411,7 +411,7 @@ function Te(e, t, n) {
     let c = r[f],
       l = f + 1,
       u = 0;
-    for (; u < c.length && c[u] === " "; ) u++;
+    for (; u < c.length && c[u] === " ";) u++;
     let a = c.slice(u);
     if (!a.trim()) {
       let o = w(u, t);
@@ -421,7 +421,7 @@ function Te(e, t, n) {
     let h = w(u, t);
     if (n) {
       let o = 0;
-      for (; o < c.length && (c[o] === " " || c[o] === "	"); ) o++;
+      for (; o < c.length && (c[o] === " " || c[o] === "	");) o++;
       if (c.slice(0, o).includes("	"))
         throw new SyntaxError(`Line ${l}: Tabs are not allowed in indentation in strict mode`);
       if (u > 0 && u % t !== 0)
