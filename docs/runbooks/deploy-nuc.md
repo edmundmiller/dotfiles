@@ -167,6 +167,35 @@ Recovery:
 - `failed to clean up stale arg0 temp dirs`: restore ownership with
   `sudo chown -R "$USER:users" "$HOME/.codex/tmp/arg0"`.
 
+## Buzz Mill Docs worker
+
+The hosted-relay worker is `buzz-mill-docs-codex.service`. Its source of truth
+is `hosts/nuc/default.nix`; its encrypted identity and owner attestation are
+`hosts/nuc/secrets/buzz-mill-docs-agent-env.age`. It uses the existing
+`/home/emiller/.codex` ChatGPT login and does not need an API key.
+
+Verify after a deploy or recovery:
+
+```bash
+ssh nuc 'systemctl is-active buzz-mill-docs-codex.service'
+ssh nuc 'systemctl show buzz-mill-docs-codex.service -p MainPID -p NRestarts -p ExecMainStatus'
+ssh nuc 'journalctl -u buzz-mill-docs-codex.service -n 30 --no-pager'
+```
+
+Expected: `active`, one worker, no restarts, and a connection to
+`wss://millers.communities.buzz.xyz`. The service has no listener; it only
+maintains the outbound relay connection. Restart it with:
+
+```bash
+ssh nuc 'sudo systemctl restart buzz-mill-docs-codex.service'
+```
+
+The worker accepts explicit mentions only from its exact Nix allowlist. Before
+adding Moni, obtain her 64-character relay pubkey and confirm she is a
+community member; then update the allowlist, deploy, and run both an allowed
+mention and a member-but-unallowlisted negative test. Never print or copy the
+agenix secret.
+
 ## Rollback
 
 If the deployment causes issues:

@@ -1,16 +1,16 @@
 ---
-purpose: Record why Buzz is promising but not yet part of the self-hosted agent stack.
-applies_to: Decisions about deploying Buzz or replacing Hermes messaging surfaces.
-entrypoint: Reassess the revisit criteria before proposing a deployment.
-verification: Compare current Buzz releases and live NUC capacity with this evidence snapshot.
-update_when: Buzz reaches the revisit criteria or a bounded pilot produces new evidence.
+purpose: Record why Buzz relay self-hosting remains deferred and bound the hosted Mill Docs worker.
+applies_to: Decisions about self-hosting Buzz or operating the NUC Buzz worker.
+entrypoint: Inspect `buzz-mill-docs-codex.service`, then reassess the self-hosting criteria.
+verification: Verify the live worker and compare current Buzz releases with the self-hosting criteria.
+update_when: The hosted worker boundary, Buzz deployment model, or self-hosting criteria change.
 ---
 
 # ADR 0009: Defer Buzz as a core self-hosted agent workspace
 
 ## Status
 
-Accepted — watchlist, not approved for permanent deployment
+Accepted — defer relay self-hosting; allow the bounded hosted-relay worker
 
 ## Date
 
@@ -35,18 +35,32 @@ another workspace and state system rather than replace a proven boundary.
 
 ## Decision
 
-Do not deploy Buzz as permanent infrastructure or migrate Hermes conversations
-to it yet.
+Do not self-host the Buzz relay or migrate Hermes conversations to Buzz.
 
-Keep Buzz on the watchlist. Reassess it as a possible collaborative front end
-while Hermes remains the agent runtime, rather than assuming Buzz must replace
-Hermes.
+Run one persistent, low-privilege Mill Docs worker on the NUC against the
+hosted Miller community relay. This is a client integration, not a Buzz
+infrastructure deployment. Hermes remains the primary agent runtime.
 
 Current assessment:
 
 - Strategic fit: **8/10**
-- Operational fit: **4/10**
-- Recommended action: **defer; consider only a disposable pilot**
+- Self-hosted operational fit: **4/10**
+- Action: **operate the bounded hosted worker; defer relay self-hosting**
+
+## Hosted worker architecture
+
+```text
+Buzz community ──WSS──> buzz-acp on NUC ──ACP──> codex-acp ──> Codex
+                                    cwd: /home/emiller/mill-docs
+```
+
+`hosts/nuc/default.nix` owns `buzz-mill-docs-codex.service`. The unit uses
+source-pinned Buzz and Codex ACP packages, a dedicated Nostr identity from
+agenix, the existing ChatGPT Codex login, mention-only subscription, and an
+exact author allowlist. It opens no inbound port.
+
+The owner is currently the only allowlisted author. Add Moni only after her
+64-character relay pubkey is known and her identity belongs to the community.
 
 ## Reasons
 
@@ -116,22 +130,20 @@ The decisive use case is a real shared project room where multiple humans and
 agents need discussion, Git changes, CI evidence, review, and approvals in one
 durable record. A prettier dashboard for existing personal agents is not enough.
 
-## Pilot boundary
+## Hosted worker boundary
 
-A future pilot is allowed without reopening the permanent-deployment decision
-if it remains reversible:
+The approved worker remains narrow:
 
-- Tailscale-only access; no public ingress.
-- One disposable project and one low-privilege agent.
-- Isolated databases, object storage, and volumes; do not reuse production
-  Hermes state or existing PostgreSQL databases.
-- No sensitive repositories, durable secrets, or conversation migration.
-- A fixed evaluation window followed by either a documented restore/deletion
-  exercise or removal of the pilot.
+- Use the hosted relay; do not deploy Buzz databases or object storage.
+- Run one dedicated identity in one project channel with one Codex subprocess.
+- Keep its private key and owner attestation in agenix.
+- Require explicit mentions and an exact author allowlist.
+- Enforce project filesystem and network policy through Codex plus systemd.
 
-The pilot must answer whether Buzz materially improves collaborative work and
-whether Hermes-to-Buzz ACP integration is viable. Installation success alone
-is not acceptance evidence.
+Acceptance requires a live allowlisted reply, a non-mention drop, a true
+member-but-not-allowlisted mention drop, restart recovery, and filesystem
+boundary probes. Installation success alone is not evidence. Until Moni joins
+and the member-negative probe passes, the two-person allowlist is incomplete.
 
 ## Consequences
 
@@ -140,9 +152,8 @@ Positive:
 - Avoids adding a premature stateful platform to the NUC.
 - Preserves reliable Telegram and Discord delivery while Buzz's mobile path
   matures.
-- Keeps the strategically valuable idea visible with objective revisit
-  triggers.
-- Allows a safe integration experiment without implying production adoption.
+- Gains real Buzz identity, channel, and ACP experience against a hosted relay.
+- Keeps relay self-hosting gated by objective revisit criteria.
 
 Tradeoffs:
 
