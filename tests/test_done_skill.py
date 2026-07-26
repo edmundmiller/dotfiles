@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -30,7 +31,7 @@ class DoneSkillContractTest(unittest.TestCase):
             "Default to direct landing",
             "merge-base --is-ancestor",
             "ls-remote",
-            "Do not remove the worktree",
+            "Never delete a candidate that contains",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
@@ -80,6 +81,7 @@ class DoneSkillContractTest(unittest.TestCase):
             )
             self.assertEqual(0, after.returncode, after.stderr)
 
+    @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_jj_verifier_requires_local_and_remote_bookmark_alignment(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

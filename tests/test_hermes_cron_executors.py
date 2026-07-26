@@ -14,13 +14,14 @@ class HermesCronExecutorTests(unittest.TestCase):
             "amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;",
             config,
         )
-        self.assertIn('envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";', config)
-        self.assertIn("hermesAmosburtonSecretsMaterialize", config)
-        self.assertIn("systemd.services.hermes-amosburton-cron-tick", config)
+        self.assertIn('envVar = "LINEAR_API_KEY";', config)
         self.assertIn(
-            'ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";',
-            config,
+            'path = "/var/lib/opnix/secrets/amosburtonLinearApiKey";', config
         )
+        self.assertIn("hermesAmosburtonSecretsMaterialize", config)
+        self.assertIn("unset HERMES_MCP_BEARER_TOKEN_LINEAR", config)
+        self.assertIn("systemd.services.hermes-amosburton-cron-tick", config)
+        self.assertIn('ExecStart = "${amosburtonCronExecutor}";', config)
         self.assertIn("systemd.timers.hermes-amosburton-cron-tick", config)
         self.assertIn("systemd.services.hermes-gateway-amosburton.enable = false;", config)
 
