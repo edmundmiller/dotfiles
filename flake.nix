@@ -307,6 +307,8 @@
             "ergodox-firmware"
             "lgtm"
             "stack"
+            "stream-deck-herdr-plugin"
+            "work-calendar-busy"
           ]
           // {
             inherit (inputs.llm-agents.packages.${linuxSystem})
