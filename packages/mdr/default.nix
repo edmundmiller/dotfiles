@@ -5,7 +5,7 @@
 }:
 
 rustPlatform.buildRustPackage {
-  pname = "majjit";
+  pname = "mdr";
   version = "0-unstable-2026-06-15";
 
   src = fetchFromGitHub {
@@ -19,16 +19,17 @@ rustPlatform.buildRustPackage {
 
   patches = [
     ./patches/0001-disable-word-wrap-for-structured-log.patch
+    ./patches/0002-rebrand-as-mdr.patch
   ];
 
   doCheck = true;
 
   meta = with lib; {
-    description = "Magit-inspired TUI for manipulating the Jujutsu DAG";
+    description = "Macro Diff Refinement tool for manipulating the Jujutsu DAG";
     homepage = "https://github.com/anthrofract/majjit";
     license = licenses.mit;
     maintainers = [ ];
-    mainProgram = "majjit";
+    mainProgram = "mdr";
     platforms = platforms.unix;
   };
 }
