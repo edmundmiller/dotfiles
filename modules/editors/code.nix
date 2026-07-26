@@ -38,7 +38,7 @@ in
       services.gnome.gnome-keyring.enable = true;
       programs.seahorse.enable = true;
       # FIXME if kde
-      programs.ssh.askPassword = lib.mkForce "${pkgs.libsForQt5.ksshaskpass}/libexec/ksshaskpass";
+      programs.ssh.askPassword = lib.mkForce "${pkgs.kdePackages.ksshaskpass}/libexec/ksshaskpass";
       programs.dconf.enable = true;
     })
   ]);

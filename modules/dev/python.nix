@@ -75,7 +75,7 @@ in
         programs = {
           nix-ld = {
             enable = true;
-            package = pkgs.nix-ld-rs;
+            package = pkgs.nix-ld;
             libraries = [ pkgs.unstable.pixi ];
           };
         };

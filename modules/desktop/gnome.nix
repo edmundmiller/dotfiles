@@ -17,7 +17,6 @@ in
   config = mkIf cfg.enable {
     services.xserver.enable = true;
     services.displayManager.gdm.enable = true;
-    services.displayManager.gdm.wayland = true;
     services.desktopManager.gnome.enable = true;
     services.desktopManager.gnome.debug = true;
     environment.gnome.excludePackages = with pkgs; [

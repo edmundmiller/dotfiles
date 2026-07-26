@@ -20,7 +20,7 @@ in
       julia-bin
       # Plots.jl
       mesa
-      libsForQt5.qt5.qtbase
+      qt5.qtbase
     ];
 
     # TODO
