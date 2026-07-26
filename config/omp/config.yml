@@ -1,5 +1,5 @@
-providers:
-  webSearch: auto
+web_search:
+  enabled: true
 symbolPreset: nerd
 theme:
   dark: dark-catppuccin
