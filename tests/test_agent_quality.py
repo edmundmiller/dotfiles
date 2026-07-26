@@ -167,7 +167,6 @@ class AgentQualityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("different model family", result.stderr)
 
-    @unittest.expectedFailure
     def test_start_writes_a_git_receipt_without_jj_installed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -236,7 +235,6 @@ class AgentQualityTests(unittest.TestCase):
             self.assertTrue(receipt["vcs"]["changeId"])
             self.assertTrue(receipt["vcs"]["operationId"])
 
-    @unittest.expectedFailure
     def test_start_refuses_to_invent_jj_inside_a_git_worktree_without_jj(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
