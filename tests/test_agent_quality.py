@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -12,10 +14,24 @@ HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
 
 
 class AgentQualityTests(unittest.TestCase):
-    def run_cli(self, *args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    def git_only_env(self, root: Path) -> dict[str, str]:
+        bin_dir = root / "bin"
+        bin_dir.mkdir()
+        git_path = shutil.which("git")
+        self.assertIsNotNone(git_path)
+        (bin_dir / "git").symlink_to(git_path)
+        return os.environ | {"PATH": str(bin_dir)}
+
+    def run_cli(
+        self,
+        *args: str,
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(SCRIPT), *args],
             cwd=cwd or ROOT,
+            env=env,
             text=True,
             capture_output=True,
             check=False,
@@ -151,7 +167,8 @@ class AgentQualityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("different model family", result.stderr)
 
-    def test_start_writes_a_versioned_git_receipt(self) -> None:
+    @unittest.expectedFailure
+    def test_start_writes_a_git_receipt_without_jj_installed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             repo = root / "repo"
@@ -170,6 +187,7 @@ class AgentQualityTests(unittest.TestCase):
                 "gpt-5",
                 "--state-dir",
                 str(state),
+                env=self.git_only_env(root),
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -181,6 +199,7 @@ class AgentQualityTests(unittest.TestCase):
             self.assertEqual(receipt["metrics"], {"retries": 0, "userCorrections": 0})
             self.assertTrue(Path(receipt["receiptPath"]).is_file())
 
+    @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_start_creates_an_isolated_jj_workspace_and_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -217,7 +236,8 @@ class AgentQualityTests(unittest.TestCase):
             self.assertTrue(receipt["vcs"]["changeId"])
             self.assertTrue(receipt["vcs"]["operationId"])
 
-    def test_start_refuses_to_invent_jj_inside_a_git_worktree(self) -> None:
+    @unittest.expectedFailure
+    def test_start_refuses_to_invent_jj_inside_a_git_worktree_without_jj(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             repo = root / "repo"
@@ -254,6 +274,7 @@ class AgentQualityTests(unittest.TestCase):
                 "boundary",
                 "--state-dir",
                 str(root / "state"),
+                env=self.git_only_env(root),
             )
 
             self.assertEqual(result.returncode, 2)

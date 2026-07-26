@@ -26,8 +26,11 @@ class NucHermesRuntimeTest(unittest.TestCase):
             'writeShellScript "hermes-amosburton-cron-executor"', source
         )
         self.assertIn("amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY", source)
-        self.assertIn("SupplementaryGroups", service)
-        self.assertIn('"onepassword-secrets"', service)
+        self.assertIn("hermes-amosburton-secrets-materialize.service", service)
+        self.assertIn(
+            'EnvironmentFile = [ "/run/hermes-amosburton-env/secrets.env" ];',
+            service,
+        )
 
     def test_scintillate_cron_pins_profile_home_for_terminal_tools(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
