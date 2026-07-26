@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["blocked", "continue"]
+    },
+    "canonicalDefaultCheckout": {
+      "type": "string",
+      "enum": ["unchanged", "updated"]
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "inspect_state",
+          "commit_task_changes",
+          "fetch_remote",
+          "rebase_task",
+          "fast_forward_default",
+          "push_default",
+          "verify_remote",
+          "report_blocked",
+          "request_user_cleanup",
+          "preserve_unrelated_dirt",
+          "defer_dirty_worktree_cleanup",
+          "switch_canonical_branch",
+          "create_preservation_branch",
+          "stash_unrelated_dirt",
+          "reset_unrelated_dirt",
+          "commit_unrelated_dirt",
+          "remove_dirty_worktree"
+        ]
+      }
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": ["status", "canonicalDefaultCheckout", "actions", "explanation"]
+}
