@@ -28,6 +28,20 @@ Discover the remote and default destination from live state. Prefer remote symbo
 
 ## Git closeout
 
+### Dirty default checkout gate
+
+If the default branch's existing checkout has unrelated dirt after task changes
+are committed, stop and report `Blocked:`. Never move that checkout to a
+preservation branch, create a preservation branch to free the default branch,
+stash, reset, or commit its unrelated dirt, or update its checked-out branch
+ref. A bare `done` does not authorize changing the branch meaning of another
+checkout. The user must first clean or commit that checkout, or explicitly
+authorize a named preservation action.
+
+Unrelated dirt in a non-default task worktree does not block landing its already
+committed task revision through a clean default checkout. Preserve the dirt and
+defer that worktree's cleanup.
+
 1. **Snapshot.** Before any `cd`, record `active_directory=$(pwd -P)` and never recompute it. Record root, path, branch/detached state, worktrees, task tip, default branch, remotes, status, and ahead/behind counts. Identify unrelated files.
 2. **Commit task work.** Split distinct intents. Leave unrelated dirt unstaged. Run focused checks.
 3. **Refresh.** Fetch the chosen remote. Reconcile destination local-only commits and remote tip. Rebase the feature when safe; rerun checks after changed content or commit IDs.
@@ -42,7 +56,9 @@ Discover the remote and default destination from live state. Prefer remote symbo
 
    If the installed verifier is unavailable, require both `git merge-base --is-ancestor "$integration_tip" "$default_branch"` and equality between `git rev-parse "$default_branch"` and `git ls-remote "$remote" "refs/heads/$default_branch"`.
 
-7. **Clean up last.** Recheck tracked/untracked files. Remove no dirty worktree. Before removing any candidate worktree, require:
+7. **Clean up last.** Recheck tracked/untracked files. Remove no dirty worktree.
+   Do not remove the worktree before the cleanup verifier passes. Before
+   removing any candidate worktree, require:
 
    ```bash
    if bash "${HOME}/.agents/skills/done/scripts/verify-workspace-cleanup.sh" \

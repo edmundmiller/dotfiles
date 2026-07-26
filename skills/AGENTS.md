@@ -109,6 +109,22 @@ Then `hey rebuild`.
 
 3. **Rebuild**: `hey rebuild` — auto-enabled via `local` source.
 
+## Evaluating Global Skills
+
+Skill behavior evals live in `tests/skill-evals/`. Run deterministic scorer and
+source-contract tests before a live model eval:
+
+```bash
+cd tests/skill-evals
+bun install --frozen-lockfile
+bun run test
+bun run evals:done
+```
+
+`evals:done` uses vitest-evals with an ephemeral, read-only Codex CLI run. Use
+`evals:done:acpx` for a tool-disabled ACPX one-shot agent, and set
+`DONE_SKILL_EVAL_AGENT` to choose another registered ACPX agent.
+
 ## Marimo Skill Curation
 
 We intentionally do **not** enable every skill from `marimo-team/skills`.
