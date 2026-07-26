@@ -1,0 +1,19 @@
+{
+  "name": "dotfiles-skill-evals",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.13",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "evals:done": "DONE_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts done-skill.eval.ts",
+    "evals:done:acpx": "DONE_SKILL_EVALS_ENABLED=1 DONE_SKILL_EVAL_RUNNER=acpx vitest run --config vitest.evals.config.ts done-skill.eval.ts",
+    "evals:done:json": "DONE_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts done-skill.eval.ts --reporter=vitest-evals/reporter --reporter=json --outputFile.json=vitest-results.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "typescript": "~5.8.3",
+    "vitest": "^4.1.5",
+    "vitest-evals": "^0.14.0"
+  }
+}
