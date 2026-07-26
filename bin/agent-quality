@@ -249,7 +249,17 @@ def review(args: argparse.Namespace) -> int:
 
 
 def run_vcs(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
+    try:
+        return subprocess.run(
+            command, cwd=cwd, text=True, capture_output=True, check=False
+        )
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(
+            command,
+            127,
+            stdout="",
+            stderr=f"{command[0]}: command not found",
+        )
 
 
 def output_line(command: list[str], cwd: Path) -> str | None:
