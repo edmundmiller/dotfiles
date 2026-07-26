@@ -50,20 +50,27 @@ pkgs.testers.nixosTest {
           input_boolean.test_adaptive_lighting_sleep_mode = {
             name = "Test Adaptive Lighting Sleep Mode";
           };
-          switch = [
+          template = [
             {
-              platform = "template";
-              switches.adaptive_lighting_sleep_mode_living_space = {
-                value_template = "{{ is_state('input_boolean.test_adaptive_lighting_sleep_mode', 'on') }}";
-                turn_on = {
-                  service = "input_boolean.turn_on";
-                  target.entity_id = "input_boolean.test_adaptive_lighting_sleep_mode";
-                };
-                turn_off = {
-                  service = "input_boolean.turn_off";
-                  target.entity_id = "input_boolean.test_adaptive_lighting_sleep_mode";
-                };
-              };
+              switch = [
+                {
+                  name = "Adaptive Lighting Sleep Mode Living Space";
+                  default_entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
+                  state = "{{ is_state('input_boolean.test_adaptive_lighting_sleep_mode', 'on') }}";
+                  turn_on = [
+                    {
+                      action = "input_boolean.turn_on";
+                      target.entity_id = "input_boolean.test_adaptive_lighting_sleep_mode";
+                    }
+                  ];
+                  turn_off = [
+                    {
+                      action = "input_boolean.turn_off";
+                      target.entity_id = "input_boolean.test_adaptive_lighting_sleep_mode";
+                    }
+                  ];
+                }
+              ];
             }
           ];
           automation = [ ];
