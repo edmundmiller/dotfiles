@@ -1049,7 +1049,11 @@
                     export ZOXIDE_TEST_DIRS
 
                     # Run zunit tests (--tap bypasses revolver spinner dependency)
-                    cd ${./.}
+                    cp -R ${./.} source
+                    chmod -R u+w source
+                    cd source
+                    patchShebangs config/tmux/*.sh config/tmux/*.ts
+                    export DOTFILES_TEST_ROOT=$PWD
                     for test in config/*/tests/*.zunit; do
                       if [ -f "$test" ]; then
                         echo "Running $test..."

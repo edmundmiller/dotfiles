@@ -1,9 +1,24 @@
 #!/usr/bin/env zunit
 
 @setup {
+  patch_bash_shebangs() {
+    local script temp
+    for script in "$@"; do
+      [[ -f "$script" ]] || continue
+      [[ "$(head -n 1 "$script")" == '#!/usr/bin/env bash' ]] || continue
+      temp="$script.shebang"
+      {
+        printf '#!%s\n' "$BASH_BIN"
+        tail -n +2 "$script"
+      } > "$temp"
+      mv "$temp" "$script"
+      chmod +x "$script"
+    done
+  }
+
   export ORIGINAL_PATH=$PATH
   export BASH_BIN=$(command -v bash)
-  export ROOT=$PWD
+  export ROOT=${DOTFILES_TEST_ROOT:-$PWD}
   export REAL_BASE64=$(command -v base64)
   export TEST_DIR=$(mktemp -d /tmp/agent-hunk.zunit.XXXXXX)
   export MOCK_BIN="$TEST_DIR/bin"
@@ -121,6 +136,7 @@ printf 'launcher:%s\n' "$*" >> "$DISPATCH_LOG"
 } > "$PROMPT_ARGV"
 EOF
   chmod +x "$MOCK_BIN/git" "$MOCK_BIN/bun" "$MOCK_BIN/fzf-tmux" "$MOCK_TMUX_HOME"/*
+  patch_bash_shebangs "$MOCK_BIN"/* "$MOCK_HELPERS"/* "$RUN_LAUNCHER" "$MOCK_TMUX_HOME"/*
 }
 
 @teardown {
@@ -217,6 +233,7 @@ cat >/dev/null
 printf '0123456789abcdef  -\n'
 EOF
   chmod +x "$MOCK_BIN/sha256sum"
+  patch_bash_shebangs "$MOCK_BIN/sha256sum"
   run env MOCK_CANONICAL=/repo SHA256SUM_BIN="$MOCK_BIN/sha256sum" "$RUN_LAUNCHER" resume pi wanted /repo
   assert $state equals 0
   local log=$(cat "$TMUX_LOG")
@@ -311,6 +328,7 @@ printf '%s\n' "$*" >> "$HUNK_LOG"
 exit 0
 EOF
   chmod +x "$MOCK_BIN/git" "$MOCK_BIN/hunk"
+  patch_bash_shebangs "$MOCK_BIN/git" "$MOCK_BIN/hunk"
   export HUNK_LOG="$TEST_DIR/hunk.log" REPO="$repo"
   run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:$ORIGINAL_PATH" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" HUNK_LOG="$HUNK_LOG" REPO="$REPO" HUNK_LAUNCHER="$HUNK_LAUNCHER" "$BASH_BIN" -c 'exec "$BASH_BIN" "$HUNK_LAUNCHER" --resume </dev/null'
   assert $state equals 0
@@ -338,6 +356,7 @@ EOF
 printf '%s\n' "$*" >> "$BUNX_LOG"
 EOF
   chmod +x "$MOCK_BIN/git" "$MOCK_BIN/hunk" "$MOCK_BIN/bunx"
+  patch_bash_shebangs "$MOCK_BIN/git" "$MOCK_BIN/hunk" "$MOCK_BIN/bunx"
   export BUNX_LOG="$TEST_DIR/bunx.log" HUNK_LOG="$TEST_DIR/hunk.log" REPO="$repo"
   run env HOME="$TEST_DIR/home" PATH="$MOCK_BIN:$ORIGINAL_PATH" DOTFILES_BIN="$MOCK_HELPERS" MOCK_CANONICAL="$repo" BUNX_LOG="$BUNX_LOG" HUNK_LOG="$HUNK_LOG" REPO="$REPO" "$BASH_BIN" "$HUNK_LAUNCHER" --resume
   assert $state equals 0
