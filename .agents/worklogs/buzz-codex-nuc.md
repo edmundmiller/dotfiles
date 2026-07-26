@@ -53,7 +53,8 @@ The NUC deployment guard correctly rejected dry activation after `origin/main` a
 
 ## Commits
 
-- `5b3c9e171` `chore(packages): pin Codex ACP runtime`
-- `563ad6c9d` `test(buzz): cover exact respond-to allowlists`
-- `2173b1ba9` `fix(buzz): enforce exact respond-to allowlists`
-- `c656f3fd0` `feat(nuc): add owner-restricted Buzz Codex worker`
+- `97b4d71f8` `chore(packages): pin Codex ACP runtime`
+- `a39a402cb` `test(buzz): cover exact respond-to allowlists`
+- `9ef149ff9` `fix(buzz): enforce exact respond-to allowlists`
+- `bcf8893d4` `feat(nuc): add owner-restricted Buzz Codex worker`
+- `cd42fb45a` `fix(nuc): correct Buzz worker secret`
