@@ -1,0 +1,54 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index e9747cb..c77e61d 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -3,6 +3,10 @@ name = "majjit"
+ version = "0.1.0"
+ edition = "2024"
+ rust-version = "1.91.1"
++
++[[bin]]
++name = "mdr"
++path = "src/main.rs"
+ 
+ [dependencies]
+ ansi-to-tui = "8.0.1"
+diff --git a/src/main.rs b/src/main.rs
+index 19bf4d7..f8c03d3 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -17,7 +17,7 @@ use shell_out::JjCommand;
+ use terminal::Term;
+ 
+ #[derive(Parser, Debug)]
+-#[command(version, about = "Majjit: A TUI to manipulate the Jujutsu DAG")]
++#[command(name = "mdr", version, about = "Macro Diff Refinement tool")]
+ struct Args {
+     /// Path to repository to operate on
+     #[arg(short = 'R', long, default_value = ".")]
+diff --git a/src/model.rs b/src/model.rs
+index 2e9408d..70e19d8 100644
+--- a/src/model.rs
++++ b/src/model.rs
+@@ -1287,7 +1287,7 @@ impl Model {
+         let contents = cmd.run().map_err(|e| anyhow::anyhow!("{}", e))?;
+ 
+         let temp_dir = tempfile::Builder::new()
+-            .prefix(&format!("majjit-{change_id}-{commit_id}-"))
++            .prefix(&format!("mdr-{change_id}-{commit_id}-"))
+             .tempdir()?;
+         let target_path = temp_dir.path().join(&file_path);
+         if let Some(parent) = target_path.parent() {
+diff --git a/src/log_tree.rs b/src/log_tree.rs
+index a29b726..4bf06f6 100644
+--- a/src/log_tree.rs
++++ b/src/log_tree.rs
+@@ -237,7 +237,7 @@ pub struct Commit {
+ 
+ /// Marker delimiting structured fields in our custom `jj log` template
+ /// output. Emitted via `stringify(...)` so it never carries ANSI styling.
+-pub const COMMIT_FIELD_MARKER: &str = "_MAJJIT_";
++pub const COMMIT_FIELD_MARKER: &str = "_MDR_";
+ 
+ /// Number of structured fields between the leading and trailing markers.
+ const COMMIT_NUM_FIELDS: usize = 12;
