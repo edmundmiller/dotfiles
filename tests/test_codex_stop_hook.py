@@ -23,7 +23,7 @@ def write_command(path, name, exit_code=0):
     return command
 
 
-def run_hook(python_exit=0, hey_exit=0):
+def run_hook(python_exit=0, hey_exit=0, stop_hook_active=False):
     directory = tempfile.TemporaryDirectory()
     temporary = pathlib.Path(directory.name)
     log = temporary / "commands.log"
@@ -39,7 +39,13 @@ def run_hook(python_exit=0, hey_exit=0):
         ["bash", str(HOOK)],
         cwd=ROOT,
         env=env,
-        input=json.dumps({"cwd": str(ROOT), "hook_event_name": "Stop"}),
+        input=json.dumps(
+            {
+                "cwd": str(ROOT),
+                "hook_event_name": "Stop",
+                "stop_hook_active": stop_hook_active,
+            }
+        ),
         capture_output=True,
         text=True,
     )
@@ -105,6 +111,23 @@ class CodexStopHookTests(unittest.TestCase):
                 "python -m unittest discover -s tests -p test_*.py",
                 "hey check",
             ],
+        )
+
+    def test_known_regression_forced_continuation_blocks_again(self):
+        result, commands = run_hook(python_exit=1, stop_hook_active=True)
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(
+            json.loads(result.stdout),
+            {
+                "decision": "block",
+                "reason": "Dotfiles regression tests failed; fix them before stopping.",
+            },
+        )
+        self.assertEqual(result.stderr, "python output\n")
+        self.assertEqual(
+            commands,
+            ["python -m unittest discover -s tests -p test_*.py"],
         )
 
 
