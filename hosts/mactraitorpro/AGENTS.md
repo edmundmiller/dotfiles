@@ -41,6 +41,7 @@ No agenix secrets on this host (credentials in 1Password). Hermes Desktop is ins
 
 ## Related Files
 
+- `README.md` — human-facing host setup and troubleshooting
 - `default.nix` — host config
 - `homebrew.nix` — casks, formulae, MAS apps
 - `modules/desktop/macos/` — shared macOS defaults (dock, finder, trackpad, Siri off, etc.)
