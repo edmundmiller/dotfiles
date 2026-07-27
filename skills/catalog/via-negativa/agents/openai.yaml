@@ -1,0 +1,4 @@
+interface:
+  display_name: "Via Negativa"
+  short_description: "Simplify by cutting against one purpose"
+  default_prompt: "Use $via-negativa to simplify this product, document, offering, or flow by removing what does not serve its core purpose."
