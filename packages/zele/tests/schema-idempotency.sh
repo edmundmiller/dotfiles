@@ -4,14 +4,21 @@ set -euo pipefail
 schema_path=$1
 
 check_schema() {
-  ! awk '
-    /^CREATE TABLE / &&
-    $0 !~ /^CREATE TABLE IF NOT EXISTS / &&
-    $0 !~ /^CREATE TABLE sqlite_sequence/ {
-      print
+  awk '
+    /^CREATE TABLE / && $0 !~ /^CREATE TABLE sqlite_sequence/ {
       found = 1
+      if ($0 !~ /^CREATE TABLE IF NOT EXISTS /) {
+        print
+        invalid = 1
+      }
     }
-    END { exit found ? 0 : 1 }
+    END {
+      if (!found) {
+        print "No application table DDL found" > "/dev/stderr"
+        exit 1
+      }
+      exit invalid ? 1 : 0
+    }
   ' "$schema_path"
 }
 
