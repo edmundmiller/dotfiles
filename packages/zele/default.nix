@@ -31,6 +31,7 @@
     ./patches/0003-resolve-oauth-client-by-key-name.patch
     ./patches/0004-configure-google-access-level.patch
     ./patches/0005-pin-google-auth-library.patch
+    ./patches/0006-make-generated-schema-idempotent.patch
   ];
 
   postPatch = ''
@@ -55,7 +56,7 @@
 
   doInstallCheck = true;
   installCheckPhase = ''
-    EXPECT_FAILURE=1 bash ${./tests/schema-idempotency.sh} "$out/lib/zele/src/schema.sql"
+    bash ${./tests/schema-idempotency.sh} "$out/lib/zele/src/schema.sql"
   '';
 
   installPhase = ''
