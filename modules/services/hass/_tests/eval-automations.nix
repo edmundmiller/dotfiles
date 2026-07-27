@@ -292,6 +292,18 @@ let
 
   last = list: builtins.elemAt list ((length list) - 1);
 
+  enablesSleepModeBeforeScene =
+    script: sceneEntityId:
+    let
+      sequence = toList (script.sequence or [ ]);
+      first = if length sequence > 0 then builtins.elemAt sequence 0 else { };
+      second = if length sequence > 1 then builtins.elemAt sequence 1 else { };
+    in
+    (first.action or null) == "switch.turn_on"
+    && (first.target.entity_id or null) == "switch.adaptive_lighting_sleep_mode_living_space"
+    && (second.action or null) == "scene.turn_on"
+    && (second.target.entity_id or null) == sceneEntityId;
+
   allowedDisabledAutomations = [ "sync_iphone_alarm_8sleep" ];
 
   missingInitialState = filter (
@@ -896,6 +908,24 @@ let
     {
       test = !(sleepScene.entities ? "switch.eve_energy_20ebu4101");
       msg = "Sleep scene must not force whitenoise off (manual/automation owns it)";
+    }
+    {
+      test =
+        !(
+          !(goodNightScene.entities ? "switch.adaptive_lighting_sleep_mode_living_space")
+          && goodNightScript != null
+          && enablesSleepModeBeforeScene goodNightScript "scene.good_night"
+        );
+      msg = "xfail: Good Night bedtime-lighting race unexpectedly fixed; remove the expected-failure marker";
+    }
+    {
+      test =
+        !(
+          !(sleepScene.entities ? "switch.adaptive_lighting_sleep_mode_living_space")
+          && sleepScript != null
+          && enablesSleepModeBeforeScene sleepScript "scene.sleep"
+        );
+      msg = "xfail: Sleep bedtime-lighting race unexpectedly fixed; remove the expected-failure marker";
     }
     {
       test = (sleepScene.entities."switch.desk_monitor" or null) == "off";
