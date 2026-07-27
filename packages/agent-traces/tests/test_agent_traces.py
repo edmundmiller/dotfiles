@@ -113,6 +113,37 @@ class AgentTracesTests(unittest.TestCase):
             self.assertEqual(third.inserted, 1)
             self.assertEqual(catalog.load_table("agent_traces.sessions").scan().to_arrow().num_rows, 2)
 
+    def test_batched_append_is_idempotent(self) -> None:
+        from pyiceberg.catalog import load_catalog
+
+        with tempfile.TemporaryDirectory() as directory:
+            catalog = load_catalog(
+                "test",
+                type="sql",
+                uri=f"sqlite:///{directory}/catalog.db",
+                warehouse=f"file://{directory}/warehouse",
+            )
+            candidates = [
+                Candidate(
+                    source="codex",
+                    native_id=f"batch-{index}",
+                    native_format="jsonl",
+                    native_locator=f"~/.codex/sessions/batch-{index}.jsonl",
+                    native_modified_at=datetime(2026, 7, 27, tzinfo=UTC),
+                    native_size=20 + index,
+                    read=lambda value=f'{{"id":"{index}"}}\n'.encode(): value,
+                    normalize=lambda native: ([{"role": "meta", "source": "codex", "id": native.decode()}], []),
+                )
+                for index in range(5)
+            ]
+            with mock.patch("agent_traces.ingest._flush_rows", wraps=__import__("agent_traces.ingest", fromlist=["_flush_rows"])._flush_rows) as flush:
+                first = ingest_candidates(catalog, candidates, observed_at=datetime.now(UTC), batch_size=2)
+            # 2+2+1 => three flushes during first run
+            self.assertEqual(flush.call_count, 3)
+            second = ingest_candidates(catalog, candidates, observed_at=datetime.now(UTC), batch_size=2)
+            rows = catalog.load_table("agent_traces.sessions").scan().to_arrow().num_rows
+            self.assertEqual((first.inserted, second.inserted, rows), (5, 0, 5))
+
     def test_hash_native_bytes_and_raw_only_diagnostics(self) -> None:
         from pyiceberg.catalog import load_catalog
 

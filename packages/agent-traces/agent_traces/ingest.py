@@ -78,16 +78,36 @@ def _normalize(candidate: Candidate, native: bytes) -> tuple[list[object], list[
     return records, diagnostics if isinstance(diagnostics, list) else []
 
 
-def ingest_candidates(catalog: Catalog, candidates: Iterable[Candidate], observed_at: datetime | None = None) -> IngestResult:
+def _flush_rows(table, rows: list[dict[str, object]]) -> None:
+    if not rows:
+        return
+    arrow = pa.Table.from_pylist(rows, schema=schema_to_pyarrow(ICEBERG_SCHEMA))
+    # ponytail: append is enough; immutable keys + local hash set prevent dupes within a run
+    table.append(arrow)
+    rows.clear()
+
+
+def ingest_candidates(
+    catalog: Catalog,
+    candidates: Iterable[Candidate],
+    observed_at: datetime | None = None,
+    batch_size: int = 200,
+) -> IngestResult:
     table = _ensure_table(catalog)
     candidates = list(candidates)
     observed_at = (observed_at or datetime.now(UTC)).astimezone(UTC)
-    existing_rows = table.scan(selected_fields=("source", "native_id", "version_hash", "native_size", "native_modified_at")).to_arrow().to_pylist()
-    metadata = {(row["source"], row["native_id"], row["native_size"], row["native_modified_at"]): row["version_hash"] for row in existing_rows}
+    existing_rows = table.scan(
+        selected_fields=("source", "native_id", "version_hash", "native_size", "native_modified_at")
+    ).to_arrow().to_pylist()
+    metadata = {
+        (row["source"], row["native_id"], row["native_size"], row["native_modified_at"]): row["version_hash"]
+        for row in existing_rows
+    }
     hashes = {(row["source"], row["native_id"], row["version_hash"]) for row in existing_rows}
     rows: list[dict[str, object]] = []
     unchanged = 0
     failed = 0
+    inserted = 0
 
     for candidate in candidates:
         cheap_key = (candidate.source, candidate.native_id, candidate.native_size, candidate.native_modified_at)
@@ -131,15 +151,26 @@ def ingest_candidates(catalog: Catalog, candidates: Iterable[Candidate], observe
                 "native_bytes": native,
             }
         )
+        inserted += 1
+        hashes.add((candidate.source, candidate.native_id, version_hash))
+        metadata[cheap_key] = version_hash
+        if len(rows) >= batch_size:
+            _flush_rows(table, rows)
+            print(
+                _canonical_json(
+                    {
+                        "batch": True,
+                        "discovered": len(candidates),
+                        "failed": failed,
+                        "inserted": inserted,
+                        "unchanged": unchanged,
+                    }
+                ),
+                flush=True,
+            )
 
-    if rows:
-        arrow = pa.Table.from_pylist(rows, schema=schema_to_pyarrow(ICEBERG_SCHEMA))
-        table.upsert(
-            arrow,
-            join_cols=["source", "native_id", "version_hash"],
-            when_matched_update_all=False,
-        )
-    return IngestResult(len(candidates), unchanged, len(rows), failed)
+    _flush_rows(table, rows)
+    return IngestResult(len(candidates), unchanged, inserted, failed)
 
 
 def _catalog_from_env() -> Catalog:
