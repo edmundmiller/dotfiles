@@ -20,14 +20,19 @@ let
 in
 {
   services.home-assistant.config = {
+    homeassistant.customize = {
+      "light.essentials_a19_a60_3".friendly_name = "Bathroom Nightstand Lamp";
+      "light.essentials_a19_a60_4".friendly_name = "Window Nightstand Lamp";
+    };
+
     adaptive_lighting = [
       {
         name = "Living Space";
         lights = [
           "light.essentials_a19_a60" # Trashcan (kitchen)
           "light.essentials_a19_a60_2" # Dishwasher (kitchen)
-          "light.essentials_a19_a60_3" # Bathroom Nightstand
-          "light.essentials_a19_a60_4" # Window Nightstand
+          "light.essentials_a19_a60_3" # Bathroom Nightstand Lamp
+          "light.essentials_a19_a60_4" # Window Nightstand Lamp
           "light.essentials_a19_a60_5" # Wall Lamp
           "light.nanoleaf_multicolor_floor_lamp" # Couch Lamp
           "light.nanoleaf_multicolor_hd_ls" # Edmund Desk

@@ -21,6 +21,7 @@ let
   haConfig = nixosConfig.config.services.home-assistant.config;
   adaptiveLighting = haConfig.adaptive_lighting or [ ];
   automations = haConfig.automation;
+  customizations = haConfig.homeassistant.customize or { };
   scenes = haConfig.scene;
   scripts = haConfig.script;
 
@@ -983,6 +984,16 @@ let
         in
         builtins.isAttrs cfg && (cfg.state or null) == "on" && (cfg.brightness or null) == 64;
       msg = "Sundown scene must set window nightstand to 25% brightness";
+    }
+    {
+      test =
+        (customizations."light.essentials_a19_a60_3".friendly_name or null) == "Bathroom Nightstand Lamp";
+      msg = "Bathroom nightstand light must have an explicit Lamp label";
+    }
+    {
+      test =
+        (customizations."light.essentials_a19_a60_4".friendly_name or null) == "Window Nightstand Lamp";
+      msg = "Window nightstand light must have an explicit Lamp label";
     }
     {
       test = climatePolicy != null;
