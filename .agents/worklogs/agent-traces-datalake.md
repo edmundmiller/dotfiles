@@ -39,10 +39,22 @@ Use private Cloudflare R2 Data Catalog as the only durable agent-trace store. St
 - Official trajectory OpenClaw listing walks `agents/*/sessions` under a state root; OMP/Pi use their own session trees with the openclaw adapter and relabeled meta source.
 - Hermes listing path is a SQLite DB; per-session message export is required for native bytes and normalization.
 
+- Package commits: `131982c5f`, `2ef51fd4d` on `agent-traces-datalake` (HEAD==origin).
+- Bounded live ingest `AGENT_TRACES_SINCE=2026-07-24`: 341 rows first pass (228 normalized / 113 raw_only), hash verified, no duplicate keys.
+- Second bounded pass inserted only live-changed rows; snapshot advanced as expected.
+- Reader token: table scan OK; namespace create denied 403.
+- DuckDB attach with reader listed sources; write path not granted.
+- Catalog compaction enabled at 128 MB target.
+- `hey check` Darwin green after formatting. `darwin-rebuild switch` activated `org.nixos.agent-traces` at 03:30 with secret path env only.
+- OMP materialize smoke for 2026-07-26: 28 temporary trajectory files, meta-leading JSON, cleaned with tempdir.
+- Full first launchd kick still running historical backfill (stdout buffered until PYTHONUNBUFFERED rebuild).
+
 ## Remaining work
 
-- Bounded live R2 ingest, idempotency, DuckDB reader check, host activation, launchd/OMP/marimo smoke, two green commits, push.
+- Wait for first full launchd backfill JSON summary; optional browser marimo pass.
+- Merge branch when backfill completes.
 
 ## Commits
 
-None.
+- `131982c5f` feat(agent-traces): ingest sessions into R2 Iceberg
+- `2ef51fd4d` feat(agents): schedule Iceberg ingestion and reuse it
