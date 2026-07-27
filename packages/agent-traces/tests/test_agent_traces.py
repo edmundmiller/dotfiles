@@ -158,6 +158,39 @@ class AgentTracesTests(unittest.TestCase):
             self.assertEqual(row["normalization_status"], "raw_only")
             self.assertTrue(json.loads(row["diagnostics_json"])[0]["message"])
 
+    def test_surrogate_trajectory_json_survives_append(self) -> None:
+        from pyiceberg.catalog import load_catalog
+
+        lone = "\ud83d"
+        native = b'{"id":"surrogate"}\n'
+
+        def normalize(_: bytes) -> tuple[list[dict[str, object]], list[object]]:
+            return ([{"role": "meta", "source": "codex", "title": lone}], [])
+
+        with tempfile.TemporaryDirectory() as directory:
+            catalog = load_catalog(
+                "test",
+                type="sql",
+                uri=f"sqlite:///{directory}/catalog.db",
+                warehouse=f"file://{directory}/warehouse",
+            )
+            candidate = Candidate(
+                source="codex",
+                native_id="surrogate",
+                native_format="jsonl",
+                native_locator="~/.codex/sessions/surrogate.jsonl",
+                native_modified_at=datetime(2026, 7, 27, tzinfo=UTC),
+                native_size=len(native),
+                read=lambda: native,
+                normalize=normalize,
+            )
+            result = ingest_candidates(catalog, [candidate], observed_at=datetime.now(UTC))
+            row = catalog.load_table("agent_traces.sessions").scan().to_arrow().to_pylist()[0]
+            self.assertEqual((result.inserted, result.failed), (1, 0))
+            self.assertEqual(row["normalization_status"], "normalized")
+            self.assertIn("\\ud83d", row["trajectory_json"])
+            self.assertEqual(json.loads(row["trajectory_json"])[0]["title"], lone)
+
 
 def fixture_candidate(native: bytes, fail: bool = False) -> Candidate:
     def normalize(_: bytes) -> list[dict[str, object]]:
