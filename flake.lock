@@ -1609,6 +1609,22 @@
         "type": "github"
       }
     },
+    "perplexity-api-platform-developers": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784818182,
+        "narHash": "sha256-SsHwPP0Wq4qUuJnS8H9wdUcveYNA/E4rYYvWGYZYeFA=",
+        "owner": "perplexityai",
+        "repo": "api-platform-developers",
+        "rev": "906630d8b9787b29afd693699fe34c1b86adf2de",
+        "type": "github"
+      },
+      "original": {
+        "owner": "perplexityai",
+        "repo": "api-platform-developers",
+        "type": "github"
+      }
+    },
     "pi-extension-skills": {
       "flake": false,
       "locked": {
@@ -1923,6 +1939,7 @@
           "nixpkgs"
         ],
         "openai-skills": "openai-skills",
+        "perplexity-api-platform-developers": "perplexity-api-platform-developers",
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
         "prek-repo": "prek-repo",

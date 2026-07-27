@@ -112,6 +112,11 @@
       flake = false;
     };
 
+    perplexity-api-platform-developers = {
+      url = "github:perplexityai/api-platform-developers";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -528,6 +533,12 @@
                   filter.maxDepth = 1;
                 };
 
+                perplexity = {
+                  path = inputs.perplexity-api-platform-developers.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 2;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -601,6 +612,9 @@
 
                   browser-control.from = "browser-control";
                   browser-control.path = "browser-control";
+
+                  pplx-cli.from = "perplexity";
+                  pplx-cli.path = "pplx-cli";
 
                   write-discoverable-code.from = "modem";
                   write-discoverable-code.path = "write-discoverable-code";
