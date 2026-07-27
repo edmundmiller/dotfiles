@@ -15,4 +15,8 @@ in
     mactraitor
     nuc
   ];
+
+  "agent-traces-r2-write-token.age".publicKeys = [ mactraitor ];
+
+  "agent-traces-r2-read-token.age".publicKeys = [ mactraitor ];
 }

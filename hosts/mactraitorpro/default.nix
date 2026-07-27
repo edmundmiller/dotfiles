@@ -262,6 +262,11 @@ in
           dailyIntrospection.enable = true;
           dailyIntrospection.commit.enable = true;
         };
+        traces = {
+          enable = true;
+          catalogUri = "https://catalog.cloudflarestorage.com/57398029d3d0add95bdad89deaa41864/agent-traces";
+          warehouse = "57398029d3d0add95bdad89deaa41864_agent-traces";
+        };
         opencode.enable = true;
       };
 

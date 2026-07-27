@@ -1,18 +1,18 @@
 # Agent Thread Introspection
 
-Analyze OMP, Codex, Claude Code, Pi, OpenCode, Amp, Droid, and other agent sessions for `{{DATE}}`; improve the shared agent system only where the evidence supports it.
+Analyze normalized agent trajectories for `{{DATE}}` from the private R2 Iceberg lake; improve the shared agent system only where the evidence supports it.
 
 ## Inputs
 
-The script appends a JSON session manifest after this prompt. Each item has:
+The script materializes temporary `trajectory-v1` JSON files for the day and appends a JSON session manifest. Each item has:
 
-- `client`: source agent/runtime, such as `omp`, `codex`, `claude`, `pi`, `opencode`, `amp`, or `droid`
-- `format`: underlying file format, such as `jsonl`, `json`, or `sqlite`
-- `path`: session/transcript path
-- `bytes`: file size
-- `modified`: local modification timestamp
+- `client`: Iceberg source label, such as `omp`, `codex`, `claude-code`, `pi`, `opencode`, `amp`, or `hermes`
+- `format`: always `trajectory-v1`
+- `path`: temporary normalized trajectory path for this run
+- `bytes`: temporary file size
+- `modified`: source `native_modified_at` timestamp
 
-Read only the sessions needed to establish patterns. Filter at the source: prefer sampling thread starts, user prompts, assistant failures, repeated tool errors, and final outcomes before loading large files.
+Read only the temporary trajectories needed to establish patterns. Prefer sampling meta/user/assistant/tool records before loading large files. Paths disappear with the temporary directory after the run.
 
 ## Parallel analysis
 

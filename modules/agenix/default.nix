@@ -90,6 +90,16 @@ in
           wakatime-api-key = {
             file = "${sharedSecretsDir}/wakatime-api-key.age";
           };
+        }
+        // optionalAttrs (effectiveHostName == "mactraitorpro") {
+          agent-traces-r2-write-token = {
+            file = "${sharedSecretsDir}/agent-traces-r2-write-token.age";
+            mode = "0600";
+          };
+          agent-traces-r2-read-token = {
+            file = "${sharedSecretsDir}/agent-traces-r2-read-token.age";
+            mode = "0600";
+          };
         };
       };
     };
