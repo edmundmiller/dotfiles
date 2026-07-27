@@ -64,7 +64,8 @@ def _ensure_table(catalog: Catalog):
 
 
 def _canonical_json(value: object) -> str:
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    # ponytail: ascii-escape lone surrogates instead of custom tree walk
+    return json.dumps(value, ensure_ascii=True, separators=(",", ":"), sort_keys=True, allow_nan=False)
 
 
 def _normalize(candidate: Candidate, native: bytes) -> tuple[list[object], list[object]]:
