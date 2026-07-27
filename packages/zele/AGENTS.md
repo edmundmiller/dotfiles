@@ -48,6 +48,7 @@ If future fork changes need rename semantics or binary patches, switch to a `git
 
 - zele is built with the upstream `build` script, which runs Prisma generation and TypeScript compilation through Bun.
 - `sqlite` is included in `nativeBuildInputs` because zele’s build regenerates `src/schema.sql` via `sqlite3`.
+- The schema-generation patch must preserve `CREATE TABLE IF NOT EXISTS`; newer `sqlite3 .schema` output omits it, but zele reapplies the generated schema on every startup.
 - `prisma-engines` binaries are injected explicitly so Prisma generation works inside the Nix build sandbox.
 - The final package wraps `dist/cli.js` with Bun and ships `dist/`, `src/schema.sql`, and production runtime dependencies.
 - Top-level devDependencies are removed after build so the package does not ship the full development toolchain.
