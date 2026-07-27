@@ -103,21 +103,23 @@
         codex.enable = true;
         omp = {
           enable = true;
-          # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic).
-          # Prewalk hands implementation to smol, so Sonnet is the coding handoff;
-          # Haiku stays on commit/tiny metadata work. Fable is the slow
-          # default, with Codex Sol as its first fallback. Opus remains the
-          # primary and plan model. Cursor Grok and Composer fast variants are
-          # fallbacks. VibeProxy exposes Claude only; do not invent xai-oauth ids.
+          # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic),
+          # google-antigravity (Gemini). Prewalk hands implementation to smol, so
+          # Sonnet is the coding handoff; Haiku stays on commit/tiny metadata work.
+          # Fable drives slow/plan/designer with Codex Sol as first fallback.
+          # Opus remains the primary default. Vision goes to Gemini via the
+          # google-antigravity login (run `/login google-antigravity` in omp once).
+          # Cursor Grok and Composer fast variants are fallbacks. VibeProxy
+          # exposes Claude only; do not invent xai-oauth ids.
           # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
           # rendered smol and can confuse commit/tiny vs prewalk handoff.
           modelRoles = {
             default = "vibeproxy/claude-opus-5:low";
             smol = "vibeproxy/claude-sonnet-5:low";
             slow = "vibeproxy/claude-fable-5:high";
-            plan = "vibeproxy/claude-opus-5:high";
-            vision = "vibeproxy/claude-sonnet-5:medium";
-            designer = "vibeproxy/claude-opus-5:medium";
+            plan = "vibeproxy/claude-fable-5:high";
+            vision = "google-antigravity/gemini-3-flash";
+            designer = "vibeproxy/claude-fable-5:medium";
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
             task = "vibeproxy/claude-sonnet-5:low";
