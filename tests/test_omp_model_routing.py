@@ -132,6 +132,26 @@ class OmpModelRoutingTests(unittest.TestCase):
                 "cursor/composer-2.5-fast",
             ],
         )
+        self.assertEqual(omp["modelRoles"]["plan"], "vibeproxy/claude-fable-5:high")
+        self.assertEqual(
+            omp["modelRoles"]["designer"],
+            "vibeproxy/claude-fable-5:medium",
+        )
+        self.assertEqual(
+            omp["modelRoles"]["vision"],
+            "google-antigravity/gemini-3-flash",
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["plan"],
+            [
+                "openai-codex/gpt-5.6-sol:high",
+                "openai-codex/gpt-5.6-luna:high",
+            ],
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["designer"],
+            ["openai-codex/gpt-5.6-sol:medium"],
+        )
 
 
 if __name__ == "__main__":
