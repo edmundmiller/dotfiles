@@ -22,7 +22,7 @@ Pick the simplest primitive that fits:
 
 **Design pattern:** Scenes define _what_ the state should be. Automations define _when_ to apply it. Scripts define _how_ to do complex procedures. Automations should `scene.turn_on` wherever possible — keeps entity state centralized in scenes, automations stay thin trigger→scene wrappers.
 
-Scenes are idempotent — every stage should assert the full expected state for that stage, even if a prior stage already set it. This makes each scene a reliable safety net regardless of entry path.
+Scenes are idempotent — every stage should assert its full static state, even if a prior stage already set it. When cross-entity ordering matters, a script owns the ordered precondition and the scene owns the final static states. Good Night and Sleep follow this exception: their scripts enable Adaptive Lighting sleep mode before applying lights-off scenes, avoiding concurrent off/on commands.
 
 Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-automations/288105), [Automations and Scenes and Scripts, Oh My!](https://community.home-assistant.io/t/automations-and-scenes-and-scripts-oh-my/583417)
 
@@ -103,6 +103,10 @@ hey nuc-status
 ```
 
 ## Lights
+
+`lighting.nix` `homeassistant.customize` is the source of truth for friendly
+names. Verify live with
+`hass-cli -o json state list 'light.*' | jq '[.[] | {entity: .entity_id, name: .attributes.friendly_name}]'`.
 
 | Entity ID                              | Friendly Name            | Area        | Color Temp |
 | -------------------------------------- | ------------------------ | ----------- | ---------- |

@@ -231,14 +231,12 @@ views:
 
           - type: custom:mushroom-light-card
             entity: light.essentials_a19_a60_3
-            name: Bathroom Nightstand Lamp
             show_brightness_control: true
             fill_container: true
             collapsible_controls: true
 
           - type: custom:mushroom-light-card
             entity: light.essentials_a19_a60_4
-            name: Window Nightstand Lamp
             show_brightness_control: true
             fill_container: true
             collapsible_controls: true

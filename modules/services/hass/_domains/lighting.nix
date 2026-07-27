@@ -1,10 +1,10 @@
 # Lighting domain — Adaptive Lighting (circadian color temperature + brightness)
 #
 # Adjusts color temp and brightness based on sun position.
-# Sleep mode is controlled by the late bedtime scenes in sleep/.
+# Sleep mode is controlled by the ordered late-bedtime scripts in sleep/.
 #
 # Sleep mode lifecycle:
-#   ON:  Good Night/Sleep scenes
+#   ON:  Good Night/Sleep scripts, before their lights-off scenes
 #   OFF: 7:00 AM (hard cutoff) + Good Morning scene + Arrive Home scene
 #   SAFETY: startup + hourly daytime check — if sleep mode on but goodnight off, correct it
 #

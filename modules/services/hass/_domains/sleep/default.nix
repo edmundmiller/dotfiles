@@ -31,6 +31,10 @@
 { lib, pkgs, ... }:
 let
   inherit (import ../../_lib.nix) ensureEnabled;
+  enableAdaptiveSleepMode = {
+    action = "switch.turn_on";
+    target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
+  };
 
   # ── Per-person entity config ───────────────────────────────────────────
   edmund = {
@@ -438,10 +442,7 @@ in
         alias = "Good Night";
         icon = "mdi:bed";
         sequence = [
-          {
-            action = "switch.turn_on";
-            target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
-          }
+          enableAdaptiveSleepMode
           {
             action = "scene.turn_on";
             target.entity_id = "scene.good_night";
@@ -484,10 +485,7 @@ in
         alias = "Sleep";
         icon = "mdi:sleep";
         sequence = [
-          {
-            action = "switch.turn_on";
-            target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
-          }
+          enableAdaptiveSleepMode
           {
             action = "scene.turn_on";
             target.entity_id = "scene.sleep";
