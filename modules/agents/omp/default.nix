@@ -250,55 +250,37 @@ let
     PY
     fi
 
-    ${pkgs.python3}/bin/python3 - "$date_arg" ${lib.escapeShellArg threadIntrospectionPrompt} "$prompt_file" <<'PY'
+    ${pkgs.my.agent-traces}/bin/python - "$date_arg" ${lib.escapeShellArg threadIntrospectionPrompt} "$prompt_file" "$tmp_dir/sessions" <<'PY'
     from datetime import datetime, timedelta
     from pathlib import Path
     import json
+    import os
     import sys
 
-    date_arg, template_path, prompt_path = sys.argv[1:4]
+    from agent_traces.query import materialize_day
+
+    date_arg, template_path, prompt_path, session_dir = sys.argv[1:5]
     if date_arg:
-        day = datetime.strptime(date_arg, "%Y-%m-%d")
+        day = datetime.strptime(date_arg, "%Y-%m-%d").date()
     else:
-        day = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+        day = (datetime.now() - timedelta(days=1)).date()
 
-    start = day.timestamp()
-    end = (day + timedelta(days=1)).timestamp()
-    home = Path.home()
-    sources = [
-        ("omp", "jsonl", home / ".omp" / "agent" / "sessions", ("*.jsonl",)),
-        ("codex", "jsonl", home / ".codex" / "sessions", ("*.jsonl",)),
-        ("codex-archived", "jsonl", home / ".codex" / "archived_sessions", ("*.jsonl",)),
-        ("claude", "jsonl", home / ".claude" / "sessions", ("*.jsonl",)),
-        ("claude-projects", "jsonl", home / ".claude" / "projects", ("*.jsonl",)),
-        ("pi", "jsonl", home / ".pi" / "agent" / "sessions", ("*.jsonl",)),
-        ("opencode", "sqlite", home / ".local" / "share" / "opencode", ("opencode.db",)),
-        ("amp", "json", home / ".codex" / "amp-bridge", ("amp-threads.json", "amp-transcripts/*.json")),
-        ("amp", "jsonl", home / ".codex" / "amp-bridge", ("amp-transcripts/*.jsonl",)),
-        ("droid", "jsonl", home / ".droid" / "sessions", ("*.jsonl",)),
-        ("droid", "jsonl", home / ".config" / "droid" / "sessions", ("*.jsonl",)),
-    ]
+    os.environ.setdefault(
+        "AGENT_TRACES_CATALOG_URI",
+        ${lib.escapeShellArg config.modules.agents.traces.catalogUri},
+    )
+    os.environ.setdefault(
+        "AGENT_TRACES_WAREHOUSE",
+        ${lib.escapeShellArg config.modules.agents.traces.warehouse},
+    )
+    os.environ.setdefault(
+        "AGENT_TRACES_READ_TOKEN_FILE",
+        ${lib.escapeShellArg "${config.user.home}/.local/share/agenix/agent-traces-r2-read-token"},
+    )
 
-    sessions = []
-    for client, file_format, root, patterns in sources:
-        if not root.exists():
-            continue
-        for pattern in patterns:
-            for path in root.rglob(pattern):
-                if not path.is_file():
-                    continue
-                stat = path.stat()
-                if start <= stat.st_mtime < end:
-                    sessions.append({
-                        "client": client,
-                        "format": file_format,
-                        "path": str(path),
-                        "bytes": stat.st_size,
-                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    })
-    sessions.sort(key=lambda item: (item["client"], item["path"]))
+    sessions = materialize_day(day, Path(session_dir))
     template = Path(template_path).read_text(encoding="utf-8")
-    prompt = template.replace("{{DATE}}", day.strftime("%Y-%m-%d"))
+    prompt = template.replace("{{DATE}}", day.isoformat())
     prompt += "\n\n## Session manifest\n\n"
     prompt += json.dumps(sessions, indent=2, sort_keys=True)
     prompt += "\n"
