@@ -107,17 +107,7 @@ hey nuc-status
 `lighting.nix` `homeassistant.customize` is the source of truth for friendly
 names. Verify live with
 `hass-cli -o json state list 'light.*' | jq '[.[] | {entity: .entity_id, name: .attributes.friendly_name}]'`.
-
-| Entity ID                              | Friendly Name            | Area        | Color Temp |
-| -------------------------------------- | ------------------------ | ----------- | ---------- |
-| `light.essentials_a19_a60`             | Trashcan                 | Kitchen     | ✅         |
-| `light.essentials_a19_a60_2`           | Dishwasher               | Kitchen     | ✅         |
-| `light.essentials_a19_a60_3`           | Bathroom Nightstand Lamp | Bedroom     | ✅         |
-| `light.essentials_a19_a60_4`           | Window Nightstand Lamp   | Bedroom     | ✅         |
-| `light.essentials_a19_a60_5`           | Wall Lamp                | Living Room | ✅         |
-| `light.nanoleaf_multicolor_floor_lamp` | Couch Lamp               | Living Room | ✅         |
-| `light.nanoleaf_multicolor_hd_ls`      | Edmund Desk              | Office      | ✅         |
-| `light.smart_night_light_w`            | Night Light              | Entrance    | ✅         |
+For offline lookup, run `rg 'Nightstand Lamp|Wall Lamp|Couch Lamp' lighting.nix`.
 
 ## Switches
 
