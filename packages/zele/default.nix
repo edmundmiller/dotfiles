@@ -53,6 +53,11 @@
 
   npmBuildScript = "build";
 
+  doInstallCheck = true;
+  installCheckPhase = ''
+    EXPECT_FAILURE=1 bash ${./tests/schema-idempotency.sh} "$out/lib/zele/src/schema.sql"
+  '';
+
   installPhase = ''
     runHook preInstall
 
