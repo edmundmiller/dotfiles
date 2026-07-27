@@ -335,7 +335,6 @@ in
         entities = {
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
-          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60" = "off";
           "light.essentials_a19_a60_2" = "off";
@@ -355,7 +354,6 @@ in
         entities = {
           "input_boolean.goodnight" = "on";
           "select.master_suite_current_mode" = "sleep";
-          "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
@@ -441,6 +439,10 @@ in
         icon = "mdi:bed";
         sequence = [
           {
+            action = "switch.turn_on";
+            target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
+          }
+          {
             action = "scene.turn_on";
             target.entity_id = "scene.good_night";
           }
@@ -482,6 +484,10 @@ in
         alias = "Sleep";
         icon = "mdi:sleep";
         sequence = [
+          {
+            action = "switch.turn_on";
+            target.entity_id = "switch.adaptive_lighting_sleep_mode_living_space";
+          }
           {
             action = "scene.turn_on";
             target.entity_id = "scene.sleep";

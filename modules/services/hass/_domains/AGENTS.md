@@ -34,7 +34,7 @@ These automations have inline actions by design — do not refactor them into sc
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `entrance_occupancy_night_light` (ambient.nix)            | Dynamic wait-loop (`wait_for_trigger`); scenes are static snapshots                                                    |
 | `plant_glow_light_on/off` (ambient.nix)                   | Single entity toggled on a time schedule; no state to compose                                                          |
-| `al_sleep_mode_off` (lighting.nix)                        | Hard cutoff only; Good Night/Sleep scenes own enabling AL sleep mode                                                   |
+| `al_sleep_mode_off` (lighting.nix)                        | Hard cutoff only; Good Night/Sleep scripts enable AL sleep mode before applying their lights-off scenes                |
 | `Mid-morning` / `Sundown` scenes                          | AL sleep mode not included — it's always off by those times of day (7 AM hard cutoff)                                  |
 | `Leave Home` scene                                        | AL sleep mode not included — irrelevant when nobody is home                                                            |
 | `Vacation` scene                                          | AL sleep mode not included — long-term away state, not a sleep cycle                                                   |
@@ -142,7 +142,7 @@ Configured in `lighting.nix`. One "Living Space" switch covers all color-temp li
 - Sleep mode: 10% brightness, 1000K (deep warm red, melatonin-friendly)
 - `take_over_control: true` — manual adjustments pause AL for that light
 - Sleep mode schedule: currently **on at 10:00 PM**, **off at 7:00 AM** (hard cutoff) via time-based automations in `lighting.nix`; new sleep lifecycle work should move bedtime behavior toward alarm-relative circadian timing
-- Sleep mode also embedded in scenes: bedtime phases → on, Good Morning → off
+- Good Night/Sleep scripts enable sleep mode before applying lights-off scenes; Good Morning turns it off
 
 ### HA entities
 

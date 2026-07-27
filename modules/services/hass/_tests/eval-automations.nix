@@ -911,21 +911,17 @@ let
     }
     {
       test =
-        !(
-          !(goodNightScene.entities ? "switch.adaptive_lighting_sleep_mode_living_space")
-          && goodNightScript != null
-          && enablesSleepModeBeforeScene goodNightScript "scene.good_night"
-        );
-      msg = "xfail: Good Night bedtime-lighting race unexpectedly fixed; remove the expected-failure marker";
+        !(goodNightScene.entities ? "switch.adaptive_lighting_sleep_mode_living_space")
+        && goodNightScript != null
+        && enablesSleepModeBeforeScene goodNightScript "scene.good_night";
+      msg = "Good Night must enable Adaptive Lighting sleep mode before applying the lights-off scene";
     }
     {
       test =
-        !(
-          !(sleepScene.entities ? "switch.adaptive_lighting_sleep_mode_living_space")
-          && sleepScript != null
-          && enablesSleepModeBeforeScene sleepScript "scene.sleep"
-        );
-      msg = "xfail: Sleep bedtime-lighting race unexpectedly fixed; remove the expected-failure marker";
+        !(sleepScene.entities ? "switch.adaptive_lighting_sleep_mode_living_space")
+        && sleepScript != null
+        && enablesSleepModeBeforeScene sleepScript "scene.sleep";
+      msg = "Sleep must enable Adaptive Lighting sleep mode before applying the lights-off scene";
     }
     {
       test = (sleepScene.entities."switch.desk_monitor" or null) == "off";
