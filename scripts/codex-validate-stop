@@ -3,6 +3,10 @@ set -uo pipefail
 
 payload=$(cat)
 cwd=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd", ""))' 2>/dev/null) || cwd=
+stop_hook_active=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("stop_hook_active") is True).lower())' 2>/dev/null) ||
+  stop_hook_active=false
+
+test "$stop_hook_active" = true && exit 0
 test -n "$cwd" || cwd=$PWD
 
 root=$(cd "$(dirname "$0")/.." && pwd)
