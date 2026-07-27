@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "repo=$(git rev-parse --show-toplevel 2>/dev/null) && bash \"$repo/scripts/codex-validate-stop\"",
+            "command": "primary=$(git worktree list --porcelain | sed -n 's/^worktree //p' | head -n 1) && bash \"$primary/scripts/codex-stop-dispatch\" scripts/codex-validate-stop",
             "timeout": 1200,
             "type": "command"
           }

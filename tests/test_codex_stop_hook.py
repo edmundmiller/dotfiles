@@ -9,6 +9,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 HOOK = ROOT / "scripts/codex-validate-stop"
+DISPATCH = ROOT / "scripts/codex-stop-dispatch"
 
 
 def write_command(path, name, exit_code=0):
@@ -60,7 +61,27 @@ class CodexStopHookTests(unittest.TestCase):
         hook = config["hooks"]["Stop"][0]["hooks"][0]
 
         self.assertEqual(hook["type"], "command")
+        self.assertIn("scripts/codex-stop-dispatch", hook["command"])
         self.assertIn("scripts/codex-validate-stop", hook["command"])
+
+    def test_dispatcher_stops_forced_continuation_before_worktree_hook(self):
+        result = subprocess.run(
+            ["bash", str(DISPATCH), "scripts/codex-validate-stop"],
+            cwd=ROOT,
+            input=json.dumps(
+                {
+                    "cwd": str(ROOT),
+                    "hook_event_name": "Stop",
+                    "stop_hook_active": True,
+                }
+            ),
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "")
 
     def test_stop_hook_runs_regressions_then_hey_check(self):
         result, commands = run_hook()

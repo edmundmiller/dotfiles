@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+handler=${1:-}
+test -n "$handler" || exit 0
+
+payload=$(cat)
+stop_hook_active=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("stop_hook_active") is True).lower())' 2>/dev/null) ||
+  stop_hook_active=false
+test "$stop_hook_active" = true && exit 0
+
+cwd=$(printf '%s' "$payload" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("cwd", ""))' 2>/dev/null) || cwd=
+test -n "$cwd" || cwd=$PWD
+repo=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
+test -f "$repo/$handler" || exit 0
+
+printf '%s' "$payload" | bash "$repo/$handler"
