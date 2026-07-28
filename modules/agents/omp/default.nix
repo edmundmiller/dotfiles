@@ -63,6 +63,7 @@ let
   '';
   herdrPlugin = ../../../packages/pi-packages/pi-herdr;
   hunkPlugin = ../../../packages/pi-packages/pi-hunk;
+  reviewLoopPluginSource = "git:github.com/earendil-works/pi-review-loop#3822e126b8b9ec05d7796b7897512c773ba9a166";
   ponytailPlugin = pkgs.fetchzip {
     name = "ponytail-4.8.4";
     url = "https://registry.npmjs.org/@dietrichgebert/ponytail/-/ponytail-4.8.4.tgz";
@@ -583,6 +584,26 @@ in
           home.activation.omp-hunk-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${hunkPlugin}"} --force --json >/dev/null
           '';
+
+          home.activation.omp-review-loop-plugin = lib.mkIf isDarwin (
+            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              review_loop_dir=${lib.escapeShellArg "${ompConfigDir}/plugins/node_modules/pi-review-loop"}
+              glimpse_dir=${lib.escapeShellArg "${ompConfigDir}/plugins/node_modules/glimpseui"}
+
+              ${ompPackage}/bin/omp plugin uninstall pi-review-loop --json >/dev/null 2>&1 || true
+              ${ompPackage}/bin/omp plugin install ${lib.escapeShellArg reviewLoopPluginSource} --force --json >/dev/null
+              ${pkgs.patch}/bin/patch \
+                --batch \
+                --forward \
+                --directory "$review_loop_dir" \
+                --strip 1 \
+                < ${./patches/0001-pi-review-loop-use-has-ui.patch}
+              /usr/bin/swiftc \
+                -O \
+                "$glimpse_dir/src/glimpse.swift" \
+                -o "$glimpse_dir/src/glimpse"
+            ''
+          );
 
           home.activation.omp-skillopt-sleep-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${ompPackage}/bin/omp plugin uninstall pi-skillopt-sleep --json >/dev/null 2>&1 || true
