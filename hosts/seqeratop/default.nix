@@ -162,7 +162,6 @@
             ];
             plan = [
               "openai-codex/gpt-5.6-sol:high"
-              "openai-codex/gpt-5.6-luna:high"
             ];
             task = [
               "openai-codex/gpt-5.6-terra:low"
