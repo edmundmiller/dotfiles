@@ -70,21 +70,23 @@ class BootstrapLayoutTest(unittest.TestCase):
 
         return created, ran, calls
 
-    def test_bootstrap_creates_only_omp_and_hunk_and_focuses_omp(self) -> None:
+    def test_bootstrap_creates_only_codex_and_hunk_and_focuses_codex(self) -> None:
         created, ran, calls = self.run_bootstrap()
 
-        self.assertEqual(created, [("omp", "/repo"), ("hunk", "/repo")])
-        self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
-        self.assertIn(["tab", "focus", "tab-omp"], calls)
+        self.assertEqual(created, [("codex", "/repo"), ("hunk", "/repo")])
+        self.assertEqual(
+            ran, [("pane-codex", "codex"), ("pane-hunk", "hunk --worktree")]
+        )
+        self.assertIn(["tab", "focus", "tab-codex"], calls)
 
     def test_bootstrap_is_idempotent(self) -> None:
         created, ran, calls = self.run_bootstrap(
-            existing={"omp": "tab-omp", "hunk": "tab-hunk"}
+            existing={"codex": "tab-codex", "hunk": "tab-hunk"}
         )
 
         self.assertEqual(created, [])
         self.assertEqual(ran, [])
-        self.assertEqual(calls, [["tab", "focus", "tab-omp"]])
+        self.assertEqual(calls, [["tab", "focus", "tab-codex"]])
 
     def test_creation_event_closes_only_the_initial_tab(self) -> None:
         _, _, calls = self.run_bootstrap(
@@ -94,7 +96,7 @@ class BootstrapLayoutTest(unittest.TestCase):
         )
 
         self.assertIn(["tab", "close", "tab-initial"], calls)
-        self.assertIn(["tab", "focus", "tab-omp"], calls)
+        self.assertIn(["tab", "focus", "tab-codex"], calls)
 
     def test_workspace_lock_serializes_concurrent_hooks(self) -> None:
         intervals: list[tuple[float, float]] = []
@@ -123,10 +125,10 @@ class BootstrapLayoutTest(unittest.TestCase):
 class CommandTest(unittest.TestCase):
     def test_pane_run_accepts_empty_success_output(self) -> None:
         with patch("dev_layout.subprocess.run", return_value=Completed(0, "")) as run:
-            dev_layout.pane_run("pane-1", "omp")
+            dev_layout.pane_run("pane-1", "codex")
 
         self.assertEqual(
-            run.call_args.args[0], ["herdr", "pane", "run", "pane-1", "omp"]
+            run.call_args.args[0], ["herdr", "pane", "run", "pane-1", "codex"]
         )
 
 
