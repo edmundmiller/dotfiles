@@ -167,34 +167,53 @@ Recovery:
 - `failed to clean up stale arg0 temp dirs`: restore ownership with
   `sudo chown -R "$USER:users" "$HOME/.codex/tmp/arg0"`.
 
-## Buzz Mill Docs worker
+## Buzz community runtimes
 
-The hosted-relay worker is `buzz-mill-docs-codex.service`. Its source of truth
-is `hosts/nuc/default.nix`; its encrypted identity and owner attestation are
-`hosts/nuc/secrets/buzz-mill-docs-agent-env.age`. It uses the existing
-`/home/emiller/.codex` ChatGPT login and does not need an API key.
+`hosts/nuc/default.nix` generates one `buzz-hermes-<profile>.service` for every
+configured NUC Hermes profile. Each service runs `buzz-acp -> hermes acp` with
+the profile's materialized home, provider environment, and declared repository
+mounts. Its dedicated identity and owner attestation live in
+`hosts/nuc/secrets/buzz-hermes-<profile>-agent-env.age`.
+Each service subscribes only to its assigned Buzz channel: Amos Burton uses
+`finances`; Anne and Betty use `mill-docs`; Orchestrator and Scintillate use
+`general`.
+
+The separate `buzz-mill-docs-codex.service` remains project-scoped. Its
+encrypted identity is `hosts/nuc/secrets/buzz-mill-docs-agent-env.age`; it uses
+the existing `/home/emiller/.codex` ChatGPT login.
 
 Verify after a deploy or recovery:
 
 ```bash
+ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
+ssh nuc "systemctl show 'buzz-hermes-*.service' -p Id -p ActiveState -p MainPID -p NRestarts"
 ssh nuc 'systemctl is-active buzz-mill-docs-codex.service'
-ssh nuc 'systemctl show buzz-mill-docs-codex.service -p MainPID -p NRestarts -p ExecMainStatus'
-ssh nuc 'journalctl -u buzz-mill-docs-codex.service -n 30 --no-pager'
+ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
 ```
 
-Expected: `active`, one worker, no restarts, and a connection to
-`wss://millers.communities.buzz.xyz`. The service has no listener; it only
-maintains the outbound relay connection. Restart it with:
+Expected: every configured unit is active with zero restarts and connected to
+`wss://millers.communities.buzz.xyz`. Lazy mode starts the Hermes ACP child
+only after an accepted mention. The services expose no listener.
 
 ```bash
+ssh nuc "sudo systemctl restart 'buzz-hermes-*.service'"
 ssh nuc 'sudo systemctl restart buzz-mill-docs-codex.service'
 ```
 
-The worker accepts explicit mentions only from its exact Nix allowlist. Before
-adding Moni, obtain her 64-character relay pubkey and confirm she is a
-community member; then update the allowlist, deploy, and run both an allowed
-mention and a member-but-unallowlisted negative test. Never print or copy the
-agenix secret.
+Create each Hermes identity through the owner-reviewed Buzz flow so the relay
+receives the owner attestation and agent-authored profile event. Never reuse a
+private key across profiles. Encrypt `BUZZ_PRIVATE_KEY` and `BUZZ_AUTH_TAG`
+directly into the matching agenix file; never print either value.
+
+The Hermes services accept explicit owner mentions only and inherit repository
+access from `services.hermes-agent.profiles.<name>.hostPathMounts`. Change that
+canonical profile boundary instead of adding service-specific paths. Host
+Docker and Podman sockets remain inaccessible even when a profile inherits
+their CLI packages.
+
+The Mill Docs worker accepts mentions from its exact Nix allowlist. Before
+adding Moni, confirm her relay membership, update the allowlist, and run both
+allowed and member-but-unallowlisted mention tests.
 
 ## Rollback
 

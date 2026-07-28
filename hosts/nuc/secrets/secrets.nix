@@ -181,6 +181,26 @@ in
     edmundmiller
     nuc
   ];
+  "buzz-hermes-amosburton-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "buzz-hermes-anne-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "buzz-hermes-betty-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "buzz-hermes-orchestrator-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "buzz-hermes-scintillate-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
 
   # TODO: create these .age files to re-enable vault-sync
   # "cubox-api-key.age".publicKeys = [
