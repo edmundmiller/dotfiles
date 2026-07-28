@@ -84,6 +84,7 @@ Custom/current mappings:
 | `prefix+R`                        | Refresh GitHub PR status                           |
 | `prefix+I`                        | Start GitHub issue workflow                        |
 | `prefix+O`                        | Start from GitHub item                             |
+| `prefix+B`                        | Open Herdr Browser in a right split                |
 
 Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes the `workspace.created` and `worktree.created` hooks per workspace, creating exactly OMP and Hunk tabs and focusing OMP.
 
@@ -107,6 +108,7 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `razajamil/herdr-plugin-workspace-manager`
 - `paulbkim-dev/vim-herdr-navigation`
 - `ogulcancelik/herdr-plugin-github-start`
+- `ogulcancelik/herdr-browser`
 - `rjyo/herdr-window-title-sync`
 - `wyattjoh/herdr-plugin-gh-pr`
 - `kkckkc/herdr-plugin-gh-workflow`
