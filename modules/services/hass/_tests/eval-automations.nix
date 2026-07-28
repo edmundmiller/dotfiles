@@ -994,14 +994,12 @@ let
       msg = "timer.climate_policy_hold must bound HA thermostat holds to 45 minutes";
     }
     {
-      expectedFailure = true;
       test =
         (inputNumbers.climate_manual_override_target.initial or null) == 74
         && (timers.climate_manual_override.duration or null) == "02:00:00";
       msg = "manual climate override must provide a 74 F target and expire after two hours";
     }
     {
-      expectedFailure = true;
       test =
         climateManualOverrideDetected != null
         && hasInfix "attribute\":\"temperature" (builtins.toJSON climateManualOverrideDetected)
@@ -1009,29 +1007,31 @@ let
         && hasInfix "context.parent_id" (builtins.toJSON climateManualOverrideDetected)
         && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "input_number.set_value"
         && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "timer.start"
-        && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "script.apply_climate_policy";
+        && hasActionCall (toList (
+          climateManualOverrideDetected.action or [ ]
+        )) "script.apply_climate_policy";
       msg = "external thermostat target changes during an HA hold must activate the bounded manual override";
     }
     {
-      expectedFailure = true;
       test =
         activateClimateManualOverride != null
         && hasActionCall (toList (activateClimateManualOverride.sequence or [ ])) "input_number.set_value"
         && hasActionCall (toList (activateClimateManualOverride.sequence or [ ])) "timer.start"
-        && hasActionCall (toList (activateClimateManualOverride.sequence or [ ])) "script.apply_climate_policy"
+        && hasActionCall (toList (
+          activateClimateManualOverride.sequence or [ ]
+        )) "script.apply_climate_policy"
         && hasInfix "timer.climate_manual_override" (builtins.toJSON applyClimatePolicy)
         && hasInfix "input_number.climate_manual_override_target" (builtins.toJSON applyClimatePolicy);
       msg = "explicit manual override must apply its target without humidity or grid adjustment";
     }
     {
-      expectedFailure = true;
       test =
         climateManualOverrideFinished != null
         && hasInfix "timer.finished" (builtins.toJSON climateManualOverrideFinished)
         && hasInfix "timer.climate_manual_override" (builtins.toJSON climateManualOverrideFinished)
-        && hasActionCall
-          (toList (climateManualOverrideFinished.action or [ ]))
-          "script.apply_climate_policy";
+        && hasActionCall (toList (
+          climateManualOverrideFinished.action or [ ]
+        )) "script.apply_climate_policy";
       msg = "manual climate override expiry must resume the normal climate policy";
     }
     {
