@@ -195,8 +195,9 @@ in
       };
 
       services = {
+        appleContainer.enable = true;
         obsidian-sync.enable = false;
-        docker.enable = true;
+        docker.enable = false;
         mosh.enable = true;
         moshi.enable = true;
         tailscale.enable = true;
