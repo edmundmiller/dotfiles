@@ -49,6 +49,7 @@ let
 
         [experimental]
         pane_history = true
+        kitty_graphics = true
 
         [keys]
         prefix = "${cfg.prefix}"
@@ -187,6 +188,12 @@ let
         type = "plugin_action"
         command = "ogulcancelik.github-start.open"
         description = "start from GitHub item"
+
+        [[keys.command]]
+        key = "prefix+B"
+        type = "shell"
+        command = "''${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus"
+        description = "open browser in a right split"
 
         [[keys.command]]
         key = "prefix+V"
@@ -636,6 +643,7 @@ in
               "dutifuldev.ghzinga.open",
               "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop",
               "ogulcancelik.github-start.open",
+              "''${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus",
               "obsidian-neovide",
           }
 
@@ -853,6 +861,12 @@ in
               'description = "start from GitHub item"',
               "",
               "[[keys.command]]",
+              'key = "prefix+B"',
+              'type = "shell"',
+              'command = "''${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus"',
+              'description = "open browser in a right split"',
+              "",
+              "[[keys.command]]",
               'key = "prefix+V"',
               'type = "shell"',
               'command = "obsidian-neovide"',
@@ -975,7 +989,14 @@ in
 
           out = upsert_worktree_directory(out)
           out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
-          out = upsert_simple_section(out, "experimental", {"pane_history": "true"})
+          out = upsert_simple_section(
+              out,
+              "experimental",
+              {
+                  "pane_history": "true",
+                  "kitty_graphics": "true",
+              },
+          )
           out = upsert_simple_section(
               out,
               "ui",
@@ -1139,6 +1160,7 @@ in
           install_plugin razajamil herdr-plugin-workspace-manager
           install_plugin paulbkim-dev vim-herdr-navigation
           install_plugin ogulcancelik herdr-plugin-github-start
+          install_plugin ogulcancelik herdr-browser
           install_plugin rjyo herdr-window-title-sync
           install_plugin wyattjoh herdr-plugin-gh-pr
           install_plugin kkckkc herdr-plugin-gh-workflow
