@@ -1,0 +1,7 @@
+diff --git a/src/index.ts b/src/index.ts
+index c1c3121..f7fb9b6 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -18 +18 @@ export default function reviewLoop(pi: ExtensionAPI) {
+-    if (ctx.mode !== "tui") {
++    if (!ctx.hasUI) {
