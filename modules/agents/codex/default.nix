@@ -19,6 +19,12 @@ let
   );
   readRule = file: builtins.readFile "${rulesDir}/${file}";
   concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+  codexVaultRestoreGuard = pkgs.writeTextFile {
+    name = "codex-vault-restore-guard";
+    destination = "/bin/codex-vault-restore-guard";
+    executable = true;
+    text = "#!${pkgs.python3}/bin/python3\n${builtins.readFile "${configDir}/codex/hooks/vault_restore_guard.py"}";
+  };
 in
 {
   options.modules.agents.codex = {
@@ -28,6 +34,7 @@ in
   config = mkIf cfg.enable {
     user.packages = [
       (lib.hiPrio pkgs.llm-agents.codex)
+      codexVaultRestoreGuard
     ];
 
     home.file = {
@@ -115,6 +122,12 @@ in
               path.write_text(next_content, encoding="utf-8")
           PY
         '';
+
+        home.activation.codex-vault-restore-guard-install =
+          lib.hm.dag.entryAfter [ "codex-config-bootstrap" ]
+            ''
+              ${codexVaultRestoreGuard}/bin/codex-vault-restore-guard --install "$HOME/.codex/hooks.json"
+            '';
       };
   };
 }
