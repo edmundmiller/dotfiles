@@ -80,6 +80,8 @@ host before adding roles/fallbacks. Never invent hybrid ids like
 
 ## Docs
 
+- [advisor-watchdog.md](./advisor-watchdog.md) — advisor runtime, roster
+  discovery, cost, role-scoped fallbacks, and project review guidance.
 - [message-queue.md](./message-queue.md) — the three message-queue knobs
   (`interruptMode` / `steeringMode` / `followUpMode`) with a flow diagram.
   Also tracks the pending OMP + Herdr theme fix.
