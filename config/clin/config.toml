@@ -1,0 +1,100 @@
+[core]
+storage_path = "$HOME/obsidian-vault"
+mouse_enabled = true
+confirm_on_delete = true
+enable_key_sequences = false
+auto_refresh = true
+code_line_numbers = true
+code_theme = "base16-ocean.dark"
+confirm_on_quit = false
+keybind_preset = "helix"
+link_url_max_length = 80
+preview_expand_mode = "inline"
+preview_wrap = true
+preview_wrap_indicator = false
+syntax_highlighting = true
+
+[ui]
+theme = "catppuccin_macchiato"
+background = "transparent"
+show_status_bar = true
+icon_mode = "nerd"
+tab_icons_only = false
+hint_bar_style = "powerline_rounded"
+
+[list]
+preview_enabled = true
+preview_position = "right"
+preview_encryption = false
+show_date_in_list = true
+show_file_size = false
+date_format = "%Y-%m-%d"
+density = "compact"
+default_view = "grid"
+pinned_on_top = true
+show_hidden_files = false
+show_all_files = false
+calendar_enabled = true
+smart_folders_enabled = false
+calendar_height = 9
+calendar_position = "bottom"
+expanded_folders = []
+folders_first = true
+pinned_folders = []
+preview_width_ratio = 0.43
+sections = ["calendar", "goals"]
+week_start = "sunday"
+
+[editor]
+external_enabled = false
+preview_enabled = false
+show_line_numbers = true
+
+[backup]
+enabled = false
+backup_on_save = false
+backup_on_quit = false
+auto_push = false
+
+[graf]
+preview_enabled = false
+
+[graf.visual]
+graph_background = "solid"
+node_color_mode = "folder"
+edge_color_mode = "uniform"
+label_mode = "selected"
+label_max_length = 20
+node_size = 2.0
+node_size_mode = "fixed"
+edge_thickness = 1
+show_legend = true
+show_grid = false
+show_minimap = false
+minimap_position = "top_right"
+minimap_width = 24
+minimap_height = 12
+canvas_marker = "braille"
+node_shape = "circle"
+label_offset = 4.0
+grid_divisions = 10
+
+[graf.physics]
+ideal_distance = 80.0
+
+[graf.interaction]
+zoom_factor = 1.15
+drag_sensitivity = 1.0
+
+[graf.filter]
+exclude_tags = []
+min_links = 0
+
+[graf.search]
+max_results = 20
+max_visible = 10
+
+[goals]
+enabled = true
+word_goal = 500
+note_goal = 3
