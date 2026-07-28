@@ -6,6 +6,22 @@
 }:
 let
   obsidianVault = "${config.user.home}/obsidian-vault";
+  clin = inputs.clin.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  clinWithVaultEnv = pkgs.writeShellScriptBin "clin" ''
+    for arg in "$@"; do
+      case "$arg" in
+        --vault | --vault=*)
+          exec ${clin}/bin/clin "$@"
+          ;;
+      esac
+    done
+
+    if [ -n "''${CLIN_VAULT:-}" ]; then
+      exec ${clin}/bin/clin --vault "$CLIN_VAULT" "$@"
+    fi
+
+    exec ${clin}/bin/clin "$@"
+  '';
   obsidianGuardDir = "${config.user.home}/Library/Application Support/obsidian-sync-guard";
   obsidianDesktopGuard = pkgs.writeShellScript "obsidian-desktop-sync-guard" ''
     set -u
@@ -298,7 +314,7 @@ in
 
     # Add desktop helpers + qmd CLI
     environment.systemPackages = with pkgs; [
-      inputs.clin.packages.${pkgs.stdenv.hostPlatform.system}.default
+      clinWithVaultEnv
       llm-agents.qmd
       my.openwiki
       my.zele
@@ -328,6 +344,8 @@ in
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
           "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
+        home.file."Library/Application Support/com.clin.clin/config.toml".source =
+          "${config.dotfiles.configDir}/clin/config.toml";
 
         # Keep the Seqera work wallpaper in a stable location and apply it to the desktop.
         # macOS wallpaper automation reliably accepts the PNG export; the SVG sibling
