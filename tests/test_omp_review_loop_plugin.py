@@ -35,6 +35,7 @@ class OmpReviewLoopPluginTests(unittest.TestCase):
         self.assertIn("/bin/sed", result.stdout)
         self.assertIn('if (ctx.mode !== "tui")', result.stdout)
         self.assertIn("if (!ctx.hasUI)", result.stdout)
+        self.assertIn('"$review_loop_dir/src/index.ts"', result.stdout)
         self.assertNotIn("/bin/patch", result.stdout)
         self.assertIn("/usr/bin/swiftc", result.stdout)
         self.assertIn("glimpseui", result.stdout)

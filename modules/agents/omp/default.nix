@@ -592,12 +592,12 @@ in
 
               ${ompPackage}/bin/omp plugin uninstall pi-review-loop --json >/dev/null 2>&1 || true
               ${ompPackage}/bin/omp plugin install ${lib.escapeShellArg reviewLoopPluginSource} --force --json >/dev/null
-              ${pkgs.gnugrep}/bin/grep -F 'if (ctx.mode !== "tui")' "$review_loop_dir/index.ts" >/dev/null
+              ${pkgs.gnugrep}/bin/grep -F 'if (ctx.mode !== "tui")' "$review_loop_dir/src/index.ts" >/dev/null
               ${pkgs.gnused}/bin/sed \
                 -i \
                 's/if (ctx.mode !== "tui")/if (!ctx.hasUI)/' \
-                "$review_loop_dir/index.ts"
-              ${pkgs.gnugrep}/bin/grep -F 'if (!ctx.hasUI)' "$review_loop_dir/index.ts" >/dev/null
+                "$review_loop_dir/src/index.ts"
+              ${pkgs.gnugrep}/bin/grep -F 'if (!ctx.hasUI)' "$review_loop_dir/src/index.ts" >/dev/null
               /usr/bin/swiftc \
                 -O \
                 "$glimpse_dir/src/glimpse.swift" \
