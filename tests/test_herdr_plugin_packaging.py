@@ -61,3 +61,22 @@ def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() ->
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
     assert '"tab-smart-rename.rename-now",' in module
+
+
+def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+
+    assert config["experimental"]["kitty_graphics"] is True
+    assert "install_plugin ogulcancelik herdr-browser" in module
+    assert {
+        "key": "prefix+B",
+        "type": "shell",
+        "command": (
+            "${HERDR_BIN_PATH} plugin pane open --plugin official.browser "
+            "--entrypoint browser --placement split --direction right --focus"
+        ),
+        "description": "open browser in a right split",
+    } in config["keys"]["command"]
+    assert '"kitty_graphics": "true"' in module
+    assert "official.browser" in module
