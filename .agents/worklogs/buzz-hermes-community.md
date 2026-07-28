@@ -1,6 +1,6 @@
 # Worklog: buzz-hermes-community
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -58,13 +58,24 @@ the expected repository boundary.
 - Five distinct owner-attested agent profiles are live. Each encrypted identity
   decrypts locally, appears as a bot in its least-privilege channel, and can
   read that channel with its own credentials.
+- `hey nuc-wt switch` deployed the current worktree generation. All five
+  `buzz-hermes-*` units are active with zero restarts, authenticated to the
+  Millers relay, subscribed to exactly one assigned channel, and expose no
+  listener.
+- A natural owner mention in `finances` started `hermes acp`; Amos Burton
+  verified the finances Git workspace and absence of a Mill Docs workspace,
+  then returned the exact acceptance token. A non-mention produced no agent
+  reply.
+- An explicit restart recovered all five relay connections and channel
+  subscriptions with zero automatic restarts.
 - `nixfmt --check` and `git diff --check` pass for the current changes.
 
 ## Reviews
 
 - Plan review: unavailable. The heterogeneous reviewer reached ACP
   `session/new` and returned `RUNTIME: Authentication required`.
-- Landing review: pending.
+- Landing review: `sem diff --staged` confirmed the change is limited to the
+  NUC Buzz runtime, its tests, encrypted identities, and canonical docs.
 
 ## Feedback
 
@@ -72,8 +83,8 @@ None.
 
 ## Remaining work
 
-- Deploy and run live positive/boundary checks.
+None.
 
 ## Commits
 
-Pending.
+- `9267732e1` — `feat(nuc): run Hermes profiles in Buzz community`
