@@ -77,9 +77,31 @@
         ];
         zsh.enable = true;
         mo.enable = true;
+        # Scan roots for `mo purge` (build-artifact cleanup). This list
+        # REPLACES mole's built-in defaults, so anything omitted here is
+        # never scanned. Nonexistent dirs are a harmless no-op and are kept
+        # so coverage kicks in automatically if they ever appear.
+        #
+        # Deliberate omissions:
+        #   ~/Library/CloudStorage — mole scans this by default, but purging
+        #     artifacts inside iCloud/Google Drive propagates deletions to
+        #     other machines and can force-download dataless files.
+        #   ~/Repos — same inode as ~/repos on case-insensitive APFS.
         mo.purgePaths = [
+          # Actually in use on this host
           "~/src"
           "~/repos"
+          "~/.codex/worktrees"
+          "~/.local/share/herdr/worktrees"
+          # Mole defaults, kept for future coverage
+          "~/.claude/worktrees"
+          "~/www"
+          "~/dev"
+          "~/Projects"
+          "~/GitHub"
+          "~/Code"
+          "~/Workspace"
+          "~/Development"
         ];
       };
 
