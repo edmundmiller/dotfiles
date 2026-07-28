@@ -421,10 +421,125 @@ let
   millDocsVaultPath = "/home/emiller/mill-docs";
   buzzMillDocsOwnerPubkey = "fdb266e13b8a216bcb47132c5451fa4cac6b70730bd6d9952b9609362cc84d4c";
   buzzMillDocsAllowedPubkeys = [ buzzMillDocsOwnerPubkey ];
-  buzzMillDocsChannelId = "ebe6fa65-e776-46e6-9c79-7dae679ad1de";
+  buzzHermesChannelIds = {
+    amosburton = "0496329b-5844-4985-9fed-b2963906045f";
+    anne = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
+    betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
+    orchestrator = "2f26ea17-737f-5121-b01b-0df23e851c38";
+    scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
+  };
+  buzzMillDocsChannelId = buzzHermesChannelIds.anne;
   buzzMillDocsCodexAcp = pkgs.writeShellScriptBin "mill-docs-codex-acp" ''
     exec ${pkgs.my.codex-acp}/bin/codex-acp "$@"
   '';
+  mkBuzzHermesService =
+    profile:
+    let
+      stateDir = "/var/lib/hermes-${profile}";
+      workspaceDir = "${stateDir}/workspace";
+      profileConfig = config.services.hermes-agent.profiles.${profile};
+      mountSources = builtins.attrNames profileConfig.hostPathMounts;
+      translateContainerPath =
+        value:
+        let
+          mountCandidate =
+            if lib.hasPrefix "/home/hermes/" value then lib.removePrefix "/home/hermes" value else value;
+          mountValue = lib.foldl' (
+            resolved: source:
+            let
+              target = profileConfig.hostPathMounts.${source};
+            in
+            if resolved == target || lib.hasPrefix "${target}/" resolved then
+              source + lib.removePrefix target resolved
+            else
+              resolved
+          ) mountCandidate mountSources;
+        in
+        if mountValue != mountCandidate then
+          mountValue
+        else if value == "/data" || lib.hasPrefix "/data/" value then
+          stateDir + lib.removePrefix "/data" value
+        else if value == "/home/hermes" || lib.hasPrefix "/home/hermes/" value then
+          "${stateDir}/home" + lib.removePrefix "/home/hermes" value
+        else
+          value;
+      hostPathEnvironment = lib.mapAttrs (_name: translateContainerPath) profileConfig.environment;
+    in
+    {
+      description = "Buzz Hermes community runtime for ${profile}";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+      path = [
+        config.services.hermes-agent.package
+        pkgs.bashInteractive
+        pkgs.coreutils
+        pkgs.git
+        pkgs.my.buzz
+        pkgs.openssh
+      ]
+      ++ profileConfig.extraPackages;
+      environment = hostPathEnvironment // {
+        HOME = stateDir;
+        HERMES_HOME = "${stateDir}/.hermes";
+        HERMES_REAL_HOME = stateDir;
+        HERMES_PROFILE = profile;
+        MESSAGING_CWD = workspaceDir;
+        TERMINAL_HOME_MODE = "real";
+        NO_BROWSER = "1";
+        BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
+        BUZZ_ACP_AGENT_OWNER = buzzMillDocsOwnerPubkey;
+        BUZZ_ACP_AGENT_COMMAND = "${config.services.hermes-agent.package}/bin/hermes";
+        BUZZ_ACP_AGENT_ARGS = "acp";
+        BUZZ_ACP_AGENTS = "1";
+        BUZZ_ACP_LAZY_POOL = "true";
+        BUZZ_ACP_SUBSCRIBE = "mentions";
+        BUZZ_ACP_CHANNELS = buzzHermesChannelIds.${profile};
+        BUZZ_ACP_RESPOND_TO = "owner-only";
+        BUZZ_ACP_ALLOWED_RESPOND_TO = "owner-only";
+        BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
+        BUZZ_ACP_MEMORY = "false";
+      };
+      serviceConfig = {
+        Type = "simple";
+        User = "emiller";
+        Group = "users";
+        WorkingDirectory = workspaceDir;
+        EnvironmentFile = profileConfig.environmentFiles ++ [
+          config.age.secrets."buzz-hermes-${profile}-agent-env".path
+        ];
+        ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
+        Restart = "always";
+        RestartSec = "10s";
+        UMask = "0077";
+        ProtectSystem = "strict";
+        ProtectHome = "tmpfs";
+        BindPaths = lib.unique ([ stateDir ] ++ mountSources);
+        InaccessiblePaths = [
+          "-/run/docker.sock"
+          "-/run/podman/podman.sock"
+        ];
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        CapabilityBoundingSet = "";
+        LockPersonality = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+      };
+    };
   legacyMillDocsPath = "/home/emiller/sync/mill-docs";
   millDocsDeviceName = "nuc-mill-docs";
   obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT,.mdbase,.amp,scripts,.trash,.obsidian/plugins-disabled-20260505-160148,.obsidian/plugins-disabled-20260505-162506,.obsidian/plugins-disabled-all-20260505-164607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082626,06_Attachments/YouTube,src";
@@ -1973,6 +2088,8 @@ in
           };
           anne = { };
           orchestrator = {
+            workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
+            workspaceLinks."repos/tnote" = tnoteBaseRepo;
             providers = {
               obsidianVault.hostPath = "/home/emiller/obsidian-vault";
               tnote = {
@@ -2150,6 +2267,32 @@ in
     mode = "0400";
   };
 
+  age.secrets.buzz-hermes-amosburton-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.buzz-hermes-anne-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.buzz-hermes-betty-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.buzz-hermes-orchestrator-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.buzz-hermes-scintillate-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+
   systemd.services.buzz-mill-docs-codex = {
     description = "Buzz mention worker for mill-docs";
     after = [ "network-online.target" ];
@@ -2210,6 +2353,12 @@ in
       SystemCallArchitectures = "native";
     };
   };
+
+  systemd.services.buzz-hermes-amosburton = mkBuzzHermesService "amosburton";
+  systemd.services.buzz-hermes-anne = mkBuzzHermesService "anne";
+  systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
+  systemd.services.buzz-hermes-orchestrator = mkBuzzHermesService "orchestrator";
+  systemd.services.buzz-hermes-scintillate = mkBuzzHermesService "scintillate";
 
   systemd.services.obsidian-sync-mill-docs = {
     description = "Obsidian Headless Sync (mill-docs)";

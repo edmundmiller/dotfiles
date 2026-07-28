@@ -1,16 +1,16 @@
 ---
-purpose: Record why Buzz relay self-hosting remains deferred and bound the hosted Mill Docs worker.
-applies_to: Decisions about self-hosting Buzz or operating the NUC Buzz worker.
-entrypoint: Inspect `buzz-mill-docs-codex.service`, then reassess the self-hosting criteria.
-verification: Verify the live worker and compare current Buzz releases with the self-hosting criteria.
-update_when: The hosted worker boundary, Buzz deployment model, or self-hosting criteria change.
+purpose: Record why Buzz relay self-hosting remains deferred and bound the hosted NUC runtimes.
+applies_to: Decisions about self-hosting Buzz or operating NUC Buzz agent runtimes.
+entrypoint: Inspect `buzz-hermes-*` and `buzz-mill-docs-codex.service`.
+verification: Verify live runtimes and compare current Buzz releases with the self-hosting criteria.
+update_when: The hosted runtime boundary, Buzz deployment model, or self-hosting criteria change.
 ---
 
 # ADR 0009: Defer Buzz as a core self-hosted agent workspace
 
 ## Status
 
-Accepted — defer relay self-hosting; allow the bounded hosted-relay worker
+Accepted — defer relay self-hosting; allow bounded hosted-relay runtimes
 
 ## Date
 
@@ -35,31 +35,39 @@ another workspace and state system rather than replace a proven boundary.
 
 ## Decision
 
-Do not self-host the Buzz relay or migrate Hermes conversations to Buzz.
+Do not self-host the Buzz relay or replace existing Hermes delivery surfaces
+with Buzz.
 
-Run one persistent, low-privilege Mill Docs worker on the NUC against the
-hosted Miller community relay. This is a client integration, not a Buzz
+Expose the configured NUC Hermes profiles to the hosted Millers community as
+separate, low-privilege agent runtimes. Keep the bounded Mill Docs Codex worker
+for its project-specific sandbox. This is a client integration, not a Buzz
 infrastructure deployment. Hermes remains the primary agent runtime.
 
 Current assessment:
 
 - Strategic fit: **8/10**
 - Self-hosted operational fit: **4/10**
-- Action: **operate the bounded hosted worker; defer relay self-hosting**
+- Action: **operate bounded hosted runtimes; defer relay self-hosting**
 
-## Hosted worker architecture
+## Hosted runtime architecture
 
 ```text
-Buzz community ──WSS──> buzz-acp on NUC ──ACP──> codex-acp ──> Codex
-                                    cwd: /home/emiller/mill-docs
+                                  ┌─> Hermes ACP profile A ─> declared repos
+Buzz community ─WSS─> buzz-acp ──┼─> Hermes ACP profile B ─> declared repos
+                  one identity    └─> Hermes ACP profile N ─> declared repos
+                  per profile
+
+Buzz community ─WSS─> buzz-acp ─ACP─> codex-acp ─> bounded Mill Docs worker
 ```
 
-`hosts/nuc/default.nix` owns `buzz-mill-docs-codex.service`. The unit uses
-source-pinned Buzz and Codex ACP packages, a dedicated Nostr identity from
-agenix, the existing ChatGPT Codex login, mention-only subscription, and an
-exact author allowlist. It opens no inbound port.
+`hosts/nuc/default.nix` owns the generated `buzz-hermes-<profile>.service`
+units and `buzz-mill-docs-codex.service`. Each Hermes unit uses the profile's
+materialized home, package, environment, and declared host mounts. Each has a
+dedicated Nostr identity from agenix, one channel matching its repository
+boundary, owner-only mention routing, lazy ACP startup, no inbound port, and no
+host Docker or Podman socket.
 
-The owner is currently the only allowlisted author. Add Moni only after her
+The Mill Docs worker keeps its exact author allowlist. Add Moni only after her
 64-character relay pubkey is known and her identity belongs to the community.
 
 ## Reasons
@@ -122,28 +130,28 @@ Reopen this decision when most of the following are true:
 - Buzz demonstrates a stable authorization boundary suitable for agents with
   different privileges, or channel membership is proven sufficient for the
   intended deployment.
-- A compatibility spike proves that `hermes-acp`, or another supported Hermes
-  adapter, can participate through Buzz's ACP harness without duplicating agent
-  runtime state.
+- Several weeks of live use show that per-profile Hermes ACP processes coexist
+  safely with cron state, provider credentials, and repository writes.
 
 The decisive use case is a real shared project room where multiple humans and
 agents need discussion, Git changes, CI evidence, review, and approvals in one
 durable record. A prettier dashboard for existing personal agents is not enough.
 
-## Hosted worker boundary
+## Hosted runtime boundary
 
-The approved worker remains narrow:
+The approved runtimes remain narrow:
 
 - Use the hosted relay; do not deploy Buzz databases or object storage.
-- Run one dedicated identity in one project channel with one Codex subprocess.
-- Keep its private key and owner attestation in agenix.
-- Require explicit mentions and an exact author allowlist.
-- Enforce project filesystem and network policy through Codex plus systemd.
+- Use one dedicated Buzz identity per Hermes profile.
+- Keep every private key and owner attestation in a separate agenix secret.
+- Require explicit owner mentions and disable heartbeat by default.
+- Derive repository access from the profile's existing host mounts.
+- Keep the Mill Docs Codex worker's project-specific sandbox and allowlist.
 
-Acceptance requires a live allowlisted reply, a non-mention drop, a true
-member-but-not-allowlisted mention drop, restart recovery, and filesystem
-boundary probes. Installation success alone is not evidence. Until Moni joins
-and the member-negative probe passes, the two-person allowlist is incomplete.
+Acceptance requires a live Hermes reply, a non-mention drop, restart recovery,
+and profile-specific filesystem boundary probes. Installation success alone is
+not evidence. The Mill Docs two-person allowlist remains incomplete until Moni
+joins and the member-negative probe passes.
 
 ## Consequences
 
@@ -152,12 +160,13 @@ Positive:
 - Avoids adding a premature stateful platform to the NUC.
 - Preserves reliable Telegram and Discord delivery while Buzz's mobile path
   matures.
-- Gains real Buzz identity, channel, and ACP experience against a hosted relay.
+- Makes existing Hermes profiles available in Buzz without widening their
+  repository access.
 - Keeps relay self-hosting gated by objective revisit criteria.
 
 Tradeoffs:
 
-- The current agent activity trail remains split across Hermes state,
+- Agent activity remains split across Hermes state,
   messaging surfaces, repositories, and operational artifacts.
 - Delaying adoption may postpone useful experience with Buzz's identity and
   event model.
