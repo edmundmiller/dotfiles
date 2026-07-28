@@ -23,6 +23,5 @@
     (( nix_index < brew_index && brew_index < intel_index ))
   '
 
-  [[ $state -ne 0 ]] || fail 'unexpected pass: remove the regression marker'
-  skip 'known regression: native Homebrew currently shadows managed Nix commands'
+  assert $state equals 0
 }
