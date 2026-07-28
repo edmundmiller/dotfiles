@@ -1,0 +1,28 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export ORIG_PWD=$PWD
+  export ZSHENV_FILE="$ORIG_PWD/config/zsh/.zshenv"
+  export ZSH_BIN=$(command -v zsh)
+}
+
+@test 'managed Nix commands take precedence over native Homebrew commands' {
+  if [[ "$(uname -s)" != "Darwin" ]] || [[ ! -x /opt/homebrew/bin/brew ]]; then
+    skip 'requires Darwin with ARM Homebrew'
+  fi
+
+  run env ZSHENV_FILE="$ZSHENV_FILE" USER="$USER" "$ZSH_BIN" -fc '
+    PATH=/usr/local/bin:/usr/bin:/bin
+    source "$ZSHENV_FILE"
+
+    nix_path="/etc/profiles/per-user/$USER/bin"
+    integer nix_index=${path[(i)$nix_path]}
+    integer brew_index=${path[(i)/opt/homebrew/bin]}
+    integer intel_index=${path[(i)/usr/local/bin]}
+
+    (( nix_index < brew_index && brew_index < intel_index ))
+  '
+
+  [[ $state -ne 0 ]] || fail 'unexpected pass: remove the regression marker'
+  skip 'known regression: native Homebrew currently shadows managed Nix commands'
+}
