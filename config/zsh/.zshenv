@@ -63,16 +63,3 @@ path=(
   $HOME/.cargo/bin
   $path
 )
-
-# nix-homebrew exposes both ARM (/opt/homebrew) and Rosetta (/usr/local) brew entrypoints.
-# In native ARM shells, macOS/path_helper can still leave /usr/local ahead of /opt/homebrew,
-# which makes plain `brew` resolve to the Intel prefix and fail cask installs.
-# Keep the native ARM brew first unless this shell is running under Rosetta.
-typeset -U path PATH
-if [[ "$(uname -m)" == "arm64" ]] && [[ "$(sysctl -in sysctl.proc_translated 2>/dev/null || echo 0)" != "1" ]]; then
-  path=(
-    /opt/homebrew/bin
-    /opt/homebrew/sbin
-    $path
-  )
-fi
