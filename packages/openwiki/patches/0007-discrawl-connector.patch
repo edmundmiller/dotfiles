@@ -22,7 +22,7 @@ index dea2fb2..ae46aa8 100644
  
  You can configure the same connector more than once. For example, add one Web
  Search source for AI research and another for NBA news; OpenWiki stores them as
-@@ -192,10 +192,47 @@ instances with `openwiki ingest all`, all instances for one connector with
+@@ -192,10 +192,49 @@ instances with `openwiki ingest all`, all instances for one connector with
  - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
  - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
  - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
@@ -54,6 +54,8 @@ index dea2fb2..ae46aa8 100644
 +connector caps `windowHours` at 720 and `maxMessages` at 5000, fails closed on
 +schedule gaps or truncated queries, keeps a cursor per channel, and writes only
 +allowlisted normalized message fields.
++Scheduled runs resume from the persisted cursor with up to 15 minutes of
++bounded overlap so normal launch delay does not create a gap.
 +
 +Use `discrawl --json channels list` to inspect the archive without copying a
 +token into OpenWiki. To keep it current, configure Discrawl separately with a
@@ -100,7 +102,7 @@ new file mode 100644
 index 0000000..6b8b36a
 --- /dev/null
 +++ i/src/connectors/sources/discord.ts
-@@ -0,0 +1,482 @@
+@@ -0,0 +1,496 @@
 +import { execFile } from "node:child_process";
 +import { promisify } from "node:util";
 +import {
@@ -123,6 +125,7 @@ index 0000000..6b8b36a
 +const DISCRAWL_EXECUTABLE_ENV_KEY = "OPENWIKI_DISCRAWL_EXECUTABLE";
 +const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
 +const MAX_WINDOW_HOURS = 720;
++const SCHEDULE_GRACE_MS = 15 * 60 * 1000;
 +
 +export type DiscordConfig = {
 +  channelIds?: string[];
@@ -228,10 +231,17 @@ index 0000000..6b8b36a
 +  if (gapError) {
 +    return result(runId, "error", rawFiles, warnings, gapError);
 +  }
++  const previousRunAt = Date.parse(state.lastRunAt ?? "");
++  if (Number.isFinite(previousRunAt)) {
++    start.setTime(Math.min(start.getTime(), previousRunAt));
++  }
++  const queryHours = Math.ceil(
++    (end.getTime() - start.getTime()) / (60 * 60 * 1000),
++  );
 +
 +  let rows: DiscrawlMessage[];
 +  try {
-+    rows = deduplicateMessages(await readScopedMessages(config));
++    rows = deduplicateMessages(await readScopedMessages(config, queryHours));
 +  } catch (error) {
 +    return result(runId, "error", rawFiles, warnings, mapDiscrawlError(error));
 +  }
@@ -280,7 +290,7 @@ index 0000000..6b8b36a
 +    channels: summarizeChannels(messages, state, nextCursors),
 +    window: {
 +      end: end.toISOString(),
-+      hours: config.windowHours,
++      hours: queryHours,
 +      start: start.toISOString(),
 +    },
 +  });
@@ -340,6 +350,7 @@ index 0000000..6b8b36a
 +
 +async function readScopedMessages(
 +  config: Required<DiscordConfig>,
++  windowHours: number,
 +): Promise<DiscrawlMessage[]> {
 +  const scopes: string[][] = [];
 +  const guildArgs =
@@ -363,7 +374,7 @@ index 0000000..6b8b36a
 +        "messages",
 +        ...scope,
 +        "--hours",
-+        String(config.windowHours),
++        String(windowHours),
 +        "--limit",
 +        String(config.maxMessages),
 +      ]),
@@ -536,7 +547,12 @@ index 0000000..6b8b36a
 +  windowHours: number,
 +): string | undefined {
 +  const previousRunAt = Date.parse(state.lastRunAt ?? "");
-+  if (!Number.isFinite(previousRunAt) || previousRunAt >= start.getTime()) {
++  const scheduleGraceMs =
++    windowHours < MAX_WINDOW_HOURS ? SCHEDULE_GRACE_MS : 0;
++  if (
++    !Number.isFinite(previousRunAt) ||
++    previousRunAt >= start.getTime() - scheduleGraceMs
++  ) {
 +    return undefined;
 +  }
 +  const requiredHours = Math.ceil(
@@ -818,7 +834,7 @@ new file mode 100644
 index 0000000..4baed2b
 --- /dev/null
 +++ i/test/discord-connector.test.ts
-@@ -0,0 +1,264 @@
+@@ -0,0 +1,305 @@
 +import { execFileSync } from "node:child_process";
 +import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 +import os from "node:os";
@@ -1064,6 +1080,47 @@ index 0000000..4baed2b
 +    });
 +    expect(malformed).toMatchObject({ status: "error" });
 +    expect(malformed.message).toContain("invalid JSON message array");
++  });
++
++  test("covers bounded scheduler drift with cursor-deduplicated overlap", async () => {
++    const stateDir = path.join(home, ".openwiki/connectors/discord");
++    await mkdir(stateDir, { recursive: true });
++    await writeFile(
++      path.join(stateDir, "state.json"),
++      `${JSON.stringify({
++        lastRunAt: "2026-07-17T11:55:00.000Z",
++        latestIds: { "channel:300": "1500000000000000001" },
++        runs: [],
++        version: 1,
++      })}\n`,
++    );
++    execFileAsync.mockResolvedValue({
++      stdout: `${JSON.stringify([
++        message("1500000000000000002", "300", "2026-07-17T11:57:00.000Z"),
++      ])}\n`,
++      stderr: "",
++    });
++    const connector = await loadConnector();
++
++    const result = await connector.ingest({
++      connectorConfig: { guildIds: ["100"], windowHours: 24 },
++    });
++
++    expect(result).toMatchObject({ status: "success" });
++    expect(execFileAsync).toHaveBeenCalledWith(
++      "/test/discrawl",
++      [
++        "--json",
++        "messages",
++        "--guilds",
++        "100",
++        "--hours",
++        "25",
++        "--limit",
++        "500",
++      ],
++      { maxBuffer: 10 * 1024 * 1024 },
++    );
 +  });
 +
 +  test("refuses a catch-up gap larger than the configured window", async () => {
