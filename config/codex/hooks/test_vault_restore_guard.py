@@ -25,7 +25,6 @@ def run_guard(command, cwd=VAULT):
 
 
 class VaultRestoreGuardTest(unittest.TestCase):
-    @unittest.expectedFailure
     def test_protects_openwiki_output_without_blocking_targeted_restore(self):
         historical_cleanup = '''python3 - <<'PY'
 restoredTracked = [p for p in tracked if p.startswith("04_Resources/")]
