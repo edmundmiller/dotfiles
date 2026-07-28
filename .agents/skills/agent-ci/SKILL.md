@@ -1,6 +1,6 @@
 ---
 name: agent-ci
-description: Run GitHub Actions CI locally with Agent CI only when the user explicitly asks to run Agent CI or validate GitHub Actions locally.
+description: Run GitHub Actions CI locally with Agent CI only when explicitly requested.
 license: MIT
 compatibility: Requires Node.js 18+ and Docker
 metadata:

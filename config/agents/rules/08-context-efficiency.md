@@ -16,6 +16,7 @@ Prefer precise, filtered queries over dumping large datasets. A few tokens filte
 - Never dump an entire response to find one field
 - Bound commands before they run: add path scopes, `--limit`, `head`, field selectors, or SQL `LIMIT`; do not raise output caps to compensate for broad dumps.
 - If output truncates, rerun a narrower command instead of scanning the dump.
+- After a timeout or evaluator-state loss, restart with a fresh, narrower, self-contained query; do not retry a state-dependent command.
 
 ```
 tool --output json | jg 'precise selector'   # good
