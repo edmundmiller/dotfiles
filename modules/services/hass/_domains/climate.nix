@@ -25,9 +25,25 @@ in
       unit_of_measurement = "F";
     };
 
+    input_number.climate_manual_override_target = {
+      name = "Temporary Cooling Target";
+      icon = "mdi:thermometer-chevron-up";
+      min = 68;
+      max = 76;
+      step = 0.5;
+      initial = 74;
+      unit_of_measurement = "F";
+    };
+
     timer.climate_policy_hold = {
       name = "Climate Policy Hold";
       duration = "00:45:00";
+      restore = true;
+    };
+
+    timer.climate_manual_override = {
+      name = "Temporary Climate Override";
+      duration = "02:00:00";
       restore = true;
     };
 
@@ -80,7 +96,9 @@ in
               {% set humidity_high =
                    states('sensor.main_floor_current_humidity') | float(0) > 60
                    or states('sensor.master_suite_current_humidity') | float(0) > 60 %}
-              {% if is_state('input_boolean.vacation_mode', 'on') or not occupied %}
+              {% if is_state('timer.climate_manual_override', 'active') %}
+                {{ states('input_number.climate_manual_override_target') | float(74) }}
+              {% elif is_state('input_boolean.vacation_mode', 'on') or not occupied %}
                 78
               {% elif grid_stressed %}
                 {{ [base, 74] | max }}
@@ -165,6 +183,39 @@ in
       ];
     };
 
+    script.activate_climate_manual_override = {
+      alias = "Use Temporary Climate Target";
+      icon = "mdi:dog-side";
+      mode = "restart";
+      fields.temperature = {
+        name = "Cooling target";
+        description = "Ignore automatic humidity and grid adjustments for two hours.";
+        required = true;
+        default = 74;
+        selector.number = {
+          min = 68;
+          max = 76;
+          step = 0.5;
+          unit_of_measurement = "F";
+          mode = "slider";
+        };
+      };
+      sequence = [
+        {
+          action = "input_number.set_value";
+          target.entity_id = "input_number.climate_manual_override_target";
+          data.value = "{{ temperature | float }}";
+        }
+        {
+          action = "timer.start";
+          target.entity_id = "timer.climate_manual_override";
+        }
+        {
+          action = "script.apply_climate_policy";
+        }
+      ];
+    };
+
     automation = lib.mkAfter (ensureEnabled [
       {
         alias = "Climate policy";
@@ -187,6 +238,7 @@ in
               "person.moni"
               "input_boolean.goodnight"
               "input_boolean.vacation_mode"
+              "input_number.occupied_cooling_target"
               "sensor.ercot_grid_status"
             ];
           }
@@ -230,6 +282,65 @@ in
           {
             delay.seconds = 5;
           }
+          {
+            action = "script.apply_climate_policy";
+          }
+        ];
+      }
+      {
+        alias = "Respect manual climate target";
+        id = "climate_manual_override_detected";
+        description = "Follow an external thermostat target for two hours instead of fighting it.";
+        mode = "restart";
+        trigger = {
+          platform = "state";
+          entity_id = thermostats;
+          attribute = "temperature";
+        };
+        condition = [
+          {
+            condition = "state";
+            entity_id = "timer.climate_policy_hold";
+            state = "active";
+          }
+          {
+            condition = "template";
+            value_template = ''
+              {{ trigger.to_state is not none
+                 and trigger.to_state.context.parent_id is none
+                 and trigger.to_state.attributes.temperature is number }}
+            '';
+          }
+        ];
+        action = [
+          {
+            action = "input_number.set_value";
+            target.entity_id = "input_number.climate_manual_override_target";
+            data.value = "{{ trigger.to_state.attributes.temperature | float }}";
+          }
+          {
+            action = "timer.start";
+            target.entity_id = "timer.climate_manual_override";
+          }
+          {
+            action = "timer.cancel";
+            target.entity_id = "timer.climate_policy_hold";
+          }
+          {
+            action = "script.apply_climate_policy";
+          }
+        ];
+      }
+      {
+        alias = "Resume climate policy after manual override";
+        id = "climate_manual_override_finished";
+        description = "Resume automatic humidity and grid adjustments after the temporary target expires.";
+        trigger = {
+          platform = "event";
+          event_type = "timer.finished";
+          event_data.entity_id = "timer.climate_manual_override";
+        };
+        action = [
           {
             action = "script.apply_climate_policy";
           }
