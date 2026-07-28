@@ -79,14 +79,14 @@ Custom/current mappings:
 | `prefix+a`                        | New jj workspace                                   |
 | `prefix+d`                        | Remove clean closed-PR jj workspace                |
 | `prefix+D`                        | Abandon clean jj workspace with typed confirmation |
-| `prefix+t`                        | Smart rename current Pi or OMP tab                 |
+| `prefix+t`                        | Smart rename current agent tab                     |
 | `prefix+T`                        | Agent timeline                                     |
 | `prefix+R`                        | Refresh GitHub PR status                           |
 | `prefix+I`                        | Start GitHub issue workflow                        |
 | `prefix+O`                        | Start from GitHub item                             |
 | `prefix+B`                        | Open Herdr Browser in a right split                |
 
-Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes the `workspace.created` and `worktree.created` hooks per workspace, creating exactly OMP and Hunk tabs and focusing OMP.
+Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes the `workspace.created` and `worktree.created` hooks per workspace, creating exactly Codex and Hunk tabs and focusing Codex.
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
