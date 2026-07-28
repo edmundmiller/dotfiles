@@ -4,6 +4,8 @@
   stdenv,
   fetchFromGitHub,
   fetchPnpmDeps,
+  git,
+  git-lfs,
   cctools,
   makeWrapper,
   node-gyp,
@@ -195,6 +197,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0008-rss-connector-regression.patch
     ./patches/0009-rss-connector.patch
     ./patches/0010-relative-raw-tool-paths.patch
+    ./patches/0011-git-provenance.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -245,6 +248,13 @@ stdenv.mkDerivation (finalAttrs: {
     ''}
     makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
       --add-flags "$out/lib/openwiki/dist/cli.js" \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          git
+          git-lfs
+          nodejs_22
+        ]
+      } \
       ${lib.optionalString stdenv.hostPlatform.isDarwin ''
         --prefix PATH : ${lib.makeBinPath [ imsg ]} \
         --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"' \
