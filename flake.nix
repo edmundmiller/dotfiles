@@ -1173,6 +1173,11 @@
                 inherit pkgs;
               };
 
+              nuc-buzz-hermes-community-runtime = import ./hosts/nuc/_tests/buzz-hermes-community-runtime.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-radar-cron-runtime = import ./hosts/nuc/_tests/radar-cron-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
