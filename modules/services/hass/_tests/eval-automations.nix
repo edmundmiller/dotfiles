@@ -333,12 +333,16 @@ let
   climateDoorOpen = findAutomation "climate_pause_front_door_open";
   climateDoorClosed = findAutomation "climate_resume_front_door_closed";
   climateHoldWatchdog = findAutomation "climate_hold_watchdog";
+  climateManualOverrideDetected = findAutomation "climate_manual_override_detected";
+  climateManualOverrideFinished = findAutomation "climate_manual_override_finished";
   applyClimatePolicy = scripts.apply_climate_policy or null;
+  activateClimateManualOverride = scripts.activate_climate_manual_override or null;
   vacationEndPresence = findAutomation "vacation_end_presence";
   vacationEndPresenceActions =
     if vacationEndPresence == null then [ ] else toList (vacationEndPresence.action or [ ]);
   extraComponents = nixosConfig.config.services.home-assistant.extraComponents;
   restConfig = haConfig.rest or [ ];
+  inputNumbers = haConfig.input_number or { };
   timers = haConfig.timer or { };
   applyClimatePolicySequence =
     if applyClimatePolicy == null then [ ] else toList (applyClimatePolicy.sequence or [ ]);
@@ -988,6 +992,47 @@ let
     {
       test = (timers.climate_policy_hold.duration or null) == "00:45:00";
       msg = "timer.climate_policy_hold must bound HA thermostat holds to 45 minutes";
+    }
+    {
+      expectedFailure = true;
+      test =
+        (inputNumbers.climate_manual_override_target.initial or null) == 74
+        && (timers.climate_manual_override.duration or null) == "02:00:00";
+      msg = "manual climate override must provide a 74 F target and expire after two hours";
+    }
+    {
+      expectedFailure = true;
+      test =
+        climateManualOverrideDetected != null
+        && hasInfix "attribute\":\"temperature" (builtins.toJSON climateManualOverrideDetected)
+        && hasInfix "timer.climate_policy_hold" (builtins.toJSON climateManualOverrideDetected)
+        && hasInfix "context.parent_id" (builtins.toJSON climateManualOverrideDetected)
+        && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "input_number.set_value"
+        && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "timer.start"
+        && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "script.apply_climate_policy";
+      msg = "external thermostat target changes during an HA hold must activate the bounded manual override";
+    }
+    {
+      expectedFailure = true;
+      test =
+        activateClimateManualOverride != null
+        && hasActionCall (toList (activateClimateManualOverride.sequence or [ ])) "input_number.set_value"
+        && hasActionCall (toList (activateClimateManualOverride.sequence or [ ])) "timer.start"
+        && hasActionCall (toList (activateClimateManualOverride.sequence or [ ])) "script.apply_climate_policy"
+        && hasInfix "timer.climate_manual_override" (builtins.toJSON applyClimatePolicy)
+        && hasInfix "input_number.climate_manual_override_target" (builtins.toJSON applyClimatePolicy);
+      msg = "explicit manual override must apply its target without humidity or grid adjustment";
+    }
+    {
+      expectedFailure = true;
+      test =
+        climateManualOverrideFinished != null
+        && hasInfix "timer.finished" (builtins.toJSON climateManualOverrideFinished)
+        && hasInfix "timer.climate_manual_override" (builtins.toJSON climateManualOverrideFinished)
+        && hasActionCall
+          (toList (climateManualOverrideFinished.action or [ ]))
+          "script.apply_climate_policy";
+      msg = "manual climate override expiry must resume the normal climate policy";
     }
     {
       test =
