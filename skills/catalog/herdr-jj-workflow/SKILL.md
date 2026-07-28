@@ -1,6 +1,6 @@
 ---
 name: herdr-jj-workflow
-description: Runs issue, PR, and task work with Herdr, raw jj, OMP, and Hunk from creation through cleanup.
+description: Runs issue, PR, and task work with Herdr, raw jj, Codex, and Hunk from creation through cleanup.
 ---
 
 # Herdr + jj task workflow
@@ -28,7 +28,7 @@ Use this skill for `create`, `resume`, `approve commit`, `publish`, `ship`, `sub
 
 - `prefix+a`: create a jj workspace. Enter the stable task name and base revision. Base defaults to `trunk()`; use a published parent bookmark for a stacked task.
 - `prefix+g`: Git-only fallback using Herdr's native worktree flow.
-- A created checkout must contain exactly two tabs: `omp` and `hunk`, with `omp` focused.
+- A created checkout must contain exactly two tabs: `codex` and `hunk`, with `codex` focused.
 - Resume from the issue or PR, jj log/bookmarks, Hunk comments, and Herdr state. Conversation history is not authoritative.
 
 ## Review and commit

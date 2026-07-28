@@ -1,6 +1,6 @@
 ---
 purpose: Document the local Herdr checkout-layout plugin.
-applies_to: Changes to OMP/Hunk tab bootstrap or Hunk actions.
+applies_to: Changes to Codex/Hunk tab bootstrap or Hunk actions.
 entrypoint: Edit dev_layout.py and herdr-plugin.toml.
 verification: Run python3 -m unittest dev_layout_test.py.
 update_when: Plugin actions, events, layout, or requirements change.
@@ -8,7 +8,7 @@ update_when: Plugin actions, events, layout, or requirements change.
 
 # Dotfiles Dev Layout
 
-Creates an idempotent two-tab task workspace: OMP and Hunk, with OMP focused.
+Creates an idempotent two-tab task workspace: Codex and Hunk, with Codex focused.
 
 ## Install
 
@@ -27,4 +27,4 @@ herdr plugin install edmundmiller/dotfiles/packages/herdr-plugins/dotfiles-dev-l
 
 - Herdr `0.7.0` or newer
 - `python3`
-- Required: `omp`, plus `hunk` or `bunx hunkdiff`
+- Required: `codex`, plus `hunk` or `bunx hunkdiff`
