@@ -1160,6 +1160,12 @@
                 inherit pkgs;
               };
 
+              apple-container-pilot-assertions = import ./hosts/mactraitorpro/_tests/apple-container-pilot.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {

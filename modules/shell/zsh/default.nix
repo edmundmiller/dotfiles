@@ -16,9 +16,14 @@ let
   );
 
   claudeEnabled = attrByPath [ "modules" "shell" "claude" "enable" ] false config;
+  dockerEnabled = attrByPath [ "modules" "services" "docker" "enable" ] false config;
 
   aliasPathFor =
-    dir: if dir == "claude" && !claudeEnabled then null else "${configDir}/${dir}/aliases.zsh";
+    dir:
+    if (dir == "claude" && !claudeEnabled) || (dir == "docker" && !dockerEnabled) then
+      null
+    else
+      "${configDir}/${dir}/aliases.zsh";
 
   envPathFor = dir: if dir == "claude" && !claudeEnabled then null else "${configDir}/${dir}/env.zsh";
 
@@ -162,8 +167,8 @@ in
         # --filter = respect .gitignore files
         rcp = "rsync -azPJ --include=.git/ --filter=':- .gitignore' --filter=':- $XDG_CONFIG_HOME/git/ignore'";
         weather = "curl -s 'wttr.in/Ft+Worth?m&format=3'";
-
-        # docker-compose
+      }
+      // optionalAttrs dockerEnabled {
         dcup = "docker-compose up -d";
         dcdw = "docker-compose down";
         dcre = "docker-compose restart";
