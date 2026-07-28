@@ -110,6 +110,12 @@ in
           '';
         };
         mo.enable = true;
+        # TODO: mirror the seqeratop purgePaths audit (13976f8c8e38). This list
+        # REPLACES mole's built-in defaults, so the agent worktree roots and the
+        # standard project dirs are currently never scanned. Verify which paths
+        # exist on THIS host before copying — the seqeratop list was pruned for
+        # its own layout, and ~/Library/CloudStorage should stay omitted since
+        # purging artifacts there propagates deletions across machines.
         mo.purgePaths = [
           "~/src"
           "~/repos"
