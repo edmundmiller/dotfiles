@@ -1,6 +1,6 @@
 # Worklog: apple-container-mactraitor-pilot
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -39,10 +39,9 @@ Replace MacTraitor-Pro's Nix-managed Docker CLI and Compose configuration with a
 
 ## Remaining work
 
-- External plan/landing review providers remain unavailable; exact failures are recorded above.
-- Complete commits, publication, proof, Beads sync, receipt, and tag.
+None. External plan/landing review provider failures are recorded above.
 
 ## Commits
 
-- `ba89fbaa7 feat(darwin): add Apple Container module`
-- `7ac652b06 feat(mactraitorpro): pilot Apple Container`
+- `4c998a864 feat(darwin): add Apple Container module`
+- `c2cdc6b77 feat(mactraitorpro): pilot Apple Container`
