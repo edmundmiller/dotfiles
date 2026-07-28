@@ -27,7 +27,10 @@ the module and points the Nextflow LSP at the Nix-built launcher, not a
 Claude-plugin-root placeholder. The `permission-policy-guard` extension is
 linked from `config/omp/` and explicitly listed in `config.yml`. OMP links the
 repo-local `packages/pi-packages/pi-herdr` and `pi-hunk` packages so review
-workflows can create Herdr PR workspaces and write Hunk comments. Other OMP
+workflows can create Herdr PR workspaces and write Hunk comments. It also
+installs a pinned `pi-review-loop` on Darwin for the persistent `/diff-review`
+window, patches its Pi-specific TUI-mode guard to use OMP's `ctx.hasUI`, and
+builds the Glimpse macOS host skipped by OMP's plugin installer. Other OMP
 runtime state remains mutable and OMP-owned.
 
 The module clears OMP's cached MCP tool metadata during activation so removed
