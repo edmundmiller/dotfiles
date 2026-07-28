@@ -1162,6 +1162,26 @@
         "type": "github"
       }
     },
+    "nix-apple-container": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784544890,
+        "narHash": "sha256-84cB7vjkXDhiR206K3op/rITG6L5/iY+SnZLQUdgwVI=",
+        "owner": "halfwhey",
+        "repo": "nix-apple-container",
+        "rev": "ea4430f133a0d9499e98a9ed6aa4e6712171b78b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "halfwhey",
+        "repo": "nix-apple-container",
+        "type": "github"
+      }
+    },
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
@@ -1812,6 +1832,7 @@
         "home-manager": "home-manager_3",
         "hunk": "hunk",
         "llm-agents": "llm-agents",
+        "nix-apple-container": "nix-apple-container",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
         "nix-steipete-tools": "nix-steipete-tools",
