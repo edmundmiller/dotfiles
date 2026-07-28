@@ -50,6 +50,39 @@ let
           return 70;
         }
 
+        char xdg_config[PATH_MAX];
+        char xdg_data[PATH_MAX];
+        char xdg_cache[PATH_MAX];
+        const int config_length = snprintf(
+          xdg_config,
+          sizeof(xdg_config),
+          "%s/.config",
+          user->pw_dir
+        );
+        const int data_length = snprintf(
+          xdg_data,
+          sizeof(xdg_data),
+          "%s/.local/share",
+          user->pw_dir
+        );
+        const int cache_length = snprintf(
+          xdg_cache,
+          sizeof(xdg_cache),
+          "%s/.cache",
+          user->pw_dir
+        );
+        if (
+          config_length < 0 ||
+          (size_t)config_length >= sizeof(xdg_config) ||
+          data_length < 0 ||
+          (size_t)data_length >= sizeof(xdg_data) ||
+          cache_length < 0 ||
+          (size_t)cache_length >= sizeof(xdg_cache)
+        ) {
+          fputs("openwiki-launchd-launcher: user path is too long\n", stderr);
+          return 70;
+        }
+
         environ = empty_environment;
         if (
           setenv("HOME", user->pw_dir, 1) != 0 ||
@@ -58,7 +91,10 @@ let
             "PATH",
             "/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin",
             1
-          ) != 0
+          ) != 0 ||
+          setenv("XDG_CONFIG_HOME", xdg_config, 1) != 0 ||
+          setenv("XDG_DATA_HOME", xdg_data, 1) != 0 ||
+          setenv("XDG_CACHE_HOME", xdg_cache, 1) != 0
         ) {
           perror("openwiki-launchd-launcher");
           return 70;
@@ -100,11 +136,30 @@ let
           argc == 2 && strcmp(argv[1], "--self-test") == 0;
       #endif
         if (self_test) {
+          const char *home = getenv("HOME");
+          const char *xdg_config = getenv("XDG_CONFIG_HOME");
+          const char *xdg_data = getenv("XDG_DATA_HOME");
+          const char *xdg_cache = getenv("XDG_CACHE_HOME");
+          if (
+            home == NULL ||
+            xdg_config == NULL ||
+            xdg_data == NULL ||
+            xdg_cache == NULL
+          ) {
+            return 1;
+          }
+          const size_t home_length = strlen(home);
           return getenv("NODE_OPTIONS") != NULL ||
             strcmp(
               getenv("PATH"),
               "/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-            ) != 0;
+            ) != 0 ||
+            strncmp(xdg_config, home, home_length) != 0 ||
+            strcmp(xdg_config + home_length, "/.config") != 0 ||
+            strncmp(xdg_data, home, home_length) != 0 ||
+            strcmp(xdg_data + home_length, "/.local/share") != 0 ||
+            strncmp(xdg_cache, home, home_length) != 0 ||
+            strcmp(xdg_cache + home_length, "/.cache") != 0;
         }
         if (argc != 1) {
           fputs("usage: openwiki-launchd-launcher\n", stderr);
@@ -153,6 +208,9 @@ let
       marker="$PWD/hostile-library-loaded"
       NODE_OPTIONS=/tmp/hostile-node-options HOME=/tmp/hostile-home \
         PATH=/tmp/hostile-path \
+        XDG_CONFIG_HOME=/tmp/hostile-xdg-config \
+        XDG_DATA_HOME=/tmp/hostile-xdg-data \
+        XDG_CACHE_HOME=/tmp/hostile-xdg-cache \
         DYLD_INSERT_LIBRARIES="$PWD/hostile-launcher-library.dylib" \
         OPENWIKI_INJECTION_MARKER="$marker" \
         ./openwiki-launchd-launcher-test
