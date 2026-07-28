@@ -145,8 +145,12 @@
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
             task = "vibeproxy/claude-sonnet-5:low";
+            advisor = "openai-codex/gpt-5.6-sol:high";
           };
           retry.fallbackChains = {
+            advisor = [
+              "vibeproxy/claude-opus-4-8:high"
+            ];
             default = [
               "openai-codex/gpt-5.6-sol:low"
               "cursor/cursor-grok-4.5-low-fast"
@@ -284,15 +288,11 @@
         home.file.".ssh/seqera.pub".text =
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty Seqera Key\n";
 
-        # OMP does not apply retry.fallbackChains inside advisor runtimes.
-        # Keep a Codex reviewer active alongside Opus so Claude cooldowns do not
-        # leave the session without advisor coverage.
+        # Keep one cross-family reviewer active on every turn. Advisor runtimes
+        # use retry.fallbackChains, so Opus runs only when Sol fails.
         home.file.".omp/agent/WATCHDOG.yml".text = ''
           advisors:
-            - name: Opus
-              model: vibeproxy/claude-opus-5:high
-            - name: Codex backup
-              model: openai-codex/gpt-5.6-sol:high
+            - name: Sol
         '';
 
         # Shared config-seqera pins signingkey to the literal pubkey, which

@@ -28,6 +28,10 @@ providers:
         name: VibeProxy Claude Opus 5
         contextWindow: 200000
         reasoning: true
+      - id: claude-opus-4-8
+        name: VibeProxy Claude Opus 4.8
+        contextWindow: 200000
+        reasoning: true
       - id: claude-sonnet-5
         name: VibeProxy Claude Sonnet 5
         contextWindow: 200000
