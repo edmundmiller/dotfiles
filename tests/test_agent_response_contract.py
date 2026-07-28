@@ -35,6 +35,18 @@ class AgentResponseContractTests(unittest.TestCase):
         )
         self.assertIn('"npm:pi-verbosity-control"', settings)
 
+    def test_shared_version_control_rule_routes_codex_through_herdr_jj(self) -> None:
+        rule = (ROOT / "config/agents/rules/03-version-control.md").read_text()
+
+        for expected in (
+            "Herdr owns jj workspace creation",
+            "`prefix+a`",
+            "Codex",
+            "`jj root --ignore-working-copy`",
+            "Never initialize jj inside a Codex Desktop Git worktree",
+            "Use the `done` skill",
+        ):
+            self.assertIn(expected, rule)
 
 
 if __name__ == "__main__":

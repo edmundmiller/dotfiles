@@ -16,6 +16,14 @@ waiver_path: .agents/waivers/AGENT-03.md
 - **Commit scope:** before committing, compare staged paths with the current request. “Commit/push” authorizes only those paths; if they are already landed and only unrelated paths remain, report that state instead of touching them.
 - **Hook validation:** do not run `prek` manually during routine validation. Let commit or push invoke its hooks; run `prek` directly only when configuring/debugging hooks or when explicitly requested.
 
+## Herdr + jj + Codex
+
+- Herdr owns jj workspace creation. Use `prefix+a` for one stable task-named jj workspace, then run Codex in its focused `codex` tab.
+- Before choosing VCS commands, detect the live backend with `jj root --ignore-working-copy`. In a jj repository, use jj commands and never stage or commit with Git.
+- Never initialize jj inside a Codex Desktop Git worktree. Finish that checkout with Git; initialize jj once from the primary checkout in a separate task.
+- Keep one task bookmark per workspace. Use Hunk for review. Use the `done` skill for rebase, publication, remote-equality proof, and cleanup.
+- Use `prefix+g` only when the repository is intentionally Git-only.
+
 ## Non-interactive defaults (agents)
 
 - Never use interactive git/editor flows in `bash` toolcalls (`git rebase -i`, `git add -p`, `git commit` without `-m`, `git mergetool`, `vim`, `less`, etc.)

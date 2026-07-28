@@ -217,11 +217,11 @@ def workspace_lock(workspace_id: str) -> Iterator[None]:
 
 def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> None:
     tabs, tab_ids = workspace_tabs(workspace_id)
-    omp_tab = tabs.get("omp")
-    if not omp_tab:
-        omp_tab, pane = tab_create(workspace_id, cwd, "omp")
-        pane_rename(pane, "omp")
-        pane_run(pane, "omp")
+    codex_tab = tabs.get("codex")
+    if not codex_tab:
+        codex_tab, pane = tab_create(workspace_id, cwd, "codex")
+        pane_rename(pane, "codex")
+        pane_run(pane, "codex")
 
     if "hunk" not in tabs:
         _, pane = tab_create(workspace_id, cwd, "hunk")
@@ -233,11 +233,11 @@ def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> Non
     if (
         event in {"workspace.created", "worktree.created"}
         and initial_tab in tab_ids
-        and initial_tab not in {omp_tab, tabs.get("hunk")}
+        and initial_tab not in {codex_tab, tabs.get("hunk")}
     ):
         run_json(["tab", "close", initial_tab])
 
-    run_json(["tab", "focus", omp_tab])
+    run_json(["tab", "focus", codex_tab])
 
 
 def bootstrap() -> None:
@@ -246,8 +246,8 @@ def bootstrap() -> None:
     cwd = ctx_worktree_path(ctx) or os.getcwd()
     if not workspace_id:
         raise SystemExit("missing Herdr workspace id in plugin context")
-    if not command_exists("omp"):
-        raise SystemExit("omp not found on PATH")
+    if not command_exists("codex"):
+        raise SystemExit("codex not found on PATH")
 
     with workspace_lock(workspace_id):
         bootstrap_workspace(ctx, workspace_id, cwd)
