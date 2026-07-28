@@ -150,6 +150,11 @@ command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"
 key = "prefix+O"
 type = "plugin_action"
 command = "ogulcancelik.github-start.open"
+
+[[keys.command]]
+key = "prefix+B"
+type = "shell"
+command = "${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus"
 ```
 
 Meaning:
@@ -184,6 +189,7 @@ Meaning:
 - `prefix+R` refreshes GitHub PR status.
 - `prefix+I` starts the GitHub issue workflow.
 - `prefix+O` starts from a GitHub item.
+- `prefix+B` opens Herdr Browser in a right split.
 
 ## Important gotchas
 
@@ -202,5 +208,6 @@ Meaning:
 - `packages/herdr-plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews.
 - `packages/herdr-plugin-jj-workspace/` owns the pinned upstream source and local lifecycle-safety patch.
 - `packages/herdr-tab-smart-rename/` owns the pinned upstream source, OMP provider patch, and automatic worker lifecycle.
+- `ogulcancelik/herdr-browser` is installed from GitHub; it requires `[experimental].kitty_graphics = true`.
 - Other marketplace plugins are installed by `modules/shell/herdr/default.nix`.
 - `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.
