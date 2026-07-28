@@ -121,6 +121,14 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
         self.assertEqual(omp["modelRoles"]["slow"], "vibeproxy/claude-fable-5:high")
         self.assertEqual(
+            omp["modelRoles"]["advisor"],
+            "openai-codex/gpt-5.6-sol:high",
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["advisor"],
+            ["vibeproxy/claude-opus-4-8:high"],
+        )
+        self.assertEqual(
             omp["retry"]["fallbackChains"]["slow"],
             ["openai-codex/gpt-5.6-sol:high"],
         )
@@ -143,15 +151,31 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["plan"],
-            [
-                "openai-codex/gpt-5.6-sol:high",
-                "openai-codex/gpt-5.6-luna:high",
-            ],
+            ["openai-codex/gpt-5.6-sol:high"],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["designer"],
             ["openai-codex/gpt-5.6-sol:medium"],
         )
+
+
+    def test_seqeratop_watchdog_uses_one_role_resolved_advisor(self) -> None:
+        result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--raw",
+                '.#darwinConfigurations.Seqeratop.config.home-manager.users.edmundmiller.home.file.".omp/agent/WATCHDOG.yml".text',
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "advisors:\n  - name: Sol\n")
 
 
 if __name__ == "__main__":
