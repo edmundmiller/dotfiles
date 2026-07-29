@@ -193,6 +193,10 @@ in
     edmundmiller
     nuc
   ];
+  "buzz-hermes-finn-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "buzz-hermes-orchestrator-agent-env.age".publicKeys = [
     edmundmiller
     nuc
