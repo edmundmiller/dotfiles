@@ -47,5 +47,6 @@ description: When to trigger this skill
 ## Nix Modules
 
 - `modules/agents/claude/default.nix` - Concatenates rules → CLAUDE.md
+- `modules/agents/plannotator/default.nix` - Installs Plannotator and configures supported agents
 - `modules/agents/opencode/default.nix` - Symlinks all directories
 - `modules/agents/pi/default.nix` - Symlinks Pi config; global skills come from agent-skills-nix
