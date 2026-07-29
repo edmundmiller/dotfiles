@@ -140,21 +140,19 @@ active directory.
 
 ### Herdr
 
-When `HERDR_ENV=1`, require a nonempty `HERDR_WORKSPACE_ID`. Inspect
-`herdr worktree list --workspace "$HERDR_WORKSPACE_ID" --json` and confirm its
-worktree provenance names the recorded task root. If it does not, do not close a
-normal or parent Herdr workspace.
-
-For a confirmed Herdr-owned task worktree, invoke this as the last tool action:
+When `HERDR_ENV=1`, invoke the teardown script with the recorded task root as
+the last tool action:
 
 ```bash
-herdr worktree remove --workspace "$HERDR_WORKSPACE_ID" --json
+bash "${HOME}/.agents/skills/done/scripts/teardown-herdr-worktree.sh" \
+  "$task_root"
 ```
 
-Do not add `--force`; dirty-state refusal is a safety failure. Herdr owns both
-checkout deletion and workspace closure. If `HERDR_ENV=1` but the workspace ID,
-provenance, command, or clean-state proof is unavailable, report cleanup
-deferred with the exact missing condition.
+The script requires `HERDR_WORKSPACE_ID`, proves the active directory and clean
+Git root match the recorded task root, parses Herdr's structured worktree
+provenance, and executes native worktree removal without `--force`. It never
+closes a normal or parent Herdr workspace. Treat any refusal as deferred cleanup
+and report its exact reason.
 
 ### Codex Desktop
 
