@@ -37,6 +37,11 @@
       flake = false;
     };
 
+    humanlayer-skills = {
+      url = "github:humanlayer/skills";
+      flake = false;
+    };
+
     mattpocock-skills = {
       url = "github:mattpocock/skills";
       flake = false;
@@ -426,6 +431,12 @@
                   filter.maxDepth = 1;
                 };
 
+                humanlayer = {
+                  path = inputs.humanlayer-skills.outPath;
+                  subdir = "plugins/design-control-loop/skills";
+                  filter.maxDepth = 3;
+                };
+
                 mattpocock-engineering = {
                   path = inputs.mattpocock-skills.outPath;
                   subdir = "skills/engineering";
@@ -558,6 +569,9 @@
                 // {
                   gh-fix-ci.from = "openai";
                   gh-fix-ci.path = "gh-fix-ci";
+
+                  design-control-loop.from = "humanlayer";
+                  design-control-loop.path = "design-control-loop";
 
                   agent-tail.from = "agent-tail";
                   agent-tail.path = "agent-tail";
