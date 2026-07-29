@@ -27,4 +27,9 @@ grep -Fq -- 'updateExtensionsShim = lib.concatStringsSep "\n"' "$wrapper_source"
 grep -Fq -- '/usr/bin/codesign -f -s - "$out/libexec/pi/pi"' "$wrapper_source" \
   || fail "Pi wrapper must re-sign the copied Darwin binary"
 
+if grep -Fq -- '--replace-fail "${pkgs.llm-agents.pi}/libexec/pi/pi" "$out/libexec/pi/pi"' "$wrapper_source"; then
+  fail "XPASS: remove the expected-failure marker for Pi's copied runtime path"
+fi
+printf 'XFAIL: copied Pi launcher still bypasses the re-signed runtime\n'
+
 printf 'PASS: Pi runtime wrapper keeps Nix node, Python 3.11+setuptools, and CLT wiring\n'
