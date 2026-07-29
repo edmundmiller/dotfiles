@@ -167,6 +167,9 @@ let
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
+  buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+    inherit lib;
+  };
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
   bettyDiscordBindings = (discordBindings.agents or { }).betty or { };
   hermesScintillateApiServerPort = 8642;
@@ -428,24 +431,21 @@ let
     tokenFile = "/etc/opnix-token";
   };
   millDocsVaultPath = "/home/emiller/mill-docs";
-  buzzMillDocsOwnerPubkey = "fdb266e13b8a216bcb47132c5451fa4cac6b70730bd6d9952b9609362cc84d4c";
-  buzzMillDocsAllowedPubkeys = [ buzzMillDocsOwnerPubkey ];
-  buzzHermesChannelIds = {
-    amosburton = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    anne = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
-    betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
-    finn = "0496329b-5844-4985-9fed-b2963906045f";
-    orchestrator = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    radar = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
-  };
-  mkBuzzCronEnvironment = profile: {
-    BUZZ_RELAY_URL = "https://millers.communities.buzz.xyz";
-    BUZZ_CHANNELS = buzzHermesChannelIds.${profile};
-    BUZZ_HOME_CHANNEL = buzzHermesChannelIds.${profile};
-    BUZZ_CLI_PATH = "${pkgs.my.buzz}/bin/buzz";
-  };
-  buzzMillDocsChannelId = buzzHermesChannelIds.anne;
+  buzzMillDocsOwnerPubkey = buzzBindings.identities.edmund.pubkey;
+  buzzChannelId = channel: buzzBindings.channels.${channel}.id;
+  buzzChannelIds = channels: lib.concatStringsSep "," (map buzzChannelId channels);
+  mkBuzzCronEnvironment =
+    profile:
+    let
+      binding = buzzBindings.profiles.${profile};
+    in
+    {
+      BUZZ_RELAY_URL = "https://millers.communities.buzz.xyz";
+      BUZZ_CHANNELS = buzzChannelIds binding.channels;
+      BUZZ_HOME_CHANNEL = buzzChannelId binding.home;
+      BUZZ_CLI_PATH = "${pkgs.my.buzz}/bin/buzz";
+    };
+  buzzMillDocsChannelId = buzzChannelId "mill-docs";
   buzzMillDocsCodexAcp = pkgs.writeShellScriptBin "mill-docs-codex-acp" ''
     exec ${pkgs.my.codex-acp}/bin/codex-acp "$@"
   '';
@@ -455,6 +455,8 @@ let
       stateDir = "/var/lib/hermes-${profile}";
       workspaceDir = "${stateDir}/workspace";
       profileConfig = config.services.hermes-agent.profiles.${profile};
+      buzzProfile = buzzBindings.profiles.${profile};
+      allowMoni = buzzProfile.respondTo == "allowlist";
       mountSources = builtins.attrNames profileConfig.hostPathMounts;
       translateContainerPath =
         value:
@@ -496,27 +498,33 @@ let
         pkgs.openssh
       ]
       ++ profileConfig.extraPackages;
-      environment = hostPathEnvironment // {
-        HOME = stateDir;
-        HERMES_HOME = "${stateDir}/.hermes";
-        HERMES_REAL_HOME = stateDir;
-        HERMES_PROFILE = profile;
-        MESSAGING_CWD = workspaceDir;
-        TERMINAL_HOME_MODE = "real";
-        NO_BROWSER = "1";
-        BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
-        BUZZ_ACP_AGENT_OWNER = buzzMillDocsOwnerPubkey;
-        BUZZ_ACP_AGENT_COMMAND = "${config.services.hermes-agent.package}/bin/hermes";
-        BUZZ_ACP_AGENT_ARGS = "acp";
-        BUZZ_ACP_AGENTS = "1";
-        BUZZ_ACP_LAZY_POOL = "true";
-        BUZZ_ACP_SUBSCRIBE = "mentions";
-        BUZZ_ACP_CHANNELS = buzzHermesChannelIds.${profile};
-        BUZZ_ACP_RESPOND_TO = "owner-only";
-        BUZZ_ACP_ALLOWED_RESPOND_TO = "owner-only";
-        BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
-        BUZZ_ACP_MEMORY = "false";
-      };
+      environment =
+        hostPathEnvironment
+        // {
+          HOME = stateDir;
+          HERMES_HOME = "${stateDir}/.hermes";
+          HERMES_REAL_HOME = stateDir;
+          HERMES_PROFILE = profile;
+          MESSAGING_CWD = workspaceDir;
+          TERMINAL_HOME_MODE = "real";
+          NO_BROWSER = "1";
+          BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
+          BUZZ_ACP_AGENT_OWNER = buzzMillDocsOwnerPubkey;
+          BUZZ_ACP_AGENT_COMMAND = "${config.services.hermes-agent.package}/bin/hermes";
+          BUZZ_ACP_AGENT_ARGS = "acp";
+          BUZZ_ACP_AGENTS = "1";
+          BUZZ_ACP_LAZY_POOL = "true";
+          BUZZ_ACP_SUBSCRIBE = "mentions";
+          BUZZ_ACP_CHANNELS = buzzChannelIds buzzProfile.channels;
+          BUZZ_HOME_CHANNEL = buzzChannelId buzzProfile.home;
+          BUZZ_ACP_RESPOND_TO = buzzProfile.respondTo;
+          BUZZ_ACP_ALLOWED_RESPOND_TO = if allowMoni then "owner-only,allowlist" else "owner-only";
+          BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
+          BUZZ_ACP_MEMORY = "false";
+        }
+        // lib.optionalAttrs allowMoni {
+          BUZZ_ACP_RESPOND_TO_ALLOWLIST = buzzBindings.moniPubkey;
+        };
       serviceConfig = {
         Type = "simple";
         User = "emiller";
@@ -2154,7 +2162,7 @@ in
               };
             };
           };
-          # Radar intentionally disabled on NUC until its HA endpoint/runtime is fixed.
+          radar = { };
           finn.workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
           amosburton = {
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
@@ -2375,9 +2383,8 @@ in
       BUZZ_ACP_AGENTS = "1";
       BUZZ_ACP_SUBSCRIBE = "mentions";
       BUZZ_ACP_CHANNELS = buzzMillDocsChannelId;
-      BUZZ_ACP_RESPOND_TO = "allowlist";
-      BUZZ_ACP_RESPOND_TO_ALLOWLIST = lib.concatStringsSep "," buzzMillDocsAllowedPubkeys;
-      BUZZ_ACP_ALLOWED_RESPOND_TO = "allowlist";
+      BUZZ_ACP_RESPOND_TO = "owner-only";
+      BUZZ_ACP_ALLOWED_RESPOND_TO = "owner-only";
       BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
       BUZZ_ACP_MEMORY = "false";
     };
@@ -2425,6 +2432,7 @@ in
   systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
   systemd.services.buzz-hermes-finn = mkBuzzHermesService "finn";
   systemd.services.buzz-hermes-orchestrator = mkBuzzHermesService "orchestrator";
+  systemd.services.buzz-hermes-radar = mkBuzzHermesService "radar";
   systemd.services.buzz-hermes-scintillate = mkBuzzHermesService "scintillate";
 
   systemd.services.obsidian-sync-mill-docs = {

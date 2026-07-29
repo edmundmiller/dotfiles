@@ -1,6 +1,10 @@
 # Pure Nix eval: each configured NUC Hermes profile must have an isolated
 # Buzz community runtime that preserves its canonical host access boundary.
-{ nixosConfig, pkgs }:
+{
+  nixosConfig,
+  pkgs,
+  buzzBindings,
+}:
 let
   cfg = nixosConfig.config;
   profiles = builtins.attrNames cfg.modules.services.hermes.agents;
@@ -30,20 +34,24 @@ let
       TN_VAULT_PATH = "/home/emiller/obsidian-vault";
       WIKI_PATH = "/home/emiller/obsidian-vault";
     };
+    radar = { };
     scintillate = {
       CODEX_HOME = "/var/lib/hermes-scintillate/.codex";
       TN_VAULT_PATH = "/home/emiller/obsidian-vault";
       WIKI_PATH = "/home/emiller/obsidian-vault/03_Areas/Personal";
     };
   };
-  expectedChannels = {
-    amosburton = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    anne = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
-    betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
-    finn = "0496329b-5844-4985-9fed-b2963906045f";
-    orchestrator = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
-  };
+  channelId = channel: buzzBindings.channels.${channel}.id;
+  expectedChannels = pkgs.lib.mapAttrs (
+    _profile: profile: builtins.concatStringsSep "," (map channelId profile.channels)
+  ) buzzBindings.profiles;
+  expectedHomes = pkgs.lib.mapAttrs (_profile: profile: channelId profile.home) buzzBindings.profiles;
+  moniEnabledProfiles = [
+    "amosburton"
+    "betty"
+    "radar"
+    "scintillate"
+  ];
 
   profileAssertions =
     profile:
@@ -86,12 +94,23 @@ let
       }
       {
         test =
-          service.environment.BUZZ_ACP_RESPOND_TO == "owner-only"
+          service.environment.BUZZ_ACP_RESPOND_TO
+          == (if builtins.elem profile moniEnabledProfiles then "allowlist" else "owner-only")
+          &&
+            service.environment.BUZZ_ACP_ALLOWED_RESPOND_TO
+            == (if builtins.elem profile moniEnabledProfiles then "owner-only,allowlist" else "owner-only")
+          && (
+            if builtins.elem profile moniEnabledProfiles then
+              service.environment.BUZZ_ACP_RESPOND_TO_ALLOWLIST == buzzBindings.moniPubkey
+            else
+              !(service.environment ? BUZZ_ACP_RESPOND_TO_ALLOWLIST)
+          )
           && service.environment.BUZZ_ACP_SUBSCRIBE == "mentions"
           && service.environment.BUZZ_ACP_CHANNELS == expectedChannels.${profile}
+          && service.environment.BUZZ_HOME_CHANNEL == expectedHomes.${profile}
           && service.environment.BUZZ_ACP_HEARTBEAT_INTERVAL == "0"
           && service.environment.BUZZ_ACP_LAZY_POOL == "true";
-        msg = "${profile}: Buzz runtime must default to owner mentions in its assigned channel without heartbeat.";
+        msg = "${profile}: Buzz runtime must enforce its subscriptions, home, and signed mention policy.";
       }
       {
         test = service.serviceConfig.WorkingDirectory == "${stateDir}/workspace";
@@ -139,6 +158,7 @@ let
           "betty"
           "finn"
           "orchestrator"
+          "radar"
           "scintillate"
         ];
       msg = "Buzz community runtime coverage must match the configured NUC Hermes profiles.";
