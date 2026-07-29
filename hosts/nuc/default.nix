@@ -67,7 +67,14 @@ let
       pkgs.python3
     ];
     postBuild = ''
-      photon_plugin="$out/share/hermes-agent/plugins/platforms/photon"
+      plugins_root="$out/share/hermes-agent/plugins"
+      rm "$plugins_root"
+      cp -RL --no-preserve=mode,ownership,timestamps \
+        ${hermesAgentUpstream}/share/hermes-agent/plugins \
+        "$plugins_root"
+      chmod -R u+w "$plugins_root"
+
+      photon_plugin="$plugins_root/platforms/photon"
       photon_sidecar="$photon_plugin/sidecar"
       rm -rf "$photon_plugin"
       mkdir -p "$(dirname "$photon_plugin")"
@@ -75,6 +82,7 @@ let
       chmod -R u+w "$photon_plugin"
       rm -rf "$photon_sidecar"
       cp -R ${hermesPhotonSidecar} "$photon_sidecar"
+      test -f "$plugins_root/platforms/buzz/plugin.yaml"
       python - <<PY
       from pathlib import Path
 
@@ -428,7 +436,14 @@ let
     betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
     finn = "0496329b-5844-4985-9fed-b2963906045f";
     orchestrator = "2f26ea17-737f-5121-b01b-0df23e851c38";
+    radar = "2f26ea17-737f-5121-b01b-0df23e851c38";
     scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
+  };
+  mkBuzzCronEnvironment = profile: {
+    BUZZ_RELAY_URL = "https://millers.communities.buzz.xyz";
+    BUZZ_CHANNELS = buzzHermesChannelIds.${profile};
+    BUZZ_HOME_CHANNEL = buzzHermesChannelIds.${profile};
+    BUZZ_CLI_PATH = "${pkgs.my.buzz}/bin/buzz";
   };
   buzzMillDocsChannelId = buzzHermesChannelIds.anne;
   buzzMillDocsCodexAcp = pkgs.writeShellScriptBin "mill-docs-codex-acp" ''
@@ -1715,14 +1730,19 @@ in
       pkgs.coreutils
       pkgs.findutils
       pkgs.git
+      pkgs.my.buzz
       pkgs.python3
     ];
+    environment = mkBuzzCronEnvironment "amosburton";
     serviceConfig = {
       Type = "oneshot";
       User = "emiller";
       Group = "users";
       WorkingDirectory = "/var/lib/hermes-amosburton/workspace";
-      EnvironmentFile = [ "/run/hermes-amosburton-env/secrets.env" ];
+      EnvironmentFile = [
+        "/run/hermes-amosburton-env/secrets.env"
+        config.age.secrets.buzz-hermes-amosburton-agent-env.path
+      ];
       Environment = [
         "HOME=/var/lib/hermes-amosburton"
         "HERMES_HOME=/var/lib/hermes-amosburton/.hermes"
@@ -1776,16 +1796,21 @@ in
       pkgs.findutils
       pkgs.git
       pkgs.himalaya
+      pkgs.my.buzz
       pkgs.python3
       pkgs.uv
     ];
+    environment = mkBuzzCronEnvironment "betty";
     serviceConfig = {
       Type = "oneshot";
       User = "emiller";
       Group = "users";
       SupplementaryGroups = [ "onepassword-secrets" ];
       WorkingDirectory = "/var/lib/hermes-betty";
-      EnvironmentFile = [ "/run/hermes-betty-env/secrets.env" ];
+      EnvironmentFile = [
+        "/run/hermes-betty-env/secrets.env"
+        config.age.secrets.buzz-hermes-betty-agent-env.path
+      ];
       Environment = [
         "HOME=/var/lib/hermes-betty"
         "HERMES_HOME=/var/lib/hermes-betty/.hermes"
@@ -1890,15 +1915,20 @@ in
       pkgs.coreutils
       pkgs.findutils
       pkgs.git
+      pkgs.my.buzz
       pkgs.python3
       pkgs.rtk
     ];
+    environment = mkBuzzCronEnvironment "radar";
     serviceConfig = {
       Type = "oneshot";
       User = "emiller";
       Group = "users";
       WorkingDirectory = "/var/lib/hermes-radar";
-      EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
+      EnvironmentFile = [
+        "/run/hermes-radar-env/secrets.env"
+        config.age.secrets.buzz-hermes-radar-agent-env.path
+      ];
       Environment = [
         "HOME=/var/lib/hermes-radar"
         "HERMES_HOME=/var/lib/hermes-radar/.hermes"
@@ -1956,27 +1986,34 @@ in
       pkgs.coreutils
       pkgs.findutils
       pkgs.git-lfs
+      pkgs.my.buzz
       pkgs.python3
     ]
     ++ config.services.hermes-agent.profiles.scintillate.extraPackages;
-    environment = config.services.hermes-agent.profiles.scintillate.environment // {
-      HOME = "/var/lib/hermes-scintillate";
-      HERMES_HOME = "/var/lib/hermes-scintillate/.hermes";
-      HERMES_REAL_HOME = "/var/lib/hermes-scintillate";
-      HERMES_KANBAN_HOME = hermesSharedHome;
-      HERMES_PROFILE = "scintillate";
-      TERMINAL_HOME_MODE = "real";
-      MESSAGING_CWD = "/home/emiller/obsidian-vault";
-      TN_VAULT_PATH = "/home/emiller/obsidian-vault";
-      WIKI_PATH = "/home/emiller/obsidian-vault/03_Areas/Personal";
-      CODEX_HOME = "/home/emiller/.codex";
-    };
+    environment =
+      config.services.hermes-agent.profiles.scintillate.environment
+      // {
+        HOME = "/var/lib/hermes-scintillate";
+        HERMES_HOME = "/var/lib/hermes-scintillate/.hermes";
+        HERMES_REAL_HOME = "/var/lib/hermes-scintillate";
+        HERMES_KANBAN_HOME = hermesSharedHome;
+        HERMES_PROFILE = "scintillate";
+        TERMINAL_HOME_MODE = "real";
+        MESSAGING_CWD = "/home/emiller/obsidian-vault";
+        TN_VAULT_PATH = "/home/emiller/obsidian-vault";
+        WIKI_PATH = "/home/emiller/obsidian-vault/03_Areas/Personal";
+        CODEX_HOME = "/home/emiller/.codex";
+      }
+      // mkBuzzCronEnvironment "scintillate";
     serviceConfig = {
       Type = "oneshot";
       User = "emiller";
       Group = "users";
       WorkingDirectory = "/home/emiller/obsidian-vault";
-      EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
+      EnvironmentFile = [
+        "/run/hermes-scintillate-env/secrets.env"
+        config.age.secrets.buzz-hermes-scintillate-agent-env.path
+      ];
       ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
       NoNewPrivileges = true;
       PrivateTmp = true;
@@ -2307,6 +2344,11 @@ in
     mode = "0400";
   };
   age.secrets.buzz-hermes-orchestrator-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.buzz-hermes-radar-agent-env = {
     owner = "emiller";
     group = "users";
     mode = "0400";

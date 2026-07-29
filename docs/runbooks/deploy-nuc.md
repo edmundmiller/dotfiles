@@ -178,6 +178,11 @@ Each service subscribes only to its assigned Buzz channel: Finn uses
 `finances`; Anne and Betty use `mill-docs`; Amos Burton, Orchestrator, and
 Scintillate use `general`.
 
+Active cron executors use Hermes' native Buzz adapter for outbound delivery.
+Amos Burton, Radar, and Scintillate deliver to `general`; Betty delivers to
+`mill-docs`. Each executor loads the same dedicated identity as its profile's
+inbound runtime. `buzz-acp` remains the mention-scoped inbound transport.
+
 The separate `buzz-mill-docs-codex.service` remains project-scoped. Its
 encrypted identity is `hosts/nuc/secrets/buzz-mill-docs-agent-env.age`; it uses
 the existing `/home/emiller/.codex` ChatGPT login.
