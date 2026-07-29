@@ -67,7 +67,11 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 @@ -222,0 +275,2 @@ def cron_status():
 +    external = _external_systemd_executor_status()
 +
-@@ -266,0 +321,15 @@ def cron_status():
+@@ -304,7 +359,22 @@ def cron_status():
+             print(f"  PID: {', '.join(map(str, pids))}")
+             if hb_age is not None:
+                 print(f"  Ticker heartbeat: {int(hb_age)}s ago")
+-    else:
 +    elif external is not None:
 +        unit, active = external
 +        if active:
@@ -83,3 +87,7 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 +            print("  To enable automatic execution:")
 +            print(f"    systemctl enable --now {unit}")
 +            print(f"    systemctl status {unit}")
++    else:
+         print(color("✗ Gateway is not running — cron jobs will NOT fire", Colors.RED))
+         print()
+         print("  To enable automatic execution:")
