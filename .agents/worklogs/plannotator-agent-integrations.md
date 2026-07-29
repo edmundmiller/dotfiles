@@ -65,6 +65,15 @@ upstream.
 - Done snapshot: canonical `main` has unrelated Herdr overlay edits. The dirty
   default-checkout gate forbids moving or landing `main`; those files remain
   untouched.
+- Continuation audit: the same five canonical Herdr files remain dirty and
+  `origin/main` still lacks `modules/agents/plannotator/default.nix`.
+- A later rebuild from canonical `main` restored Pi's unsigned upstream
+  launcher: `pi --version` exited 137 and `.pi-wrapped` referenced
+  `/nix/store/pyp1rz...-pi-0.81.1/libexec/pi/pi`.
+- Reapplying this feature generation passed. Fresh proof reports signed Pi
+  0.81.1 with `@plannotator/pi-extension@0.24.2`, Plannotator 0.25.0, OMP
+  doctor `ok` at 0.25.0, Claude 0.25.0 enabled, Codex hooks enabled, all three
+  shared skills present, and the Herdr-triggered Plannotator module enabled.
 
 ## Reviews
 
@@ -81,7 +90,8 @@ was retried at landing. Claude again returned `Authentication required`.
 
 ## Feedback
 
-None.
+- Until this change lands on `main`, any canonical rebuild can revert the live
+  Pi repair and agent integrations even though the feature generation works.
 
 ## Remaining work
 
