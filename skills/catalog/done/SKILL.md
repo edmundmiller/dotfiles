@@ -14,7 +14,7 @@ A task is done only when:
 1. Task changes are shaped into reviewable, green Git commits or jj changes.
 2. The task revision is an ancestor of the repository's actual default branch/bookmark.
 3. When a writable remote exists, the authoritative remote default tip equals the local default tip.
-4. After proof, remove a task worktree/workspace and feature branch/bookmark only when it does not contain the agent's original directory; defer launcher-owned active worktrees.
+4. After proof, remove a task worktree/workspace and feature branch/bookmark. Use the owning launcher for its active worktree; never delete the agent's original directory directly.
 
 Commit/change shaping, integration, publication, proof, and cleanup are separate states. Never report `done` from a clean feature workspace alone.
 
@@ -68,7 +68,12 @@ defer that worktree's cleanup.
    fi
    ```
 
-   Never delete a candidate that contains `active_directory`, even after `cd` elsewhere. Codex and Herdr launcher-owned worktrees must remain until their agent/session exits; `cd`-ing out first only leaves the returning shell in a deleted CWD. Report this cleanup as deferred, not as a failed landing. Delete a feature branch only after Git proves containment and no preserved worktree still checks it out.
+   Never delete a candidate that contains `active_directory`, even after `cd`
+   elsewhere. `cd`-ing out first only leaves the returning shell in a deleted
+   CWD. Route a recognized launcher-owned current worktree through **Launcher
+   teardown** after completing any receipt. Otherwise report cleanup deferred,
+   not failed. Delete a feature branch only after Git proves containment and no
+   preserved worktree still checks it out.
 
 ## jj closeout
 
@@ -106,7 +111,12 @@ defer that worktree's cleanup.
      "$active_directory" "$candidate_workspace_path"
    ```
 
-   Forget by workspace name and remove only the corresponding physical path after the verifier succeeds. Never remove the workspace containing `active_directory`, even after `cd` elsewhere; Codex and Herdr launchers own its lifetime. Preserve it and report cleanup deferred. Preserve other workspaces and bookmarks.
+   Forget by workspace name and remove only the corresponding physical path
+   after the verifier succeeds. Never remove the workspace containing
+   `active_directory`, even after `cd` elsewhere. Route a recognized
+   launcher-owned current workspace through **Launcher teardown** after
+   completing any receipt. Otherwise preserve it and report cleanup deferred.
+   Preserve other workspaces and bookmarks.
 
 ## Receipt
 
@@ -120,6 +130,45 @@ hey agent-complete "$receipt" \
 ```
 
 A mismatch records `false_done` and fails. Do not edit the receipt to turn it green.
+
+## Launcher teardown
+
+Launcher teardown applies only after landing proof, receipt completion, and a
+fresh check that the recorded task checkout has no tracked, untracked, or
+conflicted files. Prepare the final report first. Do not manually remove the
+active directory.
+
+### Herdr
+
+When `HERDR_ENV=1`, require a nonempty `HERDR_WORKSPACE_ID`. Inspect
+`herdr worktree list --workspace "$HERDR_WORKSPACE_ID" --json` and confirm its
+worktree provenance names the recorded task root. If it does not, do not close a
+normal or parent Herdr workspace.
+
+For a confirmed Herdr-owned task worktree, invoke this as the last tool action:
+
+```bash
+herdr worktree remove --workspace "$HERDR_WORKSPACE_ID" --json
+```
+
+Do not add `--force`; dirty-state refusal is a safety failure. Herdr owns both
+checkout deletion and workspace closure. If `HERDR_ENV=1` but the workspace ID,
+provenance, command, or clean-state proof is unavailable, report cleanup
+deferred with the exact missing condition.
+
+### Codex Desktop
+
+When `CODEX_THREAD_ID` is set, first confirm the recorded task root is the
+calling thread's Codex-owned worktree under
+`${CODEX_HOME:-$HOME/.codex}/worktrees/`. Do not archive a same-directory or
+local-checkout thread merely because the variable exists.
+
+Use the current-thread `set_thread_archived` tool with `{ "archived": true }`,
+omitting `threadId` and `hostId`. The background archive lets Codex Desktop own
+thread and worktree cleanup. Never run `git worktree remove` against the active
+Codex worktree. If the tool is unavailable or ownership cannot be proved,
+report cleanup deferred and tell the user to archive the thread in Codex
+Desktop.
 
 ## Final report
 
