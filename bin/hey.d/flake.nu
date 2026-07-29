@@ -66,6 +66,22 @@ def check-scope-label [scopes: list<string>] {
   if ($scopes | is-empty) { "changed files" } else { $scopes | str join ", " }
 }
 
+def nix-precommit-config [] {
+  let result = (^nix build ".#pre-commit-config" --no-link --print-out-paths | complete)
+  if $result.exit_code != 0 {
+    if (($result.stderr | str trim) | is-not-empty) {
+      print -e $result.stderr
+    }
+    error make {msg: "Failed to build the Nix-owned pre-commit config"}
+  }
+
+  let paths = ($result.stdout | lines | where {|path| ($path | str trim) != "" })
+  if ($paths | is-empty) {
+    error make {msg: "Nix returned no pre-commit config path"}
+  }
+  $paths | last | str trim
+}
+
 def "main check" [
   --worktree # Include staged, unstaged, and untracked files in formatting/pre-commit checks.
   ...paths: string # Optional path scopes for formatting and pre-commit checks.
@@ -109,13 +125,14 @@ def "main check" [
     let check_files = (changed-check-files --worktree=$worktree ...$paths)
     let check_scope = (check-scope-label $paths)
     let check_files_label = if ($check_files | is-empty) { $"no changed files under ($check_scope)" } else { $"($check_files | length) changed files under ($check_scope)" }
+    let precommit_config = if ($check_files | is-empty) { "" } else { nix-precommit-config }
 
     print ""
     print $"==> Running treefmt formatting check \(($check_files_label)\)..."
     if ($check_files | is-empty) {
       print "✓ Formatting OK (no changed files)"
     } else {
-      let treefmt_check = (^prek run treefmt --files ...$check_files --no-progress | complete)
+      let treefmt_check = (^prek --config $precommit_config run treefmt --files ...$check_files --no-progress | complete)
       if $treefmt_check.exit_code == 0 {
         print "✓ Formatting OK"
       } else {
@@ -135,7 +152,7 @@ def "main check" [
     if ($check_files | is-empty) {
       print "✓ Pre-commit hooks OK (no changed files)"
     } else {
-      let precommit_check = (^prek run --stage pre-commit --skip treefmt --files ...$check_files --no-progress | complete)
+      let precommit_check = (^prek --config $precommit_config run --stage pre-commit --skip treefmt --files ...$check_files --no-progress | complete)
       if $precommit_check.exit_code == 0 {
         print "✓ Pre-commit hooks OK"
       } else {

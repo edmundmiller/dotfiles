@@ -49,7 +49,6 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("^agent-quality ...$args", wrapper)
         self.assertNotIn("python3 bin/agent-quality", wrapper)
 
-    @unittest.expectedFailure
     def test_hey_and_git_hooks_use_the_nix_owned_prek_config(self) -> None:
         flake = FLAKE.read_text()
         hey = HEY_FLAKE.read_text()
@@ -66,7 +65,6 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn(".#pre-commit-config", hey)
         self.assertEqual(hey.count("--config $precommit_config"), 2)
 
-    @unittest.expectedFailure
     def test_packaged_agent_quality_uses_the_active_checkout_and_jujutsu(self) -> None:
         wrapper = HEY_WRAPPER.read_text()
         module = OMP_MODULE.read_text()
