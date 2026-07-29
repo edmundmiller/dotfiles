@@ -1,3 +1,11 @@
+---
+purpose: Route changes among managed AI-agent modules.
+applies_to: Agent packages, runtime config, integrations, and host wiring.
+entrypoint: Read the nearest agent module AGENTS.md or README.
+verification: Run the affected agent check, then hey check.
+update_when: Agent module ownership or integration boundaries change.
+---
+
 # Agents Module Directory
 
 This directory contains Nix modules for AI agents:
@@ -8,6 +16,7 @@ This directory contains Nix modules for AI agents:
 - `hermes/` - NixOS-only Hermes Gateway/runtime host wiring
 - `omp/` - Oh My Pi CLI, isolated from Pi's `~/.pi/agent`
 - `opencode/` - OpenCode CLI
+- `plannotator/` - Shared Plannotator package and native agent integrations
 - `pi/` - Pi coding agent + shell helpers (worktree management, PR review)
 
 ## Option Namespace
@@ -41,6 +50,7 @@ Agents (claude, codex, opencode) share a single source of truth in `config/agent
 - `config/agents/modes/` - Shared agent mode definitions
 
 Global skills live in `~/.agents/skills/` and are discovered natively.
+Plannotator installs its shared Codex skills there through `skills/flake.nix`.
 
 ## Agent Runtime Drift Hooks
 
