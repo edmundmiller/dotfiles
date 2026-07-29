@@ -1,6 +1,6 @@
 # Worklog: fix-dotfiles-meta-checks
 
-Status: complete
+Status: blocked
 
 ## Objective
 
@@ -81,10 +81,13 @@ Landing review with Claude reached `session/new` and returned the same
 
 ## Remaining work
 
-None.
+- Landing is blocked by unrelated tracked and untracked NUC/Buzz work in the
+  existing `/Users/emiller/.config/dotfiles` checkout of `main`. The owner must
+  commit/clean that checkout or explicitly authorize a named preservation
+  action before `main` can be fast-forwarded, pushed, tagged, and verified.
 
 ## Commits
 
 - `bfb901c7d test(meta): cover hook and agent-quality drift`
 - `47363c88a fix(meta): repair hook and agent-quality ownership`
-- Worklog closeout commit.
+- Worklog checkpoint commits.
