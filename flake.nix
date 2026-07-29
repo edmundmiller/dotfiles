@@ -311,6 +311,7 @@
             "audio-priority-bar"
             "ergodox-firmware"
             "lgtm"
+            "quill"
             "stack"
             "stream-deck-herdr-plugin"
             "work-calendar-busy"
