@@ -174,9 +174,9 @@ configured NUC Hermes profile. Each service runs `buzz-acp -> hermes acp` with
 the profile's materialized home, provider environment, and declared repository
 mounts. Its dedicated identity and owner attestation live in
 `hosts/nuc/secrets/buzz-hermes-<profile>-agent-env.age`.
-Each service subscribes only to its assigned Buzz channel: Amos Burton uses
-`finances`; Anne and Betty use `mill-docs`; Orchestrator and Scintillate use
-`general`.
+Each service subscribes only to its assigned Buzz channel: Finn uses
+`finances`; Anne and Betty use `mill-docs`; Amos Burton, Orchestrator, and
+Scintillate use `general`.
 
 The separate `buzz-mill-docs-codex.service` remains project-scoped. Its
 encrypted identity is `hosts/nuc/secrets/buzz-mill-docs-agent-env.age`; it uses

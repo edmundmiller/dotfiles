@@ -186,6 +186,7 @@ let
     "amosburton"
     "anne"
     "betty"
+    "finn"
     "orchestrator"
     "radar"
     "scintillate"
@@ -422,9 +423,10 @@ let
   buzzMillDocsOwnerPubkey = "fdb266e13b8a216bcb47132c5451fa4cac6b70730bd6d9952b9609362cc84d4c";
   buzzMillDocsAllowedPubkeys = [ buzzMillDocsOwnerPubkey ];
   buzzHermesChannelIds = {
-    amosburton = "0496329b-5844-4985-9fed-b2963906045f";
+    amosburton = "2f26ea17-737f-5121-b01b-0df23e851c38";
     anne = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
     betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
+    finn = "0496329b-5844-4985-9fed-b2963906045f";
     orchestrator = "2f26ea17-737f-5121-b01b-0df23e851c38";
     scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
   };
@@ -1343,6 +1345,14 @@ in
         };
         environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
       };
+      finn = {
+        authFile = "/home/emiller/.codex/auth.json";
+        environment.CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+        hostPathMounts = lib.mkForce {
+          "/home/emiller/.codex" = "/home/emiller/.codex";
+          "/home/emiller/src/personal/finances" = "/repos/finances";
+        };
+      };
       scintillate = {
         # Codex OAuth refresh tokens are single-use. Do not seed Hermes from
         # ~/.codex/auth.json or share Codex CLI credentials; Scintillate owns
@@ -1386,7 +1396,6 @@ in
           "/home/emiller/.config/dotfiles" = "/repos/dotfiles";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
           "/home/emiller/src/personal/agents-workspace" = "/repos/agents-workspace";
-          "/home/emiller/src/personal/finances" = "/repos/finances";
           "/home/emiller/src/personal/tailnet" = "/repos/tailnet";
         };
         environmentFiles = [ "/run/hermes-amosburton-env/secrets.env" ];
@@ -1417,7 +1426,7 @@ in
       rm -rf "$profiles_dir"
       install -d -o emiller -g users -m 0750 "$profiles_dir"
 
-      for profile in amosburton anne betty orchestrator scintillate; do
+      for profile in amosburton anne betty finn orchestrator scintillate; do
         src=/var/lib/hermes-$profile/.hermes
         dst=$profiles_dir/$profile
         if [ -d "$src" ]; then
@@ -1457,13 +1466,24 @@ in
   ];
   systemd.services.hermes-gateway-betty.enable = false;
 
+  systemd.services.hermes-gateway-finn = {
+    enable = false;
+    serviceConfig.ExecStartPre = lib.mkBefore [
+      (pkgs.writeShellScript "hermes-finn-repo-compat-links" ''
+        set -eu
+        install -d -o emiller -g users -m 0750 /var/lib/hermes-finn/home/repos
+        ln -sfn /repos/finances /var/lib/hermes-finn/home/repos/finances
+        chown -h emiller:users /var/lib/hermes-finn/home/repos/finances
+      '')
+    ];
+  };
+
   systemd.services.hermes-gateway-amosburton.serviceConfig.ExecStartPre = lib.mkBefore [
     (pkgs.writeShellScript "hermes-amosburton-repo-compat-links" ''
       set -eu
       install -d -o emiller -g users -m 0750 /var/lib/hermes-amosburton/home/repos
       ln -sfn /repos/agents-workspace /var/lib/hermes-amosburton/home/repos/agents-workspace
       ln -sfn /repos/dotfiles /var/lib/hermes-amosburton/home/repos/dotfiles
-      ln -sfn /repos/finances /var/lib/hermes-amosburton/home/repos/finances
       ln -sfn /repos/obsidian-vault /var/lib/hermes-amosburton/home/repos/obsidian-vault
       ln -sfn /repos/tailnet /var/lib/hermes-amosburton/home/repos/tailnet
       chown -h emiller:users /var/lib/hermes-amosburton/home/repos/*
@@ -1724,7 +1744,6 @@ in
         "/var/lib/hermes-amosburton"
         "/home/emiller/.config/dotfiles"
         "/home/emiller/src/personal/agents-workspace"
-        "/home/emiller/src/personal/finances"
         "/home/emiller/src/personal/tailnet"
       ];
     };
@@ -2099,10 +2118,10 @@ in
             };
           };
           # Radar intentionally disabled on NUC until its HA endpoint/runtime is fixed.
+          finn.workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
           amosburton = {
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
             workspaceLinks."repos/dotfiles" = "/home/emiller/.config/dotfiles";
-            workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tailnet" = "/home/emiller/src/personal/tailnet";
           };
@@ -2282,6 +2301,11 @@ in
     group = "users";
     mode = "0400";
   };
+  age.secrets.buzz-hermes-finn-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
   age.secrets.buzz-hermes-orchestrator-agent-env = {
     owner = "emiller";
     group = "users";
@@ -2357,6 +2381,7 @@ in
   systemd.services.buzz-hermes-amosburton = mkBuzzHermesService "amosburton";
   systemd.services.buzz-hermes-anne = mkBuzzHermesService "anne";
   systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
+  systemd.services.buzz-hermes-finn = mkBuzzHermesService "finn";
   systemd.services.buzz-hermes-orchestrator = mkBuzzHermesService "orchestrator";
   systemd.services.buzz-hermes-scintillate = mkBuzzHermesService "scintillate";
 
