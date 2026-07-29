@@ -61,7 +61,11 @@ def summarize(agent: dict[str, Any]) -> dict[str, Any]:
 
 def matches(agent: dict[str, Any], query: str) -> bool:
     needle = query.casefold()
-    return any(needle in str(value).casefold() for value in agent.values())
+    fields = ("pane_id", "agent", "status", "cwd", "title")
+    return any(
+        needle in str(agent.get(field)).casefold()
+        for field in fields
+    )
 
 
 def main() -> int:
