@@ -1,8 +1,23 @@
-diff --git i/src/server/headless.rs w/src/server/headless.rs
-index 9c21aa1..5a71126 100644
---- i/src/server/headless.rs
-+++ w/src/server/headless.rs
-@@ -7194,7 +7194,7 @@ next_tab = ""
+diff --git a/src/server/headless.rs b/src/server/headless.rs
+index a1c0e25..79042c7 100644
+--- a/src/server/headless.rs
++++ b/src/server/headless.rs
+@@ -7167,7 +7167,7 @@ next_tab = ""
+     }
+ 
+     #[tokio::test]
+-    async fn render_and_stream_uses_each_client_terminal_size() {
++    async fn render_and_stream_uses_each_client_size_without_resizing_background_tabs() {
+         let mut server = test_headless_server();
+         let mut workspace = crate::workspace::Workspace::test_new("test");
+         let active_pane = workspace.tabs[0].root_pane;
+@@ -7256,12 +7256,12 @@ next_tab = ""
+         assert_eq!(
+             server.app.state.workspaces[0].tabs[background_tab].runtimes[&background_pane]
+                 .current_size(),
+-            expected_pane_size
++            (24, 80)
+         );
      }
  
      #[tokio::test]
@@ -11,7 +26,7 @@ index 9c21aa1..5a71126 100644
          let mut server = test_headless_server();
          let mut workspace = crate::workspace::Workspace::test_new("test");
          let background_tab = workspace.test_add_tab(Some("background"));
-@@ -7240,6 +7240,19 @@ next_tab = ""
+@@ -7307,6 +7307,19 @@ next_tab = ""
                  .current_size(),
              expected
          );
@@ -31,22 +46,22 @@ index 9c21aa1..5a71126 100644
          assert_eq!(
              server
                  .app
-diff --git i/src/ui.rs w/src/ui.rs
-index 8557498..b9f34a4 100644
---- i/src/ui.rs
-+++ w/src/ui.rs
-@@ -39,9 +39,7 @@ use self::navigator::render_navigator_overlay;
- pub(crate) use self::onboarding::onboarding_welcome_continue_rect;
- use self::onboarding::render_onboarding_overlay;
- pub(crate) use self::panes::popup_pane_rects;
--use self::panes::{
--    compute_pane_infos, render_panes, render_popup_pane, resize_popup_pane, resize_tab_panes,
+diff --git a/src/ui.rs b/src/ui.rs
+index 6d5c02f..e7558a5 100644
+--- a/src/ui.rs
++++ b/src/ui.rs
+@@ -57,9 +57,7 @@ use self::status::{
+     copy_feedback_rect, render_config_diagnostic, render_copy_feedback, render_toast_notification,
+     toast_notification_rect,
+ };
+-pub(crate) use self::tab_surface::{
+-    compute_tab_surface, render_tab_surface, resize_tab_surface, TabSurfaceLayout,
 -};
-+use self::panes::{compute_pane_infos, render_panes, render_popup_pane, resize_popup_pane};
- pub(crate) use self::release_notes::{
-     product_announcement_display_lines, release_notes_close_button_rect,
-     release_notes_display_lines, release_notes_wrapped_line_count, PRODUCT_ANNOUNCEMENT_MODAL_SIZE,
-@@ -157,39 +155,6 @@ pub(crate) fn compute_view_without_resizing_panes(
++pub(crate) use self::tab_surface::{compute_tab_surface, render_tab_surface, TabSurfaceLayout};
+ use self::tabs::render_tab_bar;
+ pub(crate) use self::{
+     dialogs::{
+@@ -160,38 +158,6 @@ pub(crate) fn compute_view_without_resizing_panes(
      );
  }
  
@@ -61,7 +76,7 @@ index 8557498..b9f34a4 100644
 -            if app.active == Some(ws_idx) && tab_idx == ws.active_tab_index() {
 -                continue;
 -            }
--            resize_tab_panes(app, terminal_runtimes, tab, terminal_area, cell_size);
+-            resize_tab_surface(app, terminal_runtimes, tab, terminal_area, cell_size);
 -        }
 -    }
 -}
@@ -78,37 +93,30 @@ index 8557498..b9f34a4 100644
 -            if app.active == Some(ws_idx) && tab_idx == ws.active_tab_index() {
 -                continue;
 -            }
--            resize_tab_panes(app, terminal_runtimes, tab, terminal_area, cell_size);
+-            resize_tab_surface(app, terminal_runtimes, tab, terminal_area, cell_size);
 -        }
 -    }
 -}
--
+ 
  fn desktop_tab_bar_and_terminal_area(
      app: &AppState,
-     ws: &crate::workspace::Workspace,
-@@ -289,7 +254,9 @@ fn compute_view_internal(
+@@ -283,7 +249,6 @@ fn compute_view_internal(
          cell_size,
      );
      if resize_panes {
 -        resize_background_tab_panes_for_desktop(app, terminal_runtimes, main_area, cell_size);
-+        // Only resize the visible tab. Background tabs are resized when focused; eagerly
-+        // resizing every hidden terminal on each client resize multiplies libghostty
-+        // reflow crash surface without affecting the current frame.
          resize_popup_pane(app, terminal_runtimes, terminal_area, cell_size);
      }
  
-@@ -367,7 +334,9 @@ fn compute_mobile_view(
+@@ -352,7 +317,6 @@ fn compute_mobile_view(
          cell_size,
      );
      if resize_panes {
 -        resize_background_tab_panes_to_area(app, terminal_runtimes, terminal_area, cell_size);
-+        // Only resize the visible tab. Background tabs are resized when focused; eagerly
-+        // resizing every hidden terminal on each client resize multiplies libghostty
-+        // reflow crash surface without affecting the current frame.
          resize_popup_pane(app, terminal_runtimes, terminal_area, cell_size);
      }
      let header_hits = compute_mobile_header_hit_areas(app, header_rect);
-@@ -811,7 +780,7 @@ mod tests {
+@@ -826,7 +790,7 @@ mod tests {
      }
  
      #[tokio::test]
@@ -117,7 +125,7 @@ index 8557498..b9f34a4 100644
          let mut app = crate::app::state::AppState::test_new();
          app.hide_tab_bar_when_single_tab = true;
  
-@@ -841,11 +810,20 @@ mod tests {
+@@ -856,11 +820,20 @@ mod tests {
          let two_tab_size =
              app.workspaces[1].tabs[background_tab].runtimes[&two_tab_pane].current_size();
          assert_eq!(one_tab_size, (20, 53));
@@ -139,7 +147,7 @@ index 8557498..b9f34a4 100644
          let mut app = crate::app::state::AppState::test_new();
  
          let mut workspace = Workspace::test_new("mobile");
-@@ -865,6 +843,14 @@ mod tests {
+@@ -880,6 +853,14 @@ mod tests {
  
          assert_eq!(app.view.layout, ViewLayout::Mobile);
          assert_eq!(app.view.terminal_area, Rect::new(0, 2, 44, 18));
@@ -154,11 +162,11 @@ index 8557498..b9f34a4 100644
          assert_eq!(
              app.workspaces[0].tabs[background_tab].runtimes[&background_pane].current_size(),
              (18, 43)
-diff --git i/src/ui/panes.rs w/src/ui/panes.rs
-index ae4cc13..ead92ae 100644
---- i/src/ui/panes.rs
-+++ w/src/ui/panes.rs
-@@ -128,21 +128,6 @@ pub(crate) fn apply_pane_chrome(
+diff --git a/src/ui/panes.rs b/src/ui/panes.rs
+index 981f324..7c672d6 100644
+--- a/src/ui/panes.rs
++++ b/src/ui/panes.rs
+@@ -128,20 +128,6 @@ pub(crate) fn apply_pane_chrome(
          .collect()
  }
  
@@ -176,11 +184,10 @@ index ae4cc13..ead92ae 100644
 -        .get(terminal_id)
 -        .map(|runtime| (terminal_id, runtime))
 -}
--
+ 
  fn stable_scrollbar_gutter(rt: &TerminalRuntime, pane_inner: Rect) -> (Rect, Option<Rect>) {
      let inner_rect = stable_terminal_inner_rect(pane_inner);
-     if inner_rect == pane_inner {
-@@ -162,55 +147,6 @@ fn stable_scrollbar_gutter(rt: &TerminalRuntime, pane_inner: Rect) -> (Rect, Opt
+@@ -162,54 +148,6 @@ fn stable_scrollbar_gutter(rt: &TerminalRuntime, pane_inner: Rect) -> (Rect, Opt
      (inner_rect, scrollbar_rect)
  }
  
@@ -232,7 +239,34 @@ index ae4cc13..ead92ae 100644
 -        }
 -    }
 -}
--
+ 
  /// Compute pane layout info and optionally resize pane runtimes to match.
  pub(super) fn compute_pane_infos(
+diff --git a/src/ui/tab_surface.rs b/src/ui/tab_surface.rs
+index 1594f83..5e260c7 100644
+--- a/src/ui/tab_surface.rs
++++ b/src/ui/tab_surface.rs
+@@ -1,6 +1,6 @@
+ use ratatui::{layout::Rect, Frame};
+ 
+-use super::panes::{compute_pane_infos, render_panes, resize_tab_panes};
++use super::panes::{compute_pane_infos, render_panes};
+ use crate::app::state::ViewState;
+ use crate::app::{AppState, Mode};
+ use crate::layout::{PaneInfo, SplitBorder};
+@@ -53,15 +53,6 @@ pub(crate) fn compute_tab_surface(
+     }
+ }
+ 
+-pub(crate) fn resize_tab_surface(
+-    app: &AppState,
+-    terminal_runtimes: &TerminalRuntimeRegistry,
+-    tab: &crate::workspace::Tab,
+-    area: Rect,
+-    cell_size: crate::kitty_graphics::HostCellSize,
+-) {
+-    resize_tab_panes(app, terminal_runtimes, tab, area, cell_size);
+-}
+ 
+ pub(crate) fn render_tab_surface(
      app: &AppState,
