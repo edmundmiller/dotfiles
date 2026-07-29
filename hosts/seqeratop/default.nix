@@ -277,6 +277,7 @@
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
       my.zele
+      my.quill
       my.work-calendar-busy
     ];
 
