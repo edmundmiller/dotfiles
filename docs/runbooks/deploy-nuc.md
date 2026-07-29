@@ -174,14 +174,18 @@ configured NUC Hermes profile. Each service runs `buzz-acp -> hermes acp` with
 the profile's materialized home, provider environment, and declared repository
 mounts. Its dedicated identity and owner attestation live in
 `hosts/nuc/secrets/buzz-hermes-<profile>-agent-env.age`.
-Each service subscribes only to its assigned Buzz channel: Finn uses
-`finances`; Anne and Betty use `mill-docs`; Amos Burton, Orchestrator, and
-Scintillate use `general`.
+Subscriptions and home channels come from the canonical
+`agents-workspace/deployments/nuc/buzz-bindings.nix` deployment binding.
+Project profiles watch `mill-docs` or `finances`; Orchestrator watches
+`general`; Amos, Radar, and Scintillate watch `general` plus `agent-reports`;
+Betty watches `mill-docs`, `meal-planning`, and `fitness`.
 
 Active cron executors use Hermes' native Buzz adapter for outbound delivery.
-Amos Burton, Radar, and Scintillate deliver to `general`; Betty delivers to
-`mill-docs`. Each executor loads the same dedicated identity as its profile's
-inbound runtime. `buzz-acp` remains the mention-scoped inbound transport.
+Amos Burton, Radar, and Scintillate use `agent-reports` as home. Betty keeps
+`mill-docs` as home while her meal-plan and Lift jobs resolve logical routes to
+`meal-planning` and `fitness`. Each executor loads the same dedicated identity
+as its profile's inbound runtime. `buzz-acp` remains mention-scoped inbound
+transport.
 
 The separate `buzz-mill-docs-codex.service` remains project-scoped. Its
 encrypted identity is `hosts/nuc/secrets/buzz-mill-docs-agent-env.age`; it uses
@@ -210,15 +214,14 @@ receives the owner attestation and agent-authored profile event. Never reuse a
 private key across profiles. Encrypt `BUZZ_PRIVATE_KEY` and `BUZZ_AUTH_TAG`
 directly into the matching agenix file; never print either value.
 
-The Hermes services accept explicit owner mentions only and inherit repository
-access from `services.hermes-agent.profiles.<name>.hostPathMounts`. Change that
-canonical profile boundary instead of adding service-specific paths. Host
-Docker and Podman sockets remain inaccessible even when a profile inherits
-their CLI packages.
+Amos, Betty, Radar, and Scintillate accept signed mentions from the owner and
+the exact Moni pubkey in the deployment binding. Anne, Finn, and Orchestrator
+remain owner-only. All inherit repository access from
+`services.hermes-agent.profiles.<name>.hostPathMounts`; change that canonical
+profile boundary instead of adding service-specific paths. Host Docker and
+Podman sockets remain inaccessible.
 
-The Mill Docs worker accepts mentions from its exact Nix allowlist. Before
-adding Moni, confirm her relay membership, update the allowlist, and run both
-allowed and member-but-unallowlisted mention tests.
+The Mill Docs worker remains owner-only in `mill-docs`.
 
 ## Rollback
 

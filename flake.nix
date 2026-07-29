@@ -1198,6 +1198,9 @@
               nuc-buzz-hermes-community-runtime = import ./hosts/nuc/_tests/buzz-hermes-community-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
+                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
               };
 
               nuc-radar-cron-runtime = import ./hosts/nuc/_tests/radar-cron-runtime.nix {
@@ -1209,6 +1212,9 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
                 bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
+                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
               };
 
               nuc-hermes-cron-external-executor =

@@ -3,6 +3,7 @@
   nixosConfig,
   pkgs,
   bettyAgentSpec,
+  buzzBindings,
 }:
 let
   cfg = nixosConfig.config;
@@ -18,12 +19,16 @@ let
     radar = cfg.systemd.services.hermes-radar-cron-tick;
     scintillate = cfg.systemd.services.hermes-scintillate-cron-tick;
   };
-  expectedBuzzCronChannels = {
-    amosburton = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
-    radar = "2f26ea17-737f-5121-b01b-0df23e851c38";
-    scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
-  };
+  channelId = channel: buzzBindings.channels.${channel}.id;
+  expectedBuzzCronChannels =
+    pkgs.lib.mapAttrs
+      (_profile: profile: builtins.concatStringsSep "," (map channelId profile.channels))
+      (
+        pkgs.lib.filterAttrs (profile: _: builtins.hasAttr profile buzzCronServices) buzzBindings.profiles
+      );
+  expectedBuzzCronHomes = pkgs.lib.mapAttrs (_profile: profile: channelId profile.home) (
+    pkgs.lib.filterAttrs (profile: _: builtins.hasAttr profile buzzCronServices) buzzBindings.profiles
+  );
   cronTickTimers = [
     cfg.systemd.timers.hermes-amosburton-cron-tick
     bettyTimer
@@ -126,7 +131,7 @@ let
           service = buzzCronServices.${profile};
         in
         service.environment.BUZZ_RELAY_URL == "https://millers.communities.buzz.xyz"
-        && service.environment.BUZZ_HOME_CHANNEL == expectedBuzzCronChannels.${profile}
+        && service.environment.BUZZ_HOME_CHANNEL == expectedBuzzCronHomes.${profile}
         && service.environment.BUZZ_CHANNELS == expectedBuzzCronChannels.${profile}
         && pkgs.lib.any (package: service.environment.BUZZ_CLI_PATH == "${package}/bin/buzz") service.path
         &&
