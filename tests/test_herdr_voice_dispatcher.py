@@ -73,6 +73,19 @@ class HerdrVoiceDispatcherTests(unittest.TestCase):
         self.assertTrue(MODULE.matches(agent, "w17:p1p"))
         self.assertFalse(MODULE.matches(agent, "mill-docs"))
 
+    @unittest.expectedFailure
+    def test_query_ignores_focus_state(self) -> None:
+        agent = {
+            "pane_id": "w1:p2",
+            "agent": "omp",
+            "status": "idle",
+            "cwd": "/repo",
+            "title": "Review skill",
+            "focused": False,
+        }
+
+        self.assertFalse(MODULE.matches(agent, "false"))
+
 
 if __name__ == "__main__":
     unittest.main()
