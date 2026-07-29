@@ -48,16 +48,15 @@ class DoneSkillContractTest(unittest.TestCase):
         for phrase in (
             "HERDR_ENV",
             "HERDR_WORKSPACE_ID",
-            'herdr worktree remove --workspace "$HERDR_WORKSPACE_ID"',
+            "teardown-herdr-worktree.sh",
             "CODEX_THREAD_ID",
             "set_thread_archived",
-            "Do not add `--force`",
+            "without `--force`",
             "Do not archive a same-directory",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
-    @unittest.expectedFailure
     def test_herdr_teardown_script_refuses_unsafe_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
