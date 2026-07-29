@@ -5,7 +5,12 @@ let
   cfg = nixosConfig.config;
   profiles = builtins.attrNames cfg.modules.services.hermes.agents;
   services = map (profile: cfg.systemd.services."buzz-hermes-${profile}") profiles;
-  identityFiles = map (service: builtins.elemAt service.serviceConfig.EnvironmentFile 1) services;
+  identityFiles = map (
+    service:
+    builtins.elemAt service.serviceConfig.EnvironmentFile (
+      builtins.length service.serviceConfig.EnvironmentFile - 1
+    )
+  ) services;
   identitySourceFiles = map (
     profile: cfg.age.secrets."buzz-hermes-${profile}-agent-env".file
   ) profiles;
@@ -19,6 +24,7 @@ let
       CODEX_HOME = "/var/lib/hermes-betty/.codex";
       WIKI_PATH = "/home/emiller/mill-docs/02_Areas/Home";
     };
+    finn.CODEX_HOME = "/home/emiller/.codex";
     orchestrator = {
       CODEX_HOME = "/home/emiller/.codex";
       TN_VAULT_PATH = "/home/emiller/obsidian-vault";
@@ -31,9 +37,10 @@ let
     };
   };
   expectedChannels = {
-    amosburton = "0496329b-5844-4985-9fed-b2963906045f";
+    amosburton = "2f26ea17-737f-5121-b01b-0df23e851c38";
     anne = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
     betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
+    finn = "0496329b-5844-4985-9fed-b2963906045f";
     orchestrator = "2f26ea17-737f-5121-b01b-0df23e851c38";
     scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
   };
@@ -130,10 +137,20 @@ let
           "amosburton"
           "anne"
           "betty"
+          "finn"
           "orchestrator"
           "scintillate"
         ];
       msg = "Buzz community runtime coverage must match the configured NUC Hermes profiles.";
+    }
+    {
+      test =
+        builtins.hasAttr "finn" cfg.services.hermes-agent.profiles
+        &&
+          cfg.services.hermes-agent.profiles.finn.hostPathMounts."/home/emiller/src/personal/finances"
+          == "/repos/finances"
+        && !(builtins.hasAttr "/home/emiller/src/personal/finances" cfg.services.hermes-agent.profiles.amosburton.hostPathMounts);
+      msg = "Finn, not Amos Burton, must own the NUC finances checkout.";
     }
     {
       test = builtins.length (pkgs.lib.unique identityFiles) == builtins.length profiles;

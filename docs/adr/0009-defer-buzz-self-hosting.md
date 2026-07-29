@@ -67,6 +67,10 @@ dedicated Nostr identity from agenix, one channel matching its repository
 boundary, owner-only mention routing, lazy ACP startup, no inbound port, and no
 host Docker or Podman socket.
 
+Project ownership follows the canonical agents workspace: Finn owns the
+`finances` checkout and forum; Anne and Betty share `mill-docs`; Amos Burton,
+Orchestrator, and Scintillate use `general`.
+
 The Mill Docs worker keeps its exact author allowlist. Add Moni only after her
 64-character relay pubkey is known and her identity belongs to the community.
 
