@@ -11,6 +11,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "agent-quality"
 HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
+HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
+FLAKE = ROOT / "flake.nix"
+OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 
 
 class AgentQualityTests(unittest.TestCase):
@@ -45,6 +48,37 @@ class AgentQualityTests(unittest.TestCase):
         wrapper = HEY_WRAPPER.read_text()
         self.assertIn("^agent-quality ...$args", wrapper)
         self.assertNotIn("python3 bin/agent-quality", wrapper)
+
+    @unittest.expectedFailure
+    def test_hey_and_git_hooks_use_the_nix_owned_prek_config(self) -> None:
+        flake = FLAKE.read_text()
+        hey = HEY_FLAKE.read_text()
+
+        self.assertIn(
+            "packages.pre-commit-config = config.pre-commit.settings.configFile;",
+            flake,
+        )
+        self.assertIn("install.enable = false;", flake)
+        self.assertIn(
+            "--config ${config.pre-commit.settings.configFile}",
+            flake,
+        )
+        self.assertIn(".#pre-commit-config", hey)
+        self.assertEqual(hey.count("--config $precommit_config"), 2)
+
+    @unittest.expectedFailure
+    def test_packaged_agent_quality_uses_the_active_checkout_and_jujutsu(self) -> None:
+        wrapper = HEY_WRAPPER.read_text()
+        module = OMP_MODULE.read_text()
+
+        self.assertIn("let ctx = (context)", wrapper)
+        self.assertIn("AGENT_QUALITY_ROOT: $ctx.flake_dir", wrapper)
+        self.assertIn("pkgs.jujutsu", module)
+        self.assertNotIn("pkgs.jj", module)
+        self.assertIn(
+            'export AGENT_QUALITY_ROOT="\'\'${AGENT_QUALITY_ROOT:-${../../..}}"',
+            module,
+        )
 
     def test_worklog_validation_accepts_complete_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
