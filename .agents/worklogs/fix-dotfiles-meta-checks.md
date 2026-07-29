@@ -1,6 +1,6 @@
 # Worklog: fix-dotfiles-meta-checks
 
-Status: blocked
+Status: complete
 
 ## Objective
 
@@ -63,6 +63,16 @@ hey agent-finish --worklog ...` emitted `git diff --cached` and not-a-repo
 agent-finish --worklog ...` passed repo quality, all 17 agent-quality tests,
   confidence, inventory, and worklog validation. The jj workspace test used
   `/private/tmp` successfully; no Git/Nix-store-root errors occurred.
+- Waited for the owning Buzz Codex task to finish and push. Rebasing onto
+  `origin/main` `9dff7b279` was conflict-free; all 17 focused tests and the
+  source `./bin/hey check --worktree` passed.
+- Buzz's later Darwin activation reproduced the installed missing-config
+  failure because it deployed pre-repair `main`. Activating this rebased branch
+  restored the installed launcher, and `env -u PREK_ALLOW_NO_CONFIG hey check
+--worktree` passed every Darwin gate.
+- The existing default checkout retains only unrelated Herdr edits. Landing
+  uses this clean task checkout and a fast-forward remote-main push without
+  modifying those files.
 
 ## Reviews
 
@@ -81,13 +91,10 @@ Landing review with Claude reached `session/new` and returned the same
 
 ## Remaining work
 
-- Landing is blocked by unrelated tracked and untracked NUC/Buzz work in the
-  existing `/Users/emiller/.config/dotfiles` checkout of `main`. The owner must
-  commit/clean that checkout or explicitly authorize a named preservation
-  action before `main` can be fast-forwarded, pushed, tagged, and verified.
+None.
 
 ## Commits
 
-- `bfb901c7d test(meta): cover hook and agent-quality drift`
-- `47363c88a fix(meta): repair hook and agent-quality ownership`
+- `fbb165ba8 test(meta): cover hook and agent-quality drift`
+- `bb49e0bbd fix(meta): repair hook and agent-quality ownership`
 - Worklog checkpoint commits.
