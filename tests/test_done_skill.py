@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import shutil
 import subprocess
 import tempfile
@@ -10,6 +11,9 @@ SKILL = ROOT / "skills/catalog/done/SKILL.md"
 FLAKE = ROOT / "skills/flake.nix"
 VERIFIER = ROOT / "skills/catalog/done/scripts/verify-landing.sh"
 JJ_VERIFIER = ROOT / "skills/catalog/done/scripts/verify-jj-landing.sh"
+HERDR_TEARDOWN = (
+    ROOT / "skills/catalog/done/scripts/teardown-herdr-worktree.sh"
+)
 
 
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -52,6 +56,141 @@ class DoneSkillContractTest(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
+
+    @unittest.expectedFailure
+    def test_herdr_teardown_script_refuses_unsafe_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            worktree = root / "worktree"
+            wrong_worktree = root / "wrong-worktree"
+            mock_herdr = root / "herdr"
+            herdr_log = root / "herdr.log"
+
+            git(root, "init", "-b", "main", str(repo))
+            git(repo, "config", "user.name", "Done Skill Test")
+            git(repo, "config", "user.email", "done-skill@example.invalid")
+            (repo / "state.txt").write_text("base\n")
+            git(repo, "add", "state.txt")
+            git(repo, "commit", "-m", "base")
+            git(repo, "worktree", "add", "-qb", "task", str(worktree))
+
+            mock_herdr.write_text(
+                """#!/usr/bin/env python3
+import json
+import os
+from pathlib import Path
+import sys
+
+args = sys.argv[1:]
+workspace_id = os.environ["HERDR_WORKSPACE_ID"]
+if args == ["worktree", "list", "--workspace", workspace_id, "--json"]:
+    path = os.environ["MOCK_WORKTREE_PATH"]
+    print(json.dumps({
+        "id": "test",
+        "result": {
+            "type": "worktree_list",
+            "source": {
+                "repo_key": "test",
+                "repo_name": "repo",
+                "repo_root": os.environ["MOCK_REPO_ROOT"],
+                "source_checkout_path": os.environ["MOCK_REPO_ROOT"],
+            },
+            "worktrees": [{
+                "path": path,
+                "branch": "task",
+                "is_bare": False,
+                "is_detached": False,
+                "is_prunable": False,
+                "is_linked_worktree": True,
+                "open_workspace_id": workspace_id,
+                "label": "task",
+            }],
+        },
+    }))
+elif args == ["worktree", "remove", "--workspace", workspace_id, "--json"]:
+    Path(os.environ["MOCK_HERDR_LOG"]).write_text(" ".join(args) + "\\n")
+    print(json.dumps({
+        "id": "test",
+        "result": {
+            "type": "worktree_removed",
+            "workspace_id": workspace_id,
+            "path": os.environ["MOCK_WORKTREE_PATH"],
+            "forced": False,
+        },
+    }))
+else:
+    print(f"unexpected herdr arguments: {args}", file=sys.stderr)
+    raise SystemExit(2)
+"""
+            )
+            mock_herdr.chmod(0o755)
+
+            base_env = os.environ.copy()
+            base_env.update(
+                {
+                    "HERDR_BIN_PATH": str(mock_herdr),
+                    "MOCK_HERDR_LOG": str(herdr_log),
+                    "MOCK_REPO_ROOT": str(repo),
+                    "MOCK_WORKTREE_PATH": str(worktree),
+                }
+            )
+
+            outside_herdr = subprocess.run(
+                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                cwd=worktree,
+                env=base_env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, outside_herdr.returncode)
+            self.assertIn("HERDR_ENV=1", outside_herdr.stderr)
+
+            herdr_env = base_env | {
+                "HERDR_ENV": "1",
+                "HERDR_WORKSPACE_ID": "workspace-test",
+                "MOCK_WORKTREE_PATH": str(wrong_worktree),
+            }
+            wrong_provenance = subprocess.run(
+                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                cwd=worktree,
+                env=herdr_env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, wrong_provenance.returncode)
+            self.assertIn("does not own", wrong_provenance.stderr)
+            self.assertFalse(herdr_log.exists())
+
+            herdr_env["MOCK_WORKTREE_PATH"] = str(worktree)
+            dirty_file = worktree / "dirty.txt"
+            dirty_file.write_text("dirty\n")
+            dirty = subprocess.run(
+                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                cwd=worktree,
+                env=herdr_env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, dirty.returncode)
+            self.assertIn("not clean", dirty.stderr)
+            self.assertFalse(herdr_log.exists())
+            dirty_file.unlink()
+
+            safe = subprocess.run(
+                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                cwd=worktree,
+                env=herdr_env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, safe.returncode, safe.stderr)
+            remove_args = herdr_log.read_text().strip()
+            self.assertEqual(
+                "worktree remove --workspace workspace-test --json",
+                remove_args,
+            )
+            self.assertNotIn("--force", remove_args)
 
     def test_verifier_requires_published_default_branch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
