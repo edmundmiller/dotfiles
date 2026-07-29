@@ -36,6 +36,9 @@ pkgs.stdenvNoCC.mkDerivation {
     ''}
 
     if [ -x "$out/bin/pi" ]; then
+      substituteInPlace "$out/bin/pi" \
+        --replace-fail "${pkgs.llm-agents.pi}/libexec/pi/pi" "$out/libexec/pi/pi"
+
       wrapProgram "$out/bin/pi" \
         --run ${lib.escapeShellArg "${piSecretPreflightScript}"} \
         --prefix PATH : ${lib.escapeShellArg runtimePath} \
