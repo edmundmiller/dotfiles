@@ -38,7 +38,6 @@ class DoneSkillContractTest(unittest.TestCase):
 
         self.assertNotIn('done.from = "bholmesdev";', flake)
 
-    @unittest.expectedFailure
     def test_launcher_owned_worktrees_use_launcher_teardown(self) -> None:
         skill = SKILL.read_text()
 
@@ -48,6 +47,8 @@ class DoneSkillContractTest(unittest.TestCase):
             'herdr worktree remove --workspace "$HERDR_WORKSPACE_ID"',
             "CODEX_THREAD_ID",
             "set_thread_archived",
+            "Do not add `--force`",
+            "Do not archive a same-directory",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
