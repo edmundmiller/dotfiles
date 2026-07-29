@@ -29,6 +29,12 @@ pkgs.stdenvNoCC.mkDerivation {
     cp -a ${pkgs.llm-agents.pi} "$out"
     chmod -R u+w "$out"
 
+    ${lib.optionalString pkgs.stdenv.isDarwin ''
+      if [ -x "$out/libexec/pi/pi" ]; then
+        /usr/bin/codesign -f -s - "$out/libexec/pi/pi"
+      fi
+    ''}
+
     if [ -x "$out/bin/pi" ]; then
       wrapProgram "$out/bin/pi" \
         --run ${lib.escapeShellArg "${piSecretPreflightScript}"} \
