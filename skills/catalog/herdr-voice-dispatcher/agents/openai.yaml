@@ -1,0 +1,4 @@
+interface:
+  display_name: "Herdr Voice Dispatcher"
+  short_description: "Dispatch voice prompts to Herdr agents"
+  default_prompt: "Use $herdr-voice-dispatcher to list my Herdr agents and send a prompt to the one I name."
