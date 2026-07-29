@@ -1001,6 +1001,22 @@
         "type": "github"
       }
     },
+    "humanlayer-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782850091,
+        "narHash": "sha256-P7KBvZqdC4IoSL20CTNyAXRYpSbT4p15vbKI+yk/r/g=",
+        "owner": "humanlayer",
+        "repo": "skills",
+        "rev": "39fb32786ae7a7cd864cf2c237148c38b1e4db07",
+        "type": "github"
+      },
+      "original": {
+        "owner": "humanlayer",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "hunk": {
       "inputs": {
         "bun2nix": [
@@ -1929,6 +1945,7 @@
         "diffity-repo": "diffity-repo",
         "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",
+        "humanlayer-skills": "humanlayer-skills",
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",
