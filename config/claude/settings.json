@@ -222,11 +222,18 @@
         "source": "github",
         "repo": "edmundmiller/dotfiles"
       }
+    },
+    "plannotator": {
+      "source": {
+        "source": "github",
+        "repo": "backnotprop/plannotator"
+      }
     }
   },
   "enabledPlugins": {
     "json-to-toon@dotfiles-plugins": true,
     "claude-code-wakatime@wakatime": true,
+    "plannotator@plannotator": true,
     "context7@claude-plugins-official": false,
     "feature-dev@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,

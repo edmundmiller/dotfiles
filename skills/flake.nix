@@ -17,6 +17,11 @@
       flake = false;
     };
 
+    plannotator = {
+      url = "github:backnotprop/plannotator/v0.25.0";
+      flake = false;
+    };
+
     agent-tail-repo = {
       url = "github:gillkyle/agent-tail";
       flake = false;
@@ -407,6 +412,12 @@
                   filter.maxDepth = 2;
                 };
 
+                plannotator = {
+                  path = inputs.plannotator.outPath;
+                  subdir = "apps/skills/core";
+                  filter.maxDepth = 2;
+                };
+
                 agent-tail = {
                   path = inputs.agent-tail-repo.outPath;
                   subdir = "skills";
@@ -569,6 +580,15 @@
                 // {
                   gh-fix-ci.from = "openai";
                   gh-fix-ci.path = "gh-fix-ci";
+
+                  plannotator-review.from = "plannotator";
+                  plannotator-review.path = "plannotator-review";
+
+                  plannotator-annotate.from = "plannotator";
+                  plannotator-annotate.path = "plannotator-annotate";
+
+                  plannotator-last.from = "plannotator";
+                  plannotator-last.path = "plannotator-last";
 
                   design-control-loop.from = "humanlayer";
                   design-control-loop.path = "design-control-loop";
