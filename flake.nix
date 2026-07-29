@@ -439,10 +439,33 @@
         }:
         let
           unstable = mkPkgs nixpkgs-unstable [ ] system;
+          preCommitShellHook = ''
+            if git rev-parse --git-dir >/dev/null 2>&1; then
+              repo_root=$(git rev-parse --show-toplevel)
+              hooks_dir=$(git rev-parse --git-path hooks)
+
+              # Remove the former checkout-local generated config. Hooks and
+              # checks now consume the immutable Nix-owned config directly.
+              if [ -L "$repo_root/.pre-commit-config.yaml" ]; then
+                rm -f "$repo_root/.pre-commit-config.yaml"
+              fi
+
+              for stage in commit-msg post-merge post-rewrite pre-commit pre-push; do
+                ${lib.getExe config.pre-commit.settings.package} install \
+                  -f \
+                  --config ${config.pre-commit.settings.configFile} \
+                  --hook-type "$stage"
+                rm -f "$hooks_dir/$stage.legacy"
+              done
+            fi
+          '';
         in
         {
           # Expose deploy-rs CLI for `nix run .#deploy-rs`
           packages.deploy-rs = deploy-rs.packages.${system}.default;
+
+          # Authoritative generated hook config for checks and shared Git shims.
+          packages.pre-commit-config = config.pre-commit.settings.configFile;
 
           # Headless agent environment (Factory, Devin, etc.)
           # Install: nix profile install .#agent-env
@@ -519,6 +542,7 @@
 
           pre-commit.settings = {
             package = pkgs.prek;
+            install.enable = false;
             hooks = {
               treefmt = {
                 enable = true;
@@ -922,8 +946,7 @@
             };
 
             # Lightweight default shell for direnv and routine agent work.
-            # Also refreshes generated git hooks so .pre-commit-config.yaml stays
-            # in sync with treefmt/pre-commit settings during normal direnv use.
+            # Refresh shared Git hooks against the immutable generated config.
             # Use `nix develop .#full` when you need deploy tooling.
             default = pkgs.mkShellNoCC {
               packages =
@@ -937,14 +960,12 @@
                   statix
                 ])
                 ++ config.pre-commit.settings.enabledPackages;
-              shellHook = config.pre-commit.shellHook + ''
-                # prek install (called above) moves existing hooks to *.legacy when the
-                # config changes; remove them so prek doesn't re-run the old shim.
-                for h in commit-msg post-merge post-rewrite pre-commit pre-push; do
-                  rm -f ".git/hooks/$h.legacy"
-                done
-                echo "dotfiles lightweight shell (use: nix develop .#full)"
-              '';
+              shellHook =
+                config.pre-commit.shellHook
+                + preCommitShellHook
+                + ''
+                  echo "dotfiles lightweight shell (use: nix develop .#full)"
+                '';
             };
 
             # Full development shell: deploy tooling plus git hook installation.
@@ -962,12 +983,12 @@
                   self.packages.${system}.package-harness
                 ]
                 ++ config.pre-commit.settings.enabledPackages;
-              shellHook = config.pre-commit.shellHook + ''
-                for h in commit-msg post-merge post-rewrite pre-commit pre-push; do
-                  rm -f ".git/hooks/$h.legacy"
-                done
-                echo "dotfiles full development shell"
-              '';
+              shellHook =
+                config.pre-commit.shellHook
+                + preCommitShellHook
+                + ''
+                  echo "dotfiles full development shell"
+                '';
             };
           };
 
