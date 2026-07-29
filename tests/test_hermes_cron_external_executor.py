@@ -51,6 +51,7 @@ def _load_cron_module(source: Path):
     ]
     jobs.TICKER_INTERVAL_SECONDS = 60
     jobs.get_ticker_heartbeat_age = lambda: 1
+    jobs.get_ticker_last_error = lambda: None
     jobs.get_ticker_success_age = lambda: 1
     gateway = types.ModuleType("hermes_cli.gateway")
     gateway.find_gateway_pids = lambda: []

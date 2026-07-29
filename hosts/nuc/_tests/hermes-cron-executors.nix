@@ -12,6 +12,18 @@ let
   amosSecretMaterialization = cfg.system.activationScripts.hermesAmosburtonSecretsMaterialize.text;
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
+  buzzCronServices = {
+    amosburton = amosService;
+    betty = bettyService;
+    radar = cfg.systemd.services.hermes-radar-cron-tick;
+    scintillate = cfg.systemd.services.hermes-scintillate-cron-tick;
+  };
+  expectedBuzzCronChannels = {
+    amosburton = "2f26ea17-737f-5121-b01b-0df23e851c38";
+    betty = "b0d457c1-d07e-4396-868a-1d8e3caf1e83";
+    radar = "2f26ea17-737f-5121-b01b-0df23e851c38";
+    scintillate = "2f26ea17-737f-5121-b01b-0df23e851c38";
+  };
   cronTickTimers = [
     cfg.systemd.timers.hermes-amosburton-cron-tick
     bettyTimer
@@ -106,6 +118,22 @@ let
     {
       test = if cronTickCadenceExpectedFailure then !cronTickCadenceMatches else cronTickCadenceMatches;
       msg = "Hermes cron timers must tick every 60 seconds without scheduling jitter.";
+    }
+    {
+      test = pkgs.lib.all (
+        profile:
+        let
+          service = buzzCronServices.${profile};
+        in
+        service.environment.BUZZ_RELAY_URL == "https://millers.communities.buzz.xyz"
+        && service.environment.BUZZ_HOME_CHANNEL == expectedBuzzCronChannels.${profile}
+        && service.environment.BUZZ_CHANNELS == expectedBuzzCronChannels.${profile}
+        && pkgs.lib.any (package: service.environment.BUZZ_CLI_PATH == "${package}/bin/buzz") service.path
+        &&
+          builtins.elem cfg.age.secrets."buzz-hermes-${profile}-agent-env".path
+            service.serviceConfig.EnvironmentFile
+      ) (builtins.attrNames buzzCronServices);
+      msg = "Every active Hermes cron executor must use its dedicated Buzz identity and home channel.";
     }
     {
       test = bettyTimer.timerConfig.Unit == "hermes-betty-cron-tick.service";
