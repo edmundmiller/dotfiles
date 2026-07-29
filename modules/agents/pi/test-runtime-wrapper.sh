@@ -24,4 +24,9 @@ grep -Fq -- '--set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"}' 
 grep -Fq -- 'updateExtensionsShim = lib.concatStringsSep "\n"' "$wrapper_source" \
   || fail "Pi update shim must avoid heredoc newline splitting before exec target"
 
+if grep -Fq -- '/usr/bin/codesign -f -s - "$out/libexec/pi/pi"' "$wrapper_source"; then
+  fail "XPASS: remove the expected-failure marker for Pi's Darwin signature repair"
+fi
+printf 'XFAIL: copied Pi binary is not re-signed for Darwin execution\n'
+
 printf 'PASS: Pi runtime wrapper keeps Nix node, Python 3.11+setuptools, and CLT wiring\n'
