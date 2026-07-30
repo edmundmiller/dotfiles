@@ -177,15 +177,17 @@ mounts. Its dedicated identity and owner attestation live in
 Subscriptions and home channels come from the canonical
 `agents-workspace/deployments/nuc/buzz-bindings.nix` deployment binding.
 Project profiles watch `mill-docs` or `finances`; Orchestrator watches
-`general`; Amos, Radar, and Scintillate watch `general` plus `agent-reports`;
-Betty watches `mill-docs`, `meal-planning`, and `fitness`.
+`general`; Amos watches `general` plus `agent-reports`; Radar watches
+`general`; Scintillate watches `general` plus `personal-reports`; Betty watches
+`mill-docs`, `meal-planning`, and `fitness`.
 
 Active cron executors use Hermes' native Buzz adapter for outbound delivery.
-Amos Burton, Radar, and Scintillate use `agent-reports` as home. Betty keeps
-`mill-docs` as home while her meal-plan and Lift jobs resolve logical routes to
-`meal-planning` and `fitness`. Each executor loads the same dedicated identity
-as its profile's inbound runtime. `buzz-acp` remains mention-scoped inbound
-transport.
+Amos Burton uses `agent-reports`; Scintillate uses `personal-reports`. Betty
+keeps `mill-docs` as home while her meal-plan and Lift jobs resolve logical
+routes to `meal-planning` and `fitness`. Radar cron delivers only to Edmund by
+email and does not load Buzz delivery credentials. Buzz executors load the
+same dedicated identity as their profile's inbound runtime. `buzz-acp` remains
+mention-scoped inbound transport.
 
 The separate `buzz-mill-docs-codex.service` remains project-scoped. Its
 encrypted identity is `hosts/nuc/secrets/buzz-mill-docs-agent-env.age`; it uses

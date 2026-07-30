@@ -1923,20 +1923,15 @@ in
       pkgs.coreutils
       pkgs.findutils
       pkgs.git
-      pkgs.my.buzz
       pkgs.python3
       pkgs.rtk
     ];
-    environment = mkBuzzCronEnvironment "radar";
     serviceConfig = {
       Type = "oneshot";
       User = "emiller";
       Group = "users";
       WorkingDirectory = "/var/lib/hermes-radar";
-      EnvironmentFile = [
-        "/run/hermes-radar-env/secrets.env"
-        config.age.secrets.buzz-hermes-radar-agent-env.path
-      ];
+      EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
       Environment = [
         "HOME=/var/lib/hermes-radar"
         "HERMES_HOME=/var/lib/hermes-radar/.hermes"
