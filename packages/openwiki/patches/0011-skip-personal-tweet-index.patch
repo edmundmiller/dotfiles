@@ -1,0 +1,49 @@
+diff --git a/src/agent/index-middleware.ts b/src/agent/index-middleware.ts
+--- a/src/agent/index-middleware.ts
++++ b/src/agent/index-middleware.ts
+@@ -12,6 +12,7 @@
+   "AGENTS.md": true,
+   "INSTRUCTIONS.md": true,
+ };
++const EXCLUDED_INDEX_DIRECTORIES = new Set(["Clippings/Tweets"]);
+ 
+ interface Directory {
+   entries: FileInfo[];
+@@ -50,6 +51,13 @@
+ ): Promise<void> {
+   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+   for (const directory of await collectDirectories(backend, root, true)) {
++    if (
++      EXCLUDED_INDEX_DIRECTORIES.has(
++        path.posix.relative(root, directory.path),
++      )
++    ) {
++      continue;
++    }
+     await synchronizeDirectory(backend, directory, root);
+   }
+ }
+diff --git a/test/index-middleware.test.ts b/test/index-middleware.test.ts
+--- a/test/index-middleware.test.ts
++++ b/test/index-middleware.test.ts
+@@ -193,6 +193,20 @@
+     ).resolves.not.toContain("AGENTS.md");
+   });
+ 
++  test("does not create a redundant index for personal tweet clippings", async () => {
++    const { backend, rootDir } = await setup("local-wiki");
++    await backend.write(
++      "/Clippings/Tweets/tweet.md",
++      document("Tweet", "Imported tweet clipping."),
++    );
++
++    await synchronizeWikiIndexes(backend, "local-wiki");
++
++    await expect(
++      readFile(path.join(rootDir, "Clippings/Tweets/index.md"), "utf8"),
++    ).rejects.toMatchObject({ code: "ENOENT" });
++  });
++
+   test("supports the local wiki root and empty directories", async () => {
+     const { backend, rootDir } = await setup("local-wiki");
+     await backend.write(
