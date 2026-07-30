@@ -32,7 +32,6 @@ class CronFailureSummaryTest(unittest.TestCase):
     def setUpClass(cls):
         cls.summarize = staticmethod(_load_failure_summarizer(Path(HERMES_SOURCE)))
 
-    @unittest.expectedFailure
     def test_script_failure_with_429_in_commit_hash_is_not_a_provider_limit(self):
         summary = self.summarize(
             {"id": "job-1", "name": "tnote-schedule", "no_agent": True},
@@ -42,7 +41,6 @@ class CronFailureSummaryTest(unittest.TestCase):
         self.assertIn("script", summary.lower())
         self.assertNotIn("provider", summary.lower())
 
-    @unittest.expectedFailure
     def test_429_inside_non_provider_identifier_is_not_a_status_code(self):
         summary = self.summarize(
             {"id": "job-1", "name": "tnote-schedule"},
