@@ -195,6 +195,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0008-rss-connector-regression.patch
     ./patches/0009-rss-connector.patch
     ./patches/0010-relative-raw-tool-paths.patch
+    ./patches/0011-skip-personal-tweet-index.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
