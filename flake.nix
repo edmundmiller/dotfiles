@@ -1235,6 +1235,19 @@
                     touch "$out"
                   '';
 
+              nuc-hermes-cron-failure-summary =
+                pkgs.runCommand "nuc-hermes-cron-failure-summary"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                  }
+                  ''
+                    mkdir hermes-source
+                    cp -R ${inputs.hermes-agent}/cron hermes-source/cron
+                    HERMES_SOURCE="$PWD/hermes-source" \
+                      python3 ${./tests/test_hermes_cron_failure_summary.py}
+                    touch "$out"
+                  '';
+
               nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
