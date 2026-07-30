@@ -13,10 +13,10 @@ let
   amosSecretMaterialization = cfg.system.activationScripts.hermesAmosburtonSecretsMaterialize.text;
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
+  radarService = cfg.systemd.services.hermes-radar-cron-tick;
   buzzCronServices = {
     amosburton = amosService;
     betty = bettyService;
-    radar = cfg.systemd.services.hermes-radar-cron-tick;
     scintillate = cfg.systemd.services.hermes-scintillate-cron-tick;
   };
   channelId = channel: buzzBindings.channels.${channel}.id;
@@ -139,6 +139,12 @@ let
             service.serviceConfig.EnvironmentFile
       ) (builtins.attrNames buzzCronServices);
       msg = "Every active Hermes cron executor must use its dedicated Buzz identity and home channel.";
+    }
+    {
+      test =
+        !(radarService.environment ? BUZZ_RELAY_URL)
+        && !(builtins.elem cfg.age.secrets.buzz-hermes-radar-agent-env.path radarService.serviceConfig.EnvironmentFile);
+      msg = "Radar cron must deliver only by email and must not load Buzz delivery credentials.";
     }
     {
       test = bettyTimer.timerConfig.Unit == "hermes-betty-cron-tick.service";
