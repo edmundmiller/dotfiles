@@ -56,8 +56,12 @@ let
         cp -RL --no-preserve=mode,ownership,timestamps \
           ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/hermes_cli \
           "$site_packages/hermes_cli"
-        chmod -R u+w "$site_packages/hermes_cli"
+        cp -RL --no-preserve=mode,ownership,timestamps \
+          ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/cron \
+          "$site_packages/cron"
+        chmod -R u+w "$site_packages/hermes_cli" "$site_packages/cron"
         patch -d "$site_packages" -p1 < ${../../overlays/hermes-agent/patches/0003-report-external-cron-executor.patch}
+        patch -d "$site_packages" -p1 < ${../../overlays/hermes-agent/patches/0004-classify-cron-script-failures.patch}
       '';
   hermesAgentBase = pkgs.symlinkJoin {
     name = "${hermesAgentUpstream.name}-honcho";
