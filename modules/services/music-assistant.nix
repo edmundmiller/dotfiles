@@ -34,7 +34,7 @@ in
 
       virtualisation.oci-containers.containers.music-assistant = {
         autoStart = true;
-        image = "ghcr.io/music-assistant/server:2.9.9";
+        image = "ghcr.io/music-assistant/server:2.10.0.dev2026072904";
         volumes = [ "/var/lib/music-assistant:/data" ];
         extraOptions = [ "--network=host" ];
       };
