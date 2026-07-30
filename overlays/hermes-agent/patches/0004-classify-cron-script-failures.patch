@@ -1,0 +1,24 @@
+diff --git a/cron/scheduler.py b/cron/scheduler.py
+--- a/cron/scheduler.py
++++ b/cron/scheduler.py
+@@ -102,8 +102,19 @@ def _summarize_cron_failure_for_delivery(job: dict, error: str | None) -> str:
+     text = (error or "unknown error").strip()
+     lower = text.lower()
+ 
++    # Pure-script jobs never call a model provider. Classify them before
++    # inspecting their arbitrary stdout/stderr for provider-shaped tokens.
++    if job.get("no_agent"):
++        detail = re.sub(r"\s+", " ", text.splitlines()[0]).strip()
++        if len(detail) > 120:
++            detail = detail[:117].rstrip() + "..."
++        return (
++            f"⚠️ Cron '{job_name}' failed: script error ({detail}). "
++            "Full details saved in cron output."
++        )
++
+     # Provider/API failures are the common noisy path. Keep these short.
+-    if "429" in text or "rate limit" in lower or "usage limit" in lower:
++    if re.search(r"\b429\b", text) or "rate limit" in lower or "usage limit" in lower:
+         reason = "rate limit"
+         if "weekly usage limit" in lower:
+             reason = "weekly usage limit"
