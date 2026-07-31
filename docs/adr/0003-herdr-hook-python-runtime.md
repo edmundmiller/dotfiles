@@ -1,12 +1,25 @@
+---
+purpose: Preserve the superseded Python launcher decision for Herdr helpers.
+applies_to: Historical Herdr hook work and standalone Python helper scripts.
+entrypoint: Use the dotfiles.dev-layout plugin for current worktree automation.
+verification: Inspect its manifest events and run dev_layout_test.py.
+update_when: Herdr plugin events or helper runtime ownership changes.
+---
+
 # ADR 0003: Herdr hook scripts use `uv` Python shebangs
 
 ## Status
 
-Superseded by the Herdr 0.7 plugin migration for `worktree.created` handling. Historical guidance remains relevant for standalone helper scripts, but the worktree layout flow now lives in `config/herdr/plugins/dotfiles-dev-layout/` instead of `[worktrees].post_create_command`.
+Superseded by the Herdr plugin migration. Historical launcher guidance remains
+relevant only for standalone helper scripts. Checkout layout now lives in
+`packages/herdr-plugins/dotfiles-dev-layout/`.
 
 ## Context
 
-`bin/herdr-worktree-layout` runs as Herdr's `worktrees.post_create_command`. It is a lifecycle hook, not an interactive shell command, so its interpreter and dependencies must be available from the Herdr server environment. Other `bin/herdr-*` helpers also run from Herdr keybindings or agent tooling, so using the same launcher keeps behavior consistent across helpers.
+Before the plugin migration, `bin/herdr-worktree-layout` ran through
+`[worktrees].post_create_command`. Herdr's plugin event surface superseded that
+config callback. `worktree.create` now emits `worktree.created`; enabled plugins
+subscribe with `[[events]]` and receive event context and JSON.
 
 The scripts are currently stdlib-only, but they perform enough JSON, socket, process, and argument orchestration that Python is much more maintainable than Bash. We considered several Python script launcher options:
 
@@ -39,6 +52,9 @@ The key reason to prefer `uv` is not just speed: `uv` script metadata gives chec
 
 ## Decision
 
+Current worktree automation belongs in a Herdr plugin event hook. Do not restore
+`[worktrees].post_create_command`; activation removes that legacy key.
+
 For checked-in Herdr helper scripts that benefit from Python and may need lightweight Python package dependencies, prefer a `uv run --script` shebang with inline script metadata.
 
 Example:
@@ -57,13 +73,15 @@ The Herdr module/package wiring must ensure `uv` is available in the environment
 
 ## Consequences
 
-- Herdr helper scripts start fast enough for interactive lifecycle hooks and keybindings while remaining easy to extend with Python dependencies.
-- Hook scripts depend on `uv` being available to the Herdr server/hook environment; this must be handled declaratively by the module/profile rather than relying on an interactive shell.
+- Herdr worktree lifecycle code runs through the packaged plugin and its declared runtime.
+- Standalone `uv` helpers still depend on `uv` being available declaratively.
 - `nix-shell` shebangs remain appropriate when Nix-provided runtime purity matters more than startup latency or inline Python dependency ergonomics.
 - `cached-nix-shell` remains a possible manual optimization, but it is not the default for this repo's Herdr hook scripts.
 
 ## References
 
+- Herdr socket API and worktree events: https://herdr.dev/docs/socket-api/
+- Herdr plugin configuration: https://herdr.dev/docs/plugins/
 - Nix 2.28 `nix-shell` manual: https://nix.dev/manual/nix/2.28/command-ref/nix-shell.html
 - NixOS wiki: https://wiki.nixos.org/wiki/Nix-shell_shebang
 - Travis B. Hartwell gist: https://gist.github.com/travisbhartwell/f972aab227306edfcfea
