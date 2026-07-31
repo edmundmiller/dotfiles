@@ -1200,6 +1200,11 @@
                 inherit pkgs;
               };
 
+              nuc-mill-docs-git-pull = import ./hosts/nuc/_tests/mill-docs-git-pull.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-buzz-hermes-community-runtime = import ./hosts/nuc/_tests/buzz-hermes-community-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
