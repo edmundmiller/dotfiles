@@ -2580,7 +2580,7 @@ in
       ExecStart = "${millDocsCodingAgent}/bin/mill-docs-coding-agent";
       EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;
       LoadCredential = [
-        "linear-api-key:/var/lib/opnix/secrets/amosburtonLinearApiKey"
+        "linear-api-key:/var/lib/opnix/secrets/millDocsCodingAgentLinearToken"
         "github-token:/var/lib/opnix/secrets/millDocsCodingAgentGithubToken"
       ];
       TimeoutStartSec = "45min";
@@ -2695,6 +2695,9 @@ in
       };
       amosburtonLinearApiKey = {
         reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;
+      };
+      millDocsCodingAgentLinearToken = {
+        reference = "op://Agents/Linear Cloudflare Agents API key/credential";
       };
       millDocsCodingAgentGithubToken = {
         reference = "op://Agents/Mill-docs GitHub Personal Access Token/token";
