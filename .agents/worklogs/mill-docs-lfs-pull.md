@@ -1,6 +1,6 @@
 # Worklog: mill-docs-lfs-pull
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -22,6 +22,11 @@ Stop the NUC pull timer from creating autostashes when local history violates Gi
 - `nix build --no-link .#checks.x86_64-linux.nuc-mill-docs-git-pull` passed on the NUC.
 - The built script rejected the live invalid checkout before pull; stash count and tip stayed 12,582 and `694e0bf6b5c5b3f327870e129d631345600e16b1`.
 - `hey agent-audit-tests` passed.
+- Dotfiles `main` and `origin/main` landed at `43c1bac35dee0776af95f019314021c193866f2c`; NUC generation 1269 contains the pointer guard.
+- Signed mill-docs reconciliation `9f44d66af13bad6ebbc17da4e10dcf87e843c11a` is equal on Buzz, GitHub, and NUC `main`.
+- The deployed service rebased naturally, then reran up-to-date with exit 0, LFS green, and all 16 divergent/unique files restored byte-identically.
+- The timer-triggered 17:31 CDT run reported `Git LFS fsck OK`, `Already up to date`, `Result=success`, and `ExecMainStatus=0`.
+- NUC preservation ref `preserve/nuc-lfs-repair-20260731` retains `abdc30044bfa7c69d928aaf0de25f6ad68e38068`; all 12,582 stashes retain tip `694e0bf6b5c5b3f327870e129d631345600e16b1`.
 
 ## Reviews
 
@@ -33,11 +38,11 @@ Stop the NUC pull timer from creating autostashes when local history violates Gi
 
 ## Remaining work
 
-- Land dotfiles and deploy NUC.
-- Preserve/reconcile NUC branch and worktree.
-- Verify natural service run and remote equality.
+- None.
 
 ## Commits
 
 - `c2f23dce2` test(nuc): cover LFS pointer preflight
 - `66dbe712f` fix(nuc): reject invalid LFS history before pull
+- `43c1bac35` docs(agent): record mill-docs pull repair
+- `9f44d66af` chore(sync): reconcile NUC history after LFS repair (mill-docs)
