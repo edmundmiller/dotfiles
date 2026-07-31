@@ -37,5 +37,5 @@ None.
 
 ## Commits
 
-- `8a97feb47` — NUC Buzz ownership and callback wiring.
+- `834701648` — NUC Buzz ownership and callback wiring.
 - MillDocs companion commit: `520bb21`.
