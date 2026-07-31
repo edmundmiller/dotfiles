@@ -35,7 +35,6 @@ let
 
   safetyCheck = pkgs.writeShellScript "obsidian-sync-safety-check" ''
     set -eu
-    ${vaultGitDirtCheck}/bin/obsidian-vault-git-dirt-check ${escapeShellArg cfg.vaultPath}
     state_dir=${escapeShellArg (dirOf cfg.safety.statePath)}
     mkdir -p "$state_dir"
     events="$state_dir/events.jsonl"
@@ -62,6 +61,20 @@ let
       "${pkgs.curl}/bin/curl -fsS -m 10 ${escapeShellArg "${cfg.healthcheck.pingUrl}/fail"} >/dev/null || true"
     }
     echo "Obsidian Sync stopped by corruption tripwire" >&2
+    exit "$rc"
+  '';
+
+  gitDirtAudit = pkgs.writeShellScript "obsidian-vault-git-dirt-audit" ''
+    set -u
+    output="$(${vaultGitDirtCheck}/bin/obsidian-vault-git-dirt-check ${escapeShellArg cfg.vaultPath} 2>&1)"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+      exit 0
+    fi
+    echo "$output" >&2
+    ${optionalString (cfg.healthcheck.enable && cfg.healthcheck.pingUrl != "")
+      "${pkgs.curl}/bin/curl -fsS -m 10 ${escapeShellArg "${cfg.healthcheck.pingUrl}/fail"} >/dev/null || true"
+    }
     exit "$rc"
   '';
 
@@ -353,6 +366,29 @@ in
           OnBootSec = cfg.safety.interval;
           OnUnitActiveSec = cfg.safety.interval;
           AccuracySec = "1s";
+        };
+      };
+
+      systemd.services.obsidian-vault-git-dirt-check = {
+        description = "Audit Obsidian vault Git dirt outside 00_Inbox";
+        serviceConfig = {
+          Type = "oneshot";
+          User = cfg.user;
+          Group = "users";
+          ExecStart = "${gitDirtAudit}";
+          ProtectHome = "read-only";
+          PrivateTmp = true;
+          NoNewPrivileges = true;
+        };
+      };
+
+      systemd.timers.obsidian-vault-git-dirt-check = {
+        description = "Audit Obsidian vault Git dirt twice daily";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* 09,21:00:00";
+          Persistent = true;
+          AccuracySec = "1min";
         };
       };
 
