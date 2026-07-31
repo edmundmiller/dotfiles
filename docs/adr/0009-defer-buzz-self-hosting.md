@@ -1,7 +1,7 @@
 ---
 purpose: Record why Buzz relay self-hosting remains deferred and bound the hosted NUC runtimes.
 applies_to: Decisions about self-hosting Buzz or operating NUC Buzz agent runtimes.
-entrypoint: Inspect `buzz-hermes-*` and `buzz-mill-docs-codex.service`.
+entrypoint: Inspect `buzz-hermes-*`, `mill-docs-coding-agent.timer`, and the MillDocs Buzz runbook.
 verification: Verify live runtimes and compare current Buzz releases with the self-hosting criteria.
 update_when: The hosted runtime boundary, Buzz deployment model, or self-hosting criteria change.
 ---
@@ -39,9 +39,10 @@ Do not self-host the Buzz relay or replace existing Hermes delivery surfaces
 with Buzz.
 
 Expose the configured NUC Hermes profiles to the hosted Millers community as
-separate, low-privilege agent runtimes. Keep the bounded Mill Docs Codex worker
-for its project-specific sandbox. This is a client integration, not a Buzz
-infrastructure deployment. Hermes remains the primary agent runtime.
+separate, low-privilege agent runtimes. MillDocs Buzz is owned by its dedicated
+Cloudflare Worker; the NUC only executes its typed Linear coding queue. This is
+a client integration, not a Buzz infrastructure deployment. Hermes remains the
+primary agent runtime for the other profiles.
 
 Current assessment:
 
@@ -57,11 +58,11 @@ Buzz community ─WSS─> buzz-acp ──┼─> Hermes ACP profile B ─> decla
                   one identity    └─> Hermes ACP profile N ─> declared repos
                   per profile
 
-Buzz community ─WSS─> buzz-acp ─ACP─> codex-acp ─> bounded Mill Docs worker
+Buzz community ─HTTP─> dedicated Flue 2 Worker ─> Linear queue ─> NUC executor
 ```
 
 `hosts/nuc/default.nix` owns the generated `buzz-hermes-<profile>.service`
-units and `buzz-mill-docs-codex.service`. Each Hermes unit uses the profile's
+units and the MillDocs coding-agent timer. Each Hermes unit uses the profile's
 materialized home, package, environment, and declared host mounts. Each has a
 dedicated Nostr identity from agenix, one channel matching its repository
 boundary, owner-only mention routing, lazy ACP startup, no inbound port, and no
@@ -71,7 +72,7 @@ Project ownership follows the canonical agents workspace: Finn owns the
 `finances` checkout and forum; Anne and Betty share `mill-docs`; Amos Burton,
 Orchestrator, and Scintillate use `general`.
 
-The Mill Docs worker keeps its exact author allowlist. Add Moni only after her
+The Cloudflare MillDocs Worker keeps its exact author allowlist. Add Moni only after her
 64-character relay pubkey is known and her identity belongs to the community.
 
 ## Reasons
