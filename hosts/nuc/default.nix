@@ -455,6 +455,7 @@ let
       state_dir=${lib.escapeShellArg millDocsCodingAgentStateDir}
       repo=${lib.escapeShellArg millDocsCodingAgentRepo}
       export NOSTR_PRIVATE_KEY="$BUZZ_PRIVATE_KEY"
+      export GIT_LFS_SKIP_SMUDGE=1
       install -d -m 0700 "$state_dir"
 
       if [ ! -d "$repo/.git" ]; then
