@@ -507,10 +507,6 @@ let
       BUZZ_HOME_CHANNEL = buzzChannelId binding.home;
       BUZZ_CLI_PATH = "${pkgs.my.buzz}/bin/buzz";
     };
-  buzzMillDocsChannelId = buzzChannelId "mill-docs";
-  buzzMillDocsCodexAcp = pkgs.writeShellScriptBin "mill-docs-codex-acp" ''
-    exec ${pkgs.my.codex-acp}/bin/codex-acp "$@"
-  '';
   mkBuzzHermesService =
     profile:
     let
@@ -2429,66 +2425,6 @@ in
     mode = "0400";
   };
 
-  systemd.services.buzz-mill-docs-codex = {
-    description = "Buzz mention worker for mill-docs";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    environment = {
-      HOME = "/home/emiller";
-      CODEX_HOME = "/home/emiller/.codex";
-      NO_BROWSER = "1";
-      BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
-      BUZZ_ACP_AGENT_OWNER = buzzMillDocsOwnerPubkey;
-      BUZZ_ACP_AGENT_COMMAND = "${buzzMillDocsCodexAcp}/bin/mill-docs-codex-acp";
-      BUZZ_ACP_AGENT_ARGS = "";
-      BUZZ_ACP_AGENTS = "1";
-      BUZZ_ACP_SUBSCRIBE = "mentions";
-      BUZZ_ACP_CHANNELS = buzzMillDocsChannelId;
-      BUZZ_ACP_RESPOND_TO = "owner-only";
-      BUZZ_ACP_ALLOWED_RESPOND_TO = "owner-only";
-      BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
-      BUZZ_ACP_MEMORY = "false";
-    };
-    serviceConfig = {
-      Type = "simple";
-      User = "emiller";
-      Group = "users";
-      WorkingDirectory = millDocsVaultPath;
-      ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
-      EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;
-      Restart = "always";
-      RestartSec = "10s";
-      UMask = "0077";
-      ProtectSystem = "strict";
-      ProtectHome = "tmpfs";
-      BindPaths = [
-        millDocsVaultPath
-        "/home/emiller/.codex"
-      ];
-      BindReadOnlyPaths = [ "/home/emiller/obsidian-vault" ];
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      PrivateDevices = true;
-      CapabilityBoundingSet = "";
-      LockPersonality = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
-      ];
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
-    };
-  };
-
   systemd.services.buzz-hermes-amosburton = mkBuzzHermesService "amosburton";
   systemd.services.buzz-hermes-anne = mkBuzzHermesService "anne";
   systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
@@ -2572,7 +2508,7 @@ in
       NPM_CONFIG_CACHE = "${millDocsCodingAgentStateDir}/cache/npm";
       XDG_DATA_HOME = "${millDocsCodingAgentStateDir}/data";
       XDG_STATE_HOME = "${millDocsCodingAgentStateDir}/state";
-      BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-agents.${tailnet}/channels/buzz/feedback";
+      BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-buzz.edmund-a-miller.workers.dev/channels/buzz/feedback";
       BUZZ_RELAY_URL = "https://millers.communities.buzz.xyz";
     };
     serviceConfig = {
