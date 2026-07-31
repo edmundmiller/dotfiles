@@ -53,7 +53,12 @@
     "op-shell-plugins".url = "github:1Password/shell-plugins";
     opnix.url = "github:brizzbuzz/opnix";
     zen-browser.url = "github:MarceColl/zen-browser-flake";
+    brew-src = {
+      url = "github:Homebrew/brew/6.0.14";
+      flake = false;
+    };
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
+    nix-homebrew.inputs.brew-src.follows = "brew-src";
     clin.url = "github:reekta92/clin-rs";
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
