@@ -24,11 +24,22 @@ let
   '';
   obsidianGuardDir = "${config.user.home}/Library/Application Support/obsidian-sync-guard";
   obsidianVaultGitDirtCheck = pkgs.my.obsidian-vault-git-dirt-check;
+  obsidianVaultGitDirtAudit = pkgs.writeShellScript "obsidian-vault-git-dirt-audit" ''
+    set -u
+    mkdir -p ${builtins.toJSON obsidianGuardDir}
+    output="$(${obsidianVaultGitDirtCheck}/bin/obsidian-vault-git-dirt-check ${builtins.toJSON obsidianVault} 2>&1)"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+      exit 0
+    fi
+    printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$output" >> ${builtins.toJSON "${obsidianGuardDir}/git-dirt.log"}
+    /usr/bin/osascript -e 'display notification "Unexpected changes outside 00_Inbox; inspect the Git dirt log." with title "Obsidian vault Git audit"' >/dev/null 2>&1 || true
+    exit "$rc"
+  '';
   obsidianDesktopGuard = pkgs.writeShellScript "obsidian-desktop-sync-guard" ''
     set -u
     mkdir -p ${builtins.toJSON obsidianGuardDir}
-    output="$(${obsidianVaultGitDirtCheck}/bin/obsidian-vault-git-dirt-check ${builtins.toJSON obsidianVault} 2>&1 && \
-      ${pkgs.bun}/bin/bun ${builtins.toJSON "${obsidianVault}/scripts/obsidian-sync-safety-check.ts"} \
+    output="$(${pkgs.bun}/bin/bun ${builtins.toJSON "${obsidianVault}/scripts/obsidian-sync-safety-check.ts"} \
       --vault ${builtins.toJSON obsidianVault} \
       --policy ${builtins.toJSON "${obsidianVault}/07_Metadata/Validation/obsidian-sync-policy.json"} \
       --engine desktop \
@@ -278,6 +289,24 @@ in
         StartInterval = 30;
         StandardOutPath = "/tmp/obsidian-sync-guard.log";
         StandardErrorPath = "/tmp/obsidian-sync-guard.err";
+      };
+    };
+
+    launchd.user.agents.obsidian-vault-git-dirt-check = {
+      command = "${obsidianVaultGitDirtAudit}";
+      serviceConfig = {
+        StartCalendarInterval = [
+          {
+            Hour = 9;
+            Minute = 0;
+          }
+          {
+            Hour = 21;
+            Minute = 0;
+          }
+        ];
+        StandardOutPath = "/tmp/obsidian-vault-git-dirt-check.log";
+        StandardErrorPath = "/tmp/obsidian-vault-git-dirt-check.err";
       };
     };
 

@@ -15,6 +15,9 @@ let
   preStart = nuc.systemd.services.obsidian-sync.serviceConfig.ExecStartPre;
   nucGuard = nuc.systemd.services.obsidian-sync-guard.serviceConfig.ExecStart;
   macGuard = mac.launchd.user.agents.obsidian-sync-guard.command;
+  nucDirtTimer = nuc.systemd.timers.obsidian-vault-git-dirt-check.timerConfig;
+  macDirtTimer =
+    mac.launchd.user.agents.obsidian-vault-git-dirt-check.serviceConfig.StartCalendarInterval;
   dirtCheck = pkgs.callPackage ../../../../packages/obsidian-vault-git-dirt-check { };
 
   requiredExclusions = [
@@ -65,6 +68,24 @@ let
     {
       test = mac.launchd.user.agents.obsidian-sync-guard.serviceConfig.StartInterval == 30;
       msg = "Mac guard must run every 30 seconds";
+    }
+    {
+      test = nucDirtTimer.OnCalendar == "*-*-* 09,21:00:00";
+      msg = "NUC Git dirt audit must run at 09:00 and 21:00";
+    }
+    {
+      test =
+        map (entry: { inherit (entry) Hour Minute; }) macDirtTimer == [
+          {
+            Hour = 9;
+            Minute = 0;
+          }
+          {
+            Hour = 21;
+            Minute = 0;
+          }
+        ];
+      msg = "Mac Git dirt audit must run at 09:00 and 21:00";
     }
   ];
 
