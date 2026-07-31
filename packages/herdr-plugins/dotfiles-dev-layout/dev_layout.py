@@ -65,6 +65,13 @@ def command_exists(command: str) -> bool:
     return shutil.which(command) is not None
 
 
+def seed_qmd_index(cwd: str) -> None:
+    seeder = os.path.join(cwd, "scripts", "qmd-seed-worktree.sh")
+    if not os.path.isfile(seeder) or not os.access(seeder, os.X_OK):
+        return
+    subprocess.run([seeder], cwd=cwd, check=False)
+
+
 def git_output(cwd: str, args: list[str]) -> str | None:
     result = subprocess.run(
         ["git", *args],
@@ -250,6 +257,7 @@ def bootstrap() -> None:
         raise SystemExit("codex not found on PATH")
 
     with workspace_lock(workspace_id):
+        seed_qmd_index(cwd)
         bootstrap_workspace(ctx, workspace_id, cwd)
 
 

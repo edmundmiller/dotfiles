@@ -9,6 +9,8 @@ update_when: Plugin actions, events, layout, or requirements change.
 # Dotfiles Dev Layout
 
 Creates an idempotent two-tab task workspace: Codex and Hunk, with Codex focused.
+Before Codex starts, it runs an executable repo-local
+`scripts/qmd-seed-worktree.sh` when present.
 
 ## Install
 
@@ -22,6 +24,7 @@ herdr plugin install edmundmiller/dotfiles/packages/herdr-plugins/dotfiles-dev-l
 - Action: `dotfiles.dev-layout.hunk-split`
 - Action: `dotfiles.dev-layout.hunk-tab`
 - Events: `workspace.created` and `worktree.created` (serialized per workspace)
+- Prelaunch: optional repo-local QMD index seeding before Codex starts
 
 ## Requirements
 
