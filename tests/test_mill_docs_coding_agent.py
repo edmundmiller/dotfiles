@@ -28,13 +28,13 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('XDG_CACHE_HOME = "${millDocsCodingAgentStateDir}/cache";', source)
         self.assertNotIn('"/home/emiller/.local/share/omp"', source)
 
-    @unittest.expectedFailure
     def test_buzz_git_uses_nostr_credential_helper(self) -> None:
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         self.assertIn('git -c credential.useHttpPath=true -c credential.helper=${pkgs.my.buzz}/bin/git-credential-nostr clone', source)
         self.assertIn('git config credential.helper ${pkgs.my.buzz}/bin/git-credential-nostr', source)
         self.assertIn('git config credential.useHttpPath true', source)
         self.assertIn('export NOSTR_PRIVATE_KEY="$BUZZ_PRIVATE_KEY"', source)
+        self.assertIn('unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY', source)
         self.assertIn('EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;', source)
 
     def test_buzz_package_installs_git_credential_helper(self) -> None:
