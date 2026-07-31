@@ -22,7 +22,7 @@ index 052619b..b33bbb1 100644
  
  You can configure the same connector more than once. For example, add one Web
  Search source for AI research and another for NBA news; OpenWiki stores them as
-@@ -192,9 +192,75 @@ instances with `openwiki ingest all`, all instances for one connector with
+@@ -192,9 +192,77 @@ instances with `openwiki ingest all`, all instances for one connector with
  - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
  - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
  - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
@@ -50,7 +50,9 @@ index 052619b..b33bbb1 100644
 +case-insensitive scope. When both fields are present, a chat must satisfy both
 +(AND), so no conversation is selected implicitly. `windowHours` is bounded to
 +1–168 and defaults to 24; `maxMessagesPerChat` is bounded to 1–5000 and
-+defaults to 500. Run a configured source with:
++defaults to 500. Normal scheduled runs may drift by a few minutes; the connector
++resumes from the persisted cursor with up to 15 minutes of bounded overlap. Run
++a configured source with:
 +
 +```sh
 +OPENWIKI_WIKI_DIR=/absolute/path/to/wiki openwiki ingest imessage --print
@@ -237,7 +239,7 @@ new file mode 100644
 index 0000000..c62d127
 --- /dev/null
 +++ b/src/connectors/sources/imessage.ts
-@@ -0,0 +1,587 @@
+@@ -0,0 +1,596 @@
 +import { execFile } from "node:child_process";
 +import { basename } from "node:path";
 +import { promisify } from "node:util";
@@ -260,6 +262,7 @@ index 0000000..c62d127
 +const execFileAsync = promisify(execFile);
 +const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
 +const MAX_WINDOW_HOURS = 168;
++const SCHEDULE_GRACE_MS = 15 * 60 * 1000;
 +
 +export type IMessageConfig = {
 +  enabled?: boolean;
@@ -369,7 +372,12 @@ index 0000000..c62d127
 +  const end = new Date();
 +  const start = new Date(end.getTime() - config.windowHours * 60 * 60 * 1000);
 +  const previousRunAt = Date.parse(state.lastRunAt ?? "");
-+  if (Number.isFinite(previousRunAt) && previousRunAt < start.getTime()) {
++  const scheduleGraceMs =
++    config.windowHours < MAX_WINDOW_HOURS ? SCHEDULE_GRACE_MS : 0;
++  if (
++    Number.isFinite(previousRunAt) &&
++    previousRunAt < start.getTime() - scheduleGraceMs
++  ) {
 +    const requiredHours = Math.ceil(
 +      (end.getTime() - previousRunAt) / (60 * 60 * 1000),
 +    );
@@ -378,6 +386,9 @@ index 0000000..c62d127
 +        ? `The previous successful iMessage ingest is ${requiredHours} hours old, but windowHours is capped at ${MAX_WINDOW_HOURS}. To recover the most recent ${MAX_WINDOW_HOURS} hours and deliberately accept the older gap, set windowHours=${MAX_WINDOW_HOURS}, move ~/.openwiki/connectors/imessage/state.json aside, and rerun.`
 +        : `The previous successful iMessage ingest predates windowHours=${config.windowHours}; increase windowHours to at least ${requiredHours} to catch up without gaps.`;
 +    return result(runId, "error", rawFiles, warnings, message);
++  }
++  if (Number.isFinite(previousRunAt)) {
++    start.setTime(Math.min(start.getTime(), previousRunAt));
 +  }
 +  let chats: IMessageChat[];
 +
@@ -1171,7 +1182,7 @@ new file mode 100644
 index 0000000..18c619f
 --- /dev/null
 +++ b/test/imessage-connector.test.ts
-@@ -0,0 +1,512 @@
+@@ -0,0 +1,554 @@
 +import { execFileSync } from "node:child_process";
 +import {
 +  mkdtemp,
@@ -1481,6 +1492,48 @@ index 0000000..18c619f
 +    });
 +    expect(secondState.latestIds).toEqual(firstState.latestIds);
 +    expect(secondEntries).toEqual(firstEntries);
++  });
++
++  test("covers bounded scheduler drift without dropping overlap messages", async () => {
++    const stateDir = path.join(home, ".openwiki/connectors/imessage");
++    await mkdir(stateDir, { recursive: true });
++    await writeFile(
++      path.join(stateDir, "state.json"),
++      JSON.stringify({
++        lastRunAt: "2026-07-14T11:55:00.000Z",
++        latestIds: { "chat:7": "10" },
++        runs: [],
++        version: 1,
++      }),
++    );
++    mockImsg([chat(7, ["alice@example.com"])], {
++      7: [message(11, 7, "2026-07-14T11:57:00.000Z")],
++    });
++    const connector = await loadConnector();
++
++    const result = await connector.ingest({
++      connectorConfig: { chatIds: [7], windowHours: 24 },
++    });
++
++    expect(result).toMatchObject({ status: "success" });
++    expect(execFileAsync).toHaveBeenNthCalledWith(
++      2,
++      "imsg",
++      [
++        "history",
++        "--chat-id",
++        "7",
++        "--limit",
++        "500",
++        "--attachments",
++        "--start",
++        "2026-07-14T11:55:00.000Z",
++        "--end",
++        "2026-07-15T12:00:00.000Z",
++        "--json",
++      ],
++      { maxBuffer: 10 * 1024 * 1024 },
++    );
 +  });
 +
 +  test("fails closed when the previous run predates the bounded window", async () => {
