@@ -486,8 +486,8 @@ let
         npm ci
       fi
       export PATH="/etc/profiles/per-user/emiller/bin:$PATH"
-      LINEAR_API_KEY="$(< /var/lib/opnix/secrets/amosburtonLinearApiKey)"
-      GH_TOKEN="$(< /var/lib/opnix/secrets/millDocsCodingAgentGithubToken)"
+      LINEAR_API_KEY="$(< "$CREDENTIALS_DIRECTORY/linear-api-key")"
+      GH_TOKEN="$(< "$CREDENTIALS_DIRECTORY/github-token")"
       BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"
       export LINEAR_API_KEY GH_TOKEN BUZZ_FEEDBACK_STATUS_SECRET
       exec node scripts/run-coding-agent-queue.ts --once
@@ -2579,6 +2579,10 @@ in
       WorkingDirectory = millDocsCodingAgentStateDir;
       ExecStart = "${millDocsCodingAgent}/bin/mill-docs-coding-agent";
       EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;
+      LoadCredential = [
+        "linear-api-key:/var/lib/opnix/secrets/amosburtonLinearApiKey"
+        "github-token:/var/lib/opnix/secrets/millDocsCodingAgentGithubToken"
+      ];
       TimeoutStartSec = "45min";
       UMask = "0077";
       ProtectSystem = "strict";
