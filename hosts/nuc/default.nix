@@ -435,6 +435,55 @@ let
     tokenFile = "/etc/opnix-token";
   };
   millDocsVaultPath = "/home/emiller/mill-docs";
+  millDocsCodingAgentStateDir = "/var/lib/mill-docs-coding-agent";
+  millDocsCodingAgentRepo = "/var/lib/mill-docs-coding-agent/repo";
+  millDocsBuzzGitUrl = "https://millers.communities.buzz.xyz/git/fdb266e13b8a216bcb47132c5451fa4cac6b70730bd6d9952b9609362cc84d4c/mill-docs";
+  millDocsGithubGitUrl = "git@github.com:edmundmiller/mill-docs.git";
+  millDocsCodingAgent = pkgs.writeShellApplication {
+    name = "mill-docs-coding-agent";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.git
+      pkgs.gh
+      pkgs.nodejs
+      pkgs.openssh
+    ];
+    text = ''
+      set -euo pipefail
+      state_dir=${lib.escapeShellArg millDocsCodingAgentStateDir}
+      repo=${lib.escapeShellArg millDocsCodingAgentRepo}
+      install -d -m 0700 "$state_dir"
+
+      if [ ! -d "$repo/.git" ]; then
+        git clone --origin origin ${lib.escapeShellArg millDocsBuzzGitUrl} "$repo"
+      fi
+      cd "$repo"
+      test -z "$(git status --porcelain)" || {
+        echo "dedicated coding-agent checkout is dirty: $repo" >&2
+        exit 1
+      }
+      git remote set-url origin ${lib.escapeShellArg millDocsBuzzGitUrl}
+      if git remote get-url github >/dev/null 2>&1; then
+        git remote set-url github ${lib.escapeShellArg millDocsGithubGitUrl}
+      else
+        git remote add github ${lib.escapeShellArg millDocsGithubGitUrl}
+      fi
+      git fetch origin main
+      git fetch github main
+      git switch main
+      git merge --ff-only origin/main
+
+      cd agents
+      if [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
+        npm ci
+      fi
+      export PATH="/etc/profiles/per-user/emiller/bin:$PATH"
+      export LINEAR_API_KEY="$(< /var/lib/opnix/secrets/amosburtonLinearApiKey)"
+      export GH_TOKEN="$(< /var/lib/opnix/secrets/millDocsCodingAgentGithubToken)"
+      export BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"
+      exec node scripts/run-coding-agent-queue.ts --once
+    '';
+  };
   buzzMillDocsOwnerPubkey = buzzBindings.identities.edmund.pubkey;
   buzzChannelId = channel: buzzBindings.channels.${channel}.id;
   buzzChannelIds = channels: lib.concatStringsSep "," (map buzzChannelId channels);
@@ -2495,6 +2544,51 @@ in
     };
   };
 
+  systemd.services.mill-docs-coding-agent = {
+    description = "Shape MillDocs feedback and hand off verified GitHub PRs";
+    after = [
+      "network-online.target"
+      "opnix-secrets.service"
+    ];
+    requires = [ "opnix-secrets.service" ];
+    wants = [ "network-online.target" ];
+    environment = {
+      HOME = "/home/emiller";
+      BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-agents.${tailnet}/channels/buzz/feedback";
+    };
+    serviceConfig = {
+      Type = "oneshot";
+      User = "emiller";
+      Group = "users";
+      StateDirectory = "mill-docs-coding-agent";
+      StateDirectoryMode = "0700";
+      WorkingDirectory = millDocsCodingAgentStateDir;
+      ExecStart = "${millDocsCodingAgent}/bin/mill-docs-coding-agent";
+      TimeoutStartSec = "45min";
+      UMask = "0077";
+      ProtectSystem = "strict";
+      ProtectHome = "read-only";
+      ReadWritePaths = [
+        millDocsCodingAgentStateDir
+        "/home/emiller/.cache"
+        "/home/emiller/.local/share/omp"
+      ];
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+    };
+  };
+
+  systemd.timers.mill-docs-coding-agent = {
+    description = "Poll the typed MillDocs feedback queue";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "3min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+      Unit = "mill-docs-coding-agent.service";
+    };
+  };
+
   systemd.timers.mill-docs-git-pull = {
     description = "Auto-pull Git changes into mill-docs vault on a short interval";
     wantedBy = [ "timers.target" ];
@@ -2584,6 +2678,9 @@ in
       };
       amosburtonLinearApiKey = {
         reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;
+      };
+      millDocsCodingAgentGithubToken = {
+        reference = "op://Agents/Mill-docs GitHub Personal Access Token/token";
       };
     };
   };
