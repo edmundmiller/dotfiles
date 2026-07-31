@@ -90,6 +90,30 @@ Herdr defaults still provide other common actions. `prefix+a` creates a task-nam
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
+## Herdr 0.7.5 lifecycle
+
+`[worktrees].post_create_command` is obsolete here. Activation removes that key;
+worktree automation belongs in plugin `[[events]]` hooks.
+
+Herdr emits these lifecycle sequences:
+
+| Operation         | Relevant events                                                        |
+| ----------------- | ---------------------------------------------------------------------- |
+| `worktree.create` | `workspace.created`, `tab.created`, `pane.created`, `worktree.created` |
+| `worktree.open`   | `worktree.opened`; creation events when a workspace must be opened     |
+| `worktree.remove` | `worktree.removed`; `workspace.closed` when the workspace was open     |
+
+Current and potential repo uses:
+
+- `dotfiles.dev-layout` already uses `worktree.created` for native Git checkout bootstrap and `workspace.created` for ordinary or jj-created Herdr workspaces. Its lock and idempotence absorb the create sequence safely.
+- `worktree.opened` would fit rehydrating plugin-owned state when an existing checkout opens. No separate hook is needed now because layout state persists and a newly opened workspace emits `workspace.created`.
+- `worktree.removed` would fit deleting plugin-owned per-checkout cache. Do not use it to replace the explicit safe removal in the `done` skill; no such cache exists today.
+- Smart rename should remain on `workspace.created` and `tab.created`; it is workspace/tab lifecycle, not Git checkout lifecycle.
+
+Inspect the version-matched event schema with `herdr api schema --json`. Event
+hooks receive `HERDR_PLUGIN_EVENT`, `HERDR_PLUGIN_EVENT_JSON`, and
+`HERDR_PLUGIN_CONTEXT_JSON`.
+
 ## Plugins
 
 Repo-owned plugins are composed into a local package and registered by `modules/shell/herdr/default.nix`:
@@ -99,6 +123,10 @@ Repo-owned plugins are composed into a local package and registered by `modules/
 - `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
 - `nathanflurry.jj-workspace` — built from a pinned upstream revision plus the ordered safety patch under `packages/herdr-plugin-jj-workspace/`.
 - `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
+
+Herdr 0.7.5 makes installed/linked plugins and enabled state global per user.
+The module therefore owns one `~/.config/herdr/plugins.json`, not per-session
+registries.
 
 Marketplace/GitHub plugins are installed by activation when missing:
 
