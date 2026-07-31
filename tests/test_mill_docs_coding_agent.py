@@ -11,7 +11,8 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('millDocsCodingAgentRepo = "/var/lib/mill-docs-coding-agent/repo";', source)
         self.assertIn("systemd.services.mill-docs-coding-agent", source)
         self.assertIn("systemd.timers.mill-docs-coding-agent", source)
-        self.assertIn('BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-agents.${tailnet}/channels/buzz/feedback";', source)
+        self.assertIn('BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-buzz.edmund-a-miller.workers.dev/channels/buzz/feedback";', source)
+        self.assertNotIn("systemd.services.buzz-mill-docs-codex", source)
         self.assertIn('git remote add github', source)
         self.assertNotIn('WorkingDirectory = millDocsVaultPath;\n      ExecStart = "${millDocsCodingAgent', source)
 
