@@ -2,7 +2,5 @@
   "source": "https://github.com/digimata/quill.git",
   "ref": "7ea94e27cbf403dd1fa14f460b1bea56bf78477d",
   "patches": [],
-  "checks": [
-    ["swift", "build", "-c", "release"]
-  ]
+  "checks": [["swift", "build", "-c", "release"]]
 }
