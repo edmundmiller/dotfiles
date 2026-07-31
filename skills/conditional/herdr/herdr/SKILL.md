@@ -46,26 +46,27 @@ Use `agent explain` when status is wrong, stuck, or `unknown`; do not guess from
 
 ## Coordinate agents semantically
 
-Start an agent in a managed pane and capture its returned pane ID:
+`agent start` targets an existing shell pane and returns only after Herdr detects
+the requested agent as ready. Create topology first, then start and prompt:
 
 ```bash
-START=$(herdr agent start reviewer --cwd "$PWD" --split right --no-focus -- omp)
-PANE_ID=$(printf '%s' "$START" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["agent"]["pane_id"])')
-```
-
-Wait until the agent is ready. `agent send` writes literal text; submit it with Enter through that pane ID. Use the lower-level status waiter when the UI-specific `done` state matters:
-
-```bash
-herdr agent wait "$PANE_ID" --status idle --timeout 30000
-herdr agent send "$PANE_ID" "Review the current changes and report only actionable findings."
-herdr pane send-keys "$PANE_ID" enter
-herdr wait agent-status "$PANE_ID" --status done --timeout 120000
+SPLIT=$(herdr pane split --current --direction right --no-focus)
+PANE_ID=$(printf '%s' "$SPLIT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
+herdr agent start reviewer --kind omp --pane "$PANE_ID" --timeout 30000
+herdr agent prompt "$PANE_ID" \
+  "Review the current changes and report only actionable findings." \
+  --wait --until idle --until done --until blocked --timeout 120000
 herdr agent read "$PANE_ID" --source recent-unwrapped --lines 100
 ```
 
+`agent prompt` submits text and Enter atomically while honoring bracketed paste.
+Use `agent send-keys` only for interactive keys such as `esc` or `ctrl+c`.
+
 Use names only when unique. Otherwise use the pane ID returned by `agent start` or a fresh `agent list` response.
 
-`done` means the agent finished but its pane has not been viewed. `idle` means it is ready for input. A status wait observes agent state, not arbitrary command completion.
+`done` means the agent finished but its pane has not been viewed. `idle` means it
+is ready and seen. `blocked` means it needs input. `unknown` is not success. Agent
+waits observe semantic state, not arbitrary command completion.
 
 ## Run processes in panes
 
@@ -75,11 +76,12 @@ Use pane primitives for servers, tests, logs, and shells:
 SPLIT=$(herdr pane split --current --direction right --no-focus)
 # Parse the new pane_id from SPLIT; do not predict it.
 herdr pane run <pane-id> "npm run dev"
-herdr wait output <pane-id> --match "ready" --timeout 30000
+herdr pane wait-output <pane-id> --match "ready" --timeout 30000
 herdr pane read <pane-id> --source recent-unwrapped --lines 40
 ```
 
-Use `pane read` for output that may already exist. Use `wait output` only for expected future output. Read `recent-unwrapped` when matching or copying text so soft wraps do not corrupt it.
+`pane wait-output` searches existing output before polling. Read
+`recent-unwrapped` when matching or copying text so soft wraps do not corrupt it.
 
 ## Workspaces, worktrees, and layouts
 
@@ -93,6 +95,11 @@ herdr workspace create --cwd /path/to/project --label api --no-focus
 
 Inspect installed help before using less-common worktree/plugin/layout flags; these evolve faster than the core commands.
 
+For durable worktree automation, use plugin event hooks instead of a config shell
+callback. `worktree.create` emits `workspace.created`, `tab.created`,
+`pane.created`, then `worktree.created`; `worktree.open` and `worktree.remove`
+emit `worktree.opened` and `worktree.removed`.
+
 For repeatable multi-pane setups, export/apply layouts rather than replaying fragile split sequences:
 
 ```bash
@@ -102,9 +109,10 @@ herdr pane layout --current
 
 ## Input rules
 
-- Use `agent send` for agent prompts.
+- Use `agent prompt` for agent prompts, with `--wait` when the caller needs a settled state.
+- Use `agent send-keys` for keys sent to a live agent.
 - Use `pane run` for shell command text followed by Enter.
-- Use `pane send-text` plus `pane send-keys … enter` for literal TUI input when no agent adapter applies.
+- Use `pane send-text` plus `pane send-keys … enter` only when no agent adapter applies.
 - Pass key combos such as `ctrl+h`, `shift+tab`, or named punctuation. Do not pass configuration strings such as `prefix+]` to `send-keys`.
 
 ## Recovery

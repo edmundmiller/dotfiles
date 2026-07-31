@@ -14,13 +14,14 @@ Delegate work to a sibling Pi session through Herdr. Use this workflow when a de
 1. Inspect the parent repo state (`git status --short`) and identify unrelated dirty files.
 2. Write a structured handoff prompt to a temp file.
 3. Create a Herdr workspace (or reuse/split an existing pane) in the target repo.
-4. Start `pi` in that pane.
-5. Wait for the Pi agent status to become `idle` (best effort).
-6. Send the handoff prompt into the Pi TUI and press Enter.
+4. Start Pi with `agent start`; this waits for Herdr to detect it as ready.
+5. Submit the handoff with `agent prompt`.
+6. Keep the returned agent name and pane ID for later waits or steering.
 7. Record the returned `workspace_id`/`pane_id` and monitor that pane until the child reports back.
 8. Review child output before applying/merging/committing any work.
 
-Use a two-step launch for long prompts: start `pi`, wait until it is ready, then send the prompt. Avoid `pi "$(cat prompt.md)"` for large handoffs because TUI startup prompt submission can be unreliable.
+Use `agent start` followed by `agent prompt` for long prompts. Avoid
+`pi "$(cat prompt.md)"` because startup prompt submission can be unreliable.
 
 ## Principles
 
@@ -67,7 +68,9 @@ LAUNCH_JSON=$(python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
 PANE_ID=$(printf '%s' "$LAUNCH_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pane_id"])')
 ```
 
-`start_pi_workspace.py` waits for Herdr's semantic Pi `idle` status before sending the prompt, then prints JSON with `workspace_id` and `pane_id`. Use `--idle-timeout-ms` if startup is slow.
+`start_pi_workspace.py` uses `agent start` for readiness, submits through
+`agent prompt`, then prints `workspace_id`, `pane_id`, and `agent_name`. Use
+`--start-timeout-ms` if startup is slow.
 
 To send a prompt to an already-open pane, or to a pane you created with `herdr pane split`:
 
@@ -123,11 +126,9 @@ CREATE_JSON=$(herdr workspace create \
 
 PANE_ID=$(printf '%s' "$CREATE_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])')
 
-herdr pane run "$PANE_ID" "pi"
-herdr wait agent-status "$PANE_ID" --status idle --timeout 30000 || true
-herdr pane send-text "$PANE_ID" "$(cat "$PROMPT_FILE")"
-herdr pane send-keys "$PANE_ID" Enter
-herdr pane get "$PANE_ID"
+herdr agent start pi_delegate --kind pi --pane "$PANE_ID" --timeout 30000
+herdr agent prompt "$PANE_ID" "$(cat "$PROMPT_FILE")"
+herdr agent get "$PANE_ID"
 ```
 
 ## Existing-pane / split-pane variant
@@ -148,9 +149,9 @@ Use `--no-focus` when the current pane should remain active.
 ## Monitor the child Pi
 
 ```bash
-herdr pane get "$PANE_ID"
-herdr pane read "$PANE_ID" --source recent --lines 80
-herdr wait agent-status "$PANE_ID" --status done --timeout 120000
+herdr agent get "$PANE_ID"
+herdr agent read "$PANE_ID" --source recent --lines 80
+herdr agent wait "$PANE_ID" --until done --timeout 120000
 ```
 
 Agent statuses include `idle`, `working`, `blocked`, `done`, and `unknown`. If `done` never arrives, read recent output and decide whether to wait, steer the child, or close the pane.
@@ -175,7 +176,7 @@ LAUNCH_JSON=$(python3 ~/.agents/skills/herdr/scripts/start_pi_workspace.py \
   --label "pi smoke" \
   --prompt-file "$PROMPT_FILE")
 PANE_ID=$(printf '%s' "$LAUNCH_JSON" | python3 -c 'import sys,json; print(json.load(sys.stdin)["pane_id"])')
-herdr wait output "$PANE_ID" --match HERDR_PI_SMOKE_RECEIVED --source recent --lines 120 --timeout 180000
+herdr pane wait-output "$PANE_ID" --match HERDR_PI_SMOKE_RECEIVED --source recent --lines 120 --timeout 180000
 herdr pane read "$PANE_ID" --source recent --lines 120
 ```
 
