@@ -444,6 +444,7 @@ let
     runtimeInputs = [
       pkgs.coreutils
       pkgs.git
+      pkgs.git-lfs
       pkgs.gh
       pkgs.nodejs
       pkgs.openssh
