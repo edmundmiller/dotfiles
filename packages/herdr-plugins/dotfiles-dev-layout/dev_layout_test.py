@@ -101,7 +101,6 @@ class BootstrapLayoutTest(unittest.TestCase):
         self.assertIn(["tab", "close", "tab-initial"], calls)
         self.assertIn(["tab", "focus", "tab-codex"], calls)
 
-    @unittest.expectedFailure
     def test_bootstrap_seeds_qmd_before_launching_codex(self) -> None:
         with tempfile.TemporaryDirectory() as repo:
             scripts = Path(repo, "scripts")
