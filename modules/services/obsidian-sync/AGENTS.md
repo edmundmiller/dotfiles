@@ -18,7 +18,7 @@ Headless Obsidian Sync for the NUC. Mac intentionally uses Desktop Sync.
 - **One-time setup required** — `ob login` + `ob sync-setup` before service starts
 - **Do NOT combine** with Obsidian desktop app sync on the same device
 - **Shared policy** — vault `07_Metadata/Validation/obsidian-sync-policy.json`
-- **Tripwire** — `ExecStartPre` plus 30-second timer; stops Headless without rewriting vault data
+- **Tripwire** — `ExecStartPre` plus 30-second timer; permits Git dirt only under `00_Inbox/` and stops Headless without rewriting vault data
 
 ## Sync Modes
 
@@ -35,7 +35,7 @@ Set `syncMode` to override the default derived from `mode`.
 **NixOS** — `systemd.services.obsidian-sync`
 
 - `ExecStartPre` runs `ob sync-config` to set mode/device before each start
-- `ExecStartPre` rejects unsafe paths, missing exclusions, markers, loops, churn, and engine conflicts
+- `ExecStartPre` rejects Git dirt outside `00_Inbox/`, unsafe paths, missing exclusions, markers, loops, churn, and engine conflicts
 - Runs as configured user, sandboxed with `ProtectHome=read-only`
 - `obsidian-sync-guard.timer` stops the writer and fails Healthchecks.io on violations
 

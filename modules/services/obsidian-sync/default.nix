@@ -31,9 +31,11 @@ let
       "bidirectional";
 
   excludedFoldersStr = concatStringsSep "," cfg.excludedFolders;
+  vaultGitDirtCheck = pkgs.my.obsidian-vault-git-dirt-check;
 
   safetyCheck = pkgs.writeShellScript "obsidian-sync-safety-check" ''
     set -eu
+    ${vaultGitDirtCheck}/bin/obsidian-vault-git-dirt-check ${escapeShellArg cfg.vaultPath}
     state_dir=${escapeShellArg (dirOf cfg.safety.statePath)}
     mkdir -p "$state_dir"
     events="$state_dir/events.jsonl"
