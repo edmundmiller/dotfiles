@@ -37,7 +37,6 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY', source)
         self.assertIn('EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;', source)
 
-    @unittest.expectedFailure
     def test_buzz_package_installs_git_credential_helper(self) -> None:
         source = (ROOT / "packages/buzz/default.nix").read_text()
         self.assertIn('"--package=git-credential-nostr"', source)
