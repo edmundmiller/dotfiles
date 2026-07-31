@@ -252,6 +252,21 @@ ssh nuc "sudo journalctl -u <service-name> --since '5 minutes ago'"
 hey nuc-rollback
 ```
 
+### Mill Docs Git pull reports invalid LFS pointers
+
+`mill-docs-git-pull.service` validates `HEAD` with `git lfs fsck --pointers`
+before invoking Git's autostash. If this fails, pause
+`mill-docs-git-pull.timer`, preserve the checkout and every stash, then repair
+the invalid local history. Do not repeatedly start the service or drop the
+generated stashes.
+
+After repair, verify the checkout and resume the timer:
+
+```bash
+ssh nuc 'cd ~/mill-docs && git lfs fsck --pointers HEAD'
+ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
+```
+
 ### Private flake authentication fails
 
 ```bash
