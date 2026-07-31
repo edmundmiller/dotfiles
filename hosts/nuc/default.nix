@@ -453,6 +453,7 @@ let
       set -euo pipefail
       state_dir=${lib.escapeShellArg millDocsCodingAgentStateDir}
       repo=${lib.escapeShellArg millDocsCodingAgentRepo}
+      export NOSTR_PRIVATE_KEY="$BUZZ_PRIVATE_KEY"
       install -d -m 0700 "$state_dir"
 
       if [ ! -d "$repo/.git" ]; then
@@ -475,6 +476,7 @@ let
       git fetch github main
       git switch main
       git merge --ff-only origin/main
+      unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY
 
       cd agents
       if [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
