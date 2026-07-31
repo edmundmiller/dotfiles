@@ -425,7 +425,7 @@ in
             action = "script.book_player_start";
             continue_on_error = true;
             data = {
-              book_uri = "library://audiobook/84";
+              book_uri = "library://audiobook/83";
               player_entity_id = "media_player.bedtime";
             };
           }
@@ -465,7 +465,7 @@ in
                 action = "script.book_player_start";
                 continue_on_error = true;
                 data = {
-                  book_uri = "library://audiobook/84";
+                  book_uri = "library://audiobook/83";
                   player_entity_id = "media_player.bedtime";
                 };
               }
