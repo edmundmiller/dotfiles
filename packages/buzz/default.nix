@@ -22,6 +22,7 @@ rustPlatform.buildRustPackage rec {
   cargoBuildFlags = [
     "--package=buzz-acp"
     "--package=buzz-cli"
+    "--package=git-credential-nostr"
   ];
   cargoInstallFlags = cargoBuildFlags;
   cargoTestFlags = [
