@@ -5,6 +5,7 @@ import tomllib
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import patch
 
@@ -27,19 +28,25 @@ class BootstrapLayoutTest(unittest.TestCase):
         context: dict[str, str] | None = None,
         existing: dict[str, str] | None = None,
         tab_ids: set[str] | None = None,
+        before_pane_run: Callable[[str, str], None] | None = None,
     ):
         created: list[tuple[str, str]] = []
         ran: list[tuple[str, str]] = []
         calls: list[list[str]] = []
+        ctx = {"workspace_id": "workspace-1", "workspace_cwd": "/repo"}
+        ctx.update(context or {})
 
         def fake_tab_create(workspace_id: str, cwd: str, label: str) -> tuple[str, str]:
             self.assertEqual(workspace_id, "workspace-1")
-            self.assertEqual(cwd, "/repo")
+            self.assertEqual(cwd, ctx["workspace_cwd"])
             created.append((label, cwd))
             return f"tab-{label}", f"pane-{label}"
 
-        ctx = {"workspace_id": "workspace-1", "workspace_cwd": "/repo"}
-        ctx.update(context or {})
+        def fake_pane_run(pane: str, command: str) -> None:
+            if before_pane_run:
+                before_pane_run(pane, command)
+            ran.append((pane, command))
+
         with (
             patch.dict(os.environ, env or {}, clear=True),
             patch.object(dev_layout, "context", return_value=ctx),
@@ -54,11 +61,7 @@ class BootstrapLayoutTest(unittest.TestCase):
             ),
             patch.object(dev_layout, "tab_create", side_effect=fake_tab_create),
             patch.object(dev_layout, "pane_rename"),
-            patch.object(
-                dev_layout,
-                "pane_run",
-                side_effect=lambda pane, command: ran.append((pane, command)),
-            ),
+            patch.object(dev_layout, "pane_run", side_effect=fake_pane_run),
             patch.object(dev_layout, "hunk_command", return_value="hunk --worktree"),
             patch.object(
                 dev_layout,
@@ -97,6 +100,25 @@ class BootstrapLayoutTest(unittest.TestCase):
 
         self.assertIn(["tab", "close", "tab-initial"], calls)
         self.assertIn(["tab", "focus", "tab-codex"], calls)
+
+    @unittest.expectedFailure
+    def test_bootstrap_seeds_qmd_before_launching_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as repo:
+            scripts = Path(repo, "scripts")
+            scripts.mkdir()
+            marker = Path(repo, ".qmd-seeded")
+            seeder = scripts / "qmd-seed-worktree.sh"
+            seeder.write_text("#!/bin/sh\nset -eu\ntouch .qmd-seeded\n")
+            seeder.chmod(0o755)
+
+            def assert_seeded_before_codex(_pane: str, command: str) -> None:
+                if command == "codex":
+                    self.assertTrue(marker.exists())
+
+            self.run_bootstrap(
+                context={"workspace_cwd": repo},
+                before_pane_run=assert_seeded_before_codex,
+            )
 
     def test_workspace_lock_serializes_concurrent_hooks(self) -> None:
         intervals: list[tuple[float, float]] = []
