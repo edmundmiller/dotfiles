@@ -456,7 +456,7 @@ let
       install -d -m 0700 "$state_dir"
 
       if [ ! -d "$repo/.git" ]; then
-        git -c credential.helper=${pkgs.my.buzz}/bin/git-credential-nostr clone --origin origin ${lib.escapeShellArg millDocsBuzzGitUrl} "$repo"
+        git -c credential.useHttpPath=true -c credential.helper=${pkgs.my.buzz}/bin/git-credential-nostr clone --origin origin ${lib.escapeShellArg millDocsBuzzGitUrl} "$repo"
       fi
       cd "$repo"
       test -z "$(git status --porcelain)" || {
@@ -465,6 +465,7 @@ let
       }
       git remote set-url origin ${lib.escapeShellArg millDocsBuzzGitUrl}
       git config credential.helper ${pkgs.my.buzz}/bin/git-credential-nostr
+      git config credential.useHttpPath true
       if git remote get-url github >/dev/null 2>&1; then
         git remote set-url github ${lib.escapeShellArg millDocsGithubGitUrl}
       else
