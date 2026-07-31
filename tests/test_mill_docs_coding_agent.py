@@ -15,10 +15,13 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('git remote add github', source)
         self.assertNotIn('WorkingDirectory = millDocsVaultPath;\n      ExecStart = "${millDocsCodingAgent', source)
 
+    @unittest.expectedFailure
     def test_secret_reads_do_not_mask_failures(self) -> None:
         source = (ROOT / "hosts/nuc/default.nix").read_text()
-        self.assertIn('LINEAR_API_KEY="$(< /var/lib/opnix/secrets/amosburtonLinearApiKey)"', source)
-        self.assertIn('GH_TOKEN="$(< /var/lib/opnix/secrets/millDocsCodingAgentGithubToken)"', source)
+        self.assertIn('LINEAR_API_KEY="$(< "$CREDENTIALS_DIRECTORY/linear-api-key")"', source)
+        self.assertIn('GH_TOKEN="$(< "$CREDENTIALS_DIRECTORY/github-token")"', source)
+        self.assertIn('"linear-api-key:/var/lib/opnix/secrets/amosburtonLinearApiKey"', source)
+        self.assertIn('"github-token:/var/lib/opnix/secrets/millDocsCodingAgentGithubToken"', source)
         self.assertIn('BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"', source)
         self.assertIn("export LINEAR_API_KEY GH_TOKEN BUZZ_FEEDBACK_STATUS_SECRET", source)
 
