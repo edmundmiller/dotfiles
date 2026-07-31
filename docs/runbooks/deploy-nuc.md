@@ -189,26 +189,30 @@ email and does not load Buzz delivery credentials. Buzz executors load the
 same dedicated identity as their profile's inbound runtime. `buzz-acp` remains
 mention-scoped inbound transport.
 
-The separate `buzz-mill-docs-codex.service` remains project-scoped. Its
-encrypted identity is `hosts/nuc/secrets/buzz-mill-docs-agent-env.age`; it uses
-the existing `/home/emiller/.codex` ChatGPT login.
+MillDocs Buzz replies are owned by the dedicated Cloudflare `mill-docs-buzz`
+Worker. The NUC keeps only `mill-docs-coding-agent.timer`, which processes typed
+Linear feedback and posts authenticated status callbacks. Its encrypted Buzz
+identity remains available for repository credentials and queue execution.
 
 Verify after a deploy or recovery:
 
 ```bash
 ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
 ssh nuc "systemctl show 'buzz-hermes-*.service' -p Id -p ActiveState -p MainPID -p NRestarts"
-ssh nuc 'systemctl is-active buzz-mill-docs-codex.service'
+ssh nuc 'systemctl is-active mill-docs-coding-agent.timer'
+ssh nuc 'systemctl status buzz-mill-docs-codex.service --no-pager'
 ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
 ```
 
-Expected: every configured unit is active with zero restarts and connected to
+Expected: every configured Hermes unit is active with zero restarts and connected to
 `wss://millers.communities.buzz.xyz`. Lazy mode starts the Hermes ACP child
 only after an accepted mention. The services expose no listener.
+`mill-docs-coding-agent.timer` is active, and
+`buzz-mill-docs-codex.service` is not found.
 
 ```bash
 ssh nuc "sudo systemctl restart 'buzz-hermes-*.service'"
-ssh nuc 'sudo systemctl restart buzz-mill-docs-codex.service'
+ssh nuc 'sudo systemctl start mill-docs-coding-agent.service'
 ```
 
 Create each Hermes identity through the owner-reviewed Buzz flow so the relay
