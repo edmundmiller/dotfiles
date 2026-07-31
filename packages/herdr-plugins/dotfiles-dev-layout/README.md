@@ -26,6 +26,10 @@ herdr plugin install edmundmiller/dotfiles/packages/herdr-plugins/dotfiles-dev-l
 - Events: `workspace.created` and `worktree.created` (serialized per workspace)
 - Prelaunch: optional repo-local QMD index seeding before Codex starts
 
+`worktree.create` emits both creation events. The bootstrap is locked and
+idempotent because `workspace.created` is also required for ordinary workspaces,
+including Herdr workspaces created around jj checkouts.
+
 ## Requirements
 
 - Herdr `0.7.0` or newer
