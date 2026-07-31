@@ -443,6 +443,7 @@ let
     name = "mill-docs-coding-agent";
     runtimeInputs = [
       pkgs.coreutils
+      pkgs.bash
       pkgs.git
       pkgs.git-lfs
       pkgs.gh
