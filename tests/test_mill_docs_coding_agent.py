@@ -28,7 +28,6 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('XDG_CACHE_HOME = "${millDocsCodingAgentStateDir}/cache";', source)
         self.assertNotIn('"/home/emiller/.local/share/omp"', source)
 
-    @unittest.expectedFailure
     def test_buzz_git_uses_nostr_credential_helper(self) -> None:
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         self.assertIn('git -c credential.helper=${pkgs.my.buzz}/bin/git-credential-nostr clone', source)
