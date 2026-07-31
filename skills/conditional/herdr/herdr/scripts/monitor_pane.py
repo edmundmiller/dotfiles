@@ -29,16 +29,16 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    run(["herdr", "pane", "get", args.pane], check=False)
+    run(["herdr", "agent", "get", args.pane], check=False)
 
     if args.wait_status:
         run(
             [
                 "herdr",
+                "agent",
                 "wait",
-                "agent-status",
                 args.pane,
-                "--status",
+                "--until",
                 args.wait_status,
                 "--timeout",
                 str(args.timeout_ms),
@@ -49,7 +49,7 @@ def main() -> int:
     run(
         [
             "herdr",
-            "pane",
+            "agent",
             "read",
             args.pane,
             "--source",

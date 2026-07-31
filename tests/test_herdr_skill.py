@@ -1,16 +1,10 @@
 from pathlib import Path
 
-import pytest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "conditional" / "herdr" / "herdr"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Herdr 0.7.5 replaced the legacy agent and wait command forms",
-)
 def test_herdr_skill_uses_current_agent_and_wait_commands() -> None:
     paths = [
         SKILL / "SKILL.md",
