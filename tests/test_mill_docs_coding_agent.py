@@ -22,6 +22,13 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"', source)
         self.assertIn("export LINEAR_API_KEY GH_TOKEN BUZZ_FEEDBACK_STATUS_SECRET", source)
 
+    @unittest.expectedFailure
+    def test_mutable_agent_state_is_service_owned(self) -> None:
+        source = (ROOT / "hosts/nuc/default.nix").read_text()
+        self.assertIn('XDG_DATA_HOME = "${millDocsCodingAgentStateDir}/data";', source)
+        self.assertIn('XDG_CACHE_HOME = "${millDocsCodingAgentStateDir}/cache";', source)
+        self.assertNotIn('"/home/emiller/.local/share/omp"', source)
+
 
 if __name__ == "__main__":
     unittest.main()
