@@ -478,9 +478,10 @@ let
         npm ci
       fi
       export PATH="/etc/profiles/per-user/emiller/bin:$PATH"
-      export LINEAR_API_KEY="$(< /var/lib/opnix/secrets/amosburtonLinearApiKey)"
-      export GH_TOKEN="$(< /var/lib/opnix/secrets/millDocsCodingAgentGithubToken)"
-      export BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"
+      LINEAR_API_KEY="$(< /var/lib/opnix/secrets/amosburtonLinearApiKey)"
+      GH_TOKEN="$(< /var/lib/opnix/secrets/millDocsCodingAgentGithubToken)"
+      BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"
+      export LINEAR_API_KEY GH_TOKEN BUZZ_FEEDBACK_STATUS_SECRET
       exec node scripts/run-coding-agent-queue.ts --once
     '';
   };
