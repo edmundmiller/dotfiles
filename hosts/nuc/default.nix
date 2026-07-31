@@ -775,6 +775,11 @@ let
       exit 0
     fi
 
+    if ! ${pkgs.git}/bin/git lfs fsck --pointers HEAD; then
+      echo "current HEAD contains files that should be Git LFS pointers; refusing to autostash" >&2
+      exit 1
+    fi
+
     ${pkgs.git}/bin/git pull --rebase --autostash
   '';
 
