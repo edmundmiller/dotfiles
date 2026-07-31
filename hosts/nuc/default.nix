@@ -2563,6 +2563,7 @@ in
     environment = {
       HOME = "/home/emiller";
       XDG_CACHE_HOME = "${millDocsCodingAgentStateDir}/cache";
+      NPM_CONFIG_CACHE = "${millDocsCodingAgentStateDir}/cache/npm";
       XDG_DATA_HOME = "${millDocsCodingAgentStateDir}/data";
       XDG_STATE_HOME = "${millDocsCodingAgentStateDir}/state";
       BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-agents.${tailnet}/channels/buzz/feedback";
