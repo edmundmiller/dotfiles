@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+  echo "usage: obsidian-vault-git-dirt-check VAULT" >&2
+  exit 64
+fi
+
+vault=$1
+GIT_OPTIONAL_LOCKS=0 git -C "$vault" rev-parse --is-inside-work-tree >/dev/null
+
+status_file="$(mktemp "${TMPDIR:-/tmp}/obsidian-vault-git-status.XXXXXX")"
+trap 'rm -f "$status_file"' EXIT
+GIT_OPTIONAL_LOCKS=0 git -C "$vault" status --porcelain=v1 -z --untracked-files=all >"$status_file"
+
+unsafe=0
+check_path() {
+  local status=$1
+  local path=$2
+
+  case "$status" in
+    DD | AU | UD | UA | DU | AA | UU)
+      printf 'conflicted Git path: %s %s\n' "$status" "$path" >&2
+      unsafe=1
+      return
+      ;;
+  esac
+
+  if [[ "$path" == "00_Inbox" || "$path" == 00_Inbox/* ]]; then
+    return
+  fi
+
+  printf 'unexpected Git dirt outside 00_Inbox: %s %s\n' "$status" "$path" >&2
+  unsafe=1
+}
+
+while IFS= read -r -d '' record; do
+  status=${record:0:2}
+  path=${record:3}
+  check_path "$status" "$path"
+
+  if [[ "$status" == *R* || "$status" == *C* ]]; then
+    IFS= read -r -d '' previous_path
+    check_path "$status" "$previous_path"
+  fi
+done <"$status_file"
+
+exit "$unsafe"
