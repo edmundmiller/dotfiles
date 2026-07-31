@@ -5,19 +5,19 @@ These patterns come from official CLI behavior and recurring session-trace failu
 ## Delegate to a sibling agent
 
 1. Inspect current repo state and define a bounded handoff.
-2. Start the agent with `herdr agent start`; keep focus with `--no-focus`.
-3. Wait for `idle` before sending a long prompt.
-4. Send literal prompt text with `herdr agent send`, then submit Enter to the returned pane ID.
-5. Wait for `done` with `herdr wait agent-status`, then read recent unwrapped output.
+2. Split or create the shell pane; keep focus with `--no-focus`.
+3. Start the agent in that pane with `herdr agent start`.
+4. Submit and wait atomically with `herdr agent prompt --wait`.
+5. Accept `idle`, `done`, or `blocked`, then read recent unwrapped output.
 6. Review the child's changes before applying or landing them.
 
 ```bash
-START=$(herdr agent start audit --cwd "$PWD" --split right --no-focus -- omp)
-PANE_ID=$(printf '%s' "$START" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["agent"]["pane_id"])')
-herdr agent wait "$PANE_ID" --status idle --timeout 30000
-herdr agent send "$PANE_ID" "Inspect the touched tests. Report gaps; do not edit."
-herdr pane send-keys "$PANE_ID" enter
-herdr wait agent-status "$PANE_ID" --status done --timeout 120000
+SPLIT=$(herdr pane split --current --direction right --no-focus)
+PANE_ID=$(printf '%s' "$SPLIT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
+herdr agent start audit --kind omp --pane "$PANE_ID" --timeout 30000
+herdr agent prompt "$PANE_ID" \
+  "Inspect the touched tests. Report gaps; do not edit." \
+  --wait --until idle --until done --until blocked --timeout 120000
 herdr agent read "$PANE_ID" --source recent-unwrapped --lines 120
 ```
 
@@ -29,7 +29,7 @@ If the name is ambiguous, use the returned pane ID.
 CREATE=$(herdr pane split --current --direction right --no-focus)
 # Extract pane_id from CREATE.
 herdr pane run <pane-id> "npm run dev"
-herdr wait output <pane-id> --match "ready" --timeout 30000
+herdr pane wait-output <pane-id> --match "ready" --timeout 30000
 herdr pane read <pane-id> --source recent-unwrapped --lines 40
 ```
 
@@ -80,7 +80,8 @@ herdr pane send-text <pane-id> "literal text"
 herdr pane send-keys <pane-id> enter
 ```
 
-For shell commands, use `pane run`; it submits text and Enter together. For semantic agent prompts, use `agent send`.
+For shell commands, use `pane run`; it submits text and Enter together. For
+semantic agent prompts, use `agent prompt`.
 
 ## Preserve long-lived layouts
 

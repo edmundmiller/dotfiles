@@ -10,12 +10,13 @@ Use the installed CLI as the versioned source of truth. Run `<area> --help` befo
 | Inspect one agent           | `herdr agent get <target>`                                      |
 | Read an agent transcript    | `herdr agent read <target> --source recent-unwrapped --lines N` |
 | Understand status detection | `herdr agent explain <target> --json`                           |
-| Prompt an agent             | `herdr agent send <target> <text>`                              |
-| Wait for agent state        | `herdr agent wait <target> --status <state> --timeout MS`       |
-| Start an agent              | `herdr agent start <name> … -- <argv…>`                         |
+| Prompt an agent             | `herdr agent prompt <target> <text> [--wait]`                   |
+| Send keys to an agent       | `herdr agent send-keys <target> <key>…`                         |
+| Wait for agent state        | `herdr agent wait <target> --until <state> --timeout MS`        |
+| Start an agent              | `herdr agent start <name> --kind <kind> --pane <id> -- <args…>` |
 | Inspect current pane        | `herdr pane current`                                            |
 | Run a shell command         | `herdr pane run <pane> <command>`                               |
-| Wait for process output     | `herdr wait output <pane> --match <text> --timeout MS`          |
+| Wait for process output     | `herdr pane wait-output <pane> --match <text> --timeout MS`     |
 | Bootstrap full live state   | `herdr api snapshot`                                            |
 | Inspect API types           | `herdr api schema --json`                                       |
 
@@ -38,7 +39,10 @@ Prefer:
 - `done`: finished and not yet viewed.
 - `unknown`: no authoritative state.
 
-Agent waits observe semantic state. For a server/test process, wait on output or inspect process info instead.
+`agent start` requires an existing pane at its shell prompt and waits for agent
+readiness. `agent prompt --wait` observes state changes after submission;
+standalone `agent wait` can return immediately when the current state matches.
+For a server/test process, wait on output or inspect process info instead.
 
 ## Pane reads
 
