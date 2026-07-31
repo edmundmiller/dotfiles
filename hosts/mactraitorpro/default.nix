@@ -23,10 +23,12 @@ let
     exec ${clin}/bin/clin "$@"
   '';
   obsidianGuardDir = "${config.user.home}/Library/Application Support/obsidian-sync-guard";
+  obsidianVaultGitDirtCheck = pkgs.my.obsidian-vault-git-dirt-check;
   obsidianDesktopGuard = pkgs.writeShellScript "obsidian-desktop-sync-guard" ''
     set -u
     mkdir -p ${builtins.toJSON obsidianGuardDir}
-    output="$(${pkgs.bun}/bin/bun ${builtins.toJSON "${obsidianVault}/scripts/obsidian-sync-safety-check.ts"} \
+    output="$(${obsidianVaultGitDirtCheck}/bin/obsidian-vault-git-dirt-check ${builtins.toJSON obsidianVault} 2>&1 && \
+      ${pkgs.bun}/bin/bun ${builtins.toJSON "${obsidianVault}/scripts/obsidian-sync-safety-check.ts"} \
       --vault ${builtins.toJSON obsidianVault} \
       --policy ${builtins.toJSON "${obsidianVault}/07_Metadata/Validation/obsidian-sync-policy.json"} \
       --engine desktop \

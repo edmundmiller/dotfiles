@@ -15,6 +15,7 @@ let
   preStart = nuc.systemd.services.obsidian-sync.serviceConfig.ExecStartPre;
   nucGuard = nuc.systemd.services.obsidian-sync-guard.serviceConfig.ExecStart;
   macGuard = mac.launchd.user.agents.obsidian-sync-guard.command;
+  dirtCheck = pkgs.callPackage ../../../../packages/obsidian-vault-git-dirt-check { };
 
   requiredExclusions = [
     ".git"
@@ -71,6 +72,7 @@ let
 in
 pkgs.runCommand "obsidian-sync-safety-assertions"
   {
+    nativeBuildInputs = [ pkgs.git ];
     passthru = { inherit assertions failures; };
   }
   ''
@@ -78,6 +80,7 @@ pkgs.runCommand "obsidian-sync-safety-assertions"
       echo "${toString (length failures)} Obsidian Sync structural assertions failed" >&2
       exit 1
     fi
+    ${../../../../packages/obsidian-vault-git-dirt-check/git-dirt-check.test.sh} ${dirtCheck}/bin/obsidian-vault-git-dirt-check
     mkdir -p "$out"
     echo "All Obsidian Sync safety assertions passed." > "$out/result"
   ''
