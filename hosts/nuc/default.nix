@@ -2555,6 +2555,9 @@ in
     wants = [ "network-online.target" ];
     environment = {
       HOME = "/home/emiller";
+      XDG_CACHE_HOME = "${millDocsCodingAgentStateDir}/cache";
+      XDG_DATA_HOME = "${millDocsCodingAgentStateDir}/data";
+      XDG_STATE_HOME = "${millDocsCodingAgentStateDir}/state";
       BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-agents.${tailnet}/channels/buzz/feedback";
     };
     serviceConfig = {
@@ -2571,8 +2574,6 @@ in
       ProtectHome = "read-only";
       ReadWritePaths = [
         millDocsCodingAgentStateDir
-        "/home/emiller/.cache"
-        "/home/emiller/.local/share/omp"
       ];
       NoNewPrivileges = true;
       PrivateTmp = true;
