@@ -1,0 +1,1511 @@
+diff --git a/README.md b/README.md
+index c8d45a1..5074268 100644
+--- a/README.md
++++ b/README.md
+@@ -188,6 +188,13 @@ instances with `openwiki ingest all`, all instances for one connector with
+ `openwiki ingest web-search`, or one instance with
+ `openwiki ingest web-search-2`.
+
++When `OPENWIKI_WIKI_DIR` is inside a Git worktree, each successful source run
++commits its wiki changes with `OpenWiki-Connector`,
++`OpenWiki-Source-Instance`, and `OpenWiki-Pull-Run` provenance trailers.
++OpenWiki requires the wiki directory to be clean before it pulls connector
++state; commit, stash, or revert existing wiki changes before retrying. Ingestion
++outside a Git worktree keeps the existing no-commit behavior.
++
+ - `git-repo` reads configured local repository paths and writes compact manifests.
+ - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
+ - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
+diff --git a/src/agent/docs-only-backend.ts b/src/agent/docs-only-backend.ts
+index 6316ad0..e07c81f 100644
+--- a/src/agent/docs-only-backend.ts
++++ b/src/agent/docs-only-backend.ts
+@@ -1,3 +1,4 @@
++import { createHash } from "node:crypto";
+ import {
+   LocalShellBackend,
+   type EditResult,
+@@ -5,7 +6,7 @@ import {
+   type WriteResult,
+ } from "deepagents";
+ import { OPEN_WIKI_DIR } from "../constants.js";
+-import type { OpenWikiOutputMode } from "./types.js";
++import type { OpenWikiMutation, OpenWikiOutputMode } from "./types.js";
+
+ export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
+
+@@ -17,6 +18,10 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
+ export class OpenWikiLocalShellBackend extends LocalShellBackend {
+   private readonly docsOnly: boolean;
+   private readonly outputMode: OpenWikiOutputMode;
++  private readonly wikiMutations = new Map<
++    string,
++    Omit<OpenWikiMutation, "path">
++  >();
+
+   constructor(options: OpenWikiBackendOptions) {
+     super(options);
+@@ -33,7 +38,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
+       return { error };
+     }
+
+-    return markMutation(await super.write(filePath, content), filePath);
++    const result = markMutation(await super.write(filePath, content), filePath);
++    if (!result.error) {
++      this.recordMutation(result.path ?? filePath, content);
++    }
++    return result;
+   }
+
+   override async edit(
+@@ -47,10 +56,45 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
+       return { error };
+     }
+
+-    return markMutation(
++    const result = markMutation(
+       await super.edit(filePath, oldString, newString, replaceAll),
+       filePath,
+     );
++    if (!result.error) {
++      await this.recordPersistedMutation(result.path ?? filePath);
++    }
++    return result;
++  }
++
++  getWikiMutations(): OpenWikiMutation[] {
++    return [...this.wikiMutations]
++      .map(([path, mutation]) => ({ path, ...mutation }))
++      .sort((left, right) => left.path.localeCompare(right.path));
++  }
++
++  async recordPersistedMutation(filePath: string): Promise<void> {
++    const read = await super.readRaw(filePath);
++    const rawContent = read.data?.content;
++    if (
++      read.error ||
++      rawContent === undefined ||
++      rawContent instanceof Uint8Array
++    ) {
++      throw new Error(
++        `Unable to record OpenWiki mutation ${filePath}: ${read.error ?? "no text file content"}`,
++      );
++    }
++    const content = Array.isArray(rawContent)
++      ? rawContent.join("\n")
++      : rawContent;
++    this.recordMutation(filePath, content);
++  }
++
++  private recordMutation(filePath: string, content: string): void {
++    this.wikiMutations.set(normalizeVirtualPath(filePath), {
++      content,
++      sha256: createHash("sha256").update(content).digest("hex"),
++    });
+   }
+
+   private getDocsOnlyWriteError(filePath: string): string | null {
+@@ -80,9 +124,15 @@ function markMutation<Result extends WriteResult | EditResult>(
+   return result;
+ }
+
++function normalizeVirtualPath(filePath: string): string {
++  return filePath
++    .trim()
++    .replace(/\\/gu, "/")
++    .replace(/^\/+/u, "");
++}
++
+ export function isOpenWikiDocsPath(filePath: string): boolean {
+-  const normalizedPath = filePath.trim().replace(/\\/gu, "/");
+-  const virtualPath = normalizedPath.replace(/^\/+/u, "");
++  const virtualPath = normalizeVirtualPath(filePath);
+
+   return (
+     virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)
+diff --git a/src/agent/frontmatter-validator.ts b/src/agent/frontmatter-validator.ts
+index 4fd5e6d..91d6ee9 100644
+--- a/src/agent/frontmatter-validator.ts
++++ b/src/agent/frontmatter-validator.ts
+@@ -5,8 +5,14 @@ import { parse } from "yaml";
+ import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
+ import type { OpenWikiOutputMode } from "./types.js";
+
+-const OKF_STRING_FIELDS = ["type", "title", "description", "resource"];
+-const OKF_FIELDS = new Set([...OKF_STRING_FIELDS, "tags"]);
++const OKF_STRING_FIELDS = [
++  "type",
++  "title",
++  "description",
++  "resource",
++  "status",
++];
++const OKF_FIELDS = new Set([...OKF_STRING_FIELDS, "tags", "now"]);
+ const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
+
+ interface FrontmatterIssue {
+@@ -15,6 +21,10 @@ interface FrontmatterIssue {
+   message: string;
+ }
+
++type FrontmatterValidationOptions = {
++  requireLocalWikiFields?: boolean;
++};
++
+ export type FrontmatterValidation =
+   | {
+       valid: true;
+@@ -25,7 +35,10 @@ export type FrontmatterValidation =
+     };
+
+ /** Parses and validates leading YAML front matter against the supported OKF fields. */
+-export function validateOkfFrontmatter(content: string): FrontmatterValidation {
++export function validateOkfFrontmatter(
++  content: string,
++  options: FrontmatterValidationOptions = {},
++): FrontmatterValidation {
+   const lines = content.split(/\r?\n/u);
+   if (lines[0] !== "---") {
+     return invalid(
+@@ -64,6 +77,16 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
+   if (!Object.hasOwn(fields, "type")) {
+     issues.push(issue("missing_type", "Required field `type` is missing."));
+   }
++  if (options.requireLocalWikiFields) {
++    if (!Object.hasOwn(fields, "status")) {
++      issues.push(
++        issue("missing_status", "Required field `status` is missing."),
++      );
++    }
++    if (!Object.hasOwn(fields, "now")) {
++      issues.push(issue("missing_now", "Required field `now` is missing."));
++    }
++  }
+   for (const field of OKF_STRING_FIELDS) {
+     if (
+       Object.hasOwn(fields, field) &&
+@@ -89,6 +112,9 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
+       ),
+     );
+   }
++  if (Object.hasOwn(fields, "now") && typeof fields.now !== "boolean") {
++    issues.push(issue("invalid_now", "Field `now` must be a boolean."));
++  }
+
+   return issues.length === 0 ? { valid: true } : { issues, valid: false };
+ }
+@@ -114,7 +140,11 @@ export async function addFrontmatterWarning<Result>(
+     );
+   if (!mutation) return result;
+
+-  const validation = await validatePersistedFile(backend, mutation.path);
++  const validation = await validatePersistedFile(
++    backend,
++    mutation.path,
++    outputMode,
++  );
+   if (validation.valid) return result;
+
+   const warning = formatWarning(mutation.path, validation.issues);
+@@ -129,6 +159,7 @@ export async function addFrontmatterWarning<Result>(
+ async function validatePersistedFile(
+   backend: BackendProtocolV2,
+   filePath: string,
++  outputMode: OpenWikiOutputMode,
+ ): Promise<FrontmatterValidation> {
+   const read = await backend.readRaw(filePath);
+   const content = read.data?.content;
+@@ -140,6 +171,7 @@ async function validatePersistedFile(
+   }
+   return validateOkfFrontmatter(
+     Array.isArray(content) ? content.join("\n") : content,
++    { requireLocalWikiFields: outputMode === "local-wiki" },
+   );
+ }
+
+diff --git a/src/agent/index-middleware.ts b/src/agent/index-middleware.ts
+index 88c18ec..db40df5 100644
+--- a/src/agent/index-middleware.ts
++++ b/src/agent/index-middleware.ts
+@@ -12,7 +12,8 @@ const EXCLUDED_FILES: Record<string, true> = {
+   "AGENTS.md": true,
+   "INSTRUCTIONS.md": true,
+ };
+-const EXCLUDED_INDEX_DIRECTORIES = new Set(["Clippings/Tweets"]);
++const EXCLUDED_DIRECTORIES = new Set(["large_tool_results"]);
++const EXCLUDED_DIRECTORY_PATHS = new Set(["/Clippings/Tweets"]);
+
+ interface Directory {
+   entries: FileInfo[];
+@@ -51,13 +52,6 @@ export async function synchronizeWikiIndexes(
+ ): Promise<void> {
+   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+   for (const directory of await collectDirectories(backend, root, true)) {
+-    if (
+-      EXCLUDED_INDEX_DIRECTORIES.has(
+-        path.posix.relative(root, directory.path),
+-      )
+-    ) {
+-      continue;
+-    }
+     await synchronizeDirectory(backend, directory, root);
+   }
+ }
+@@ -75,9 +69,14 @@ async function collectDirectories(
+   }
+
+   const entries = result.files ?? [];
+-  const children = entries.filter(
+-    (entry) => entry.is_dir && !entryName(entry).startsWith("."),
+-  );
++  const children = entries.filter((entry) => {
++    const name = entryName(entry);
++    return (
++      entry.is_dir &&
++      !name.startsWith(".") &&
++      !isExcludedDirectory(directoryPath, name)
++    );
++  });
+   const descendants = await Promise.all(
+     children.map((entry) =>
+       collectDirectories(
+@@ -89,6 +88,13 @@ async function collectDirectories(
+   return [...descendants.flat(), { entries, path: directoryPath }];
+ }
+
++function isExcludedDirectory(parent: string, name: string): boolean {
++  return (
++    EXCLUDED_DIRECTORIES.has(name) ||
++    EXCLUDED_DIRECTORY_PATHS.has(path.posix.join(parent, name))
++  );
++}
++
+ /** Builds and writes one directory's index when its content has changed. */
+ async function synchronizeDirectory(
+   backend: BackendProtocolV2,
+@@ -103,6 +109,7 @@ async function synchronizeDirectory(
+     if (!name || name.startsWith(".")) continue;
+
+     if (entry.is_dir) {
++      if (isExcludedDirectory(directory.path, name)) continue;
+       directories.push({ href: `${encodeURIComponent(name)}/`, label: name });
+       continue;
+     }
+@@ -136,6 +143,7 @@ async function synchronizeDirectory(
+   )
+     ? await readText(backend, indexPath)
+     : null;
++  if (root === "/" && directory.path === root && existing !== null) return;
+   if (existing === content) return;
+
+   const result = existing
+@@ -158,7 +166,15 @@ function renderIndex(
+   ]
+     .filter(Boolean)
+     .join("\n\n");
+-  return `---\ntype: Documentation Index\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(`Files and subdirectories in ${title}.`)}\n---\n\n${sections}\n`;
++  const body = sections ? `\n\n${sections}` : "";
++  return `---
++title: ${JSON.stringify(title)}
++type: resources-index
++status: active
++now: false
++description: ${JSON.stringify(`Files and subdirectories in ${title}.`)}
++---${body}
++`;
+ }
+
+ /** Renders a sorted Markdown section for files or subdirectories. */
+diff --git a/src/agent/index.ts b/src/agent/index.ts
+index bdf2ced..8dd1208 100644
+--- a/src/agent/index.ts
++++ b/src/agent/index.ts
+@@ -85,6 +85,7 @@ import {
+   resolveProviderLocation,
+   resolveProviderRegion,
+   resolveProviderRetryAttempts,
++  UPDATE_METADATA_PATH,
+   type OpenWikiProvider,
+ } from "../constants.js";
+ import {
+@@ -339,6 +340,15 @@ async function runOpenWikiAgentCore(
+     openWikiSnapshotBefore,
+   );
+
++  if (metadataWritten) {
++    await wikiBackend.recordPersistedMutation(
++      outputMode === "local-wiki"
++        ? "/.last-update.json"
++        : `/${UPDATE_METADATA_PATH}`,
++    );
++  }
++  options.onWikiMutations?.(wikiBackend.getWikiMutations());
++
+   if (metadataWritten) {
+     emitDebug(options, "metadata=written");
+   } else {
+diff --git a/src/agent/types.ts b/src/agent/types.ts
+index a033057..497e879 100644
+--- a/src/agent/types.ts
++++ b/src/agent/types.ts
+@@ -1,6 +1,12 @@
+ export type OpenWikiCommand = "chat" | "init" | "update";
+ export type OpenWikiOutputMode = "local-wiki" | "repository";
+
++export type OpenWikiMutation = {
++  content: string;
++  path: string;
++  sha256: string;
++};
++
+ export type OpenWikiRunResult = {
+   command: OpenWikiCommand;
+   model: string;
+@@ -36,6 +42,7 @@ export type OpenWikiRunOptions = {
+   isFollowup?: boolean;
+   modelId?: string | null;
+   onEvent?: (event: OpenWikiRunEvent) => void;
++  onWikiMutations?: (mutations: OpenWikiMutation[]) => void;
+   outputMode?: OpenWikiOutputMode;
+   threadId?: string;
+   userMessage?: string | null;
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 2025a81..bf703e9 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -1,3 +1,6 @@
++import { spawn } from "node:child_process";
++import { createHash, randomUUID } from "node:crypto";
++import { readFile, realpath, rm } from "node:fs/promises";
+ import path from "node:path";
+ import {
+   createConnectorRegistry,
+@@ -23,6 +26,7 @@ import {
+ import { createOpenWikiThreadId, runOpenWikiAgent } from "./agent/index.js";
+ import type {
+   OpenWikiRunEvent,
++  OpenWikiMutation,
+   OpenWikiRunOptions,
+   OpenWikiRunResult,
+ } from "./agent/types.js";
+@@ -40,6 +44,7 @@ export type SourceIngestionResult = {
+   agentResult?: OpenWikiRunResult;
+   connectorId: ConnectorId;
+   deterministicPull?: ConnectorIngestResult;
++  error?: string;
+   displayName: string;
+   rawFiles: string[];
+   sourceInstanceId: string;
+@@ -138,6 +143,9 @@ async function runSourceIngestion({
+   );
+
+   try {
++    const gitSnapshot = await snapshotGitWiki(cwd);
++    assertGitWikiClean(gitSnapshot);
++
+     const deterministicPull = isDeterministicConnector(connector)
+       ? await connector.ingest({
+           connectorConfig: sourceConfig.connectorConfig,
+@@ -160,10 +168,14 @@ async function runSourceIngestion({
+       };
+     }
+
++    let wikiMutations: OpenWikiMutation[] = [];
+     const agentResult = await runOpenWikiAgent("update", cwd, {
+       isFollowup: false,
+       modelId,
+       onEvent: emit,
++      onWikiMutations: (mutations) => {
++        wikiMutations = mutations;
++      },
+       outputMode: "local-wiki",
+       threadId: createOpenWikiThreadId(cwd),
+       userMessage: createSourceUpdateMessage({
+@@ -174,6 +186,14 @@ async function runSourceIngestion({
+         sourceConfig,
+       }),
+     });
++    await commitGitWikiUpdate({
++      connectorId: connector.id,
++      pullRunId: deterministicPull?.runId,
++      emit,
++      snapshot: gitSnapshot,
++      sourceInstanceId: sourceConfig.id,
++      wikiMutations,
++    });
+
+     return {
+       agentResult,
+@@ -190,6 +210,7 @@ async function runSourceIngestion({
+     return {
+       connectorId: connector.id,
+       displayName: getSourceDisplayName(connector, sourceConfig),
++      error: message,
+       rawFiles: [],
+       sourceInstanceId: sourceConfig.id,
+       status: "error",
+@@ -197,6 +218,334 @@ async function runSourceIngestion({
+   }
+ }
+
++type GitWikiSnapshot = {
++  dirtyPaths: Set<string>;
++  headOid: string;
++  repoRoot: string;
++  wikiPathspec: string;
++};
++
++async function snapshotGitWiki(cwd: string): Promise<GitWikiSnapshot | null> {
++  let repoRoot: string;
++  try {
++    repoRoot = (await runGit(cwd, ["rev-parse", "--show-toplevel"])).trim();
++  } catch (error) {
++    if (isNotGitRepositoryError(error)) return null;
++    throw error;
++  }
++
++  const resolvedCwd = await realpath(cwd);
++  const wikiPathspec = path.relative(repoRoot, resolvedCwd) || ".";
++  if (
++    path.isAbsolute(wikiPathspec) ||
++    wikiPathspec === ".." ||
++    wikiPathspec.startsWith(`..${path.sep}`)
++  ) {
++    throw new Error(`OpenWiki directory is outside Git worktree: ${cwd}`);
++  }
++
++  const [dirtyPaths, headOid] = await Promise.all([
++    listGitDirtyPaths(repoRoot, wikiPathspec),
++    runGit(repoRoot, ["rev-parse", "HEAD"]).then((value) => value.trim()),
++  ]);
++  return {
++    dirtyPaths,
++    headOid,
++    repoRoot,
++    wikiPathspec,
++  };
++}
++
++function assertGitWikiClean(snapshot: GitWikiSnapshot | null): void {
++  if (!snapshot || snapshot.dirtyPaths.size === 0) return;
++
++  const dirtyPaths = [...snapshot.dirtyPaths].sort();
++  const displayedPaths = dirtyPaths.slice(0, 5).join(", ");
++  const remainder =
++    dirtyPaths.length > 5 ? `, and ${dirtyPaths.length - 5} more` : "";
++  throw new Error(
++    `OpenWiki wiki must be clean before ingestion: ${displayedPaths}${remainder}`,
++  );
++}
++
++async function commitGitWikiUpdate({
++  connectorId,
++  pullRunId,
++  emit,
++  snapshot,
++  sourceInstanceId,
++  wikiMutations,
++}: {
++  connectorId: ConnectorId;
++  pullRunId: string | undefined;
++  emit: ((event: OpenWikiRunEvent) => void) | undefined;
++  snapshot: GitWikiSnapshot | null;
++  sourceInstanceId: string;
++  wikiMutations: OpenWikiMutation[];
++}): Promise<void> {
++  if (!snapshot) return;
++
++  const after = await listGitDirtyPaths(
++    snapshot.repoRoot,
++    snapshot.wikiPathspec,
++  );
++  const changedPaths = [...after].sort();
++  if (changedPaths.length === 0) return;
++
++  const recordedMutations = await validateRecordedWikiMutations(
++    snapshot,
++    changedPaths,
++    wikiMutations,
++  );
++  const trailers = [
++    `OpenWiki-Connector: ${connectorId}`,
++    `OpenWiki-Source-Instance: ${sourceInstanceId}`,
++  ];
++  if (pullRunId) {
++    trailers.push(`OpenWiki-Pull-Run: ${pullRunId}`);
++  }
++  await commitRecordedWikiMutations(
++    snapshot,
++    changedPaths,
++    recordedMutations,
++    sourceInstanceId,
++    trailers,
++  );
++  try {
++    await runGit(snapshot.repoRoot, [
++      "reset",
++      "--mixed",
++      "HEAD",
++      "--",
++      ...changedPaths,
++    ]);
++  } catch (error) {
++    throw new Error(
++      `OpenWiki committed ${sourceInstanceId} but failed to refresh the real Git index: ${getErrorMessage(error)}`,
++      { cause: error },
++    );
++  }
++  emitText(
++    emit,
++    `Committed ${changedPaths.length} OpenWiki file(s) for ${sourceInstanceId}.\n`,
++  );
++}
++
++async function validateRecordedWikiMutations(
++  snapshot: GitWikiSnapshot,
++  changedPaths: string[],
++  wikiMutations: OpenWikiMutation[],
++): Promise<Map<string, OpenWikiMutation>> {
++  const recorded = new Map<string, OpenWikiMutation>();
++  for (const mutation of wikiMutations) {
++    const digest = createHash("sha256").update(mutation.content).digest("hex");
++    if (digest !== mutation.sha256) {
++      throw new Error(
++        `OpenWiki recorded an invalid mutation: ${mutation.path}`,
++      );
++    }
++    recorded.set(gitPathForMutation(snapshot, mutation.path), mutation);
++  }
++
++  const unrecorded = changedPaths.filter((filePath) => !recorded.has(filePath));
++  if (unrecorded.length > 0) {
++    throw new Error(
++      `OpenWiki found unrecorded wiki changes: ${unrecorded.slice(0, 5).join(", ")}`,
++    );
++  }
++
++  for (const filePath of changedPaths) {
++    const mutation = recorded.get(filePath);
++    if (!mutation) throw new Error(`Missing OpenWiki mutation: ${filePath}`);
++    const current = await readFile(
++      path.join(snapshot.repoRoot, ...filePath.split("/")),
++      "utf8",
++    );
++    if (current !== mutation.content) {
++      throw new Error(
++        `OpenWiki wiki file changed after the agent wrote it: ${filePath}`,
++      );
++    }
++  }
++  return recorded;
++}
++
++function gitPathForMutation(
++  snapshot: GitWikiSnapshot,
++  mutationPath: string,
++): string {
++  if (
++    !mutationPath ||
++    path.posix.isAbsolute(mutationPath) ||
++    mutationPath.split("/").includes("..")
++  ) {
++    throw new Error(`Invalid OpenWiki mutation path: ${mutationPath}`);
++  }
++  const wikiPathspec = snapshot.wikiPathspec.split(path.sep).join("/");
++  return wikiPathspec === "."
++    ? mutationPath
++    : path.posix.join(wikiPathspec, mutationPath);
++}
++
++async function commitRecordedWikiMutations(
++  snapshot: GitWikiSnapshot,
++  changedPaths: string[],
++  recorded: Map<string, OpenWikiMutation>,
++  sourceInstanceId: string,
++  trailers: string[],
++): Promise<void> {
++  const { repoRoot } = snapshot;
++  const realIndex = path.resolve(
++    repoRoot,
++    (await runGit(repoRoot, ["rev-parse", "--git-path", "index"])).trim(),
++  );
++  const temporaryIndex = `${realIndex}.openwiki-${randomUUID()}`;
++  const env = { GIT_INDEX_FILE: temporaryIndex };
++  try {
++    await runGit(repoRoot, ["read-tree", snapshot.headOid], { env });
++    for (const filePath of changedPaths) {
++      const mutation = recorded.get(filePath);
++      if (!mutation) throw new Error(`Missing OpenWiki mutation: ${filePath}`);
++      const objectId = (
++        await runGit(repoRoot, ["hash-object", "-w", "--stdin"], {
++          input: mutation.content,
++        })
++      ).trim();
++      await runGit(
++        repoRoot,
++        ["update-index", "--add", "--cacheinfo", "100644", objectId, filePath],
++        { env },
++      );
++    }
++    const treeOid = (await runGit(repoRoot, ["write-tree"], { env })).trim();
++    await runGit(repoRoot, ["hook", "run", "--ignore-missing", "pre-commit"], {
++      env,
++    });
++    const validatedTreeOid = (
++      await runGit(repoRoot, ["write-tree"], { env })
++    ).trim();
++    if (validatedTreeOid !== treeOid) {
++      throw new Error("OpenWiki pre-commit hook modified the temporary index");
++    }
++    const commitMessage = [
++      `docs(openwiki): ingest ${sourceInstanceId}`,
++      "",
++      ...trailers,
++      "",
++    ].join("\n");
++    const commitOid = (
++      await runGit(
++        repoRoot,
++        [
++          "-c",
++          "commit.gpgsign=false",
++          "-c",
++          "user.name=OpenWiki",
++          "-c",
++          "user.email=openwiki@localhost",
++          "commit-tree",
++          treeOid,
++          "-p",
++          snapshot.headOid,
++        ],
++        { input: commitMessage },
++      )
++    ).trim();
++    try {
++      await runGit(repoRoot, [
++        "update-ref",
++        "HEAD",
++        commitOid,
++        snapshot.headOid,
++      ]);
++    } catch (error) {
++      const currentHead = (
++        await runGit(repoRoot, ["rev-parse", "HEAD"])
++      ).trim();
++      if (currentHead !== snapshot.headOid) {
++        throw new Error("Git HEAD changed during OpenWiki ingestion", {
++          cause: error,
++        });
++      }
++      throw error;
++    }
++  } finally {
++    await rm(temporaryIndex, { force: true });
++  }
++}
++
++async function listGitDirtyPaths(
++  repoRoot: string,
++  wikiPathspec: string,
++): Promise<Set<string>> {
++  const outputs = await Promise.all([
++    runGit(repoRoot, ["diff", "--name-only", "-z", "--", wikiPathspec]),
++    runGit(repoRoot, [
++      "diff",
++      "--cached",
++      "--name-only",
++      "-z",
++      "--",
++      wikiPathspec,
++    ]),
++    runGit(repoRoot, [
++      "ls-files",
++      "--others",
++      "--exclude-standard",
++      "-z",
++      "--",
++      wikiPathspec,
++    ]),
++  ]);
++  return new Set(
++    outputs.flatMap((output) => output.split("\0").filter(Boolean)),
++  );
++}
++
++async function runGit(
++  cwd: string,
++  args: string[],
++  options: { env?: NodeJS.ProcessEnv; input?: string } = {},
++): Promise<string> {
++  const child = spawn("git", args, {
++    cwd,
++    env: {
++      ...process.env,
++      ...options.env,
++      GIT_TERMINAL_PROMPT: "0",
++      LC_ALL: "C",
++    },
++    stdio: ["pipe", "pipe", "pipe"],
++  });
++  const stdout: Buffer[] = [];
++  const stderr: Buffer[] = [];
++  child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
++  child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
++  child.stdin.end(options.input);
++  const exitCode = await new Promise<number>((resolve, reject) => {
++    child.once("error", reject);
++    child.once("close", (code) => resolve(code ?? 1));
++  });
++  const stdoutText = Buffer.concat(stdout).toString("utf8");
++  if (exitCode !== 0) {
++    const stderrText = Buffer.concat(stderr).toString("utf8");
++    throw Object.assign(
++      new Error(`git ${args[0]} failed: ${stderrText.trim()}`),
++      { code: exitCode, stderr: stderrText },
++    );
++  }
++  return stdoutText;
++}
++
++function isNotGitRepositoryError(error: unknown): boolean {
++  return (
++    error instanceof Error &&
++    "code" in error &&
++    error.code === 128 &&
++    error.message.includes("not a git repository")
++  );
++}
++
+ function resolveIngestionSourceInstances(
+   target: IngestionTarget,
+   config: OpenWikiOnboardingConfig,
+@@ -325,6 +674,7 @@ Instructions:
+
+ function createSourceSynthesisPolicy(connectorId: ConnectorId): string {
+   return `
++- Every created or materially modified wiki Markdown file must include \`title\`, a lowercase contract-approved \`type\`, \`status\`, and \`now\`. Use \`type: source-summary\`, \`status: processed\`, and \`now: false\` for \`/sources/${connectorId}.md\`; use \`type: synthesis\`, \`status: active\`, and \`now: false\` for canonical synthesis pages.
+ - Synthesize into canonical cross-source files when relevant: /open-questions.md for unresolved memory/wiki questions, /themes.md for recurring trends, /commitments.md for work tasks/follow-ups, /personal-logistics.md for non-work life-admin items, /quickstart.md for high-level navigation/current status, and /sources/${connectorId}.md for compact source evidence.
+ - Apply confidence labels: confirmed, source-backed, watchlist, or saved-context. Keep weak/watchlist items out of /quickstart.md unless they materially affect current status.
+ - Deduplicate with stable topic keys. Update existing themes, open questions, and commitments instead of repeating the same fact in several source pages.
+diff --git a/test/docs-only-backend.test.ts b/test/docs-only-backend.test.ts
+index 08fa817..162d5af 100644
+--- a/test/docs-only-backend.test.ts
++++ b/test/docs-only-backend.test.ts
+@@ -1,4 +1,5 @@
+-import { mkdtemp, readFile } from "node:fs/promises";
++import { createHash } from "node:crypto";
++import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+ import os from "node:os";
+ import path from "node:path";
+ import { describe, expect, test } from "vitest";
+@@ -65,6 +66,20 @@ describe("OpenWikiLocalShellBackend", () => {
+     await expect(
+       readFile(path.join(rootDir, "quickstart.md"), "utf8"),
+     ).resolves.toBe("updated");
++    await writeFile(path.join(rootDir, ".last-update.json"), "{}\n");
++    await backend.recordPersistedMutation("/.last-update.json");
++    expect(backend.getWikiMutations()).toEqual([
++      {
++        path: ".last-update.json",
++        content: "{}\n",
++        sha256: createHash("sha256").update("{}\n").digest("hex"),
++      },
++      {
++        path: "quickstart.md",
++        content: "updated",
++        sha256: createHash("sha256").update("updated").digest("hex"),
++      },
++    ]);
+   });
+
+   test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {
+diff --git a/test/frontmatter-validator.test.ts b/test/frontmatter-validator.test.ts
+index 94ec42b..3453924 100644
+--- a/test/frontmatter-validator.test.ts
++++ b/test/frontmatter-validator.test.ts
+@@ -54,6 +54,32 @@ describe("validateOkfFrontmatter", () => {
+         ),
+       ),
+     ).toEqual({ valid: true });
++    expect(
++      validateOkfFrontmatter(
++        markdown("type: source-summary\nstatus: processed\nnow: false"),
++        { requireLocalWikiFields: true },
++      ),
++    ).toEqual({ valid: true });
++  });
++
++  test("requires vault fields for local wiki writes", () => {
++    expect(
++      validateOkfFrontmatter(markdown("type: source-summary"), {
++        requireLocalWikiFields: true,
++      }),
++    ).toMatchObject({
++      issues: [{ code: "missing_status" }, { code: "missing_now" }],
++      valid: false,
++    });
++    expect(
++      validateOkfFrontmatter(
++        markdown("type: source-summary\nstatus: processed\nnow: nope"),
++        { requireLocalWikiFields: true },
++      ),
++    ).toMatchObject({
++      issues: [{ code: "invalid_now" }],
++      valid: false,
++    });
+   });
+
+   test("reports deterministic delimiter and required-field issues", () => {
+diff --git a/test/index-middleware.test.ts b/test/index-middleware.test.ts
+index 9c21fbe..5f7d612 100644
+--- a/test/index-middleware.test.ts
++++ b/test/index-middleware.test.ts
+@@ -43,8 +43,9 @@ describe("synchronizeWikiIndexes", () => {
+       "utf8",
+     );
+
+-    expect(rootIndex).toContain("type: Documentation Index");
+-    expect(rootIndex).not.toMatch(/^tags:/mu);
++    expect(rootIndex).toContain("type: resources-index");
++    expect(rootIndex).toContain("status: active");
++    expect(rootIndex).toContain("now: false");
+     expect(rootIndex).toContain("- [Quickstart](quickstart.md) - Start here.");
+     expect(rootIndex).toContain(
+       "# Directories\n\n- [architecture](architecture/)",
+@@ -193,20 +194,79 @@ describe("synchronizeWikiIndexes", () => {
+     ).resolves.not.toContain("AGENTS.md");
+   });
+
+-  test("does not create a redundant index for personal tweet clippings", async () => {
++  test("ignores agent scratch directories", async () => {
++    const { backend, rootDir } = await setup();
++    await backend.write("/openwiki/large_tool_results/chunk.txt", "scratch");
++
++    await synchronizeWikiIndexes(backend, "repository");
++
++    await expect(
++      readFile(path.join(rootDir, "openwiki/index.md"), "utf8"),
++    ).resolves.not.toContain("large_tool_results");
++    await expect(
++      readFile(
++        path.join(rootDir, "openwiki/large_tool_results/index.md"),
++        "utf8",
++      ),
++    ).rejects.toMatchObject({ code: "ENOENT" });
++  });
++
++  test("ignores vault paths with stricter content contracts", async () => {
+     const { backend, rootDir } = await setup("local-wiki");
+-    await backend.write(
+-      "/Clippings/Tweets/tweet.md",
+-      document("Tweet", "Imported tweet clipping."),
+-    );
++    await backend.write("/Clippings/Tweets/tweet.md", "not an index target");
+
+     await synchronizeWikiIndexes(backend, "local-wiki");
+
++    await expect(
++      readFile(path.join(rootDir, "Clippings/index.md"), "utf8"),
++    ).resolves.not.toContain("Tweets");
+     await expect(
+       readFile(path.join(rootDir, "Clippings/Tweets/index.md"), "utf8"),
+     ).rejects.toMatchObject({ code: "ENOENT" });
+   });
+
++  test("indexes matching paths in repository mode", async () => {
++    const { backend, rootDir } = await setup();
++    await backend.write(
++      "/openwiki/Clippings/Tweets/tweet.md",
++      document("Tweet", "Repository documentation."),
++    );
++
++    await synchronizeWikiIndexes(backend, "repository");
++
++    await expect(
++      readFile(
++        path.join(rootDir, "openwiki/Clippings/Tweets/index.md"),
++        "utf8",
++      ),
++    ).resolves.toContain("[Tweet](tweet.md) - Repository documentation.");
++  });
++
++  test("preserves a curated local wiki root index", async () => {
++    const { backend, rootDir } = await setup("local-wiki");
++    const canonical = `---
++title: Resources Index
++type: resources-index
++status: active
++now: false
++---
++
++- [[index]]
++- [[log]]
++- [[AGENTS]]
++- [[Resources.base]]
++- [[Source-Processing.base]]
++`;
++    await writeFile(path.join(rootDir, "index.md"), canonical);
++    await backend.write("/page.md", document("Page", "Current page."));
++
++    await synchronizeWikiIndexes(backend, "local-wiki");
++
++    await expect(
++      readFile(path.join(rootDir, "index.md"), "utf8"),
++    ).resolves.toBe(canonical);
++  });
++
+   test("supports the local wiki root and empty directories", async () => {
+     const { backend, rootDir } = await setup("local-wiki");
+     await backend.write(
+@@ -220,8 +280,11 @@ describe("synchronizeWikiIndexes", () => {
+     await expect(
+       readFile(path.join(rootDir, "index.md"), "utf8"),
+     ).resolves.toContain("- [empty](empty/)");
+-    await expect(
+-      readFile(path.join(rootDir, "empty/index.md"), "utf8"),
+-    ).resolves.toContain('title: "Empty"');
++    const emptyIndex = await readFile(
++      path.join(rootDir, "empty/index.md"),
++      "utf8",
++    );
++    expect(emptyIndex).toContain('title: "Empty"');
++    expect(emptyIndex.endsWith("---\n")).toBe(true);
+   });
+ });
+diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
+index 2d5b616..9f48520 100644
+--- a/test/ingestion.test.ts
++++ b/test/ingestion.test.ts
+@@ -1,7 +1,35 @@
+-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
++import { createHash } from "node:crypto";
++import { execFile } from "node:child_process";
++import {
++  chmod,
++  mkdtemp,
++  mkdir,
++  readFile,
++  rm,
++  writeFile,
++} from "node:fs/promises";
+ import os from "node:os";
+ import path from "node:path";
++import { promisify } from "node:util";
+ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++import type { OpenWikiMutation } from "../src/agent/types.js";
++
++const execFileAsync = promisify(execFile);
++function wikiMutation(filePath: string, content: string): OpenWikiMutation {
++  return {
++    content,
++    path: filePath,
++    sha256: createHash("sha256").update(content).digest("hex"),
++  };
++}
++
++async function git(cwd: string, ...args: string[]): Promise<string> {
++  const { stdout } = await execFileAsync("git", args, {
++    cwd,
++    encoding: "utf8",
++  });
++  return stdout;
++}
+
+ const ingest = vi.hoisted(() => vi.fn());
+ const linksIngest = vi.hoisted(() => vi.fn());
+@@ -76,6 +104,9 @@ vi.mock("../src/connectors/mcp-runtime.js", () => ({
+ }));
+
+ const originalHome = process.env.HOME;
++const originalWikiDir = process.env.OPENWIKI_WIKI_DIR;
++const originalPath = process.env.PATH;
++const originalTestRealGit = process.env.OPENWIKI_TEST_REAL_GIT;
+ let home: string;
+
+ beforeEach(async () => {
+@@ -105,6 +136,15 @@ beforeEach(async () => {
+ afterEach(async () => {
+   if (originalHome === undefined) delete process.env.HOME;
+   else process.env.HOME = originalHome;
++  if (originalWikiDir === undefined) delete process.env.OPENWIKI_WIKI_DIR;
++  else process.env.OPENWIKI_WIKI_DIR = originalWikiDir;
++  if (originalPath === undefined) delete process.env.PATH;
++  else process.env.PATH = originalPath;
++  if (originalTestRealGit === undefined) {
++    delete process.env.OPENWIKI_TEST_REAL_GIT;
++  } else {
++    process.env.OPENWIKI_TEST_REAL_GIT = originalTestRealGit;
++  }
+   await rm(home, { recursive: true, force: true });
+ });
+
+@@ -345,6 +385,469 @@ describe("deterministic ingestion", () => {
+     );
+   });
+
++  test("commits a source update without staging unrelated work", async () => {
++    const repo = path.join(home, "vault");
++    const wiki = path.join(repo, "04_Resources");
++    const rawDir = path.join(
++      home,
++      ".openwiki",
++      "connectors",
++      "google",
++      "raw",
++      "run-provenance",
++    );
++    await mkdir(path.join(wiki, "sources"), { recursive: true });
++    await mkdir(rawDir, { recursive: true });
++    await writeFile(path.join(wiki, "index.md"), "# Wiki\n");
++    await writeFile(path.join(repo, "user-note.md"), "before\n");
++    await writeFile(path.join(rawDir, "records.json"), "[]\n");
++    await git(repo, "init", "-q");
++    await git(repo, "config", "user.name", "Test User");
++    await git(repo, "config", "user.email", "test@example.com");
++    await git(repo, "add", ".");
++    await git(repo, "commit", "-qm", "baseline");
++    await git(repo, "config", "commit.gpgsign", "true");
++    await git(repo, "config", "gpg.format", "ssh");
++    await git(
++      repo,
++      "config",
++      "user.signingkey",
++      path.join(repo, "missing-signing-key"),
++    );
++    await writeFile(path.join(repo, "user-note.md"), "staged user work\n");
++    await git(repo, "add", "user-note.md");
++
++    process.env.OPENWIKI_WIKI_DIR = wiki;
++    ingest.mockResolvedValue({
++      connectorId: "google",
++      message: "Wrote one item.",
++      rawFiles: [path.join(rawDir, "records.json")],
++      runId: "run-provenance",
++      statePath: "~/.openwiki/connectors/google/state.json",
++      status: "success",
++      warnings: [],
++    });
++    runOpenWikiAgent.mockImplementation(
++      async (
++        _mode: string,
++        agentCwd: string,
++        options: {
++          onWikiMutations?: (mutations: OpenWikiMutation[]) => void;
++        },
++      ) => {
++        await writeFile(
++          path.join(agentCwd, "sources", "google.md"),
++          "# Google\n",
++        );
++        options.onWikiMutations?.([
++          wikiMutation("sources/google.md", "# Google\n"),
++        ]);
++        return {
++          finalOutput: "updated",
++          threadId: "test-thread",
++        };
++      },
++    );
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const events: string[] = [];
++    const result = await runOpenWikiIngestion(home, {
++      onEvent: (event) => {
++        if ("text" in event) events.push(event.text);
++      },
++      target: "google",
++    });
++
++    expect(events.join("")).toContain(
++      "Committed 1 OpenWiki file(s) for deterministic-1.",
++    );
++    expect(result.results[0]).toMatchObject({ status: "agent-updated" });
++    for (const field of [
++      "type: source-summary",
++      "status: processed",
++      "now: false",
++    ]) {
++      expect(runOpenWikiAgent.mock.calls[0]?.[2]).toMatchObject({
++        userMessage: expect.stringContaining(field),
++      });
++    }
++    expect(await git(repo, "log", "-1", "--format=%B")).toContain(
++      "OpenWiki-Connector: google\n" +
++        "OpenWiki-Source-Instance: deterministic-1\n" +
++        "OpenWiki-Pull-Run: run-provenance",
++    );
++    expect(
++      (await git(repo, "show", "--format=", "--name-only", "HEAD"))
++        .trim()
++        .split("\n"),
++    ).toEqual(["04_Resources/sources/google.md"]);
++    expect(await git(repo, "diff", "--cached", "--name-only")).toBe(
++      "user-note.md\n",
++    );
++    expect(await git(repo, "status", "--short", "--", "04_Resources")).toBe("");
++  });
++
++  test("refuses concurrent unrecorded wiki changes", async () => {
++    const repo = path.join(home, "vault");
++    const wiki = path.join(repo, "04_Resources");
++    const rawDir = path.join(
++      home,
++      ".openwiki",
++      "connectors",
++      "google",
++      "raw",
++      "run-concurrent",
++    );
++    await mkdir(path.join(wiki, "sources"), { recursive: true });
++    await mkdir(rawDir, { recursive: true });
++    await writeFile(path.join(wiki, "index.md"), "# Wiki\n");
++    await writeFile(path.join(rawDir, "records.json"), "[]\n");
++    await git(repo, "init", "-q");
++    await git(repo, "config", "user.name", "Test User");
++    await git(repo, "config", "user.email", "test@example.com");
++    await git(repo, "add", ".");
++    await git(repo, "commit", "-qm", "baseline");
++
++    process.env.OPENWIKI_WIKI_DIR = wiki;
++    ingest.mockResolvedValue({
++      connectorId: "google",
++      message: "Wrote one item.",
++      rawFiles: [path.join(rawDir, "records.json")],
++      runId: "run-concurrent",
++      statePath: "~/.openwiki/connectors/google/state.json",
++      status: "success",
++      warnings: [],
++    });
++    runOpenWikiAgent.mockImplementation(
++      async (
++        _mode: string,
++        agentCwd: string,
++        options: {
++          onWikiMutations?: (mutations: OpenWikiMutation[]) => void;
++        },
++      ) => {
++        await writeFile(
++          path.join(agentCwd, "sources", "google.md"),
++          "# Google\n",
++        );
++        await writeFile(path.join(agentCwd, "personal.md"), "user edit\n");
++        options.onWikiMutations?.([
++          wikiMutation("sources/google.md", "# Google\n"),
++        ]);
++        return {
++          finalOutput: "updated",
++          threadId: "test-thread",
++        };
++      },
++    );
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, { target: "google" });
++
++    expect(result.results[0]).toMatchObject({
++      error: expect.stringContaining("unrecorded wiki changes"),
++      status: "error",
++    });
++    expect(await git(repo, "diff", "--cached", "--name-only")).toBe("");
++    expect(
++      (
++        await git(
++          repo,
++          "ls-files",
++          "--others",
++          "--exclude-standard",
++          "--",
++          "04_Resources",
++        )
++      )
++        .trim()
++        .split("\n"),
++    ).toEqual(["04_Resources/personal.md", "04_Resources/sources/google.md"]);
++    expect(await git(repo, "rev-list", "--count", "HEAD")).toBe("1\n");
++  });
++
++  test("uses CAS to refuse a Git HEAD race at update-ref", async () => {
++    const repo = path.join(home, "vault");
++    const wiki = path.join(repo, "04_Resources");
++    const rawDir = path.join(
++      home,
++      ".openwiki",
++      "connectors",
++      "google",
++      "raw",
++      "run-head-change",
++    );
++    await mkdir(path.join(wiki, "sources"), { recursive: true });
++    await mkdir(rawDir, { recursive: true });
++    await writeFile(path.join(wiki, "index.md"), "# Wiki\n");
++    await writeFile(path.join(rawDir, "records.json"), "[]\n");
++    await git(repo, "init", "-q");
++    await git(repo, "config", "user.name", "Test User");
++    await git(repo, "config", "user.email", "test@example.com");
++    await git(repo, "add", ".");
++    await git(repo, "commit", "-qm", "baseline");
++    const binDir = path.join(home, "git-race-bin");
++    await mkdir(binDir);
++    const { stdout: realGit } = await execFileAsync(
++      "sh",
++      ["-c", "command -v git"],
++      { encoding: "utf8" },
++    );
++    process.env.OPENWIKI_TEST_REAL_GIT = realGit.trim();
++    const gitWrapper = path.join(binDir, "git");
++    await writeFile(
++      gitWrapper,
++      [
++        "#!/bin/sh",
++        "set -eu",
++        'if [ "$1" = "update-ref" ] && [ -f .git/openwiki-race-requested ]; then',
++        "  rm .git/openwiki-race-requested",
++        '  "$OPENWIKI_TEST_REAL_GIT" add concurrent.md',
++        '  "$OPENWIKI_TEST_REAL_GIT" commit -qm concurrent',
++        "fi",
++        'exec "$OPENWIKI_TEST_REAL_GIT" "$@"',
++        "",
++      ].join("\n"),
++    );
++    await chmod(gitWrapper, 0o755);
++    process.env.PATH = `${binDir}${path.delimiter}${originalPath ?? ""}`;
++
++    process.env.OPENWIKI_WIKI_DIR = wiki;
++    ingest.mockResolvedValue({
++      connectorId: "google",
++      message: "Wrote one item.",
++      rawFiles: [path.join(rawDir, "records.json")],
++      runId: "run-head-change",
++      statePath: "~/.openwiki/connectors/google/state.json",
++      status: "success",
++      warnings: [],
++    });
++    runOpenWikiAgent.mockImplementation(
++      async (
++        _mode: string,
++        agentCwd: string,
++        options: {
++          onWikiMutations?: (mutations: OpenWikiMutation[]) => void;
++        },
++      ) => {
++        await writeFile(
++          path.join(agentCwd, "sources", "google.md"),
++          "# Google\n",
++        );
++        options.onWikiMutations?.([
++          wikiMutation("sources/google.md", "# Google\n"),
++        ]);
++        await writeFile(path.join(repo, "concurrent.md"), "concurrent\n");
++        await writeFile(path.join(repo, ".git", "openwiki-race-requested"), "");
++        return {
++          finalOutput: "updated",
++          threadId: "test-thread",
++        };
++      },
++    );
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, { target: "google" });
++
++    expect(result.results[0]).toMatchObject({
++      error: expect.stringContaining(
++        "Git HEAD changed during OpenWiki ingestion",
++      ),
++      status: "error",
++    });
++    expect(await git(repo, "log", "-1", "--format=%s")).toBe("concurrent\n");
++    expect(await git(repo, "rev-list", "--count", "HEAD")).toBe("2\n");
++    expect(await git(repo, "show", "HEAD:concurrent.md")).toBe("concurrent\n");
++    expect(await git(repo, "diff", "--cached", "--name-only")).toBe("");
++    expect(
++      await git(
++        repo,
++        "ls-files",
++        "--others",
++        "--exclude-standard",
++        "--",
++        "04_Resources",
++      ),
++    ).toBe("04_Resources/sources/google.md\n");
++  });
++
++  test("unstages wiki changes when an automated commit fails", async () => {
++    const repo = path.join(home, "vault");
++    const wiki = path.join(repo, "04_Resources");
++    const rawDir = path.join(
++      home,
++      ".openwiki",
++      "connectors",
++      "google",
++      "raw",
++      "run-failed-commit",
++    );
++    await mkdir(path.join(wiki, "sources"), { recursive: true });
++    await mkdir(rawDir, { recursive: true });
++    await writeFile(path.join(wiki, "index.md"), "# Wiki\n");
++    await writeFile(path.join(rawDir, "records.json"), "[]\n");
++    await git(repo, "init", "-q");
++    await git(repo, "config", "user.name", "Test User");
++    await git(repo, "config", "user.email", "test@example.com");
++    await git(repo, "add", ".");
++    await git(repo, "commit", "-qm", "baseline");
++    const preCommit = path.join(repo, ".git", "hooks", "pre-commit");
++    await writeFile(
++      preCommit,
++      '#!/bin/sh\necho "commit blocked" >&2\nexit 1\n',
++    );
++    await chmod(preCommit, 0o755);
++
++    process.env.OPENWIKI_WIKI_DIR = wiki;
++    ingest.mockResolvedValue({
++      connectorId: "google",
++      message: "Wrote one item.",
++      rawFiles: [path.join(rawDir, "records.json")],
++      runId: "run-failed-commit",
++      statePath: "~/.openwiki/connectors/google/state.json",
++      status: "success",
++      warnings: [],
++    });
++    runOpenWikiAgent.mockImplementation(
++      async (
++        _mode: string,
++        agentCwd: string,
++        options: {
++          onWikiMutations?: (mutations: OpenWikiMutation[]) => void;
++        },
++      ) => {
++        await writeFile(
++          path.join(agentCwd, "sources", "google.md"),
++          "# Google\n",
++        );
++        options.onWikiMutations?.([
++          wikiMutation("sources/google.md", "# Google\n"),
++        ]);
++        return {
++          finalOutput: "updated",
++          threadId: "test-thread",
++        };
++      },
++    );
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, { target: "google" });
++
++    expect(result.results[0]).toMatchObject({
++      error: expect.stringContaining("commit blocked"),
++      status: "error",
++    });
++    expect(await git(repo, "diff", "--cached", "--name-only")).toBe("");
++    expect(
++      await git(
++        repo,
++        "ls-files",
++        "--others",
++        "--exclude-standard",
++        "--",
++        "04_Resources",
++      ),
++    ).toBe("04_Resources/sources/google.md\n");
++    expect(await readFile(path.join(wiki, "index.md"), "utf8")).toBe(
++      "# Wiki\n",
++    );
++    expect(await git(repo, "rev-list", "--count", "HEAD")).toBe("1\n");
++  });
++
++  test("reports Git failures instead of treating them as a non-Git wiki", async () => {
++    const wiki = path.join(home, "wiki");
++    const binDir = path.join(home, "bin");
++    await mkdir(wiki);
++    await mkdir(binDir);
++    const gitExecutable = path.join(binDir, "git");
++    await writeFile(
++      gitExecutable,
++      '#!/bin/sh\necho "fatal: detected dubious ownership" >&2\nexit 128\n',
++    );
++    await chmod(gitExecutable, 0o755);
++    process.env.PATH = `${binDir}:${originalPath ?? ""}`;
++    process.env.OPENWIKI_WIKI_DIR = wiki;
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++
++    const result = await runOpenWikiIngestion(home, { target: "google" });
++
++    expect(result.results[0]).toMatchObject({
++      error: expect.stringContaining("detected dubious ownership"),
++      status: "error",
++    });
++    expect(ingest).not.toHaveBeenCalled();
++    expect(runOpenWikiAgent).not.toHaveBeenCalled();
++  });
++
++  test("does not attribute a pre-existing dirty file to OpenWiki", async () => {
++    const repo = path.join(home, "vault");
++
++    const wiki = path.join(repo, "04_Resources");
++    const sourcePage = path.join(wiki, "sources", "google.md");
++    const rawDir = path.join(
++      home,
++      ".openwiki",
++      "connectors",
++      "google",
++      "raw",
++      "run-conflict",
++    );
++    await mkdir(path.dirname(sourcePage), { recursive: true });
++    await mkdir(rawDir, { recursive: true });
++    await writeFile(sourcePage, "baseline\n");
++    await writeFile(path.join(rawDir, "records.json"), "[]\n");
++    await git(repo, "init", "-q");
++    await git(repo, "config", "user.name", "Test User");
++    await git(repo, "config", "user.email", "test@example.com");
++    await git(repo, "add", ".");
++    await git(repo, "commit", "-qm", "baseline");
++    await writeFile(sourcePage, "user work\n");
++
++    process.env.OPENWIKI_WIKI_DIR = wiki;
++    ingest.mockResolvedValue({
++      connectorId: "google",
++      message: "Wrote one item.",
++      rawFiles: [path.join(rawDir, "records.json")],
++      runId: "run-conflict",
++      statePath: "~/.openwiki/connectors/google/state.json",
++      status: "success",
++      warnings: [],
++    });
++    runOpenWikiAgent.mockImplementation(
++      async (_mode: string, agentCwd: string) => {
++        await writeFile(
++          path.join(agentCwd, "sources", "google.md"),
++          "agent work\n",
++        );
++        return { finalOutput: "updated", threadId: "test-thread" };
++      },
++    );
++    vi.resetModules();
++    const { runOpenWikiIngestion } = await import("../src/ingestion.ts");
++    const events: string[] = [];
++
++    const result = await runOpenWikiIngestion(home, {
++      onEvent: (event) => {
++        if ("text" in event) events.push(event.text);
++      },
++      target: "google",
++    });
++
++    expect(result.results[0]).toMatchObject({ status: "error" });
++    expect(events.join("")).toContain(
++      "OpenWiki wiki must be clean before ingestion: " +
++        "04_Resources/sources/google.md",
++    );
++    expect(await readFile(sourcePage, "utf8")).toBe("user work\n");
++    expect(await git(repo, "log", "-1", "--format=%s")).toBe("baseline\n");
++    expect(ingest).not.toHaveBeenCalled();
++    expect(runOpenWikiAgent).not.toHaveBeenCalled();
++  });
++
+   test("ingest rss runs every configured RSS source instance", async () => {
+     await writeFile(
+       path.join(home, ".openwiki", "onboarding.json"),
