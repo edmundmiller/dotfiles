@@ -14,10 +14,11 @@ import sys
 from pathlib import Path
 
 
-def run(args: list[str], *, input_text: str | None = None, capture: bool = False) -> subprocess.CompletedProcess[str]:
+def run(
+    args: list[str], *, capture: bool = False
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         args,
-        input=input_text,
         text=True,
         stdout=subprocess.PIPE if capture else None,
         stderr=subprocess.PIPE if capture else None,
@@ -25,24 +26,25 @@ def run(args: list[str], *, input_text: str | None = None, capture: bool = False
     )
 
 
-def wait_for_pi_ready(pane_id: str, *, idle_timeout_ms: int) -> None:
-    """Best-effort wait for Herdr's semantic Pi idle state."""
+def default_agent_name(pane_id: str) -> str:
+    suffix = "".join(char if char.isalnum() else "_" for char in pane_id)
+    return f"pi_{suffix}"[:32]
 
-    subprocess.run(
+
+def start_pi(pane_id: str, agent_name: str, *, timeout_ms: int) -> None:
+    run(
         [
             "herdr",
             "agent",
-            "wait",
+            "start",
+            agent_name,
+            "--kind",
+            "pi",
+            "--pane",
             pane_id,
-            "--status",
-            "idle",
             "--timeout",
-            str(idle_timeout_ms),
+            str(timeout_ms),
         ],
-        text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
     )
 
 
@@ -54,15 +56,19 @@ def main() -> int:
     parser.add_argument("--label", required=True, help="Herdr workspace label")
     parser.add_argument("--prompt-file", required=True, help="Markdown/text file containing the Pi handoff prompt")
     parser.add_argument(
+        "--agent-name",
+        help="Unique live agent name; defaults to one derived from the returned pane ID",
+    )
+    parser.add_argument(
         "--no-focus",
         action="store_true",
         help="Create the workspace without focusing it",
     )
     parser.add_argument(
-        "--idle-timeout-ms",
+        "--start-timeout-ms",
         type=int,
         default=30_000,
-        help="How long to wait for Pi to become idle before sending the prompt",
+        help="How long agent start waits for Herdr to detect Pi as ready",
     )
     args = parser.parse_args()
 
@@ -96,14 +102,21 @@ def main() -> int:
     result = payload["result"]
     pane_id = result["root_pane"]["pane_id"]
     workspace_id = result["workspace"]["workspace_id"]
+    agent_name = args.agent_name or default_agent_name(pane_id)
 
-    run(["herdr", "pane", "run", pane_id, "pi"])
-    wait_for_pi_ready(pane_id, idle_timeout_ms=args.idle_timeout_ms)
+    start_pi(pane_id, agent_name, timeout_ms=args.start_timeout_ms)
+    run(["herdr", "agent", "prompt", pane_id, prompt])
 
-    run(["herdr", "pane", "send-text", pane_id, prompt])
-    run(["herdr", "pane", "send-keys", pane_id, "Enter"])
-
-    print(json.dumps({"workspace_id": workspace_id, "pane_id": pane_id}, indent=2))
+    print(
+        json.dumps(
+            {
+                "workspace_id": workspace_id,
+                "pane_id": pane_id,
+                "agent_name": agent_name,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
