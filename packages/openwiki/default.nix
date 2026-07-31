@@ -4,6 +4,8 @@
   stdenv,
   fetchFromGitHub,
   fetchPnpmDeps,
+  git,
+  git-lfs,
   cctools,
   makeWrapper,
   node-gyp,
@@ -196,6 +198,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0009-rss-connector.patch
     ./patches/0010-relative-raw-tool-paths.patch
     ./patches/0011-skip-personal-tweet-index.patch
+    ./patches/0012-git-provenance.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -246,8 +249,18 @@ stdenv.mkDerivation (finalAttrs: {
     ''}
     makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
       --add-flags "$out/lib/openwiki/dist/cli.js" \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          git
+          git-lfs
+          nodejs_22
+        ]
+      } \
       ${lib.optionalString stdenv.hostPlatform.isDarwin ''
         --prefix PATH : ${lib.makeBinPath [ imsg ]} \
+        --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"' \
+        --run 'export XDG_DATA_HOME="''${XDG_DATA_HOME:-$HOME/.local/share}"' \
+        --run 'export XDG_CACHE_HOME="''${XDG_CACHE_HOME:-$HOME/.cache}"' \
         --set OPENWIKI_EXECUTABLE /run/current-system/sw/bin/openwiki \
         --set OPENWIKI_LAUNCHER /run/current-system/sw/bin/openwiki-launchd-launcher
       ''}
