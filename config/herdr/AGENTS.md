@@ -16,6 +16,7 @@ Tracked Herdr runtime config lives here and is wired in by `modules/shell/herdr/
 - The shell module defaults `modules.shell.herdr.configFile` to this tracked file.
 - The live file is `~/.config/herdr/config.toml`, but it is intentionally writable because Herdr writes some settings itself.
 - Do **not** add `onboarding = false` to the tracked config. Let Herdr manage onboarding/settings state.
+- Do **not** restore `[worktrees].post_create_command`. Use packaged plugin event hooks.
 
 After edits, update the live config if needed and reload:
 
@@ -198,7 +199,7 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep checkout bootstrap in the local `dotfiles.dev-layout` plugin's `workspace.created` and `worktree.created` hooks. It serializes per workspace, runs an executable repo-local `scripts/qmd-seed-worktree.sh` before Codex when present, and owns exactly the Codex and Hunk tabs.
+- Keep checkout bootstrap in the local `dotfiles.dev-layout` plugin's `workspace.created` and `worktree.created` hooks. `worktree.create` emits both; serialize per workspace, run an executable repo-local `scripts/qmd-seed-worktree.sh` before Codex when present, remain idempotent, and own only the Codex and Hunk tabs.
 - `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
