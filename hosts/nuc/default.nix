@@ -447,6 +447,7 @@ let
       pkgs.gh
       pkgs.nodejs
       pkgs.openssh
+      pkgs.my.buzz
     ];
     text = ''
       set -euo pipefail
@@ -455,7 +456,7 @@ let
       install -d -m 0700 "$state_dir"
 
       if [ ! -d "$repo/.git" ]; then
-        git clone --origin origin ${lib.escapeShellArg millDocsBuzzGitUrl} "$repo"
+        git -c credential.helper=${pkgs.my.buzz}/bin/git-credential-nostr clone --origin origin ${lib.escapeShellArg millDocsBuzzGitUrl} "$repo"
       fi
       cd "$repo"
       test -z "$(git status --porcelain)" || {
@@ -463,6 +464,7 @@ let
         exit 1
       }
       git remote set-url origin ${lib.escapeShellArg millDocsBuzzGitUrl}
+      git config credential.helper ${pkgs.my.buzz}/bin/git-credential-nostr
       if git remote get-url github >/dev/null 2>&1; then
         git remote set-url github ${lib.escapeShellArg millDocsGithubGitUrl}
       else
@@ -2559,6 +2561,7 @@ in
       XDG_DATA_HOME = "${millDocsCodingAgentStateDir}/data";
       XDG_STATE_HOME = "${millDocsCodingAgentStateDir}/state";
       BUZZ_FEEDBACK_STATUS_URL = "https://mill-docs-agents.${tailnet}/channels/buzz/feedback";
+      BUZZ_RELAY_URL = "https://millers.communities.buzz.xyz";
     };
     serviceConfig = {
       Type = "oneshot";
@@ -2568,6 +2571,7 @@ in
       StateDirectoryMode = "0700";
       WorkingDirectory = millDocsCodingAgentStateDir;
       ExecStart = "${millDocsCodingAgent}/bin/mill-docs-coding-agent";
+      EnvironmentFile = config.age.secrets.buzz-mill-docs-agent-env.path;
       TimeoutStartSec = "45min";
       UMask = "0077";
       ProtectSystem = "strict";
