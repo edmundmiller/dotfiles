@@ -15,7 +15,6 @@ class MillDocsCodingAgentTest(unittest.TestCase):
         self.assertIn('git remote add github', source)
         self.assertNotIn('WorkingDirectory = millDocsVaultPath;\n      ExecStart = "${millDocsCodingAgent', source)
 
-    @unittest.expectedFailure
     def test_secret_reads_do_not_mask_failures(self) -> None:
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         self.assertIn('LINEAR_API_KEY="$(< "$CREDENTIALS_DIRECTORY/linear-api-key")"', source)
