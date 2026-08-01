@@ -20,6 +20,9 @@ let
   ) execStartPreStrings;
   radarVaultLink =
     nixosConfig.config.modules.services.hermes.agents.radar.workspaceLinks."repos/obsidian-vault";
+  radarSecretMaterialization =
+    nixosConfig.config.system.activationScripts.hermesRadarSecretsMaterialize.text;
+  knownActivationTargetsLiveVault = pkgs.lib.hasInfix ''ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"'' radarSecretMaterialization;
 in
 pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
   if [ "${if hasBlogwatcher then "1" else "0"}" -ne 1 ]; then
@@ -46,6 +49,11 @@ pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
   fi
   if [ ${pkgs.lib.escapeShellArg radarVaultLink} != /var/lib/hermes-radar/.hermes/state/obsidian-vault ]; then
     echo "Radar cron must not write to the live Obsidian Sync checkout." >&2
+    exit 1
+  fi
+  # Strict regression capture: flip this assertion with the implementation fix.
+  if [ "${if knownActivationTargetsLiveVault then "1" else "0"}" -ne 1 ]; then
+    echo "Expected the captured Radar activation link bug." >&2
     exit 1
   fi
   touch "$out"
