@@ -38,8 +38,8 @@ let
       msg = "Mill Docs coding agent must load the OpenAI model credential.";
     }
     {
-      test = pkgs.lib.hasInfix "unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY" source;
-      msg = "Regression fixture: coding runner no longer clears the Nostr signing key.";
+      test = !(pkgs.lib.hasInfix "unset NOSTR_PRIVATE_KEY" source);
+      msg = "Mill Docs coding runner must retain its Nostr signing key for runner-owned git operations.";
     }
   ];
 in
