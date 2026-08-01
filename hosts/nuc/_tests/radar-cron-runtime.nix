@@ -15,6 +15,11 @@ let
   repairsStateOwnership = builtins.any (
     command: pkgs.lib.hasInfix "chown -hR emiller:users /var/lib/hermes-radar" command
   ) execStartPreStrings;
+  preparesIsolatedVault = builtins.any (
+    command: pkgs.lib.hasInfix "radar-vault-prepare" command
+  ) execStartPreStrings;
+  radarVaultLink =
+    nixosConfig.config.modules.services.hermes.agents.radar.workspaceLinks."repos/obsidian-vault";
 in
 pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
   if [ "${if hasBlogwatcher then "1" else "0"}" -ne 1 ]; then
@@ -33,6 +38,14 @@ pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
   # Startup must restore the profile's declared owner before materialization.
   if [ "${if repairsStateOwnership then "1" else "0"}" -ne 1 ]; then
     echo "Radar cron startup must repair profile state ownership." >&2
+    exit 1
+  fi
+  if [ "${if preparesIsolatedVault then "1" else "0"}" -ne 1 ]; then
+    echo "Radar cron must prepare and publish its isolated vault checkout." >&2
+    exit 1
+  fi
+  if [ ${pkgs.lib.escapeShellArg radarVaultLink} != /var/lib/hermes-radar/.hermes/state/obsidian-vault ]; then
+    echo "Radar cron must not write to the live Obsidian Sync checkout." >&2
     exit 1
   fi
   touch "$out"
