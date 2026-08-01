@@ -86,7 +86,7 @@ Custom/current mappings:
 | `prefix+O`                        | Start from GitHub item                             |
 | `prefix+B`                        | Open Herdr Browser in a right split                |
 
-Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes the `workspace.created` and `worktree.created` hooks per workspace, runs an executable repo-local `scripts/qmd-seed-worktree.sh` before Codex when present, creates exactly Codex and Hunk tabs, and focuses Codex.
+Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin serializes `workspace.created` and `worktree.created` per workspace. It creates and focuses OMP everywhere, and adds Hunk only when the workspace is inside a Git checkout.
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
@@ -119,7 +119,7 @@ hooks receive `HERDR_PLUGIN_EVENT`, `HERDR_PLUGIN_EVENT_JSON`, and
 Repo-owned plugins are composed into a local package and registered by `modules/shell/herdr/default.nix`:
 
 - `dotfiles.agent-read-command` — copies a `herdr agent read ...` command from pane/tab context menus.
-- `dotfiles.dev-layout` — provides Hunk actions plus the idempotent two-tab checkout bootstrap.
+- `dotfiles.dev-layout` — provides Hunk actions plus idempotent OMP bootstrap, adding Hunk only for Git checkout workspaces.
 - `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
 - `nathanflurry.jj-workspace` — built from a pinned upstream revision plus the ordered safety patch under `packages/herdr-plugin-jj-workspace/`.
 - `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
