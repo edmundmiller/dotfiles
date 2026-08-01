@@ -64,11 +64,21 @@ def "main hermes-local" [--smoke-only] {
   require-success "Orchestrator gateway install" $install
   let start = (^orchestrator-hermes gateway start | complete)
   require-success "Orchestrator gateway start" $start
-  let gateway = (^orchestrator-hermes gateway status | complete)
+  mut gateway = (^orchestrator-hermes gateway status | complete)
+  mut gateway_pid = []
+  for _ in 1..10 {
+    if $gateway.exit_code == 0 {
+      $gateway_pid = ($gateway.stdout | parse --regex '"PID" = (?<pid>[0-9]+);')
+      if not ($gateway_pid | is-empty) {
+        break
+      }
+    }
+    sleep 1sec
+    $gateway = (^orchestrator-hermes gateway status | complete)
+  }
   require-success "Orchestrator gateway status" $gateway
-  let gateway_pid = ($gateway.stdout | parse --regex '"PID" = (?<pid>[0-9]+);')
   if ($gateway_pid | is-empty) {
-    error make {msg: "Orchestrator gateway status missing a live PID"}
+    error make {msg: "Orchestrator gateway status missing a live PID after 10 seconds"}
   }
 
   let dispatcher = (^orchestrator-hermes kanban dispatch --dry-run --json | complete)
