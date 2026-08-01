@@ -183,6 +183,10 @@ if [[ ${#packages[@]} -eq 0 && $run_integration -eq 0 ]]; then
   exit 0
 fi
 
+while IFS= read -r name; do
+  unset "$name"
+done < <(git -C "$ROOT_DIR" rev-parse --local-env-vars)
+
 echo "qa-changed: ensuring workspace deps are installed"
 symlinked_node_modules=()
 while IFS= read -r -d '' link_path; do
