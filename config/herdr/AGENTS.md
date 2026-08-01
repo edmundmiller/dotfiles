@@ -205,7 +205,7 @@ Meaning:
 ## Related files
 
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
-- `packages/herdr-plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and the two-tab checkout bootstrap.
+- `packages/herdr-plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and the OMP/Hunk checkout bootstrap.
 - `packages/herdr-plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews.
 - `packages/herdr-plugin-jj-workspace/` owns the pinned upstream source and local lifecycle-safety patch.
 - `packages/herdr-tab-smart-rename/` owns the pinned upstream source, OMP provider patch, and automatic worker lifecycle.
