@@ -489,8 +489,9 @@ let
       export PATH="/etc/profiles/per-user/emiller/bin:$PATH"
       LINEAR_API_KEY="$(< "$CREDENTIALS_DIRECTORY/linear-api-key")"
       GH_TOKEN="$(< "$CREDENTIALS_DIRECTORY/github-token")"
+      OPENAI_API_KEY="$(< "$CREDENTIALS_DIRECTORY/openai-api-key")"
       BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"
-      export LINEAR_API_KEY GH_TOKEN BUZZ_FEEDBACK_STATUS_SECRET
+      export LINEAR_API_KEY GH_TOKEN OPENAI_API_KEY BUZZ_FEEDBACK_STATUS_SECRET
       exec node scripts/run-coding-agent-queue.ts --once
     '';
   };
@@ -2525,6 +2526,7 @@ in
       LoadCredential = [
         "linear-api-key:/var/lib/opnix/secrets/millDocsCodingAgentLinearToken"
         "github-token:/var/lib/opnix/secrets/millDocsCodingAgentGithubToken"
+        "openai-api-key:${config.age.secrets.openai-api-key.path}"
       ];
       TimeoutStartSec = "45min";
       UMask = "0077";
