@@ -1,6 +1,6 @@
 # Worklog: plannotator-agent-integrations
 
-Status: blocked
+Status: complete
 
 ## Objective
 
@@ -54,19 +54,14 @@ upstream.
   Pi, Claude, and Codex report current.
 - Focused Python, Pi, OMP, Ruff, nixfmt, and diff checks passed.
 - `hey agent-audit-tests`: `PASS test-confidence`.
-- `hey check`: Darwin evaluation, lock sync, tmux, package, policy, and ast-grep
-  checks passed. Its formatter/pre-commit wrapper could not discover the
-  generated config absent from this worktree; the same hooks were rerun against
-  `/nix/store/dl5wyj0jfxdvr7xw0qg9cn9zn2wc9cnz-pre-commit-config.json` across
-  every task file and passed.
-- `hey agent-finish`: its installed wrapper selected the JSON utility `jj`
-  1.9.2 where the bundled test requires Jujutsu, so that unrelated completion
-  test failed. The same focused test passed from current source with Jujutsu.
-- Done snapshot: canonical `main` has unrelated Herdr overlay edits. The dirty
-  default-checkout gate forbids moving or landing `main`; those files remain
-  untouched.
-- Continuation audit: the same five canonical Herdr files remain dirty and
-  `origin/main` still lacks `modules/agents/plannotator/default.nix`.
+- Fresh `hey check`: Darwin evaluation, lock sync, formatting, pre-commit,
+  tmux, package harness, package policy, and ast-grep checks all passed.
+- Fresh `hey agent-finish`: worklog, repo-quality, 17 agent-quality tests,
+  confidence, and inventory-drift checks passed.
+- The Herdr cleanup task landed its scoped overlay, preserved unrelated NUC and
+  Flue edits on `wip/main-preserve-20260730-ma-landing`, and confirmed no dirty
+  `main` checkout remained. Its cross-task audit notified the only other
+  blocked task, Moshi.
 - A later rebuild from canonical `main` restored Pi's unsigned upstream
   launcher: `pi --version` exited 137 and `.pi-wrapped` referenced
   `/nix/store/pyp1rz...-pi-0.81.1/libexec/pi/pi`.
@@ -74,6 +69,10 @@ upstream.
   0.81.1 with `@plannotator/pi-extension@0.24.2`, Plannotator 0.25.0, OMP
   doctor `ok` at 0.25.0, Claude 0.25.0 enabled, Codex hooks enabled, all three
   shared skills present, and the Herdr-triggered Plannotator module enabled.
+- The feature was rebased onto current `origin/main`, activated with
+  `darwin-rebuild switch --flake .`, fast-forwarded through a clean integration
+  worktree, and pushed to actual `main`. `verify-landing.sh` confirmed the
+  integration tip, local `main`, and authoritative `origin/main` were equal.
 
 ## Reviews
 
@@ -90,13 +89,12 @@ was retried at landing. Claude again returned `Authentication required`.
 
 ## Feedback
 
-- Until this change lands on `main`, any canonical rebuild can revert the live
-  Pi repair and agent integrations even though the feature generation works.
+- The prior rebuild drift was caused by the feature living only off `main`.
+  Landing the scoped commits removes that source/deployment mismatch.
 
 ## Remaining work
 
-- Owner must clean or commit the unrelated canonical Herdr overlay edits. Then
-  fast-forward `main`, push it, complete the receipt, and prove remote equality.
+- None.
 
 ## Commits
 
@@ -105,3 +103,6 @@ was retried at landing. Claude again returned `Authentication required`.
 - `test(pi): capture copied runtime bypass`
 - `fix(pi): launch re-signed runtime copy`
 - `feat(agents): configure Plannotator integrations`
+- `docs(agents): record Plannotator rollout`
+- `docs(agents): record Plannotator drift audit`
+- `docs(agents): complete Plannotator rollout`
