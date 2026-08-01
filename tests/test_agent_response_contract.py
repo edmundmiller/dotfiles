@@ -48,6 +48,15 @@ class AgentResponseContractTests(unittest.TestCase):
         ):
             self.assertIn(expected, rule)
 
+    def test_code_standards_scope_compatibility_and_dependency_choices(self) -> None:
+        rule = (ROOT / "config/agents/rules/10-code-standards.md").read_text()
+
+        for expected in (
+            "Preserve backward compatibility only when required by documented consumers, public APIs, or migrations.",
+            "Prefer established, well-maintained libraries when they materially reduce complexity; avoid dependencies for trivial behavior.",
+        ):
+            self.assertIn(expected, rule)
+
 
 if __name__ == "__main__":
     unittest.main()
