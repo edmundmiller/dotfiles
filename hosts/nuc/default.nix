@@ -190,7 +190,11 @@ let
       git -C "$repo" config user.name Radar
       git -C "$repo" config user.email radar@agents.local
 
-      unexpected="$(git -C "$repo" status --porcelain=v1 | cut -c4- | grep -v '^04_Resources/Signals/' || true)"
+      unexpected="$({
+        git -C "$repo" diff --name-only
+        git -C "$repo" diff --cached --name-only
+        git -C "$repo" ls-files --others --exclude-standard
+      } | grep -v '^04_Resources/Signals/' || true)"
       if [ -n "$unexpected" ]; then
         echo "radar-vault-prepare: preserving unexpected isolated dirt" >&2
         printf '%s\n' "$unexpected" >&2
