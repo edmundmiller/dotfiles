@@ -106,6 +106,8 @@ in
         unstable.yazi
         zoxide
         my.hey # Nix-managed hey command with completions
+        my.jsongrep # `jg` path-query tool for JSON/YAML/TOML
+        jq
         my.zsh-bench
       ];
 
