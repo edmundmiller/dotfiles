@@ -2,6 +2,7 @@
   inputs,
   lib,
   stdenv,
+  coreutils,
   fetchFromGitHub,
   fetchPnpmDeps,
   git,
@@ -15,6 +16,7 @@
   python313,
   removeReferencesTo,
   srcOnly,
+  writeShellApplication,
 }:
 
 let
@@ -27,6 +29,88 @@ let
       })
     else
       null;
+
+  openwikiScheduledIngestion = writeShellApplication {
+    name = "openwiki-scheduled-ingestion";
+    runtimeInputs = [
+      coreutils
+      git
+    ];
+    text = ''
+      repo="''${OPENWIKI_SCHEDULE_REPO:-$HOME/.local/state/openwiki/obsidian-vault}"
+      remote="''${OPENWIKI_SCHEDULE_REMOTE:-git@github.com:edmundmiller/claude-vault.git}"
+      branch="automation/openwiki"
+
+      mkdir -p "$(dirname "$repo")"
+      if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
+        git clone --branch main "$remote" "$repo"
+        git -C "$repo" switch -c "$branch"
+      fi
+
+      if [ "$(git -C "$repo" remote get-url origin)" != "$remote" ]; then
+        echo "openwiki-scheduled-ingestion: unexpected origin URL" >&2
+        exit 69
+      fi
+      if [ -d "$(git -C "$repo" rev-parse --git-path rebase-merge)" ] ||
+         [ -d "$(git -C "$repo" rev-parse --git-path rebase-apply)" ]; then
+        echo "openwiki-scheduled-ingestion: preserved interrupted rebase" >&2
+        exit 75
+      fi
+      if [ -n "$(git -C "$repo" status --porcelain=v1)" ]; then
+        echo "openwiki-scheduled-ingestion: preserved dirty isolated checkout" >&2
+        exit 75
+      fi
+
+      if git -C "$repo" show-ref --verify --quiet "refs/heads/$branch"; then
+        git -C "$repo" switch "$branch"
+      else
+        git -C "$repo" fetch origin main
+        git -C "$repo" switch -c "$branch" origin/main
+      fi
+
+      publish() {
+        for attempt in 1 2 3 4 5; do
+          git -C "$repo" fetch origin main
+          git -C "$repo" rebase origin/main
+          remote_before="$(git -C "$repo" rev-parse origin/main)"
+          mutation_tip="$(git -C "$repo" rev-parse HEAD)"
+          if push_output="$(git -C "$repo" push origin HEAD:main 2>&1)"; then
+            git -C "$repo" fetch origin main
+            remote_tip="$(git -C "$repo" rev-parse origin/main)"
+            authoritative_tip="$(git -C "$repo" ls-remote origin refs/heads/main | cut -f1)"
+            if [ "$remote_tip" != "$authoritative_tip" ] ||
+               ! git -C "$repo" merge-base --is-ancestor "$mutation_tip" "$remote_tip"; then
+              echo "openwiki-scheduled-ingestion: remote verification failed" >&2
+              return 75
+            fi
+            return 0
+          fi
+
+          git -C "$repo" fetch origin main
+          remote_after="$(git -C "$repo" rev-parse origin/main)"
+          if [ "$remote_before" = "$remote_after" ]; then
+            printf '%s\n' "$push_output" >&2
+            return 1
+          fi
+          echo "openwiki-scheduled-ingestion: remote main advanced; retrying ($attempt/5)" >&2
+          sleep "$attempt"
+        done
+        echo "openwiki-scheduled-ingestion: remote main kept advancing" >&2
+        return 75
+      }
+
+      publish
+      git -C "$repo" switch -C "$branch" origin/main
+      export OPENWIKI_WIKI_DIR="$repo/04_Resources"
+      cd "$repo"
+      set +e
+      /run/current-system/sw/bin/openwiki ingest all --scheduled --print
+      ingestion_status=$?
+      set -e
+      publish
+      exit "$ingestion_status"
+    '';
+  };
 
   openwikiLaunchdLauncher = stdenv.mkDerivation {
     pname = "openwiki-launchd-launcher";
@@ -69,26 +153,6 @@ let
         return 0;
       }
 
-      static int enter_wiki(void) {
-        const struct passwd *user = getpwuid(getuid());
-        char wiki[PATH_MAX];
-        if (user == NULL) {
-          fputs("openwiki-launchd-launcher: cannot resolve user\n", stderr);
-          return 70;
-        }
-        const int length = snprintf(
-          wiki,
-          sizeof(wiki),
-          "%s/obsidian-vault",
-          user->pw_dir
-        );
-        if (length < 0 || (size_t)length >= sizeof(wiki) || chdir(wiki) != 0) {
-          perror("openwiki-launchd-launcher");
-          return 72;
-        }
-        return 0;
-      }
-
       int main(int argc, char **argv) {
         int status = prepare_environment();
         if (status != 0) {
@@ -113,17 +177,9 @@ let
           return 64;
         }
 
-        status = enter_wiki();
-        if (status != 0) {
-          return status;
-        }
         execl(
-          "/run/current-system/sw/bin/openwiki",
-          "openwiki",
-          "ingest",
-          "all",
-          "--scheduled",
-          "--print",
+          "/run/current-system/sw/bin/openwiki-scheduled-ingestion",
+          "openwiki-scheduled-ingestion",
           (char *)NULL
         );
         perror("openwiki-launchd-launcher");
@@ -199,6 +255,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0010-relative-raw-tool-paths.patch
     ./patches/0011-skip-personal-tweet-index.patch
     ./patches/0012-git-provenance.patch
+    ./patches/0013-scheduled-git-mutation-lane.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -246,6 +303,7 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r dist node_modules package.json skills README.md LICENSE "$out/lib/openwiki/"
     ${lib.optionalString stdenv.hostPlatform.isDarwin ''
       ln -s ${lib.getExe openwikiLaunchdLauncher} "$out/bin/openwiki-launchd-launcher"
+      ln -s ${lib.getExe openwikiScheduledIngestion} "$out/bin/openwiki-scheduled-ingestion"
     ''}
     makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
       --add-flags "$out/lib/openwiki/dist/cli.js" \
@@ -262,7 +320,8 @@ stdenv.mkDerivation (finalAttrs: {
         --run 'export XDG_DATA_HOME="''${XDG_DATA_HOME:-$HOME/.local/share}"' \
         --run 'export XDG_CACHE_HOME="''${XDG_CACHE_HOME:-$HOME/.cache}"' \
         --set OPENWIKI_EXECUTABLE /run/current-system/sw/bin/openwiki \
-        --set OPENWIKI_LAUNCHER /run/current-system/sw/bin/openwiki-launchd-launcher
+        --set OPENWIKI_LAUNCHER /run/current-system/sw/bin/openwiki-launchd-launcher \
+        --run 'export OPENWIKI_SCHEDULE_CWD="$HOME/.local/state/openwiki/obsidian-vault"'
       ''}
 
     runHook postInstall
