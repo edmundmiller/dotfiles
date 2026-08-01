@@ -132,6 +132,14 @@ in
     edmundmiller
     nuc
   ];
+  "hermes-scintillate-dashboard-password.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "hermes-scintillate-dashboard-session-secret.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hermes-anne-honcho-api-key.age".publicKeys = [
     edmundmiller
     nuc
