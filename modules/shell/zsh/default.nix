@@ -23,9 +23,9 @@ let
     if (dir == "claude" && !claudeEnabled) || (dir == "docker" && !dockerEnabled) then
       null
     else
-      "${configDir}/${dir}/aliases.zsh";
+      configDir + "/${dir}/aliases.zsh";
 
-  envPathFor = dir: if dir == "claude" && !claudeEnabled then null else "${configDir}/${dir}/env.zsh";
+  envPathFor = dir: if dir == "claude" && !claudeEnabled then null else configDir + "/${dir}/env.zsh";
 
   autoRcFiles = builtins.filter (path: path != null && builtins.pathExists path) (
     map aliasPathFor configSubdirs
@@ -48,7 +48,7 @@ in
       by $XDG_CONFIG_HOME/zsh/.zshenv
     '';
 
-    rcFiles = mkOpt (listOf (either str path)) ([ "${configDir}/zsh/prompt.zsh" ] ++ autoRcFiles);
+    rcFiles = mkOpt (listOf (either str path)) ([ (configDir + "/zsh/prompt.zsh") ] ++ autoRcFiles);
     envFiles = mkOpt (listOf (either str path)) autoEnvFiles;
   };
 
@@ -79,7 +79,7 @@ in
       };
 
       modules.shell.zsh = {
-        rcFiles = mkBefore ([ "${configDir}/zsh/prompt.zsh" ] ++ autoRcFiles);
+        rcFiles = mkBefore ([ (configDir + "/zsh/prompt.zsh") ] ++ autoRcFiles);
         envFiles = mkBefore autoEnvFiles;
       };
 
