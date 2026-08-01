@@ -176,6 +176,7 @@ let
       pkgs.git
       pkgs.git-lfs
       pkgs.gnugrep
+      pkgs.openssh
     ];
     text = ''
       repo=${lib.escapeShellArg radarVaultPath}
