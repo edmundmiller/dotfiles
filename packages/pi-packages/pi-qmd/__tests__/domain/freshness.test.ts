@@ -86,7 +86,7 @@ describe("check_freshness", () => {
     }
   });
 
-  it.fails("ignores inherited repository-local Git state", async () => {
+  it("ignores inherited repository-local Git state", async () => {
     const commit = git(["rev-parse", "HEAD"]).trim();
     const previous_git_dir = process.env.GIT_DIR;
     process.env.GIT_DIR = "/not-the-fixture-repository";
