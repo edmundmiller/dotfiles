@@ -162,7 +162,7 @@ Meaning:
 
 - `prefix+w` opens the workspace picker.
 - `prefix+N` creates a workspace.
-- `prefix+g` creates a native Git worktree. Both `workspace.created` and `worktree.created` bootstrap exactly Codex and Hunk, with Codex focused.
+- `prefix+g` creates a native Git worktree. Creation bootstraps OMP and, only inside a Git checkout, Hunk; OMP is focused.
 - `prefix+G` opens an existing worktree.
 - `prefix+/` opens Herdr goto/navigation.
 - `prefix+c` creates a tab.
@@ -199,7 +199,7 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep checkout bootstrap in the local `dotfiles.dev-layout` plugin's `workspace.created` and `worktree.created` hooks. `worktree.create` emits both; serialize per workspace, run an executable repo-local `scripts/qmd-seed-worktree.sh` before Codex when present, remain idempotent, and own only the Codex and Hunk tabs.
+- Keep checkout layout seeding in the local `dotfiles.dev-layout` plugin's `workspace.created` and `worktree.created` hooks. The bootstrap serializes per workspace, is idempotent, and opens Hunk only from a Git checkout.
 - `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
