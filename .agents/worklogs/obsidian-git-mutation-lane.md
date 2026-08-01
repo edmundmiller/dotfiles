@@ -17,11 +17,14 @@ Run scheduled OpenWiki ingestion outside `/Users/emiller/obsidian-vault`, publis
 - `python3 -m unittest tests/test_openwiki_git_mutation_lane.py`: pass.
 - `nix develop --command pkg-check openwiki`: 14 files, 139 tests pass.
 - `nix build .#packages.aarch64-darwin.openwiki --no-link`: pass.
+- `hey agent-audit-tests`: `PASS test-confidence`.
+- `hey agent-finish`: all Darwin checks and 17 quality tests pass.
 - Runtime acceptance and remote equality remain pending.
 
 ## Reviews
 
 - `hey agent-review plan --active-model-family gpt-5 ...` could not run: `Authentication required`.
+- Landing review failed at the same authentication boundary.
 - Per retry policy, the same unavailable review route was not retried.
 
 ## Feedback
@@ -35,3 +38,4 @@ Run scheduled OpenWiki ingestion outside `/Users/emiller/obsidian-vault`, publis
 ## Commits
 
 - `6f8cdc5c2 test(openwiki): capture canonical checkout mutation`
+- `b546b98ac fix(openwiki): isolate scheduled Git mutations`
