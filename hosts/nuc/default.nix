@@ -2536,6 +2536,7 @@ in
       ReadWritePaths = [
         millDocsCodingAgentStateDir
         "/home/emiller/.omp/agent"
+        "/home/emiller/.omp/logs"
         "/home/emiller/.omp/run"
       ];
       NoNewPrivileges = true;
