@@ -13,7 +13,8 @@
     "patches/0009-rss-connector.patch",
     "patches/0010-relative-raw-tool-paths.patch",
     "patches/0011-skip-personal-tweet-index.patch",
-    "patches/0012-git-provenance.patch"
+    "patches/0012-git-provenance.patch",
+    "patches/0013-scheduled-git-mutation-lane.patch"
   ],
   "checks": [
     ["pnpm", "install", "--frozen-lockfile"],
