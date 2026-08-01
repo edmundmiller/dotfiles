@@ -480,7 +480,7 @@ let
       git fetch github main
       git switch main
       git merge --ff-only origin/main
-      unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY
+      unset BUZZ_PRIVATE_KEY
 
       cd agents
       if [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
