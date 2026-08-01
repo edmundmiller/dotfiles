@@ -41,6 +41,7 @@ function setupMemoryDir(): string {
 
   // git init + initial commit so the extension sees an existing repo
   execSync("git init", { cwd: memDir });
+  execSync("git config core.hooksPath /dev/null", { cwd: memDir });
   execSync("git add .", { cwd: memDir });
   execSync('git -c commit.gpgsign=false -c user.name="test" -c user.email="t@t" commit -m "init"', {
     cwd: memDir,
