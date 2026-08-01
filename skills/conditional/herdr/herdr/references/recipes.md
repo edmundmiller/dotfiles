@@ -5,23 +5,30 @@ These patterns come from official CLI behavior and recurring session-trace failu
 ## Delegate to a sibling agent
 
 1. Inspect current repo state and define a bounded handoff.
-2. Split or create the shell pane; keep focus with `--no-focus`.
-3. Start the agent in that pane with `herdr agent start`.
-4. Submit and wait atomically with `herdr agent prompt --wait`.
-5. Accept `idle`, `done`, or `blocked`, then read recent unwrapped output.
+2. Create the pane first with `herdr pane split --no-focus`; `agent start` needs an existing pane at a shell prompt and never creates layout.
+3. Start the agent in that pane with `herdr agent start <name> --kind <kind> --pane <id>`.
+4. Submit the prompt with `herdr agent prompt --wait --until done --timeout MS` (it sends text plus Enter in one call).
+5. Read recent unwrapped output.
 6. Review the child's changes before applying or landing them.
 
 ```bash
-SPLIT=$(herdr pane split --current --direction right --no-focus)
-PANE_ID=$(printf '%s' "$SPLIT" | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["pane"]["pane_id"])')
-herdr agent start audit --kind omp --pane "$PANE_ID" --timeout 30000
-herdr agent prompt "$PANE_ID" \
-  "Inspect the touched tests. Report gaps; do not edit." \
-  --wait --until idle --until done --until blocked --timeout 120000
-herdr agent read "$PANE_ID" --source recent-unwrapped --lines 120
+split=$(herdr pane split --current --direction right --cwd "$PWD" --no-focus)
+audit_pane=$(printf '%s\n' "$split" | ~/.agents/skills/herdr/scripts/extract_ids.py pane)
+herdr agent start audit --kind omp --pane "$audit_pane"
+herdr agent prompt audit "Inspect the touched tests. Report gaps; do not edit." \
+  --wait --until done --timeout 120000
+herdr agent read audit --source recent-unwrapped --lines 120
 ```
 
 If the name is ambiguous, use the returned pane ID.
+
+## Interact with a blocked agent
+
+```bash
+herdr agent wait audit --until blocked --timeout 120000
+herdr agent read audit --source recent-unwrapped --lines 80
+herdr agent send-keys audit esc
+```
 
 ## Run and observe a service
 
@@ -38,7 +45,7 @@ On timeout, read output before waiting again. The process may have failed before
 ## Debug incorrect agent status
 
 ```bash
-python3 ~/.agents/skills/herdr/scripts/agent_context.py <target> --lines 100
+~/.agents/skills/herdr/scripts/agent_context.py <target> --lines 100
 ```
 
 Interpret the combined output:
@@ -80,15 +87,14 @@ herdr pane send-text <pane-id> "literal text"
 herdr pane send-keys <pane-id> enter
 ```
 
-For shell commands, use `pane run`; it submits text and Enter together. For
-semantic agent prompts, use `agent prompt`.
+For shell commands, use `pane run`; it submits text and Enter together. For semantic agent prompts, use `agent prompt`.
 
 ## Preserve long-lived layouts
 
-Export a good live layout instead of reconstructing it through sequential split assumptions:
+There is no `layout export`/`apply` in 0.7.5. Durable alternatives:
 
 ```bash
-herdr layout export
+herdr pane layout --current
 ```
 
-Apply layouts only after inspecting installed help. Layout restoration recreates structure and commands; it does not preserve live PTYs, running processes, or scrollback.
+Inspect the live layout for reference, then script `workspace create` / `pane split` sequences that parse the returned IDs (`.result.root_pane.pane_id`, `.result.pane.pane_id`). Reconstruction recreates structure and commands; it does not preserve live PTYs, running processes, or scrollback.
