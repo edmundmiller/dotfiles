@@ -543,6 +543,11 @@ in
         force = true;
       };
 
+      home.file.".omp/agent/rules/incremental-architecture.md" = {
+        source = "${configDir}/omp/rules/incremental-architecture.md";
+        force = true;
+      };
+
       home.file.".omp/agent/lsp.json" = {
         source = lsp.configFile;
         force = true;
