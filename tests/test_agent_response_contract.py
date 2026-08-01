@@ -1,3 +1,4 @@
+import json
 import tomllib
 import unittest
 from pathlib import Path
@@ -35,18 +36,39 @@ class AgentResponseContractTests(unittest.TestCase):
         )
         self.assertIn('"npm:pi-verbosity-control"', settings)
 
-    def test_shared_version_control_rule_routes_codex_through_herdr_jj(self) -> None:
+    def test_shared_version_control_rule_routes_work_through_herdr_jj_omp(self) -> None:
         rule = (ROOT / "config/agents/rules/03-version-control.md").read_text()
 
         for expected in (
-            "Herdr owns jj workspace creation",
+            "Herdr owns task-workspace creation",
             "`prefix+a`",
-            "Codex",
+            "the new workspace opens with OMP focused",
             "`jj root --ignore-working-copy`",
-            "Never initialize jj inside a Codex Desktop Git worktree",
-            "Use the `done` skill",
+            "never initialize jj inside a Codex Desktop Git worktree",
+            "use `done` for publication and cleanup",
+            "record the task with `hey agent-start` without `--workspace`",
+            "`jj diff --git -r @`",
         ):
             self.assertIn(expected, rule)
+
+    def test_omp_jj_rule_triggers_at_herdr_decision_points(self) -> None:
+        rule = (ROOT / "config/omp/rules/working-with-jj.md").read_text()
+        condition_line = next(
+            line for line in rule.splitlines() if line.startswith("condition: ")
+        )
+        condition = json.loads(condition_line.removeprefix("condition: "))
+
+        for command in (
+            "HERDR_ENV=1 hey agent-start --repo . --task demo",
+            "herdr agent list",
+            "hunk diff",
+            "jj status",
+            "git commit -m demo",
+        ):
+            with self.subTest(command=command):
+                self.assertRegex(command, condition)
+
+        self.assertNotRegex("git status", condition)
 
 
 if __name__ == "__main__":
