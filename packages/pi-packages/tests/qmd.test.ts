@@ -25,6 +25,7 @@ function setup_git_repo(): string {
   fs.writeFileSync(path.join(repo_dir, "docs", "guide.md"), "# Guide\n", "utf8");
 
   execSync("git init", { cwd: repo_dir, stdio: "ignore" });
+  execSync("git config core.hooksPath /dev/null", { cwd: repo_dir, stdio: "ignore" });
   execSync('git config user.name "Test User"', { cwd: repo_dir, stdio: "ignore" });
   execSync('git config user.email "test@example.com"', { cwd: repo_dir, stdio: "ignore" });
   execSync("git add .", { cwd: repo_dir, stdio: "ignore" });
