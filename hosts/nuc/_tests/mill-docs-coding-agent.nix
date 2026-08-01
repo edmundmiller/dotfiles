@@ -18,6 +18,10 @@ let
         && service.serviceConfig.BindPaths == [ "${acpxDir}:/home/emiller/.acpx" ];
       msg = "Mill Docs coding agent must bind writable acpx state into its protected home.";
     }
+    {
+      test = !(builtins.elem "/home/emiller/.omp/agent" service.serviceConfig.ReadWritePaths);
+      msg = "Regression fixture: the OMP agent directory is unexpectedly writable.";
+    }
   ];
 in
 pkgs.runCommand "nuc-mill-docs-coding-agent" { } ''
