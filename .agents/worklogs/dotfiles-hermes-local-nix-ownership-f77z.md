@@ -1,3 +1,11 @@
+---
+purpose: Track Nix ownership and runtime verification for laptop Hermes.
+applies_to: Hermes on MacTraitor-Pro and the feat/hermes-local patch set.
+entrypoint: modules/agents/hermes-local/default.nix and bin/hey.d/hermes.nu.
+verification: Run bin/hey hermes-local, then hey check.
+update_when: Hermes ownership, profile rendering, smoke checks, or landing status changes.
+---
+
 # Worklog: dotfiles-hermes-local-nix-ownership-f77z
 
 Status: complete
