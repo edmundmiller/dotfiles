@@ -51,9 +51,8 @@ pkgs.runCommand "nuc-radar-cron-runtime-regression" { } ''
     echo "Radar cron must not write to the live Obsidian Sync checkout." >&2
     exit 1
   fi
-  # Strict regression capture: flip this assertion with the implementation fix.
-  if [ "${if knownActivationTargetsLiveVault then "1" else "0"}" -ne 1 ]; then
-    echo "Expected the captured Radar activation link bug." >&2
+  if [ "${if knownActivationTargetsLiveVault then "1" else "0"}" -ne 0 ]; then
+    echo "Radar activation must not relink its workspace to the live vault." >&2
     exit 1
   fi
   touch "$out"
