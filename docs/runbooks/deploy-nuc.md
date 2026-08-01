@@ -72,7 +72,7 @@ hey nuc-status
 
 # Check specific services
 ssh nuc "systemctl status home-assistant"
-ssh nuc "systemctl status hermes-agent.service"
+ssh nuc "systemctl status hermes-scintillate-desktop-dashboard.service nginx.service"
 
 # Legacy OpenClaw deployments only
 ssh nuc "systemctl --user status openclaw-gateway.service"
@@ -287,7 +287,11 @@ ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-w
 
 ### Gateway restart behavior after deploy
 
-The active NUC gateway is `hermes-agent.service`, a system service that is restarted by activation during `hey nuc`, so no manual post-deploy restart is normally needed.
+The Scintillate Desktop dashboard is `hermes-scintillate-desktop-dashboard.service`; its loopback proxy is `nginx.service`. After rotating `hosts/nuc/secrets/hermes-scintillate-api-server-key.age`, deploy it, then reload the service's new secret:
+
+```bash
+ssh nuc "sudo systemctl restart hermes-scintillate-desktop-dashboard.service"
+```
 
 For older OpenClaw deployments only, the legacy user unit still uses `X-RestartIfChanged=false`, so you may need:
 
