@@ -5,10 +5,24 @@ import { promisify } from "node:util";
 import type { FreshnessResult, QmdRepoMarker } from "../core/types.js";
 
 const exec_file = promisify(exec_file_callback);
+const repo_local_git_vars =
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX GIT_SHALLOW_FILE GIT_COMMON_DIR".split(
+    " "
+  );
+
+function clean_git_env(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const name of repo_local_git_vars) delete env[name];
+  return env;
+}
+
+function run_git(repo_root: string, args: string[]) {
+  return exec_file("git", ["-C", repo_root, ...args], { env: clean_git_env() });
+}
 
 export async function get_repo_head_commit(repo_root: string): Promise<string | null> {
   try {
-    const { stdout } = await exec_file("git", ["-C", repo_root, "rev-parse", "HEAD"]);
+    const { stdout } = await run_git(repo_root, ["rev-parse", "HEAD"]);
     const commit = stdout.trim();
     return commit || null;
   } catch {
@@ -25,7 +39,7 @@ export async function check_freshness(marker: QmdRepoMarker): Promise<FreshnessR
   }
 
   try {
-    await exec_file("git", ["-C", marker.repo_root, "rev-parse", "--is-inside-work-tree"]);
+    await run_git(marker.repo_root, ["rev-parse", "--is-inside-work-tree"]);
   } catch {
     return {
       status: "unknown",
@@ -36,9 +50,7 @@ export async function check_freshness(marker: QmdRepoMarker): Promise<FreshnessR
 
   try {
     const [{ stdout: tracked_stdout }, { stdout: untracked_stdout }] = await Promise.all([
-      exec_file("git", [
-        "-C",
-        marker.repo_root,
+      run_git(marker.repo_root, [
         "diff",
         "--name-only",
         "--diff-filter=ACMR",
@@ -46,9 +58,7 @@ export async function check_freshness(marker: QmdRepoMarker): Promise<FreshnessR
         "--",
         ":(glob)**/*.md",
       ]),
-      exec_file("git", [
-        "-C",
-        marker.repo_root,
+      run_git(marker.repo_root, [
         "ls-files",
         "--others",
         "--exclude-standard",
