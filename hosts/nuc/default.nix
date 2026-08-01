@@ -168,6 +168,45 @@ let
   radarCronExecutor = pkgs.writeText "hermes-radar-cron-executor.json" ''
     {"kind":"systemd","unit":"hermes-radar-cron-tick.timer"}
   '';
+  radarVaultPath = "/var/lib/hermes-radar/.hermes/state/obsidian-vault";
+  radarVaultPrepare = pkgs.writeShellApplication {
+    name = "radar-vault-prepare";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.git
+      pkgs.git-lfs
+      pkgs.gnugrep
+    ];
+    text = ''
+      repo=${lib.escapeShellArg radarVaultPath}
+      remote=git@github.com:edmundmiller/claude-vault.git
+      mkdir -p "$(dirname "$repo")"
+      if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
+        git clone --branch main "$remote" "$repo"
+        git -C "$repo" switch -c automation/radar
+      fi
+      test "$(git -C "$repo" remote get-url origin)" = "$remote"
+      git -C "$repo" config user.name Radar
+      git -C "$repo" config user.email radar@agents.local
+
+      unexpected="$(git -C "$repo" status --porcelain=v1 | cut -c4- | grep -v '^04_Resources/Signals/' || true)"
+      if [ -n "$unexpected" ]; then
+        echo "radar-vault-prepare: preserving unexpected isolated dirt" >&2
+        printf '%s\n' "$unexpected" >&2
+        exit 75
+      fi
+      if [ -n "$(git -C "$repo" status --porcelain=v1)" ]; then
+        git -C "$repo" add -- 04_Resources/Signals
+        git -C "$repo" commit -m "docs(radar): publish weekly signals digest"
+      fi
+      if [ "$(git -C "$repo" rev-list --count origin/main..HEAD)" -gt 0 ]; then
+        "$repo/scripts/publish-vault-mutation.sh"
+      else
+        git -C "$repo" fetch origin main
+        git -C "$repo" rebase origin/main
+      fi
+    '';
+  };
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
@@ -2011,7 +2050,10 @@ in
         "EMAIL_SMTP_PORT=587"
         "EMAIL_HOME_ADDRESS=emiller@edmundmiller.dev"
       ];
-      ExecStartPre = [ "+${pkgs.coreutils}/bin/chown -hR emiller:users /var/lib/hermes-radar" ];
+      ExecStartPre = [
+        "+${pkgs.coreutils}/bin/chown -hR emiller:users /var/lib/hermes-radar"
+        "${radarVaultPrepare}/bin/radar-vault-prepare"
+      ];
       ExecStart = "${radarHermesLauncher}/bin/radar-hermes cron tick";
       NoNewPrivileges = true;
       PrivateTmp = true;
@@ -2222,7 +2264,7 @@ in
               };
             };
           };
-          radar = { };
+          radar.workspaceLinks."repos/obsidian-vault" = radarVaultPath;
           finn.workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
           amosburton = {
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
