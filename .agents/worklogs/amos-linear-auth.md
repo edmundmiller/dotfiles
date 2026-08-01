@@ -17,7 +17,7 @@ Materialize Amos's valid 1Password Linear credential into its isolated cron exec
 ## Decisions
 
 - Replace the stale shared OAuth token source only for Amos.
-- Use `op://Agents/Amos Linear Bot Team/credential`, already proven by a read-only GraphQL viewer query.
+- Use `amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY` as the source of truth; opnix materializes that 1Password credential once for both `LINEAR_API_KEY` and `HERMES_MCP_BEARER_TOKEN_LINEAR`.
 - Do not mutate cron state. Preserve the Linear bug queue sweep's hourly schedule.
 
 ## Evidence
