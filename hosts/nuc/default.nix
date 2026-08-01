@@ -480,7 +480,7 @@ let
       git fetch github main
       git switch main
       git merge --ff-only origin/main
-      unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY
+      unset BUZZ_PRIVATE_KEY
 
       cd agents
       if [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
@@ -489,8 +489,9 @@ let
       export PATH="/etc/profiles/per-user/emiller/bin:$PATH"
       LINEAR_API_KEY="$(< "$CREDENTIALS_DIRECTORY/linear-api-key")"
       GH_TOKEN="$(< "$CREDENTIALS_DIRECTORY/github-token")"
+      OPENAI_API_KEY="$(< "$CREDENTIALS_DIRECTORY/openai-api-key")"
       BUZZ_FEEDBACK_STATUS_SECRET="$(< /home/emiller/.local/share/mill-docs-agents/tailnet-proxy-secret)"
-      export LINEAR_API_KEY GH_TOKEN BUZZ_FEEDBACK_STATUS_SECRET
+      export LINEAR_API_KEY GH_TOKEN OPENAI_API_KEY BUZZ_FEEDBACK_STATUS_SECRET
       exec node scripts/run-coding-agent-queue.ts --once
     '';
   };
@@ -2525,6 +2526,7 @@ in
       LoadCredential = [
         "linear-api-key:/var/lib/opnix/secrets/millDocsCodingAgentLinearToken"
         "github-token:/var/lib/opnix/secrets/millDocsCodingAgentGithubToken"
+        "openai-api-key:${config.age.secrets.openai-api-key.path}"
       ];
       TimeoutStartSec = "45min";
       UMask = "0077";
@@ -2533,6 +2535,9 @@ in
       BindPaths = [ "${millDocsCodingAgentAcpxDir}:/home/emiller/.acpx" ];
       ReadWritePaths = [
         millDocsCodingAgentStateDir
+        "/home/emiller/.omp/agent"
+        "/home/emiller/.omp/logs"
+        "/home/emiller/.omp/run"
       ];
       NoNewPrivileges = true;
       PrivateTmp = true;

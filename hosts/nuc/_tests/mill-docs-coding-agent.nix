@@ -2,6 +2,7 @@
 let
   cfg = nixosConfig.config;
   service = cfg.systemd.services.mill-docs-coding-agent;
+  source = builtins.readFile ../default.nix;
   acpxDir = "/var/lib/mill-docs-coding-agent/acpx";
   failures = builtins.filter (assertion: !assertion.test) [
     {
@@ -17,6 +18,28 @@ let
         service.serviceConfig.ProtectHome == "read-only"
         && service.serviceConfig.BindPaths == [ "${acpxDir}:/home/emiller/.acpx" ];
       msg = "Mill Docs coding agent must bind writable acpx state into its protected home.";
+    }
+    {
+      test = builtins.elem "/home/emiller/.omp/agent" service.serviceConfig.ReadWritePaths;
+      msg = "Mill Docs coding agent must allow OMP to update its SQLite state.";
+    }
+    {
+      test = builtins.elem "/home/emiller/.omp/run" service.serviceConfig.ReadWritePaths;
+      msg = "Mill Docs coding agent must allow OMP to register daemon presence.";
+    }
+    {
+      test = builtins.elem "/home/emiller/.omp/logs" service.serviceConfig.ReadWritePaths;
+      msg = "Mill Docs coding agent must allow OMP to write diagnostic logs.";
+    }
+    {
+      test = builtins.any (
+        credential: pkgs.lib.hasPrefix "openai-api-key:" credential
+      ) service.serviceConfig.LoadCredential;
+      msg = "Mill Docs coding agent must load the OpenAI model credential.";
+    }
+    {
+      test = !(pkgs.lib.hasInfix "unset NOSTR_PRIVATE_KEY" source);
+      msg = "Mill Docs coding runner must retain its Nostr signing key for runner-owned git operations.";
     }
   ];
 in
