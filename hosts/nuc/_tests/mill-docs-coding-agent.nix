@@ -23,8 +23,8 @@ let
       msg = "Mill Docs coding agent must allow OMP to update its SQLite state.";
     }
     {
-      test = !(builtins.elem "/home/emiller/.omp/run" service.serviceConfig.ReadWritePaths);
-      msg = "Regression fixture: the OMP runtime directory is unexpectedly writable.";
+      test = builtins.elem "/home/emiller/.omp/run" service.serviceConfig.ReadWritePaths;
+      msg = "Mill Docs coding agent must allow OMP to register daemon presence.";
     }
   ];
 in
