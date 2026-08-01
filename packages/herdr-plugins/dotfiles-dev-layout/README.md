@@ -1,6 +1,6 @@
 ---
 purpose: Document the local Herdr checkout-layout plugin.
-applies_to: Changes to Codex/Hunk tab bootstrap or Hunk actions.
+applies_to: Changes to OMP/Hunk tab bootstrap or Hunk actions.
 entrypoint: Edit dev_layout.py and herdr-plugin.toml.
 verification: Run python3 -m unittest dev_layout_test.py.
 update_when: Plugin actions, events, layout, or requirements change.
@@ -8,9 +8,7 @@ update_when: Plugin actions, events, layout, or requirements change.
 
 # Dotfiles Dev Layout
 
-Creates an idempotent two-tab task workspace: Codex and Hunk, with Codex focused.
-Before Codex starts, it runs an executable repo-local
-`scripts/qmd-seed-worktree.sh` when present.
+Creates OMP for every workspace and Hunk for Git checkout workspaces, with OMP focused.
 
 ## Install
 
@@ -34,4 +32,4 @@ including Herdr workspaces created around jj checkouts.
 
 - Herdr `0.7.0` or newer
 - `python3`
-- Required: `codex`, plus `hunk` or `bunx hunkdiff`
+- Required: `omp`, plus `hunk` or `bunx hunkdiff`
