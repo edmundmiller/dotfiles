@@ -27,8 +27,8 @@ let
       msg = "Mill Docs coding agent must allow OMP to register daemon presence.";
     }
     {
-      test = !(builtins.elem "/home/emiller/.omp/logs" service.serviceConfig.ReadWritePaths);
-      msg = "Regression fixture: the OMP log directory is unexpectedly writable.";
+      test = builtins.elem "/home/emiller/.omp/logs" service.serviceConfig.ReadWritePaths;
+      msg = "Mill Docs coding agent must allow OMP to write diagnostic logs.";
     }
     {
       test = builtins.any (
