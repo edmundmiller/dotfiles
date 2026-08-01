@@ -15,7 +15,7 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 1. Inspect repository, runtime, issue state, and unrelated dirt.
 2. Copy `.agents/worklogs/TEMPLATE.md` to `.agents/worklogs/<issue-or-slug>.md`.
 3. Define the outcome, stopping condition, and verification surfaces before editing.
-4. Run `hey agent-start --repo "$PWD" --task <issue-or-slug> --runtime <runtime> --model <model>` and retain the JSON receipt path. In a jj repository, add `--workspace <path> --base 'trunk()'` before editing.
+4. Run `hey agent-start --repo "$PWD" --task <issue-or-slug> --runtime <runtime> --model <model>` and retain the JSON receipt path. Outside Herdr, in a jj repository, add `--workspace <path> --base 'trunk()'` to create an isolated workspace. If Herdr already created the current jj task workspace, omit `--workspace` and record that workspace instead; never create a second workspace for the same task. Git-only runs use the base command.
 5. Route through root and nearest nested `AGENTS.md`. Load every matching skill before acting.
 6. Find canonical docs by searching the first seven lines for `purpose`, `applies_to`, or `update_when`.
 
