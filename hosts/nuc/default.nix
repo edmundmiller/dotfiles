@@ -205,7 +205,7 @@ let
         git -C "$repo" commit -m "docs(radar): publish weekly signals digest"
       fi
       if [ "$(git -C "$repo" rev-list --count origin/main..HEAD)" -gt 0 ]; then
-        "$repo/scripts/publish-vault-mutation.sh"
+        (cd "$repo" && ./scripts/publish-vault-mutation.sh)
       else
         git -C "$repo" fetch origin main
         git -C "$repo" rebase origin/main
