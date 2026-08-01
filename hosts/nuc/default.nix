@@ -436,6 +436,7 @@ let
   };
   millDocsVaultPath = "/home/emiller/mill-docs";
   millDocsCodingAgentStateDir = "/var/lib/mill-docs-coding-agent";
+  millDocsCodingAgentAcpxDir = "${millDocsCodingAgentStateDir}/acpx";
   millDocsCodingAgentRepo = "/var/lib/mill-docs-coding-agent/repo";
   millDocsBuzzGitUrl = "https://millers.communities.buzz.xyz/git/fdb266e13b8a216bcb47132c5451fa4cac6b70730bd6d9952b9609362cc84d4c/mill-docs";
   millDocsGithubGitUrl = "git@github.com:edmundmiller/mill-docs.git";
@@ -2380,6 +2381,7 @@ in
   services.tailscale.extraSetFlags = [ "--advertise-routes=192.168.1.0/24" ];
   systemd.tmpfiles.rules = [
     "d ${millDocsVaultPath} 0755 emiller users -"
+    "d ${millDocsCodingAgentAcpxDir} 0700 emiller users -"
 
   ];
 
@@ -2528,6 +2530,7 @@ in
       UMask = "0077";
       ProtectSystem = "strict";
       ProtectHome = "read-only";
+      BindPaths = [ "${millDocsCodingAgentAcpxDir}:/home/emiller/.acpx" ];
       ReadWritePaths = [
         millDocsCodingAgentStateDir
       ];
