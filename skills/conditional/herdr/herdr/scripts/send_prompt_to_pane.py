@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Send a prompt file to an existing Herdr pane and press Enter."""
 
 from __future__ import annotations
@@ -13,9 +17,25 @@ def run(args: list[str]) -> None:
     subprocess.run(args, text=True, check=True)
 
 
-def default_agent_name(pane_id: str) -> str:
-    suffix = "".join(char if char.isalnum() else "_" for char in pane_id)
-    return f"pi_{suffix}"[:32]
+def wait_for_pi_ready(pane_id: str, *, idle_timeout_ms: int) -> None:
+    """Best-effort wait for Herdr's semantic Pi idle state."""
+
+    subprocess.run(
+        [
+            "herdr",
+            "agent",
+            "wait",
+            pane_id,
+            "--until",
+            "idle",
+            "--timeout",
+            str(idle_timeout_ms),
+        ],
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
 
 
 def main() -> int:
@@ -28,14 +48,10 @@ def main() -> int:
         help="Run `pi` in the pane before sending the prompt",
     )
     parser.add_argument(
-        "--agent-name",
-        help="Unique live agent name when --start-pi is used",
-    )
-    parser.add_argument(
-        "--start-timeout-ms",
+        "--idle-timeout-ms",
         type=int,
         default=30_000,
-        help="How long agent start waits for Herdr to detect Pi as ready",
+        help="How long to wait for Pi to become idle if --start-pi is used",
     )
     args = parser.parse_args()
 
@@ -49,23 +65,11 @@ def main() -> int:
         return 2
 
     if args.start_pi:
-        agent_name = args.agent_name or default_agent_name(args.pane)
-        run(
-            [
-                "herdr",
-                "agent",
-                "start",
-                agent_name,
-                "--kind",
-                "pi",
-                "--pane",
-                args.pane,
-                "--timeout",
-                str(args.start_timeout_ms),
-            ]
-        )
+        run(["herdr", "pane", "run", args.pane, "pi"])
+        wait_for_pi_ready(args.pane, idle_timeout_ms=args.idle_timeout_ms)
 
-    run(["herdr", "agent", "prompt", args.pane, prompt])
+    run(["herdr", "pane", "send-text", args.pane, prompt])
+    run(["herdr", "pane", "send-keys", args.pane, "Enter"])
     print(args.pane)
     return 0
 
