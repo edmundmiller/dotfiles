@@ -79,6 +79,10 @@ def git_output(cwd: str, args: list[str]) -> str | None:
     return value or None
 
 
+def checkout_root(cwd: str) -> str | None:
+    return git_output(cwd, ["rev-parse", "--show-toplevel"])
+
+
 def default_base_ref(cwd: str) -> str | None:
     for candidate in ("origin/main", "origin/master", "main", "master"):
         if git_output(cwd, ["rev-parse", "--verify", candidate]):
@@ -188,7 +192,10 @@ def hunk(
     open_tab: bool, mode: str = "worktree", passthrough: list[str] | None = None
 ) -> None:
     ctx = context()
-    cwd = ctx.get("focused_pane_cwd") or ctx.get("workspace_cwd") or os.getcwd()
+    requested_cwd = ctx_worktree_path(ctx) or os.getcwd()
+    cwd = checkout_root(requested_cwd)
+    if not cwd:
+        raise SystemExit(f"Hunk requires a Git checkout; {requested_cwd} is not inside one")
     workspace_id = ctx.get("workspace_id") or os.environ.get("HERDR_WORKSPACE_ID")
     pane_id = ctx.get("focused_pane_id") or os.environ.get("HERDR_PANE_ID")
     if not workspace_id:
@@ -217,27 +224,27 @@ def workspace_lock(workspace_id: str) -> Iterator[None]:
 
 def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> None:
     tabs, tab_ids = workspace_tabs(workspace_id)
-    codex_tab = tabs.get("codex")
-    if not codex_tab:
-        codex_tab, pane = tab_create(workspace_id, cwd, "codex")
-        pane_rename(pane, "codex")
-        pane_run(pane, "codex")
-
-    if "hunk" not in tabs:
-        _, pane = tab_create(workspace_id, cwd, "hunk")
+    omp_tab = tabs.get("omp")
+    if not omp_tab:
+        omp_tab, pane = tab_create(workspace_id, cwd, "omp")
+        pane_rename(pane, "omp")
+        pane_run(pane, "omp")
+    hunk_cwd = checkout_root(cwd)
+    if "hunk" not in tabs and hunk_cwd:
+        _, pane = tab_create(workspace_id, hunk_cwd, "hunk")
         pane_rename(pane, "hunk")
-        pane_run(pane, hunk_command(cwd))
+        pane_run(pane, hunk_command(hunk_cwd))
 
     event = os.environ.get("HERDR_PLUGIN_EVENT")
     initial_tab = ctx.get("tab_id") or os.environ.get("HERDR_TAB_ID")
     if (
         event in {"workspace.created", "worktree.created"}
         and initial_tab in tab_ids
-        and initial_tab not in {codex_tab, tabs.get("hunk")}
+        and initial_tab not in {omp_tab, tabs.get("hunk")}
     ):
         run_json(["tab", "close", initial_tab])
 
-    run_json(["tab", "focus", codex_tab])
+    run_json(["tab", "focus", omp_tab])
 
 
 def bootstrap() -> None:
@@ -246,8 +253,8 @@ def bootstrap() -> None:
     cwd = ctx_worktree_path(ctx) or os.getcwd()
     if not workspace_id:
         raise SystemExit("missing Herdr workspace id in plugin context")
-    if not command_exists("codex"):
-        raise SystemExit("codex not found on PATH")
+    if not command_exists("omp"):
+        raise SystemExit("omp not found on PATH")
 
     with workspace_lock(workspace_id):
         bootstrap_workspace(ctx, workspace_id, cwd)
