@@ -8,7 +8,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "evals:done": "DONE_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts done-skill.eval.ts",
     "evals:done:acpx": "DONE_SKILL_EVALS_ENABLED=1 DONE_SKILL_EVAL_RUNNER=acpx vitest run --config vitest.evals.config.ts done-skill.eval.ts",
-    "evals:done:json": "DONE_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts done-skill.eval.ts --reporter=vitest-evals/reporter --reporter=json --outputFile.json=vitest-results.json"
+    "evals:done:json": "DONE_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts done-skill.eval.ts --reporter=vitest-evals/reporter --reporter=json --outputFile.json=vitest-results.json",
+    "evals:herdr": "HERDR_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts herdr-skill.eval.ts",
+    "evals:herdr:help-only": "HERDR_SKILL_EVAL_ARM=helpOnly HERDR_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts herdr-skill.eval.ts",
+    "evals:herdr:minimal": "HERDR_SKILL_EVAL_ARM=minimal HERDR_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts herdr-skill.eval.ts",
+    "evals:herdr:arms": "HERDR_SKILL_EVAL_ARM=helpOnly HERDR_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts herdr-skill.eval.ts ; HERDR_SKILL_EVAL_ARM=minimal HERDR_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts herdr-skill.eval.ts ; HERDR_SKILL_EVAL_ARM=full HERDR_SKILL_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts herdr-skill.eval.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

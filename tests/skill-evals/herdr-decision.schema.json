@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan", "explanation", "helpInvocations"],
+  "properties": {
+    "plan": {
+      "type": "string",
+      "description": "The exact herdr command sequence you would run, one command per line."
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Why this sequence is correct, including any state or response-shape reasoning."
+    },
+    "helpInvocations": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How many times you invoked a herdr --help command while answering."
+    }
+  }
+}

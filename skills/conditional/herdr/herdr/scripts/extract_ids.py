@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Extract workspace/tab/pane ids from Herdr JSON output.
 
 Useful in shell pipelines with `herdr workspace create`, `herdr tab create`, or
