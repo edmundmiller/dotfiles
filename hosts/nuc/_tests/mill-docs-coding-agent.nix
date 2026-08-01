@@ -19,8 +19,8 @@ let
       msg = "Mill Docs coding agent must bind writable acpx state into its protected home.";
     }
     {
-      test = !(builtins.elem "/home/emiller/.omp/agent" service.serviceConfig.ReadWritePaths);
-      msg = "Regression fixture: the OMP agent directory is unexpectedly writable.";
+      test = builtins.elem "/home/emiller/.omp/agent" service.serviceConfig.ReadWritePaths;
+      msg = "Mill Docs coding agent must allow OMP to update its SQLite state.";
     }
   ];
 in
