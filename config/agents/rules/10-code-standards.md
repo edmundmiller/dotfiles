@@ -16,4 +16,6 @@ Minimize the layers, state, and code a reader must understand.
 - Parse and validate at outer boundaries; pass typed domain values inward.
 - Reuse existing repository or library primitives before adding a utility, parser, or collection helper.
 - Reject duplicate, pass-through, or speculative abstractions. Every interface, parameter, and function must earn its place.
+- Preserve backward compatibility only when required by documented consumers, public APIs, or migrations.
+- Prefer established, well-maintained libraries when they materially reduce complexity; avoid dependencies for trivial behavior.
 - Prefer the simplest correct design and the least code.
