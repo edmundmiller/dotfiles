@@ -2533,6 +2533,7 @@ in
       BindPaths = [ "${millDocsCodingAgentAcpxDir}:/home/emiller/.acpx" ];
       ReadWritePaths = [
         millDocsCodingAgentStateDir
+        "/home/emiller/.omp/agent"
       ];
       NoNewPrivileges = true;
       PrivateTmp = true;
