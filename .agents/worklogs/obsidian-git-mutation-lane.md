@@ -1,6 +1,6 @@
 # Worklog: obsidian-git-mutation-lane
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -19,7 +19,9 @@ Run scheduled OpenWiki ingestion outside `/Users/emiller/obsidian-vault`, publis
 - `nix build .#packages.aarch64-darwin.openwiki --no-link`: pass.
 - `hey agent-audit-tests`: `PASS test-confidence`.
 - `hey agent-finish`: all Darwin checks and 17 quality tests pass.
-- Runtime acceptance and remote equality remain pending.
+- `hey re`: activation passed; launchd plist now uses `~/.local/state/openwiki/obsidian-vault` at 02:00.
+- Manual `launchctl kickstart`: isolated ingestion committed and published through a concurrent Flue-audit update; live vault stayed clean and unmoved until the explicit final fast-forward.
+- Isolated OpenWiki `HEAD`, tracking ref, and authoritative remote all reached `f2838c1c4c`.
 
 ## Reviews
 
@@ -29,13 +31,15 @@ Run scheduled OpenWiki ingestion outside `/Users/emiller/obsidian-vault`, publis
 
 ## Feedback
 
-- Pending.
+- The first runtime trigger exposed missing `git-lfs` in the scheduler PATH; the focused test and runtime inputs now cover it.
 
 ## Remaining work
 
-- Commit implementation, rebuild/reload, trigger ingestion, and verify runtime isolation.
+- None for the OpenWiki scheduler lane.
 
 ## Commits
 
 - `6f8cdc5c2 test(openwiki): capture canonical checkout mutation`
 - `b546b98ac fix(openwiki): isolate scheduled Git mutations`
+- `ab9423eda docs(agent): record mutation lane verification`
+- `b56b09aa0 fix(openwiki): include Git LFS in scheduler runtime`
