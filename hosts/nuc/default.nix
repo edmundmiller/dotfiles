@@ -223,6 +223,7 @@ let
   hermesScintillateApiServerPort = 8642;
   hermesScintillateWebuiPort = 8787;
   hermesScintillateDesktopDashboardPort = 9121;
+  hermesScintillateDashboardProxyPort = 9122;
   hermesScintillateTailscaleServiceName = "hermes";
   hermesSharedStateDir = "/var/lib/hermes";
   hermesSharedHome = "${hermesSharedStateDir}/.hermes";
@@ -1661,6 +1662,23 @@ in
     hermesScintillateDesktopDashboardPort
   ];
 
+  services.nginx = {
+    enable = true;
+    virtualHosts."hermes-scintillate-dashboard" = {
+      listen = [
+        {
+          addr = "127.0.0.1";
+          port = hermesScintillateDashboardProxyPort;
+        }
+      ];
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString hermesScintillateDesktopDashboardPort}";
+        proxyWebsockets = true;
+        extraConfig = "proxy_set_header Host 127.0.0.1:${toString hermesScintillateDesktopDashboardPort};";
+      };
+    };
+  };
+
   systemd.services.hermes-scintillate-desktop-dashboard = {
     enable = true;
     description = "Hermes Desktop-compatible dashboard for Scintillate";
@@ -1794,7 +1812,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --http=${toString hermesScintillateDesktopDashboardPort} http://127.0.0.1:${toString hermesScintillateDesktopDashboardPort} && exit 0; sleep 1; done; exit 1\"'";
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --http=${toString hermesScintillateDesktopDashboardPort} http://127.0.0.1:${toString hermesScintillateDashboardProxyPort} && exit 0; sleep 1; done; exit 1\"'";
       ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.tailscale}/bin/tailscale serve --http=${toString hermesScintillateDesktopDashboardPort} off || true'";
     };
   };
