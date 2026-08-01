@@ -51,6 +51,7 @@ class BootstrapLayoutTest(unittest.TestCase):
             patch.dict(os.environ, env or {}, clear=True),
             patch.object(dev_layout, "context", return_value=ctx),
             patch.object(dev_layout, "command_exists", return_value=True),
+            patch.object(dev_layout, "checkout_root", return_value="/repo"),
             patch.object(
                 dev_layout,
                 "workspace_tabs",
@@ -73,23 +74,19 @@ class BootstrapLayoutTest(unittest.TestCase):
 
         return created, ran, calls
 
-    def test_bootstrap_creates_only_codex_and_hunk_and_focuses_codex(self) -> None:
+    def test_bootstrap_creates_only_omp_and_hunk_and_focuses_omp(self) -> None:
         created, ran, calls = self.run_bootstrap()
 
-        self.assertEqual(created, [("codex", "/repo"), ("hunk", "/repo")])
-        self.assertEqual(
-            ran, [("pane-codex", "codex"), ("pane-hunk", "hunk --worktree")]
-        )
-        self.assertIn(["tab", "focus", "tab-codex"], calls)
+        self.assertEqual(created, [("omp", "/repo"), ("hunk", "/repo")])
+        self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
+        self.assertIn(["tab", "focus", "tab-omp"], calls)
 
     def test_bootstrap_is_idempotent(self) -> None:
-        created, ran, calls = self.run_bootstrap(
-            existing={"codex": "tab-codex", "hunk": "tab-hunk"}
-        )
+        created, ran, calls = self.run_bootstrap(existing={"omp": "tab-omp", "hunk": "tab-hunk"})
 
         self.assertEqual(created, [])
         self.assertEqual(ran, [])
-        self.assertEqual(calls, [["tab", "focus", "tab-codex"]])
+        self.assertEqual(calls, [["tab", "focus", "tab-omp"]])
 
     def test_creation_event_closes_only_the_initial_tab(self) -> None:
         _, _, calls = self.run_bootstrap(
@@ -99,7 +96,33 @@ class BootstrapLayoutTest(unittest.TestCase):
         )
 
         self.assertIn(["tab", "close", "tab-initial"], calls)
-        self.assertIn(["tab", "focus", "tab-codex"], calls)
+        self.assertIn(["tab", "focus", "tab-omp"], calls)
+
+    def test_bootstrap_skips_hunk_outside_a_checkout(self) -> None:
+        created: list[tuple[str, str]] = []
+        with (
+            patch.object(
+                dev_layout,
+                "context",
+                return_value={"workspace_id": "workspace-1", "workspace_cwd": "/Users/emiller"},
+            ),
+            patch.object(dev_layout, "command_exists", return_value=True),
+            patch.object(dev_layout, "checkout_root", return_value=None),
+            patch.object(dev_layout, "workspace_tabs", return_value=({}, set())),
+            patch.object(
+                dev_layout,
+                "tab_create",
+                side_effect=lambda _workspace, cwd, label: (
+                    created.append((label, cwd)) or (f"tab-{label}", f"pane-{label}")
+                ),
+            ),
+            patch.object(dev_layout, "pane_rename"),
+            patch.object(dev_layout, "pane_run"),
+            patch.object(dev_layout, "run_json"),
+        ):
+            dev_layout.bootstrap()
+
+        self.assertEqual(created, [("omp", "/Users/emiller")])
 
     def test_bootstrap_seeds_qmd_before_launching_codex(self) -> None:
         with tempfile.TemporaryDirectory() as repo:
@@ -146,11 +169,45 @@ class BootstrapLayoutTest(unittest.TestCase):
 class CommandTest(unittest.TestCase):
     def test_pane_run_accepts_empty_success_output(self) -> None:
         with patch("dev_layout.subprocess.run", return_value=Completed(0, "")) as run:
-            dev_layout.pane_run("pane-1", "codex")
+            dev_layout.pane_run("pane-1", "omp")
 
-        self.assertEqual(
-            run.call_args.args[0], ["herdr", "pane", "run", "pane-1", "codex"]
-        )
+        self.assertEqual(run.call_args.args[0], ["herdr", "pane", "run", "pane-1", "omp"])
+
+    def test_hunk_tab_uses_workspace_checkout_not_focused_pane_cwd(self) -> None:
+        with (
+            patch.object(
+                dev_layout,
+                "context",
+                return_value={
+                    "workspace_id": "workspace-1",
+                    "workspace_cwd": "/repo",
+                    "focused_pane_cwd": "/tmp",
+                },
+            ),
+            patch.object(dev_layout, "checkout_root", return_value="/repo"),
+            patch.object(dev_layout, "tab_create", return_value=("tab-hunk", "pane-hunk")) as create,
+            patch.object(dev_layout, "pane_rename"),
+            patch.object(dev_layout, "pane_run"),
+            patch.object(dev_layout, "hunk_command", return_value="hunk diff"),
+        ):
+            dev_layout.hunk(open_tab=True)
+
+        create.assert_called_once_with("workspace-1", "/repo", "hunk")
+
+    def test_hunk_action_refuses_to_open_outside_a_git_checkout(self) -> None:
+        with (
+            patch.object(
+                dev_layout,
+                "context",
+                return_value={"workspace_id": "workspace-1", "workspace_cwd": "/Users/emiller"},
+            ),
+            patch.object(dev_layout, "checkout_root", return_value=None),
+            patch.object(dev_layout, "tab_create") as create,
+        ):
+            with self.assertRaisesRegex(SystemExit, "Hunk requires a Git checkout"):
+                dev_layout.hunk(open_tab=True)
+
+        create.assert_not_called()
 
 
 class ManifestTest(unittest.TestCase):
