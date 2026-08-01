@@ -1205,6 +1205,11 @@
                 inherit pkgs;
               };
 
+              nuc-mill-docs-coding-agent = import ./hosts/nuc/_tests/mill-docs-coding-agent.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-buzz-hermes-community-runtime = import ./hosts/nuc/_tests/buzz-hermes-community-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
