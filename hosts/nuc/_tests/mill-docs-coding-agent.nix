@@ -26,6 +26,13 @@ let
       test = builtins.elem "/home/emiller/.omp/run" service.serviceConfig.ReadWritePaths;
       msg = "Mill Docs coding agent must allow OMP to register daemon presence.";
     }
+    {
+      test =
+        !(builtins.any (
+          credential: pkgs.lib.hasPrefix "openai-api-key:" credential
+        ) service.serviceConfig.LoadCredential);
+      msg = "Regression fixture: the OpenAI model credential is unexpectedly loaded.";
+    }
   ];
 in
 pkgs.runCommand "nuc-mill-docs-coding-agent" { } ''
