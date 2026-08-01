@@ -10,6 +10,7 @@ class OpenWikiGitMutationLaneTest(unittest.TestCase):
         source = (ROOT / "packages/openwiki/default.nix").read_text()
 
         self.assertIn("openwikiScheduledIngestion", source)
+        self.assertIn("git-lfs", source)
         self.assertIn(".local/state/openwiki/obsidian-vault", source)
         self.assertIn('git -C "$repo" push origin HEAD:main', source)
         self.assertIn("for attempt in 1 2 3 4 5", source)

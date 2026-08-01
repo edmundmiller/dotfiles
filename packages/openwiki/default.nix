@@ -35,6 +35,7 @@ let
     runtimeInputs = [
       coreutils
       git
+      git-lfs
     ];
     text = ''
       repo="''${OPENWIKI_SCHEDULE_REPO:-$HOME/.local/state/openwiki/obsidian-vault}"
