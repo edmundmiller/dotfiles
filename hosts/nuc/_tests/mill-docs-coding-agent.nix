@@ -2,6 +2,7 @@
 let
   cfg = nixosConfig.config;
   service = cfg.systemd.services.mill-docs-coding-agent;
+  source = builtins.readFile ../default.nix;
   acpxDir = "/var/lib/mill-docs-coding-agent/acpx";
   failures = builtins.filter (assertion: !assertion.test) [
     {
@@ -35,6 +36,10 @@ let
         credential: pkgs.lib.hasPrefix "openai-api-key:" credential
       ) service.serviceConfig.LoadCredential;
       msg = "Mill Docs coding agent must load the OpenAI model credential.";
+    }
+    {
+      test = pkgs.lib.hasInfix "unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY" source;
+      msg = "Regression fixture: coding runner no longer clears the Nostr signing key.";
     }
   ];
 in
