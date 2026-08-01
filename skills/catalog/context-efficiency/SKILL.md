@@ -31,8 +31,8 @@ Does the tool support structured output? (--json, -o json, --format json)
 tool -o json | jg 'precise.selector'
 
 
-# Filter to the few fields needed
-tool -o json | jg 'items matching condition -> id,name,status'
+# Select a set of fields from each array item via disjunction
+tool -o json | jg '[*].(id|name|status)'
 
 
 # Transform when selection is not enough
@@ -41,7 +41,8 @@ tool -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["field
 
 ## jq/python fallback patterns
 
-Use these only when `jg` cannot express the needed transformation.
+Use these when the transformation is value-based filtering (not just path
+selection) that `jg`'s path-query language cannot express.
 
 ```bash
 # python3 -c patterns
@@ -92,23 +93,23 @@ tool search --query '"exact error" after:2026-01-01' --limit 5
 ### Home Assistant (hass-cli)
 
 ```bash
-hass-cli -o json state list 'light.*' | jg 'entity_id,state,attributes.friendly_name'
-hass-cli -o json area list | jg 'area_id,name'
-hass-cli -o json device list | jg 'devices in kitchen -> id,name,area_id'
+hass-cli -o json state list 'light.*' | jg '[*].(entity_id|state|attributes.friendly_name)'
+hass-cli -o json area list | jg '[*].(area_id|name)'
+hass-cli -o json device list | jq '[.[] | select(.area_id=="kitchen") | {id,name,area_id}]'
 ```
 
 ### GitHub CLI
 
 ```bash
-gh pr checks 42 --json name,state | jg 'failed check names'
-gh issue list --json number,title,labels --limit 30 | jg 'issues with bug label'
+gh pr checks 42 --json name,state | jq '[.[] | select(.state!="SUCCESS") | .name]'
+gh issue list --json number,title,labels --limit 30 | jq '[.[] | select(.labels[].name=="bug") | {number,title}]'
 gh api repos/:owner/:repo/pulls --jq '.[].head.ref'
 ```
 
 ### Nix
 
 ```bash
-nix eval .#packages --json | jg 'package names'
+nix eval .#packages.aarch64-darwin --apply builtins.attrNames --json | jg '[*]'
 ```
 
 ### Database
@@ -125,11 +126,11 @@ SELECT entity_id, state FROM states WHERE domain = 'light' ORDER BY last_changed
 hass-cli state list
 
 # ✅ returns exactly what you need
-hass-cli -o json state list 'light.*' | jg 'entity_id,state,attributes.friendly_name matching desk'
+hass-cli -o json state list 'light.*' | jq '.[] | select(.attributes.friendly_name | test("desk"; "i"))'
 
 # ❌ loads full PR list into context
 gh pr list
 
 # ✅ targeted
-gh pr list --json number,title --limit 30 | jg 'titles matching fix'
+gh pr list --json number,title --limit 30 | jq '[.[] | select(.title | test("fix";"i"))]'
 ```

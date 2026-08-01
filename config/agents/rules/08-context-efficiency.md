@@ -19,7 +19,7 @@ Prefer precise, filtered queries over dumping large datasets. A few tokens filte
 - After a timeout or evaluator-state loss, restart with a fresh, narrower, self-contained query; do not retry a state-dependent command.
 
 ```
-tool --output json | jg 'precise selector'   # good
+tool --output json | jg 'users.[*].name'   # good
 tool | # scan wall of text                    # bad
 ```
 
