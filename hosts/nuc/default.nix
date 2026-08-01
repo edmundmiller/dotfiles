@@ -1295,12 +1295,12 @@ in
         chown -h emiller:users "$RADAR_HOME/.codex/auth.json"
         ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
         chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
-        ln -sfn /home/emiller/obsidian-vault "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
+        ln -sfn ${radarVaultPath} "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
         chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
-        ln -sfn /home/emiller/obsidian-vault "$RADAR_HOME/obsidian-vault"
+        ln -sfn ${radarVaultPath} "$RADAR_HOME/obsidian-vault"
         chown -h emiller:users "$RADAR_HOME/obsidian-vault"
         install -d -o root -g root -m 0755 /repos
-        ln -sfn /home/emiller/obsidian-vault /repos/obsidian-vault
+        ln -sfn ${radarVaultPath} /repos/obsidian-vault
         chown -h emiller:users /repos/obsidian-vault
 
         mkdir -p "$ENV_DIR"
