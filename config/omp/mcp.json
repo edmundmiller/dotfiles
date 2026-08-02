@@ -5,5 +5,5 @@
       "command": "fff-mcp"
     }
   },
-  "disabledServers": ["strava-mcp", "cogny", "computer-use"]
+  "disabledServers": ["context7:context7", "strava-mcp"]
 }
