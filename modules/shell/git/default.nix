@@ -21,8 +21,8 @@ let
     if pkgs.stdenv.hostPlatform.isDarwin then
       hunkPackagePatched.overrideAttrs (old: {
         postInstall = (old.postInstall or "") + ''
-          chmod u+w $out/bin/hunk
-          /usr/bin/codesign -f -s - $out/bin/hunk
+          chmod u+w $out/bin/.hunk-wrapped
+          /usr/bin/codesign -f -s - $out/bin/.hunk-wrapped
         '';
       })
     else
