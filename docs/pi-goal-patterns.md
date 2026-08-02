@@ -1,76 +1,50 @@
+---
+purpose: Define the single-outcome operating loop exposed by Pi goal prompts.
+applies_to: Broad Pi work that must continue without routine user re-prompts.
+entrypoint: Use goalize to start and goal-continue-audit to resume.
+verification: Inspect deployed Pi prompts and map every requirement to fresh proof.
+update_when: Shared completion rules, goal prompts, or landing behavior changes.
+---
+
 # Pi goal patterns
 
-Use this page to reduce manual re-prompts. Keep the Pi UI small: two reusable prompt templates handle most cases, and project-specific details live in the goal text or this runbook.
+Use one durable goal for one active outcome. Pi continues until the outcome is proved and landed when authorized, or a genuine blocker requires one human action.
 
-- **What Edmund can say better**: give the agent one outcome, one stopping condition, and the evidence it must surface.
-- **What Pi setup should enforce**: a small set of reusable prompts plus global rules that keep agents iterating without waiting for `continue`.
-
-## What Edmund can do better in prompts
-
-### Prefer a durable outcome over a task bundle
-
-Weak:
+## Copy-paste contract
 
 ```text
-Look into why Obsidian and manuscript agents are rough.
+Outcome: <the single requested end state>
+Done when: <the observable stopping condition>
+Proof: <commands, diffs, runtime checks, logs, screenshots, or artifacts>
+
+Keep exactly one active outcome. Park unrelated discoveries and resume it.
+Continue without waiting for a “kick” while another agent action can advance the outcome.
+Return only:
+- Landed: every requirement is verified, authorized landing is proved, and runtime evidence is named.
+- Blocked: tools, access, or a required decision prevent progress; name exactly one smallest human action.
 ```
 
-Better:
+Planning, a clean feature worktree, and passing local checks are not terminal proof when implementation, runtime verification, or authorized landing remains.
 
-```text
-Create or continue a durable goal to make Obsidian capture reliable. Work until the configured capture path is verified by logs and a smoke note, or until you can name the exact blocker and input needed.
-```
+## Operating loop
 
-### Name the verification surface up front
+1. Create exactly one goal with `Outcome`, `Done when`, and `Proof`.
+2. Derive repository facts; ask only for missing product intent or authority.
+3. Execute the next low-risk step and inspect fresh evidence.
+4. Resolve each requirement to `verified`, `unverified`, `parked`, or `blocked`.
+5. Park tangents, then resume the active outcome without waiting for `continue`.
+6. Return `Landed` only with verification, or `Blocked` with exactly one required action.
 
-Include the commands, files, logs, rendered artifacts, or screenshots that decide completion.
+## Source of truth
 
-```text
-Before saying done, show the changed files, commands run, test/build output, logs inspected, and exact evidence that proves the workflow works.
-```
+Prompt templates in `config/pi/prompts/` are linked into `~/.pi/agent/prompts/` by the Pi Nix module:
 
-### Replace “continue” with an audit instruction
+| Template                 | Use                                               |
+| ------------------------ | ------------------------------------------------- |
+| `goalize.md`             | Create the one active goal and start execution.   |
+| `goal-continue-audit.md` | Audit fresh evidence and continue unless blocked. |
 
-When an agent stops too early, avoid a vague kick.
-
-```text
-Audit the active goal against fresh evidence. If anything remains unverified, take the next low-risk step now instead of summarizing next steps.
-```
-
-### Separate exploration from execution
-
-If you want a plan first, explicitly authorize execution after the plan.
-
-```text
-First inspect the repo and draft the plan. Then execute the plan unless you hit a real access, tool, or decision blocker.
-```
-
-### For creative/research/manuscript work, require a ledger
-
-```text
-End with a section/claim ledger that lists source material inspected, edits made, generated artifacts, validation commands, unresolved uncertainty, and blockers.
-```
-
-## What Pi setup now provides
-
-Prompt templates in `config/pi/prompts/` are linked into `~/.pi/agent/prompts/` by the Pi Nix module and become reusable prompt commands after `hey re`.
-
-| Template                 | Use when                   | What it does                                                     |
-| ------------------------ | -------------------------- | ---------------------------------------------------------------- |
-| `goalize.md`             | Starting broad work        | Creates/replaces one durable goal and starts execution           |
-| `goal-continue-audit.md` | An agent stopped too early | Audits active goal evidence and continues the next concrete step |
-
-Global rule `config/agents/rules/16-autonomous-goal-progress.md` and skill `skills/catalog/autonomous-agent-loop/SKILL.md` reinforce the same loop for future agents.
-
-## Copy-paste base contract
-
-```text
-Create or continue a durable goal for this task. Do not stop at a plan.
-Work until the verifiable end state is true.
-After each failed or partial attempt, inspect fresh evidence, update the plan, and take the next low-risk useful step.
-Before saying done, map every requirement to files, diffs, commands, logs, tests, screenshots, or artifact paths.
-If blocked, report attempted paths, exact blockers, remaining unmet requirements, and what input would unblock progress.
-```
+Shared behavior lives in `config/agents/rules/16-autonomous-goal-progress.md`. The reusable procedure lives in `skills/catalog/autonomous-agent-loop/SKILL.md`. Do not create a parallel checklist or task store.
 
 ## Project-specific clauses to add to `goalize`
 
