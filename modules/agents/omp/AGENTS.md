@@ -56,7 +56,6 @@ Enable with:
 modules.agents.omp.enable = true;
 ```
 
-
 ## Completion gate
 
 `scripts/completion-check` is the shared source of truth for Codex and OMP
