@@ -1,8 +1,8 @@
 diff --git a/Cargo.lock b/Cargo.lock
-index 2cf8645..358ba89 100644
+index 3c732a7b2..98f5e4129 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
-@@ -3268,6 +3268,7 @@ version = "17.0.5"
+@@ -4794,6 +4794,7 @@ version = "17.2.4"
  dependencies = [
   "anyhow",
   "ast-grep-core",
@@ -10,7 +10,7 @@ index 2cf8645..358ba89 100644
   "globset",
   "ignore",
   "phf 0.13.1",
-@@ -3303,6 +3304,7 @@ dependencies = [
+@@ -4829,6 +4830,7 @@ dependencies = [
   "tree-sitter-lua",
   "tree-sitter-make",
   "tree-sitter-md",
@@ -18,7 +18,7 @@ index 2cf8645..358ba89 100644
   "tree-sitter-nix",
   "tree-sitter-objc",
   "tree-sitter-ocaml",
-@@ -4938,6 +4940,15 @@ dependencies = [
+@@ -7012,6 +7014,15 @@ dependencies = [
   "tree-sitter-language",
  ]
  
@@ -35,10 +35,10 @@ index 2cf8645..358ba89 100644
  name = "tree-sitter-nix"
  version = "0.3.0"
 diff --git a/Cargo.toml b/Cargo.toml
-index 9e1ac75..479b228 100644
+index c88f565a2..84d1c1754 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -349,6 +349,7 @@ tree-sitter-kotlin = { version = "0.4", package = "tree-sitter-kotlin-sg" }
+@@ -359,6 +359,7 @@ tree-sitter-kotlin = { version = "0.4", package = "tree-sitter-kotlin-sg" }
  tree-sitter-lua = "0.5"
  tree-sitter-make = "1.1"
  tree-sitter-md = "0.5"
@@ -47,7 +47,7 @@ index 9e1ac75..479b228 100644
  tree-sitter-objc = "3.0"
  tree-sitter-ocaml = "0.24.2"
 diff --git a/crates/pi-ast/Cargo.toml b/crates/pi-ast/Cargo.toml
-index 34c7c36..51c0149 100644
+index 34c7c363e..51c01499a 100644
 --- a/crates/pi-ast/Cargo.toml
 +++ b/crates/pi-ast/Cargo.toml
 @@ -47,6 +47,7 @@ tree-sitter-kotlin.workspace = true
@@ -67,7 +67,7 @@ index 34c7c36..51c0149 100644
 +cc = "1"
 diff --git a/crates/pi-ast/build.rs b/crates/pi-ast/build.rs
 new file mode 100644
-index 0000000..75322a9
+index 000000000..75322a9f2
 --- /dev/null
 +++ b/crates/pi-ast/build.rs
 @@ -0,0 +1,13 @@
@@ -85,7 +85,7 @@ index 0000000..75322a9
 +	println!("cargo:rerun-if-changed={scanner}");
 +}
 diff --git a/crates/pi-ast/src/language/mod.rs b/crates/pi-ast/src/language/mod.rs
-index 5201fd2..1b4edee 100644
+index 5201fd231..1b4edee46 100644
 --- a/crates/pi-ast/src/language/mod.rs
 +++ b/crates/pi-ast/src/language/mod.rs
 @@ -120,6 +120,7 @@ impl_lang_expando!(Hcl, language_hcl, 'µ');
@@ -158,7 +158,7 @@ index 5201fd2..1b4edee 100644
  "obj-c"          => SupportLang::ObjC,
 diff --git a/crates/pi-ast/src/language/nextflow_scanner.c b/crates/pi-ast/src/language/nextflow_scanner.c
 new file mode 100644
-index 0000000..7d6bbdb
+index 000000000..7d6bbdb5c
 --- /dev/null
 +++ b/crates/pi-ast/src/language/nextflow_scanner.c
 @@ -0,0 +1,146 @@
@@ -309,7 +309,7 @@ index 0000000..7d6bbdb
 +  return true;
 +}
 diff --git a/crates/pi-ast/src/language/parsers.rs b/crates/pi-ast/src/language/parsers.rs
-index faaaa1e..0489771 100644
+index faaaa1efa..048977170 100644
 --- a/crates/pi-ast/src/language/parsers.rs
 +++ b/crates/pi-ast/src/language/parsers.rs
 @@ -92,6 +92,9 @@ pub fn language_make() -> TSLanguage {
@@ -324,7 +324,7 @@ index faaaa1e..0489771 100644
  }
 diff --git a/crates/pi-ast/src/language/tree_sitter/parser.h b/crates/pi-ast/src/language/tree_sitter/parser.h
 new file mode 100644
-index 0000000..858107d
+index 000000000..858107deb
 --- /dev/null
 +++ b/crates/pi-ast/src/language/tree_sitter/parser.h
 @@ -0,0 +1,286 @@
@@ -615,7 +615,7 @@ index 0000000..858107d
 +
 +#endif  // TREE_SITTER_PARSER_H_
 diff --git a/crates/pi-ast/src/summary.rs b/crates/pi-ast/src/summary.rs
-index 14b63a1..f875eb4 100644
+index 14b63a1b2..f875eb428 100644
 --- a/crates/pi-ast/src/summary.rs
 +++ b/crates/pi-ast/src/summary.rs
 @@ -736,7 +736,8 @@ fn is_elidable_kind(language: SupportLang, kind: &str) -> bool {
@@ -637,13 +637,13 @@ index 14b63a1..f875eb4 100644
  		| SupportLang::Toml
  		| SupportLang::Ini
 diff --git a/crates/pi-natives/src/ast.rs b/crates/pi-natives/src/ast.rs
-index 4eec133..2facee0 100644
+index 0ede452f8..e2fc44dac 100644
 --- a/crates/pi-natives/src/ast.rs
 +++ b/crates/pi-natives/src/ast.rs
-@@ -1306,6 +1306,48 @@ mod tests {
- 			.expect_err("mixed language inference should fail");
- 		assert!(err.to_string().contains("multiple languages"));
+@@ -1360,6 +1360,48 @@ mod tests {
+ 		);
  	}
+ 
 +	#[test]
 +	fn nextflow_process_pattern_matches_inferred_nf_file() {
 +		let language = SupportLang::from_path(Path::new("main.nf"))
@@ -690,7 +690,7 @@ index 4eec133..2facee0 100644
  	fn resolves_supported_language_aliases() {
  		assert_eq!(resolve_supported_lang("ts").ok(), Some(SupportLang::TypeScript));
 diff --git a/docs/tools/ast-grep.md b/docs/tools/ast-grep.md
-index 7eac9e3..935b593 100644
+index 7eac9e3d4..935b5937f 100644
 --- a/docs/tools/ast-grep.md
 +++ b/docs/tools/ast-grep.md
 @@ -30,7 +30,7 @@ Pattern grammar and language support exposed to the model:

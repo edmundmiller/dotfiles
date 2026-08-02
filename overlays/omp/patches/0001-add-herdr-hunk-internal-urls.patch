@@ -1,13 +1,13 @@
 diff --git a/docs/tools/read.md b/docs/tools/read.md
-index 390517a..a8cc620 100644
+index 38f1c3771..5d6c83277 100644
 --- a/docs/tools/read.md
 +++ b/docs/tools/read.md
 @@ -10,7 +10,7 @@
    - `packages/coding-agent/src/utils/zip.ts` — the unified ZIP/tar wrapper: detect `archive.ext:inner/path`, index archives, list/read entries.
    - `packages/coding-agent/src/tools/sqlite-reader.ts` — detect SQLite targets, parse selectors, render tables.
    - `packages/coding-agent/src/tools/fetch.ts` — URL parsing, fetch/render pipeline, URL cache/artifacts.
--  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, and `vault://`.
-+  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`.
+-  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, and `vault://`.
++  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, and `vault://`.
    - `packages/coding-agent/src/edit/notebook.ts` — convert `.ipynb` to editable `# %% [...] cell:N` text.
    - `packages/coding-agent/src/utils/file-display-mode.ts` — decide hashline vs line-number vs raw display.
    - `packages/coding-agent/src/workspace-tree.ts` — render directory trees.
@@ -15,12 +15,12 @@ index 390517a..a8cc620 100644
  
  ### Internal URLs
  - `read` does not resolve these itself; it delegates to `InternalUrlRouter.instance().resolve()`.
--- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, and `vault://`.
-+- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, and `vault://`.
+-- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, and `vault://`.
++- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, and `vault://`.
+   - `security://` is reserved for the OMP-owned, producer-neutral, read-only security-analysis store.
  - `#handleInternalUrl()` behavior:
    - parses the URL with `parseInternalUrl()` so colons inside the host segment are legal
-   - for `agent://`, treats non-root path extraction or `?q=` extraction as a special no-pagination mode
-@@ -205,6 +205,9 @@ URL selectors are parsed separately in `packages/coding-agent/src/tools/fetch.ts
+@@ -206,6 +206,9 @@ URL selectors are parsed separately in `packages/coding-agent/src/tools/fetch.ts
    - sets `ignoreResultLimits: true` for `skill://` so the full skill text is paginated only by explicit selectors, not by the normal default line limit
  - `issue://<N>` / `pr://<N>` (and the long form `issue://<owner>/<repo>/<N>` / `pr://<owner>/<repo>/<N>`) route through the same SQLite cache the `github` tool writes to; `?comments=0` selects the no-comments rendering. Bare `issue://` / `pr://` (and `issue://<owner>/<repo>` / `pr://<owner>/<repo>`) issue a live `gh issue list` / `gh pr list` for browsing, accepting `?state=`, `?limit=`, `?author=`, `?label=`. PR diffs share the same cache through `pr://<N>/diff` (numbered file listing with per-file hints), `pr://<N>/diff/<i>` (single file slice; 1-indexed), and `pr://<N>/diff/all` (verbatim unified diff); the listing and per-file slices are reconstructed from the cached unified-diff payload, so all three variants share one `gh pr diff` invocation per PR. Diff content is served as `text/plain`. Soft TTL `github.cache.softTtlSec` (default 5 minutes), hard TTL `github.cache.hardTtlSec` (default 7 days). Stale-hit returns the cached row and schedules a background refresh.
  
@@ -31,10 +31,10 @@ index 390517a..a8cc620 100644
  - `parseReadUrlTarget()` accepts `http://`, `https://`, or `www.` targets.
  - Plain URL reads call `executeReadUrl()` in `packages/coding-agent/src/tools/fetch.ts`.
 diff --git a/packages/coding-agent/src/config/settings-schema.ts b/packages/coding-agent/src/config/settings-schema.ts
-index 23b0e68..e8f1546 100644
+index cf2041f28..ab6492a22 100644
 --- a/packages/coding-agent/src/config/settings-schema.ts
 +++ b/packages/coding-agent/src/config/settings-schema.ts
-@@ -5071,6 +5071,10 @@ export const SETTINGS_SCHEMA = {
+@@ -5507,6 +5507,10 @@ export const SETTINGS_SCHEMA = {
  		default: "unset" as const,
  	},
  
@@ -47,7 +47,7 @@ index 23b0e68..e8f1546 100644
  	"gc.archive": { type: "boolean", default: true },
 diff --git a/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts b/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts
 new file mode 100644
-index 0000000..b15d541
+index 000000000..b15d541ab
 --- /dev/null
 +++ b/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts
 @@ -0,0 +1,168 @@
@@ -221,7 +221,7 @@ index 0000000..b15d541
 +});
 diff --git a/packages/coding-agent/src/internal-urls/herdr-hunk-protocol.ts b/packages/coding-agent/src/internal-urls/herdr-hunk-protocol.ts
 new file mode 100644
-index 0000000..834ccf7
+index 000000000..834ccf779
 --- /dev/null
 +++ b/packages/coding-agent/src/internal-urls/herdr-hunk-protocol.ts
 @@ -0,0 +1,304 @@
@@ -530,7 +530,7 @@ index 0000000..834ccf7
 +	}
 +}
 diff --git a/packages/coding-agent/src/internal-urls/index.ts b/packages/coding-agent/src/internal-urls/index.ts
-index 99311f1..e1075b4 100644
+index 6b52fb219..e9fd8f768 100644
 --- a/packages/coding-agent/src/internal-urls/index.ts
 +++ b/packages/coding-agent/src/internal-urls/index.ts
 @@ -10,6 +10,7 @@
@@ -542,13 +542,13 @@ index 99311f1..e1075b4 100644
  export * from "./issue-pr-protocol";
  export * from "./json-query";
 diff --git a/packages/coding-agent/src/internal-urls/router.ts b/packages/coding-agent/src/internal-urls/router.ts
-index 041cda4..c8d80a5 100644
+index 09061c5a2..2117e093f 100644
 --- a/packages/coding-agent/src/internal-urls/router.ts
 +++ b/packages/coding-agent/src/internal-urls/router.ts
 @@ -1,12 +1,14 @@
  /**
-- * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
-+ * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
+- * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
++ * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
   *
   * One process-global router with one handler per scheme. Access via
   * `InternalUrlRouter.instance()`. Handlers are stateless; per-session and
@@ -561,7 +561,7 @@ index 041cda4..c8d80a5 100644
  import { HistoryProtocolHandler } from "./history-protocol";
  import { IssueProtocolHandler, PrProtocolHandler } from "./issue-pr-protocol";
  import { LocalProtocolHandler } from "./local-protocol";
-@@ -48,6 +50,8 @@ export class InternalUrlRouter {
+@@ -51,6 +53,8 @@ export class InternalUrlRouter {
  		this.register(new HistoryProtocolHandler());
  		this.register(new SshProtocolHandler());
  		this.register(new XdProtocolHandler());
@@ -570,7 +570,7 @@ index 041cda4..c8d80a5 100644
  	}
  
  	/** Process-global router instance. */
-@@ -61,6 +65,12 @@ export class InternalUrlRouter {
+@@ -64,6 +68,12 @@ export class InternalUrlRouter {
  		InternalUrlRouter.#instance = undefined;
  	}
  
@@ -583,7 +583,7 @@ index 041cda4..c8d80a5 100644
  	register(handler: ProtocolHandler): void {
  		this.#handlers.set(handler.scheme.toLowerCase(), handler);
  	}
-@@ -70,20 +80,23 @@ export class InternalUrlRouter {
+@@ -73,13 +83,16 @@ export class InternalUrlRouter {
  	}
  
  	getHandler(scheme: string): ProtocolHandler | undefined {
@@ -601,7 +601,8 @@ index 041cda4..c8d80a5 100644
 +		return InternalUrlRouter.#enabled(scheme) && this.#handlers.has(scheme);
  	}
  
- 	/** Schemes whose handler supports host/path autocomplete. */
+ 	/**
+@@ -100,7 +113,7 @@ export class InternalUrlRouter {
  	completionSchemes(): string[] {
  		const schemes: string[] = [];
  		for (const [scheme, handler] of this.#handlers) {
@@ -610,7 +611,7 @@ index 041cda4..c8d80a5 100644
  		}
  		return schemes;
  	}
-@@ -93,7 +106,9 @@ export class InternalUrlRouter {
+@@ -110,7 +123,9 @@ export class InternalUrlRouter {
  	 * Returns `null` when the scheme is unknown or does not support completion.
  	 */
  	async complete(scheme: string, query: string, context?: ResolveContext): Promise<UrlCompletion[] | null> {
@@ -621,27 +622,27 @@ index 041cda4..c8d80a5 100644
  		if (!handler?.complete) return null;
  		return handler.complete(query, context);
  	}
-@@ -102,8 +117,9 @@ export class InternalUrlRouter {
- 		const parsed = parseInternalUrl(input);
- 		const scheme = parsed.protocol.replace(/:$/, "").toLowerCase();
- 		const handler = this.#handlers.get(scheme);
+@@ -125,8 +140,9 @@ export class InternalUrlRouter {
+ 		const handler =
+ 			this.#handlers.get(scheme) ??
+ 			(allowMcpResource && this.#isMcpResourceScheme(scheme) ? this.#handlers.get("mcp") : undefined);
 -		if (!handler) {
-+		if (!handler || !InternalUrlRouter.#enabled(scheme)) {
++		if (!handler || !InternalUrlRouter.#enabled(this.#handlers.has(scheme) ? scheme : "mcp")) {
  			const available = Array.from(this.#handlers.keys())
 +				.filter(candidate => InternalUrlRouter.#enabled(candidate))
  				.map(candidate => `${candidate}://`)
  				.join(", ");
  			throw new Error(`Unknown protocol: ${scheme}://\nSupported: ${available || "none"}`);
 diff --git a/packages/coding-agent/src/internal-urls/types.ts b/packages/coding-agent/src/internal-urls/types.ts
-index a1ae61f..143f64a 100644
+index d03e52784..811ddcd15 100644
 --- a/packages/coding-agent/src/internal-urls/types.ts
 +++ b/packages/coding-agent/src/internal-urls/types.ts
 @@ -1,7 +1,7 @@
  /**
   * Types for the internal URL routing system.
   *
-- * Internal URLs (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
-+ * Internal URLs (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
+- * Internal URLs (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
++ * Internal URLs (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
   * providing access to agent outputs and server resources without exposing filesystem paths.
   */
  
@@ -658,10 +659,10 @@ index a1ae61f..143f64a 100644
  	notes?: string[];
  	/**
 diff --git a/packages/coding-agent/src/prompts/system/system-prompt.md b/packages/coding-agent/src/prompts/system/system-prompt.md
-index 2fea8f2..7bdf3a4 100644
+index ef82a956f..6d30e677b 100644
 --- a/packages/coding-agent/src/prompts/system/system-prompt.md
 +++ b/packages/coding-agent/src/prompts/system/system-prompt.md
-@@ -64,6 +64,13 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
+@@ -67,6 +67,13 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
  - `vault://<vault>/<path>`: Obsidian vault (read/edit). `vault://` lists vaults; `vault://_/…` targets the active vault. File ops `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault ops `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
  {{/if}}
  - `mcp://<uri>`: MCP resource
@@ -676,7 +677,7 @@ index 2fea8f2..7bdf3a4 100644
  - `pr://<N>` (or `pr://<owner>/<repo>/<N>`): GitHub PR, same cache; `?comments=0` drops comments. Bare lists recent PRs; `?state=open|closed|merged|all&limit=&author=&label=`.
  - `omp://`: harness docs; AVOID unless the user asks about the harness itself.
 diff --git a/packages/coding-agent/src/prompts/tools/read.md b/packages/coding-agent/src/prompts/tools/read.md
-index 47610cc..3cdf6d9 100644
+index 47610ccdb..3cdf6d9b4 100644
 --- a/packages/coding-agent/src/prompts/tools/read.md
 +++ b/packages/coding-agent/src/prompts/tools/read.md
 @@ -19,6 +19,12 @@ Read files, directories, archives, SQLite, images, documents, internal resources
@@ -693,10 +694,10 @@ index 47610cc..3cdf6d9 100644
    Literal `:`, `?`, `#` → percent-encode (`%3A`/`%3F`/`%23`). Requires POSIX shell (else `ssh` tool).
  
 diff --git a/packages/coding-agent/src/system-prompt.ts b/packages/coding-agent/src/system-prompt.ts
-index a54e2a2..f53a3db 100644
+index 4a78aa965..84c4b55af 100644
 --- a/packages/coding-agent/src/system-prompt.ts
 +++ b/packages/coding-agent/src/system-prompt.ts
-@@ -10,7 +10,7 @@ import { $env, getGpuCachePath, getProjectDir, hasFsCode, isEnoent, logger, prom
+@@ -11,7 +11,7 @@ import { $env, getGpuCachePath, getProjectDir, hasFsCode, isEnoent, logger, prom
  import { contextFileCapability } from "./capability/context-file";
  import { systemPromptCapability } from "./capability/system-prompt";
  import { findConfigFile } from "./config";
@@ -705,7 +706,7 @@ index a54e2a2..f53a3db 100644
  import { type ContextFile, loadCapability, type SystemPrompt as SystemPromptFile } from "./discovery";
  import { expandAtImports } from "./discovery/at-imports";
  import { loadSkills, type Skill } from "./extensibility/skills";
-@@ -37,6 +37,10 @@ const PERSONALITY_SPECS: Record<Exclude<Personality, "none">, string> = {
+@@ -38,6 +38,10 @@ const PERSONALITY_SPECS: Record<Exclude<Personality, "none">, string> = {
  	pragmatic: pragmaticPersonality,
  };
  
@@ -716,9 +717,9 @@ index a54e2a2..f53a3db 100644
  interface AlwaysApplyRule {
  	name: string;
  	content: string;
-@@ -808,6 +812,8 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
- 		secretsEnabled,
+@@ -884,6 +888,8 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
  		hasMemoryRoot: memoryRootEnabled,
+ 		securityEnabled,
  		hasObsidian: hasObsidian(),
 +		hasHerdrInternalUrls: internalUrlPromptEnabled("internalUrls.herdr"),
 +		hasHunkInternalUrls: internalUrlPromptEnabled("internalUrls.hunk"),
@@ -726,10 +727,10 @@ index a54e2a2..f53a3db 100644
  		renderMermaid,
  		xdevTools,
 diff --git a/packages/coding-agent/src/tools/glob.ts b/packages/coding-agent/src/tools/glob.ts
-index 8991575..e321f8e 100644
+index 494b186d4..f895661b3 100644
 --- a/packages/coding-agent/src/tools/glob.ts
 +++ b/packages/coding-agent/src/tools/glob.ts
-@@ -18,8 +18,9 @@ import { applyListLimit } from "./list-limit";
+@@ -19,8 +19,9 @@ import { applyListLimit } from "./list-limit";
  import { formatFullOutputReference, type OutputMeta } from "./output-meta";
  import {
  	expandDelimitedPathEntries,
@@ -740,7 +741,7 @@ index 8991575..e321f8e 100644
  	isSshUrl,
  	normalizePathLikeInput,
  	parseFindPattern,
-@@ -165,6 +166,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+@@ -166,6 +167,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  			}
  			const internalRouter = InternalUrlRouter.instance();
  			const normalizedPatterns: string[] = [];
@@ -748,16 +749,16 @@ index 8991575..e321f8e 100644
  			for (const rawPattern of aliasResolvedPatterns) {
  				if (!internalRouter.canHandle(rawPattern)) {
  					normalizedPatterns.push(rawPattern);
-@@ -175,7 +177,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+@@ -176,7 +178,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  						`find cannot operate on a remote ssh:// path: ${rawPattern}. ssh:// has no local file to glob; use \`read ${rawPattern}\` to list or inspect the remote path.`,
  					);
  				}
 -				if (hasGlobPathChars(rawPattern)) {
 +				if (hasInternalUrlGlobPathChars(rawPattern)) {
- 					throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPattern}`);
- 				}
- 				const resource = await internalRouter.resolve(rawPattern, {
-@@ -189,6 +191,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 					if (!/^memory:\/\//i.test(rawPattern)) {
+ 						throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPattern}`);
+ 					}
+@@ -208,6 +210,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  				if (!resource.sourcePath) {
  					throw new ToolError(`Cannot find internal URL without a backing file: ${rawPattern}`);
  				}
@@ -767,7 +768,7 @@ index 8991575..e321f8e 100644
  				normalizedPatterns.push(resource.sourcePath);
  			}
  			if (normalizedPatterns.some(pattern => pattern.length === 0)) {
-@@ -228,7 +233,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+@@ -247,7 +252,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  							};
  						})(),
  					];
@@ -778,7 +779,7 @@ index 8991575..e321f8e 100644
  
  			for (const target of targets) {
  				if (target.searchPath === "/") {
-@@ -249,6 +256,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+@@ -268,6 +275,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  			const formatMatchPath = (matchPath: string, base: string, fileType?: natives.FileType): string => {
  				const hadTrailingSlash = matchPath.endsWith("/") || matchPath.endsWith("\\");
  				const absolutePath = path.isAbsolute(matchPath) ? matchPath : path.resolve(base, matchPath);
@@ -787,7 +788,7 @@ index 8991575..e321f8e 100644
  				return formatPathRelativeToCwd(absolutePath, this.session.cwd, {
  					trailingSlash: fileType === natives.FileType.Dir || hadTrailingSlash,
  				});
-@@ -396,7 +405,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+@@ -415,7 +424,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
  					throw err;
  				}
  				if (!target.hasGlob && stat.isFile()) {
@@ -798,7 +799,7 @@ index 8991575..e321f8e 100644
  				if (!stat.isDirectory()) {
  					if (isSingle) throw new ToolError(`Path is not a directory: ${target.searchPath}`);
 diff --git a/packages/coding-agent/src/tools/grep.ts b/packages/coding-agent/src/tools/grep.ts
-index e28756a..d458f38 100644
+index 353d5b951..f2f74702d 100644
 --- a/packages/coding-agent/src/tools/grep.ts
 +++ b/packages/coding-agent/src/tools/grep.ts
 @@ -43,7 +43,9 @@ import { formatMatchLine } from "./match-line-format";
@@ -858,7 +859,7 @@ index e28756a..d458f38 100644
  		virtualScopePath,
  	};
  }
-@@ -993,6 +997,7 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+@@ -1019,6 +1023,7 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
  				let exactFilePaths: string[] | undefined;
  				let missingPaths: string[];
  				const immutableSourcePaths = new Set(internalResolution.immutableSourcePaths);
@@ -866,7 +867,7 @@ index e28756a..d458f38 100644
  				if (searchablePaths.length > 0) {
  					const scope = await resolveToolSearchScope({
  						rawPaths: searchablePaths,
-@@ -1017,6 +1022,9 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+@@ -1043,6 +1048,9 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
  					for (const immutablePath of scope.immutableSourcePaths) {
  						immutableSourcePaths.add(immutablePath);
  					}
@@ -876,7 +877,7 @@ index e28756a..d458f38 100644
  					// Build the per-file line-range filter after URL materialization has run:
  					// archive entries are keyed by scratch path, URL entries by read-cache
  					// content path, and ordinary files by their resolved filesystem path.
-@@ -1050,10 +1058,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+@@ -1076,10 +1084,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
  					}
  					// When the only input was an archive selector, surface that selector instead
  					// of the temp scratch path the resolver substituted in.
@@ -891,7 +892,7 @@ index e28756a..d458f38 100644
  					scopePath = internalResolution.virtualScopePath
  						? `${physicalScopePath}, ${internalResolution.virtualScopePath}`
  						: physicalScopePath;
-@@ -1264,9 +1274,20 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+@@ -1290,9 +1300,20 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
  						if (display) match.path = display;
  					}
  				}
@@ -913,7 +914,7 @@ index e28756a..d458f38 100644
  						? filePath
  						: formatResultPath(filePath, isDirectory, searchPath, this.session.cwd);
  
-@@ -1404,7 +1425,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+@@ -1451,7 +1472,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
  				const hashContexts = new Map<string, { tag: string }>();
  				if (baseDisplayMode.hashLines) {
  					for (const relativePath of fileList) {
@@ -928,10 +929,10 @@ index e28756a..d458f38 100644
  						if (isImmutableSourcePath(absoluteFilePath, immutableSourcePaths)) continue;
  						// Mint a whole-file content tag so any anchor validates while the
 diff --git a/packages/coding-agent/src/tools/path-utils.ts b/packages/coding-agent/src/tools/path-utils.ts
-index 2d74bf5..fc04dd1 100644
+index aea44a068..055b05576 100644
 --- a/packages/coding-agent/src/tools/path-utils.ts
 +++ b/packages/coding-agent/src/tools/path-utils.ts
-@@ -34,6 +34,8 @@ const INTERNAL_URL_SELECTOR_PART_RE = new RegExp(
+@@ -35,6 +35,8 @@ const INTERNAL_URL_SELECTOR_PART_RE = new RegExp(
  const INTERNAL_SCHEMES_WITH_SELECTORS: Record<string, true> = {
  	agent: true,
  	artifact: true,
@@ -940,7 +941,7 @@ index 2d74bf5..fc04dd1 100644
  	issue: true,
  	history: true,
  	local: true,
-@@ -57,6 +59,8 @@ const NARROW_NO_BREAK_SPACE = "\u202F";
+@@ -59,6 +61,8 @@ const NARROW_NO_BREAK_SPACE = "\u202F";
  const TOP_LEVEL_INTERNAL_URL_PREFIXES = [
  	"agent://",
  	"artifact://",
@@ -948,8 +949,8 @@ index 2d74bf5..fc04dd1 100644
 +	"hunk://",
  	"skill://",
  	"rule://",
- 	"local://",
-@@ -114,6 +118,8 @@ function normalizeAtPrefix(filePath: string): string {
+ 	"security://",
+@@ -117,6 +121,8 @@ function normalizeAtPrefix(filePath: string): string {
  		// Internal URL shorthands
  		withoutAt.startsWith("agent://") ||
  		withoutAt.startsWith("artifact://") ||
@@ -957,8 +958,8 @@ index 2d74bf5..fc04dd1 100644
 +		withoutAt.startsWith("hunk://") ||
  		withoutAt.startsWith("skill://") ||
  		withoutAt.startsWith("rule://") ||
- 		withoutAt.startsWith("local:") ||
-@@ -599,6 +605,56 @@ export function hasGlobPathChars(filePath: string): boolean {
+ 		withoutAt.startsWith("security://") ||
+@@ -691,6 +697,56 @@ export function hasGlobPathChars(filePath: string): boolean {
  	return GLOB_PATH_CHARS.some(char => filePath.includes(char));
  }
  
@@ -1015,7 +1016,7 @@ index 2d74bf5..fc04dd1 100644
  type PathEntrySplitter = (item: string) => { basePath: string };
  
  const TOP_LEVEL_WHITESPACE_RE = /\s/;
-@@ -1180,6 +1236,7 @@ export interface ToolScopeResolution {
+@@ -1318,6 +1374,7 @@ export interface ToolScopeResolution {
  	exactFilePaths?: string[];
  	missingPaths: string[];
  	immutableSourcePaths: Set<string>;
@@ -1023,7 +1024,7 @@ index 2d74bf5..fc04dd1 100644
  }
  
  /**
-@@ -1207,6 +1264,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+@@ -1345,6 +1402,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
  	const internalRouter = InternalUrlRouter.instance();
  	const resolvedPathInputs: string[] = [];
  	const immutableSourcePaths = new Set<string>();
@@ -1031,7 +1032,7 @@ index 2d74bf5..fc04dd1 100644
  	for (const rawPath of rawPaths) {
  		let externalUrl = strictExternalUrlRe.test(rawPath);
  		if (!externalUrl && isReadableUrlPath(rawPath) && !hasGlobPathChars(rawPath)) {
-@@ -1247,7 +1305,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+@@ -1385,7 +1443,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
  				`Cannot ${internalUrlAction} a remote ssh:// path (no local file): ${rawPath}. Use \`read ${rawPath}\` to view it, or the \`search\` tool to grep remote files.`,
  			);
  		}
@@ -1040,7 +1041,7 @@ index 2d74bf5..fc04dd1 100644
  			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
  		}
  		const resource = await internalRouter.resolve(rawPath, {
-@@ -1267,6 +1325,9 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+@@ -1405,6 +1463,9 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
  		if (opts.trackImmutableSources && resource.immutable) {
  			immutableSourcePaths.add(path.resolve(resource.sourcePath));
  		}
@@ -1050,7 +1051,7 @@ index 2d74bf5..fc04dd1 100644
  		resolvedPathInputs.push(resource.sourcePath);
  	}
  
-@@ -1320,15 +1381,17 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+@@ -1458,15 +1519,17 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
  		const hint = opts.multipathStatHint && rawPaths.length > 1 ? opts.multipathStatHint : "";
  		throw new ToolError(`Path not found: ${scopePath}${hint}`);
  	}
@@ -1070,15 +1071,15 @@ index 2d74bf5..fc04dd1 100644
  	};
  }
 diff --git a/packages/coding-agent/src/tools/read.ts b/packages/coding-agent/src/tools/read.ts
-index 21cf268..aa5f78e 100644
+index 95cd116a7..6d1cac21e 100644
 --- a/packages/coding-agent/src/tools/read.ts
 +++ b/packages/coding-agent/src/tools/read.ts
-@@ -914,6 +914,8 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
+@@ -894,6 +894,8 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
  			IS_HL_MODE: displayMode.hashLines,
  			IS_LINE_NUMBER_MODE: !displayMode.hashLines && displayMode.lineNumbers,
- 			INSPECT_IMAGE_ENABLED: this.#inspectImageEnabled,
-+			HERDR_INTERNAL_URLS_ENABLED: session.settings.get("internalUrls.herdr"),
-+			HUNK_INTERNAL_URLS_ENABLED: session.settings.get("internalUrls.hunk"),
+ 			INSPECT_IMAGE_ENABLED: this.#inspectImageActive,
++			HERDR_INTERNAL_URLS_ENABLED: this.session.settings.get("internalUrls.herdr"),
++			HUNK_INTERNAL_URLS_ENABLED: this.session.settings.get("internalUrls.hunk"),
  		});
  	}
  
