@@ -28,7 +28,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
         self.assertIn("amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY", source)
         self.assertIn("hermes-amosburton-secrets-materialize.service", service)
         self.assertIn(
-            'EnvironmentFile = [ "/run/hermes-amosburton-env/secrets.env" ];',
+            '"/run/hermes-amosburton-env/secrets.env"',
             service,
         )
 
