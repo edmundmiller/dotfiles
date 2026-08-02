@@ -236,6 +236,26 @@ Podman sockets remain inaccessible.
 
 The Mill Docs worker remains owner-only in `mill-docs`.
 
+
+## Factory Product Pass ACP
+
+The Edmund-only Factory state is `/var/lib/factory-product-pass-edmund`. Its
+Nix-managed commands select `claude-opus-5` and never reuse a local Factory
+profile:
+
+```bash
+
+# First-time device authentication on the NUC; complete Factory's displayed flow.
+ssh -t nuc 'cd /var/empty && factory-product-pass-droid'
+
+
+# Proves only authenticated ACP startup; the agent has no tools and uses /var/empty.
+ssh nuc factory-product-pass-canary
+```
+
+Do not copy Factory credentials or state from another host. Do not create a
+Buzz identity or channel until this canary returns an authenticated response.
+
 ## Rollback
 
 If the deployment causes issues:
