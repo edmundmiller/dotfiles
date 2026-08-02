@@ -54,6 +54,7 @@ url = "https://developers.openai.com/mcp"
 
 [features]
 hooks = true
+default_mode_request_user_input = true
 rmcp_client = true
 multi_agent_v2 = true
 
