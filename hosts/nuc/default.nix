@@ -1462,9 +1462,17 @@ in
         src=/var/lib/hermes-$profile/.hermes
         dst=$profiles_dir/$profile
         if [ -d "$src" ]; then
-          install -d -o emiller -g users -m 0750 "$dst"
-          [ -f "$src/config.yaml" ] && install -o emiller -g users -m 0640 "$src/config.yaml" "$dst/config.yaml"
-          [ -f "$src/profile.yaml" ] && install -o emiller -g users -m 0640 "$src/profile.yaml" "$dst/profile.yaml"
+          install -d -o emiller -g users -m 0750 \
+            "$dst" "$dst/cron" "$dst/sessions" "$dst/logs" "$dst/memories"
+          for file in config.yaml profile.yaml SOUL.md; do
+            [ -f "$src/$file" ] && install -o emiller -g users -m 0640 "$src/$file" "$dst/$file"
+          done
+          for dir in skills shared-skills; do
+            if [ -d "$src/$dir" ]; then
+              cp -a "$src/$dir" "$dst/$dir"
+              chown -R emiller:users "$dst/$dir"
+            fi
+          done
         fi
       done
     '')

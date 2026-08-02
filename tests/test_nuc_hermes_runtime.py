@@ -79,6 +79,21 @@ class NucHermesRuntimeTest(unittest.TestCase):
             activation,
         )
 
+    def test_orchestrator_worker_profiles_have_managed_runtime_shape(self):
+        source = (ROOT / "hosts/nuc/default.nix").read_text()
+        start = source.index('"hermes-orchestrator-profile-list-mirror"')
+        end = source.index("systemd.services.hermes-gateway-orchestrator.enable", start)
+        mirror = source[start:end]
+
+        self.assertIn(
+            '"$dst" "$dst/cron" "$dst/sessions" "$dst/logs" "$dst/memories"',
+            mirror,
+        )
+        self.assertIn("for file in config.yaml profile.yaml SOUL.md", mirror)
+        self.assertIn("for dir in skills shared-skills", mirror)
+        for private_state in (".env", "auth.json", "honcho.json", "state.db"):
+            self.assertNotIn(f'"$src/{private_state}"', mirror)
+
     def test_hermes_revision_includes_profile_descriptions(self):
         flake = (ROOT / "flake.nix").read_text()
         self.assertIn(
