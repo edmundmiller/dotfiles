@@ -2606,7 +2606,6 @@ in
 
   systemd.timers.mill-docs-coding-agent = {
     description = "Poll the typed MillDocs feedback queue";
-    wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "3min";
       OnUnitActiveSec = "5min";
