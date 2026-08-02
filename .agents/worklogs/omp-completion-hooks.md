@@ -1,3 +1,11 @@
+---
+purpose: Record the OMP and Codex completion-gate implementation.
+applies_to: Changes to repository completion checks or stop hooks.
+entrypoint: Read scripts/completion-check and .omp/hooks/post/completion-gate.ts.
+verification: Run the focused completion-hook tests.
+update_when: Completion-gate behavior, wiring, or verification changes.
+---
+
 # Worklog: omp-completion-hooks
 
 Status: complete

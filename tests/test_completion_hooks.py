@@ -78,7 +78,7 @@ class CompletionHookTests(unittest.TestCase):
         self.assertEqual(hook["type"], "command")
         self.assertEqual(
             hook["command"],
-            'repo=$(git rev-parse --show-toplevel 2>/dev/null) && bash "$repo/scripts/codex-validate-stop"',
+            'primary=$(git worktree list --porcelain | sed -n \'s/^worktree //p\' | head -n 1) && bash "$primary/scripts/codex-stop-dispatch" scripts/codex-validate-stop',
         )
         self.assertEqual(hook["timeout"], 1200)
 
