@@ -392,6 +392,8 @@ let
   hermesAmosburtonSecretsMaterialize = pkgs.writeShellScript "hermes-amosburton-secrets-materialize" hermesAmosburtonSecretsMaterializeText;
   hermesScintillateSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
+    (mkAgentSecret "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD" "hermes-scintillate-dashboard-password")
+    (mkAgentSecret "HERMES_DASHBOARD_BASIC_AUTH_SECRET" "hermes-scintillate-dashboard-session-secret")
     {
       envVar = "TELEGRAM_BOT_TOKEN";
       path = hermesScintillateTelegramBotTokenFile;
@@ -1662,7 +1664,7 @@ in
   ];
 
   systemd.services.hermes-scintillate-desktop-dashboard = {
-    enable = false;
+    enable = true;
     description = "Hermes Desktop-compatible dashboard for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -1686,6 +1688,7 @@ in
       # intentionally runs the host dashboard process directly so Hermes Desktop
       # can use the dashboard JSON-RPC/WebSocket API from macOS.
       HERMES_DEV = "1";
+      HERMES_DASHBOARD_BASIC_AUTH_USERNAME = "emiller";
     };
     serviceConfig = {
       User = "emiller";
@@ -1696,13 +1699,11 @@ in
       EnvironmentFile = [ "/run/hermes-scintillate-env/secrets.env" ];
       ExecStart = pkgs.writeShellScript "hermes-scintillate-desktop-dashboard-start" ''
         set -eu
-        export HERMES_DASHBOARD_SESSION_TOKEN="$API_SERVER_KEY"
         exec ${hermesAgentBase}/bin/hermes dashboard \
           --host 0.0.0.0 \
           --port ${toString hermesScintillateDesktopDashboardPort} \
           --no-open \
-          --skip-build \
-          --insecure
+          --skip-build
       '';
       NoNewPrivileges = true;
       ProtectHome = false;
@@ -1776,26 +1777,6 @@ in
         "/var/lib/hermes-radar"
         "/var/lib/hermes-scintillate"
       ];
-    };
-  };
-
-  systemd.services.hermes-scintillate-tailscale-serve = {
-    enable = false;
-    description = "Expose Scintillate Hermes WebUI via Tailscale Service";
-    wantedBy = [ "multi-user.target" ];
-    after = [
-      "hermes-scintillate-webui.service"
-      "tailscaled.service"
-    ];
-    wants = [
-      "hermes-scintillate-webui.service"
-      "tailscaled.service"
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateWebuiPort} && exit 0; sleep 1; done; exit 1\"'";
-      ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${hermesScintillateTailscaleServiceName} || true'";
     };
   };
 
