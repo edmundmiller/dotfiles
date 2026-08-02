@@ -1,3 +1,11 @@
+---
+purpose: Record the shared agent instruction audit for Codex models.
+applies_to: Changes to shared rules, skill portability, or agent quality gates.
+entrypoint: Run bin/check-agent-rules and the focused agent tests.
+verification: Run the instruction linter, skill validator, and hey check.
+update_when: Shared instruction policy or validation behavior changes.
+---
+
 # Worklog: sol-terra-instruction-audit
 
 Status: complete
