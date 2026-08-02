@@ -11,6 +11,7 @@ let
   profile = cfg.services.hermes-agent.profiles.scintillate;
   bettyProfile = cfg.services.hermes-agent.profiles.betty;
   anneProfile = cfg.services.hermes-agent.profiles.anne;
+  finnProfile = cfg.services.hermes-agent.profiles.finn;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
   orchestratorGatewayService = cfg.systemd.services.hermes-gateway-orchestrator;
   desktopDashboardService = cfg.systemd.services.hermes-scintillate-desktop-dashboard;
@@ -83,6 +84,12 @@ let
           cfg.services.hermes-agent.profiles.orchestrator.environment.HERMES_KANBAN_HOME
           == "/var/lib/hermes/.hermes";
       msg = "Scintillate and Orchestrator must use the shared native Hermes Kanban home.";
+    }
+    {
+      test =
+        finnProfile.environment.HERMES_KANBAN_HOME == "/var/lib/hermes/.hermes"
+        && finnProfile.hostPathMounts."/var/lib/hermes/.hermes" == "/var/lib/hermes/.hermes";
+      msg = "Finn must use and mount the shared native Hermes Kanban home.";
     }
     {
       test = if hostCronVaultFixExpectedFailure then !hostCronUsesLiveVault else hostCronUsesLiveVault;
