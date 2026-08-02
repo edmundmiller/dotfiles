@@ -7,10 +7,13 @@
 let
   cfg = nixosConfig.config;
   hermesAgent = cfg.modules.services.hermes.agents.scintillate;
+  orchestratorAgent = cfg.modules.services.hermes.agents.orchestrator;
   profile = cfg.services.hermes-agent.profiles.scintillate;
   bettyProfile = cfg.services.hermes-agent.profiles.betty;
   anneProfile = cfg.services.hermes-agent.profiles.anne;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
+  orchestratorGatewayService = cfg.systemd.services.hermes-gateway-orchestrator;
+  desktopDashboardService = cfg.systemd.services.hermes-scintillate-desktop-dashboard;
   cronTickService = cfg.systemd.services.hermes-scintillate-cron-tick;
   cronTickTimer = cfg.systemd.timers.hermes-scintillate-cron-tick;
   runtimeSmokeService = cfg.systemd.services.hermes-runtime-smoke;
@@ -27,6 +30,19 @@ let
   packageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
   systemPackageStrings = map (pkg: stripContext (toString pkg)) cfg.environment.systemPackages;
   cronTickPathStrings = map (pkg: stripContext (toString pkg)) cronTickService.path;
+  sharedProfileNames = [
+    "amosburton"
+    "anne"
+    "betty"
+    "finn"
+    "orchestrator"
+    "radar"
+    "scintillate"
+  ];
+  expectedDashboardAccessPaths = [
+    "/var/lib/hermes"
+  ]
+  ++ map (name: "/var/lib/hermes-${name}") sharedProfileNames;
   hostCronVaultFixExpectedFailure = false;
   hostCronUsesLiveVault =
     cronTickService.serviceConfig.WorkingDirectory == "/home/emiller/obsidian-vault"
@@ -40,6 +56,34 @@ let
   hasSystemPackageNamed = name: any (pkg: hasInfix name pkg) systemPackageStrings;
 
   assertions = [
+    {
+      test = orchestratorGatewayService.enable;
+      msg = "The Orchestrator gateway must be enabled for native TaskNotes-to-Kanban routing.";
+    }
+    {
+      test = desktopDashboardService.enable;
+      msg = "The Hermes Desktop dashboard must be enabled.";
+    }
+    {
+      test = desktopDashboardService.serviceConfig.ReadWritePaths == expectedDashboardAccessPaths;
+      msg = "The desktop dashboard must have access to the shared home and every exposed profile.";
+    }
+    {
+      test = orchestratorAgent.providers.obsidianVault.hostPath == "/home/emiller/obsidian-vault";
+      msg = "NUC must provide Orchestrator's live Obsidian vault.";
+    }
+    {
+      test = orchestratorAgent.providers.tnote.repoPath == "/home/emiller/src/personal/tnote";
+      msg = "NUC must provide Orchestrator's live tnote repository.";
+    }
+    {
+      test =
+        profile.environment.HERMES_KANBAN_HOME == "/var/lib/hermes/.hermes"
+        &&
+          cfg.services.hermes-agent.profiles.orchestrator.environment.HERMES_KANBAN_HOME
+          == "/var/lib/hermes/.hermes";
+      msg = "Scintillate and Orchestrator must use the shared native Hermes Kanban home.";
+    }
     {
       test = if hostCronVaultFixExpectedFailure then !hostCronUsesLiveVault else hostCronUsesLiveVault;
       msg = "Scintillate host cron must use the live NUC vault for cwd, TaskNotes, and wiki data.";
