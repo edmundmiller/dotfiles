@@ -18,7 +18,7 @@ from pathlib import Path
 
 config = json.loads(Path(os.environ["OMP_MCP_JSON"]).read_text())
 expected_servers = {"fff": {"command": "fff-mcp"}}
-expected_disabled = ["strava-mcp", "cogny", "computer-use"]
+expected_disabled = ["context7:context7", "strava-mcp"]
 
 if config.get("mcpServers") != expected_servers:
     raise SystemExit(f"FAIL: expected only {expected_servers!r} in mcpServers")

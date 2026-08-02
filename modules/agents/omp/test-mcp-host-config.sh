@@ -21,7 +21,7 @@ from pathlib import Path
 config = json.loads(Path(os.environ["OMP_MCP_CONFIG"]).read_text())
 host = os.environ["OMP_MCP_HOST"]
 
-assert config["disabledServers"] == ["strava-mcp", "cogny", "computer-use"], host
+assert config["disabledServers"] == ["context7:context7", "strava-mcp"], host
 assert set(config["mcpServers"]) == {"fff"}, host
 command = config["mcpServers"]["fff"]["command"]
 assert command.endswith("/bin/fff-mcp"), command
