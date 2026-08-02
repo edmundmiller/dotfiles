@@ -1454,7 +1454,7 @@ in
       rm -rf "$profiles_dir"
       install -d -o emiller -g users -m 0750 "$profiles_dir"
 
-      for profile in amosburton anne betty finn orchestrator scintillate; do
+      for profile in ${lib.concatStringsSep " " hermesSharedProfileNames}; do
         src=/var/lib/hermes-$profile/.hermes
         dst=$profiles_dir/$profile
         if [ -d "$src" ]; then
