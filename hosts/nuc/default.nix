@@ -1587,6 +1587,7 @@ in
       # intentionally runs the host dashboard process directly so Hermes Desktop
       # can use the dashboard JSON-RPC/WebSocket API from macOS.
       HERMES_DEV = "1";
+      HERMES_DASHBOARD_BASIC_AUTH_USERNAME = "scintillate";
     };
     serviceConfig = {
       User = "emiller";
@@ -1598,6 +1599,8 @@ in
       ExecStart = pkgs.writeShellScript "hermes-scintillate-desktop-dashboard-start" ''
         set -eu
         export HERMES_DASHBOARD_SESSION_TOKEN="$API_SERVER_KEY"
+        export HERMES_DASHBOARD_BASIC_AUTH_PASSWORD="$API_SERVER_KEY"
+        export HERMES_DASHBOARD_BASIC_AUTH_SECRET="$API_SERVER_KEY"
         exec ${hermesAgentBase}/bin/hermes dashboard \
           --host 0.0.0.0 \
           --port ${toString hermesScintillateDesktopDashboardPort} \
