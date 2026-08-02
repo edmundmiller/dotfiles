@@ -61,6 +61,31 @@ class NucHermesRuntimeTest(unittest.TestCase):
             'shell_init_files = [ "${scintillateTerminalInit}" ];', profile
         )
 
+    def test_shared_profile_metadata_uses_canonical_purposes(self):
+        source = (ROOT / "hosts/nuc/default.nix").read_text()
+        start = source.index("hermesSharedProfilesAggregate = {")
+        end = source.index("hermesAmosburtonSecretsMaterialize = {", start)
+        activation = source[start:end]
+
+        self.assertIn(
+            "hermesAgentSpecs = import (inputs.agents-workspace + /agents/registry.nix)",
+            source,
+        )
+        self.assertIn("description = hermesAgentSpecs.${profile}.purpose;", source)
+        self.assertIn("description_auto = false;", source)
+        self.assertIn("install -o emiller -g users -m 0640", activation)
+        self.assertNotIn(
+            'if [ -d "$profile_home" ] && [ ! -f "$profile_home/profile.yaml" ]',
+            activation,
+        )
+
+    def test_hermes_revision_includes_profile_descriptions(self):
+        flake = (ROOT / "flake.nix").read_text()
+        self.assertIn(
+            "github:NousResearch/hermes-agent/5b5932886ce6477a0f4a3d25ca465392288d5126",
+            flake,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
