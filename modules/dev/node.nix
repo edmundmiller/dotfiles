@@ -53,7 +53,7 @@ in
         in
         ''
           echo "Ensuring bun global packages: ${packages}" >&2
-          sudo -u emiller HOME=/Users/emiller ${pkgs.bun}/bin/bun install -g ${packages} || echo "Warning: bun global install failed" >&2
+          sudo -u emiller HOME=/Users/emiller PATH=/Users/emiller/.bun/bin:$PATH ${pkgs.bun}/bin/bun install -g ${packages} || echo "Warning: bun global install failed" >&2
         '';
     })
 
