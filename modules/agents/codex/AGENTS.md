@@ -2,7 +2,7 @@
 purpose: Define ownership and recovery for Codex CLI configuration and remote control.
 applies_to: Changes to the Codex package, Home Manager module, or NUC remote-control setup.
 entrypoint: modules/agents/codex/default.nix
-verification: command -v codex; codex app-server daemon version
+verification: bash modules/agents/codex/test-seqera-mcp.sh; command -v codex; codex app-server daemon version
 update_when: Codex installation paths, ownership, bootstrap, or recovery behavior changes.
 ---
 
@@ -21,8 +21,15 @@ Remote control deliberately uses a second, installer-managed Codex binary for it
 
 - `auth.json` — OAuth credentials (user-managed)
 - `sessions/`, `history.jsonl` — runtime data
-- `config.toml` after bootstrap — user-managed and writable
+- `config.toml` after bootstrap — user-managed and writable, except enabled host integrations such as `seqeraMcp`, which reconcile their MCP block and prerequisite feature
 - `packages/standalone/` — mutable daemon runtime installed and updated by the official Codex installer
+
+## Seqera MCP
+
+Set `modules.agents.codex.seqeraMcp.enable = true` only on hosts that need it.
+Activation registers `https://mcp.seqera.io/mcp` and enables `rmcp_client`.
+OAuth remains user-managed: after rebuilding that host, run `codex mcp login seqera`.
+On Seqeratop, verify the registration with `codex mcp get seqera`.
 
 ## Project Permissions
 
