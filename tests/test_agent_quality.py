@@ -14,6 +14,12 @@ HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
 HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
 FLAKE = ROOT / "flake.nix"
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
+AUTONOMOUS_RULE = ROOT / "config" / "agents" / "rules" / "16-autonomous-goal-progress.md"
+AUTONOMOUS_SKILL = ROOT / "skills" / "catalog" / "autonomous-agent-loop" / "SKILL.md"
+GOALIZE_PROMPT = ROOT / "config" / "pi" / "prompts" / "goalize.md"
+GOAL_AUDIT_PROMPT = ROOT / "config" / "pi" / "prompts" / "goal-continue-audit.md"
+DONE_SKILL = ROOT / "skills" / "catalog" / "done" / "SKILL.md"
+
 
 class AgentQualityTests(unittest.TestCase):
     def git_only_env(self, root: Path) -> dict[str, str]:
@@ -75,6 +81,43 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn(
             'export AGENT_QUALITY_ROOT="\'\'${AGENT_QUALITY_ROOT:-${../../..}}"',
             module,
+        )
+
+    def test_completion_contract_stays_aligned_across_canonical_sources(self) -> None:
+        sources = {
+            "shared rule": AUTONOMOUS_RULE.read_text(),
+            "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
+            "goalize prompt": GOALIZE_PROMPT.read_text(),
+            "goal audit prompt": GOAL_AUDIT_PROMPT.read_text(),
+        }
+
+        for name, source in sources.items():
+            with self.subTest(source=name):
+                self.assertIn("one active", source)
+                self.assertIn("parked", source.lower())
+                self.assertIn("blocked", source.lower())
+                self.assertIn("evidence", source.lower())
+
+        for source in ("shared rule", "autonomous loop skill", "goalize prompt"):
+            with self.subTest(contract=source):
+                self.assertIn("`Outcome`", sources[source])
+                self.assertIn("`Done when`", sources[source])
+                self.assertIn("`Proof`", sources[source])
+
+        audit = sources["goal audit prompt"]
+        for state in ("`verified`", "`unverified`", "`parked`", "`blocked`"):
+            self.assertIn(state, audit)
+        self.assertIn("Continue unless", audit)
+        self.assertIn("planning or passing local checks alone is not completion", audit)
+
+    def test_done_skill_preserves_landing_safety_contract(self) -> None:
+        done_skill = DONE_SKILL.read_text()
+
+        self.assertIn("### Dirty default checkout gate", done_skill)
+        self.assertIn("temporary integration worktree", done_skill)
+        self.assertIn(
+            "Never report `done` from a clean feature workspace alone.",
+            done_skill,
         )
 
     def test_worklog_validation_accepts_complete_log(self) -> None:
