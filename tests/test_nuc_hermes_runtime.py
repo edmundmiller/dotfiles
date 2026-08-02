@@ -21,14 +21,14 @@ class NucHermesRuntimeTest(unittest.TestCase):
         )
         service = source[service_start:service_end]
 
-        self.assertIn("amosburtonCronExecutor", service)
         self.assertIn(
-            'writeShellScript "hermes-amosburton-cron-executor"', source
+            'ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";',
+            service,
         )
         self.assertIn("amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY", source)
         self.assertIn("hermes-amosburton-secrets-materialize.service", service)
         self.assertIn(
-            'EnvironmentFile = [ "/run/hermes-amosburton-env/secrets.env" ];',
+            '"/run/hermes-amosburton-env/secrets.env"',
             service,
         )
 
