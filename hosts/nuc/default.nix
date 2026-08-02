@@ -241,6 +241,7 @@ let
       {
         terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
       };
+  hermesAgentSpecs = import (inputs.agents-workspace + /agents/registry.nix) { inherit lib; };
   hermesSharedProfileNames = [
     "amosburton"
     "anne"
@@ -250,6 +251,16 @@ let
     "radar"
     "scintillate"
   ];
+  hermesProfileMetadataFiles = lib.genAttrs hermesSharedProfileNames (
+    profile:
+    (pkgs.formats.yaml { }).generate "hermes-profile-${profile}.yaml" {
+      name = profile;
+      visible = true;
+      aggregated_into = "/var/lib/hermes/.hermes/profiles/${profile}";
+      description = hermesAgentSpecs.${profile}.purpose;
+      description_auto = false;
+    }
+  );
   hermesGatewayUnits = map (name: "hermes-gateway-${name}.service") hermesSharedProfileNames;
   hermesRuntimeSmoke = inputs.agents-workspace.packages.${hostSystem}.hermes-runtime-smoke;
   scintillateWhisperModel = pkgs.fetchurl {
@@ -935,15 +946,9 @@ in
             ln -s "$profile_home" "$aggregate_link"
             chown -h emiller:users "$aggregate_link"
           fi
-          if [ -d "$profile_home" ] && [ ! -f "$profile_home/profile.yaml" ]; then
-            printf '%s\n' \
-              'name: ${profile}' \
-              'visible: true' \
-              'aggregated_into: /var/lib/hermes/.hermes/profiles/${profile}' \
-              > "$profile_home/profile.yaml"
-            chown emiller:users "$profile_home/profile.yaml"
-            chmod 0640 "$profile_home/profile.yaml"
-          fi
+          install -o emiller -g users -m 0640 \
+            ${lib.escapeShellArg hermesProfileMetadataFiles.${profile}} \
+            "$profile_home/profile.yaml"
         '') hermesSharedProfileNames}
 
         if ls "$SHARED_HOME"/kanban.db* >/dev/null 2>&1; then
@@ -1570,7 +1575,7 @@ in
       done
     '')
   ];
-  systemd.services.hermes-gateway-orchestrator.enable = false;
+  systemd.services.hermes-gateway-orchestrator.enable = true;
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
     ExecStartPre = lib.mkBefore [
@@ -1711,12 +1716,8 @@ in
       PrivateTmp = true;
       ReadWritePaths = [
         hermesSharedStateDir
-        "/var/lib/hermes-amosburton"
-        "/var/lib/hermes-anne"
-        "/var/lib/hermes-betty"
-        "/var/lib/hermes-radar"
-        "/var/lib/hermes-scintillate"
-      ];
+      ]
+      ++ map (profile: "/var/lib/hermes-${profile}") hermesSharedProfileNames;
     };
   };
 
