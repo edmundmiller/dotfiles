@@ -543,6 +543,36 @@ let
   buzzMillDocsOwnerPubkey = buzzBindings.identities.edmund.pubkey;
   buzzChannelId = channel: buzzBindings.channels.${channel}.id;
   buzzChannelIds = channels: lib.concatStringsSep "," (map buzzChannelId channels);
+  factoryProductPassStateDir = "/var/lib/factory-product-pass-edmund";
+  factoryProductPassSettings = pkgs.writeText "factory-product-pass-settings.json" (
+    builtins.toJSON {
+      sessionDefaultSettings = {
+        model = "claude-opus-5";
+        reasoningEffort = "medium";
+      };
+    }
+  );
+  factoryProductPassDroid = pkgs.writeShellApplication {
+    name = "factory-product-pass-droid";
+    runtimeInputs = [ pkgs.bun ];
+    text = ''
+      export HOME=${lib.escapeShellArg factoryProductPassStateDir}
+      export XDG_CACHE_HOME="$HOME/.cache"
+      export XDG_CONFIG_HOME="$HOME/.config"
+      exec bunx --bun droid@0.186.0 --settings ${factoryProductPassSettings} "$@"
+    '';
+  };
+  factoryProductPassCanary = pkgs.writeShellApplication {
+    name = "factory-product-pass-canary";
+    runtimeInputs = [
+      pkgs.my.acpx
+      factoryProductPassDroid
+    ];
+    text = ''
+      exec acpx --agent 'factory-product-pass-droid exec --output-format acp' --cwd /var/empty --deny-all --no-terminal --timeout 120 --format text --verbose exec \
+        'Reply exactly FACTORY_ACP_READY followed by your available model. Do not access files, repositories, terminals, or external services.'
+    '';
+  };
   mkBuzzCronEnvironment =
     profile:
     let
@@ -1430,6 +1460,8 @@ in
     my.buzz
     my.codex-acp
     my.zele # packaged upstream+patches zele CLI
+    factoryProductPassDroid # isolated Factory device-login environment for Edmund
+    factoryProductPassCanary # no-tools ACP authentication check for that environment
     my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
   ];
   imports = [
@@ -2410,6 +2442,7 @@ in
   systemd.tmpfiles.rules = [
     "d ${millDocsVaultPath} 0755 emiller users -"
     "d ${millDocsCodingAgentAcpxDir} 0700 emiller users -"
+    "d ${factoryProductPassStateDir} 0700 emiller users -"
 
   ];
 
