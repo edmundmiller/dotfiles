@@ -13,6 +13,72 @@ let
   ompConfigDir = "${config.user.home}/.omp";
   ompAgentDir = "${ompConfigDir}/agent";
   lsp = import ./_lsp.nix { inherit pkgs; };
+  mcpServerType = types.submodule {
+    options = {
+      type = mkOption {
+        type = types.enum [
+          "stdio"
+          "http"
+          "sse"
+        ];
+        default = "stdio";
+      };
+      command = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      args = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+      };
+      env = mkOption {
+        type = types.attrsOf types.str;
+        default = { };
+      };
+      cwd = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      url = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      headers = mkOption {
+        type = types.attrsOf types.str;
+        default = { };
+      };
+      enabled = mkOption {
+        type = types.nullOr types.bool;
+        default = null;
+      };
+      timeout = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+      };
+    };
+  };
+  renderMcpServer =
+    server:
+    filterAttrs
+      (
+        _: value:
+        value != null
+        && (!builtins.isList value || value != [ ])
+        && (!builtins.isAttrs value || value != { })
+      )
+      {
+        inherit (server)
+          type
+          command
+          args
+          env
+          cwd
+          url
+          headers
+          enabled
+          timeout
+          ;
+      };
   hassMcpServer = pkgs.writeShellScriptBin "omp-ha-mcp-server" ''
     set -euo pipefail
 
@@ -180,6 +246,9 @@ let
   # copying the whole config.
   baseConfig = ../../../config/omp/config.yml;
   baseMcpConfig = builtins.fromJSON (builtins.readFile ../../../config/omp/mcp.json);
+  fffMcpServer = baseMcpConfig.mcpServers.fff // {
+    command = "${pkgs.my.fff-mcp}/bin/fff-mcp";
+  };
   configOverrides = [
     ".internalUrls.herdr = ${if config.modules.shell.herdr.enable then "true" else "false"}"
     ".internalUrls.hunk = ${if config.modules.shell.git.hunk.enable then "true" else "false"}"
@@ -209,7 +278,9 @@ let
     builtins.toJSON (
       baseMcpConfig
       // {
-        mcpServers = baseMcpConfig.mcpServers // cfg.mcpServers;
+        mcpServers =
+          (baseMcpConfig.mcpServers // { fff = fffMcpServer; })
+          // mapAttrs (_: renderMcpServer) cfg.mcpServers;
         disabledServers = unique (baseMcpConfig.disabledServers ++ cfg.disabledMcpServers);
       }
     )
@@ -478,8 +549,20 @@ in
       description = "Per-host modelRoles overrides overlaid onto config/omp/config.yml.";
     };
     mcpServers = mkOption {
-      type = types.attrsOf types.anything;
+      type = types.attrsOf mcpServerType;
       default = { };
+      apply = mapAttrs (
+        name: server:
+        if server.type == "stdio" then
+          if server.command != null && server.url == null then
+            server
+          else
+            throw "modules.agents.omp.mcpServers.${name}: stdio servers require command and forbid url"
+        else if server.command == null && server.url != null then
+          server
+        else
+          throw "modules.agents.omp.mcpServers.${name}: ${server.type} servers require url and forbid command"
+      );
       description = "Host-specific MCP server definitions merged over config/omp/mcp.json.";
     };
     disabledMcpServers = mkOption {
