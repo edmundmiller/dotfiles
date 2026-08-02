@@ -122,7 +122,10 @@
         };
         agentsview.enable = true;
         claude.enable = true;
-        codex.enable = true;
+        codex = {
+          enable = true;
+          seqeraMcp.enable = true;
+        };
         omp = {
           enable = true;
           # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic),
@@ -193,6 +196,10 @@
           # keeps the shared Catppuccin default.
           themeDark = "dark-seqera";
           themeLight = "light-seqera";
+          mcpServers.seqera = {
+            type = "http";
+            url = "https://mcp.seqera.io/mcp";
+          };
           # Wire omp to the VibeProxy menu-bar app (installed via the vibeproxy
           # homebrew cask). Exposes Claude/GPT subscription models on :8317 as
           # vibeproxy/* selectors; see config/omp/models.yml.
