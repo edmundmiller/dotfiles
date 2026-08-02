@@ -1375,8 +1375,12 @@ in
       };
       finn = {
         authFile = "/home/emiller/.codex/auth.json";
-        environment.CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+        environment = {
+          CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_HOME = hermesSharedHome;
+        };
         hostPathMounts = lib.mkForce {
+          "${hermesSharedHome}" = hermesSharedHome;
           "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/src/personal/finances" = "/repos/finances";
         };
