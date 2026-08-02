@@ -13,7 +13,7 @@ let
     pname = "hermes-photon-sidecar";
     version = hermesAgentUpstream.version or "0.17.0";
     src = "${hermesAgentUpstream}/share/hermes-agent/plugins/platforms/photon/sidecar";
-    npmDepsHash = "sha256-Z6yKhVlwv/PswOS3HyCmtvYGMgh/bnNZ46FjpyTJ7tE=";
+    npmDepsHash = "sha256-CEUTK8IAN3ZPdpNwH8a4XyyoYGt6xb8SsHUOnxGHzHQ=";
     dontNpmBuild = true;
     installPhase = ''
       mkdir -p $out
