@@ -1210,6 +1210,13 @@
                 inherit pkgs;
               };
 
+              # Pure Nix eval: keep the Desktop dashboard enabled across
+              # automatic NUC upgrades from the default branch.
+              nuc-hermes-dashboard-enabled = import ./hosts/nuc/_tests/hermes-dashboard-enabled.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
