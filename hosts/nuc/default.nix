@@ -1563,7 +1563,7 @@ in
   ];
 
   systemd.services.hermes-scintillate-desktop-dashboard = {
-    enable = false;
+    enable = true;
     description = "Hermes Desktop-compatible dashboard for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [
