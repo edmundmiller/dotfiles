@@ -8,7 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NodeConfigTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_bun_global_install_has_global_bin_on_path(self) -> None:
         result = subprocess.run(
             [
