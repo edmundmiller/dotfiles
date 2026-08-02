@@ -9,30 +9,27 @@ Use this skill when the task should finish without repeated user nudges.
 
 ## Start: make the contract durable
 
-1. Restate the requested end state as an outcome, not a task list.
-2. Define concrete verification evidence before editing: commands, diffs, rendered output, smoke checks, logs, or artifact paths.
-3. If a durable goal tool exists and no active goal covers the work, create one. Do not invent a token budget.
-4. Prefer existing `goalize` and `goal-continue-audit` prompt templates for common start/recovery loops. Keep project-specific details in the goal text or repo docs instead of creating many templates.
-5. Inspect repo/session state before changing files; preserve unrelated user changes.
+Keep exactly one active outcome. Record:
+
+- `Outcome`: the single requested end state.
+- `Done when`: the observable stopping condition.
+- `Proof`: the commands, diffs, rendered output, smoke checks, logs, or artifacts that establish it.
+
+Derive repository facts before asking. Request only missing product intent or authority. If a durable goal tool exists and no active goal covers the work, create one; do not add a task store or second goal-tracking convention. Prefer `goalize` and `goal-continue-audit`, and keep project-specific details in the goal or repository docs.
 
 ## Work loop
 
-Repeat until done or blocked:
+Repeat until the only valid return state is `done` or genuine `blocked`:
 
-1. Choose the next low-risk step that reduces uncertainty or moves implementation forward.
-2. Run it.
-3. Inspect fresh evidence.
-4. Update the plan based on what happened.
-5. Continue without waiting for the user unless a decision/access blocker is real.
-6. For background jobs, use a blocking or longest bounded wait when available. After an unchanged status, increase the interval; never poll again immediately unless the status changed or a real deadline is near.
+1. Choose the next low-risk step that reduces uncertainty or advances the outcome.
+2. Run it and inspect fresh evidence.
+3. Update the plan from that evidence.
+4. Record unrelated discoveries as `Parked`, then resume the active outcome.
+5. Before proposing scope expansion, state what current work it would displace.
+6. Continue without waiting unless tools, access, or a required decision make progress impossible.
+7. For background jobs, use a blocking or longest bounded wait when available. After an unchanged status, increase the interval; never poll again immediately unless the status changed or a real deadline is near.
 
-Do not stop at:
-
-- a plan when implementation remains
-- “next steps” the agent could do itself
-- validation failures without triage
-- partial completion without naming unmet requirements
-- an optional ask when the original request already implied doing the work
+Do not stop at a plan, agent-actionable next steps, untriaged validation failures, or partial completion. Do not add a scheduler, dashboard, coordinator process, or notification policy; existing durable-goal tools are the execution mechanism.
 
 ## Evidence-first debugging
 
@@ -45,12 +42,12 @@ When behavior is “rough” or repeatedly needs kicks:
 
 ## Blocked stop format
 
-If completion is impossible, stop with:
+Return `blocked` only when completion is impossible. Report:
 
 - attempted paths
 - evidence gathered
 - exact blocker
 - unmet requirements
-- the smallest user input/access needed to continue
+- exactly one smallest human action needed to continue
 
-Never mark a durable goal complete while any requirement is unverified, narrowed, or deferred.
+Never mark a durable goal `done` while any requirement is unverified, narrowed, deferred, or merely locally checked when authorized landing remains.
