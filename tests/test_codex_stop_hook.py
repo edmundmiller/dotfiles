@@ -12,29 +12,27 @@ HOOK = ROOT / "scripts/codex-validate-stop"
 DISPATCH = ROOT / "scripts/codex-stop-dispatch"
 
 
-def write_command(path, name, exit_code=0):
+def write_command(path, name, exit_code=0, stdout=""):
     command = path / name
     command.write_text(
         "#!/usr/bin/env bash\n"
         f'printf \'{name} %s\\n\' "$*" >>"$CODEX_STOP_LOG"\n'
-        f"printf '{name} output\\n'\n"
+        f"printf '%s' {stdout!r}\n"
         f"exit {exit_code}\n"
     )
     command.chmod(command.stat().st_mode | stat.S_IXUSR)
     return command
 
 
-def run_hook(python_exit=0, hey_exit=0, stop_hook_active=False):
+def run_hook(checker_exit=0, checker_output="", stop_hook_active=False):
     directory = tempfile.TemporaryDirectory()
     temporary = pathlib.Path(directory.name)
     log = temporary / "commands.log"
-    python = write_command(temporary, "python", python_exit)
-    hey = write_command(temporary, "hey", hey_exit)
+    checker = write_command(temporary, "checker", checker_exit, checker_output)
     env = {
         **os.environ,
-        "CODEX_STOP_HEY": str(hey),
+        "CODEX_STOP_CHECKER": str(checker),
         "CODEX_STOP_LOG": str(log),
-        "CODEX_STOP_PYTHON": str(python),
     }
     result = subprocess.run(
         ["bash", str(HOOK)],
@@ -83,59 +81,46 @@ class CodexStopHookTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertEqual(result.stderr, "")
 
-    def test_stop_hook_runs_regressions_then_hey_check(self):
+    def test_stop_hook_runs_completion_checker(self):
         result, commands = run_hook()
 
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
-        self.assertEqual(result.stderr, "python output\nhey output\n")
-        self.assertEqual(
-            commands,
-            [
-                "python -m unittest discover -s tests -p test_*.py",
-                "hey check",
-            ],
-        )
+        self.assertEqual(result.stderr, "")
+        self.assertEqual(commands, ["checker "])
 
     def test_stop_hook_blocks_when_regressions_fail(self):
-        result, commands = run_hook(python_exit=1)
+        reason = "Dotfiles regression tests failed; fix them before stopping."
+        result, commands = run_hook(checker_exit=1, checker_output=reason)
 
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stderr, "python output\n")
+        self.assertEqual(result.stderr, "")
         self.assertEqual(
             json.loads(result.stdout),
             {
                 "decision": "block",
-                "reason": "Dotfiles regression tests failed; fix them before stopping.",
+                "reason": reason,
             },
         )
-        self.assertEqual(
-            commands,
-            ["python -m unittest discover -s tests -p test_*.py"],
-        )
+        self.assertEqual(commands, ["checker "])
 
     def test_stop_hook_blocks_when_hey_check_fails(self):
-        result, commands = run_hook(hey_exit=1)
+        reason = "hey check failed; fix it before stopping."
+        result, commands = run_hook(checker_exit=1, checker_output=reason)
 
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stderr, "python output\nhey output\n")
+        self.assertEqual(result.stderr, "")
         self.assertEqual(
             json.loads(result.stdout),
             {
                 "decision": "block",
-                "reason": "hey check failed; fix it before stopping.",
+                "reason": reason,
             },
         )
-        self.assertEqual(
-            commands,
-            [
-                "python -m unittest discover -s tests -p test_*.py",
-                "hey check",
-            ],
-        )
+        self.assertEqual(commands, ["checker "])
 
     def test_forced_continuation_does_not_block_or_rerun_checks(self):
-        result, commands = run_hook(python_exit=1, stop_hook_active=True)
+        result, commands = run_hook(checker_exit=1, stop_hook_active=True)
 
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
