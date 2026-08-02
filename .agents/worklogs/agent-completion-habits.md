@@ -1,6 +1,6 @@
 # Worklog: agent-completion-habits
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -8,7 +8,7 @@ Shared agents complete one evidenced outcome or report one actionable blocker.
 
 Outcome: Shared agents complete one evidenced outcome or report one actionable blocker.
 Done when: Shared rules, the autonomous loop skill, Pi goal prompts, canonical documentation, and regression coverage enforce one active outcome through verified landing or one genuine blocker while preserving existing landing safety.
-Proof: Focused agent-quality tests, inventory validation, agent-finish, hey check, deployed runtime target inspection, landing review, and final contract/diff audits all pass.
+Proof: Focused agent-quality tests, inventory validation, agent-finish, hey check, deployed runtime target inspection, attempted risk-gate reviews, final contract/diff audits, and remote landing verification.
 
 ## Decisions
 
@@ -32,6 +32,7 @@ Proof: Focused agent-quality tests, inventory validation, agent-finish, hey chec
 - Final literal audits found `Outcome`, `Done when`, `Proof`, tangent parking, and blocker handling on the canonical rule/skill/prompt surfaces; the `done` skill still contains both landing-safety anchors.
 - `sem diff` showed only the shared rule, Pi prompts, Pi guide, autonomous-loop skill, and agent-quality tests plus this worklog; an unrelated formatter-only package harness change was restored.
 - `hey agent-audit-tests`: PASS test-confidence.
+- The `done` landing verifier proved the task revision is contained by `main` and local `main` equals authoritative `origin/main`; this proof is rerun after the closeout commit.
 
 ## Reviews
 
@@ -44,8 +45,10 @@ Proof: Focused agent-quality tests, inventory validation, agent-finish, hey chec
 
 ## Remaining work
 
-Commit, publish, verify remote equality, complete the receipt, and create the required work tag.
+None.
 
 ## Commits
 
-Planned commit: `feat(agents): enforce evidenced outcome completion`; required tag: `agent-work/agent-completion-habits`.
+- `186dd9539 feat(agents): enforce evidenced outcome completion`
+- `docs(agents): close completion worklog`
+- Required tag: `agent-work/agent-completion-habits`
