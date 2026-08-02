@@ -2,7 +2,7 @@
 purpose: Define ownership and recovery for Codex CLI configuration and remote control.
 applies_to: Changes to the Codex package, Home Manager module, or NUC remote-control setup.
 entrypoint: modules/agents/codex/default.nix
-verification: bash modules/agents/codex/test-seqera-mcp.sh; command -v codex; codex app-server daemon version
+verification: python3 -m unittest tests.test_codex_model_config; bash modules/agents/codex/test-seqera-mcp.sh; command -v codex
 update_when: Codex installation paths, ownership, bootstrap, or recovery behavior changes.
 ---
 
@@ -57,3 +57,9 @@ for bootstrap, pairing, verification, and recovery.
 
 Codex reads shared generated skills from `~/.agents/skills/`.
 `~/.codex/skills/` is only for Codex-specific skills with `meta.targets = [ "codex" ]`.
+
+## Model roles
+
+`config/codex/config.toml` seeds Sol High for primary work and Terra Medium for native subagents. Max remains selectable for exceptional tasks, and the concurrency ceiling prevents unbounded delegation. Keep Luna for clear standalone work; do not add catalog overrides that force it into native subagent communication.
+
+The live `~/.codex/config.toml` is writable and may differ after app changes. Compare its model and `[agents]` fields with the source, then verify feature state with `codex features list`.
