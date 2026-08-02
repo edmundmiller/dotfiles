@@ -22,7 +22,14 @@ config = json.loads(Path(os.environ["OMP_MCP_CONFIG"]).read_text())
 host = os.environ["OMP_MCP_HOST"]
 
 assert config["disabledServers"] == ["context7:context7", "strava-mcp"], host
-assert set(config["mcpServers"]) == {"fff"}, host
+expected_servers = {"fff"}
+if host == "Seqeratop":
+    expected_servers.add("seqera")
+    assert config["mcpServers"]["seqera"] == {
+        "type": "http",
+        "url": "https://mcp.seqera.io/mcp",
+    }, config["mcpServers"]["seqera"]
+assert set(config["mcpServers"]) == expected_servers, host
 command = config["mcpServers"]["fff"]["command"]
 assert command.endswith("/bin/fff-mcp"), command
 assert os.access(command, os.X_OK), command

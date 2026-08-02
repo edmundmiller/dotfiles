@@ -29,6 +29,9 @@ in
 {
   options.modules.agents.codex = {
     enable = mkBoolOpt false;
+    seqeraMcp.enable = mkBoolOpt false // {
+      description = "Ensure Seqera MCP is registered in Codex's writable configuration.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -90,12 +93,15 @@ in
                     ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
 
                     # Remove stale managed MCP blocks from the writable config.
-                    ${pkgs.python3}/bin/python3 - "$target" <<'PY'
+                    ${pkgs.python3}/bin/python3 - "$target" ${
+                      if cfg.seqeraMcp.enable then "1" else "0"
+                    } <<'PY'
           import pathlib
           import re
           import sys
 
           path = pathlib.Path(sys.argv[1])
+          seqera_mcp_enabled = sys.argv[2] == "1"
           content = path.read_text(encoding="utf-8") if path.exists() else ""
           original_content = content
           content = re.sub(
@@ -112,11 +118,30 @@ in
               "",
               content,
           )
-          stale_mcp_servers = ["code" + "graph", "seqera", "node_repl"]
+          stale_mcp_servers = ["code" + "graph", "node_repl", "seqera"]
           next_content = content
           for server_name in stale_mcp_servers:
               pattern = re.compile(r'(?ms)^\[mcp_servers\.' + re.escape(server_name) + r'(?:\.[^\]]+)?\]\n.*?(?=^\[(?!mcp_servers\.' + re.escape(server_name) + r'(?:\.|\]))|\Z)')
               next_content = pattern.sub("", next_content)
+          if seqera_mcp_enabled:
+              features_pattern = re.compile(r'(?ms)^\[features\]\n.*?(?=^\[|\Z)')
+              features_match = features_pattern.search(next_content)
+              if features_match is None:
+                  next_content = next_content.rstrip() + "\n\n[features]\nrmcp_client = true\n"
+              else:
+                  features = features_match.group()
+                  if re.search(r'(?m)^rmcp_client\s*=', features):
+                      features = re.sub(r'(?m)^rmcp_client\s*=.*$', "rmcp_client = true", features)
+                  else:
+                      features = features.rstrip() + "\nrmcp_client = true\n"
+                  next_content = (
+                      next_content[:features_match.start()]
+                      + features
+                      + next_content[features_match.end():]
+                  )
+              next_content = next_content.rstrip() + (
+                  "\n\n[mcp_servers.seqera]\nurl = \"https://mcp.seqera.io/mcp\"\n"
+              )
           next_content = next_content.rstrip() + "\n"
           if next_content != original_content:
               path.write_text(next_content, encoding="utf-8")
