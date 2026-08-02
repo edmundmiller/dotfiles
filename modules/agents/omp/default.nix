@@ -179,6 +179,7 @@ let
   # build-time overlays so Seqeratop and MacTraitorPro can diverge without
   # copying the whole config.
   baseConfig = ../../../config/omp/config.yml;
+  baseMcpConfig = builtins.fromJSON (builtins.readFile ../../../config/omp/mcp.json);
   configOverrides = [
     ".internalUrls.herdr = ${if config.modules.shell.herdr.enable then "true" else "false"}"
     ".internalUrls.hunk = ${if config.modules.shell.git.hunk.enable then "true" else "false"}"
@@ -204,6 +205,15 @@ let
       pkgs.runCommand "omp-config.yml" { nativeBuildInputs = [ pkgs.yq-go ]; } ''
         yq eval ${lib.escapeShellArg (concatStringsSep " | " configOverrides)} ${baseConfig} > "$out"
       '';
+  ompMcpConfigFile = pkgs.writeText "omp-mcp.json" (
+    builtins.toJSON (
+      baseMcpConfig
+      // {
+        mcpServers = baseMcpConfig.mcpServers // cfg.mcpServers;
+        disabledServers = unique (baseMcpConfig.disabledServers ++ cfg.disabledMcpServers);
+      }
+    )
+  );
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
     set -euo pipefail
@@ -467,6 +477,16 @@ in
       example.default = "cursor/composer-2.5";
       description = "Per-host modelRoles overrides overlaid onto config/omp/config.yml.";
     };
+    mcpServers = mkOption {
+      type = types.attrsOf types.anything;
+      default = { };
+      description = "Host-specific MCP server definitions merged over config/omp/mcp.json.";
+    };
+    disabledMcpServers = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Additional inherited MCP server names to disable on this host.";
+    };
     retry = {
       modelFallback = mkOption {
         type = types.nullOr types.bool;
@@ -540,6 +560,10 @@ in
 
       home.file.".omp/agent/config.yml" = {
         source = ompConfigFile;
+        force = true;
+      };
+      home.file.".omp/agent/mcp.json" = {
+        source = ompMcpConfigFile;
         force = true;
       };
 
