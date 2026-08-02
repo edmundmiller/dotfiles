@@ -177,15 +177,9 @@ mounts. Its dedicated identity and owner attestation live in
 Subscriptions and home channels come from the canonical
 `agents-workspace/deployments/nuc/buzz-bindings.nix` deployment binding.
 Project profiles watch `mill-docs` or `finances`; Orchestrator watches
-`general`; Amos watches `general` plus `agent-reports`; Scintillate watches
-`general` plus `personal-reports`; Betty watches `mill-docs` and
-`meal-planning`. Radar has no inbound Buzz runtime.
-
-Each runtime uses generated `buzz-acp` config rules from that binding. Betty is
-ambient in `meal-planning` and mention-gated in `mill-docs`; every other Hermes
-subscription is mention-gated. The `fitness` channel is human-only. Personal
-workout planning remains with Flue Workouts outside Buzz. The canonical table
-and rationale live in agents-workspace ADR-0011.
+`general`; Amos watches `general` plus `agent-reports`; Radar watches
+`general`; Scintillate watches `general` plus `personal-reports`; Betty watches
+`mill-docs`, `meal-planning`, and `fitness`.
 
 Active cron executors use Hermes' native Buzz adapter for outbound delivery.
 Amos Burton uses `agent-reports`; Scintillate uses `personal-reports`. Betty
@@ -197,23 +191,23 @@ mention-scoped inbound transport.
 
 MillDocs Buzz replies are owned by the dedicated Cloudflare `mill-docs-buzz`
 Worker. The NUC keeps only `mill-docs-coding-agent.timer`, which processes typed
-Linear feedback and posts authenticated status callbacks. Its encrypted Buzz
-identity remains available for repository credentials and queue execution.
+Linear feedback and posts authenticated status callbacks. Its rotated encrypted
+Buzz identity remains available for repository credentials and queue execution.
 
 Verify after a deploy or recovery:
 
 ```bash
 ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
 ssh nuc "systemctl show 'buzz-hermes-*.service' -p Id -p ActiveState -p MainPID -p NRestarts"
-ssh nuc 'systemctl is-active mill-docs-coding-agent.timer'
+ssh nuc 'systemctl show mill-docs-coding-agent.timer mill-docs-coding-agent.service -p ActiveState -p NextElapseUSecRealtime'
 ssh nuc 'systemctl status buzz-mill-docs-codex.service --no-pager'
 ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
 ```
 
 Expected: every configured Hermes unit is active with zero restarts and connected to
 `wss://millers.communities.buzz.xyz`. Lazy mode starts the Hermes ACP child
-only after an accepted message. The services expose no listener.
-`mill-docs-coding-agent.timer` is active, and
+only after an accepted mention. The services expose no listener.
+`mill-docs-coding-agent.timer` is active with a future next trigger, and
 `buzz-mill-docs-codex.service` is not found.
 
 ```bash
@@ -226,16 +220,14 @@ receives the owner attestation and agent-authored profile event. Never reuse a
 private key across profiles. Encrypt `BUZZ_PRIVATE_KEY` and `BUZZ_AUTH_TAG`
 directly into the matching agenix file; never print either value.
 
-Amos and Scintillate accept signed mentions from the owner and the exact Moni
-pubkey in the deployment binding. Betty accepts those authors ambiently in
-`meal-planning` and only when mentioned in `mill-docs`. Anne, Finn, and
-Orchestrator remain owner-only. All inherit repository access from
+Amos, Betty, Radar, and Scintillate accept signed mentions from the owner and
+the exact Moni pubkey in the deployment binding. Anne, Finn, and Orchestrator
+remain owner-only. All inherit repository access from
 `services.hermes-agent.profiles.<name>.hostPathMounts`; change that canonical
 profile boundary instead of adding service-specific paths. Host Docker and
 Podman sockets remain inaccessible.
 
 The Mill Docs worker remains owner-only in `mill-docs`.
-
 
 ## Factory Product Pass ACP
 
