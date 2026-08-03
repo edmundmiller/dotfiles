@@ -163,55 +163,7 @@ let
       exec ${bettyDjPython}/bin/python ${bettyAgentSpec.automations.bookPlayer.helper} "$@"
     '';
   };
-  radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
-  radarBlogwatcherCli = inputs.agents-workspace.packages.${hostSystem}.blogwatcher-cli;
-  radarCronExecutor = pkgs.writeText "hermes-radar-cron-executor.json" ''
-    {"kind":"systemd","unit":"hermes-radar-cron-tick.timer"}
-  '';
-  radarVaultPath = "/var/lib/hermes-radar/.hermes/state/obsidian-vault";
-  radarVaultPrepare = pkgs.writeShellApplication {
-    name = "radar-vault-prepare";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.git
-      pkgs.git-lfs
-      pkgs.gnugrep
-      pkgs.openssh
-    ];
-    text = ''
-      repo=${lib.escapeShellArg radarVaultPath}
-      remote=git@github.com:edmundmiller/claude-vault.git
-      mkdir -p "$(dirname "$repo")"
-      if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
-        git clone --branch main "$remote" "$repo"
-        git -C "$repo" switch -c automation/radar
-      fi
-      test "$(git -C "$repo" remote get-url origin)" = "$remote"
-      git -C "$repo" config user.name Radar
-      git -C "$repo" config user.email radar@agents.local
 
-      unexpected="$({
-        git -C "$repo" diff --name-only
-        git -C "$repo" diff --cached --name-only
-        git -C "$repo" ls-files --others --exclude-standard
-      } | grep -v '^04_Resources/Signals/' || true)"
-      if [ -n "$unexpected" ]; then
-        echo "radar-vault-prepare: preserving unexpected isolated dirt" >&2
-        printf '%s\n' "$unexpected" >&2
-        exit 75
-      fi
-      if [ -n "$(git -C "$repo" status --porcelain=v1)" ]; then
-        git -C "$repo" add -- 04_Resources/Signals
-        git -C "$repo" commit -m "docs(radar): publish weekly signals digest"
-      fi
-      if [ "$(git -C "$repo" rev-list --count origin/main..HEAD)" -gt 0 ]; then
-        (cd "$repo" && ./scripts/publish-vault-mutation.sh)
-      else
-        git -C "$repo" fetch origin main
-        git -C "$repo" rebase origin/main
-      fi
-    '';
-  };
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
   };
@@ -248,7 +200,6 @@ let
     "betty"
     "finn"
     "orchestrator"
-    "radar"
     "scintillate"
   ];
   hermesProfileMetadataFiles = lib.genAttrs hermesSharedProfileNames (
@@ -447,32 +398,11 @@ let
   hermesOrchestratorSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
   ];
-  hermesRadarSecrets =
-    (builtins.filter (
-      secret:
-      !(builtins.elem secret.envVar [
-        "AGENTMAIL_API_KEY"
-        "HA_TOKEN"
-        "HASS_TOKEN"
-      ])
-    ) hermesProviderSecrets)
-    ++ [
-      (mkAgentSecret "HONCHO_API_KEY" "hermes-radar-honcho-api-key")
-      {
-        envVar = "AGENTMAIL_API_KEY";
-        path = "/var/lib/opnix/secrets/radarAgentmailCredential";
-      }
-      {
-        envVar = "EMAIL_PASSWORD";
-        path = "/var/lib/opnix/secrets/radarAgentmailCredential";
-      }
-    ];
   hermesSecretSets = {
     amosburton = hermesAmosburtonSecrets;
     anne = hermesAnneSecrets;
     betty = hermesBettySecrets;
     orchestrator = hermesOrchestratorSecrets;
-    radar = hermesRadarSecrets;
     scintillate = hermesScintillateSecrets;
   };
   hermesSecretEnvOwners =
@@ -868,14 +798,6 @@ in
     removeLegacyZele = ''
       rm -f /home/emiller/.bun/bin/zele /home/emiller/.cache/npm/bin/zele
     '';
-
-    hermesRadarCronExecutor = {
-      deps = [ "users" ];
-      text = ''
-        ${pkgs.coreutils}/bin/install -d -o emiller -g users -m 0700 /var/lib/hermes-radar/.hermes/cron
-        ${pkgs.coreutils}/bin/install -o emiller -g users -m 0600 ${radarCronExecutor} /var/lib/hermes-radar/.hermes/cron/executor.json
-      '';
-    };
 
     # The upstream hermes-agent module declares a dep on setupSecrets
     # (sops-nix convention) but we use agenix. Provide a no-op stub.
@@ -1279,66 +1201,6 @@ in
       '';
     };
 
-    hermesRadarSecretsMaterialize = {
-      deps = [
-        "agenixInstall"
-        "agenixChown"
-      ];
-      text = ''
-        RADAR_HOME="/var/lib/hermes-radar"
-        ENV_DIR="/run/hermes-radar-env"
-        ENV_FILE="$ENV_DIR/secrets.env"
-        HERMES_ENV_HOME="$RADAR_HOME/.hermes"
-
-        install -d -o emiller -g users -m 0750 "$RADAR_HOME"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/workspace/repos"
-        install -d -o emiller -g users -m 0750 "$HERMES_ENV_HOME/.codex"
-        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.codex"
-        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local"
-        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local/state"
-        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local/state/hermes"
-        install -d -o emiller -g users -m 0750 "$RADAR_HOME/.local/state/hermes/gateway-locks"
-
-        ln -sfn /home/emiller/.codex/auth.json "$RADAR_HOME/.codex/auth.json"
-        chown -h emiller:users "$RADAR_HOME/.codex/auth.json"
-        ln -sfn /home/emiller/.codex/auth.json "$HERMES_ENV_HOME/.codex/auth.json"
-        chown -h emiller:users "$HERMES_ENV_HOME/.codex/auth.json"
-        ln -sfn ${radarVaultPath} "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
-        chown -h emiller:users "$HERMES_ENV_HOME/workspace/repos/obsidian-vault"
-        ln -sfn ${radarVaultPath} "$RADAR_HOME/obsidian-vault"
-        chown -h emiller:users "$RADAR_HOME/obsidian-vault"
-        install -d -o root -g root -m 0755 /repos
-        ln -sfn ${radarVaultPath} /repos/obsidian-vault
-        chown -h emiller:users /repos/obsidian-vault
-
-        mkdir -p "$ENV_DIR"
-        : > "$ENV_FILE"
-        chmod 600 "$ENV_FILE"
-        chown emiller:users "$ENV_FILE"
-
-        printf 'HERMES_HONCHO_HOST=%s\n' "radar" >> "$ENV_FILE"
-
-        ${lib.concatMapStringsSep "\n" (secret: ''
-          if [ -f ${lib.escapeShellArg (toString secret.path)} ]; then
-            secret_value="$(cat ${lib.escapeShellArg (toString secret.path)})"
-            printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
-          fi
-        '') hermesRadarSecrets}
-
-        if [ -f /etc/opnix-token ]; then
-          OP_SERVICE_ACCOUNT_TOKEN="$(cat /etc/opnix-token)"
-          export OP_SERVICE_ACCOUNT_TOKEN
-          if radar_openrouter_key="$(${pkgs._1password-cli}/bin/op read 'op://Agents/Radar Flue Openrouter/credential' 2>/dev/null)" && [ -n "$radar_openrouter_key" ]; then
-            printf 'OPENROUTER_API_KEY=%s\n' "$radar_openrouter_key" >> "$ENV_FILE"
-          fi
-          unset radar_openrouter_key OP_SERVICE_ACCOUNT_TOKEN
-        fi
-
-        printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
-      '';
-    };
 
     hermesBettyWorkspaceCompat = {
       deps = [ ];
@@ -1429,7 +1291,6 @@ in
     himalaya # IMAP/SMTP CLI for Fastmail triage by Scintillate/agents
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
     hermesRuntimeSmoke
-    radarBlogwatcherCli # Radar terminal login-shell runtime
     rtk # Hermes terminal command rewriting after login-shell snapshot
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.buzz
@@ -1790,7 +1651,6 @@ in
         "/var/lib/hermes-amosburton"
         "/var/lib/hermes-anne"
         "/var/lib/hermes-betty"
-        "/var/lib/hermes-radar"
         "/var/lib/hermes-scintillate"
       ];
     };
@@ -2016,70 +1876,6 @@ in
     };
   };
 
-  systemd.services.hermes-radar-cron-tick = {
-    description = "Run Radar cron jobs without an interactive gateway";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    path = [
-      radarHermesLauncher
-      radarBlogwatcherCli
-      hermesAgentBase
-      pkgs.bashInteractive
-      pkgs.coreutils
-      pkgs.findutils
-      pkgs.git
-      pkgs.python3
-      pkgs.rtk
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      User = "emiller";
-      Group = "users";
-      WorkingDirectory = "/var/lib/hermes-radar";
-      EnvironmentFile = [ "/run/hermes-radar-env/secrets.env" ];
-      Environment = [
-        "HOME=/var/lib/hermes-radar"
-        "HERMES_HOME=/var/lib/hermes-radar/.hermes"
-        "HERMES_KANBAN_HOME=${hermesSharedHome}"
-        "HERMES_PROFILE=radar"
-        "MESSAGING_CWD=/var/lib/hermes-radar/.hermes/workspace"
-        "CODEX_HOME=/home/emiller/.codex"
-        "EMAIL_ADDRESS=norbot@agentmail.to"
-        "EMAIL_IMAP_HOST=imap.agentmail.to"
-        "EMAIL_IMAP_PORT=993"
-        "EMAIL_SMTP_HOST=smtp.agentmail.to"
-        "EMAIL_SMTP_PORT=587"
-        "EMAIL_HOME_ADDRESS=emiller@edmundmiller.dev"
-      ];
-      ExecStartPre = [
-        "+${pkgs.coreutils}/bin/chown -hR emiller:users /var/lib/hermes-radar"
-        "${radarVaultPrepare}/bin/radar-vault-prepare"
-      ];
-      ExecStart = "${radarHermesLauncher}/bin/radar-hermes cron tick";
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      ProtectHome = false;
-      ProtectSystem = "strict";
-      ReadWritePaths = [
-        hermesSharedStateDir
-        "/var/lib/hermes-radar"
-      ];
-    };
-  };
-
-  systemd.timers.hermes-radar-cron-tick = {
-    description = "Run Radar background cron jobs on a timer";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "2min";
-      OnUnitActiveSec = "60s";
-      AccuracySec = "1s";
-      RandomizedDelaySec = "0s";
-      Unit = "hermes-radar-cron-tick.service";
-    };
-  };
-
-  systemd.services.hermes-gateway-radar.enable = false;
 
   systemd.services.hermes-scintillate-cron-tick = {
     description = "Run Scintillate cron jobs without an interactive gateway";
@@ -2265,7 +2061,7 @@ in
               };
             };
           };
-          radar.workspaceLinks."repos/obsidian-vault" = radarVaultPath;
+
           finn.workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
           amosburton = {
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
@@ -2460,11 +2256,6 @@ in
     group = "users";
     mode = "0400";
   };
-  age.secrets.buzz-hermes-radar-agent-env = {
-    owner = "emiller";
-    group = "users";
-    mode = "0400";
-  };
   age.secrets.buzz-hermes-scintillate-agent-env = {
     owner = "emiller";
     group = "users";
@@ -2476,7 +2267,6 @@ in
   systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
   systemd.services.buzz-hermes-finn = mkBuzzHermesService "finn";
   systemd.services.buzz-hermes-orchestrator = mkBuzzHermesService "orchestrator";
-  systemd.services.buzz-hermes-radar = mkBuzzHermesService "radar";
   systemd.services.buzz-hermes-scintillate = mkBuzzHermesService "scintillate";
 
   systemd.services.obsidian-sync-mill-docs = {
@@ -2681,9 +2471,6 @@ in
     secrets = {
       githubNixToken = {
         reference = "op://Agents/GH PA dotfiles flake/credential";
-      };
-      radarAgentmailCredential = {
-        reference = "op://Agents/Radar Agentmail/credential";
       };
       amosburtonLinearApiKey = {
         reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;

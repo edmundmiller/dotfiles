@@ -32,7 +32,6 @@ let
   cronTickTimers = [
     cfg.systemd.timers.hermes-amosburton-cron-tick
     bettyTimer
-    cfg.systemd.timers.hermes-radar-cron-tick
     cfg.systemd.timers.hermes-scintillate-cron-tick
   ];
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
