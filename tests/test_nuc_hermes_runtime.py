@@ -55,7 +55,6 @@ class NucHermesRuntimeTest(unittest.TestCase):
             'shell_init_files = [ "${scintillateTerminalInit}" ];', profile
         )
 
-    @unittest.expectedFailure
     def test_shared_profile_metadata_uses_canonical_purposes(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         start = source.index("hermesSharedProfilesAggregate = {")
