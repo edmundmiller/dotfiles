@@ -1296,6 +1296,15 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
+
+              # Validate the tracked Herdr config template with Herdr's own
+              # `config check`, which rejects unknown keys. Cheap and runs
+              # everywhere; the VM test below covers the activated config.
+              herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
+                inherit pkgs;
+                herdrPackage = inputs.llm-agents.packages.${system}.herdr;
+                configFile = ./config/herdr/config.toml;
+              };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
@@ -1320,6 +1329,13 @@
               kittylitter-vm-test = import ./modules/services/kittylitter/_tests/vm-test.nix {
                 inherit pkgs inputs;
                 kittylitterPackage = self.packages.${system}.kittylitter;
+              };
+
+              # NixOS VM test: verify the Herdr config bootstrap activation
+              # produces a writable config that passes `herdr config check`.
+              herdr-vm-test = import ./modules/shell/herdr/_tests/vm-test.nix {
+                inherit pkgs inputs;
+                herdrPackage = inputs.llm-agents.packages.${system}.herdr;
               };
 
               validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" { } ''
