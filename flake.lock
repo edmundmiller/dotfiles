@@ -89,11 +89,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785783213,
-        "narHash": "sha256-qnfiDVofiOGmxYJBJbWLwoWYh/HcGAk5FXnBzWiyS3I=",
+        "lastModified": 1785784128,
+        "narHash": "sha256-+9JTffj6V1VQL1NA/WSHEtmy9jCbX0saAIHj1KavHU4=",
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "1f6ecd6d828048a6862ece147c57cbaff572d0bc",
+        "rev": "88b59553067734a8c369dc4afbbe5b4827dd5f8e",
         "type": "github"
       },
       "original": {

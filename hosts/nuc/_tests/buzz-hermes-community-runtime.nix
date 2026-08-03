@@ -3,6 +3,7 @@
 {
   nixosConfig,
   pkgs,
+  bettyAgentSpec,
   buzzBindings,
 }:
 let
@@ -170,6 +171,14 @@ let
     ];
 
   assertions = [
+    {
+      test =
+        bettyAgentSpec.materialization.skillPruneNames == [
+          "lifetime-class-booking"
+          "plan-moni-workouts"
+        ];
+      msg = "Betty materialization must prune retired fitness and Life Time skills from mutable runtime state.";
+    }
     {
       test =
         profiles == [
