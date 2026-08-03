@@ -206,7 +206,7 @@ ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
 
 Expected: every configured Hermes unit is active with zero restarts and connected to
 `wss://millers.communities.buzz.xyz`. Lazy mode starts the Hermes ACP child
-only after an accepted mention. The services expose no listener.
+only after an accepted message. The services expose no listener.
 `mill-docs-coding-agent.timer` is active, and
 `buzz-mill-docs-codex.service` is not found.
 
@@ -220,9 +220,10 @@ receives the owner attestation and agent-authored profile event. Never reuse a
 private key across profiles. Encrypt `BUZZ_PRIVATE_KEY` and `BUZZ_AUTH_TAG`
 directly into the matching agenix file; never print either value.
 
-Amos, Betty, Radar, and Scintillate accept signed mentions from the owner and
-the exact Moni pubkey in the deployment binding. Anne, Finn, and Orchestrator
-remain owner-only. All inherit repository access from
+Amos, Radar, and Scintillate accept signed mentions from the owner and the exact
+Moni pubkey in the deployment binding. Betty accepts every eligible message in
+`mill-docs`, `meal-planning`, and `fitness` from those same authors. Anne, Finn,
+and Orchestrator remain owner-only. All inherit repository access from
 `services.hermes-agent.profiles.<name>.hostPathMounts`; change that canonical
 profile boundary instead of adding service-specific paths. Host Docker and
 Podman sockets remain inaccessible.
