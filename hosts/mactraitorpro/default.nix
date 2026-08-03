@@ -372,7 +372,7 @@ in
       {
         home.sessionVariables = {
           PI_MODEL_SWITCH_INTENT = "opencode-go/kimi-2.5";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
           PI_MODEL_SWITCH_DONE = "opencode-go/kimi-2.5";
         };
 
