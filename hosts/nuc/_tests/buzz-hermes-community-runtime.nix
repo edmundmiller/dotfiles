@@ -34,7 +34,6 @@ let
       TN_VAULT_PATH = "/home/emiller/obsidian-vault";
       WIKI_PATH = "/home/emiller/obsidian-vault";
     };
-    radar = { };
     scintillate = {
       CODEX_HOME = "/var/lib/hermes-scintillate/.codex";
       TN_VAULT_PATH = "/home/emiller/obsidian-vault";
@@ -49,7 +48,6 @@ let
   moniEnabledProfiles = [
     "amosburton"
     "betty"
-    "radar"
     "scintillate"
   ];
 
@@ -158,7 +156,6 @@ let
           "betty"
           "finn"
           "orchestrator"
-          "radar"
           "scintillate"
         ];
       msg = "Buzz community runtime coverage must match the configured NUC Hermes profiles.";
