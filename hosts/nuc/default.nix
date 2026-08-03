@@ -379,8 +379,6 @@ let
     inherit (bettyAgentSpec.hermes.dotenvReferences)
       DISCORD_BOT_TOKEN
       HERMES_SPOTIFY_CLIENT_ID
-      LIFETIME_PASSWORD
-      LIFETIME_USERNAME
       ;
     HERMES_MCP_BEARER_TOKEN_LINEAR = bettyAgentSpec.hermes.mcpBearerTokenReferences.linear;
   };
@@ -502,6 +500,26 @@ let
       workspaceDir = "${stateDir}/workspace";
       profileConfig = config.services.hermes-agent.profiles.${profile};
       buzzProfile = buzzBindings.profiles.${profile};
+      buzzSubscriptionConfig = pkgs.writeText "buzz-acp-${profile}.toml" (
+        lib.concatMapStringsSep "\n" (
+          channel:
+          let
+            mode = buzzProfile.channelSubscriptions.${channel} or "mentions";
+            kinds =
+              if buzzBindings.channels.${channel}.type == "forum" then
+                "9, 46010, 40007, 45001, 45003"
+              else
+                "9, 46010, 40007";
+          in
+          ''
+            [[rules]]
+            name = "${profile}-${channel}"
+            channels = ["${buzzChannelId channel}"]
+            kinds = [${kinds}]
+            require_mention = ${if mode == "mentions" then "true" else "false"}
+          ''
+        ) buzzProfile.channels
+      );
       allowMoni = buzzProfile.respondTo == "allowlist";
       mountSources = builtins.attrNames profileConfig.hostPathMounts;
       translateContainerPath =
@@ -560,8 +578,8 @@ let
           BUZZ_ACP_AGENT_ARGS = "acp";
           BUZZ_ACP_AGENTS = "1";
           BUZZ_ACP_LAZY_POOL = "true";
-          BUZZ_ACP_SUBSCRIBE = buzzProfile.subscribe or "mentions";
-          BUZZ_ACP_CHANNELS = buzzChannelIds buzzProfile.channels;
+          BUZZ_ACP_SUBSCRIBE = "config";
+          BUZZ_ACP_CONFIG = buzzSubscriptionConfig;
           BUZZ_HOME_CHANNEL = buzzChannelId buzzProfile.home;
           BUZZ_ACP_RESPOND_TO = buzzProfile.respondTo;
           BUZZ_ACP_ALLOWED_RESPOND_TO = if allowMoni then "owner-only,allowlist" else "owner-only";
