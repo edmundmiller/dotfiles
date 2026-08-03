@@ -1,6 +1,6 @@
 model = "gpt-5.6-sol"
 enabled-reasoning-efforts = ["medium", "high", "xhigh", "max"]
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 approval_policy = "never"
 personality = "pragmatic"
 model_verbosity = "low"
