@@ -37,7 +37,6 @@ let
     "betty"
     "finn"
     "orchestrator"
-    "radar"
     "scintillate"
   ];
   expectedDashboardAccessPaths = [
