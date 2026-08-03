@@ -324,7 +324,7 @@
           SF_DISABLE_TELEMETRY = "true";
 
           PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.6-terra";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
           PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.6-luna";
         };
 
