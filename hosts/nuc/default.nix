@@ -560,7 +560,7 @@ let
           BUZZ_ACP_AGENT_ARGS = "acp";
           BUZZ_ACP_AGENTS = "1";
           BUZZ_ACP_LAZY_POOL = "true";
-          BUZZ_ACP_SUBSCRIBE = "mentions";
+          BUZZ_ACP_SUBSCRIBE = buzzProfile.subscribe or "mentions";
           BUZZ_ACP_CHANNELS = buzzChannelIds buzzProfile.channels;
           BUZZ_HOME_CHANNEL = buzzChannelId buzzProfile.home;
           BUZZ_ACP_RESPOND_TO = buzzProfile.respondTo;
@@ -1201,7 +1201,6 @@ in
         '') hermesOrchestratorSecrets}
       '';
     };
-
 
     hermesBettyWorkspaceCompat = {
       deps = [ ];
@@ -1876,7 +1875,6 @@ in
       Unit = "hermes-betty-cron-tick.service";
     };
   };
-
 
   systemd.services.hermes-scintillate-cron-tick = {
     description = "Run Scintillate cron jobs without an interactive gateway";
