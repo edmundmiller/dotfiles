@@ -665,6 +665,16 @@ in
         force = true;
       };
 
+      home.file.".omp/agent/rules/commit-house-style.md" = {
+        source = "${configDir}/omp/rules/commit-house-style.md";
+        force = true;
+      };
+
+      home.file.".omp/agent/rules/pr-house-style.md" = {
+        source = "${configDir}/omp/rules/pr-house-style.md";
+        force = true;
+      };
+
       home.file.".omp/agent/lsp.json" = {
         source = lsp.configFile;
         force = true;
