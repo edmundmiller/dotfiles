@@ -783,6 +783,7 @@ in
       text = ''
         SHARED_HOME=${lib.escapeShellArg hermesSharedHome}
         install -d -o emiller -g users -m 0750 "$SHARED_HOME" "$SHARED_HOME/profiles"
+        rm -f "$SHARED_HOME/profiles/"*
 
         if [ ! -f "$SHARED_HOME/profile.yaml" ]; then
           printf '%s\n' \
