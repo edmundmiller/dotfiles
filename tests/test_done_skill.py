@@ -125,7 +125,11 @@ else:
             )
             mock_herdr.chmod(0o755)
 
-            base_env = os.environ.copy()
+            base_env = {
+                key: value
+                for key, value in os.environ.items()
+                if not key.startswith("HERDR_")
+            }
             base_env.update(
                 {
                     "HERDR_BIN_PATH": str(mock_herdr),
