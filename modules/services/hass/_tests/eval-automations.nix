@@ -307,6 +307,7 @@ let
   edmundAwake = findAutomation "edmund_awake_detection";
   monicaAwake = findAutomation "monica_awake_detection";
   circadianSleepHomeostasis = findAutomation "circadian_sleep_homeostasis";
+  busyBarBedtimeProgress = findAutomation "busy_bar_bedtime_progress";
   refreshEightSleepWakeSchedule = findAutomation "refresh_eight_sleep_wake_schedule";
   voiceWebhookSleep = findAutomation "voice_webhook_sleep";
   voiceWebhookInBed = findAutomation "voice_webhook_in_bed";
@@ -342,6 +343,16 @@ let
     if vacationEndPresence == null then [ ] else toList (vacationEndPresence.action or [ ]);
   extraComponents = nixosConfig.config.services.home-assistant.extraComponents;
   restConfig = haConfig.rest or [ ];
+  restCommands = haConfig.rest_command or { };
+  busyBarBedtimeDraw = restCommands.busy_bar_bedtime_draw or null;
+  busyBarBedtimeClear = restCommands.busy_bar_bedtime_clear or null;
+  busyBarBedtimeDrawPayload =
+    if busyBarBedtimeDraw == null then "" else busyBarBedtimeDraw.payload or "";
+  busyBarBedtimeClearUrl = if busyBarBedtimeClear == null then "" else busyBarBedtimeClear.url or "";
+  busyBarBedtimeProgressJson =
+    if busyBarBedtimeProgress == null then "" else builtins.toJSON busyBarBedtimeProgress;
+  busyBarBedtimeInBedTemplate =
+    if busyBarBedtimeProgress == null then "" else busyBarBedtimeProgress.variables.in_bed_ts or "";
   inputNumbers = haConfig.input_number or { };
   timers = haConfig.timer or { };
   applyClimatePolicySequence =
@@ -562,6 +573,110 @@ let
     {
       test = hasEventTrigger circadianSleepHomeostasis "sleep_homeostasis_test_tick";
       msg = "circadian_sleep_homeostasis missing hidden sleep_homeostasis_test_tick debug trigger";
+    }
+    {
+      test = busyBarBedtimeProgress != null;
+      msg = "automation 'busy_bar_bedtime_progress' missing";
+    }
+    {
+      test = busyBarBedtimeProgress != null && (busyBarBedtimeProgress.initial_state or false);
+      msg = "busy_bar_bedtime_progress must inherit initial_state = true";
+    }
+    {
+      test =
+        busyBarBedtimeProgress != null
+        && hasTimePatternTrigger busyBarBedtimeProgress "/1"
+        &&
+          builtins.all
+            (
+              hour:
+              any (
+                trigger:
+                (trigger.platform or null) == "time_pattern"
+                && (trigger.hours or null) == hour
+                && (trigger.minutes or null) == "/1"
+              ) (toList (busyBarBedtimeProgress.trigger or [ ]))
+            )
+            [
+              "20"
+              "21"
+              "22"
+              "23"
+            ];
+      msg = "busy_bar_bedtime_progress must tick every minute from 8 PM through 11:59 PM";
+    }
+    {
+      test =
+        busyBarBedtimeProgress != null
+        && hasStateTriggerAny busyBarBedtimeProgress "sensor.edmund_s_eight_sleep_side_next_alarm";
+      msg = "busy_bar_bedtime_progress missing Eight Sleep alarm state trigger";
+    }
+    {
+      test =
+        busyBarBedtimeProgress != null
+        && hasHomeAssistantStartTrigger (toList (busyBarBedtimeProgress.trigger or [ ]));
+      msg = "busy_bar_bedtime_progress missing Home Assistant start trigger";
+    }
+    {
+      test =
+        busyBarBedtimeProgress != null
+        && hasEventTrigger busyBarBedtimeProgress "busy_bar_bedtime_test_tick";
+      msg = "busy_bar_bedtime_progress missing hidden test event trigger";
+    }
+    {
+      test =
+        busyBarBedtimeProgress != null
+        && hasActionContinueOnErrorDeep (toList (
+          busyBarBedtimeProgress.action or [ ]
+        )) "rest_command.busy_bar_bedtime_draw"
+        && hasActionContinueOnErrorDeep (toList (
+          busyBarBedtimeProgress.action or [ ]
+        )) "rest_command.busy_bar_bedtime_clear";
+      msg = "busy_bar_bedtime_progress must call both BUSY Bar REST actions with continue_on_error";
+    }
+    {
+      test =
+        busyBarBedtimeDraw != null
+        && (busyBarBedtimeDraw.method or null) == "post"
+        && (busyBarBedtimeDraw.content_type or null) == "application/json"
+        && (busyBarBedtimeDraw.timeout or null) == 3
+        && busyBarBedtimeClear != null
+        && (busyBarBedtimeClear.method or null) == "delete"
+        && (busyBarBedtimeClear.timeout or null) == 3;
+      msg = "BUSY Bar REST commands must use the expected methods, JSON type, and timeout";
+    }
+    {
+      test =
+        hasInfix "home_assistant_bedtime" busyBarBedtimeDrawPayload
+        && hasInfix ''"priority": 50'' busyBarBedtimeDrawPayload
+        && hasInfix ''"show_hours": "when_non_zero"'' busyBarBedtimeDrawPayload
+        && hasInfix ''"timeout": 75'' busyBarBedtimeDrawPayload
+        &&
+          builtins.all
+            (checkpoint: hasInfix ''"id": "checkpoint_${toString checkpoint}"'' busyBarBedtimeDrawPayload)
+            [
+              1
+              2
+              3
+              4
+              5
+            ]
+        && hasInfix "#00D4FFFF" busyBarBedtimeDrawPayload
+        && hasInfix "#202020FF" busyBarBedtimeDrawPayload
+        && !(hasInfix "gradient_h" busyBarBedtimeDrawPayload)
+        && !(hasInfix "gradient_v" busyBarBedtimeDrawPayload);
+      msg = "BUSY Bar draw payload must preserve the countdown and five solid checkpoint contract";
+    }
+    {
+      test =
+        hasInfix "?application_name=home_assistant_bedtime" busyBarBedtimeClearUrl
+        && busyBarBedtimeClearUrl != "http://192.168.1.207/api/display/draw";
+      msg = "BUSY Bar clear command must target only the bedtime Canvas application";
+    }
+    {
+      test =
+        hasInfix "- 15 * 60" busyBarBedtimeInBedTemplate && hasInfix "1800" busyBarBedtimeProgressJson;
+      msg = "BUSY Bar widget must share the in-bed offset and 30-minute activation window";
     }
     {
       test = voiceWebhookSleep == null;
@@ -1094,6 +1209,10 @@ let
     {
       test = builtins.elem "co2signal" extraComponents;
       msg = "Electricity Maps component must be available for config-flow setup";
+    }
+    {
+      test = builtins.elem "rest_command" extraComponents;
+      msg = "REST command component must be available for BUSY Bar Canvas actions";
     }
     {
       test = hasInfix "daily-prc.json" (builtins.toJSON restConfig);

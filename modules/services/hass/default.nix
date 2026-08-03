@@ -206,6 +206,7 @@ in
           "smart_meter_texas"
           "co2signal"
           "rest"
+          "rest_command"
           # Voice intents (hassil dependency for conversation config)
           "conversation"
           # Fast zlib compression

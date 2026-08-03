@@ -1,3 +1,11 @@
+---
+purpose: Document the Home Assistant sleep domain lifecycle and operator test paths.
+applies_to: Sleep scheduling, bedtime cues, wake tracking, and Eight Sleep integration changes.
+entrypoint: Start with wake_up_at.nix and the alarm-relative timing rules below.
+verification: Run the sleep-domain Nix assertions and exercise the documented hidden test event.
+update_when: Sleep timing, owned entities, integrations, or debug events change.
+---
+
 # Sleep Domain
 
 Alarm-driven circadian sleep lifecycle + 8Sleep wake scheduling + wake detection, with **manual/voice Good Morning**.
@@ -25,6 +33,21 @@ Timing rules:
 - **Good Night:** Sleep minus 15 minutes (fall-asleep buffer)
 - **Get Ready for Bed:** Good Night minus 10 minutes (prep buffer)
 - **Winding Down:** Sleep minus 60 minutes (circadian prelude)
+
+### BUSY Bar bedtime progress
+
+During the final 30 minutes before Good Night, Home Assistant draws a countdown and five six-minute checkpoints on the BUSY Bar through the LAN Canvas API. The drawing uses the namespaced application `home_assistant_bedtime`, priority 50, and 75-second element timeouts. BUSY/custom firmware activity at priority 90 takes precedence. The automation never calls the Matter `light.busy_bar` entity.
+
+The automation redraws every minute from 8 PM through midnight and whenever its alarm, presence, or sleep-state inputs change. Outside the active window it deletes only the `home_assistant_bedtime` application, restoring the prior display.
+
+For deterministic testing, fire `busy_bar_bedtime_test_tick` with ISO8601 `now` and `target` values. The event bypasses only the presence guard; the active-window and sleep-state guards still apply.
+
+```yaml
+event_type: busy_bar_bedtime_test_tick
+event_data:
+  now: "2026-08-02T22:45:00-05:00"
+  target: "2026-08-02T23:00:00-05:00"
+```
 
 ### Hidden debug tick
 
