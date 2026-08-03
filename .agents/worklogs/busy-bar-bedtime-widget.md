@@ -1,6 +1,6 @@
 # Worklog: busy-bar-bedtime-widget
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -39,8 +39,9 @@ Done when the Nix assertions pass, the NUC configuration deploys healthy, a Home
 
 ## Remaining work
 
-Commit, rebase, publish, tag, and verify upstream equality.
+None.
 
 ## Commits
 
-Pending.
+- `feat(hass): add BUSY Bar bedtime progress`
+- `chore(agent): close BUSY Bar bedtime worklog`
