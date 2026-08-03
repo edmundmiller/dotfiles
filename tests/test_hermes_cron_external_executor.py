@@ -92,7 +92,7 @@ class ExternalExecutorHealthTest(unittest.TestCase):
             json.dumps(
                 {
                     "kind": "systemd",
-                    "unit": "hermes-radar-cron-tick.timer",
+                    "unit": "hermes-example-cron-tick.timer",
                 }
             )
             + "\n",
@@ -113,7 +113,7 @@ class ExternalExecutorHealthTest(unittest.TestCase):
     def test_status_reports_active_systemd_timer(self):
         output = self._capture(self.cron.cron_status, returncode=0)
         self.assertIn("External cron executor is running", output)
-        self.assertIn("hermes-radar-cron-tick.timer", output)
+        self.assertIn("hermes-example-cron-tick.timer", output)
         self.assertNotIn("Gateway is not running", output)
 
     def test_list_suppresses_gateway_warning_for_active_timer(self):
@@ -124,7 +124,7 @@ class ExternalExecutorHealthTest(unittest.TestCase):
     def test_status_names_configured_but_inactive_timer(self):
         output = self._capture(self.cron.cron_status, returncode=3)
         self.assertIn("External cron executor is not running", output)
-        self.assertIn("hermes-radar-cron-tick.timer", output)
+        self.assertIn("hermes-example-cron-tick.timer", output)
         self.assertNotIn("Gateway is not running", output)
 
     def test_missing_marker_preserves_gateway_warning(self):
