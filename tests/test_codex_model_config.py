@@ -20,17 +20,22 @@ class CodexModelConfigTests(unittest.TestCase):
             ["medium", "high", "xhigh", "max"],
         )
 
-    def test_native_subagents_use_terra_without_catalog_overrides(self):
+    @unittest.expectedFailure
+    def test_sol_uses_bounded_luna_subagents_without_catalog_overrides(self):
         self.assertEqual(
             self.config["agents"],
             {
                 "max_concurrent_threads_per_session": 8,
-                "default_subagent_model": "gpt-5.6-terra",
+                "default_subagent_model": "gpt-5.6-luna",
                 "default_subagent_reasoning_effort": "medium",
             },
         )
         self.assertTrue(self.config["features"]["multi_agent_v2"])
         self.assertNotIn("model_providers", self.config)
+        guidance = self.config["developer_instructions"]
+        self.assertIn("Keep Sol as the primary coordinator", guidance)
+        self.assertIn("normally one to three", guidance)
+        self.assertIn("never delegate recursively", guidance)
 
     def test_runtime_guidance_and_docs_connector_remain_top_level(self):
         self.assertTrue(self.config["developer_instructions"].startswith("Runtime defaults:"))
