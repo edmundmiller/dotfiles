@@ -45,7 +45,18 @@
     "font-jetbrains-mono"
   ];
 
-  masApps = {
-    "Xcode" = 497799835;
-  };
+  # Xcode intentionally undeclared. It IS installed from the App Store and fully
+  # working: valid Contents/_MASReceipt, `codesign --verify` passes, and
+  # `xcodebuild -version` reports 26.6. The problem is Spotlight -- Xcode is the
+  # only app in /Applications missing from the index (70 others present), so
+  # `mas list`, which reads Spotlight, cannot see it. `brew bundle` therefore
+  # treats this entry as unsatisfied and runs `mas install --force 497799835`,
+  # which hung ~29h and blocked darwin-rebuild.
+  #
+  # The importer itself is fine: `mdimport -t -d2 /Applications/Xcode.app`
+  # emits kMDItemAppStoreAdamID = 497799835. But `mdimport -f` and
+  # `sudo mdutil -E /` both leave the index unchanged. Untried: `sudo mdutil -Eai on`.
+  # If that repair lands and `mas list | grep -i Xcode` shows Xcode, restore:
+  #   masApps = { "Xcode" = 497799835; };
+  masApps = { };
 }
