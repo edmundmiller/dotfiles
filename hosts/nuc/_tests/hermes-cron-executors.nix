@@ -172,13 +172,16 @@ let
       msg = "Betty secrets must be materialized by root with the NUC 1Password service token.";
     }
     {
-      test = builtins.all (envVar: hasInfix envVar bettySecretMaterialization) [
-        "DISCORD_BOT_TOKEN"
-        "LIFETIME_USERNAME"
-        "LIFETIME_PASSWORD"
-        "HERMES_MCP_BEARER_TOKEN_LINEAR"
-      ];
-      msg = "Betty's generated service environment must contain Discord, Life Time, and Linear secrets.";
+      test =
+        builtins.all (envVar: hasInfix envVar bettySecretMaterialization) [
+          "DISCORD_BOT_TOKEN"
+          "HERMES_MCP_BEARER_TOKEN_LINEAR"
+        ]
+        && builtins.all (envVar: !(hasInfix envVar bettySecretMaterialization)) [
+          "LIFETIME_USERNAME"
+          "LIFETIME_PASSWORD"
+        ];
+      msg = "Betty's generated environment must contain active credentials and exclude retired Life Time secrets.";
     }
     {
       test = builtins.elem "onepassword-secrets" bettyService.serviceConfig.SupplementaryGroups;

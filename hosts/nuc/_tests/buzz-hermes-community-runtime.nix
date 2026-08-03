@@ -41,12 +41,10 @@ let
     };
   };
   channelId = channel: buzzBindings.channels.${channel}.id;
-  expectedChannels = pkgs.lib.mapAttrs (
-    _profile: profile: builtins.concatStringsSep "," (map channelId profile.channels)
-  ) buzzBindings.profiles;
   expectedHomes = pkgs.lib.mapAttrs (_profile: profile: channelId profile.home) buzzBindings.profiles;
   expectedSubscriptions = pkgs.lib.mapAttrs (
-    _profile: profile: profile.subscribe or "mentions"
+    _profile: profile:
+    pkgs.lib.genAttrs profile.channels (channel: profile.channelSubscriptions.${channel} or "mentions")
   ) buzzBindings.profiles;
   moniEnabledProfiles = [
     "amosburton"
@@ -60,6 +58,26 @@ let
       stateDir = "/var/lib/hermes-${profile}";
       profileConfig = cfg.services.hermes-agent.profiles.${profile};
       service = cfg.systemd.services."buzz-hermes-${profile}";
+      subscriptionConfig = builtins.readFile service.environment.BUZZ_ACP_CONFIG;
+      expectedRules = pkgs.lib.concatMapStringsSep "\n" (
+        channel:
+        let
+          mode = expectedSubscriptions.${profile}.${channel};
+          kinds =
+            if buzzBindings.channels.${channel}.type == "forum" then
+              "9, 46010, 40007, 45001, 45003"
+            else
+              "9, 46010, 40007";
+        in
+        ''
+          [[rules]]
+          name = "${profile}-${channel}"
+          channels = ["${channelId channel}"]
+          kinds = [${kinds}]
+          require_mention = ${if mode == "mentions" then "true" else "false"}
+        ''
+      ) buzzProfile.channels;
+      buzzProfile = buzzBindings.profiles.${profile};
       expectedBindPaths = [ stateDir ] ++ builtins.attrNames profileConfig.hostPathMounts;
       containerOnlyEnvironmentValues = builtins.filter (
         value:
@@ -106,8 +124,9 @@ let
             else
               !(service.environment ? BUZZ_ACP_RESPOND_TO_ALLOWLIST)
           )
-          && service.environment.BUZZ_ACP_SUBSCRIBE == expectedSubscriptions.${profile}
-          && service.environment.BUZZ_ACP_CHANNELS == expectedChannels.${profile}
+          && service.environment.BUZZ_ACP_SUBSCRIBE == "config"
+          && !(service.environment ? BUZZ_ACP_CHANNELS)
+          && subscriptionConfig == expectedRules
           && service.environment.BUZZ_HOME_CHANNEL == expectedHomes.${profile}
           && service.environment.BUZZ_ACP_HEARTBEAT_INTERVAL == "0"
           && service.environment.BUZZ_ACP_LAZY_POOL == "true";
