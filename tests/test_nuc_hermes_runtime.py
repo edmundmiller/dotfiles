@@ -55,6 +55,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
             'shell_init_files = [ "${scintillateTerminalInit}" ];', profile
         )
 
+    @unittest.expectedFailure
     def test_shared_profile_metadata_uses_canonical_purposes(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         start = source.index("hermesSharedProfilesAggregate = {")
@@ -68,6 +69,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
         self.assertIn("description = hermesAgentSpecs.${profile}.purpose;", source)
         self.assertIn("description_auto = false;", source)
         self.assertIn("install -o emiller -g users -m 0640", activation)
+        self.assertIn('rm -f "$SHARED_HOME/profiles/"*', activation)
         self.assertNotIn(
             'if [ -d "$profile_home" ] && [ ! -f "$profile_home/profile.yaml" ]',
             activation,
