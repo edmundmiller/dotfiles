@@ -140,10 +140,6 @@ in
     edmundmiller
     nuc
   ];
-  "hermes-radar-honcho-api-key.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   "hermes-scintillate-honcho-api-key.age".publicKeys = [
     edmundmiller
     nuc
@@ -198,10 +194,6 @@ in
     nuc
   ];
   "buzz-hermes-orchestrator-agent-env.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
-  "buzz-hermes-radar-agent-env.age".publicKeys = [
     edmundmiller
     nuc
   ];

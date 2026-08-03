@@ -16,7 +16,6 @@ let
   buzzCronServices = {
     amosburton = amosService;
     betty = bettyService;
-    radar = cfg.systemd.services.hermes-radar-cron-tick;
     scintillate = cfg.systemd.services.hermes-scintillate-cron-tick;
   };
   channelId = channel: buzzBindings.channels.${channel}.id;
@@ -32,7 +31,6 @@ let
   cronTickTimers = [
     cfg.systemd.timers.hermes-amosburton-cron-tick
     bettyTimer
-    cfg.systemd.timers.hermes-radar-cron-tick
     cfg.systemd.timers.hermes-scintillate-cron-tick
   ];
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;

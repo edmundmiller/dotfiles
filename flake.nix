@@ -1203,11 +1203,6 @@
                 };
               };
 
-              nuc-radar-cron-runtime = import ./hosts/nuc/_tests/radar-cron-runtime.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
-
               nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
