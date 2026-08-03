@@ -314,7 +314,15 @@
           ''
         );
 
+        # sf CLI's bundled plugin-telemetry (3.7.2) spawns a detached
+        # upload.js per invocation that finishes its upload but never exits:
+        # the AppInsights reporter leaves un-unref'd libuv handles, so each
+        # process parks in kevent forever holding ~84MB. 229 of them had
+        # accumulated here and filled swap. Disabling telemetry stops the
+        # spawns entirely.
         home.sessionVariables = {
+          SF_DISABLE_TELEMETRY = "true";
+
           PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.6-terra";
           PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.3-codex";
           PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.6-luna";
