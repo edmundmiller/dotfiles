@@ -45,6 +45,9 @@ let
     _profile: profile: builtins.concatStringsSep "," (map channelId profile.channels)
   ) buzzBindings.profiles;
   expectedHomes = pkgs.lib.mapAttrs (_profile: profile: channelId profile.home) buzzBindings.profiles;
+  expectedSubscriptions = pkgs.lib.mapAttrs (
+    _profile: profile: profile.subscribe or "mentions"
+  ) buzzBindings.profiles;
   moniEnabledProfiles = [
     "amosburton"
     "betty"
@@ -103,12 +106,12 @@ let
             else
               !(service.environment ? BUZZ_ACP_RESPOND_TO_ALLOWLIST)
           )
-          && service.environment.BUZZ_ACP_SUBSCRIBE == "mentions"
+          && service.environment.BUZZ_ACP_SUBSCRIBE == expectedSubscriptions.${profile}
           && service.environment.BUZZ_ACP_CHANNELS == expectedChannels.${profile}
           && service.environment.BUZZ_HOME_CHANNEL == expectedHomes.${profile}
           && service.environment.BUZZ_ACP_HEARTBEAT_INTERVAL == "0"
           && service.environment.BUZZ_ACP_LAZY_POOL == "true";
-        msg = "${profile}: Buzz runtime must enforce its subscriptions, home, and signed mention policy.";
+        msg = "${profile}: Buzz runtime must enforce its subscription mode, channels, home, and author policy.";
       }
       {
         test = service.serviceConfig.WorkingDirectory == "${stateDir}/workspace";
