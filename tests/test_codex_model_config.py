@@ -20,7 +20,6 @@ class CodexModelConfigTests(unittest.TestCase):
             ["medium", "high", "xhigh", "max"],
         )
 
-    @unittest.expectedFailure
     def test_sol_uses_bounded_luna_subagents_without_catalog_overrides(self):
         self.assertEqual(
             self.config["agents"],
