@@ -22,8 +22,120 @@ let
     # until the fallback alarm/presence path is added.
     notify = "notify.mobile_app_edmunds_iphone";
   };
+
+  busyBarBaseUrl = "http://192.168.1.207";
+  busyBarApplicationName = "home_assistant_bedtime";
+  busyBarEveningTickTriggers =
+    map
+      (hours: {
+        platform = "time_pattern";
+        inherit hours;
+        minutes = "/1";
+        id = "tick";
+      })
+      [
+        "20"
+        "21"
+        "22"
+        "23"
+      ];
 in
 {
+  services.home-assistant.config.rest_command = {
+    busy_bar_bedtime_draw = {
+      url = "${busyBarBaseUrl}/api/display/draw";
+      method = "post";
+      content_type = "application/json";
+      timeout = 3;
+      payload = ''
+        {
+          "application_name": "${busyBarApplicationName}",
+          "priority": 50,
+          "elements": [
+            {
+              "id": "countdown",
+              "type": "countdown",
+              "timestamp": "{{ target_ts | int }}",
+              "direction": "time_left",
+              "show_hours": "when_non_zero",
+              "x": 36,
+              "y": 0,
+              "align": "top_mid",
+              "color": "#FFFFFFFF",
+              "timeout": 75
+            },
+            {
+              "id": "checkpoint_1",
+              "type": "rectangle",
+              "x": 4,
+              "y": 11,
+              "width": 12,
+              "height": 5,
+              "fill": "solid",
+              "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 1 else '#202020FF' }}"],
+              "border_width": 0,
+              "timeout": 75
+            },
+            {
+              "id": "checkpoint_2",
+              "type": "rectangle",
+              "x": 17,
+              "y": 11,
+              "width": 12,
+              "height": 5,
+              "fill": "solid",
+              "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 2 else '#202020FF' }}"],
+              "border_width": 0,
+              "timeout": 75
+            },
+            {
+              "id": "checkpoint_3",
+              "type": "rectangle",
+              "x": 30,
+              "y": 11,
+              "width": 12,
+              "height": 5,
+              "fill": "solid",
+              "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 3 else '#202020FF' }}"],
+              "border_width": 0,
+              "timeout": 75
+            },
+            {
+              "id": "checkpoint_4",
+              "type": "rectangle",
+              "x": 43,
+              "y": 11,
+              "width": 12,
+              "height": 5,
+              "fill": "solid",
+              "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 4 else '#202020FF' }}"],
+              "border_width": 0,
+              "timeout": 75
+            },
+            {
+              "id": "checkpoint_5",
+              "type": "rectangle",
+              "x": 56,
+              "y": 11,
+              "width": 12,
+              "height": 5,
+              "fill": "solid",
+              "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 5 else '#202020FF' }}"],
+              "border_width": 0,
+              "timeout": 75
+            }
+          ]
+        }
+      '';
+    };
+
+    busy_bar_bedtime_clear = {
+      url = "${busyBarBaseUrl}/api/display/draw?application_name=${busyBarApplicationName}";
+      method = "delete";
+      timeout = 3;
+    };
+  };
+
   services.home-assistant.config.automation = lib.mkAfter (ensureEnabled [
 
     # Keep the Eight Sleep alarm fresh only during the evening decision window.
@@ -368,6 +480,130 @@ in
                   target.entity_id = "input_boolean.winding_down_done";
                 }
               ];
+            }
+          ];
+        }
+      ];
+    }
+
+    {
+      alias = "BUSY Bar Bedtime Progress";
+      id = "busy_bar_bedtime_progress";
+      description = "Show a countdown and six-minute checkpoints before the alarm-relative in-bed target";
+      mode = "restart";
+      trigger = busyBarEveningTickTriggers ++ [
+        {
+          platform = "state";
+          entity_id = edmund.nextAlarm;
+        }
+        {
+          platform = "state";
+          entity_id = edmund.presence;
+        }
+        {
+          platform = "state";
+          entity_id = "input_boolean.goodnight_done";
+        }
+        {
+          platform = "state";
+          entity_id = "input_boolean.sleep_done";
+        }
+        {
+          platform = "homeassistant";
+          event = "start";
+          id = "startup";
+        }
+        {
+          platform = "time";
+          at = "00:00:00";
+          id = "midnight_clear";
+        }
+        {
+          platform = "event";
+          event_type = "busy_bar_bedtime_test_tick";
+          id = "test_tick";
+        }
+      ];
+      variables = {
+        in_bed_ts = ''
+          {%- set test_target = trigger.event.data.target if trigger.id == 'test_tick' and trigger.event.data.target is defined else none -%}
+          {%- if test_target -%}
+            {{ as_timestamp(as_datetime(test_target)) }}
+          {%- else -%}
+            {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
+            {%- set base_now = now() -%}
+            {%- set wake = base_now + timedelta(days=1) -%}
+            {%- set weekend = wake.isoweekday() in [6, 7] -%}
+            {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+            {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
+            {%- set ideal_wake = latest_wake - 30 * 60 -%}
+            {{ ideal_wake - 6 * 90 * 60 - 15 * 60 }}
+          {%- endif -%}
+        '';
+        now_ts = ''
+          {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
+          {%- set base_now = as_datetime(test_now) if test_now else now() -%}
+          {{ as_timestamp(base_now) }}
+        '';
+      };
+      action = [
+        {
+          variables = {
+            filled_count = ''
+              {%- set elapsed_steps = (((now_ts | float) - (in_bed_ts | float - 1800)) / 360) | int -%}
+              {{ 0 if elapsed_steps < 0 else 5 if elapsed_steps > 5 else elapsed_steps }}
+            '';
+          };
+        }
+        {
+          choose = [
+            {
+              conditions = [
+                {
+                  condition = "or";
+                  conditions = [
+                    {
+                      condition = "trigger";
+                      id = "test_tick";
+                    }
+                    {
+                      condition = "state";
+                      entity_id = edmund.presence;
+                      state = "home";
+                    }
+                  ];
+                }
+                {
+                  condition = "template";
+                  value_template = "{{ now_ts | float >= in_bed_ts | float - 1800 and now_ts | float <= in_bed_ts | float }}";
+                }
+                {
+                  condition = "state";
+                  entity_id = "input_boolean.goodnight_done";
+                  state = "off";
+                }
+                {
+                  condition = "state";
+                  entity_id = "input_boolean.sleep_done";
+                  state = "off";
+                }
+              ];
+              sequence = [
+                {
+                  action = "rest_command.busy_bar_bedtime_draw";
+                  continue_on_error = true;
+                  data = {
+                    target_ts = "{{ in_bed_ts | int }}";
+                    filled_count = "{{ filled_count | int }}";
+                  };
+                }
+              ];
+            }
+          ];
+          default = [
+            {
+              action = "rest_command.busy_bar_bedtime_clear";
+              continue_on_error = true;
             }
           ];
         }
