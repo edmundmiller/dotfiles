@@ -127,6 +127,11 @@
       flake = false;
     };
 
+    no-ai-slop-repo = {
+      url = "git+https://github.com/petergyang/no-ai-slop.git";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -561,6 +566,12 @@
                   filter.maxDepth = 2;
                 };
 
+                no-ai-slop = {
+                  path = inputs.no-ai-slop-repo.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 2;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -649,6 +660,9 @@
 
                   pplx-cli.from = "perplexity";
                   pplx-cli.path = "pplx-cli";
+
+                  no-ai-slop.from = "no-ai-slop";
+                  no-ai-slop.path = "no-ai-slop";
 
                   write-discoverable-code.from = "modem";
                   write-discoverable-code.path = "write-discoverable-code";
