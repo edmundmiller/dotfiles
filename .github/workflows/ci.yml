@@ -48,6 +48,10 @@ jobs:
           echo "::group::package-harness-tests" && time nix build .#checks.x86_64-linux.package-harness-tests --no-link && echo "::endgroup::"
           echo "::group::herdr-config-check" && time nix build .#checks.x86_64-linux.herdr-config-check --no-link && echo "::endgroup::"
           echo "::group::vm-shell-herdr-vm-test" && time nix build .#checks.x86_64-linux.vm-shell-herdr-vm-test --no-link && echo "::endgroup::"
+          echo "::group::vm-services-gatus-vm-test" && time nix build .#checks.x86_64-linux.vm-services-gatus-vm-test --no-link && echo "::endgroup::"
+          echo "::group::vm-services-hass-time-guards-test" && time nix build .#checks.x86_64-linux.vm-services-hass-time-guards-test --no-link && echo "::endgroup::"
+          echo "::group::vm-services-hass-vm-test" && time nix build .#checks.x86_64-linux.vm-services-hass-vm-test --no-link && echo "::endgroup::"
+          echo "::group::vm-services-kittylitter-vm-test" && time nix build .#checks.x86_64-linux.vm-services-kittylitter-vm-test --no-link && echo "::endgroup::"
 
       - name: Validate agent documentation contract
         shell: bash
