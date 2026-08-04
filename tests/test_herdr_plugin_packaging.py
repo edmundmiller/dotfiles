@@ -1,6 +1,8 @@
 import tomllib
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -45,6 +47,15 @@ def test_local_plugin_link_defers_only_connection_refusal() -> None:
     assert "link_output=" in module
     assert "Connection refused" in module
     assert "deferring local plugin link" in module
+
+
+@pytest.mark.xfail(strict=True, reason="activation currently fails against an older running Herdr server")
+def test_marketplace_activation_defers_protocol_mismatch() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    assert 'installed_json=$("$herdr_cmd" plugin list --json 2>&1)' in module
+    assert "protocol_mismatch" in module
+    assert "deferring marketplace plugin installation" in module
 
 
 def test_smart_rename_is_packaged_started_and_bound() -> None:
