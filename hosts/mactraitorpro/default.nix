@@ -150,7 +150,6 @@ in
           profiles = [
             "amosburton"
             "orchestrator"
-            "workouts"
           ];
         };
         omp = {
