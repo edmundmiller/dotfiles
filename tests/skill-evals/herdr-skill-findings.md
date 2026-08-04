@@ -3,6 +3,10 @@
 Measured with `tests/skill-evals/herdr-skill.eval.ts` against herdr 0.7.5,
 runner `claude -p`, blind rubric judge, n=3 on contested cases.
 
+Historical: these numbers are from the 0.7.5 sweep and have not been re-measured
+against 0.8.0. The executable corpus, shim, and tests are pinned to 0.8.0; rerun
+the eval before treating any figure below as current.
+
 ## Arms
 
 | Arm        | Context                                                       |

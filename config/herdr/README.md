@@ -90,7 +90,7 @@ Herdr defaults still provide other common actions. `prefix+a` creates a task-nam
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
-## Herdr 0.7.5 lifecycle
+## Herdr 0.8.0 lifecycle
 
 `[worktrees].post_create_command` is obsolete here. Activation removes that key;
 worktree automation belongs in plugin `[[events]]` hooks.
@@ -124,7 +124,7 @@ Repo-owned plugins are composed into a local package and registered by `modules/
 - `nathanflurry.jj-workspace` — built from a pinned upstream revision plus the ordered safety patch under `packages/herdr-plugin-jj-workspace/`.
 - `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
 
-Herdr 0.7.5 makes installed/linked plugins and enabled state global per user.
+Herdr 0.8.0 makes installed/linked plugins and enabled state global per user.
 The module therefore owns one `~/.config/herdr/plugins.json`, not per-session
 registries.
 
