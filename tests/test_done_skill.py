@@ -57,7 +57,6 @@ class DoneSkillContractTest(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
-    @unittest.expectedFailure
     def test_dirty_default_attempts_safe_fast_forward_before_blocking(self) -> None:
         skill = SKILL.read_text()
 
