@@ -24,6 +24,7 @@ Update the shared Moshi hook pin from 0.2.69 to official upstream 0.2.70, land i
 - Plan gate: default Claude reviewer stopped at ACP `session/new` with `RUNTIME: Authentication required`; no findings produced.
 - Plan fallback: OpenCode reviewer exited before ACP initialization because the `opencode-ai` postinstall runtime is missing; no findings produced.
 - Manual scope review: one upstream version and its four official archive hashes; no behavior or interface change.
+- Landing gate: default reviewer again stopped at ACP `session/new` with `RUNTIME: Authentication required`; manual `sem diff --staged` review found only the requested version/hash pin and this worklog.
 
 ## Feedback
 
@@ -36,4 +37,5 @@ None.
 
 ## Commits
 
-Pending.
+- `6f655e65e` — initial task worklog.
+- Task tip — Moshi 0.2.70 pin and final worklog evidence.
