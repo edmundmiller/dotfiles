@@ -28,15 +28,28 @@ Discover the remote and default destination from live state. Prefer remote symbo
 
 ## Git closeout
 
-### Dirty default checkout gate
+### Dirty default checkout integration
 
-If the default branch's existing checkout has unrelated dirt after task changes
-are committed, stop and report `Blocked:`. Never move that checkout to a
-preservation branch, create a preservation branch to free the default branch,
-stash, reset, or commit its unrelated dirt, or update its checked-out branch
-ref. A bare `done` does not authorize changing the branch meaning of another
-checkout. The user must first clean or commit that checkout, or explicitly
-authorize a named preservation action.
+Unrelated dirt in the default branch's existing checkout is not itself a
+blocker after task changes are committed. Preserve it and first try the normal
+safe Git path:
+
+1. Fetch the remote and create a clean temporary integration worktree at the
+   remote default tip.
+2. Rebase or cherry-pick only the explicit task commits there. Never absorb
+   other commits merely because they are ancestors of the task tip.
+3. Run `git -C "$default_checkout" merge --ff-only "$integration_tip"`.
+   Git will refuse before overwriting overlapping tracked or untracked work.
+4. When it succeeds, push the default branch without force, fetch again, and
+   prove local/remote equality.
+
+Report `Blocked:` only when Git refuses the fast-forward because the task
+overlaps dirty paths, or when the default histories cannot be reconciled
+without changing user-owned work. Include Git's refusal as evidence. Never move
+that checkout to a preservation branch, create a preservation branch to free
+the default branch, stash, reset, commit its unrelated dirt, or update its
+checked-out branch ref directly. A bare `done` does not authorize changing the
+branch meaning of another checkout.
 
 Unrelated dirt in a non-default task worktree does not block landing its already
 committed task revision through a clean default checkout. Preserve the dirt and
@@ -44,8 +57,8 @@ defer that worktree's cleanup.
 
 1. **Snapshot.** Before any `cd`, record `active_directory=$(pwd -P)` and never recompute it. Record root, path, branch/detached state, worktrees, task tip, default branch, remotes, status, and ahead/behind counts. Identify unrelated files.
 2. **Commit task work.** Split distinct intents. Leave unrelated dirt unstaged. Run focused checks.
-3. **Refresh.** Fetch the chosen remote. Reconcile destination local-only commits and remote tip. Rebase the feature when safe; rerun checks after changed content or commit IDs.
-4. **Integrate.** Prefer a fast-forward on the default branch, using its clean checkout or a temporary integration worktree. Never reset, overwrite, or blindly stash unrelated dirt.
+3. **Refresh.** Fetch the chosen remote. Reconcile destination local-only commits and remote tip. Rebase the explicit task commits when safe; rerun checks after changed content or commit IDs.
+4. **Integrate.** Prefer a fast-forward on the default branch. Use its clean checkout directly, or use a temporary integration worktree and then attempt `merge --ff-only` in a dirty default checkout as described above. Never reset, overwrite, or blindly stash unrelated dirt.
 5. **Publish.** Push the default branch, not merely the feature branch. Do not bypass hooks.
 6. **Prove.** After a final fetch, run:
 
