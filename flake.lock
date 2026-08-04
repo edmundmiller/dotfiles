@@ -1504,6 +1504,22 @@
         "type": "github"
       }
     },
+    "no-ai-slop-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785795644,
+        "narHash": "sha256-S6dLSW2lFg7NrnDO78nP+os/AshvGYPaXmdguYg/0+0=",
+        "ref": "refs/heads/main",
+        "rev": "f284f8ce636421c9300c02ea895bf5ca06d36c68",
+        "revCount": 18,
+        "type": "git",
+        "url": "https://github.com/petergyang/no-ai-slop.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/petergyang/no-ai-slop.git"
+      }
+    },
     "npm-lockfile-fix": {
       "inputs": {
         "nixpkgs": [
@@ -1956,6 +1972,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
+        "no-ai-slop-repo": "no-ai-slop-repo",
         "openai-skills": "openai-skills",
         "perplexity-api-platform-developers": "perplexity-api-platform-developers",
         "pi-extension-skills": "pi-extension-skills",
