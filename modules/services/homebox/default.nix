@@ -51,6 +51,34 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homebox";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Homebox";
+      order = 120;
+      group = "Home";
+      url = "https://homebox.cinnamon-rooster.ts.net/";
+      conditions = [ "[STATUS] < 500" ];
+    };
+    homepage = {
+      group = "Home";
+      name = "Homebox";
+      order = 70;
+      description = "Household inventory pilot";
+      icon = "mdi-package-variant-closed";
+      href = "https://homebox.cinnamon-rooster.ts.net/";
+      widget = {
+        type = "homebox";
+        url = "http://127.0.0.1:7745";
+        username = "{{HOMEPAGE_VAR_HOMEBOX_USERNAME}}";
+        password = "{{HOMEPAGE_VAR_HOMEBOX_PASSWORD}}";
+        fields = [
+          "items"
+          "locations"
+          "totalValue"
+        ];
+      };
+    };
   };
 
   config = mkIf cfg.enable (

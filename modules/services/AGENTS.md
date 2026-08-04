@@ -46,41 +46,50 @@ See the `agenix-secrets` skill. Quick summary:
 4. Wire in host config: `environmentFile = config.age.secrets.<name>-env.path;`
 5. Override owner: `age.secrets.<name>-env.owner = "<service-user>";`
 
-## 4. Gatus (`modules/services/gatus/default.nix`)
+## 4. Status page & dashboard (`registry`)
 
-Add conditional health check endpoint:
+Do **not** edit `gatus/default.nix` or `homepage.nix`. Append a `registry`
+block to your own module's option declaration instead; both aggregators read it
+off every service and merge in the enabled ones:
 
 ```nix
-++ optionals config.modules.services.<name>.enable [
-  {
-    name = "<Name>";
-    group = "<Group>";
-    url = "http://localhost:<port>";
-    interval = "60s";
-    conditions = [ "[STATUS] < 500" ];
+  options.modules.services.<name> = {
+    enable = mkBoolOpt false;
+    # ...
   }
-]
-```
-
-## 5. Homepage (`modules/services/homepage.nix`)
-
-Add card to appropriate group. Include widget if supported (check gethomepage.dev/widgets/services/):
-
-```nix
-{
-  "<Name>" = {
-    href = "${nucBase}:<port>";
-    description = "...";
-    icon = "<name>.svg";
-    widget = {
-      type = "<name>";
-      url = "http://localhost:<port>";
-      username = "{{HOMEPAGE_VAR_<NAME>_USERNAME}}";
-      password = "{{HOMEPAGE_VAR_<NAME>_PASSWORD}}";
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "<Name>";
+      group = "<Group>";
+      url = "http://localhost:${toString cfg.port}";
+      conditions = [ "[STATUS] < 500" ];
+      # interval defaults to "60s"; set alerts = true to attach alert providers
+    };
+    homepage = {
+      group = "<Group>";
+      name = "<Name>";
+      description = "...";
+      icon = "<name>.svg";
+      href = "http://nuc.${tailnet}:${toString cfg.port}";
+      widget = {
+        type = "<name>";
+        url = "http://localhost:${toString cfg.port}";
+        username = "{{HOMEPAGE_VAR_<NAME>_USERNAME}}";
+        password = "{{HOMEPAGE_VAR_<NAME>_PASSWORD}}";
+      };
     };
   };
-}
 ```
+
+Both keys are optional — omit `homepage` for an unmonitored internal service,
+omit `gatus` for a dashboard-only link. The entries become option *defaults*, so
+a host can still override any field.
+
+Homepage `group` must match an existing group ("Media", "Home", "Network",
+...); a card with an unknown group is silently dropped.
+
+Services with no owning module (a router, hosted SaaS) stay hard-coded in the
+aggregator — there is nothing to hang a registry off.
 
 Add `HOMEPAGE_VAR_*` entries to `homepage-env.age` (decrypt → append → re-encrypt).
 

@@ -78,13 +78,17 @@ This means healthchecks.io alerts if:
 
 ## Adding New Endpoints
 
-Add to the `endpoints` list in `default.nix`. HTTP endpoints use `[STATUS] == 200`, TCP use `[CONNECTED] == true`. Alerts are auto-attached to all endpoints via `withAlerts`.
+If the service has its own module, do **not** edit `default.nix`. Declare the
+endpoint in that module via `lib.my.mkRegistry { gatus = { ... }; }`; this file
+aggregates `registry.gatus` from every enabled service automatically. See
+`modules/services/AGENTS.md` §4.
 
-For conditional endpoints (only when another module is enabled):
+Only services with no owning module (Router, NextDNS, Grafana Cloud, ...) are
+hard-coded in the `endpoints` list here.
 
-```nix
-++ optionals config.modules.services.foo.enable [ { ... } ]
-```
+HTTP endpoints use `[STATUS] == 200`, TCP use `[CONNECTED] == true`. Registry
+entries opt into alert providers with `alerts = true`; hard-coded entries use
+`withAlerts`.
 
 ## Adding New Alert Providers
 

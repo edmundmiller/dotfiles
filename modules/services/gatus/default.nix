@@ -54,6 +54,43 @@ let
       alerts = endpointAlerts;
     };
 
+  # Endpoints contributed by the services themselves via
+  # `modules.services.<name>.registry.gatus`. Adding a monitored service is a
+  # one-line change in that service's own module, not an edit here.
+  #
+  # Sub-services count too: `hass.homebridge` has its own `enable` and its own
+  # registry, so it is gated on that flag rather than on its parent's.
+  registryContributors =
+    let
+      isContributor = v: builtins.isAttrs v && v ? registry && v ? enable;
+      children = svc: filter isContributor (attrValues (removeAttrs svc [ "registry" ]));
+      collect = svc: [ svc ] ++ children svc;
+    in
+    concatMap collect (filter isContributor (attrValues config.modules.services));
+
+  # Sort the whole endpoint list by `order` (then name) and drop `order`, which
+  # is display metadata rather than Gatus config.
+  sortEndpoints =
+    endpoints:
+    map (entry: removeAttrs entry [ "order" ]) (
+      sort (a: b: if a.order != b.order then a.order < b.order else a.name < b.name) endpoints
+    );
+
+  registryEndpoints = concatMap (
+    svc:
+    let
+      entry = svc.registry.gatus;
+    in
+    optional (svc.enable && entry != null) (
+      (removeAttrs entry [
+        "alerts"
+        "headers"
+      ])
+      // optionalAttrs (entry.headers != { }) { inherit (entry) headers; }
+      // optionalAttrs (entry.alerts && endpointAlerts != [ ]) { alerts = endpointAlerts; }
+    )
+  ) registryContributors;
+
   configTemplate = pkgs.writeText "gatus-config-template.yaml" (
     builtins.toJSON (
       {
@@ -64,60 +101,22 @@ let
           path = "/var/lib/gatus/data.db";
         };
 
-        endpoints =
+        # Every endpoint carries an `order`; the combined list is sorted once and
+        # `order` stripped, so registry-contributed entries land in the same
+        # positions they occupied when they were hard-coded here.
+        endpoints = sortEndpoints (
           (map withAlerts [
             {
-              name = "Home Assistant";
-              group = "Smart Home";
-              url = "http://localhost:8123/manifest.json";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-            {
-              name = "Homebridge";
-              group = "Smart Home";
-              url = "http://localhost:8581";
-              interval = "60s";
-              conditions = [ "[STATUS] < 500" ];
-            }
-            {
               name = "Matter Server";
+              order = 30;
               group = "Smart Home";
               url = "tcp://localhost:5580";
               interval = "120s";
               conditions = [ "[CONNECTED] == true" ];
             }
             {
-              name = "Jellyfin";
-              group = "Media";
-              url = "http://localhost:8096/health";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-
-            {
-              name = "Sonarr";
-              group = "Media";
-              url = "http://localhost:8989/ping";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-            {
-              name = "Radarr";
-              group = "Media";
-              url = "http://localhost:7878/ping";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-            {
-              name = "Prowlarr";
-              group = "Media";
-              url = "http://localhost:9696/ping";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-            {
               name = "PostgreSQL";
+              order = 80;
               group = "Infrastructure";
               url = "tcp://localhost:5432";
               interval = "60s";
@@ -125,6 +124,7 @@ let
             }
             {
               name = "Mill Docs Agents";
+              order = 90;
               group = "Infrastructure";
               url = "https://mill-docs-agents.cinnamon-rooster.ts.net/";
               interval = "60s";
@@ -132,6 +132,7 @@ let
             }
             {
               name = "Grafana Cloud";
+              order = 100;
               group = "Monitoring";
               url = "https://fearlesslorry169.grafana.net/api/health";
               interval = "60s";
@@ -146,27 +147,10 @@ let
             #   conditions = [ "[STATUS] == 200" ];
             # }
           ])
-          ++ optionals config.modules.services.lubelogger.enable [
-            {
-              name = "LubeLogger";
-              group = "Home";
-              url = "http://localhost:5000";
-              interval = "60s";
-              conditions = [ "[STATUS] < 500" ];
-            }
-          ]
-          ++ optionals config.modules.services.homebox.enable [
-            {
-              name = "Homebox";
-              group = "Home";
-              url = "https://homebox.cinnamon-rooster.ts.net/";
-              interval = "60s";
-              conditions = [ "[STATUS] < 500" ];
-            }
-          ]
           ++ optionals config.modules.services.homepage.enable [
             {
               name = "Homepage";
+              order = 130;
               group = "Monitoring";
               url = "http://localhost:8082";
               interval = "60s";
@@ -184,6 +168,7 @@ let
               [
                 {
                   name = "Obsidian Sync";
+                  order = 140;
                   group = "Sync";
                   url = "https://healthchecks.io/api/v2/checks/${obsidianSyncHealthcheckId}";
                   headers = {
@@ -196,60 +181,8 @@ let
                   ];
                 }
               ]
-          ++ optionals config.modules.services.speedtest-tracker.enable [
-            {
-              name = "Speedtest Tracker";
-              group = "Network";
-              url = "http://localhost:${toString config.modules.services.speedtest-tracker.port}/admin/login";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ]
-          ++ optionals config.modules.services.open-wearables.enable [
-            {
-              name = "Open Wearables API";
-              group = "Health";
-              url = "http://localhost:${toString config.modules.services.open-wearables.backendPort}/docs";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ]
-          ++ optionals config.modules.services.sparkyfitness.enable [
-            (withAlerts {
-              name = "SparkyFitness";
-              group = "Health";
-              url = "https://sparkyfitness.cinnamon-rooster.ts.net/";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            })
-          ]
-          ++ optionals config.modules.services.audiobookshelf.enable [
-            {
-              name = "Audiobookshelf";
-              group = "Media";
-              url = "http://localhost:${toString config.modules.services.audiobookshelf.port}";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ]
-          ++ optionals config.modules.services.music-assistant.enable [
-            (withAlerts {
-              name = "Music Assistant";
-              group = "Media";
-              url = "http://localhost:${toString config.modules.services.music-assistant.port}";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            })
-          ]
-          ++ optionals config.modules.services.agentsview.enable [
-            {
-              name = "AgentsView";
-              group = "Infrastructure";
-              url = "http://127.0.0.1:${toString config.modules.services.agentsview.port}";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ];
+          ++ registryEndpoints
+        );
       }
       // optionalAttrs (alertingConfig != { }) {
         alerting = alertingConfig;
