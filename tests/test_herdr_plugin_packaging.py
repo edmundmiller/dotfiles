@@ -1,8 +1,6 @@
 import tomllib
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -41,15 +39,15 @@ def test_jj_workspace_fixture_uses_packaged_mkdir() -> None:
     assert '${lib.getExe\' coreutils "mkdir"}' in expression
 
 
-def test_local_plugin_link_defers_only_connection_refusal() -> None:
+def test_local_plugin_link_defers_unavailable_runtime() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
     assert "link_output=" in module
     assert "Connection refused" in module
+    assert "protocol_mismatch" in module
     assert "deferring local plugin link" in module
 
 
-@pytest.mark.xfail(strict=True, reason="activation currently fails against an older running Herdr server")
 def test_marketplace_activation_defers_protocol_mismatch() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
