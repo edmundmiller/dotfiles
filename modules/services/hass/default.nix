@@ -173,19 +173,67 @@ in
       userStoragePath = mkOpt types.str "/var/lib/homebridge";
       settings = mkOpt types.attrs { };
       uiSettings = mkOpt types.attrs { };
+      tailscaleService = {
+        enable = mkBoolOpt false;
+        serviceName = mkOpt types.str "homebridge";
+        port = mkOpt types.port 8581;
+      };
+    }
+    # Homebridge is gated on its own `enable`, not on `hass.enable`, so it
+    # carries its own registry entry; the aggregators pick up sub-services that
+    # have both `enable` and `registry`.
+    // lib.my.mkRegistry {
+      gatus = {
+        name = "Homebridge";
+        order = 20;
+        group = "Smart Home";
+        url = "http://localhost:8581";
+        conditions = [ "[STATUS] < 500" ];
+        alerts = true;
+      };
+      homepage = {
+        group = "Home";
+        name = "Homebridge";
+        order = 20;
+        href = "https://homebridge.cinnamon-rooster.ts.net";
+        description = "HomeKit bridge";
+        icon = "homebridge.svg";
+        widget = {
+          type = "homebridge";
+          url = "http://localhost:8581";
+          username = "admin";
+          password = "{{HOMEPAGE_VAR_HOMEBRIDGE_PASSWORD}}";
+        };
+      };
     };
 
     tailscaleService = {
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "homeassistant";
     };
-
-    homebridge.tailscaleService = {
-      enable = mkBoolOpt false;
-      serviceName = mkOpt types.str "homebridge";
-      port = mkOpt types.port 8581;
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Home Assistant";
+      order = 10;
+      group = "Smart Home";
+      url = "http://localhost:8123/manifest.json";
+      conditions = [ "[STATUS] == 200" ];
+      alerts = true;
     };
-
+    homepage = {
+      group = "Home";
+      name = "Home Assistant";
+      order = 10;
+      href = "https://homeassistant.cinnamon-rooster.ts.net";
+      description = "Home automation";
+      icon = "home-assistant.svg";
+      widget = {
+        type = "homeassistant";
+        url = "http://localhost:8123";
+        key = "{{HOMEPAGE_VAR_HASS_TOKEN}}";
+      };
+    };
   };
 
   config = optionalAttrs (!isDarwin) (
