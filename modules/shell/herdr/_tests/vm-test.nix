@@ -9,12 +9,10 @@
 #
 # `herdr config check` takes no path argument; it reads
 # $XDG_CONFIG_HOME/herdr/config.toml and exits non-zero on unknown keys.
-{
-  pkgs,
-  inputs,
-  herdrPackage,
-}:
+{ pkgs, inputs }:
 let
+  herdrPackage = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
+
   dotfilesLib = pkgs.lib.extend (
     self: _super: {
       my = import ../../../../lib {
@@ -23,65 +21,51 @@ let
       };
     }
   );
-
-  # Same harness as modules/services/kittylitter/_tests/vm-test.nix.
-  # `pkgs.testers.runNixOSTest` pins nixpkgs.config itself, which conflicts
-  # with the per-node overlay/allowUnfree this module's package needs.
-  nixosTesting = import "${pkgs.path}/nixos/lib/testing-python.nix" {
-    inherit pkgs;
-    inherit (pkgs.stdenv.hostPlatform) system;
-  };
 in
-nixosTesting.runTest {
+dotfilesLib.my.mkServiceVmTest {
   name = "herdr-config-check";
 
-  node.specialArgs = {
-    lib = dotfilesLib;
-    inherit inputs;
-    isDarwin = false;
-  };
+  modules = [
+    inputs.home-manager.nixosModules.home-manager
+    # The module consumes dotfiles-custom options (env, home.configFile,
+    # user.*) that a bare NixOS VM does not define.
+    ../../../options.nix
+    # Declare only the surface modules/shell/herdr reads from sibling
+    # modules, rather than importing them and their dependency trees.
+    # Assigning these without declaring them is an "option does not exist"
+    # error. Every `modules.agents.*` reference is guarded by a
+    # `cfg.integrations.<name>.enable &&`, so the integrations disabled
+    # below short-circuit those; the git theme options are read
+    # unconditionally and must exist.
+    (
+      { lib, ... }:
+      {
+        options.modules.shell.tmux = {
+          enable = lib.mkEnableOption "tmux";
+          rcFiles = lib.mkOption {
+            type = lib.types.listOf (lib.types.either lib.types.path lib.types.str);
+            default = [ ];
+          };
+        };
 
-  nodes.machine =
+        options.modules.shell.git.hunk.theme = {
+          dark = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+          };
+          light = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+          };
+        };
+      }
+    )
+    ../default.nix
+  ];
+
+  extraConfig =
     { lib, ... }:
     {
-      imports = [
-        inputs.home-manager.nixosModules.home-manager
-        # The module consumes dotfiles-custom options (env, home.configFile,
-        # user.*) that a bare NixOS VM does not define.
-        ../../../options.nix
-        # Declare only the surface modules/shell/herdr reads from sibling
-        # modules, rather than importing them and their dependency trees.
-        # Assigning these without declaring them is an "option does not exist"
-        # error. Every `modules.agents.*` reference is guarded by a
-        # `cfg.integrations.<name>.enable &&`, so the integrations disabled
-        # below short-circuit those; the git theme options are read
-        # unconditionally and must exist.
-        (
-          { lib, ... }:
-          {
-            options.modules.shell.tmux = {
-              enable = lib.mkEnableOption "tmux";
-              rcFiles = lib.mkOption {
-                type = lib.types.listOf (lib.types.either lib.types.path lib.types.str);
-                default = [ ];
-              };
-            };
-
-            options.modules.shell.git.hunk.theme = {
-              dark = lib.mkOption {
-                type = lib.types.nullOr lib.types.str;
-                default = null;
-              };
-              light = lib.mkOption {
-                type = lib.types.nullOr lib.types.str;
-                default = null;
-              };
-            };
-          }
-        )
-        ../default.nix
-      ];
-
       nixpkgs = {
         config.allowUnfree = true;
         overlays = [
@@ -158,8 +142,6 @@ nixosTesting.runTest {
       # path the VM never deploys, so activation would bootstrap from a
       # missing file instead of the tracked template this test targets.
       modules.shell.herdr.configFile = ../../../../config/herdr/config.toml;
-
-      virtualisation.memorySize = 2048;
     };
 
   testScript = ''

@@ -4,13 +4,13 @@
 # verifies HA starts, checks generated configuration.yaml contains expected
 # automations, and exercises the test helper API.
 #
-# Run: nix build .#checks.x86_64-linux.hass-vm-test
+# Run: nix build .#checks.x86_64-linux.vm-services-hass-vm-test
 # (requires x86_64-linux — run on NUC or Linux builder)
 #
 # See also:
 #   eval-automations.nix  — fast pure-nix structural assertions (no VM)
 #   ha_test_lib.py        — Python test helpers used by this test
-{ pkgs }:
+{ pkgs, inputs }:
 let
   # Our HA domain modules — the actual config we're testing
   domainModules = [
@@ -29,16 +29,27 @@ let
     mkdir -p $out
     cp ${./ha_test_lib.py} $out/ha_test_lib.py
   '';
+  dotfilesLib = pkgs.lib.extend (
+    self: _super: {
+      my = import ../../../../lib {
+        inherit pkgs inputs;
+        lib = self;
+      };
+    }
+  );
 in
-pkgs.testers.nixosTest {
+dotfilesLib.my.mkServiceVmTest {
   name = "hass-config";
 
-  nodes.hass =
+  nodeName = "hass";
+  modules = domainModules;
+
+  # ha_test_lib is injected at runtime via sys.path — mypy can't find it
+  skipTypeCheck = true;
+
+  extraConfig =
     { config, ... }:
     {
-      # Import domain modules directly (they use services.home-assistant.config)
-      imports = domainModules;
-
       services.home-assistant = {
         enable = true;
 
@@ -80,12 +91,7 @@ pkgs.testers.nixosTest {
 
       # Match HA timezone so clock manipulation works correctly
       time.timeZone = "US/Central";
-      # Enough RAM for HA
-      virtualisation.memorySize = 2048;
     };
-
-  # ha_test_lib is injected at runtime via sys.path — mypy can't find it
-  skipTypeCheck = true;
 
   testScript = ''
     import sys
