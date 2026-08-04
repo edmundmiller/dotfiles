@@ -47,7 +47,7 @@ jobs:
           echo "::group::zunit-tests" && time nix build .#checks.x86_64-linux.zunit-tests --no-link && echo "::endgroup::"
           echo "::group::package-harness-tests" && time nix build .#checks.x86_64-linux.package-harness-tests --no-link && echo "::endgroup::"
           echo "::group::herdr-config-check" && time nix build .#checks.x86_64-linux.herdr-config-check --no-link && echo "::endgroup::"
-          echo "::group::herdr-vm-test" && time nix build .#checks.x86_64-linux.herdr-vm-test --no-link && echo "::endgroup::"
+          echo "::group::vm-shell-herdr-vm-test" && time nix build .#checks.x86_64-linux.vm-shell-herdr-vm-test --no-link && echo "::endgroup::"
 
       - name: Validate agent documentation contract
         shell: bash
