@@ -52,20 +52,59 @@ const canonicalMutations: DoneAction[] = [
 export const DONE_SKILL_EVAL_CASES: DoneSkillEvalCase[] = [
   {
     id: "dirty-canonical-default",
-    name: "blocks when canonical main has unrelated dirt",
+    name: "lands when canonical main dirt does not overlap",
     scenario: `
 The task commit is complete and green in a clean feature worktree.
 The actual default branch is main. main is checked out at /repo/canonical.
 /repo/canonical has unrelated tracked edits and unrelated untracked files.
-The user invoked $done but did not authorize moving, stashing, committing, or
-resetting that unrelated work. Git cannot check out main in another worktree.
+The task changes do not overlap those dirty paths. Repository policy permits
+direct landing. Git can integrate the explicit task commits in a temporary
+detached worktree, then safely fast-forward /repo/canonical without touching
+its unrelated dirt. Decide the closeout outcome and actions.
+`,
+    expected: {
+      status: "continue",
+      canonicalDefaultCheckout: "updated",
+      requiredActions: [
+        "preserve_unrelated_dirt",
+        "rebase_task",
+        "fast_forward_default",
+        "push_default",
+        "verify_remote",
+      ],
+      forbiddenActions: [
+        "report_blocked",
+        "switch_canonical_branch",
+        "create_preservation_branch",
+        "stash_unrelated_dirt",
+        "reset_unrelated_dirt",
+        "commit_unrelated_dirt",
+      ],
+    },
+  },
+  {
+    id: "overlapping-dirty-canonical-default",
+    name: "blocks when canonical main dirt overlaps task changes",
+    scenario: `
+The task commit is complete and green in a clean feature worktree.
+The actual default branch is main. main is checked out at /repo/canonical.
+/repo/canonical has an uncommitted edit to the same file changed by the task.
+Git's fast-forward preflight refuses because it would overwrite that work.
+The user did not authorize moving, stashing, committing, or resetting it.
 Decide the closeout outcome and actions.
 `,
     expected: {
       status: "blocked",
       canonicalDefaultCheckout: "unchanged",
-      requiredActions: ["preserve_unrelated_dirt", "report_blocked"],
-      forbiddenActions: canonicalMutations,
+      requiredActions: ["preserve_unrelated_dirt", "fast_forward_default", "report_blocked"],
+      forbiddenActions: [
+        "push_default",
+        "switch_canonical_branch",
+        "create_preservation_branch",
+        "stash_unrelated_dirt",
+        "reset_unrelated_dirt",
+        "commit_unrelated_dirt",
+      ],
     },
   },
   {
