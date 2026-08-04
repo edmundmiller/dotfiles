@@ -58,7 +58,14 @@ class PackagePolicyTest(unittest.TestCase):
         overlay = (ROOT / "overlays/herdr/default.nix").read_text()
         revision = re.search(r'\brev = "([^"]+)";', overlay)
         self.assertIsNotNone(revision, "Herdr overlay revision is missing")
-        self.assertEqual(metadata["source"], "https://github.com/ogulcancelik/herdr.git")
+        owner = re.search(r'\bowner = "([^"]+)";', overlay)
+        repo = re.search(r'\brepo = "([^"]+)";', overlay)
+        self.assertIsNotNone(owner, "Herdr overlay owner is missing")
+        self.assertIsNotNone(repo, "Herdr overlay repo is missing")
+        self.assertEqual(
+            metadata["source"],
+            f"https://github.com/{owner.group(1)}/{repo.group(1)}.git",
+        )
         self.assertEqual(metadata["ref"], revision.group(1))
 
         validated = subprocess.run(

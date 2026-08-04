@@ -14,7 +14,7 @@ function output(over: Partial<HerdrRunOutput> = {}): HerdrRunOutput {
 }
 
 describe("scoreHerdrOutput", () => {
-  it("passes a correct 0.7.5 answer", () => {
+  it("passes a correct 0.8.0 answer", () => {
     const score = scoreHerdrOutput(
       output({
         plan: [
@@ -46,7 +46,7 @@ describe("scoreHerdrOutput", () => {
     expect(score.passed).toBe(false);
   });
 
-  it("flags pre-0.7.5 flags that no longer exist", () => {
+  it("flags pre-0.8.0 flags that no longer exist", () => {
     const score = scoreHerdrOutput(
       output({
         plan: "herdr agent wait worker --status done --timeout 60000",
@@ -169,7 +169,7 @@ describe("command scoring scope", () => {
       output({
         plan: goodPlan,
         explanation:
-          "Note that `herdr wait` and `agent send` no longer exist in 0.7.5; use `agent prompt --wait --until` instead.",
+          "Note that `herdr wait` and `agent send` no longer exist in 0.8.0; use `agent prompt --wait` instead.",
       }),
       startCase,
       () => true

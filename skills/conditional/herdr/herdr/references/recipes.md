@@ -7,7 +7,7 @@ These patterns come from official CLI behavior and recurring session-trace failu
 1. Inspect current repo state and define a bounded handoff.
 2. Create the pane first with `herdr pane split --no-focus`; `agent start` needs an existing pane at a shell prompt and never creates layout.
 3. Start the agent in that pane with `herdr agent start <name> --kind <kind> --pane <id>`.
-4. Submit the prompt with `herdr agent prompt --wait --until done --timeout MS` (it sends text plus Enter in one call).
+4. Submit the prompt with `herdr agent prompt --wait --timeout MS` (it sends text plus Enter in one call). Plain `--wait` already settles on `idle`, `done`, or `blocked`.
 5. Read recent unwrapped output.
 6. Review the child's changes before applying or landing them.
 
@@ -16,7 +16,7 @@ split=$(herdr pane split --current --direction right --cwd "$PWD" --no-focus)
 audit_pane=$(printf '%s\n' "$split" | ~/.agents/skills/herdr/scripts/extract_ids.py pane)
 herdr agent start audit --kind omp --pane "$audit_pane"
 herdr agent prompt audit "Inspect the touched tests. Report gaps; do not edit." \
-  --wait --until done --timeout 120000
+  --wait --timeout 120000
 herdr agent read audit --source recent-unwrapped --lines 120
 ```
 
@@ -91,7 +91,7 @@ For shell commands, use `pane run`; it submits text and Enter together. For sema
 
 ## Preserve long-lived layouts
 
-There is no `layout export`/`apply` in 0.7.5. Durable alternatives:
+There is no `layout export`/`apply` in 0.8.0. Durable alternatives:
 
 ```bash
 herdr pane layout --current

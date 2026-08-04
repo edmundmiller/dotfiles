@@ -31,7 +31,7 @@ for arg in "$@"; do
   esac
 done
 case "${1:-}" in
-  # `help` is an unknown command in 0.7.5 and is replayed as such. Bare `herdr`
+  # `help` is an unknown command in 0.8.0 and is replayed as such. Bare `herdr`
   # is NOT help -- it launches or attaches a session, so it is refused like any
   # other live command; treating it as help would hand the arm a discovery
   # route the prompt never granted.
@@ -60,7 +60,7 @@ flags = [a for a in argv if a.startswith("-")]
 if "--version" in flags or "-V" in flags:
     key = "--version"
 elif path and path[0] == "help":
-    # 0.7.5 has no `help <path>` form -- `herdr help agent prompt` returns
+    # 0.8.0 has no `help <path>` form -- `herdr help agent prompt` returns
     # "unknown command: help" (exit 2), same as bare `help`. Collapsing every
     # help-prefixed call to that one captured entry reproduces the real CLI;
     # resolving it to `agent prompt --help` would invent a surface that does
