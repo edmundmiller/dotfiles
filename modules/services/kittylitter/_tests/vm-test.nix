@@ -3,12 +3,10 @@
 # Exercises the NixOS/home-manager integration: the module should generate
 # host.toml, install the user systemd unit, start the daemon, and expose a
 # working local CLI status path.
-{
-  pkgs,
-  inputs,
-  kittylitterPackage,
-}:
+{ pkgs, inputs }:
 let
+  kittylitterPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.kittylitter;
+
   dotfilesLib = pkgs.lib.extend (
     self: _super: {
       my = import ../../../../lib {
@@ -17,29 +15,18 @@ let
       };
     }
   );
-
-  nixosTesting = import "${pkgs.path}/nixos/lib/testing-python.nix" {
-    inherit pkgs;
-    inherit (pkgs.stdenv.hostPlatform) system;
-  };
 in
-nixosTesting.runTest {
+dotfilesLib.my.mkServiceVmTest {
   name = "kittylitter-module";
 
-  node.specialArgs = {
-    lib = dotfilesLib;
-    inherit inputs;
-    isDarwin = false;
-  };
+  modules = [
+    inputs.home-manager.nixosModules.home-manager
+    ../default.nix
+  ];
 
-  nodes.machine =
+  extraConfig =
     { pkgs, ... }:
     {
-      imports = [
-        inputs.home-manager.nixosModules.home-manager
-        ../default.nix
-      ];
-
       nixpkgs = {
         config.allowUnfree = true;
         overlays = [ inputs.llm-agents.overlays."shared-nixpkgs" ];
@@ -70,7 +57,6 @@ nixosTesting.runTest {
       # Keep the smoke test focused on module wiring and daemon startup.
       # The CLI availability checks should therefore be deterministic.
       environment.systemPackages = [ pkgs.jq ];
-      virtualisation.memorySize = 2048;
     };
 
   testScript = ''
