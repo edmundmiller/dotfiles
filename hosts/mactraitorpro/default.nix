@@ -362,6 +362,7 @@ in
       clinWithVaultEnv
       llm-agents.qmd
       my.openwiki
+      my.writer
       my.zele
       my.work-calendar-busy
     ];
