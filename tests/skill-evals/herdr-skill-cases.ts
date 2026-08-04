@@ -18,7 +18,7 @@ export const HALLUCINATED_COMMANDS = [
   "herdr layout ",
 ] as const;
 
-/** Flags/paths removed or never present in 0.7.5. */
+/** Flags/paths removed or never present in 0.8.0. */
 export const STALE_SYNTAX = [
   "--status idle",
   "--status done",
