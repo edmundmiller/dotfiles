@@ -57,6 +57,76 @@ class DoneSkillContractTest(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
+    @unittest.expectedFailure
+    def test_dirty_default_attempts_safe_fast_forward_before_blocking(self) -> None:
+        skill = SKILL.read_text()
+
+        for phrase in (
+            "temporary integration worktree",
+            "merge --ff-only",
+            "only when Git refuses",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
+
+        self.assertIn("preservation branch", skill)
+        self.assertIn("stash, reset, commit its unrelated dirt", skill)
+
+    def test_dirty_default_fast_forward_preserves_non_overlapping_work(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            feature = root / "feature"
+
+            git(root, "init", "-b", "main", str(repo))
+            git(repo, "config", "user.name", "Done Skill Test")
+            git(repo, "config", "user.email", "done-skill@example.invalid")
+            (repo / "base.txt").write_text("base\n")
+            git(repo, "add", "base.txt")
+            git(repo, "commit", "-m", "base")
+            git(repo, "worktree", "add", "-b", "feature", str(feature), "main")
+
+            (feature / "task.txt").write_text("task\n")
+            git(feature, "add", "task.txt")
+            git(feature, "commit", "-m", "task")
+
+            (repo / "base.txt").write_text("unrelated tracked edit\n")
+            (repo / "untracked.txt").write_text("unrelated untracked edit\n")
+            merged = git(repo, "merge", "--ff-only", "feature")
+
+            self.assertIn("Fast-forward", merged.stdout)
+            self.assertEqual("unrelated tracked edit\n", (repo / "base.txt").read_text())
+            self.assertEqual("unrelated untracked edit\n", (repo / "untracked.txt").read_text())
+            self.assertEqual("task\n", (repo / "task.txt").read_text())
+
+    def test_dirty_default_fast_forward_refuses_overlapping_work(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            feature = root / "feature"
+
+            git(root, "init", "-b", "main", str(repo))
+            git(repo, "config", "user.name", "Done Skill Test")
+            git(repo, "config", "user.email", "done-skill@example.invalid")
+            (repo / "state.txt").write_text("base\n")
+            git(repo, "add", "state.txt")
+            git(repo, "commit", "-m", "base")
+            git(repo, "worktree", "add", "-b", "feature", str(feature), "main")
+
+            (feature / "state.txt").write_text("task\n")
+            git(feature, "commit", "-am", "task")
+            (repo / "state.txt").write_text("user edit\n")
+
+            refused = subprocess.run(
+                ["git", "-C", str(repo), "merge", "--ff-only", "feature"],
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(0, refused.returncode)
+            self.assertIn("would be overwritten by merge", refused.stderr)
+            self.assertEqual("user edit\n", (repo / "state.txt").read_text())
+
     def test_herdr_teardown_script_refuses_unsafe_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
