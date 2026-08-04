@@ -26,7 +26,7 @@ const scripts = [
 
 /**
  * Prose legitimately names dead commands to warn against them ("There is no
- * layout export/apply in 0.7.5"). Only fenced code blocks are prescriptive, so
+ * layout export/apply in 0.8.0"). Only fenced code blocks are prescriptive, so
  * staleness is asserted against those.
  */
 function codeBlocks(markdown: string): string {
@@ -34,7 +34,7 @@ function codeBlocks(markdown: string): string {
   return blocks.join("\n");
 }
 
-describe("herdr skill matches the installed 0.7.5 CLI surface", () => {
+describe("herdr skill matches the installed 0.8.0 CLI surface", () => {
   for (const { rel, text } of docs) {
     const runnable = codeBlocks(text);
 
@@ -42,12 +42,12 @@ describe("herdr skill matches the installed 0.7.5 CLI surface", () => {
       expect(runnable.length).toBeGreaterThan(0);
     });
 
-    it(`${rel} runs no command removed in 0.7.5`, () => {
+    it(`${rel} runs no command removed in 0.8.0`, () => {
       const found = HALLUCINATED_COMMANDS.filter((c) => runnable.includes(c));
       expect(found).toEqual([]);
     });
 
-    it(`${rel} uses no pre-0.7.5 flag spelling in examples`, () => {
+    it(`${rel} uses no pre-0.8.0 flag spelling in examples`, () => {
       for (const stale of STALE_SYNTAX) {
         expect(runnable.includes(stale), `${rel} example contains "${stale}"`).toBe(false);
       }
