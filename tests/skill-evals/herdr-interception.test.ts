@@ -88,7 +88,7 @@ describe("herdr interception under a login shell", () => {
     expect(stdout).toContain("no captured help");
   });
 
-  it("reproduces 0.7.5's rejection of `herdr help <path>`", () => {
+  it("reproduces 0.8.0's rejection of `herdr help <path>`", () => {
     // There is no `help <subcommand>` form; the real CLI says "unknown
     // command: help". Resolving it to real help would invent a surface.
     const { stdout } = loginShell("herdr help agent prompt 2>&1");
