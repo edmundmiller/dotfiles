@@ -39,6 +39,23 @@ in
     };
     schedule = mkOpt types.str "0 * * * *"; # hourly by default
     timezone = mkOpt types.str "America/Chicago";
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Speedtest Tracker";
+      order = 150;
+      group = "Network";
+      url = "http://localhost:${toString cfg.port}/admin/login";
+      conditions = [ "[STATUS] == 200" ];
+    };
+    homepage = {
+      group = "Network";
+      name = "Speedtest Tracker";
+      order = 40;
+      description = "Network speed history";
+      icon = "mdi-speedometer";
+      href = "http://nuc.cinnamon-rooster.ts.net:${toString cfg.port}";
+    };
   };
 
   # NixOS-only service (OCI container)
@@ -47,7 +64,7 @@ in
       virtualisation.oci-containers.containers."speedtest-tracker" = {
         autoStart = true;
         image = "lscr.io/linuxserver/speedtest-tracker:latest";
-        ports = [ "0.0.0.0:${toString port}:80" ];
+        ports = [ "0.0.0.0:${toString cfg.port}:80" ];
         volumes = [ "${dataDir}:/config:rw" ];
         environment = {
           PUID = "1000";

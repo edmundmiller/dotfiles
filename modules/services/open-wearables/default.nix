@@ -241,6 +241,23 @@ in
       enable = mkBoolOpt true;
       serviceName = mkOpt types.str "open-wearables";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Open Wearables API";
+      order = 160;
+      group = "Health";
+      url = "http://localhost:${toString cfg.backendPort}/docs";
+      conditions = [ "[STATUS] == 200" ];
+    };
+    homepage = {
+      group = "Home";
+      name = "Open Wearables";
+      order = 60;
+      description = "Wearable health API (Apple XML import)";
+      icon = "healthchecks.svg";
+      href = "http://nuc.cinnamon-rooster.ts.net:${toString cfg.backendPort}/docs";
+    };
   };
 
   config = mkIf cfg.enable (
