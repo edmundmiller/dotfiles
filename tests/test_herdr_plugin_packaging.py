@@ -1,8 +1,6 @@
 import tomllib
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -98,10 +96,6 @@ def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
     assert "official.browser" in module
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="herdr 0.8 refuses the OMP install while activation reuses Pi's agent dir",
-)
 def test_omp_integration_install_isolates_pi_agent_dir() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
