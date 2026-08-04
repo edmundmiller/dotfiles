@@ -82,7 +82,7 @@ off every service and merge in the enabled ones:
 ```
 
 Both keys are optional — omit `homepage` for an unmonitored internal service,
-omit `gatus` for a dashboard-only link. The entries become option *defaults*, so
+omit `gatus` for a dashboard-only link. The entries become option _defaults_, so
 a host can still override any field.
 
 Homepage `group` must match an existing group ("Media", "Home", "Network",
