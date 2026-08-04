@@ -10,8 +10,8 @@ Use the installed CLI as the versioned source of truth. Run `<area> --help` befo
 | Inspect one agent           | `herdr agent get <target>`                                      |
 | Read an agent transcript    | `herdr agent read <target> --source recent-unwrapped --lines N` |
 | Understand status detection | `herdr agent explain <target> --json`                           |
-| Prompt an agent             | `herdr agent prompt <target> <text> [--wait --timeout MS]`       |
-| Wait for agent state        | `herdr agent wait <target> [--until <state>] --timeout MS`       |
+| Prompt an agent             | `herdr agent prompt <target> <text> [--wait --timeout MS]`      |
+| Wait for agent state        | `herdr agent wait <target> [--until <state>] --timeout MS`      |
 | Start an agent              | `herdr agent start <name> --kind <kind> --pane <id> [-- argv…]` |
 | Inspect current pane        | `herdr pane current`                                            |
 | Run a shell command         | `herdr pane run <pane> <command>`                               |
