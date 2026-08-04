@@ -1,6 +1,8 @@
 import tomllib
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -94,3 +96,19 @@ def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
     } in config["keys"]["command"]
     assert '"kitty_graphics": "true"' in module
     assert "official.browser" in module
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="herdr 0.8 refuses the OMP install while activation reuses Pi's agent dir",
+)
+def test_omp_integration_install_isolates_pi_agent_dir() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    # Herdr 0.8 refuses to install OMP when Pi and OMP resolve to the same
+    # extension directory. Activation can inherit PI_CODING_AGENT_DIR from a
+    # wrapped OMP, so the OMP install must clear it and rely on PI_CONFIG_DIR.
+    assert "PI_CODING_AGENT_DIR= PI_CONFIG_DIR=.omp install_integration omp" in module
+    assert 'PI_CODING_AGENT_DIR="$HOME/.omp/agent" install_integration omp' not in module
+    # Pi keeps its own absolute override, which wins over any ambient value.
+    assert 'PI_CODING_AGENT_DIR="$HOME/.pi/agent" install_integration pi' in module
