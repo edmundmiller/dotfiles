@@ -1,322 +1,322 @@
 {
-  "--help": {
-    "exit": 0,
-    "stdout": "herdr \u2014 terminal workspace manager for AI coding agents\n\nUsage: herdr [options]\n       herdr --session <name> [options]\n       herdr --remote <ssh-target> [--session <name>]\n       herdr session attach <name>\n       herdr completion zsh\n       herdr update [--handoff]\n       herdr channel set <stable|preview>\n       herdr server stop\n       herdr server reload-config\n       herdr api <subcommand> ...\n       herdr completion <shell>\n       herdr config <subcommand> ...\n       herdr channel <subcommand> ...\n       herdr workspace <subcommand> ...\n       herdr worktree <subcommand> ...\n       herdr tab <subcommand> ...\n       herdr notification <subcommand> ...\n       herdr agent <subcommand> ...\n       herdr pane <subcommand> ...\n       herdr session <subcommand> ...\n       herdr integration <subcommand> ...\n\nCommon commands:\n  herdr                            Launch or attach to the persistent session\n  herdr status [server|client]     Show local client and running server status\n  herdr update                     Download and install the latest version\n  herdr completion zsh             Generate shell completions for zsh\n  herdr server stop                Stop the running server via the API socket\n  herdr channel set <stable|preview> Choose the stable or preview update channel\n  herdr server reload-config       Reload config.toml in the running server\n  herdr config reset-keys          Back up config.toml and remove custom keybindings\n  herdr channel <subcommand>       Manage the stable or preview update channel\n  herdr api <subcommand>           Inspect socket API metadata and live runtime state\n  herdr workspace <subcommand>     Workspace helpers over the socket API\n  herdr worktree <subcommand>      Git worktree helpers over the socket API\n  herdr tab <subcommand>           Tab helpers over the socket API\n  herdr notification <subcommand>  Notification helpers over the socket API\n  herdr agent <subcommand>         Agent/terminal helpers over the socket API\n  herdr pane <subcommand>          Pane control helpers over the socket API\n  herdr session <subcommand>       Manage named persistent sessions\n  herdr integration <subcommand>   Manage built-in agent integrations\n\nAdvanced commands:\n  herdr server                     Run as headless server\n\nOptions:\n  --no-session        Run monolithically (no server/client, escape hatch)\n  --session <name>    Use or create a named persistent session\n  --remote <target>   Attach through SSH to a remote Herdr server\n  --remote-keybindings <local|server>\n                      Keybindings for --remote app attach (default: local)\n  --handoff           Opt into live handoff for update or remote attach\n  --default-config    Print default configuration and exit\n  --version, -V       Print version and exit\n  --help, -h          Show this help\n\nConfig: /Users/edmundmiller/.config/herdr/config.toml\nLogs:   /Users/edmundmiller/.config/herdr/herdr.log (plus herdr-client.log, herdr-server.log)\nEnv:    HERDR_CONFIG_PATH overrides config file path\nHome:   https://herdr.dev\n"
-  },
-  "--version": {
-    "exit": 0,
-    "stdout": "herdr 0.7.5\n"
-  },
-  "agent --help": {
-    "exit": 0,
-    "stdout": "Control and inspect agent panes\n\nUsage: herdr agent [COMMAND]\n\nCommands:\n  list       List agents\n  get        Show an agent\n  read       Read agent terminal output\n  send-keys  Send key presses to an agent\n  prompt     Submit a prompt to an agent\n  rename     Rename an agent\n  focus      Focus an agent\n  wait       Wait until an agent reaches one of the requested states\n  attach     Attach directly to an agent terminal\n  start      Start a supported interactive agent in an existing pane\n  explain    Explain agent detection state\n\n"
-  },
-  "agent attach --help": {
-    "exit": 0,
-    "stdout": "Attach directly to an agent terminal\n\nUsage: herdr agent attach <TARGET> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\nOptions:\n      --takeover\n\n"
-  },
-  "agent explain --help": {
-    "exit": 0,
-    "stdout": "Explain agent detection state\n\nUsage: herdr agent explain [OPTIONS] [TARGET]\n\nArguments:\n  [TARGET]\n          \n\nOptions:\n      --file <PATH>\n          \n\n      --agent <LABEL>\n          \n\n      --json\n          \n\n      --format <FORMAT>\n          [possible values: text, json]\n\n  -v, --verbose\n\n"
-  },
-  "agent focus --help": {
-    "exit": 0,
-    "stdout": "Focus an agent\n\nUsage: herdr agent focus <target>\n\nArguments:\n  <target>\n\n"
-  },
-  "agent get --help": {
-    "exit": 0,
-    "stdout": "Show an agent\n\nUsage: herdr agent get <target>\n\nArguments:\n  <target>\n\n"
-  },
-  "agent list --help": {
-    "exit": 0,
-    "stdout": "List agents\n\nUsage: herdr agent list\n\n"
-  },
-  "agent prompt --help": {
-    "exit": 0,
-    "stdout": "Submit a prompt to an agent\n\nUsage: herdr agent prompt <TARGET> <TEXT> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\n  <TEXT>\n          \n\nOptions:\n      --wait\n          Wait for the first matching state observed after submission\n\n      --until <STATUS>\n          State to match after --wait; repeat for more than one state\n          \n          [possible values: idle, working, blocked, done, unknown]\n\n      --timeout <MS>\n          Fail after this many milliseconds\n\nWhen submission starts from a non-working state, --wait first requires an observed state change within 5000ms; otherwise it returns agent_prompt_stalled. A shorter --timeout returns timeout instead. It then matches idle, done, or blocked by default, or any exact --until state. It does not track turns: if the agent is already working, that active turn's completion may match. Without --timeout, the settled-state wait is indefinite.\n\n"
-  },
-  "agent read --help": {
-    "exit": 0,
-    "stdout": "Read agent terminal output\n\nUsage: herdr agent read <TARGET> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\nOptions:\n      --source <SOURCE>\n          Terminal snapshot source (default: recent)\n          \n          [possible values: visible, recent, recent-unwrapped, detection]\n\n      --lines <N>\n          \n\n      --format <FORMAT>\n          [possible values: text, ansi]\n\n      --ansi\n\n"
-  },
-  "agent rename --help": {
-    "exit": 0,
-    "stdout": "Rename an agent\n\nUsage: herdr agent rename <TARGET> <NAME>|--clear\n\nArguments:\n  <TARGET>\n          \n\n  [NAME]\n          \n\nOptions:\n      --clear\n\n"
-  },
-  "agent send-keys --help": {
-    "exit": 0,
-    "stdout": "Send key presses to an agent\n\nUsage: herdr agent send-keys <TARGET> <KEY>...\n\nArguments:\n  <TARGET>\n          \n\n  <KEY>...\n          \n\nUse esc as the canonical Escape key name; escape is also accepted.\n\n"
-  },
-  "agent start --help": {
-    "exit": 0,
-    "stdout": "Start a supported interactive agent in an existing pane\n\nUsage: herdr agent start <NAME> --kind <KIND> --pane <ID> [OPTIONS] [-- [AGENT_ARG]...]\n\nArguments:\n  <NAME>\n          \n\n  [AGENT_ARG]...\n          \n\nOptions:\n      --kind <KIND>\n          Supported agent kind and canonical executable\n          \n          [possible values: pi, claude, codex, gemini, cursor, devin, agy, cline, omp, mastracode, opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo, qodercli, maki]\n\n      --pane <ID>\n          Existing pane at an interactive shell prompt\n\n      --timeout <MS>\n          Wait for interactive readiness (default: 30000; max: 300000)\n\nThe pane must be at its interactive shell prompt. Success means the expected agent was detected in the same terminal and is ready for input.\n\n"
-  },
-  "agent wait --help": {
-    "exit": 0,
-    "stdout": "Wait until an agent reaches one of the requested states\n\nUsage: herdr agent wait <TARGET> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\nOptions:\n      --until <STATUS>\n          State to match; repeat for more than one state\n          \n          [possible values: idle, working, blocked, done, unknown]\n\n      --timeout <MS>\n          Fail after this many milliseconds\n\nWithout --until, matches idle, done, or blocked. Use --until unknown explicitly when needed. Without --timeout, waits indefinitely.\n\n"
-  },
-  "api --help": {
-    "exit": 0,
-    "stdout": "Inspect socket API metadata and live runtime state\n\nUsage: herdr api [COMMAND]\n\nCommands:\n  snapshot  Print the live session snapshot\n  schema    Print or write the bundled API schema\n\n"
-  },
-  "api schema --help": {
-    "exit": 0,
-    "stdout": "Print or write the bundled API schema\n\nUsage: herdr api schema [OPTIONS]\n\nOptions:\n      --json\n          \n\n      --output <PATH>\n\n"
-  },
-  "api snapshot --help": {
-    "exit": 0,
-    "stdout": "Print the live session snapshot\n\nUsage: herdr api snapshot\n\n"
-  },
-  "channel --help": {
-    "exit": 0,
-    "stdout": "Manage stable and preview update channels\n\nUsage: herdr channel [COMMAND]\n\nCommands:\n  show  Print the configured update channel\n  set   Choose the update channel\n\n"
-  },
-  "channel set --help": {
-    "exit": 0,
-    "stdout": "Choose the update channel\n\nUsage: herdr channel set <CHANNEL>\n\nArguments:\n  <CHANNEL>\n          [possible values: stable, preview]\n\n"
-  },
-  "channel show --help": {
-    "exit": 0,
-    "stdout": "Print the configured update channel\n\nUsage: herdr channel show\n\n"
-  },
-  "config --help": {
-    "exit": 0,
-    "stdout": "Manage local configuration\n\nUsage: herdr config [COMMAND]\n\nCommands:\n  check       Validate config.toml and print diagnostics\n  reset-keys  Reset custom keybindings\n\n"
-  },
-  "config check --help": {
-    "exit": 0,
-    "stdout": "Validate config.toml and print diagnostics\n\nUsage: herdr config check\n\n"
-  },
-  "config reset-keys --help": {
-    "exit": 0,
-    "stdout": "Reset custom keybindings\n\nUsage: herdr config reset-keys\n\n"
-  },
-  "help": {
-    "exit": 2,
-    "stdout": "unknown command: help\nrun 'herdr --help' for usage\n"
-  },
-  "integration --help": {
-    "exit": 0,
-    "stdout": "Manage built-in agent integrations\n\nUsage: herdr integration [COMMAND]\n\nCommands:\n  install    Install an integration\n  uninstall  Uninstall an integration\n  status     Show integration status\n\n"
-  },
-  "integration install --help": {
-    "exit": 0,
-    "stdout": "Install an integration\n\nUsage: herdr integration install <TARGET>\n\nArguments:\n  <TARGET>\n          [possible values: pi, omp, claude, codex, copilot, devin, droid, kimi, opencode, kilo, hermes, qodercli, cursor, mastracode]\n\n"
-  },
-  "integration status --help": {
-    "exit": 0,
-    "stdout": "Show integration status\n\nUsage: herdr integration status [OPTIONS]\n\nOptions:\n      --outdated-only\n\n"
-  },
-  "integration uninstall --help": {
-    "exit": 0,
-    "stdout": "Uninstall an integration\n\nUsage: herdr integration uninstall <TARGET>\n\nArguments:\n  <TARGET>\n          [possible values: pi, omp, claude, codex, copilot, devin, droid, kimi, opencode, kilo, hermes, qodercli, cursor, mastracode]\n\n"
-  },
-  "notification --help": {
-    "exit": 0,
-    "stdout": "Show Herdr notifications\n\nUsage: herdr notification [COMMAND]\n\nCommands:\n  show  Show a notification\n\n"
-  },
-  "notification show --help": {
-    "exit": 0,
-    "stdout": "Show a notification\n\nUsage: herdr notification show [OPTIONS] <TITLE>\n\nArguments:\n  <TITLE>\n          \n\nOptions:\n      --body <TEXT>\n          \n\n      --position <POSITION>\n          [possible values: top-left, top-right, bottom-left, bottom-right]\n\n      --sound <SOUND>\n          [possible values: none, done, request]\n\n"
-  },
-  "pane --help": {
-    "exit": 0,
-    "stdout": "Control terminal panes\n\nUsage: herdr pane [COMMAND]\n\nCommands:\n  list                  List panes\n  current               Show the current pane\n  get                   Show a pane\n  layout                Show pane layout information\n  process-info          Show pane process information\n  neighbor              Find a pane neighbor\n  edges                 Show pane edge information\n  focus                 Focus a neighboring pane\n  resize                Resize a pane split\n  zoom                  Toggle or set pane zoom\n  read                  Read pane terminal output\n  rename                Rename a pane\n  split                 Split a pane\n  swap                  Swap panes\n  move                  Move a pane\n  close                 Close a pane\n  send-text             Send literal text to a pane\n  send-keys             Send key presses to a pane\n  wait-output           Wait for matching pane output\n  run                   Run a command in a pane\n  report-agent          Report pane agent lifecycle state\n  report-agent-session  Report pane agent session identity\n  release-agent         Release pane agent lifecycle authority\n  report-metadata       Report display-only pane metadata\n\n"
-  },
-  "pane close --help": {
-    "exit": 0,
-    "stdout": "Close a pane\n\nUsage: herdr pane close <pane_id>\n\nArguments:\n  <pane_id>\n\n"
-  },
-  "pane current --help": {
-    "exit": 0,
-    "stdout": "Show the current pane\n\nUsage: herdr pane current [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane edges --help": {
-    "exit": 0,
-    "stdout": "Show pane edge information\n\nUsage: herdr pane edges [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane focus --help": {
-    "exit": 0,
-    "stdout": "Focus a neighboring pane\n\nUsage: herdr pane focus [OPTIONS] --direction <DIRECTION>\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane get --help": {
-    "exit": 0,
-    "stdout": "Show a pane\n\nUsage: herdr pane get <pane_id>\n\nArguments:\n  <pane_id>\n\n"
-  },
-  "pane layout --help": {
-    "exit": 0,
-    "stdout": "Show pane layout information\n\nUsage: herdr pane layout [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane list --help": {
-    "exit": 0,
-    "stdout": "List panes\n\nUsage: herdr pane list [OPTIONS]\n\nOptions:\n      --workspace <WORKSPACE_ID>\n\n"
-  },
-  "pane move --help": {
-    "exit": 0,
-    "stdout": "Move a pane\n\nUsage: herdr pane move [OPTIONS] <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --tab <TAB_ID>\n          \n\n      --split <DIRECTION>\n          [possible values: right, down]\n\n      --target-pane <ID>\n          \n\n      --ratio <FLOAT>\n          \n\n      --new-tab\n          \n\n      --workspace <ID>\n          \n\n      --new-workspace\n          \n\n      --label <TEXT>\n          \n\n      --tab-label <TEXT>\n          \n\n      --focus\n          \n\n      --no-focus\n\n"
-  },
-  "pane neighbor --help": {
-    "exit": 0,
-    "stdout": "Find a pane neighbor\n\nUsage: herdr pane neighbor [OPTIONS] --direction <DIRECTION>\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane process-info --help": {
-    "exit": 0,
-    "stdout": "Show pane process information\n\nUsage: herdr pane process-info [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane read --help": {
-    "exit": 0,
-    "stdout": "Read pane terminal output\n\nUsage: herdr pane read [OPTIONS] <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <SOURCE>\n          Terminal snapshot source (default: recent)\n          \n          [possible values: visible, recent, recent-unwrapped, detection]\n\n      --lines <N>\n          \n\n      --format <FORMAT>\n          [possible values: text, ansi]\n\n      --ansi\n          \n\n      --raw\n\n"
-  },
-  "pane release-agent --help": {
-    "exit": 0,
-    "stdout": "Release pane agent lifecycle authority\n\nUsage: herdr pane release-agent [OPTIONS] --source <ID> --agent <LABEL> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --seq <N>\n\n"
-  },
-  "pane rename --help": {
-    "exit": 0,
-    "stdout": "Rename a pane\n\nUsage: herdr pane rename [OPTIONS] <PANE_ID> [LABEL]...\n\nArguments:\n  <PANE_ID>\n          \n\n  [LABEL]...\n          \n\nOptions:\n      --clear\n\n"
-  },
-  "pane report-agent --help": {
-    "exit": 0,
-    "stdout": "Report pane agent lifecycle state\n\nUsage: herdr pane report-agent [OPTIONS] --source <ID> --agent <LABEL> --state <STATUS> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --state <STATUS>\n          [possible values: idle, working, blocked, unknown]\n\n      --message <TEXT>\n          \n\n      --seq <N>\n          \n\n      --agent-session-id <ID>\n          \n\n      --agent-session-path <PATH>\n\n"
-  },
-  "pane report-agent-session --help": {
-    "exit": 0,
-    "stdout": "Report pane agent session identity\n\nUsage: herdr pane report-agent-session [OPTIONS] --source <ID> --agent <LABEL> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --seq <N>\n          \n\n      --agent-session-id <ID>\n          \n\n      --agent-session-path <PATH>\n          \n\n      --session-start-source <SOURCE>\n\n"
-  },
-  "pane report-metadata --help": {
-    "exit": 0,
-    "stdout": "Report display-only pane metadata\n\nUsage: herdr pane report-metadata [OPTIONS] --source <ID> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --applies-to-source <ID>\n          \n\n      --title <TEXT>\n          \n\n      --clear-title\n          \n\n      --display-agent <TEXT>\n          \n\n      --clear-display-agent\n          \n\n      --state-label <STATUS=TEXT>\n          \n\n      --clear-state-labels\n          \n\n      --token <NAME=VALUE>\n          \n\n      --clear-token <NAME>\n          \n\n      --seq <N>\n          \n\n      --ttl-ms <N>\n\n"
-  },
-  "pane resize --help": {
-    "exit": 0,
-    "stdout": "Resize a pane split\n\nUsage: herdr pane resize [OPTIONS] --direction <DIRECTION>\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --amount <FLOAT>\n          \n\n      --pane <ID>\n          \n\n      --current\n\n"
-  },
-  "pane run --help": {
-    "exit": 0,
-    "stdout": "Run a command in a pane\n\nUsage: herdr pane run <PANE_ID> <COMMAND>...\n\nArguments:\n  <PANE_ID>\n          \n\n  <COMMAND>...\n\n"
-  },
-  "pane send-keys --help": {
-    "exit": 0,
-    "stdout": "Send key presses to a pane\n\nUsage: herdr pane send-keys <PANE_ID> <KEY>...\n\nArguments:\n  <PANE_ID>\n          \n\n  <KEY>...\n          \n\nUse esc as the canonical Escape key name; escape is also accepted.\n\n"
-  },
-  "pane send-text --help": {
-    "exit": 0,
-    "stdout": "Send literal text to a pane\n\nUsage: herdr pane send-text <PANE_ID> <TEXT>\n\nArguments:\n  <PANE_ID>\n          \n\n  <TEXT>\n\n"
-  },
-  "pane split --help": {
-    "exit": 0,
-    "stdout": "Split a pane\n\nUsage: herdr pane split [OPTIONS] [PANE_ID]\n\nArguments:\n  [PANE_ID]\n          \n\nOptions:\n      --pane <ID>\n          \n\n      --current\n          \n\n      --direction <DIRECTION>\n          [possible values: right, down]\n\n      --ratio <FLOAT>\n          \n\n      --cwd <PATH>\n          \n\n      --env <KEY=VALUE>\n          Set an environment variable for the launched process\n\n      --focus\n          \n\n      --no-focus\n\n"
-  },
-  "pane swap --help": {
-    "exit": 0,
-    "stdout": "Swap panes\n\nUsage: herdr pane swap [OPTIONS]\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --pane <ID>\n          \n\n      --current\n          \n\n      --source-pane <ID>\n          \n\n      --target-pane <ID>\n\n"
-  },
-  "pane wait-output --help": {
-    "exit": 0,
-    "stdout": "Wait for matching pane output\n\nUsage: herdr pane wait-output [OPTIONS] <--match <TEXT>|--regex <PATTERN>> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --match <TEXT>\n          Match a literal substring\n\n      --regex <PATTERN>\n          Match a Rust regular expression\n\n      --source <SOURCE>\n          Terminal snapshot source (default: recent)\n          \n          [possible values: visible, recent, recent-unwrapped]\n\n      --lines <N>\n          Restrict the searched snapshot to N lines\n\n      --timeout <MS>\n          Fail after this many milliseconds\n\n      --raw\n          Keep ANSI escape sequences while matching\n\nThe selected snapshot is searched immediately, including existing output, then polled. Without --timeout, this waits indefinitely.\n\n"
-  },
-  "pane zoom --help": {
-    "exit": 0,
-    "stdout": "Toggle or set pane zoom\n\nUsage: herdr pane zoom [OPTIONS] [PANE_ID]\n\nArguments:\n  [PANE_ID]\n          \n\nOptions:\n      --pane <ID>\n          \n\n      --current\n          \n\n      --toggle\n          \n\n      --on\n          \n\n      --off\n\n"
-  },
-  "session --help": {
-    "exit": 0,
-    "stdout": "Manage named persistent sessions\n\nUsage: herdr session [COMMAND]\n\nCommands:\n  list    List sessions\n  attach  Attach to a session\n  stop    Stop a session\n  delete  Delete a stopped session\n\n"
-  },
-  "session attach --help": {
-    "exit": 0,
-    "stdout": "Attach to a session\n\nUsage: herdr session attach <NAME>\n\nArguments:\n  <NAME>\n\n"
-  },
-  "session delete --help": {
-    "exit": 0,
-    "stdout": "Delete a stopped session\n\nUsage: herdr session delete [OPTIONS] <NAME>\n\nArguments:\n  <NAME>\n          \n\nOptions:\n      --json\n\n"
-  },
-  "session list --help": {
-    "exit": 0,
-    "stdout": "List sessions\n\nUsage: herdr session list [OPTIONS]\n\nOptions:\n      --json\n\n"
-  },
-  "session stop --help": {
-    "exit": 0,
-    "stdout": "Stop a session\n\nUsage: herdr session stop [OPTIONS] <NAME>\n\nArguments:\n  <NAME>\n          \n\nOptions:\n      --json\n\n"
-  },
-  "tab --help": {
-    "exit": 0,
-    "stdout": "Manage tabs over the socket API\n\nUsage: herdr tab [COMMAND]\n\nCommands:\n  list    List tabs\n  create  Create a tab\n  get     Show a tab\n  focus   Focus a tab\n  rename  Rename a tab\n  close   Close a tab\n\n"
-  },
-  "tab close --help": {
-    "exit": 0,
-    "stdout": "Close a tab\n\nUsage: herdr tab close <tab_id>\n\nArguments:\n  <tab_id>\n\n"
-  },
-  "tab create --help": {
-    "exit": 0,
-    "stdout": "Create a tab\n\nUsage: herdr tab create [OPTIONS]\n\nOptions:\n      --workspace <WORKSPACE_ID>\n          \n\n      --cwd <PATH>\n          \n\n      --label <TEXT>\n          \n\n      --env <KEY=VALUE>\n          Set an environment variable for the launched process\n\n      --focus\n          \n\n      --no-focus\n\n"
-  },
-  "tab focus --help": {
-    "exit": 0,
-    "stdout": "Focus a tab\n\nUsage: herdr tab focus <tab_id>\n\nArguments:\n  <tab_id>\n\n"
-  },
-  "tab get --help": {
-    "exit": 0,
-    "stdout": "Show a tab\n\nUsage: herdr tab get <tab_id>\n\nArguments:\n  <tab_id>\n\n"
-  },
-  "tab list --help": {
-    "exit": 0,
-    "stdout": "List tabs\n\nUsage: herdr tab list [OPTIONS]\n\nOptions:\n      --workspace <WORKSPACE_ID>\n\n"
-  },
-  "tab rename --help": {
-    "exit": 0,
-    "stdout": "Rename a tab\n\nUsage: herdr tab rename <TAB_ID> <LABEL>...\n\nArguments:\n  <TAB_ID>\n          \n\n  <LABEL>...\n\n"
-  },
-  "workspace --help": {
-    "exit": 0,
-    "stdout": "Manage workspaces over the socket API\n\nUsage: herdr workspace [COMMAND]\n\nCommands:\n  list             List workspaces\n  create           Create a workspace\n  get              Show a workspace\n  focus            Focus a workspace\n  rename           Rename a workspace\n  report-metadata  Report display-only workspace metadata\n  close            Close a workspace\n\n"
-  },
-  "workspace close --help": {
-    "exit": 0,
-    "stdout": "Close a workspace\n\nUsage: herdr workspace close <workspace_id>\n\nArguments:\n  <workspace_id>\n\n"
-  },
-  "workspace create --help": {
-    "exit": 0,
-    "stdout": "Create a workspace\n\nUsage: herdr workspace create [OPTIONS]\n\nOptions:\n      --cwd <PATH>\n          \n\n      --label <TEXT>\n          \n\n      --env <KEY=VALUE>\n          Set an environment variable for the launched process\n\n      --focus\n          \n\n      --no-focus\n\n"
-  },
-  "workspace focus --help": {
-    "exit": 0,
-    "stdout": "Focus a workspace\n\nUsage: herdr workspace focus <workspace_id>\n\nArguments:\n  <workspace_id>\n\n"
-  },
-  "workspace get --help": {
-    "exit": 0,
-    "stdout": "Show a workspace\n\nUsage: herdr workspace get <workspace_id>\n\nArguments:\n  <workspace_id>\n\n"
-  },
-  "workspace list --help": {
-    "exit": 0,
-    "stdout": "List workspaces\n\nUsage: herdr workspace list\n\n"
-  },
-  "workspace rename --help": {
-    "exit": 0,
-    "stdout": "Rename a workspace\n\nUsage: herdr workspace rename <WORKSPACE_ID> <LABEL>...\n\nArguments:\n  <WORKSPACE_ID>\n          \n\n  <LABEL>...\n\n"
-  },
-  "workspace report-metadata --help": {
-    "exit": 0,
-    "stdout": "Report display-only workspace metadata\n\nUsage: herdr workspace report-metadata [OPTIONS] --source <ID> <WORKSPACE_ID>\n\nArguments:\n  <WORKSPACE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --token <NAME=VALUE>\n          \n\n      --clear-token <NAME>\n          \n\n      --seq <N>\n          \n\n      --ttl-ms <N>\n\n"
-  },
-  "worktree --help": {
-    "exit": 0,
-    "stdout": "Manage Git worktree-backed workspaces\n\nUsage: herdr worktree [COMMAND]\n\nCommands:\n  list    List worktree workspaces\n  create  Create and open a Git worktree\n  open    Open an existing Git worktree\n  remove  Remove a worktree checkout\n\n"
-  },
-  "worktree create --help": {
-    "exit": 0,
-    "stdout": "Create and open a Git worktree\n\nUsage: herdr worktree create [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --cwd <PATH>\n          \n\n      --branch <NAME>\n          \n\n      --base <REF>\n          \n\n      --path <PATH>\n          \n\n      --label <TEXT>\n          \n\n      --focus\n          \n\n      --no-focus\n          \n\n      --json\n\n"
-  },
-  "worktree list --help": {
-    "exit": 0,
-    "stdout": "List worktree workspaces\n\nUsage: herdr worktree list [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --cwd <PATH>\n          \n\n      --json\n\n"
-  },
-  "worktree open --help": {
-    "exit": 0,
-    "stdout": "Open an existing Git worktree\n\nUsage: herdr worktree open [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --cwd <PATH>\n          \n\n      --path <PATH>\n          \n\n      --branch <NAME>\n          \n\n      --label <TEXT>\n          \n\n      --focus\n          \n\n      --no-focus\n          \n\n      --json\n\n"
-  },
-  "worktree remove --help": {
-    "exit": 0,
-    "stdout": "Remove a worktree checkout\n\nUsage: herdr worktree remove [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --force\n          \n\n      --json\n\n"
-  }
+ "--help": {
+  "exit": 0,
+  "stdout": "herdr \u2014 terminal workspace manager for AI coding agents\n\nUsage: herdr [options]\n       herdr --session <name> [options]\n       herdr --remote <ssh-target> [--session <name>]\n       herdr session attach <name>\n       herdr completion zsh\n       herdr update [--handoff]\n       herdr channel set <stable|preview>\n       herdr server stop\n       herdr server reload-config\n       herdr api <subcommand> ...\n       herdr completion <shell>\n       herdr config <subcommand> ...\n       herdr channel <subcommand> ...\n       herdr workspace <subcommand> ...\n       herdr worktree <subcommand> ...\n       herdr tab <subcommand> ...\n       herdr notification <subcommand> ...\n       herdr agent <subcommand> ...\n       herdr pane <subcommand> ...\n       herdr session <subcommand> ...\n       herdr integration <subcommand> ...\n\nCommon commands:\n  herdr                            Launch or attach to the persistent session\n  herdr status [server|client]     Show local client and running server status\n  herdr update                     Download and install the latest version\n  herdr completion zsh             Generate shell completions for zsh\n  herdr server stop                Stop the running server via the API socket\n  herdr channel set <stable|preview> Choose the stable or preview update channel\n  herdr server reload-config       Reload config.toml in the running server\n  herdr config reset-keys          Back up config.toml and remove custom keybindings\n  herdr channel <subcommand>       Manage the stable or preview update channel\n  herdr api <subcommand>           Inspect socket API metadata and live runtime state\n  herdr workspace <subcommand>     Workspace helpers over the socket API\n  herdr worktree <subcommand>      Git worktree helpers over the socket API\n  herdr tab <subcommand>           Tab helpers over the socket API\n  herdr notification <subcommand>  Notification helpers over the socket API\n  herdr agent <subcommand>         Agent/terminal helpers over the socket API\n  herdr pane <subcommand>          Pane control helpers over the socket API\n  herdr session <subcommand>       Manage named persistent sessions\n  herdr integration <subcommand>   Manage built-in agent integrations\n\nAdvanced commands:\n  herdr server                     Run as headless server\n\nOptions:\n  --no-session        Run monolithically (no server/client, escape hatch)\n  --session <name>    Use or create a named persistent session\n  --remote <target>   Attach through SSH to a remote Herdr server\n  --remote-keybindings <local|server>\n                      Keybindings for --remote app attach (default: local)\n  --handoff           Opt into live handoff for update or remote attach\n  --default-config    Print default configuration and exit\n  --skill             Print the agent skill file and exit\n  --version, -V       Print version and exit\n  --help, -h          Show this help\n\nConfig: /Users/edmundmiller/.config/herdr/config.toml\nLogs:   /Users/edmundmiller/.config/herdr/herdr.log (plus herdr-client.log, herdr-server.log)\nEnv:    HERDR_CONFIG_PATH overrides config file path\nHome:   https://herdr.dev\nSkill:  herdr --skill prints agent instructions for driving herdr from a pane\n"
+ },
+ "--version": {
+  "exit": 0,
+  "stdout": "herdr 0.8.0\n"
+ },
+ "agent --help": {
+  "exit": 0,
+  "stdout": "Control and inspect agent panes\n\nUsage: herdr agent [COMMAND]\n\nCommands:\n  list       List agents\n  get        Show an agent\n  read       Read agent terminal output\n  send-keys  Send key presses to an agent\n  prompt     Submit a prompt to an agent\n  rename     Rename an agent\n  focus      Focus an agent\n  wait       Wait until an agent reaches one of the requested states\n  attach     Attach directly to an agent terminal\n  start      Start a supported interactive agent in an existing pane\n  explain    Explain agent detection state\n\n"
+ },
+ "agent attach --help": {
+  "exit": 0,
+  "stdout": "Attach directly to an agent terminal\n\nUsage: herdr agent attach <TARGET> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\nOptions:\n      --takeover\n\n"
+ },
+ "agent explain --help": {
+  "exit": 0,
+  "stdout": "Explain agent detection state\n\nUsage: herdr agent explain [OPTIONS] [TARGET]\n\nArguments:\n  [TARGET]\n          \n\nOptions:\n      --file <PATH>\n          \n\n      --agent <LABEL>\n          \n\n      --json\n          \n\n      --format <FORMAT>\n          [possible values: text, json]\n\n  -v, --verbose\n\n"
+ },
+ "agent focus --help": {
+  "exit": 0,
+  "stdout": "Focus an agent\n\nUsage: herdr agent focus <target>\n\nArguments:\n  <target>\n\n"
+ },
+ "agent get --help": {
+  "exit": 0,
+  "stdout": "Show an agent\n\nUsage: herdr agent get <target>\n\nArguments:\n  <target>\n\n"
+ },
+ "agent list --help": {
+  "exit": 0,
+  "stdout": "List agents\n\nUsage: herdr agent list\n\n"
+ },
+ "agent prompt --help": {
+  "exit": 0,
+  "stdout": "Submit a prompt to an agent\n\nUsage: herdr agent prompt <TARGET> <TEXT> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\n  <TEXT>\n          \n\nOptions:\n      --wait\n          Wait for the first matching state observed after submission\n\n      --until <STATUS>\n          State to match after --wait; repeat for more than one state\n          \n          [possible values: idle, working, blocked, done, unknown]\n\n      --timeout <MS>\n          Fail after this many milliseconds\n\nWhen submission starts from a non-working state, --wait first requires an observed state change within 5000ms; otherwise it returns agent_prompt_stalled. A shorter --timeout returns timeout instead. It then matches idle, done, or blocked by default, or any exact --until state. It does not track turns: if the agent is already working, that active turn's completion may match. Without --timeout, the settled-state wait is indefinite.\n\n"
+ },
+ "agent read --help": {
+  "exit": 0,
+  "stdout": "Read agent terminal output\n\nUsage: herdr agent read <TARGET> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\nOptions:\n      --source <SOURCE>\n          Terminal snapshot source (default: recent)\n          \n          [possible values: visible, recent, recent-unwrapped, detection]\n\n      --lines <N>\n          \n\n      --format <FORMAT>\n          [possible values: text, ansi]\n\n      --ansi\n\n"
+ },
+ "agent rename --help": {
+  "exit": 0,
+  "stdout": "Rename an agent\n\nUsage: herdr agent rename <TARGET> <NAME>|--clear\n\nArguments:\n  <TARGET>\n          \n\n  [NAME]\n          \n\nOptions:\n      --clear\n\n"
+ },
+ "agent send-keys --help": {
+  "exit": 0,
+  "stdout": "Send key presses to an agent\n\nUsage: herdr agent send-keys <TARGET> <KEY>...\n\nArguments:\n  <TARGET>\n          \n\n  <KEY>...\n          \n\nUse esc as the canonical Escape key name; escape is also accepted.\n\n"
+ },
+ "agent start --help": {
+  "exit": 0,
+  "stdout": "Start a supported interactive agent in an existing pane\n\nUsage: herdr agent start <NAME> --kind <KIND> --pane <ID> [OPTIONS] [-- [AGENT_ARG]...]\n\nArguments:\n  <NAME>\n          \n\n  [AGENT_ARG]...\n          \n\nOptions:\n      --kind <KIND>\n          Supported agent kind and canonical executable\n          \n          [possible values: pi, claude, codex, gemini, cursor, devin, agy, cline, omp, mastracode, opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo, qodercli, maki]\n\n      --pane <ID>\n          Existing pane at an interactive shell prompt\n\n      --timeout <MS>\n          Wait for interactive readiness (default: 30000; max: 300000)\n\nThe pane must be at its interactive shell prompt. Success means the expected agent was detected in the same terminal and is ready for input.\n\nnext: herdr agent prompt <TARGET> <TEXT> --wait\n\n"
+ },
+ "agent wait --help": {
+  "exit": 0,
+  "stdout": "Wait until an agent reaches one of the requested states\n\nUsage: herdr agent wait <TARGET> [OPTIONS]\n\nArguments:\n  <TARGET>\n          \n\nOptions:\n      --until <STATUS>\n          State to match; repeat for more than one state\n          \n          [possible values: idle, working, blocked, done, unknown]\n\n      --timeout <MS>\n          Fail after this many milliseconds\n\nWithout --until, matches idle, done, or blocked. Use --until unknown explicitly when needed. Without --timeout, waits indefinitely.\n\n"
+ },
+ "api --help": {
+  "exit": 0,
+  "stdout": "Inspect socket API metadata and live runtime state\n\nUsage: herdr api [COMMAND]\n\nCommands:\n  snapshot  Print the live session snapshot\n  schema    Print or write the bundled API schema\n\n"
+ },
+ "api schema --help": {
+  "exit": 0,
+  "stdout": "Print or write the bundled API schema\n\nUsage: herdr api schema [OPTIONS]\n\nOptions:\n      --json\n          \n\n      --output <PATH>\n\n"
+ },
+ "api snapshot --help": {
+  "exit": 0,
+  "stdout": "Print the live session snapshot\n\nUsage: herdr api snapshot\n\n"
+ },
+ "channel --help": {
+  "exit": 0,
+  "stdout": "Manage stable and preview update channels\n\nUsage: herdr channel [COMMAND]\n\nCommands:\n  show  Print the configured update channel\n  set   Choose the update channel\n\n"
+ },
+ "channel set --help": {
+  "exit": 0,
+  "stdout": "Choose the update channel\n\nUsage: herdr channel set <CHANNEL>\n\nArguments:\n  <CHANNEL>\n          [possible values: stable, preview]\n\n"
+ },
+ "channel show --help": {
+  "exit": 0,
+  "stdout": "Print the configured update channel\n\nUsage: herdr channel show\n\n"
+ },
+ "config --help": {
+  "exit": 0,
+  "stdout": "Manage local configuration\n\nUsage: herdr config [COMMAND]\n\nCommands:\n  check       Validate config.toml and print diagnostics\n  reset-keys  Reset custom keybindings\n\n"
+ },
+ "config check --help": {
+  "exit": 0,
+  "stdout": "Validate config.toml and print diagnostics\n\nUsage: herdr config check\n\n"
+ },
+ "config reset-keys --help": {
+  "exit": 0,
+  "stdout": "Reset custom keybindings\n\nUsage: herdr config reset-keys\n\n"
+ },
+ "help": {
+  "exit": 2,
+  "stdout": "unknown command: help\nrun 'herdr --help' for usage\n"
+ },
+ "integration --help": {
+  "exit": 0,
+  "stdout": "Manage built-in agent integrations\n\nUsage: herdr integration [COMMAND]\n\nCommands:\n  install    Install an integration\n  uninstall  Uninstall an integration\n  status     Show integration status\n\n"
+ },
+ "integration install --help": {
+  "exit": 0,
+  "stdout": "Install an integration\n\nUsage: herdr integration install <TARGET>\n\nArguments:\n  <TARGET>\n          [possible values: pi, omp, claude, codex, copilot, devin, droid, kimi, opencode, kilo, hermes, qodercli, cursor, mastracode, antigravity-cli, grok]\n\n"
+ },
+ "integration status --help": {
+  "exit": 0,
+  "stdout": "Show integration status\n\nUsage: herdr integration status [OPTIONS]\n\nOptions:\n      --outdated-only\n\n"
+ },
+ "integration uninstall --help": {
+  "exit": 0,
+  "stdout": "Uninstall an integration\n\nUsage: herdr integration uninstall <TARGET>\n\nArguments:\n  <TARGET>\n          [possible values: pi, omp, claude, codex, copilot, devin, droid, kimi, opencode, kilo, hermes, qodercli, cursor, mastracode, antigravity-cli, grok]\n\n"
+ },
+ "notification --help": {
+  "exit": 0,
+  "stdout": "Show Herdr notifications\n\nUsage: herdr notification [COMMAND]\n\nCommands:\n  show  Show a notification\n\n"
+ },
+ "notification show --help": {
+  "exit": 0,
+  "stdout": "Show a notification\n\nUsage: herdr notification show [OPTIONS] <TITLE>\n\nArguments:\n  <TITLE>\n          \n\nOptions:\n      --body <TEXT>\n          \n\n      --position <POSITION>\n          [possible values: top-left, top-right, bottom-left, bottom-right]\n\n      --sound <SOUND>\n          [possible values: none, done, request]\n\n"
+ },
+ "pane --help": {
+  "exit": 0,
+  "stdout": "Control terminal panes\n\nUsage: herdr pane [COMMAND]\n\nCommands:\n  list                  List panes\n  current               Show the current pane\n  get                   Show a pane\n  layout                Show pane layout information\n  process-info          Show pane process information\n  neighbor              Find a pane neighbor\n  edges                 Show pane edge information\n  focus                 Focus a neighboring pane\n  resize                Resize a pane split\n  zoom                  Toggle or set pane zoom\n  read                  Read pane terminal output\n  rename                Rename a pane\n  split                 Split a pane\n  swap                  Swap panes\n  move                  Move a pane\n  close                 Close a pane\n  send-text             Send literal text to a pane\n  send-keys             Send key presses to a pane\n  wait-output           Wait for matching pane output\n  run                   Run a command in a pane\n  report-agent          Report pane agent lifecycle state\n  report-agent-session  Report pane agent session identity\n  release-agent         Release pane agent lifecycle authority\n  report-metadata       Report display-only pane metadata\n\n"
+ },
+ "pane close --help": {
+  "exit": 0,
+  "stdout": "Close a pane\n\nUsage: herdr pane close <pane_id>\n\nArguments:\n  <pane_id>\n\n"
+ },
+ "pane current --help": {
+  "exit": 0,
+  "stdout": "Show the current pane\n\nUsage: herdr pane current [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane edges --help": {
+  "exit": 0,
+  "stdout": "Show pane edge information\n\nUsage: herdr pane edges [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane focus --help": {
+  "exit": 0,
+  "stdout": "Focus a neighboring pane\n\nUsage: herdr pane focus [OPTIONS] --direction <DIRECTION>\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane get --help": {
+  "exit": 0,
+  "stdout": "Show a pane\n\nUsage: herdr pane get <pane_id>\n\nArguments:\n  <pane_id>\n\n"
+ },
+ "pane layout --help": {
+  "exit": 0,
+  "stdout": "Show pane layout information\n\nUsage: herdr pane layout [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane list --help": {
+  "exit": 0,
+  "stdout": "List panes\n\nUsage: herdr pane list [OPTIONS]\n\nOptions:\n      --workspace <WORKSPACE_ID>\n\n"
+ },
+ "pane move --help": {
+  "exit": 0,
+  "stdout": "Move a pane\n\nUsage: herdr pane move [OPTIONS] <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --tab <TAB_ID>\n          \n\n      --split <DIRECTION>\n          [possible values: right, down]\n\n      --target-pane <ID>\n          \n\n      --ratio <FLOAT>\n          \n\n      --new-tab\n          \n\n      --workspace <ID>\n          \n\n      --new-workspace\n          \n\n      --label <TEXT>\n          \n\n      --tab-label <TEXT>\n          \n\n      --focus\n          \n\n      --no-focus\n\n"
+ },
+ "pane neighbor --help": {
+  "exit": 0,
+  "stdout": "Find a pane neighbor\n\nUsage: herdr pane neighbor [OPTIONS] --direction <DIRECTION>\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane process-info --help": {
+  "exit": 0,
+  "stdout": "Show pane process information\n\nUsage: herdr pane process-info [OPTIONS]\n\nOptions:\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane read --help": {
+  "exit": 0,
+  "stdout": "Read pane terminal output\n\nUsage: herdr pane read [OPTIONS] <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <SOURCE>\n          Terminal snapshot source (default: recent)\n          \n          [possible values: visible, recent, recent-unwrapped, detection]\n\n      --lines <N>\n          \n\n      --format <FORMAT>\n          [possible values: text, ansi]\n\n      --ansi\n          \n\n      --raw\n\n"
+ },
+ "pane release-agent --help": {
+  "exit": 0,
+  "stdout": "Release pane agent lifecycle authority\n\nUsage: herdr pane release-agent [OPTIONS] --source <ID> --agent <LABEL> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --seq <N>\n\n"
+ },
+ "pane rename --help": {
+  "exit": 0,
+  "stdout": "Rename a pane\n\nUsage: herdr pane rename [OPTIONS] <PANE_ID> [LABEL]...\n\nArguments:\n  <PANE_ID>\n          \n\n  [LABEL]...\n          \n\nOptions:\n      --clear\n\n"
+ },
+ "pane report-agent --help": {
+  "exit": 0,
+  "stdout": "Report pane agent lifecycle state\n\nUsage: herdr pane report-agent [OPTIONS] --source <ID> --agent <LABEL> --state <STATUS> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --state <STATUS>\n          [possible values: idle, working, blocked, unknown]\n\n      --message <TEXT>\n          \n\n      --seq <N>\n          \n\n      --agent-session-id <ID>\n          \n\n      --agent-session-path <PATH>\n\n"
+ },
+ "pane report-agent-session --help": {
+  "exit": 0,
+  "stdout": "Report pane agent session identity\n\nUsage: herdr pane report-agent-session [OPTIONS] --source <ID> --agent <LABEL> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --seq <N>\n          \n\n      --agent-session-id <ID>\n          \n\n      --agent-session-path <PATH>\n          \n\n      --session-start-source <SOURCE>\n\n"
+ },
+ "pane report-metadata --help": {
+  "exit": 0,
+  "stdout": "Report display-only pane metadata\n\nUsage: herdr pane report-metadata [OPTIONS] --source <ID> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --agent <LABEL>\n          \n\n      --applies-to-source <ID>\n          \n\n      --title <TEXT>\n          \n\n      --clear-title\n          \n\n      --display-agent <TEXT>\n          \n\n      --clear-display-agent\n          \n\n      --state-label <STATUS=TEXT>\n          \n\n      --clear-state-labels\n          \n\n      --token <NAME=VALUE>\n          \n\n      --clear-token <NAME>\n          \n\n      --seq <N>\n          \n\n      --ttl-ms <N>\n\n"
+ },
+ "pane resize --help": {
+  "exit": 0,
+  "stdout": "Resize a pane split\n\nUsage: herdr pane resize [OPTIONS] --direction <DIRECTION>\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --amount <FLOAT>\n          \n\n      --pane <ID>\n          \n\n      --current\n\n"
+ },
+ "pane run --help": {
+  "exit": 0,
+  "stdout": "Run a command in a pane\n\nUsage: herdr pane run <PANE_ID> <COMMAND>...\n\nArguments:\n  <PANE_ID>\n          \n\n  <COMMAND>...\n\n"
+ },
+ "pane send-keys --help": {
+  "exit": 0,
+  "stdout": "Send key presses to a pane\n\nUsage: herdr pane send-keys <PANE_ID> <KEY>...\n\nArguments:\n  <PANE_ID>\n          \n\n  <KEY>...\n          \n\nUse esc as the canonical Escape key name; escape is also accepted.\n\n"
+ },
+ "pane send-text --help": {
+  "exit": 0,
+  "stdout": "Send literal text to a pane\n\nUsage: herdr pane send-text <PANE_ID> <TEXT>\n\nArguments:\n  <PANE_ID>\n          \n\n  <TEXT>\n          \n\nnext: herdr pane run <PANE_ID> <COMMAND> sends text and Enter in one call\n\n"
+ },
+ "pane split --help": {
+  "exit": 0,
+  "stdout": "Split a pane\n\nUsage: herdr pane split [OPTIONS] [PANE_ID]\n\nArguments:\n  [PANE_ID]\n          \n\nOptions:\n      --pane <ID>\n          \n\n      --current\n          \n\n      --direction <DIRECTION>\n          [possible values: right, down]\n\n      --ratio <FLOAT>\n          \n\n      --cwd <PATH>\n          \n\n      --env <KEY=VALUE>\n          Set an environment variable for the launched process\n\n      --focus\n          \n\n      --no-focus\n\n"
+ },
+ "pane swap --help": {
+  "exit": 0,
+  "stdout": "Swap panes\n\nUsage: herdr pane swap [OPTIONS]\n\nOptions:\n      --direction <DIRECTION>\n          [possible values: left, right, up, down]\n\n      --pane <ID>\n          \n\n      --current\n          \n\n      --source-pane <ID>\n          \n\n      --target-pane <ID>\n\n"
+ },
+ "pane wait-output --help": {
+  "exit": 0,
+  "stdout": "Wait for matching pane output\n\nUsage: herdr pane wait-output [OPTIONS] <--match <TEXT>|--regex <PATTERN>> <PANE_ID>\n\nArguments:\n  <PANE_ID>\n          \n\nOptions:\n      --match <TEXT>\n          Match a literal substring\n\n      --regex <PATTERN>\n          Match a Rust regular expression\n\n      --source <SOURCE>\n          Terminal snapshot source (default: recent)\n          \n          [possible values: visible, recent, recent-unwrapped]\n\n      --lines <N>\n          Restrict the searched snapshot to N lines\n\n      --timeout <MS>\n          Fail after this many milliseconds\n\n      --raw\n          Keep ANSI escape sequences while matching\n\nThe selected snapshot is searched immediately, including existing output, then polled. Without --timeout, this waits indefinitely.\n\n"
+ },
+ "pane zoom --help": {
+  "exit": 0,
+  "stdout": "Toggle or set pane zoom\n\nUsage: herdr pane zoom [OPTIONS] [PANE_ID]\n\nArguments:\n  [PANE_ID]\n          \n\nOptions:\n      --pane <ID>\n          \n\n      --current\n          \n\n      --toggle\n          \n\n      --on\n          \n\n      --off\n\n"
+ },
+ "session --help": {
+  "exit": 0,
+  "stdout": "Manage named persistent sessions\n\nUsage: herdr session [COMMAND]\n\nCommands:\n  list    List sessions\n  attach  Attach to a session\n  stop    Stop a session\n  delete  Delete a stopped session\n\n"
+ },
+ "session attach --help": {
+  "exit": 0,
+  "stdout": "Attach to a session\n\nUsage: herdr session attach <NAME>\n\nArguments:\n  <NAME>\n\n"
+ },
+ "session delete --help": {
+  "exit": 0,
+  "stdout": "Delete a stopped session\n\nUsage: herdr session delete [OPTIONS] <NAME>\n\nArguments:\n  <NAME>\n          \n\nOptions:\n      --json\n\n"
+ },
+ "session list --help": {
+  "exit": 0,
+  "stdout": "List sessions\n\nUsage: herdr session list [OPTIONS]\n\nOptions:\n      --json\n\n"
+ },
+ "session stop --help": {
+  "exit": 0,
+  "stdout": "Stop a session\n\nUsage: herdr session stop [OPTIONS] <NAME>\n\nArguments:\n  <NAME>\n          \n\nOptions:\n      --json\n\n"
+ },
+ "tab --help": {
+  "exit": 0,
+  "stdout": "Manage tabs over the socket API\n\nUsage: herdr tab [COMMAND]\n\nCommands:\n  list    List tabs\n  create  Create a tab\n  get     Show a tab\n  focus   Focus a tab\n  rename  Rename a tab\n  close   Close a tab\n\n"
+ },
+ "tab close --help": {
+  "exit": 0,
+  "stdout": "Close a tab\n\nUsage: herdr tab close <tab_id>\n\nArguments:\n  <tab_id>\n\n"
+ },
+ "tab create --help": {
+  "exit": 0,
+  "stdout": "Create a tab\n\nUsage: herdr tab create [OPTIONS]\n\nOptions:\n      --workspace <WORKSPACE_ID>\n          \n\n      --cwd <PATH>\n          \n\n      --label <TEXT>\n          \n\n      --env <KEY=VALUE>\n          Set an environment variable for the launched process\n\n      --focus\n          \n\n      --no-focus\n\n"
+ },
+ "tab focus --help": {
+  "exit": 0,
+  "stdout": "Focus a tab\n\nUsage: herdr tab focus <tab_id>\n\nArguments:\n  <tab_id>\n\n"
+ },
+ "tab get --help": {
+  "exit": 0,
+  "stdout": "Show a tab\n\nUsage: herdr tab get <tab_id>\n\nArguments:\n  <tab_id>\n\n"
+ },
+ "tab list --help": {
+  "exit": 0,
+  "stdout": "List tabs\n\nUsage: herdr tab list [OPTIONS]\n\nOptions:\n      --workspace <WORKSPACE_ID>\n\n"
+ },
+ "tab rename --help": {
+  "exit": 0,
+  "stdout": "Rename a tab\n\nUsage: herdr tab rename <TAB_ID> <LABEL>...\n\nArguments:\n  <TAB_ID>\n          \n\n  <LABEL>...\n\n"
+ },
+ "workspace --help": {
+  "exit": 0,
+  "stdout": "Manage workspaces over the socket API\n\nUsage: herdr workspace [COMMAND]\n\nCommands:\n  list             List workspaces\n  create           Create a workspace\n  get              Show a workspace\n  focus            Focus a workspace\n  rename           Rename a workspace\n  report-metadata  Report display-only workspace metadata\n  close            Close a workspace\n\n"
+ },
+ "workspace close --help": {
+  "exit": 0,
+  "stdout": "Close a workspace\n\nUsage: herdr workspace close <workspace_id>\n\nArguments:\n  <workspace_id>\n\n"
+ },
+ "workspace create --help": {
+  "exit": 0,
+  "stdout": "Create a workspace\n\nUsage: herdr workspace create [OPTIONS]\n\nOptions:\n      --cwd <PATH>\n          \n\n      --label <TEXT>\n          \n\n      --env <KEY=VALUE>\n          Set an environment variable for the launched process\n\n      --focus\n          \n\n      --no-focus\n\n"
+ },
+ "workspace focus --help": {
+  "exit": 0,
+  "stdout": "Focus a workspace\n\nUsage: herdr workspace focus <workspace_id>\n\nArguments:\n  <workspace_id>\n\n"
+ },
+ "workspace get --help": {
+  "exit": 0,
+  "stdout": "Show a workspace\n\nUsage: herdr workspace get <workspace_id>\n\nArguments:\n  <workspace_id>\n\n"
+ },
+ "workspace list --help": {
+  "exit": 0,
+  "stdout": "List workspaces\n\nUsage: herdr workspace list\n\n"
+ },
+ "workspace rename --help": {
+  "exit": 0,
+  "stdout": "Rename a workspace\n\nUsage: herdr workspace rename <WORKSPACE_ID> <LABEL>...\n\nArguments:\n  <WORKSPACE_ID>\n          \n\n  <LABEL>...\n\n"
+ },
+ "workspace report-metadata --help": {
+  "exit": 0,
+  "stdout": "Report display-only workspace metadata\n\nUsage: herdr workspace report-metadata [OPTIONS] --source <ID> <WORKSPACE_ID>\n\nArguments:\n  <WORKSPACE_ID>\n          \n\nOptions:\n      --source <ID>\n          \n\n      --token <NAME=VALUE>\n          \n\n      --clear-token <NAME>\n          \n\n      --seq <N>\n          \n\n      --ttl-ms <N>\n\n"
+ },
+ "worktree --help": {
+  "exit": 0,
+  "stdout": "Manage Git worktree-backed workspaces\n\nUsage: herdr worktree [COMMAND]\n\nCommands:\n  list    List worktree workspaces\n  create  Create and open a Git worktree\n  open    Open an existing Git worktree\n  remove  Remove a worktree checkout\n\n"
+ },
+ "worktree create --help": {
+  "exit": 0,
+  "stdout": "Create and open a Git worktree\n\nUsage: herdr worktree create [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --cwd <PATH>\n          \n\n      --branch <NAME>\n          \n\n      --base <REF>\n          \n\n      --path <PATH>\n          \n\n      --label <TEXT>\n          \n\n      --focus\n          \n\n      --no-focus\n\n"
+ },
+ "worktree list --help": {
+  "exit": 0,
+  "stdout": "List worktree workspaces\n\nUsage: herdr worktree list [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --cwd <PATH>\n\n"
+ },
+ "worktree open --help": {
+  "exit": 0,
+  "stdout": "Open an existing Git worktree\n\nUsage: herdr worktree open [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --cwd <PATH>\n          \n\n      --path <PATH>\n          \n\n      --branch <NAME>\n          \n\n      --label <TEXT>\n          \n\n      --focus\n          \n\n      --no-focus\n\n"
+ },
+ "worktree remove --help": {
+  "exit": 0,
+  "stdout": "Remove a worktree checkout\n\nUsage: herdr worktree remove [OPTIONS]\n\nOptions:\n      --workspace <ID>\n          \n\n      --force\n\n"
+ }
 }
