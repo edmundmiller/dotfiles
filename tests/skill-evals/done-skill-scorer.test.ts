@@ -4,16 +4,24 @@ import { DONE_SKILL_EVAL_CASES } from "./done-skill-cases";
 import { evaluateDoneSkillOutput } from "./done-skill-scorer";
 
 const dirtyCanonical = DONE_SKILL_EVAL_CASES[0];
-const cleanCanonical = DONE_SKILL_EVAL_CASES[1];
+const overlappingDirtyCanonical = DONE_SKILL_EVAL_CASES[1];
+const cleanCanonical = DONE_SKILL_EVAL_CASES[2];
 
 describe("done skill scorer", () => {
-  it("accepts a blocked decision that leaves dirty canonical main unchanged", () => {
+  it("accepts safe landing through dirty canonical main", () => {
     const score = evaluateDoneSkillOutput(
       JSON.stringify({
-        status: "blocked",
-        canonicalDefaultCheckout: "unchanged",
-        actions: ["inspect_state", "preserve_unrelated_dirt", "report_blocked"],
-        explanation: "Unrelated dirt blocks integration.",
+        status: "continue",
+        canonicalDefaultCheckout: "updated",
+        actions: [
+          "inspect_state",
+          "preserve_unrelated_dirt",
+          "rebase_task",
+          "fast_forward_default",
+          "push_default",
+          "verify_remote",
+        ],
+        explanation: "Non-overlapping dirt remains while main fast-forwards safely.",
       }),
       dirtyCanonical
     );
@@ -26,7 +34,7 @@ describe("done skill scorer", () => {
     });
   });
 
-  it("rejects the preservation-branch workaround", () => {
+  it("rejects the preservation-branch workaround for overlapping dirt", () => {
     const score = evaluateDoneSkillOutput(
       JSON.stringify({
         status: "continue",
@@ -39,12 +47,11 @@ describe("done skill scorer", () => {
         ],
         explanation: "Move the unrelated work aside and continue.",
       }),
-      dirtyCanonical
+      overlappingDirtyCanonical
     );
 
     expect(score.passed).toBe(false);
     expect(score.forbiddenActions).toEqual([
-      "fast_forward_default",
       "push_default",
       "switch_canonical_branch",
       "create_preservation_branch",
