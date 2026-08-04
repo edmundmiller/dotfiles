@@ -1,9 +1,11 @@
+diff --git i/src/ghostty/mod.rs w/src/ghostty/mod.rs
+index 685c073..1e18093 100644
 --- i/src/ghostty/mod.rs
 +++ w/src/ghostty/mod.rs
-@@ -686,6 +686,15 @@
-     ) -> Result<(), Error> {
-         let cell_width_px = cell_width_px.max(1);
-         let cell_height_px = cell_height_px.max(1);
+@@ -878,6 +878,15 @@ impl Terminal {
+             cell_width: cell_width_px,
+             cell_height: cell_height_px,
+         };
 +
 +        // libghostty's PageList resize path can abort the host process on
 +        // transient tiny terminal areas. macOS wake/display reconfiguration and
@@ -15,8 +17,8 @@
 +
          // SAFETY: self.raw is valid and sizes are plain values.
          unsafe {
-             ffi::ghostty_terminal_resize(self.raw, cols, rows, cell_width_px, cell_height_px)
-@@ -3024,6 +3033,19 @@
+             ffi::ghostty_terminal_resize(
+@@ -3232,6 +3241,19 @@ mod tests {
          out
      }
  

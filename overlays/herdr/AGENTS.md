@@ -55,7 +55,7 @@ outside the dotfiles repo and run Cargo there. Example for detector/pane tests:
 set -euo pipefail
 workdir=$(mktemp -d)
 repo=$(git rev-parse --show-toplevel)
-git clone https://github.com/ogulcancelik/herdr "$workdir/herdr"
+git clone https://github.com/herdrdev/herdr "$workdir/herdr"
 cd "$workdir/herdr"
 git checkout "$(sed -nE 's/^[[:space:]]*rev = "([^"]+)";/\1/p' "$repo/overlays/herdr/default.nix")"
 git apply "$repo"/overlays/herdr/patches/*.patch
