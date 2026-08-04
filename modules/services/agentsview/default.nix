@@ -77,6 +77,23 @@ in
       enable = mkBoolOpt true;
       serviceName = mkOpt types.str "agentsview";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "AgentsView";
+      order = 200;
+      group = "Infrastructure";
+      url = "http://127.0.0.1:${toString cfg.port}";
+      conditions = [ "[STATUS] == 200" ];
+    };
+    homepage = {
+      group = "Home";
+      name = "AgentsView";
+      order = 40;
+      description = "Shared agent session viewer";
+      icon = "mdi-account-eye-outline";
+      href = "https://agentsview.cinnamon-rooster.ts.net";
+    };
   };
 
   config = mkIf cfg.enable (

@@ -27,6 +27,25 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "jellyfin";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Jellyfin";
+      order = 40;
+      group = "Media";
+      url = "http://localhost:8096/health";
+      conditions = [ "[STATUS] == 200" ];
+      alerts = true;
+    };
+    homepage = {
+      group = "Media";
+      name = "Jellyfin";
+      order = 10;
+      # Use svc URL so 1Password login matching works on the same host.
+      href = "https://jellyfin.cinnamon-rooster.ts.net";
+      description = "Media server";
+      icon = "jellyfin.svg";
+    };
   };
 
   # NixOS-only service

@@ -19,7 +19,50 @@ let
   cfg = config.modules.services.homepage;
   homepagePort = 8082;
   tailnet = "cinnamon-rooster.ts.net";
-  nucBase = "http://nuc.${tailnet}";
+
+  # Cards contributed by the services themselves via
+  # `modules.services.<name>.registry.homepage`. Adding a dashboard card is a
+  # one-line change in that service's own module, not an edit here.
+  #
+  # Groups stay literal where they mix registry cards with external entries
+  # (Router, NextDNS, Tailscale, Grafana Cloud, Healthchecks) that have no
+  # owning module to hang a registry off.
+  #
+  # Sub-services count too: `hass.homebridge` has its own `enable` and its own
+  # registry, so it is gated on that flag rather than on its parent's.
+  registryContributors =
+    let
+      isContributor = v: builtins.isAttrs v && v ? registry && v ? enable;
+      children = svc: filter isContributor (attrValues (removeAttrs svc [ "registry" ]));
+      collect = svc: [ svc ] ++ children svc;
+    in
+    concatMap collect (filter isContributor (attrValues config.modules.services));
+
+  # A group's cards are the hard-coded ones plus the registry-contributed ones,
+  # sorted together by `order` (then name) so registry cards land in the same
+  # positions they occupied when they were hard-coded here. `order` is display
+  # metadata and is stripped before rendering.
+  mkGroup =
+    group: literals:
+    map
+      (entry: {
+        ${entry.name} = {
+          inherit (entry) href description icon;
+        }
+        // optionalAttrs (entry.widget or null != null) { inherit (entry) widget; };
+      })
+      (
+        sort (a: b: if a.order != b.order then a.order < b.order else a.name < b.name) (
+          literals
+          ++ concatMap (
+            svc:
+            let
+              entry = svc.registry.homepage;
+            in
+            optional (svc.enable && entry != null && entry.group == group) entry
+          ) registryContributors
+        )
+      );
 in
 {
   options.modules.services.homepage = {
@@ -125,208 +168,80 @@ in
       ];
 
       services = [
+        { "Media" = mkGroup "Media" [ ]; }
+        { "Downloads" = mkGroup "Downloads" [ ]; }
         {
-          "Media" = [
+          "Home" = mkGroup "Home" [
             {
-              "Jellyfin" = {
-                # Use svc URL so 1Password login matching works on the same host.
-                href = "https://jellyfin.${tailnet}";
-                description = "Media server";
-                icon = "jellyfin.svg";
-                # widget = {
-                #   type = "jellyfin";
-                #   url = "http://localhost:8096";
-                #   key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
-                #   version = 2;
-                #   enableBlocks = true;
-                # };
-              };
-            }
-            {
-              "Audiobookshelf" = {
-                href = "${nucBase}:13378";
-                description = "Audiobooks & podcasts";
-                icon = "audiobookshelf.svg";
-              };
+              name = "Mill Docs Agents";
+              order = 50;
+              href = "https://mill-docs-agents.${tailnet}";
+              description = "Agent docs";
+              icon = "mdi-file-document-outline";
             }
           ];
         }
         {
-          "Downloads" = [
+          "Network" = mkGroup "Network" [
             {
-              "Radarr" = {
-                href = "${nucBase}:7878";
-                description = "Movies";
-                icon = "radarr.svg";
+              name = "Router";
+              order = 10;
+              href = "http://192.168.1.254/cgi-bin/home.ha";
+              description = "Router admin";
+              icon = "mdi-router-wireless";
+            }
+            {
+              name = "NextDNS";
+              order = 20;
+              href = "https://my.nextdns.io";
+              description = "DNS filtering";
+              icon = "nextdns.svg";
+              widget = {
+                type = "nextdns";
+                profile = "{{HOMEPAGE_VAR_NEXTDNS_PROFILE}}";
+                key = "{{HOMEPAGE_VAR_NEXTDNS_API_KEY}}";
               };
             }
             {
-              "Sonarr" = {
-                href = "${nucBase}:8989";
-                description = "TV shows";
-                icon = "sonarr.svg";
-              };
-            }
-            {
-              "Prowlarr" = {
-                href = "${nucBase}:9696";
-                description = "Indexer manager";
-                icon = "prowlarr.svg";
-              };
-            }
-          ];
-        }
-        {
-          "Home" = [
-            {
-              "Home Assistant" = {
-                href = "https://homeassistant.${tailnet}";
-                description = "Home automation";
-                icon = "home-assistant.svg";
-                widget = {
-                  type = "homeassistant";
-                  url = "http://localhost:8123";
-                  key = "{{HOMEPAGE_VAR_HASS_TOKEN}}";
-                };
-              };
-            }
-            {
-              "Homebridge" = {
-                href = "https://homebridge.${tailnet}";
-                description = "HomeKit bridge";
-                icon = "homebridge.svg";
-                widget = {
-                  type = "homebridge";
-                  url = "http://localhost:8581";
-                  username = "admin";
-                  password = "{{HOMEPAGE_VAR_HOMEBRIDGE_PASSWORD}}";
-                };
-              };
-            }
-            {
-              "LubeLogger" = {
-                href = "${nucBase}:5000";
-                description = "Vehicle maintenance tracker";
-                icon = "lubelogger.svg";
-                widget = {
-                  type = "lubelogger";
-                  url = "http://localhost:5000";
-                  username = "{{HOMEPAGE_VAR_LUBELOGGER_USERNAME}}";
-                  password = "{{HOMEPAGE_VAR_LUBELOGGER_PASSWORD}}";
-                };
-              };
-            }
-            {
-              "AgentsView" = {
-                href = "https://agentsview.${tailnet}";
-                description = "Shared agent session viewer";
-                icon = "mdi-account-eye-outline";
-              };
-            }
-            {
-              "Mill Docs Agents" = {
-                href = "https://mill-docs-agents.${tailnet}";
-                description = "Agent docs";
-                icon = "mdi-file-document-outline";
-              };
-            }
-            {
-              "Open Wearables" = {
-                href = "${nucBase}:${toString config.modules.services.open-wearables.backendPort}/docs";
-                description = "Wearable health API (Apple XML import)";
-                icon = "healthchecks.svg";
-              };
-            }
-          ]
-          ++ optionals config.modules.services.homebox.enable [
-            {
-              "Homebox" = {
-                href = "https://homebox.cinnamon-rooster.ts.net/";
-                description = "Household inventory pilot";
-                icon = "mdi-package-variant-closed";
-                widget = {
-                  type = "homebox";
-                  url = "http://127.0.0.1:7745";
-                  username = "{{HOMEPAGE_VAR_HOMEBOX_USERNAME}}";
-                  password = "{{HOMEPAGE_VAR_HOMEBOX_PASSWORD}}";
-                  fields = [
-                    "items"
-                    "locations"
-                    "totalValue"
-                  ];
-                };
-              };
+              name = "Tailscale";
+              order = 30;
+              href = "https://login.tailscale.com/admin";
+              description = "VPN mesh admin";
+              icon = "tailscale.svg";
             }
           ];
         }
         {
-          "Network" = [
+          "Monitoring" = mkGroup "Monitoring" [
             {
-              "Router" = {
-                href = "http://192.168.1.254/cgi-bin/home.ha";
-                description = "Router admin";
-                icon = "mdi-router-wireless";
+              name = "Gatus";
+              order = 10;
+              href = "https://gatus.${tailnet}";
+              description = "Status page";
+              icon = "gatus.svg";
+              widget = {
+                type = "gatus";
+                url = "http://localhost:8084";
               };
             }
             {
-              "NextDNS" = {
-                href = "https://my.nextdns.io";
-                description = "DNS filtering";
-                icon = "nextdns.svg";
-                widget = {
-                  type = "nextdns";
-                  profile = "{{HOMEPAGE_VAR_NEXTDNS_PROFILE}}";
-                  key = "{{HOMEPAGE_VAR_NEXTDNS_API_KEY}}";
-                };
+              name = "Healthchecks";
+              order = 20;
+              href = "https://healthchecks.io";
+              description = "Cron job monitoring";
+              icon = "healthchecks.svg";
+              widget = {
+                type = "healthchecks";
+                url = "https://healthchecks.io";
+                key = "{{HOMEPAGE_VAR_HEALTHCHECKS_API_KEY}}";
               };
             }
             {
-              "Tailscale" = {
-                href = "https://login.tailscale.com/admin";
-                description = "VPN mesh admin";
-                icon = "tailscale.svg";
-              };
-            }
-            {
-              "Speedtest Tracker" = {
-                href = "${nucBase}:8765";
-                description = "Network speed history";
-                icon = "mdi-speedometer";
-              };
-            }
-          ];
-        }
-        {
-          "Monitoring" = [
-            {
-              "Gatus" = {
-                href = "https://gatus.${tailnet}";
-                description = "Status page";
-                icon = "gatus.svg";
-                widget = {
-                  type = "gatus";
-                  url = "http://localhost:8084";
-                };
-              };
-            }
-            {
-              "Healthchecks" = {
-                href = "https://healthchecks.io";
-                description = "Cron job monitoring";
-                icon = "healthchecks.svg";
-                widget = {
-                  type = "healthchecks";
-                  url = "https://healthchecks.io";
-                  key = "{{HOMEPAGE_VAR_HEALTHCHECKS_API_KEY}}";
-                };
-              };
-            }
-            {
-              "Grafana Cloud" = {
-                href = "https://fearlesslorry169.grafana.net/";
-                description = "Metrics dashboards";
-                icon = "grafana.svg";
-              };
+              name = "Grafana Cloud";
+              order = 30;
+              href = "https://fearlesslorry169.grafana.net/";
+              description = "Metrics dashboards";
+              icon = "grafana.svg";
             }
           ];
         }
