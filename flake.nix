@@ -1313,31 +1313,7 @@
                 inherit pkgs;
               };
 
-              # NixOS VM test: boot HA with our domain modules, verify config + API.
-              # Only on x86_64-linux (needs QEMU). Run on NUC or Linux builder.
-              hass-vm-test = import ./modules/services/hass/_tests/vm-test.nix {
-                inherit pkgs;
-              };
-
-              # Time-guard behavior tests: verify automations block before 7 AM.
-              # Uses clock manipulation + HA API to test end-to-end.
-              hass-time-guards = import ./modules/services/hass/_tests/time-guards-test.nix {
-                inherit pkgs;
-              };
-
-              # NixOS VM test: verify kittylitter home-manager user service,
-              # generated host config, daemon startup, and local status CLI.
-              kittylitter-vm-test = import ./modules/services/kittylitter/_tests/vm-test.nix {
-                inherit pkgs inputs;
-                kittylitterPackage = self.packages.${system}.kittylitter;
-              };
-
-              # NixOS VM test: verify the Herdr config bootstrap activation
-              # produces a writable config that passes `herdr config check`.
-              herdr-vm-test = import ./modules/shell/herdr/_tests/vm-test.nix {
-                inherit pkgs inputs;
-                herdrPackage = inputs.llm-agents.packages.${system}.herdr;
-              };
+              # (VM tests are merged in below via lib.my.discoverVmTests.)
 
               validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" { } ''
                 mkdir -p $out
@@ -1352,7 +1328,10 @@
 
                 echo "All plugin layout checks passed" > $out/result
               '';
-            };
+            }
+            # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.
+            # They need QEMU, so x86_64-linux only — run on NUC or a Linux builder.
+            // lib.optionalAttrs (system == "x86_64-linux") (lib.my.discoverVmTests ./modules);
         };
     };
 }

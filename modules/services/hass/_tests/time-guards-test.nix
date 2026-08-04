@@ -7,7 +7,7 @@
 #   - Wake detection can mark awake without triggering Good Morning
 #   - Good Morning scene still works manually
 #   - AL startup correction regression remains covered
-{ pkgs }:
+{ pkgs, inputs }:
 let
   domainModules = [
     ../_domains/ambient.nix
@@ -24,15 +24,25 @@ let
     mkdir -p $out
     cp ${./ha_test_lib.py} $out/ha_test_lib.py
   '';
+  dotfilesLib = pkgs.lib.extend (
+    self: _super: {
+      my = import ../../../../lib {
+        inherit pkgs inputs;
+        lib = self;
+      };
+    }
+  );
 in
-pkgs.testers.nixosTest {
+dotfilesLib.my.mkServiceVmTest {
   name = "hass-time-guards";
 
-  nodes.hass =
+  nodeName = "hass";
+  modules = domainModules;
+  skipTypeCheck = true;
+
+  extraConfig =
     { config, ... }:
     {
-      imports = domainModules;
-
       services.home-assistant = {
         enable = true;
         extraComponents = [ "met" ];
@@ -84,10 +94,7 @@ pkgs.testers.nixosTest {
       ];
 
       time.timeZone = "US/Central";
-      virtualisation.memorySize = 2048;
     };
-
-  skipTypeCheck = true;
 
   testScript = ''
     import sys
