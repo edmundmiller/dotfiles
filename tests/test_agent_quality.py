@@ -113,8 +113,9 @@ class AgentQualityTests(unittest.TestCase):
     def test_done_skill_preserves_landing_safety_contract(self) -> None:
         done_skill = DONE_SKILL.read_text()
 
-        self.assertIn("### Dirty default checkout gate", done_skill)
+        self.assertIn("### Dirty default checkout integration", done_skill)
         self.assertIn("temporary integration worktree", done_skill)
+        self.assertIn("merge --ff-only", done_skill)
         self.assertIn(
             "Never report `done` from a clean feature workspace alone.",
             done_skill,
