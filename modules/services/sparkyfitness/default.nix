@@ -106,6 +106,17 @@ in
       internal = true;
       default = composeText;
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "SparkyFitness";
+      order = 170;
+      group = "Health";
+      alerts = true;
+      url = "https://sparkyfitness.cinnamon-rooster.ts.net/";
+      interval = "60s";
+      conditions = [ "[STATUS] == 200" ];
+    };
   };
 
   config = mkIf cfg.enable (
