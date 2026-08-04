@@ -1216,7 +1216,13 @@ in
 
               ${optionalString (cfg.integrations.omp.enable && config.modules.agents.omp.enable) ''
                 ${pkgs.coreutils}/bin/mkdir -p "$HOME/.omp/agent/extensions"
-                PI_CODING_AGENT_DIR="$HOME/.omp/agent" install_integration omp
+                # Herdr 0.8 refuses to install OMP when Pi and OMP resolve to the
+                # same extension directory. Activation may inherit
+                # PI_CODING_AGENT_DIR=~/.omp/agent from the wrapped OMP that
+                # launched the rebuild, which makes both sides resolve there.
+                # Clear it so Pi falls back to ~/.pi/agent while PI_CONFIG_DIR
+                # keeps OMP on ~/.omp/agent.
+                PI_CODING_AGENT_DIR= PI_CONFIG_DIR=.omp install_integration omp
               ''}
 
               ${optionalString
