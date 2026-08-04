@@ -1,0 +1,9 @@
+{
+  "source": "https://github.com/boldsoftware/meat.git",
+  "ref": "f39f41dfe7b5b37a12b35fdfbaecc7e779855bd3",
+  "patches": [],
+  "checks": [
+    ["go", "test", "./..."],
+    ["go", "run", "./cmd/meat", "-h"]
+  ]
+}
