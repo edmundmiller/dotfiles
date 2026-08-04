@@ -1088,7 +1088,7 @@ in
           for plugin_root in "$plugins_root"/*; do
             if [ -f "$plugin_root/herdr-plugin.toml" ]; then
               if ! link_output=$("$herdr_cmd" plugin link "$plugin_root" 2>&1); then
-                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Fqi "Connection refused"; then
+                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
                   echo "herdr: warning: runtime unavailable; deferring local plugin link for $plugin_root" >&2
                 else
                   printf '%s\n' "$link_output" >&2
@@ -1103,7 +1103,7 @@ in
           export PATH=$PATH:${escapeShellArg launchPath}
           herdr_cmd=${escapeShellArg cfg.command}
           if ! start_output=$("$herdr_cmd" plugin action invoke start --plugin tab-smart-rename 2>&1); then
-            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Fqi "Connection refused"; then
+            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
               echo "herdr: warning: runtime unavailable; deferring smart rename worker start" >&2
             else
               printf '%s\n' "$start_output" >&2
@@ -1115,6 +1115,7 @@ in
         home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           export PATH=$PATH:${escapeShellArg launchPath}
           herdr_cmd=${escapeShellArg cfg.command}
+          runtime_deferred=0
 
           install_plugin() {
             owner="$1"
@@ -1126,7 +1127,17 @@ in
               spec="$spec/$subdir"
             fi
 
-            if ! installed_json=$("$herdr_cmd" plugin list --json); then
+            if [ "$runtime_deferred" -eq 1 ]; then
+              return 0
+            fi
+
+            if ! installed_json=$("$herdr_cmd" plugin list --json 2>&1); then
+              if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+                echo "herdr: warning: runtime unavailable or outdated; deferring marketplace plugin installation" >&2
+                runtime_deferred=1
+                return 0
+              fi
+              printf '%s\n' "$installed_json" >&2
               echo "herdr: error: failed to list plugins before installing $spec" >&2
               return 1
             fi
