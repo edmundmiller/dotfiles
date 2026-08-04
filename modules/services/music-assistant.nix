@@ -24,6 +24,17 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "music-assistant";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Music Assistant";
+      order = 190;
+      group = "Media";
+      alerts = true;
+      url = "http://localhost:${toString cfg.port}";
+      interval = "60s";
+      conditions = [ "[STATUS] == 200" ];
+    };
   };
 
   config = mkIf cfg.enable (

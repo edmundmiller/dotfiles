@@ -24,6 +24,29 @@ in
       default = null;
       description = "Path to env file for secrets (e.g. LUBELOGGER_ALLOWED_USERS).";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "LubeLogger";
+      order = 110;
+      group = "Home";
+      url = "http://localhost:5000";
+      conditions = [ "[STATUS] < 500" ];
+    };
+    homepage = {
+      group = "Home";
+      name = "LubeLogger";
+      order = 30;
+      description = "Vehicle maintenance tracker";
+      icon = "lubelogger.svg";
+      href = "http://nuc.cinnamon-rooster.ts.net:5000";
+      widget = {
+        type = "lubelogger";
+        url = "http://localhost:5000";
+        username = "{{HOMEPAGE_VAR_LUBELOGGER_USERNAME}}";
+        password = "{{HOMEPAGE_VAR_LUBELOGGER_PASSWORD}}";
+      };
+    };
   };
 
   # NixOS-only service
