@@ -7,8 +7,10 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const skill = readFileSync(`${root}/skills/catalog/done/SKILL.md`, "utf8");
 
 describe("done skill dirty default checkout contract", () => {
-  it("blocks without changing the branch meaning of dirty canonical main", () => {
-    expect(skill).toContain("If the default branch's existing checkout has unrelated dirt");
-    expect(skill).toMatch(/Never move that checkout to a\s+preservation branch/);
+  it.fails("tries a safe fast-forward before blocking on dirty canonical main", () => {
+    expect(skill).toContain("temporary integration worktree");
+    expect(skill).toContain("merge --ff-only");
+    expect(skill).toContain("only when Git refuses");
+    expect(skill).toMatch(/Never move\s+that checkout to a preservation branch/);
   });
 });
