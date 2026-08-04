@@ -32,6 +32,23 @@ in
       enable = mkBoolOpt false;
       serviceName = mkOpt types.str "audiobookshelf";
     };
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Audiobookshelf";
+      order = 180;
+      group = "Media";
+      url = "http://localhost:${toString cfg.port}";
+      conditions = [ "[STATUS] == 200" ];
+    };
+    homepage = {
+      group = "Media";
+      name = "Audiobookshelf";
+      order = 20;
+      description = "Audiobooks & podcasts";
+      icon = "audiobookshelf.svg";
+      href = "http://nuc.cinnamon-rooster.ts.net:13378";
+    };
   };
 
   # NixOS-only service
