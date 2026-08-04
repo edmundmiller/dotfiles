@@ -2,7 +2,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@flue/cli": "1.0.0-beta.9",
+    "@flue/cli": "2.0.2",
     "@flue/runtime": "1.0.0-beta.9"
   }
 }
