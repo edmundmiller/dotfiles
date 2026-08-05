@@ -2,6 +2,7 @@
 let
   cfg = nixosConfig.config;
   service = cfg.systemd.services.mill-docs-coding-agent;
+  timer = cfg.systemd.timers.mill-docs-coding-agent;
   source = builtins.readFile ../default.nix;
   acpxDir = "/var/lib/mill-docs-coding-agent/acpx";
   failures = builtins.filter (assertion: !assertion.test) [
@@ -40,6 +41,10 @@ let
     {
       test = !(pkgs.lib.hasInfix "unset NOSTR_PRIVATE_KEY" source);
       msg = "Mill Docs coding runner must retain its Nostr signing key for runner-owned git operations.";
+    }
+    {
+      test = timer.wantedBy == [ "timers.target" ];
+      msg = "Mill Docs coding agent timer must be enabled after credential rotation.";
     }
   ];
 in
