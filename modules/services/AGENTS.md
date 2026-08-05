@@ -117,6 +117,13 @@ options, guards, registry aggregation, generated configuration, and local
 service integration. Keep VM checks discoverable for targeted Linux/NUC runs;
 do not add every service VM to routine CI.
 
+When repository code generates a service configuration, validate the rendered
+artifact with the service's native parser or check command whenever one exists.
+Prefer that focused build/eval check over a VM. Use a VM only when native
+validation requires the running service or when the repository-specific
+behavior itself is runtime behavior. Text assertions may cover dotfiles
+invariants, but they are not a substitute for native config validation.
+
 ## 6. Deploy
 
 ```bash
