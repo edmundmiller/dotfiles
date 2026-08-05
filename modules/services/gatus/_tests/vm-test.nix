@@ -130,6 +130,10 @@ dotfilesLib.my.mkServiceVmTest {
         # "Registry On" is nowhere in gatus/default.nix. It appears only
         # because its module declares registry.gatus, so seeing it in the
         # running daemon proves the aggregation path works end-to-end.
+        machine.wait_until_succeeds(
+            "curl -fsS http://localhost:8084/api/v1/endpoints/statuses | grep -F 'Registry On'",
+            timeout=60,
+        )
         raw = machine.succeed("curl -fsS http://localhost:8084/api/v1/endpoints/statuses")
         names = {e["name"] for e in json.loads(raw)}
         print(sorted(names))
