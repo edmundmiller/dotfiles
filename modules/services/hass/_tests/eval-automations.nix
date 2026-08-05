@@ -662,7 +662,22 @@ let
               5
             ]
         && hasInfix "#00D4FFFF" busyBarBedtimeDrawPayload
+        && hasInfix "#FFB000FF" busyBarBedtimeDrawPayload
         && hasInfix "#202020FF" busyBarBedtimeDrawPayload
+        &&
+          builtins.all
+            (
+              label:
+              hasInfix ''"id": "checkpoint_label_${label}"'' busyBarBedtimeDrawPayload
+              && hasInfix ''"text": "${label}"'' busyBarBedtimeDrawPayload
+            )
+            [
+              "30"
+              "24"
+              "18"
+              "12"
+              "6"
+            ]
         && !(hasInfix "gradient_h" busyBarBedtimeDrawPayload)
         && !(hasInfix "gradient_v" busyBarBedtimeDrawPayload);
       msg = "BUSY Bar draw payload must preserve the countdown and five solid checkpoint contract";
