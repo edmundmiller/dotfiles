@@ -1,3 +1,11 @@
+---
+purpose: Define how to add, register, test, and deploy NUC service modules.
+applies_to: Changes under modules/services or hosts/nuc service configuration.
+entrypoint: Start with the numbered service checklist below.
+verification: Run hey check and targeted Linux VM checks for repository-specific behavior.
+update_when: Service ownership, registry, testing, or deployment conventions change.
+---
+
 # Adding a New Service (Checklist)
 
 End-to-end flow for adding a self-hosted service to the NUC.
