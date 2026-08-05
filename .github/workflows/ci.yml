@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   # Run flake checks on Linux (NixOS configurations)
@@ -81,6 +82,23 @@ jobs:
       - name: Skip NixOS config eval
         run: |
           echo "Skipping nuc eval in CI; openclaw-workspace is private"
+
+  # Service VM tests are slow, so they run on request rather than every push.
+  vm-services:
+    name: Service VM Tests (Linux)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
+      - name: Build service VM checks
+        run: |
+          echo "::group::vm-services-gatus-vm-test" && time nix build .#checks.x86_64-linux.vm-services-gatus-vm-test --no-link && echo "::endgroup::"
+          echo "::group::vm-services-kittylitter-vm-test" && time nix build .#checks.x86_64-linux.vm-services-kittylitter-vm-test --no-link && echo "::endgroup::"
 
   # Run flake checks on macOS (Darwin configurations)
   check-darwin:
