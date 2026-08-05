@@ -72,6 +72,7 @@ dotfilesLib.my.mkServiceVmTest {
             name = "Registry On";
             group = "TestGroup";
             url = "http://localhost:8084/health";
+            interval = "1s";
             conditions = [ "[STATUS] == 200" ];
           };
         };
