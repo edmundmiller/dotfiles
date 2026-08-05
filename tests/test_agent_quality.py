@@ -13,6 +13,7 @@ SCRIPT = ROOT / "bin" / "agent-quality"
 HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
 HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
 FLAKE = ROOT / "flake.nix"
+AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 AUTONOMOUS_RULE = ROOT / "config" / "agents" / "rules" / "16-autonomous-goal-progress.md"
 AUTONOMOUS_SKILL = ROOT / "skills" / "catalog" / "autonomous-agent-loop" / "SKILL.md"
@@ -241,6 +242,13 @@ class AgentQualityTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 2)
         self.assertIn("different model family", result.stderr)
+
+    def test_cross_model_review_is_opt_in(self) -> None:
+        workflow = AGENT_WORKFLOW.read_text()
+
+        self.assertIn("Cross-model review is optional", workflow)
+        self.assertNotIn("hey agent-review plan", workflow)
+        self.assertNotIn("hey agent-review landing", workflow)
 
     def test_start_writes_a_git_receipt_without_jj_installed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

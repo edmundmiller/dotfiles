@@ -1,8 +1,8 @@
 ---
-purpose: Canonical risk-gated workflow for agent-authored changes.
+purpose: Canonical evidence-gated workflow for agent-authored changes.
 applies_to: Broad, autonomous, high-risk, or multi-session tasks in this repository.
 entrypoint: Copy .agents/worklogs/TEMPLATE.md and use hey agent-* commands.
-verification: hey agent-finish, runtime smoke checks, heterogeneous landing review.
+verification: hey agent-finish, runtime smoke checks, and remote-equality proof.
 update_when: Repeated workflow evidence exposes drift in this contract.
 ---
 
@@ -19,11 +19,10 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 5. Route through root and nearest nested `AGENTS.md`. Load every matching skill before acting.
 6. Find canonical docs by searching the first seven lines for `purpose`, `applies_to`, or `update_when`.
 
-## Research and plan gate
+## Research
 
 - Keep research source-backed and record consequential findings in the worklog.
-- Before high-risk implementation, run `hey agent-review plan --active-model-family <family> --worklog <path>`.
-- Resolve findings or record why they do not apply. Same-family review does not satisfy the gate.
+- Cross-model review is optional. Run `hey agent-review` only when the user explicitly requests it; reviewer availability never gates implementation or landing.
 
 ## Implement
 
@@ -44,11 +43,10 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 
 1. Run focused tests, then `hey agent-audit-tests` and `hey agent-finish --worklog <path>`.
 2. For UI/performance paths, add or update the subsystem manifest command before claiming those checks pass.
-3. Run `hey agent-review landing --active-model-family <family> --worklog <path>` and resolve findings.
-4. Update evidence, feedback, remaining work, commits, worklog status, and issue status.
-5. Use the global `done` skill to commit/shape, reconcile, publish, prove remote equality, and clean up. Complete the run receipt only after proof.
-6. Run `br sync --flush-only`, commit `.beads/` only if task-shaped state changed, and verify upstream again.
-7. Create and push annotated tag `agent-work/<issue-or-slug>`.
+3. Update evidence, feedback, remaining work, commits, worklog status, and issue status.
+4. Use the global `done` skill to commit/shape, reconcile, publish, prove remote equality, and clean up. Complete the run receipt only after proof.
+5. Run `br sync --flush-only`, commit `.beads/` only if task-shaped state changed, and verify upstream again.
+6. Create and push annotated tag `agent-work/<issue-or-slug>`.
 
 `PASS` requires an exercised check. `NOT_APPLICABLE`, `SKIP`, no tests collected, and missing validators are not passes.
 
