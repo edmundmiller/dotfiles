@@ -36,7 +36,7 @@ Timing rules:
 
 ### BUSY Bar bedtime progress
 
-During the final 30 minutes before Good Night, Home Assistant draws a countdown and five six-minute checkpoints on the BUSY Bar through the LAN Canvas API. The drawing uses the namespaced application `home_assistant_bedtime`, priority 50, and 75-second element timeouts. BUSY/custom firmware activity at priority 90 takes precedence. The automation never calls the Matter `light.busy_bar` entity.
+During the final 30 minutes before Good Night, Home Assistant draws a countdown and five labeled six-minute checkpoints (`30`, `24`, `18`, `12`, `6`) on the BUSY Bar through the LAN Canvas API. Completed checkpoints are cyan, the current checkpoint is amber, and upcoming checkpoints are dim gray. The drawing uses the namespaced application `home_assistant_bedtime`, priority 50, and 75-second element timeouts. BUSY/custom firmware activity at priority 90 takes precedence. The automation never calls the Matter `light.busy_bar` entity.
 
 The automation redraws every minute from 8 PM through midnight and whenever its alarm, presence, or sleep-state inputs change. Outside the active window it deletes only the `home_assistant_bedtime` application, restoring the prior display.
 
