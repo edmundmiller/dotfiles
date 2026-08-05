@@ -22,6 +22,7 @@ Add readable minute labels to the five BUSY Bar bedtime checkpoints, distinguish
 - Home Assistant reports `automation.busy_bar_bedtime_progress` on in restart mode and both REST commands registered; deployed configuration contains all five tiny labels and the amber color.
 - `hey check` passed on the clean integration branch.
 - The BUSY Bar Wi-Fi interface remains disconnected, so the deployed Home Assistant-to-LAN draw path could not be re-exercised; the same payload was exercised through the device's USB API.
+- Landed on `main`; local and authoritative remote tips matched at `7c61813eb2e8e48a68a574fc5d480530aff7c01c`, and tag `agent-work/busy-bar-bedtime-labels` was published.
 
 ## Reviews
 
@@ -35,10 +36,10 @@ None.
 ## Remaining work
 
 - Reconnect the BUSY Bar to Wi-Fi and exercise the deployed Home Assistant-to-LAN draw path.
-- Land the integration commits and verify upstream equality.
 
 ## Commits
 
 - Source feature commit: `cf11962d9 feat(hass): label BUSY Bar bedtime checkpoints`
 - Clean integration commit: `4efa8a202 feat(hass): label BUSY Bar bedtime checkpoints`
+- Landing tip: `7c61813eb2e8e48a68a574fc5d480530aff7c01c`
 - Run receipt: `/Users/emiller/.local/state/dotfiles-agent-runs/b85a318d68a7/20260805T040754Z-4423f0e3fe76.json`
