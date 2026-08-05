@@ -93,6 +93,22 @@ aggregator — there is nothing to hang a registry off.
 
 Add `HOMEPAGE_VAR_*` entries to `homepage-env.age` (decrypt → append → re-encrypt).
 
+## 5. Tests
+
+Before adding a NixOS VM test, check whether nixpkgs already covers the upstream
+module:
+
+```bash
+gh search code '<service> repo:NixOS/nixpkgs path:nixos/tests'
+```
+
+Do not duplicate upstream service tests here. Nixpkgs owns whether its module
+starts the daemon and exposes the standard endpoints. Tests under
+`modules/services/**/_tests/` cover only this repository's behavior: wrapper
+options, guards, registry aggregation, generated configuration, and local
+service integration. Keep VM checks discoverable for targeted Linux/NUC runs;
+do not add every service VM to routine CI.
+
 ## 6. Deploy
 
 ```bash
