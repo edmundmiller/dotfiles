@@ -26,6 +26,7 @@ Add readable minute labels to the five BUSY Bar bedtime checkpoints, distinguish
 ## Reviews
 
 - Cross-family plan review was attempted with `hey agent-review plan` and blocked by `Authentication required`. The change was manually reviewed against the firmware schema, the existing payload contract, and the domain rules.
+- Cross-family landing review was attempted with `hey agent-review landing` and blocked by the same authentication failure. Manual landing review found no scope, schema, or safety regressions.
 
 ## Feedback
 
