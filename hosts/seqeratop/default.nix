@@ -283,6 +283,7 @@
 
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
+      my.openwiki
       my.zele
       my.quill
       my.work-calendar-busy
@@ -333,6 +334,10 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+
+        home.activation.removeLegacyOpenWiki = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          rm -f "$HOME/.cache/npm/bin/openwiki"
         '';
       };
 

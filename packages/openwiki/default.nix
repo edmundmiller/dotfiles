@@ -39,7 +39,7 @@ let
     ];
     text = ''
       repo="''${OPENWIKI_SCHEDULE_REPO:-$HOME/.local/state/openwiki/obsidian-vault}"
-      remote="''${OPENWIKI_SCHEDULE_REMOTE:-git@github.com:edmundmiller/claude-vault.git}"
+      remote="''${OPENWIKI_SCHEDULE_REMOTE:-git@github.com:edmundmiller/scientific-engagement.git}"
       branch="automation/openwiki"
 
       mkdir -p "$(dirname "$repo")"
