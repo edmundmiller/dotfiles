@@ -1,31 +1,31 @@
 diff --git a/docs/tools/read.md b/docs/tools/read.md
-index 38f1c3771..5d6c83277 100644
 --- a/docs/tools/read.md
 +++ b/docs/tools/read.md
 @@ -10,7 +10,7 @@
-   - `packages/coding-agent/src/utils/zip.ts` — the unified ZIP/tar wrapper: detect `archive.ext:inner/path`, index archives, list/read entries.
+   - `packages/coding-agent/src/utils/zip.ts` — unified ZIP/tar wrapper: detect `archive.ext:inner/path`, index archives, list/read entries.
    - `packages/coding-agent/src/tools/sqlite-reader.ts` — detect SQLite targets, parse selectors, render tables.
    - `packages/coding-agent/src/tools/fetch.ts` — URL parsing, fetch/render pipeline, URL cache/artifacts.
--  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, and `vault://`.
-+  - `packages/coding-agent/src/internal-urls/router.ts` — resolve `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, and `vault://`.
+-  - `packages/coding-agent/src/internal-urls/router.ts` — built-in internal-resource registry, including `ssh://` and `xd://`; MCP may advertise additional schemes.
++  - `packages/coding-agent/src/internal-urls/router.ts` — built-in internal-resource registry, including `herdr://`, `hunk://`, `ssh://` and `xd://`; MCP may advertise additional schemes.
    - `packages/coding-agent/src/edit/notebook.ts` — convert `.ipynb` to editable `# %% [...] cell:N` text.
+   - `packages/coding-agent/src/utils/cpuprofile.ts` / `sample-profile.ts` — summarize recognized profiler reports.
    - `packages/coding-agent/src/utils/file-display-mode.ts` — decide hashline vs line-number vs raw display.
-   - `packages/coding-agent/src/workspace-tree.ts` — render directory trees.
-@@ -196,7 +196,7 @@ URL selectors are parsed separately in `packages/coding-agent/src/tools/fetch.ts
+@@ -211,7 +211,7 @@
+ - Unsupported/undecodable image formats throw a `ToolError`.
  
  ### Internal URLs
- - `read` does not resolve these itself; it delegates to `InternalUrlRouter.instance().resolve()`.
--- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, and `vault://`.
-+- Registered protocols are outside this file, but the router in `packages/coding-agent/src/internal-urls/router.ts` is built for `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, and `vault://`.
+-- `read` delegates internal and MCP-advertised schemes to `InternalUrlRouter`; the built-in registry currently includes `agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`.
++- `read` delegates internal and MCP-advertised schemes to `InternalUrlRouter`; the built-in registry currently includes `agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`.
    - `security://` is reserved for the OMP-owned, producer-neutral, read-only security-analysis store.
- - `#handleInternalUrl()` behavior:
-   - parses the URL with `parseInternalUrl()` so colons inside the host segment are legal
-@@ -206,6 +206,9 @@ URL selectors are parsed separately in `packages/coding-agent/src/tools/fetch.ts
-   - sets `ignoreResultLimits: true` for `skill://` so the full skill text is paginated only by explicit selectors, not by the normal default line limit
- - `issue://<N>` / `pr://<N>` (and the long form `issue://<owner>/<repo>/<N>` / `pr://<owner>/<repo>/<N>`) route through the same SQLite cache the `github` tool writes to; `?comments=0` selects the no-comments rendering. Bare `issue://` / `pr://` (and `issue://<owner>/<repo>` / `pr://<owner>/<repo>`) issue a live `gh issue list` / `gh pr list` for browsing, accepting `?state=`, `?limit=`, `?author=`, `?label=`. PR diffs share the same cache through `pr://<N>/diff` (numbered file listing with per-file hints), `pr://<N>/diff/<i>` (single file slice; 1-indexed), and `pr://<N>/diff/all` (verbatim unified diff); the listing and per-file slices are reconstructed from the cached unified-diff payload, so all three variants share one `gh pr diff` invocation per PR. Diff content is served as `text/plain`. Soft TTL `github.cache.softTtlSec` (default 5 minutes), hard TTL `github.cache.hardTtlSec` (default 7 days). Stale-hit returns the cached row and schedules a background refresh.
+   - `xd://` lists mounted tool devices; `xd://<name>` returns that device's input documentation. Writing JSON to the same URI dispatches the device through `write`.
+   - `ssh://host/<path>` reads a remote UTF-8 file or directory; bare `ssh://` lists configured hosts. Remote paths are limited to 1 MiB and require a POSIX remote shell. Percent-encode literal `:`, `?`, or `#` in the path.
+@@ -225,6 +225,10 @@
+ - `conflict://` is handled separately from the router. `<path>:conflicts` registers blocks; `conflict://<N>` reads one registered marker block, and `/ours`, `/theirs`, `/base`, or `/both` selects a side. `conflict://*` is write-only.
+ - `issue://<N>` / `pr://<N>` (and the long form `issue://<owner>/<repo>/<N>` / `pr://<owner>/<repo>/<N>`) route through the same SQLite cache the `github` tool writes to; `?comments=0` selects the no-comments rendering. Bare `issue://` / `pr://` (and repository-qualified variants) browse live lists with `?state=`, `?limit=`, `?author=`, and `?label=`. PR diffs use `pr://<N>/diff`, `/diff/<i>`, and `/diff/all`.
  
 +- `herdr://status`, `herdr://snapshot`, `herdr://workspaces`, `herdr://tabs?workspace=<id>`, `herdr://panes?workspace=<id>`, and `herdr://pane/<id>?source=recent&lines=80` shell through the local Herdr CLI and materialize immutable output for searching.
 +- `hunk://review?repo=<path>&includePatch=1&includeNotes=1`, `hunk://context?repo=<path>`, and `hunk://comments?repo=<path>&type=user` shell through `hunk session ...` and default `repo` to the caller cwd.
++
 +
  ### Web URLs
  - `parseReadUrlTarget()` accepts `http://`, `https://`, or `www.` targets.
