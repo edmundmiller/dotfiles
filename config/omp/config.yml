@@ -88,6 +88,13 @@ inspect_image:
   enabled: true
 astGrep:
   enabled: true
+
+skills:
+  # /green (bundled ci-green command) already covers autonomous CI fixing:
+  # watch HEAD -> fix -> push -> re-watch until green. Hidden from OMP only;
+  # still deployed to Codex/hermes/opencode/pi via skills/flake.nix.
+  ignoredSkills:
+    - gh-fix-ci
 checkpoint:
   enabled: true
 vault:
