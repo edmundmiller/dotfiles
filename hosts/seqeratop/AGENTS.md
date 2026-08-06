@@ -29,6 +29,7 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 ## Host-Specific Config
 
 - **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend; activation removes stale bun/npm `qmd` shims so the Nix binary wins
+- **OpenWiki CLI**: `pkgs.my.openwiki` installed system-wide; activation removes stale npm shims so the patched Nix build owns personal-wiki ingestion and scheduling
 - **nix-homebrew**: ARM + Rosetta, auto-migrate, mutable taps
 - **Homebrew**: see `homebrew.nix` for cask/formula list
 - **primaryUser**: `edmundmiller` (overrides default)
