@@ -16,7 +16,7 @@ final: prev: {
         cargoDeps = final.rustPlatform.fetchCargoVendor {
           name = "omp-${old.version}-cargo-vendor";
           inherit src;
-          hash = "sha256-dYh0YpGzMC7aC9SZa9WtD7a+U0fR0qiVOzzQKz8GQcA=";
+          hash = "sha256-oU8ZYNil9zS2gq9yva87jZ/eL6/xEMZ6prho4MsNRIQ=";
         };
         postInstall =
           (old.postInstall or "")
