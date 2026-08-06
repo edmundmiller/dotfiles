@@ -1,15 +1,16 @@
-diff --git a/src/agent/index-middleware.ts b/src/agent/index-middleware.ts
---- a/src/agent/index-middleware.ts
-+++ b/src/agent/index-middleware.ts
-@@ -12,6 +12,7 @@
-   "AGENTS.md": true,
-   "INSTRUCTIONS.md": true,
- };
+diff --git a/src/okf/index-sync.ts b/src/okf/index-sync.ts
+index 5760d75..e2355bf 100644
+--- a/src/okf/index-sync.ts
++++ b/src/okf/index-sync.ts
+@@ -20,6 +20,7 @@ const EXCLUDED_FILES = new Set([
+   "AGENTS.md",
+   "INSTRUCTIONS.md",
+ ]);
 +const EXCLUDED_INDEX_DIRECTORIES = new Set(["Clippings/Tweets"]);
  
- interface Directory {
-   entries: FileInfo[];
-@@ -50,6 +51,13 @@
+ /**
+  * A wiki directory paired with the entries it directly contains.
+@@ -67,6 +68,13 @@ export async function synchronizeWikiIndexes(
  ): Promise<void> {
    const root = outputMode === "local-wiki" ? "/" : "/openwiki";
    for (const directory of await collectDirectories(backend, root, true)) {
@@ -20,13 +21,14 @@ diff --git a/src/agent/index-middleware.ts b/src/agent/index-middleware.ts
 +    ) {
 +      continue;
 +    }
-     await synchronizeDirectory(backend, directory, root);
+     await synchronizeDirectory(backend, directory, root, labels, conceptType);
    }
  }
 diff --git a/test/index-middleware.test.ts b/test/index-middleware.test.ts
+index f063097..f2cc42c 100644
 --- a/test/index-middleware.test.ts
 +++ b/test/index-middleware.test.ts
-@@ -193,6 +193,20 @@
+@@ -316,6 +316,20 @@ describe("synchronizeWikiIndexes", () => {
      ).resolves.not.toContain("AGENTS.md");
    });
  

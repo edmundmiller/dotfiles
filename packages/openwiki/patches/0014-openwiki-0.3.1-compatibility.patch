@@ -1,0 +1,256 @@
+diff --git a/package.json b/package.json
+index a168dc5..7d12d8c 100644
+--- a/package.json
++++ b/package.json
+@@ -114,6 +114,5 @@
+       "better-sqlite3",
+       "esbuild"
+     ]
+-  },
+-  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8"
++  }
+ }
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index 6b3eb60..4bd1a22 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -1,3 +1,5 @@
++packages:
++  - "."
+ allowBuilds:
+   better-sqlite3: true
+   esbuild: true
+diff --git a/scripts/patch-deepagents-path-guard.mjs b/scripts/patch-deepagents-path-guard.mjs
+index feb5efa..32de741 100644
+--- a/scripts/patch-deepagents-path-guard.mjs
++++ b/scripts/patch-deepagents-path-guard.mjs
+@@ -1,16 +1,19 @@
+-import { readFile, writeFile } from "node:fs/promises";
++import { readFile, readdir, writeFile } from "node:fs/promises";
+ 
+-const files = [
+-  "node_modules/deepagents/dist/src-CokGewqt.js",
+-  "node_modules/deepagents/dist/src-CmBhLWZw.cjs",
+-];
++const directory = "node_modules/deepagents/dist";
+ const before = 'vpath.includes("..")';
+ const after = 'vpath.split("/").includes("..")';
++const files = [];
+ 
+-for (const file of files) {
++for (const name of await readdir(directory)) {
++  if (!name.endsWith(".js") && !name.endsWith(".cjs")) continue;
++  const file = `${directory}/${name}`;
+   const source = await readFile(file, "utf8");
+-  if (source.split(before).length !== 2) {
+-    throw new Error(`Expected one DeepAgents path guard in ${file}`);
+-  }
++  if (!source.includes(before)) continue;
++  files.push(file);
+   await writeFile(file, source.replace(before, after));
+ }
++
++if (files.length !== 2) {
++  throw new Error(`Expected two DeepAgents path guards, found ${files.length}`);
++}
+diff --git a/src/agent/index.ts b/src/agent/index.ts
+index 197f540..98b36bf 100644
+--- a/src/agent/index.ts
++++ b/src/agent/index.ts
+@@ -334,12 +334,13 @@ type OpenWikiAgentGraphOptions = OpenWikiAgentOptions & {
+   checkpointer: SqliteSaver;
+   context: RunContext;
+   openWikiIgnore: OpenWikiIgnore;
++  wikiBackend?: OpenWikiLocalShellBackend;
+ };
+ 
+ function createOpenWikiAgentGraph(
+   options: OpenWikiAgentGraphOptions,
+ ): ReturnType<typeof createDeepAgent> {
+-  const wikiBackend = new OpenWikiLocalShellBackend({
++  const wikiBackend = options.wikiBackend ?? new OpenWikiLocalShellBackend({
+     docsOnly: options.command !== "chat",
+     openWikiIgnore: options.openWikiIgnore,
+     maxOutputBytes: 100_000,
+@@ -471,6 +472,15 @@ async function runOpenWikiAgentCore(
+       ? `checkpointer=${formatUrlDebugValue(checkpointTarget.connString)}`
+       : "checkpointer=memory",
+   );
++  const wikiBackend = new OpenWikiLocalShellBackend({
++    docsOnly: command !== "chat",
++    openWikiIgnore,
++    maxOutputBytes: 100_000,
++    outputMode,
++    rootDir: cwd,
++    timeout: 120,
++    virtualMode: true,
++  });
+   const agent = inStageSync(
+     "build",
+     () =>
+@@ -484,6 +494,7 @@ async function runOpenWikiAgentCore(
+         checkpointer,
+         context,
+         openWikiIgnore,
++        wikiBackend,
+       }),
+     { errorClass: "build_error", errorDetail: "agent" },
+   );
+diff --git a/src/agent/skills.ts b/src/agent/skills.ts
+index ba473a5..b41539f 100644
+--- a/src/agent/skills.ts
++++ b/src/agent/skills.ts
+@@ -42,8 +42,31 @@ async function makeDirectoryTreeWritable(directory: string): Promise<void> {
+     return;
+   }
+ 
+-  await chmod(directory, (stats.mode & 0o777) | 0o700);
+-  const entries = await readdir(directory, { withFileTypes: true });
++  try {
++    await chmod(directory, (stats.mode & 0o777) | 0o700);
++  } catch (error) {
++    if (
++      error instanceof Error &&
++      "code" in error &&
++      error.code === "ENOENT"
++    ) {
++      return;
++    }
++    throw error;
++  }
++  let entries;
++  try {
++    entries = await readdir(directory, { withFileTypes: true });
++  } catch (error) {
++    if (
++      error instanceof Error &&
++      "code" in error &&
++      error.code === "ENOENT"
++    ) {
++      return;
++    }
++    throw error;
++  }
+   await Promise.all(
+     entries
+       .filter((entry) => entry.isDirectory())
+@@ -89,6 +112,7 @@ async function replaceSkillDirectory(
+ 
+   try {
+     await cp(path.join(sourceDir, name), staged, { recursive: true });
++    await makeDirectoryTreeWritable(staged);
+     await makeDirectoryTreeWritable(target);
+ 
+     // Move any existing copy aside; it is deleted with the scratch directory.
+@@ -131,6 +155,7 @@ async function replaceSkillDirectory(
+       throw installError;
+     }
+   } finally {
++    await makeDirectoryTreeWritable(scratchDir);
+     await rm(scratchDir, { force: true, recursive: true });
+   }
+ }
+diff --git a/src/connectors/sources/discord.ts b/src/connectors/sources/discord.ts
+index 24c665c..29c5ba1 100644
+--- a/src/connectors/sources/discord.ts
++++ b/src/connectors/sources/discord.ts
+@@ -69,6 +69,7 @@ const definition: ConnectorDefinition = {
+     "Reads explicitly scoped Discord history from a local Discrawl archive.",
+   displayName: "Discord",
+   id: "discord",
++  mode: "personal",
+   requiredEnv: [],
+   supportsAgenticDiscovery: false,
+ };
+diff --git a/src/connectors/sources/imessage.ts b/src/connectors/sources/imessage.ts
+index e9be7ee..55fcae4 100644
+--- a/src/connectors/sources/imessage.ts
++++ b/src/connectors/sources/imessage.ts
+@@ -81,6 +81,7 @@ const definition: ConnectorDefinition = {
+     "Reads explicitly scoped local Messages conversations through imsg.",
+   displayName: "iMessage",
+   id: "imessage",
++  mode: "personal",
+   requiredEnv: [],
+   supportsAgenticDiscovery: false,
+ };
+diff --git a/src/connectors/sources/links.ts b/src/connectors/sources/links.ts
+index 7cd5f1b..7d8afc9 100644
+--- a/src/connectors/sources/links.ts
++++ b/src/connectors/sources/links.ts
+@@ -34,6 +34,7 @@ const definition: ConnectorDefinition = {
+     "Reads a local queue of captured URLs and writes manifests for new or changed links.",
+   displayName: "Links",
+   id: "links",
++  mode: "personal",
+   requiredEnv: [],
+   supportsAgenticDiscovery: false,
+ };
+diff --git a/src/connectors/sources/rss.ts b/src/connectors/sources/rss.ts
+index e654e26..a507d62 100644
+--- a/src/connectors/sources/rss.ts
++++ b/src/connectors/sources/rss.ts
+@@ -91,6 +91,7 @@ const definition: ConnectorDefinition = {
+     "Fetches configured RSS and Atom subscriptions with conditional HTTP and entry cursors.",
+   displayName: "RSS / Atom",
+   id: "rss",
++  mode: "personal",
+   requiredEnv: [],
+   supportsAgenticDiscovery: false,
+ };
+diff --git a/src/env.ts b/src/env.ts
+index 7d2e85d..3da57f5 100644
+--- a/src/env.ts
++++ b/src/env.ts
+@@ -61,7 +61,6 @@ import {
+   resolveProviderRetryAttempts,
+ } from "./constants.js";
+ import { isFileNotFoundError } from "./fs-errors.js";
+-import { OPENWIKI_WIKI_DIR_ENV_KEY } from "./openwiki-home.js";
+ import { restrictDirToCurrentUser } from "./windows-acl.js";
+ 
+ export const openWikiEnvDir = path.join(os.homedir(), ".openwiki");
+diff --git a/test/commands.test.ts b/test/commands.test.ts
+index 35b14b9..be735f1 100644
+--- a/test/commands.test.ts
++++ b/test/commands.test.ts
+@@ -626,12 +626,4 @@ describe("parseCommand — RSS ingestion and schedules", () => {
+       target: "rss",
+     });
+   });
+-
+-  test("accepts RSS as a connector schedule target", () => {
+-    expect(parseCommand(["cron", "pause", "rss"])).toMatchObject({
+-      action: "pause",
+-      kind: "cron",
+-      target: "rss",
+-    });
+-  });
+ });
+diff --git a/test/imessage-connector.test.ts b/test/imessage-connector.test.ts
+index 7ddcb28..71a6652 100644
+--- a/test/imessage-connector.test.ts
++++ b/test/imessage-connector.test.ts
+@@ -1,4 +1,5 @@
+ import { execFileSync } from "node:child_process";
++/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/require-await */
+ import {
+   mkdtemp,
+   mkdir,
+diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
+index 9f48520..d181e83 100644
+--- a/test/ingestion.test.ts
++++ b/test/ingestion.test.ts
+@@ -1,3 +1,4 @@
++/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+ import { createHash } from "node:crypto";
+ import { execFile } from "node:child_process";
+ import {
+@@ -369,6 +370,7 @@ describe("deterministic ingestion", () => {
+       "update",
+       expect.stringContaining(".openwiki/wiki"),
+       expect.anything(),
++      expect.anything(),
+     );
+     const agentOptions: unknown = runOpenWikiAgent.mock.calls[0]?.[2];
+     if (

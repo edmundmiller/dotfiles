@@ -1,30 +1,30 @@
 diff --git a/package.json b/package.json
-index 44f494c..20533ae 100644
+index d1b3713..df75c2d 100644
 --- a/package.json
 +++ b/package.json
-@@ -57,6 +57,7 @@
+@@ -67,6 +67,7 @@
      "cron-parser": "5.6.1",
      "cronstrue": "3.24.0",
-     "deepagents": "^1.11.0",
-+    "evlog": "^2.20.0",
+     "deepagents": "1.12.0",
++    "evlog": "2.20.0",
      "google-auth-library": "^10.9.0",
      "ink": "^5.1.0",
      "langchain": "^1.5.3",
 diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
-index 4f7d6a1..2e4ee72 100644
+index ed25364..536a6af 100644
 --- a/pnpm-lock.yaml
 +++ b/pnpm-lock.yaml
 @@ -53,6 +53,9 @@ importers:
        deepagents:
-         specifier: ^1.11.0
-         version: 1.11.0(258c1430434a32ce8e1dc2c77a7040b8)
+         specifier: 1.12.0
+         version: 1.12.0(36530d928ffe7026ae43c7a393ecd4c9)
 +      evlog:
-+        specifier: ^2.20.0
++        specifier: 2.20.0
 +        version: 2.20.0(react@18.3.1)(vite@8.1.3(@types/node@22.20.0)(esbuild@0.28.1)(tsx@4.22.5)(yaml@2.9.0))
        google-auth-library:
          specifier: ^10.9.0
          version: 10.9.0
-@@ -1094,6 +1097,66 @@ packages:
+@@ -1634,6 +1637,66 @@ packages:
      resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
      engines: {node: '>=18.0.0'}
  
@@ -91,7 +91,7 @@ index 4f7d6a1..2e4ee72 100644
    expand-template@2.0.3:
      resolution: {integrity: sha512-XYfuKMvj4O35f/pOXLObndIRvyQ+/+6AhODh+OKWj9S9498pHHn/IMszH+gt0fBCRWMNfk1ZSp5x3AifmnI2vg==}
      engines: {node: '>=6'}
-@@ -3035,6 +3098,11 @@ snapshots:
+@@ -4546,6 +4609,11 @@ snapshots:
  
    eventsource-parser@3.1.0: {}
  
@@ -104,12 +104,14 @@ index 4f7d6a1..2e4ee72 100644
  
    expect-type@1.4.0: {}
 diff --git a/src/cli.tsx b/src/cli.tsx
-index 5a6992a..edb72f5 100644
+index f1e40c8..99f087e 100644
 --- a/src/cli.tsx
 +++ b/src/cli.tsx
-@@ -1,7 +1,9 @@
+@@ -1,9 +1,11 @@
  #!/usr/bin/env node
 +import { randomUUID } from "node:crypto";
+ import path from "node:path";
+ import { scheduler } from "node:timers/promises";
  import React, { useEffect, useRef, useState } from "react";
  import { Box, render, Text, useApp, useInput } from "ink";
  import { marked, type Token, type Tokens } from "marked";
@@ -117,7 +119,7 @@ index 5a6992a..edb72f5 100644
  import {
    configureAuthProvider,
    listAuthProviderTools,
-@@ -3554,6 +3556,8 @@ function Rows({ rows }: RowsProps) {
+@@ -3760,6 +3762,8 @@ function Rows({ rows }: RowsProps) {
    );
  }
  
@@ -126,7 +128,7 @@ index 5a6992a..edb72f5 100644
  const argv = process.argv.slice(2);
  const parsedCommand = parseCommand(argv);
  
-@@ -3821,6 +3825,13 @@ function formatScheduleStatus(schedule: ConnectorScheduleStatus): string {
+@@ -4054,6 +4058,13 @@ function formatScheduleStatus(schedule: ConnectorScheduleStatus): string {
  async function runIngestCommand(
    command: Extract<CliCommand, { kind: "ingest" }>,
  ): Promise<void> {
@@ -140,7 +142,7 @@ index 5a6992a..edb72f5 100644
    try {
      const result = await runOpenWikiIngestion(process.cwd(), {
        debug: isDebugMode(),
-@@ -3841,15 +3852,23 @@ async function runIngestCommand(
+@@ -4074,15 +4085,23 @@ async function runIngestCommand(
        );
      }
  
