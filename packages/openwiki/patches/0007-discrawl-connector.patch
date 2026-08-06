@@ -1,87 +1,13 @@
-diff --git c/README.md i/README.md
-index dea2fb2..ae46aa8 100644
---- c/README.md
-+++ i/README.md
-@@ -40,8 +40,8 @@ openwiki --init
- OpenWiki has two modes:
- 
- - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
--  default from configured sources like local repositories, Gmail, iMessage,
--  saved links, Notion, Web Search, Hacker News, and X/Twitter.
-+  default from configured sources like local repositories, Discord, Gmail,
-+  iMessage, saved links, Notion, Web Search, Hacker News, and X/Twitter.
- - **Code mode** builds repository documentation in `openwiki/` for the current
-   codebase.
- 
-@@ -179,7 +179,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
- 
- ## Local Connectors
- 
--OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
-+OpenWiki's first-run onboarding offers connector setup for local Git repositories, Discord, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
- 
- You can configure the same connector more than once. For example, add one Web
- Search source for AI research and another for NBA news; OpenWiki stores them as
-@@ -192,10 +192,49 @@ instances with `openwiki ingest all`, all instances for one connector with
- - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
- - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
- - `google` uses the Gmail API directly with OAuth user credentials to fetch recent mail, with room to add Drive, Calendar, and other Google providers later.
-+- `discord` runs the local `discrawl` JSON CLI against explicitly approved guilds, channels, or the local-only DM cache.
- - `imessage` runs the fixed local `imsg` command against explicitly approved Messages chats on macOS.
- - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
- - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
- 
-+### Discord
-+
-+Discord ingestion reads a local [Discrawl](https://github.com/openclaw/discrawl)
-+archive. It never accepts or scrapes a Discord user token. Configure at least
-+one explicit scope in `~/.openwiki/connectors/discord/config.json`:
-+
-+```json
-+{
-+  "enabled": true,
-+  "guildIds": ["123456789012345678"],
-+  "channelIds": [],
-+  "includeDms": false,
-+  "windowHours": 24,
-+  "maxMessages": 500
-+}
-+```
-+
-+`guildIds` and `channelIds` contain Discord snowflakes. When both are present,
-+the selected channels must also belong to a selected guild. `includeDms` is
-+off by default because Discrawl DMs come from the local desktop cache. The
-+connector caps `windowHours` at 720 and `maxMessages` at 5000, fails closed on
-+schedule gaps or truncated queries, keeps a cursor per channel, and writes only
-+allowlisted normalized message fields.
-+Scheduled runs resume from the persisted cursor with up to 15 minutes of
-+bounded overlap so normal launch delay does not create a gap.
-+
-+Use `discrawl --json channels list` to inspect the archive without copying a
-+token into OpenWiki. To keep it current, configure Discrawl separately with a
-+supported bot token and grant the bot View Channel and Read Message History in
-+the selected channels. Discord may return empty message content unless the bot
-+has Message Content intent. For hardened launchd runs, set the absolute CLI
-+path in `~/.openwiki/.env`, then run the configured source:
-+
-+```sh
-+OPENWIKI_DISCRAWL_EXECUTABLE=/opt/homebrew/bin/discrawl
-+OPENWIKI_WIKI_DIR=/absolute/path/to/wiki openwiki ingest discord --print
-+```
-+
- ### Links
- 
- Links are a local, credential-free input queue. Onboarding can seed the queue,
-diff --git c/src/connectors/registry.ts i/src/connectors/registry.ts
-index ca1713a..b92d583 100644
---- c/src/connectors/registry.ts
-+++ i/src/connectors/registry.ts
+diff --git a/src/connectors/registry.ts b/src/connectors/registry.ts
+index 01ed0e5..186d3a3 100644
+--- a/src/connectors/registry.ts
++++ b/src/connectors/registry.ts
 @@ -1,3 +1,4 @@
 +import { createDiscordConnector } from "./sources/discord.js";
  import { createGitRepoConnector } from "./sources/git-repo.js";
  import { createGmailConnector } from "./sources/gmail.js";
  import { createHackerNewsConnector } from "./sources/hackernews.js";
-@@ -10,6 +11,7 @@ import { createXConnector } from "./sources/x.js";
+@@ -11,6 +12,7 @@ import { createXConnector } from "./sources/x.js";
  import type { ConnectorId, ConnectorRuntime } from "./types.js";
  
  export const CONNECTOR_IDS = [
@@ -89,7 +15,7 @@ index ca1713a..b92d583 100644
    "git-repo",
    "imessage",
    "links",
-@@ -26,6 +28,7 @@ export function createConnectorRegistry(): Record<
+@@ -28,6 +30,7 @@ export function createConnectorRegistry(): Record<
    ConnectorRuntime
  > {
    return {
@@ -97,11 +23,11 @@ index ca1713a..b92d583 100644
      "git-repo": createGitRepoConnector(),
      google: createGmailConnector(),
      hackernews: createHackerNewsConnector(),
-diff --git c/src/connectors/sources/discord.ts i/src/connectors/sources/discord.ts
+diff --git a/src/connectors/sources/discord.ts b/src/connectors/sources/discord.ts
 new file mode 100644
-index 0000000..6b8b36a
+index 0000000..24c665c
 --- /dev/null
-+++ i/src/connectors/sources/discord.ts
++++ b/src/connectors/sources/discord.ts
 @@ -0,0 +1,496 @@
 +import { execFile } from "node:child_process";
 +import { promisify } from "node:util";
@@ -599,10 +525,10 @@ index 0000000..6b8b36a
 +    warnings,
 +  };
 +}
-diff --git c/src/connectors/tools.ts i/src/connectors/tools.ts
-index 9322190..f0b5ddc 100644
---- c/src/connectors/tools.ts
-+++ i/src/connectors/tools.ts
+diff --git a/src/connectors/tools.ts b/src/connectors/tools.ts
+index 363d3e6..80fc459 100644
+--- a/src/connectors/tools.ts
++++ b/src/connectors/tools.ts
 @@ -94,6 +94,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
            connectorId: {
              type: "string",
@@ -619,7 +545,7 @@ index 9322190..f0b5ddc 100644
                "git-repo",
                "google",
                "hackernews",
-@@ -170,6 +172,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
+@@ -171,6 +173,7 @@ export function createOpenWikiConnectorTools(): StructuredToolInterface[] {
            connectorId: {
              type: "string",
              enum: [
@@ -627,21 +553,21 @@ index 9322190..f0b5ddc 100644
                "git-repo",
                "google",
                "hackernews",
-diff --git c/src/connectors/types.ts i/src/connectors/types.ts
-index 73a2db3..8dfc1d9 100644
---- c/src/connectors/types.ts
-+++ i/src/connectors/types.ts
+diff --git a/src/connectors/types.ts b/src/connectors/types.ts
+index 055abe3..a78cbe6 100644
+--- a/src/connectors/types.ts
++++ b/src/connectors/types.ts
 @@ -1,4 +1,5 @@
  export type ConnectorId =
 +  | "discord"
    | "git-repo"
    | "google"
    | "hackernews"
-diff --git c/src/credentials.tsx i/src/credentials.tsx
-index 1d93aed..b50df22 100644
---- c/src/credentials.tsx
-+++ i/src/credentials.tsx
-@@ -119,6 +119,7 @@ type PromptStep =
+diff --git a/src/credentials.tsx b/src/credentials.tsx
+index 9b3481e..b7d10a0 100644
+--- a/src/credentials.tsx
++++ b/src/credentials.tsx
+@@ -153,6 +153,7 @@ type PromptStep =
    | "global-cron-custom"
    | "global-cron-mode"
    | "global-power-mode"
@@ -649,7 +575,7 @@ index 1d93aed..b50df22 100644
    | "source-imessage-chat-ids"
    | "source-links-urls"
    | "source-description"
-@@ -203,6 +204,7 @@ const ONBOARDING_TEMPLATES = [
+@@ -240,6 +241,7 @@ const ONBOARDING_TEMPLATES = [
      id: "personal",
      name: "Personal",
      sourceIds: [
@@ -657,7 +583,7 @@ index 1d93aed..b50df22 100644
        "git-repo",
        "google",
        "imessage",
-@@ -213,6 +215,7 @@ const ONBOARDING_TEMPLATES = [
+@@ -250,6 +252,7 @@ const ONBOARDING_TEMPLATES = [
        "x",
      ],
      suggestedSources: [
@@ -665,8 +591,8 @@ index 1d93aed..b50df22 100644
        "Gmail",
        "iMessage",
        "Links",
-@@ -246,6 +249,20 @@ const RUN_MODE_OPTIONS = [
- }[];
+@@ -315,6 +318,20 @@ interface LangsmithWorkspaceDraft {
+ }
  
  const SOURCE_OPTIONS = [
 +  {
@@ -686,7 +612,7 @@ index 1d93aed..b50df22 100644
    {
      displayName: "Local Git repository",
      examples: [
-@@ -1733,6 +1750,27 @@ export function InitSetup({
+@@ -2573,6 +2590,27 @@ export function InitSetup({
        return;
      }
  
@@ -711,10 +637,10 @@ index 1d93aed..b50df22 100644
 +      return;
 +    }
 +
-     if (step === "source-description") {
-       if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
-         setInput("");
-@@ -2116,6 +2154,12 @@ export function InitSetup({
+     if (step === "source-imessage-chat-ids") {
+       const parsed = parseIMessageChatIds(input);
+       if ("error" in parsed) {
+@@ -3079,6 +3117,12 @@ export function InitSetup({
        return;
      }
  
@@ -727,7 +653,7 @@ index 1d93aed..b50df22 100644
      if (source.id === "imessage") {
        setInput("");
        setStep("source-imessage-chat-ids");
-@@ -3104,6 +3148,28 @@ function Prompt({
+@@ -4224,6 +4268,28 @@ function Prompt({
      );
    }
  
@@ -753,11 +679,11 @@ index 1d93aed..b50df22 100644
 +    );
 +  }
 +
-   if (step === "source-secret") {
-     const secretInput = selectedSource.secretInputs[secretInputIndex];
+   if (step === "source-imessage-chat-ids") {
      return (
-@@ -4263,6 +4329,24 @@ function parseIMessageChatIds(
-   return { chatIds };
+       <Box flexDirection="column">
+@@ -5627,6 +5693,24 @@ function getSourceDescriptionOptionCount(source: SourceSetupOption): number {
+   return source.examples.length + 1;
  }
  
 +function parseDiscordGuildIds(
@@ -778,17 +704,17 @@ index 1d93aed..b50df22 100644
 +  return { guildIds };
 +}
 +
- export function parseLinksInput(
+ function parseIMessageChatIds(
    value: string,
- ): { urls: string[] } | { error: string } {
-diff --git c/src/ingestion.ts i/src/ingestion.ts
-index d16bb3f..cd3b6df 100644
---- c/src/ingestion.ts
-+++ i/src/ingestion.ts
-@@ -338,6 +338,10 @@ ${createConnectorSynthesisGuidance(connectorId)}
- 
- function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
-   switch (connectorId) {
+ ): { chatIds: number[] } | { error: string } {
+diff --git a/src/ingestion.ts b/src/ingestion.ts
+index 946f7cf..0f0962f 100644
+--- a/src/ingestion.ts
++++ b/src/ingestion.ts
+@@ -355,6 +355,10 @@ export function createConnectorSynthesisGuidance(
+   connector: ConnectorRuntime,
+ ): string {
+   switch (connector.id) {
 +    case "discord":
 +      return `
 +- Apply the Slack-style communication policy: route direct requests, decisions, deadlines, approvals, and follow-ups to /commitments.md with Owner when inferable.
@@ -796,10 +722,10 @@ index d16bb3f..cd3b6df 100644
      case "google":
        return `
  - For Gmail evidence, classify each candidate item before writing: action_required, scheduled_commitment, decision_or_approval, direct_request, important_update, people_or_org_signal, project_context, security_or_account_notice, newsletter_or_digest, transaction_or_receipt, promotion_or_marketing, personal_logistics, or noise.
-diff --git c/src/onboarding.ts i/src/onboarding.ts
+diff --git a/src/onboarding.ts b/src/onboarding.ts
 index 51b004d..c88edfc 100644
---- c/src/onboarding.ts
-+++ i/src/onboarding.ts
+--- a/src/onboarding.ts
++++ b/src/onboarding.ts
 @@ -455,6 +455,7 @@ function normalizePowerManagementConfig(
  
  function isKnownConnectorId(value: string): value is ConnectorId {
@@ -808,11 +734,11 @@ index 51b004d..c88edfc 100644
      value === "git-repo" ||
      value === "google" ||
      value === "hackernews" ||
-diff --git c/test/commands.test.ts i/test/commands.test.ts
-index c431d3a..8c2ca4e 100644
---- c/test/commands.test.ts
-+++ i/test/commands.test.ts
-@@ -444,3 +444,16 @@ describe("parseCommand — links ingestion", () => {
+diff --git a/test/commands.test.ts b/test/commands.test.ts
+index b3116f3..7ff76f9 100644
+--- a/test/commands.test.ts
++++ b/test/commands.test.ts
+@@ -601,3 +601,16 @@ describe("parseCommand — links ingestion", () => {
      });
    });
  });
@@ -829,11 +755,11 @@ index c431d3a..8c2ca4e 100644
 +    });
 +  });
 +});
-diff --git c/test/discord-connector.test.ts i/test/discord-connector.test.ts
+diff --git a/test/discord-connector.test.ts b/test/discord-connector.test.ts
 new file mode 100644
-index 0000000..4baed2b
+index 0000000..2cc2fb6
 --- /dev/null
-+++ i/test/discord-connector.test.ts
++++ b/test/discord-connector.test.ts
 @@ -0,0 +1,305 @@
 +import { execFileSync } from "node:child_process";
 +import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -1140,10 +1066,10 @@ index 0000000..4baed2b
 +    expect(execFileAsync).not.toHaveBeenCalled();
 +  });
 +});
-diff --git c/test/onboarding.test.ts i/test/onboarding.test.ts
+diff --git a/test/onboarding.test.ts b/test/onboarding.test.ts
 index d51945c..7432808 100644
---- c/test/onboarding.test.ts
-+++ i/test/onboarding.test.ts
+--- a/test/onboarding.test.ts
++++ b/test/onboarding.test.ts
 @@ -128,6 +128,44 @@ describe("OpenWiki onboarding instructions", () => {
      });
    });

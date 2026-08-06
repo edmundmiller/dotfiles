@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/langchain-ai/openwiki.git",
-  "ref": "d4e94ab513ab13908c6b61346b23dc17bbd59b1f",
+  "ref": "251b6d765f6a9cd82aa5e3f1f9d332e1b7d5c797",
   "patches": [
     "patches/0001-configurable-personal-wiki-directory.patch",
     "patches/0002-imessage-connector.patch",
@@ -14,7 +14,8 @@
     "patches/0010-relative-raw-tool-paths.patch",
     "patches/0011-skip-personal-tweet-index.patch",
     "patches/0012-git-provenance.patch",
-    "patches/0013-scheduled-git-mutation-lane.patch"
+    "patches/0013-scheduled-git-mutation-lane.patch",
+    "patches/0014-openwiki-0.3.1-compatibility.patch"
   ],
   "checks": [
     ["pnpm", "install", "--frozen-lockfile"],

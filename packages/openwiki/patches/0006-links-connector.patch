@@ -1,158 +1,17 @@
-diff --git a/README.md b/README.md
-index b33bbb1..dea2fb2 100644
---- a/README.md
-+++ b/README.md
-@@ -41,7 +41,7 @@ OpenWiki has two modes:
- 
- - **Personal mode** builds a local personal brain wiki in `~/.openwiki/wiki` by
-   default from configured sources like local repositories, Gmail, iMessage,
--  Notion, Web Search, Hacker News, and X/Twitter.
-+  saved links, Notion, Web Search, Hacker News, and X/Twitter.
- - **Code mode** builds repository documentation in `openwiki/` for the current
-   codebase.
- 
-@@ -179,7 +179,7 @@ These configuration options and secrets will be saved to `~/.openwiki/.env` on y
- 
- ## Local Connectors
- 
--OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
-+OpenWiki's first-run onboarding offers connector setup for local Git repositories, Notion, Gmail, iMessage, saved links, X/Twitter, Web Search, and Hacker News. During an ingestion run, deterministic connector tools write raw data and manifests under `~/.openwiki/connectors/<connector>/raw/`, then source-specific agent runs synthesize the local wiki under `OPENWIKI_WIKI_DIR` (default: `~/.openwiki/wiki/`) from those local files.
- 
- You can configure the same connector more than once. For example, add one Web
- Search source for AI research and another for NBA news; OpenWiki stores them as
-@@ -196,6 +196,33 @@ instances with `openwiki ingest all`, all instances for one connector with
- - `web-search` uses Tavily through LangChain and requires `TAVILY_API_KEY`.
- - `hackernews` uses public Hacker News feed and search APIs, with no credentials required.
- 
-+### Links
-+
-+Links are a local, credential-free input queue. Onboarding can seed the queue,
-+or edit `~/.openwiki/connectors/links/config.json` directly:
-+
-+```json
-+{
-+  "links": [
-+    {
-+      "url": "https://example.com/reference?topic=openwiki",
-+      "capturedAt": "2026-07-18T12:00:00.000Z",
-+      "title": "Optional title",
-+      "context": "Optional reason this was saved",
-+      "source": "Optional provenance label"
-+    }
-+  ]
-+}
-+```
-+
-+`url` and `capturedAt` are required. Do not add private, signed, or
-+credential-bearing URLs. Run `openwiki ingest links --print`, or rely on
-+`openwiki ingest all` and the existing all-source schedule. The connector
-+preserves the original URL, removes fragments and common tracking parameters
-+from its canonical URL, derives a stable source ID, and writes only new or
-+changed records to `~/.openwiki/connectors/links/raw/<runId>/links.json`.
-+Repeated unchanged runs write no raw manifest and skip synthesis.
-+
- ### iMessage
- 
- iMessage ingestion requires macOS, `imsg` v0.13 or newer, and at least one
-diff --git a/openwiki/integrations/connectors.md b/openwiki/integrations/connectors.md
-index 2366c2f..8714ee1 100644
---- a/openwiki/integrations/connectors.md
-+++ b/openwiki/integrations/connectors.md
-@@ -1,25 +1,25 @@
- ---
- type: Integration
- title: OpenWiki Connectors
--description: OpenWiki ships eight built-in connectors that pull external data
-+description: OpenWiki ships nine built-in connectors that pull external data
-   into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the
-   documentation agent then reads and synthesizes into wiki ...
- tags: [connectors, integrations, ingestion, mcp]
- ---
- 
--OpenWiki ships eight built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
-+OpenWiki ships nine built-in connectors that pull external data into a local raw cache under `~/.openwiki/connectors/<id>/raw/`, which the documentation agent then reads and synthesizes into wiki pages (mainly for personal/local-wiki mode; `git-repo` also matters for code mode when documenting a different target repo than the one being ingested from).
- 
- ## Connector architecture
- 
- All connectors share types in `src/connectors/types.ts`:
- 
--- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "imessage" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
--- `ConnectorBackend` — `"direct-api" | "local-cli" | "local-git" | "mcp-http" | "mcp-stdio"`.
-+- `ConnectorId` — the union of implemented connector ids: `"git-repo" | "google" | "hackernews" | "imessage" | "links" | "notion" | "slack" | "web-search" | "x"`. This union is ground truth for what exists today.
-+- `ConnectorBackend` — `"direct-api" | "local-cli" | "local-file" | "local-git" | "mcp-http" | "mcp-stdio"`.
- - `ConnectorDefinition` / `ConnectorRuntime` — id, display name, description, required env var names, whether the connector supports agentic discovery (letting the agent decide what to fetch) vs. deterministic ingestion, and an `ingest()` function.
- - `ConnectorIngestResult` — `{ status: "success" | "skipped" | "error", rawFiles, warnings, runId, statePath, message }`.
- - `ConnectorState` — per-connector cursor/dedup bookkeeping (`lastRunAt`, `latestIds`, last 20 `runs`) persisted at `~/.openwiki/connectors/<id>/state.json`.
- 
--`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all eight; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
-+`src/connectors/registry.ts` (`createConnectorRegistry()`) wires up all nine; `notion` is built through the generic `createMcpConnector()` factory (`src/connectors/sources/mcp.ts`) rather than a bespoke source file.
- 
- Shared IO helpers live in `src/connectors/io.ts`: `writeRawJson()` writes raw dumps with `0600`/`0700` permissions under `~/.openwiki/connectors/<id>/raw/<runId>/`, and `updateStateWithRun()` maintains the state file.
- 
-@@ -29,7 +29,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
- 
- `src/connectors/mcp-client.ts` is a low-level JSON-RPC MCP client (stdio or HTTP transport) implementing `listMcpTools`/`executeMcpTool`/`executeMcpReadOnlyOperations`. `src/connectors/mcp-runtime.ts` wraps it for connector use (currently only `notion`), adding a **read-only tool-call policy**: a tool call is allowed only if it's explicitly listed in `allowedTools`, the MCP server's own `readOnlyHint` annotation is `true`, or (for the hosted `mcp.notion.com/mcp` endpoint specifically) the tool name/description matches a read-only heuristic (search/retrieve/get/list/query/read/fetch/find/lookup/load/children). This is the mechanism that keeps MCP-backed connectors read-only even though the underlying server may expose write tools.
- 
--## The eight connectors
-+## The nine connectors
- 
- | Connector        | Backend                        | Required env                                             | Agentic discovery | What it pulls                                                                                                                                                                                                                                                             |
- | ---------------- | ------------------------------ | -------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-@@ -37,6 +37,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
- | `google` (Gmail) | direct-api                     | Gmail OAuth access/refresh token env keys                | no                | Gmail API v1 messages; default query `newer_than:1d`, configurable label/format/headers. Writes `gmail-messages.json`.                                                                                                                                                    |
- | `hackernews`     | direct-api                     | none                                                     | no                | Public HN Firebase feeds (`top`/`new`/`best`/`show`/`ask`/`job`) plus Algolia `search_by_date` queries. Writes `hackernews-results.json`.                                                                                                                                 |
- | `imessage`       | local-cli                      | none                                                     | no                | Explicitly scoped local Messages chats through `imsg`; writes allowlisted `messages.json` plus `manifest.json`, with attachment metadata only and per-chat rowid cursors.                                                                                                 |
-+| `links`          | local-file                     | none                                                     | no                | Local captured-URL queue; writes new or changed allowlisted records with original/canonical URLs, capture timestamps, stable source IDs, and optional title/context/provenance.                                                                                           |
- | `notion`         | mcp-stdio (label; may be HTTP) | `OPENWIKI_NOTION_MCP_ACCESS_TOKEN`                       | yes               | Hosted Notion MCP server (or configured MCP transport); discovers tools (`mcp-tools.json`) or executes configured read-only operations (`mcp-results.json`).                                                                                                              |
- | `slack`          | direct-api                     | Slack user-token env key                                 | no                | `auth.test` identity, `search.messages` self-message search, bounded `conversations.list`/`.history` fallback, `assistant.search.context`. Writes `identity.json`, `my-messages-search.json`, `recent-messages.json`, `my-recent-messages.json`, `assistant-search.json`. |
- | `web-search`     | direct-api                     | `TAVILY_API_KEY` (via `OPENWIKI_TAVILY_API_KEY_ENV_KEY`) | no                | Tavily search (`@langchain/tavily`) for configured queries. Writes `web-search-results.json`.                                                                                                                                                                             |
-@@ -48,6 +49,7 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
- - **X streams and cursors**: each stream (except `bookmarks`) tracks a `since_id` cursor in connector state so repeated ingestion runs are incremental; `list_posts` fans out per configured `listIds`.
- - **Notion is disabled until configured**: `enabled: true` plus a transport must be set in connector config before ingestion does anything beyond tool discovery.
- - **iMessage scope and stability**: configure positive `chatIds` and/or case-insensitive `participants`; both fields use AND semantics. The default window is a bounded 24 hours, while an exclusive rowid cursor and GUID deduplication make overlapping reruns incremental. A full `maxMessagesPerChat` page containing unseen rows fails closed.
-+- **Links are local and idempotent**: `~/.openwiki/connectors/links/config.json` is the queue. The connector canonicalizes HTTP(S) URLs, rejects credential-bearing URLs, uses a canonical-URL hash as the stable source ID, and fingerprints each allowlisted record so unchanged runs write no raw manifest or invoke synthesis.
- - **git-repo has no ingest-vs-agent distinction for read access**: it's the only connector marked `supportsAgenticDiscovery: true` alongside `notion`, since a git checkout can be explored freely rather than pulled through a bounded API.
- 
- ## Ingestion orchestration
-@@ -60,6 +62,15 @@ Agent-facing tools (`src/connectors/tools.ts`) expose this to the LLM during a r
- 
- `src/schedules.ts` installs source schedules as macOS user LaunchAgents (`~/Library/LaunchAgents/`) with logs under `~/.openwiki/logs/`, and backs the `openwiki cron list|pause|resume|delete` commands (see [CLI usage](/cli/usage.md)).
- 
-+## Links queue
-+
-+Each entry in `~/.openwiki/connectors/links/config.json` requires `url` and an
-+ISO capture timestamp in `capturedAt`. `title`, `context`, and `source` are
-+optional provenance fields. Never place private, signed, or credential-bearing
-+URLs in the queue. `openwiki ingest links --print` and `openwiki ingest all`
-+write only new or changed records to `raw/<runId>/links.json`; unchanged runs
-+skip synthesis. The normal all-source schedule includes configured links.
-+
- ## iMessage privacy and operations
- 
- Run `imsg chats --limit 100 --json` on macOS to choose approved numeric chat
-@@ -111,7 +122,7 @@ If asked to implement either, follow the guide's phased checkpoints and confirm
- 
- - `src/connectors/types.ts`, `src/connectors/registry.ts`, `src/connectors/io.ts`, `src/connectors/tools.ts`
- - `src/connectors/mcp-client.ts`, `src/connectors/mcp-runtime.ts`, `src/connectors/sources/mcp.ts`
--- `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/imessage.ts`, `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
-+- `src/connectors/sources/git-repo.ts`, `src/connectors/sources/gmail.ts`, `src/connectors/sources/hackernews.ts`, `src/connectors/sources/imessage.ts`, `src/connectors/sources/links.ts`, `src/connectors/sources/slack.ts`, `src/connectors/sources/web-search.ts`, `src/connectors/sources/x.ts`
- - `src/ingestion.ts`, `src/onboarding.ts`, `src/schedules.ts`
- - `LANGSMITH-CONNECTOR.md`, `CODING-AGENTS-CONNECTOR.md`
- - `test/onboarding.test.ts`
 diff --git a/src/commands.ts b/src/commands.ts
-index 9773b14..999ebc4 100644
+index 215129c..8496fed 100644
 --- a/src/commands.ts
 +++ b/src/commands.ts
-@@ -756,6 +756,7 @@ export const helpContent: HelpContent = {
-     'openwiki --update --modelId gpt-5.5 "Please document the API routes first"',
+@@ -889,6 +889,7 @@ export const helpContent: HelpContent = {
      'openwiki personal --update "Refresh the wiki from configured connectors"',
      "openwiki ingest all",
+     "openwiki ingest all --scheduled --print",
 +    "openwiki ingest links",
      "openwiki ingest web-search",
      "openwiki ingest web-search-2",
      "openwiki cron list",
 diff --git a/src/connectors/registry.ts b/src/connectors/registry.ts
-index 8c95ac9..ca1713a 100644
+index 0a4ae8f..01ed0e5 100644
 --- a/src/connectors/registry.ts
 +++ b/src/connectors/registry.ts
 @@ -2,6 +2,7 @@ import { createGitRepoConnector } from "./sources/git-repo.js";
@@ -160,10 +19,10 @@ index 8c95ac9..ca1713a 100644
  import { createHackerNewsConnector } from "./sources/hackernews.js";
  import { createIMessageConnector } from "./sources/imessage.js";
 +import { createLinksConnector } from "./sources/links.js";
+ import { createLangSmithConnector } from "./sources/langsmith/index.js";
  import { createMcpConnector } from "./sources/mcp.js";
  import { createSlackConnector } from "./sources/slack.js";
- import { createWebSearchConnector } from "./sources/web-search.js";
-@@ -11,6 +12,7 @@ import type { ConnectorId, ConnectorRuntime } from "./types.js";
+@@ -12,6 +13,7 @@ import type { ConnectorId, ConnectorRuntime } from "./types.js";
  export const CONNECTOR_IDS = [
    "git-repo",
    "imessage",
@@ -171,14 +30,14 @@ index 8c95ac9..ca1713a 100644
    "notion",
    "x",
    "google",
-@@ -28,6 +30,7 @@ export function createConnectorRegistry(): Record<
+@@ -30,6 +32,7 @@ export function createConnectorRegistry(): Record<
      google: createGmailConnector(),
      hackernews: createHackerNewsConnector(),
      imessage: createIMessageConnector(),
 +    links: createLinksConnector(),
+     langsmith: createLangSmithConnector(),
      notion: createMcpConnector({
        description:
-         "Notion connector backed by the hosted Notion MCP server or another configured read-only MCP server.",
 diff --git a/src/connectors/sources/links.ts b/src/connectors/sources/links.ts
 new file mode 100644
 index 0000000..7cd5f1b
@@ -446,17 +305,18 @@ index 0000000..7cd5f1b
 +  return typeof value === "object" && value !== null && !Array.isArray(value);
 +}
 diff --git a/src/connectors/types.ts b/src/connectors/types.ts
-index b2da4b6..73a2db3 100644
+index 4d0e505..055abe3 100644
 --- a/src/connectors/types.ts
 +++ b/src/connectors/types.ts
-@@ -3,13 +3,19 @@ export type ConnectorId =
+@@ -3,6 +3,7 @@ export type ConnectorId =
    | "google"
    | "hackernews"
    | "imessage"
 +  | "links"
+   | "langsmith"
    | "notion"
    | "slack"
-   | "web-search"
+@@ -10,7 +11,12 @@ export type ConnectorId =
    | "x";
  
  export type ConnectorBackend =
@@ -471,18 +331,18 @@ index b2da4b6..73a2db3 100644
  export type ConnectorDefinition = {
    backend: ConnectorBackend;
 diff --git a/src/credentials.tsx b/src/credentials.tsx
-index af6d8a9..1d93aed 100644
+index 34a92ac..9b3481e 100644
 --- a/src/credentials.tsx
 +++ b/src/credentials.tsx
-@@ -120,6 +120,7 @@ type PromptStep =
+@@ -154,6 +154,7 @@ type PromptStep =
    | "global-cron-mode"
    | "global-power-mode"
    | "source-imessage-chat-ids"
 +  | "source-links-urls"
    | "source-description"
    | "source-description-custom"
-   | "source-menu"
-@@ -205,6 +206,7 @@ const ONBOARDING_TEMPLATES = [
+   | "source-langsmith-key"
+@@ -242,6 +243,7 @@ const ONBOARDING_TEMPLATES = [
        "git-repo",
        "google",
        "imessage",
@@ -490,7 +350,7 @@ index af6d8a9..1d93aed 100644
        "notion",
        "web-search",
        "hackernews",
-@@ -213,6 +215,7 @@ const ONBOARDING_TEMPLATES = [
+@@ -250,6 +252,7 @@ const ONBOARDING_TEMPLATES = [
      suggestedSources: [
        "Gmail",
        "iMessage",
@@ -498,7 +358,7 @@ index af6d8a9..1d93aed 100644
        "Notion",
        "Web Search (Tavily)",
        "Hacker News",
-@@ -312,6 +315,20 @@ const SOURCE_OPTIONS = [
+@@ -393,6 +396,20 @@ const SOURCE_OPTIONS = [
      ],
      secretInputs: [],
    },
@@ -519,7 +379,7 @@ index af6d8a9..1d93aed 100644
    {
      displayName: "Web Search (Tavily)",
      examples: [
-@@ -1704,6 +1721,18 @@ export function InitSetup({
+@@ -2576,6 +2593,18 @@ export function InitSetup({
        return;
      }
  
@@ -538,7 +398,7 @@ index af6d8a9..1d93aed 100644
      if (step === "source-description") {
        if (sourceDescriptionSelectionIndex >= selectedSource.examples.length) {
          setInput("");
-@@ -2093,6 +2122,12 @@ export function InitSetup({
+@@ -3056,6 +3085,12 @@ export function InitSetup({
        return;
      }
  
@@ -551,7 +411,7 @@ index af6d8a9..1d93aed 100644
      try {
        if (source.id === "git-repo") {
          setInput(getDefaultLocalGitRepoPath());
-@@ -2158,6 +2193,25 @@ export function InitSetup({
+@@ -3170,6 +3205,25 @@ export function InitSetup({
      return connectorConfig;
    }
  
@@ -577,7 +437,7 @@ index af6d8a9..1d93aed 100644
    async function saveModeSchedule(cronExpression: string) {
      setIsSaving(true);
  
-@@ -3031,6 +3085,25 @@ function Prompt({
+@@ -4192,6 +4246,25 @@ function Prompt({
      );
    }
  
@@ -600,10 +460,10 @@ index af6d8a9..1d93aed 100644
 +    );
 +  }
 +
-   if (step === "source-secret") {
-     const secretInput = selectedSource.secretInputs[secretInputIndex];
+   if (step === "source-description") {
      return (
-@@ -4190,6 +4263,50 @@ function parseIMessageChatIds(
+       <Box flexDirection="column">
+@@ -5573,6 +5646,50 @@ function parseIMessageChatIds(
    return { chatIds };
  }
  
@@ -655,10 +515,10 @@ index af6d8a9..1d93aed 100644
    currentFieldIndex,
    currentValue,
 diff --git a/src/ingestion.ts b/src/ingestion.ts
-index 7a2f749..d16bb3f 100644
+index ba53e64..946f7cf 100644
 --- a/src/ingestion.ts
 +++ b/src/ingestion.ts
-@@ -348,6 +348,10 @@ function createConnectorSynthesisGuidance(connectorId: ConnectorId): string {
+@@ -403,6 +403,10 @@ export function createConnectorSynthesisGuidance(
        return `
  - Synthesize only compact durable summaries, decisions, commitments, and action items from iMessage evidence; never copy full conversations into the wiki.
  - Omit participant handles and attachment filenames unless materially necessary. Use short quotes only when needed as evidence.`;
@@ -666,9 +526,9 @@ index 7a2f749..d16bb3f 100644
 +      return `
 +- Treat captured links as saved-context until the title, context, provenance, or corroborating sources justify stronger confidence.
 +- Preserve canonical URLs and stable source IDs in /sources/links.md so later captures update existing evidence instead of creating duplicates.`;
-     case "notion":
-       return `
- - Prefer Notion pages edited in the ingestion window, pages where the user is mentioned/tagged/assigned, pages where the user appears in people properties, and pages whose title/body indicate decisions, follow-ups, open questions, blockers, owners, customers, meetings, or plans.
+   }
+ }
+ 
 diff --git a/src/onboarding.ts b/src/onboarding.ts
 index a948887..51b004d 100644
 --- a/src/onboarding.ts
@@ -682,10 +542,10 @@ index a948887..51b004d 100644
      value === "slack" ||
      value === "web-search" ||
 diff --git a/test/commands.test.ts b/test/commands.test.ts
-index 607c176..c431d3a 100644
+index e4ea2ed..b3116f3 100644
 --- a/test/commands.test.ts
 +++ b/test/commands.test.ts
-@@ -431,3 +431,16 @@ describe("parseCommand — iMessage ingestion", () => {
+@@ -588,3 +588,16 @@ describe("parseCommand — iMessage ingestion", () => {
      });
    });
  });
@@ -703,21 +563,21 @@ index 607c176..c431d3a 100644
 +  });
 +});
 diff --git a/test/credentials.test.ts b/test/credentials.test.ts
-index d5ef68d..8d1d376 100644
+index 212af4a..7db8828 100644
 --- a/test/credentials.test.ts
 +++ b/test/credentials.test.ts
-@@ -1,5 +1,5 @@
- import { afterEach, describe, expect, test } from "vitest";
--import { needsCredentialSetup } from "../src/credentials.tsx";
-+import { needsCredentialSetup, parseLinksInput } from "../src/credentials.tsx";
- 
- const ENV_KEYS = [
-   "LANGSMITH_API_KEY",
-@@ -34,3 +34,26 @@ describe("needsCredentialSetup", () => {
-     expect(needsCredentialSetup()).toBe(true);
-   });
+@@ -11,6 +11,7 @@ import {
+   needsLangSmithStep,
+   nextSetupStep,
+   orderedSetupSteps,
++  parseLinksInput,
+   resolveStepStatus,
+ } from "../src/credentials.tsx";
+ import type { OpenWikiOnboardingConfig } from "../src/onboarding.ts";
+@@ -49,6 +50,29 @@ afterEach(() => {
+   }
  });
-+
+ 
 +describe("parseLinksInput", () => {
 +  test("accepts whitespace-separated HTTP(S) URLs", () => {
 +    expect(
@@ -740,6 +600,10 @@ index d5ef68d..8d1d376 100644
 +    });
 +  });
 +});
++
+ describe("needsCredentialSetup", () => {
+   test("requires provider setup for an invalid configured provider", () => {
+     process.env.OPENWIKI_PROVIDER = "bogus";
 diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
 index eb91158..dcab12a 100644
 --- a/test/ingestion.test.ts

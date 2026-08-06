@@ -234,13 +234,14 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "openwiki";
-  version = "0.2.0";
+  version = "0.3.1";
+  dontStrip = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "openwiki";
-    rev = "d4e94ab513ab13908c6b61346b23dc17bbd59b1f";
-    hash = "sha256-jble+grUAwAV8+E8EfuGZ86nDwOmwVOuzV2pogplbdY=";
+    rev = "251b6d765f6a9cd82aa5e3f1f9d332e1b7d5c797";
+    hash = "sha256-k75E+FVmPGp1WMQVfbNZ36k8VDZ13XyRxVkMovQf+KA=";
   };
 
   patches = [
@@ -257,6 +258,7 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/0011-skip-personal-tweet-index.patch
     ./patches/0012-git-provenance.patch
     ./patches/0013-scheduled-git-mutation-lane.patch
+    ./patches/0014-openwiki-0.3.1-compatibility.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -268,7 +270,7 @@ stdenv.mkDerivation (finalAttrs: {
       ;
     pnpm = pnpm_10;
     fetcherVersion = 3;
-    hash = "sha256-g2gxm4iBRcnKfXLwZJ326IGbEBRhcXE8iXakh3dU4cY=";
+    hash = "sha256-ywXAa3+a8lmOrXHfSFKUTKhEWsym5JZAsvrfWMFBZ/w=";
   };
 
   nativeBuildInputs = [
@@ -332,7 +334,6 @@ stdenv.mkDerivation (finalAttrs: {
   installCheckPhase = ''
     runHook preInstallCheck
     test -f "$out/lib/openwiki/skills/write-connector/SKILL.md"
-    test -f "$out/lib/openwiki/skills/migrate-wiki-to-okf/SKILL.md"
     test -f "$out/lib/openwiki/node_modules/fast-xml-parser/package.json"
     runHook postInstallCheck
   '';

@@ -1,11 +1,11 @@
 diff --git a/README.md b/README.md
-index c8d45a1..5074268 100644
+index 0873007..f98983f 100644
 --- a/README.md
 +++ b/README.md
-@@ -188,6 +188,13 @@ instances with `openwiki ingest all`, all instances for one connector with
- `openwiki ingest web-search`, or one instance with
- `openwiki ingest web-search-2`.
-
+@@ -110,6 +110,13 @@ openwiki ingest web-search  # run one connector's sources
+ 
+ <br/>
+ 
 +When `OPENWIKI_WIKI_DIR` is inside a Git worktree, each successful source run
 +commits its wiki changes with `OpenWiki-Connector`,
 +`OpenWiki-Source-Instance`, and `OpenWiki-Pull-Run` provenance trailers.
@@ -15,40 +15,40 @@ index c8d45a1..5074268 100644
 +
  - `git-repo` reads configured local repository paths and writes compact manifests.
  - `x` uses the X API directly with OAuth user-context credentials for home timeline, user posts, mentions, bookmarks, and list posts.
- - `notion` targets the hosted Notion MCP server, so users should authenticate through Notion OAuth instead of pasting a Notion token into OpenWiki.
+ - `notion` targets the hosted Notion MCP server, so authenticate through Notion OAuth rather than pasting a token.
 diff --git a/src/agent/docs-only-backend.ts b/src/agent/docs-only-backend.ts
-index 6316ad0..e07c81f 100644
+index 68b1a2c..dc4c04a 100644
 --- a/src/agent/docs-only-backend.ts
 +++ b/src/agent/docs-only-backend.ts
 @@ -1,3 +1,4 @@
 +import { createHash } from "node:crypto";
+ import path from "node:path";
  import {
    LocalShellBackend,
-   type EditResult,
-@@ -5,7 +6,7 @@ import {
-   type WriteResult,
+@@ -15,7 +16,7 @@ import {
  } from "deepagents";
  import { OPEN_WIKI_DIR } from "../constants.js";
+ import { OPENWIKI_IGNORE_FILE, OpenWikiIgnore } from "./openwiki-ignore.js";
 -import type { OpenWikiOutputMode } from "./types.js";
 +import type { OpenWikiMutation, OpenWikiOutputMode } from "./types.js";
-
- export const MUTATION_PATH_METADATA_KEY = "openwikiMutationPath";
-
-@@ -17,6 +18,10 @@ type OpenWikiBackendOptions = LocalShellBackendOptions & {
- export class OpenWikiLocalShellBackend extends LocalShellBackend {
-   private readonly docsOnly: boolean;
+ 
+ /**
+  * ToolMessage metadata key under which a successful mutation records the path it wrote.
+@@ -100,6 +101,10 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
+    * The doc-generation output target; `local-wiki` relaxes the docs-only write check.
+    */
    private readonly outputMode: OpenWikiOutputMode;
 +  private readonly wikiMutations = new Map<
 +    string,
 +    Omit<OpenWikiMutation, "path">
 +  >();
-
+ 
    constructor(options: OpenWikiBackendOptions) {
      super(options);
-@@ -33,7 +38,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
+@@ -155,7 +160,11 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
        return { error };
      }
-
+ 
 -    return markMutation(await super.write(filePath, content), filePath);
 +    const result = markMutation(await super.write(filePath, content), filePath);
 +    if (!result.error) {
@@ -56,12 +56,12 @@ index 6316ad0..e07c81f 100644
 +    }
 +    return result;
    }
-
-   override async edit(
-@@ -47,10 +56,45 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
+ 
+   /**
+@@ -176,10 +185,45 @@ export class OpenWikiLocalShellBackend extends LocalShellBackend {
        return { error };
      }
-
+ 
 -    return markMutation(
 +    const result = markMutation(
        await super.edit(filePath, oldString, newString, replaceAll),
@@ -103,224 +103,34 @@ index 6316ad0..e07c81f 100644
 +      sha256: createHash("sha256").update(content).digest("hex"),
 +    });
    }
-
-   private getDocsOnlyWriteError(filePath: string): string | null {
-@@ -80,9 +124,15 @@ function markMutation<Result extends WriteResult | EditResult>(
-   return result;
- }
-
+ 
+   /**
+@@ -407,12 +451,15 @@ function markMutation<Result extends WriteResult | EditResult>(
+  * segments collapsed) before the prefix check so a path such as
+  * `/openwiki/../AGENTS.md` cannot escape the confinement.
+  */
+-export function isOpenWikiDocsPath(filePath: string): boolean {
 +function normalizeVirtualPath(filePath: string): string {
-+  return filePath
-+    .trim()
-+    .replace(/\\/gu, "/")
+   const slashed = filePath.trim().replace(/\\/gu, "/");
+-  // Collapse `..`/`.` segments before the prefix check so a path like
+-  // "/openwiki/../AGENTS.md" cannot escape the openwiki/ confinement.
+-  const normalized = path.posix.normalize(`/${slashed.replace(/^\/+/u, "")}`);
+-  const virtualPath = normalized.replace(/^\/+/u, "");
++  return path.posix
++    .normalize(`/${slashed.replace(/^\/+/u, "")}`)
 +    .replace(/^\/+/u, "");
 +}
 +
- export function isOpenWikiDocsPath(filePath: string): boolean {
--  const normalizedPath = filePath.trim().replace(/\\/gu, "/");
--  const virtualPath = normalizedPath.replace(/^\/+/u, "");
++export function isOpenWikiDocsPath(filePath: string): boolean {
 +  const virtualPath = normalizeVirtualPath(filePath);
-
+ 
    return (
      virtualPath === OPEN_WIKI_DIR || virtualPath.startsWith(`${OPEN_WIKI_DIR}/`)
-diff --git a/src/agent/frontmatter-validator.ts b/src/agent/frontmatter-validator.ts
-index 4fd5e6d..91d6ee9 100644
---- a/src/agent/frontmatter-validator.ts
-+++ b/src/agent/frontmatter-validator.ts
-@@ -5,8 +5,14 @@ import { parse } from "yaml";
- import { MUTATION_PATH_METADATA_KEY } from "./docs-only-backend.js";
- import type { OpenWikiOutputMode } from "./types.js";
-
--const OKF_STRING_FIELDS = ["type", "title", "description", "resource"];
--const OKF_FIELDS = new Set([...OKF_STRING_FIELDS, "tags"]);
-+const OKF_STRING_FIELDS = [
-+  "type",
-+  "title",
-+  "description",
-+  "resource",
-+  "status",
-+];
-+const OKF_FIELDS = new Set([...OKF_STRING_FIELDS, "tags", "now"]);
- const WRITE_TOOLS = new Set(["write_file", "edit_file"]);
-
- interface FrontmatterIssue {
-@@ -15,6 +21,10 @@ interface FrontmatterIssue {
-   message: string;
- }
-
-+type FrontmatterValidationOptions = {
-+  requireLocalWikiFields?: boolean;
-+};
-+
- export type FrontmatterValidation =
-   | {
-       valid: true;
-@@ -25,7 +35,10 @@ export type FrontmatterValidation =
-     };
-
- /** Parses and validates leading YAML front matter against the supported OKF fields. */
--export function validateOkfFrontmatter(content: string): FrontmatterValidation {
-+export function validateOkfFrontmatter(
-+  content: string,
-+  options: FrontmatterValidationOptions = {},
-+): FrontmatterValidation {
-   const lines = content.split(/\r?\n/u);
-   if (lines[0] !== "---") {
-     return invalid(
-@@ -64,6 +77,16 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
-   if (!Object.hasOwn(fields, "type")) {
-     issues.push(issue("missing_type", "Required field `type` is missing."));
-   }
-+  if (options.requireLocalWikiFields) {
-+    if (!Object.hasOwn(fields, "status")) {
-+      issues.push(
-+        issue("missing_status", "Required field `status` is missing."),
-+      );
-+    }
-+    if (!Object.hasOwn(fields, "now")) {
-+      issues.push(issue("missing_now", "Required field `now` is missing."));
-+    }
-+  }
-   for (const field of OKF_STRING_FIELDS) {
-     if (
-       Object.hasOwn(fields, field) &&
-@@ -89,6 +112,9 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
-       ),
-     );
-   }
-+  if (Object.hasOwn(fields, "now") && typeof fields.now !== "boolean") {
-+    issues.push(issue("invalid_now", "Field `now` must be a boolean."));
-+  }
-
-   return issues.length === 0 ? { valid: true } : { issues, valid: false };
- }
-@@ -114,7 +140,11 @@ export async function addFrontmatterWarning<Result>(
-     );
-   if (!mutation) return result;
-
--  const validation = await validatePersistedFile(backend, mutation.path);
-+  const validation = await validatePersistedFile(
-+    backend,
-+    mutation.path,
-+    outputMode,
-+  );
-   if (validation.valid) return result;
-
-   const warning = formatWarning(mutation.path, validation.issues);
-@@ -129,6 +159,7 @@ export async function addFrontmatterWarning<Result>(
- async function validatePersistedFile(
-   backend: BackendProtocolV2,
-   filePath: string,
-+  outputMode: OpenWikiOutputMode,
- ): Promise<FrontmatterValidation> {
-   const read = await backend.readRaw(filePath);
-   const content = read.data?.content;
-@@ -140,6 +171,7 @@ async function validatePersistedFile(
-   }
-   return validateOkfFrontmatter(
-     Array.isArray(content) ? content.join("\n") : content,
-+    { requireLocalWikiFields: outputMode === "local-wiki" },
-   );
- }
-
-diff --git a/src/agent/index-middleware.ts b/src/agent/index-middleware.ts
-index 88c18ec..db40df5 100644
---- a/src/agent/index-middleware.ts
-+++ b/src/agent/index-middleware.ts
-@@ -12,7 +12,8 @@ const EXCLUDED_FILES: Record<string, true> = {
-   "AGENTS.md": true,
-   "INSTRUCTIONS.md": true,
- };
--const EXCLUDED_INDEX_DIRECTORIES = new Set(["Clippings/Tweets"]);
-+const EXCLUDED_DIRECTORIES = new Set(["large_tool_results"]);
-+const EXCLUDED_DIRECTORY_PATHS = new Set(["/Clippings/Tweets"]);
-
- interface Directory {
-   entries: FileInfo[];
-@@ -51,13 +52,6 @@ export async function synchronizeWikiIndexes(
- ): Promise<void> {
-   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
-   for (const directory of await collectDirectories(backend, root, true)) {
--    if (
--      EXCLUDED_INDEX_DIRECTORIES.has(
--        path.posix.relative(root, directory.path),
--      )
--    ) {
--      continue;
--    }
-     await synchronizeDirectory(backend, directory, root);
-   }
- }
-@@ -75,9 +69,14 @@ async function collectDirectories(
-   }
-
-   const entries = result.files ?? [];
--  const children = entries.filter(
--    (entry) => entry.is_dir && !entryName(entry).startsWith("."),
--  );
-+  const children = entries.filter((entry) => {
-+    const name = entryName(entry);
-+    return (
-+      entry.is_dir &&
-+      !name.startsWith(".") &&
-+      !isExcludedDirectory(directoryPath, name)
-+    );
-+  });
-   const descendants = await Promise.all(
-     children.map((entry) =>
-       collectDirectories(
-@@ -89,6 +88,13 @@ async function collectDirectories(
-   return [...descendants.flat(), { entries, path: directoryPath }];
- }
-
-+function isExcludedDirectory(parent: string, name: string): boolean {
-+  return (
-+    EXCLUDED_DIRECTORIES.has(name) ||
-+    EXCLUDED_DIRECTORY_PATHS.has(path.posix.join(parent, name))
-+  );
-+}
-+
- /** Builds and writes one directory's index when its content has changed. */
- async function synchronizeDirectory(
-   backend: BackendProtocolV2,
-@@ -103,6 +109,7 @@ async function synchronizeDirectory(
-     if (!name || name.startsWith(".")) continue;
-
-     if (entry.is_dir) {
-+      if (isExcludedDirectory(directory.path, name)) continue;
-       directories.push({ href: `${encodeURIComponent(name)}/`, label: name });
-       continue;
-     }
-@@ -136,6 +143,7 @@ async function synchronizeDirectory(
-   )
-     ? await readText(backend, indexPath)
-     : null;
-+  if (root === "/" && directory.path === root && existing !== null) return;
-   if (existing === content) return;
-
-   const result = existing
-@@ -158,7 +166,15 @@ function renderIndex(
-   ]
-     .filter(Boolean)
-     .join("\n\n");
--  return `---\ntype: Documentation Index\ntitle: ${JSON.stringify(title)}\ndescription: ${JSON.stringify(`Files and subdirectories in ${title}.`)}\n---\n\n${sections}\n`;
-+  const body = sections ? `\n\n${sections}` : "";
-+  return `---
-+title: ${JSON.stringify(title)}
-+type: resources-index
-+status: active
-+now: false
-+description: ${JSON.stringify(`Files and subdirectories in ${title}.`)}
-+---${body}
-+`;
- }
-
- /** Renders a sorted Markdown section for files or subdirectories. */
 diff --git a/src/agent/index.ts b/src/agent/index.ts
-index bdf2ced..8dd1208 100644
+index a18a217..197f540 100644
 --- a/src/agent/index.ts
 +++ b/src/agent/index.ts
-@@ -85,6 +85,7 @@ import {
+@@ -120,6 +120,7 @@ import {
    resolveProviderLocation,
    resolveProviderRegion,
    resolveProviderRetryAttempts,
@@ -328,10 +138,10 @@ index bdf2ced..8dd1208 100644
    type OpenWikiProvider,
  } from "../constants.js";
  import {
-@@ -339,6 +340,15 @@ async function runOpenWikiAgentCore(
-     openWikiSnapshotBefore,
-   );
-
+@@ -616,6 +617,15 @@ async function runOpenWikiAgentCore(
+     );
+   });
+ 
 +  if (metadataWritten) {
 +    await wikiBackend.recordPersistedMutation(
 +      outputMode === "local-wiki"
@@ -344,14 +154,29 @@ index bdf2ced..8dd1208 100644
    if (metadataWritten) {
      emitDebug(options, "metadata=written");
    } else {
+diff --git a/src/agent/okf-middleware.ts b/src/agent/okf-middleware.ts
+index 0c407f0..1d73d5b 100644
+--- a/src/agent/okf-middleware.ts
++++ b/src/agent/okf-middleware.ts
+@@ -110,7 +110,9 @@ export async function addFrontmatterWarning<Result>(
+     );
+   if (!mutation) return result;
+ 
+-  const validation = await validatePersistedFile(backend, mutation.path);
++  const validation = await validatePersistedFile(backend, mutation.path, {
++    requireLocalWikiFields: outputMode === "local-wiki",
++  });
+   if (validation.valid) return result;
+ 
+   const warning = formatWarning(mutation.path, validation.issues);
 diff --git a/src/agent/types.ts b/src/agent/types.ts
-index a033057..497e879 100644
+index a8b2922..68a67fb 100644
 --- a/src/agent/types.ts
 +++ b/src/agent/types.ts
 @@ -1,6 +1,12 @@
  export type OpenWikiCommand = "chat" | "init" | "update";
  export type OpenWikiOutputMode = "local-wiki" | "repository";
-
+ 
 +export type OpenWikiMutation = {
 +  content: string;
 +  path: string;
@@ -361,8 +186,8 @@ index a033057..497e879 100644
  export type OpenWikiRunResult = {
    command: OpenWikiCommand;
    model: string;
-@@ -36,6 +42,7 @@ export type OpenWikiRunOptions = {
-   isFollowup?: boolean;
+@@ -37,6 +43,7 @@ export type OpenWikiRunOptions = {
+   language?: string | null;
    modelId?: string | null;
    onEvent?: (event: OpenWikiRunEvent) => void;
 +  onWikiMutations?: (mutations: OpenWikiMutation[]) => void;
@@ -370,7 +195,7 @@ index a033057..497e879 100644
    threadId?: string;
    userMessage?: string | null;
 diff --git a/src/ingestion.ts b/src/ingestion.ts
-index 2025a81..bf703e9 100644
+index d7ee51f..cfbe67f 100644
 --- a/src/ingestion.ts
 +++ b/src/ingestion.ts
 @@ -1,3 +1,6 @@
@@ -388,7 +213,7 @@ index 2025a81..bf703e9 100644
    OpenWikiRunOptions,
    OpenWikiRunResult,
  } from "./agent/types.js";
-@@ -40,6 +44,7 @@ export type SourceIngestionResult = {
+@@ -44,6 +48,7 @@ export type SourceIngestionResult = {
    agentResult?: OpenWikiRunResult;
    connectorId: ConnectorId;
    deterministicPull?: ConnectorIngestResult;
@@ -396,9 +221,9 @@ index 2025a81..bf703e9 100644
    displayName: string;
    rawFiles: string[];
    sourceInstanceId: string;
-@@ -138,6 +143,9 @@ async function runSourceIngestion({
+@@ -142,6 +147,9 @@ async function runSourceIngestion({
    );
-
+ 
    try {
 +    const gitSnapshot = await snapshotGitWiki(cwd);
 +    assertGitWikiClean(gitSnapshot);
@@ -406,12 +231,12 @@ index 2025a81..bf703e9 100644
      const deterministicPull = isDeterministicConnector(connector)
        ? await connector.ingest({
            connectorConfig: sourceConfig.connectorConfig,
-@@ -160,10 +168,14 @@ async function runSourceIngestion({
+@@ -164,10 +172,14 @@ async function runSourceIngestion({
        };
      }
-
+ 
 +    let wikiMutations: OpenWikiMutation[] = [];
-     const agentResult = await runOpenWikiAgent("update", cwd, {
+     const runOptions: OpenWikiRunOptions = {
        isFollowup: false,
        modelId,
        onEvent: emit,
@@ -421,10 +246,10 @@ index 2025a81..bf703e9 100644
        outputMode: "local-wiki",
        threadId: createOpenWikiThreadId(cwd),
        userMessage: createSourceUpdateMessage({
-@@ -174,6 +186,14 @@ async function runSourceIngestion({
-         sourceConfig,
-       }),
-     });
+@@ -188,6 +200,14 @@ async function runSourceIngestion({
+       telemetryContext,
+       () => runOpenWikiAgent("update", cwd, runOptions, telemetryContext),
+     );
 +    await commitGitWikiUpdate({
 +      connectorId: connector.id,
 +      pullRunId: deterministicPull?.runId,
@@ -433,10 +258,10 @@ index 2025a81..bf703e9 100644
 +      sourceInstanceId: sourceConfig.id,
 +      wikiMutations,
 +    });
-
+ 
      return {
        agentResult,
-@@ -190,6 +210,7 @@ async function runSourceIngestion({
+@@ -204,6 +224,7 @@ async function runSourceIngestion({
      return {
        connectorId: connector.id,
        displayName: getSourceDisplayName(connector, sourceConfig),
@@ -444,10 +269,10 @@ index 2025a81..bf703e9 100644
        rawFiles: [],
        sourceInstanceId: sourceConfig.id,
        status: "error",
-@@ -197,6 +218,334 @@ async function runSourceIngestion({
+@@ -211,6 +232,334 @@ async function runSourceIngestion({
    }
  }
-
+ 
 +type GitWikiSnapshot = {
 +  dirtyPaths: Set<string>;
 +  headOid: string;
@@ -779,16 +604,164 @@ index 2025a81..bf703e9 100644
  function resolveIngestionSourceInstances(
    target: IngestionTarget,
    config: OpenWikiOnboardingConfig,
-@@ -325,6 +674,7 @@ Instructions:
-
- function createSourceSynthesisPolicy(connectorId: ConnectorId): string {
+@@ -339,6 +688,7 @@ Instructions:
+ 
+ function createSourceSynthesisPolicy(connector: ConnectorRuntime): string {
    return `
-+- Every created or materially modified wiki Markdown file must include \`title\`, a lowercase contract-approved \`type\`, \`status\`, and \`now\`. Use \`type: source-summary\`, \`status: processed\`, and \`now: false\` for \`/sources/${connectorId}.md\`; use \`type: synthesis\`, \`status: active\`, and \`now: false\` for canonical synthesis pages.
- - Synthesize into canonical cross-source files when relevant: /open-questions.md for unresolved memory/wiki questions, /themes.md for recurring trends, /commitments.md for work tasks/follow-ups, /personal-logistics.md for non-work life-admin items, /quickstart.md for high-level navigation/current status, and /sources/${connectorId}.md for compact source evidence.
- - Apply confidence labels: confirmed, source-backed, watchlist, or saved-context. Keep weak/watchlist items out of /quickstart.md unless they materially affect current status.
- - Deduplicate with stable topic keys. Update existing themes, open questions, and commitments instead of repeating the same fact in several source pages.
++- Every created or materially modified wiki Markdown file must include \`title\`, a lowercase contract-approved \`type\`, \`status\`, and \`now\`. Use \`type: source-summary\`, \`status: processed\`, and \`now: false\` for \`/sources/${connector.id}.md\`; use \`type: synthesis\`, \`status: active\`, and \`now: false\` for canonical synthesis pages.
+ - Synthesize into canonical cross-source files when relevant: /open-questions.md for unresolved memory/wiki questions, /themes.md for recurring trends, /commitments.md for work tasks/follow-ups, /personal-logistics.md for non-work life-admin items, /quickstart.md for high-level navigation/current status, and /sources/${connector.id}.md for compact source evidence.
+ - Apply confidence labels: confirmed, source-backed, contested, watchlist, or saved-context. Keep weak/watchlist items out of /quickstart.md unless they materially affect current status.
+ - When credible sources disagree and no ground truth settles it, label the fact contested and preserve both claims with source and date in a ## Contested section on the canonical page instead of overwriting one side. Never resolve a contested fact by recency alone.
+diff --git a/src/okf/frontmatter.ts b/src/okf/frontmatter.ts
+index b6fb9d5..3632a8b 100644
+--- a/src/okf/frontmatter.ts
++++ b/src/okf/frontmatter.ts
+@@ -9,9 +9,14 @@ const OKF_STRING_FIELDS = [
+   "title",
+   "description",
+   "resource",
++  "status",
+   "timestamp",
+ ];
+ 
++type FrontmatterValidationOptions = {
++  requireLocalWikiFields?: boolean;
++};
++
+ /**
+  * Extension field flagging front matter OpenWiki derived deterministically.
+  */
+@@ -86,7 +91,10 @@ export type FrontmatterValidation =
+ /**
+  * Parses and validates OKF front matter while tolerating producer extensions.
+  */
+-export function validateOkfFrontmatter(content: string): FrontmatterValidation {
++export function validateOkfFrontmatter(
++  content: string,
++  options: FrontmatterValidationOptions = {},
++): FrontmatterValidation {
+   const lines = content.split(/\r?\n/u);
+   if (lines[0] !== "---") {
+     return invalid(
+@@ -123,6 +131,14 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
+   if (!Object.hasOwn(fields, "type")) {
+     issues.push(issue("missing_type", "Required field `type` is missing."));
+   }
++  if (options.requireLocalWikiFields) {
++    if (!Object.hasOwn(fields, "status")) {
++      issues.push(issue("missing_status", "Required field `status` is missing."));
++    }
++    if (!Object.hasOwn(fields, "now")) {
++      issues.push(issue("missing_now", "Required field `now` is missing."));
++    }
++  }
+   for (const field of OKF_STRING_FIELDS) {
+     if (
+       Object.hasOwn(fields, field) &&
+@@ -148,6 +164,9 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
+       ),
+     );
+   }
++  if (Object.hasOwn(fields, "now") && typeof fields.now !== "boolean") {
++    issues.push(issue("invalid_now", "Field `now` must be a boolean."));
++  }
+ 
+   return issues.length === 0 ? { valid: true } : { issues, valid: false };
+ }
+@@ -158,6 +177,7 @@ export function validateOkfFrontmatter(content: string): FrontmatterValidation {
+ export async function validatePersistedFile(
+   backend: BackendProtocolV2,
+   filePath: string,
++  options: FrontmatterValidationOptions = {},
+ ): Promise<FrontmatterValidation> {
+   const read = await backend.readRaw(filePath);
+   const content = read.data?.content;
+@@ -169,6 +189,7 @@ export async function validatePersistedFile(
+   }
+   return validateOkfFrontmatter(
+     Array.isArray(content) ? content.join("\n") : content,
++    options,
+   );
+ }
+ 
+diff --git a/src/okf/index-sync.ts b/src/okf/index-sync.ts
+index e2355bf..913f49e 100644
+--- a/src/okf/index-sync.ts
++++ b/src/okf/index-sync.ts
+@@ -20,7 +20,8 @@ const EXCLUDED_FILES = new Set([
+   "AGENTS.md",
+   "INSTRUCTIONS.md",
+ ]);
+-const EXCLUDED_INDEX_DIRECTORIES = new Set(["Clippings/Tweets"]);
++const EXCLUDED_DIRECTORIES = new Set(["large_tool_results"]);
++const EXCLUDED_DIRECTORY_PATHS = new Set(["/Clippings/Tweets"]);
+ 
+ /**
+  * A wiki directory paired with the entries it directly contains.
+@@ -68,13 +69,6 @@ export async function synchronizeWikiIndexes(
+ ): Promise<void> {
+   const root = outputMode === "local-wiki" ? "/" : "/openwiki";
+   for (const directory of await collectDirectories(backend, root, true)) {
+-    if (
+-      EXCLUDED_INDEX_DIRECTORIES.has(
+-        path.posix.relative(root, directory.path),
+-      )
+-    ) {
+-      continue;
+-    }
+     await synchronizeDirectory(backend, directory, root, labels, conceptType);
+   }
+ }
+@@ -153,9 +147,14 @@ async function collectDirectories(
+   }
+ 
+   const entries = result.files ?? [];
+-  const children = entries.filter(
+-    (entry) => entry.is_dir && !entryName(entry).startsWith("."),
+-  );
++  const children = entries.filter((entry) => {
++    const name = entryName(entry);
++    return (
++      entry.is_dir &&
++      !name.startsWith(".") &&
++      !isExcludedDirectory(directoryPath, name)
++    );
++  });
+   const descendants = await Promise.all(
+     children.map((entry) =>
+       collectDirectories(
+@@ -167,6 +166,13 @@ async function collectDirectories(
+   return [...descendants.flat(), { entries, path: directoryPath }];
+ }
+ 
++function isExcludedDirectory(parent: string, name: string): boolean {
++  return (
++    EXCLUDED_DIRECTORIES.has(name) ||
++    EXCLUDED_DIRECTORY_PATHS.has(path.posix.join(parent, name))
++  );
++}
++
+ /**
+  * Builds and writes one directory's index when its content has changed.
+  */
+@@ -185,6 +191,7 @@ async function synchronizeDirectory(
+     if (!name || name.startsWith(".")) continue;
+ 
+     if (entry.is_dir) {
++      if (isExcludedDirectory(directory.path, name)) continue;
+       directories.push({ href: `${encodeURIComponent(name)}/`, label: name });
+       continue;
+     }
+@@ -217,6 +224,7 @@ async function synchronizeDirectory(
+   )
+     ? await readText(backend, indexPath)
+     : null;
++  if (root === "/" && directory.path === root && existing !== null) return;
+   if (existing === content) return;
+ 
+   const result = existing
 diff --git a/test/docs-only-backend.test.ts b/test/docs-only-backend.test.ts
-index 08fa817..162d5af 100644
+index 17f4db0..ad40c8b 100644
 --- a/test/docs-only-backend.test.ts
 +++ b/test/docs-only-backend.test.ts
 @@ -1,4 +1,5 @@
@@ -798,7 +771,7 @@ index 08fa817..162d5af 100644
  import os from "node:os";
  import path from "node:path";
  import { describe, expect, test } from "vitest";
-@@ -65,6 +66,20 @@ describe("OpenWikiLocalShellBackend", () => {
+@@ -83,6 +84,20 @@ describe("OpenWikiLocalShellBackend", () => {
      await expect(
        readFile(path.join(rootDir, "quickstart.md"), "utf8"),
      ).resolves.toBe("updated");
@@ -817,13 +790,13 @@ index 08fa817..162d5af 100644
 +      },
 +    ]);
    });
-
+ 
    test("keeps chat-mode style backends unrestricted when docsOnly is false", async () => {
 diff --git a/test/frontmatter-validator.test.ts b/test/frontmatter-validator.test.ts
-index 94ec42b..3453924 100644
+index 6f1f443..261be48 100644
 --- a/test/frontmatter-validator.test.ts
 +++ b/test/frontmatter-validator.test.ts
-@@ -54,6 +54,32 @@ describe("validateOkfFrontmatter", () => {
+@@ -52,6 +52,32 @@ describe("validateOkfFrontmatter", () => {
          ),
        ),
      ).toEqual({ valid: true });
@@ -854,124 +827,8 @@ index 94ec42b..3453924 100644
 +      valid: false,
 +    });
    });
-
-   test("reports deterministic delimiter and required-field issues", () => {
-diff --git a/test/index-middleware.test.ts b/test/index-middleware.test.ts
-index 9c21fbe..5f7d612 100644
---- a/test/index-middleware.test.ts
-+++ b/test/index-middleware.test.ts
-@@ -43,8 +43,9 @@ describe("synchronizeWikiIndexes", () => {
-       "utf8",
-     );
-
--    expect(rootIndex).toContain("type: Documentation Index");
--    expect(rootIndex).not.toMatch(/^tags:/mu);
-+    expect(rootIndex).toContain("type: resources-index");
-+    expect(rootIndex).toContain("status: active");
-+    expect(rootIndex).toContain("now: false");
-     expect(rootIndex).toContain("- [Quickstart](quickstart.md) - Start here.");
-     expect(rootIndex).toContain(
-       "# Directories\n\n- [architecture](architecture/)",
-@@ -193,20 +194,79 @@ describe("synchronizeWikiIndexes", () => {
-     ).resolves.not.toContain("AGENTS.md");
-   });
-
--  test("does not create a redundant index for personal tweet clippings", async () => {
-+  test("ignores agent scratch directories", async () => {
-+    const { backend, rootDir } = await setup();
-+    await backend.write("/openwiki/large_tool_results/chunk.txt", "scratch");
-+
-+    await synchronizeWikiIndexes(backend, "repository");
-+
-+    await expect(
-+      readFile(path.join(rootDir, "openwiki/index.md"), "utf8"),
-+    ).resolves.not.toContain("large_tool_results");
-+    await expect(
-+      readFile(
-+        path.join(rootDir, "openwiki/large_tool_results/index.md"),
-+        "utf8",
-+      ),
-+    ).rejects.toMatchObject({ code: "ENOENT" });
-+  });
-+
-+  test("ignores vault paths with stricter content contracts", async () => {
-     const { backend, rootDir } = await setup("local-wiki");
--    await backend.write(
--      "/Clippings/Tweets/tweet.md",
--      document("Tweet", "Imported tweet clipping."),
--    );
-+    await backend.write("/Clippings/Tweets/tweet.md", "not an index target");
-
-     await synchronizeWikiIndexes(backend, "local-wiki");
-
-+    await expect(
-+      readFile(path.join(rootDir, "Clippings/index.md"), "utf8"),
-+    ).resolves.not.toContain("Tweets");
-     await expect(
-       readFile(path.join(rootDir, "Clippings/Tweets/index.md"), "utf8"),
-     ).rejects.toMatchObject({ code: "ENOENT" });
-   });
-
-+  test("indexes matching paths in repository mode", async () => {
-+    const { backend, rootDir } = await setup();
-+    await backend.write(
-+      "/openwiki/Clippings/Tweets/tweet.md",
-+      document("Tweet", "Repository documentation."),
-+    );
-+
-+    await synchronizeWikiIndexes(backend, "repository");
-+
-+    await expect(
-+      readFile(
-+        path.join(rootDir, "openwiki/Clippings/Tweets/index.md"),
-+        "utf8",
-+      ),
-+    ).resolves.toContain("[Tweet](tweet.md) - Repository documentation.");
-+  });
-+
-+  test("preserves a curated local wiki root index", async () => {
-+    const { backend, rootDir } = await setup("local-wiki");
-+    const canonical = `---
-+title: Resources Index
-+type: resources-index
-+status: active
-+now: false
-+---
-+
-+- [[index]]
-+- [[log]]
-+- [[AGENTS]]
-+- [[Resources.base]]
-+- [[Source-Processing.base]]
-+`;
-+    await writeFile(path.join(rootDir, "index.md"), canonical);
-+    await backend.write("/page.md", document("Page", "Current page."));
-+
-+    await synchronizeWikiIndexes(backend, "local-wiki");
-+
-+    await expect(
-+      readFile(path.join(rootDir, "index.md"), "utf8"),
-+    ).resolves.toBe(canonical);
-+  });
-+
-   test("supports the local wiki root and empty directories", async () => {
-     const { backend, rootDir } = await setup("local-wiki");
-     await backend.write(
-@@ -220,8 +280,11 @@ describe("synchronizeWikiIndexes", () => {
-     await expect(
-       readFile(path.join(rootDir, "index.md"), "utf8"),
-     ).resolves.toContain("- [empty](empty/)");
--    await expect(
--      readFile(path.join(rootDir, "empty/index.md"), "utf8"),
--    ).resolves.toContain('title: "Empty"');
-+    const emptyIndex = await readFile(
-+      path.join(rootDir, "empty/index.md"),
-+      "utf8",
-+    );
-+    expect(emptyIndex).toContain('title: "Empty"');
-+    expect(emptyIndex.endsWith("---\n")).toBe(true);
-   });
- });
+ 
+   test("accepts OKF timestamp and producer-defined extension fields", () => {
 diff --git a/test/ingestion.test.ts b/test/ingestion.test.ts
 index 2d5b616..9f48520 100644
 --- a/test/ingestion.test.ts
@@ -1010,18 +867,18 @@ index 2d5b616..9f48520 100644
 +  });
 +  return stdout;
 +}
-
+ 
  const ingest = vi.hoisted(() => vi.fn());
  const linksIngest = vi.hoisted(() => vi.fn());
 @@ -76,6 +104,9 @@ vi.mock("../src/connectors/mcp-runtime.js", () => ({
  }));
-
+ 
  const originalHome = process.env.HOME;
 +const originalWikiDir = process.env.OPENWIKI_WIKI_DIR;
 +const originalPath = process.env.PATH;
 +const originalTestRealGit = process.env.OPENWIKI_TEST_REAL_GIT;
  let home: string;
-
+ 
  beforeEach(async () => {
 @@ -105,6 +136,15 @@ beforeEach(async () => {
  afterEach(async () => {
@@ -1038,11 +895,11 @@ index 2d5b616..9f48520 100644
 +  }
    await rm(home, { recursive: true, force: true });
  });
-
+ 
 @@ -345,6 +385,469 @@ describe("deterministic ingestion", () => {
      );
    });
-
+ 
 +  test("commits a source update without staging unrelated work", async () => {
 +    const repo = path.join(home, "vault");
 +    const wiki = path.join(repo, "04_Resources");

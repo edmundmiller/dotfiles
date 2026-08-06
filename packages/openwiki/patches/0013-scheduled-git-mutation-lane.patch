@@ -1,15 +1,14 @@
 diff --git a/src/schedules.ts b/src/schedules.ts
-index 651d598..2f96bc1 100644
+index 503a9c0..fd50bb7 100644
 --- a/src/schedules.ts
 +++ b/src/schedules.ts
-@@ -165,6 +165,8 @@ export async function installConnectorSchedule({
+@@ -164,6 +164,8 @@ export async function installConnectorSchedule({
    const logsDir = path.join(openWikiHomeDir, "logs");
    const logPath = path.join(logsDir, "ingestion.schedule.log");
    const plistPath = getLaunchAgentPath();
 +  const scheduleCwd = process.env.OPENWIKI_SCHEDULE_CWD?.trim() || cwd;
 +  await mkdir(scheduleCwd, { recursive: true, mode: 0o700 });
--
-+
+ 
    await ensureOpenWikiHome();
    await mkdir(launchAgentsDir, { recursive: true, mode: 0o700 });
 @@ -174,7 +176,7 @@ export async function installConnectorSchedule({
@@ -22,19 +21,18 @@ index 651d598..2f96bc1 100644
        logPath,
      }),
 diff --git a/test/schedules.test.ts b/test/schedules.test.ts
-index 4b5cb9d..d9b72d1 100644
+index 4b5cb9d..80a5f9a 100644
 --- a/test/schedules.test.ts
 +++ b/test/schedules.test.ts
-@@ -17,6 +17,7 @@ vi.mock("node:child_process", async (importOriginal) => {
+@@ -19,6 +19,7 @@ vi.mock("node:child_process", async (importOriginal) => {
  const originalExecutable = process.env.OPENWIKI_EXECUTABLE;
  const originalLauncher = process.env.OPENWIKI_LAUNCHER;
  const originalHome = process.env.HOME;
 +const originalScheduleCwd = process.env.OPENWIKI_SCHEDULE_CWD;
  let home: string;
--
-+
+ 
  beforeEach(async () => {
-@@ -37,5 +38,10 @@ afterEach(async () => {
+@@ -38,6 +39,11 @@ afterEach(async () => {
    else process.env.OPENWIKI_LAUNCHER = originalLauncher;
    if (originalHome === undefined) delete process.env.HOME;
    else process.env.HOME = originalHome;
@@ -45,6 +43,7 @@ index 4b5cb9d..d9b72d1 100644
 +  }
    await rm(home, { force: true, recursive: true });
  });
+ 
 @@ -65,3 +71,28 @@ test.skipIf(process.platform !== "darwin")(
      ).toBe(0o600);
    },
