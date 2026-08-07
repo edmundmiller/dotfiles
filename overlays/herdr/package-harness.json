@@ -1,12 +1,11 @@
 {
   "source": "https://github.com/ogulcancelik/herdr.git",
-  "ref": "v0.7.5",
+  "ref": "v0.8.0",
   "patches": [
     "patches/0001-libghostty-bench-gated.patch",
     "patches/0006-update-cargo-hash.patch",
     "patches/0007-worktree-actions-use-focused-pane-cwd.patch",
     "patches/0008-ignore-zero-terminal-resize.patch",
-    "patches/0009-defer-background-tab-resize.patch",
     "patches/0013-hyperlink-string-chunk-ceiling.patch"
   ],
   "checks": [["nix", "build", "--no-link"]]
