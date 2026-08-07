@@ -1088,7 +1088,7 @@ in
           for plugin_root in "$plugins_root"/*; do
             if [ -f "$plugin_root/herdr-plugin.toml" ]; then
               if ! link_output=$("$herdr_cmd" plugin link "$plugin_root" 2>&1); then
-                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Fqi "Connection refused"; then
+                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|server_not_running"; then
                   echo "herdr: warning: runtime unavailable; deferring local plugin link for $plugin_root" >&2
                 else
                   printf '%s\n' "$link_output" >&2
@@ -1103,7 +1103,7 @@ in
           export PATH=$PATH:${escapeShellArg launchPath}
           herdr_cmd=${escapeShellArg cfg.command}
           if ! start_output=$("$herdr_cmd" plugin action invoke start --plugin tab-smart-rename 2>&1); then
-            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Fqi "Connection refused"; then
+            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|server_not_running"; then
               echo "herdr: warning: runtime unavailable; deferring smart rename worker start" >&2
             else
               printf '%s\n' "$start_output" >&2
@@ -1113,61 +1113,78 @@ in
         '';
 
         home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          export PATH=$PATH:${escapeShellArg launchPath}
-          herdr_cmd=${escapeShellArg cfg.command}
+                    export PATH=$PATH:${escapeShellArg launchPath}
+                    herdr_cmd=${escapeShellArg cfg.command}
 
-          install_plugin() {
-            owner="$1"
-            repo="$2"
-            subdir="''${3:-}"
-            mode="''${4:-required}"
-            spec="$owner/$repo"
-            if [ -n "$subdir" ]; then
-              spec="$spec/$subdir"
-            fi
+                    install_plugin() {
+                      owner="$1"
+                      repo="$2"
+                      subdir="''${3:-}"
+                      mode="''${4:-required}"
+                      spec="$owner/$repo"
+                      if [ -n "$subdir" ]; then
+                        spec="$spec/$subdir"
+                      fi
 
-            if ! installed_json=$("$herdr_cmd" plugin list --json); then
-              echo "herdr: error: failed to list plugins before installing $spec" >&2
-              return 1
-            fi
+                      if ! installed_json=$("$herdr_cmd" plugin list --json 2>&1); then
+                        if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|server_not_running"; then
+                          echo "herdr: warning: runtime unavailable; deferring $spec plugin installation" >&2
+                          return 0
+                        else
+                          echo "herdr: error: failed to list plugins before installing $spec" >&2
+                          return 1
+                        fi
+                      fi
 
-            if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
-              echo "herdr: $spec plugin already installed"
-            else
-              echo "herdr: installing $spec plugin"
-              if ! install_output=$("$herdr_cmd" plugin install "$spec" --yes 2>&1); then
-                printf '%s\n' "$install_output" >&2
-                if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
-                  echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
-                else
-                  return 1
-                fi
-              fi
-            fi
-          }
+                      if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
+                        echo "herdr: $spec plugin already installed"
+                      else
+                        echo "herdr: installing $spec plugin"
+                        if ! install_output=$("$herdr_cmd" plugin install "$spec" --yes 2>&1); then
+                          printf '%s\n' "$install_output" >&2
+                          if printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|server_not_running"; then
+                            echo "herdr: warning: runtime unavailable; deferring $spec plugin installation" >&2
+                            return 0
+                          elif [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
+                            echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
+                          else
+                            return 1
+                          fi
+                        fi
+                      fi
+                    }
 
-          jj_plugin_config=$("$herdr_cmd" plugin config-dir nathanflurry.jj-workspace)
-          ${pkgs.coreutils}/bin/mkdir -p "$jj_plugin_config"
-          ${pkgs.coreutils}/bin/cat > "$jj_plugin_config/.env" <<'EOF'
+                    if ! jj_plugin_config_output=$("$herdr_cmd" plugin config-dir nathanflurry.jj-workspace 2>&1); then
+                      if printf '%s\n' "$jj_plugin_config_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|server_not_running"; then
+                        echo "herdr: warning: runtime unavailable; deferring jj workspace plugin config" >&2
+                      else
+                        printf '%s\n' "$jj_plugin_config_output" >&2
+                        exit 1
+                      fi
+                    else
+                      jj_plugin_config="$jj_plugin_config_output"
+                      ${pkgs.coreutils}/bin/mkdir -p "$jj_plugin_config"
+                      ${pkgs.coreutils}/bin/cat > "$jj_plugin_config/.env" <<'EOF'
           JJ_BASE_REV=trunk()
           JJ_WORKSPACE_NAME_PREFIXES=issue-,pr-,task-
           EOF
+                    fi
 
-          # Patched plugins are registered from Nix-managed local packages.
-          install_plugin smarzban herdr-file-viewer
-          install_plugin dutifuldev ghzinga plugins/herdr
-          install_plugin dcolinmorgan herdr-remote relay
-          install_plugin razajamil herdr-plugin-workspace-manager
-          install_plugin paulbkim-dev vim-herdr-navigation
-          install_plugin ogulcancelik herdr-plugin-github-start
-          install_plugin ogulcancelik herdr-browser
-          install_plugin rjyo herdr-window-title-sync
-          install_plugin wyattjoh herdr-plugin-gh-pr
-          install_plugin kkckkc herdr-plugin-gh-workflow
-          install_plugin alon-z herdr-command-palette
-          install_plugin 0x5c0f herdr-insight
-          install_plugin persiyanov herdr-reviewr
-          install_plugin edmundmiller herdr-which-key "" optional
+                    # Patched plugins are registered from Nix-managed local packages.
+                    install_plugin smarzban herdr-file-viewer
+                    install_plugin dutifuldev ghzinga plugins/herdr
+                    install_plugin dcolinmorgan herdr-remote relay
+                    install_plugin razajamil herdr-plugin-workspace-manager
+                    install_plugin paulbkim-dev vim-herdr-navigation
+                    install_plugin ogulcancelik herdr-plugin-github-start
+                    install_plugin ogulcancelik herdr-browser
+                    install_plugin rjyo herdr-window-title-sync
+                    install_plugin wyattjoh herdr-plugin-gh-pr
+                    install_plugin kkckkc herdr-plugin-gh-workflow
+                    install_plugin alon-z herdr-command-palette
+                    install_plugin 0x5c0f herdr-insight
+                    install_plugin persiyanov herdr-reviewr
+                    install_plugin edmundmiller herdr-which-key "" optional
         '';
 
         home.activation.herdr-agent-integrations =
@@ -1190,7 +1207,15 @@ in
               install_integration() {
                 target="$1"
                 echo "herdr: installing $target integration"
-                "$herdr_cmd" integration install "$target" >/dev/null
+                if ! install_output=$("$herdr_cmd" integration install "$target" 2>&1); then
+                  if printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|server_not_running"; then
+                    echo "herdr: warning: runtime unavailable; deferring $target integration installation" >&2
+                    return 0
+                  else
+                    printf '%s\n' "$install_output" >&2
+                    return 1
+                  fi
+                fi
               }
 
               ${optionalString (cfg.integrations.pi.enable && config.modules.agents.pi.enable) ''
@@ -1214,10 +1239,15 @@ in
                 install_integration opencode
               ''}
 
-              ${optionalString (cfg.integrations.omp.enable && config.modules.agents.omp.enable) ''
-                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.omp/agent/extensions"
-                PI_CODING_AGENT_DIR="$HOME/.omp/agent" install_integration omp
-              ''}
+              ${optionalString
+                (
+                  cfg.integrations.omp.enable && config.modules.agents.omp.enable && !config.modules.agents.pi.enable
+                )
+                ''
+                  ${pkgs.coreutils}/bin/mkdir -p "$HOME/.omp/agent/extensions"
+                  PI_CODING_AGENT_DIR="$HOME/.omp/agent" install_integration omp
+                ''
+              }
 
               ${optionalString
                 (
