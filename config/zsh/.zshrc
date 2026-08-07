@@ -144,3 +144,11 @@ fi
 
 # Hermes Agent — ensure ~/.local/bin is on PATH
 export PATH="$HOME/.local/bin:$PATH"
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/emiller/.lmstudio/bin"
+# End of LM Studio CLI section
+
+
+# Added by Devin
+export PATH="/Users/emiller/.codeium/windsurf/bin:$PATH"
