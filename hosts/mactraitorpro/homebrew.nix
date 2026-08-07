@@ -138,7 +138,10 @@
 
     # Media
     "spotify"
-    "vlc"
+    # Temporarily disabled: Homebrew 6.0.9 rejects the current cask's
+    # deprecated `command_wrapper` stanza during bundle evaluation.
+    # Re-enable after the cask is migrated upstream.
+    # "vlc"
     "soundsource"
     "subler"
 
@@ -159,7 +162,10 @@
     "elgato-stream-deck"
     "helium"
     "calibre"
-    "inkscape"
+    # Temporarily disabled: Homebrew 6.0.9 rejects the current cask's
+    # deprecated `command_wrapper` stanza during bundle evaluation.
+    # Re-enable after the cask is migrated upstream.
+    # "inkscape"
     "keymapp" # ZSA keyboard firmware flasher
     "neohtop"
     "helpwire-operator"
