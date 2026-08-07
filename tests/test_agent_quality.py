@@ -233,7 +233,8 @@ class AgentQualityTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_start_creates_an_isolated_jj_workspace_and_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            # Nix Python may return /tmp on macOS while jj canonicalizes it to /private/tmp.
+            root = Path(tmp).resolve()
             repo = root / "repo"
             workspace = root / "workspaces" / "demo"
             state = root / "state"
