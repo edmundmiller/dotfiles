@@ -433,6 +433,7 @@ let
   buzzMillDocsCodexAcp = pkgs.writeShellScriptBin "mill-docs-codex-acp" ''
     exec ${pkgs.my.codex-acp}/bin/codex-acp "$@"
   '';
+  buzzMillDocsFlueStateDir = "/var/lib/buzz-mill-docs-flue";
   mkBuzzHermesService =
     profile:
     let
@@ -2173,10 +2174,16 @@ in
   services.tailscale.extraSetFlags = [ "--advertise-routes=192.168.1.0/24" ];
   systemd.tmpfiles.rules = [
     "d ${millDocsVaultPath} 0755 emiller users -"
+    "d ${buzzMillDocsFlueStateDir} 0700 emiller users -"
 
   ];
 
   age.secrets.buzz-mill-docs-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.buzz-mill-docs-flue-env = {
     owner = "emiller";
     group = "users";
     mode = "0400";
@@ -2217,7 +2224,7 @@ in
     description = "Buzz mention worker for mill-docs";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = [ ];
     environment = {
       HOME = "/home/emiller";
       CODEX_HOME = "/home/emiller/.codex";
@@ -2251,6 +2258,74 @@ in
         "/home/emiller/.codex"
       ];
       BindReadOnlyPaths = [ "/home/emiller/obsidian-vault" ];
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      PrivateDevices = true;
+      CapabilityBoundingSet = "";
+      LockPersonality = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      RestrictAddressFamilies = [
+        "AF_UNIX"
+        "AF_INET"
+        "AF_INET6"
+      ];
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      SystemCallArchitectures = "native";
+    };
+  };
+
+  systemd.services.buzz-mill-docs-flue = {
+    description = "Buzz Flue bridge for mill-docs";
+    after = [
+      "network-online.target"
+      "mill-docs-git-pull.service"
+    ];
+    wants = [
+      "network-online.target"
+      "mill-docs-git-pull.service"
+    ];
+    conflicts = [ "buzz-mill-docs-codex.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.my.buzz ];
+    environment = {
+      HOME = buzzMillDocsFlueStateDir;
+      BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
+      BUZZ_FLUE_URL = "https://mill-docs-agents.cinnamon-rooster.ts.net";
+      BUZZ_FLUE_AGENT_PUBKEY = buzzBindings.identities.millDocsWorker.pubkey;
+      BUZZ_FLUE_ALLOWED_AUTHORS = buzzMillDocsOwnerPubkey;
+      BUZZ_FLUE_CHANNEL_IDS = buzzMillDocsChannelId;
+      BUZZ_FLUE_DM_CHANNEL_IDS = "";
+      BUZZ_FLUE_STATE_PATH = "${buzzMillDocsFlueStateDir}/delivered.json";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = "${millDocsVaultPath}/agents";
+      EnvironmentFile = [
+        config.age.secrets.buzz-mill-docs-agent-env.path
+        config.age.secrets.buzz-mill-docs-flue-env.path
+      ];
+      ExecStart = "${pkgs.nodejs_24}/bin/node scripts/buzz-flue-bridge.ts";
+      Restart = "always";
+      RestartSec = "10s";
+      UMask = "0077";
+      ProtectSystem = "strict";
+      ProtectHome = "tmpfs";
+      BindPaths = [
+        millDocsVaultPath
+        buzzMillDocsFlueStateDir
+      ];
+      InaccessiblePaths = [
+        "-/run/docker.sock"
+        "-/run/podman/podman.sock"
+      ];
       NoNewPrivileges = true;
       PrivateTmp = true;
       PrivateDevices = true;

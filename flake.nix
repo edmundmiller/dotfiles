@@ -1203,6 +1203,14 @@
                 };
               };
 
+              nuc-buzz-mill-docs-flue-runtime = import ./hosts/nuc/_tests/buzz-mill-docs-flue-runtime.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
+              };
+
               nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
