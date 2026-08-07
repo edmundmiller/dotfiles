@@ -33,6 +33,15 @@ with lib;
         download-buffer-size = 134217728; # 128MB (default is 64MB)
       };
       optimise.automatic = true;
+      gc = {
+        automatic = true;
+        interval = {
+          Weekday = 0;
+          Hour = 2;
+          Minute = 0;
+        };
+        options = "--delete-older-than 30d";
+      };
     };
 
     # Darwin state version
