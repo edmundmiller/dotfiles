@@ -7,6 +7,17 @@
 let
   obsidianVault = "${config.user.home}/obsidian-vault";
   clin = inputs.clin.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  bb = pkgs.writeShellScriptBin "bb" ''
+    set -euo pipefail
+    # bb ships as an npm package and installs native dependencies on demand.
+    # Override a user's global ignore-scripts setting for this invocation so
+    # better-sqlite3 and @parcel/watcher can install their platform bindings.
+    export npm_config_ignore_scripts=false
+    # The shared npm config intentionally holds new packages for three days.
+    # bb publishes rapidly, so @latest must bypass that policy explicitly.
+    export npm_config_min_release_age=0
+    exec ${pkgs.node-lts}/bin/npx --yes bb-app@latest "$@"
+  '';
   clinWithVaultEnv = pkgs.writeShellScriptBin "clin" ''
     for arg in "$@"; do
       case "$arg" in
@@ -322,6 +333,7 @@ in
     # Add desktop helpers + qmd CLI
     environment.systemPackages = with pkgs; [
       clinWithVaultEnv
+      bb
       llm-agents.qmd
       my.openwiki
       my.zele
