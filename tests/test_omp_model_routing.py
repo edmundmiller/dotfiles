@@ -8,8 +8,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class OmpModelRoutingTests(unittest.TestCase):
-    def test_mactraitorpro_uses_requested_sol_efforts(self) -> None:
-        for role, effort in (("default", "medium"), ("slow", "xhigh")):
+    def test_mactraitorpro_uses_temporary_quota_routing(self) -> None:
+        for role, expected in (
+            ("default", "xai-oauth/grok-4.5:low"),
+            ("slow", "xai-oauth/grok-4.5:high"),
+        ):
             with self.subTest(role=role):
                 result = subprocess.run(
                     [
@@ -26,7 +29,7 @@ class OmpModelRoutingTests(unittest.TestCase):
                 )
 
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(result.stdout, f"openai-codex/gpt-5.6-sol:{effort}")
+                self.assertEqual(result.stdout, expected)
 
     def test_mactraitorpro_uses_subscription_k3_for_designer(self) -> None:
         result = subprocess.run(
@@ -64,7 +67,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "google-antigravity/gemini-3-flash")
 
-    def test_mactraitorpro_prefers_subscription_k3_before_openrouter(self) -> None:
+    def test_mactraitorpro_uses_temporary_quota_fallbacks(self) -> None:
         result = subprocess.run(
             [
                 "nix",
@@ -81,16 +84,24 @@ class OmpModelRoutingTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         chains = json.loads(result.stdout)
-        for role in ("default", "plan", "slow"):
+        expected = {
+            "default": [
+                "opencode-go/kimi-k3:high",
+                "openrouter/moonshotai/kimi-k3:high",
+            ],
+            "plan": [
+                "xai-oauth/grok-4.5:high",
+                "openrouter/moonshotai/kimi-k3:high",
+            ],
+            "slow": [
+                "opencode-go/kimi-k3:high",
+                "openrouter/moonshotai/kimi-k3:high",
+            ],
+        }
+        for role, fallback_chain in expected.items():
             with self.subTest(role=role):
                 self.assertNotIn("opencode-go/glm-5.2", chains[role])
-                self.assertEqual(
-                    chains[role][-2:],
-                    [
-                        "opencode-go/kimi-k3:high",
-                        "openrouter/moonshotai/kimi-k3:high",
-                    ],
-                )
+                self.assertEqual(chains[role][-2:], fallback_chain)
 
     def test_seqeratop_routes_prewalk_and_metadata_roles_separately(self) -> None:
         result = subprocess.run(
