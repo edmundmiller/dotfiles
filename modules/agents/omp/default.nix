@@ -675,6 +675,11 @@ in
         force = true;
       };
 
+      home.file.".omp/agent/rules/ci-watch.md" = {
+        source = "${configDir}/omp/rules/ci-watch.md";
+        force = true;
+      };
+
       home.file.".omp/agent/lsp.json" = {
         source = lsp.configFile;
         force = true;
