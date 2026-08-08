@@ -398,9 +398,13 @@
                 };
 
                 gitbutler-but = {
-                  path = inputs.gitbutler-repo.outPath;
-                  subdir = "crates/but/skill";
-                  filter.maxDepth = 2;
+                  path = builtins.path {
+                    path = inputs.gitbutler-repo.outPath + "/crates/but/skill";
+                    name = "gitbutler-but-skill";
+                    filter = path: _type: baseNameOf path != "CLAUDE.md";
+                  };
+                  subdir = ".";
+                  filter.maxDepth = 1;
                 };
 
                 gitbutler-agentlog = {
@@ -478,7 +482,7 @@
                   subdir = "skills/productivity";
                   filter = {
                     maxDepth = 1;
-                    nameRegex = "^(grill-me|grilling|handoff|teach|writing-great-skills)$";
+                    nameRegex = "^(grill-me|grilling|handoff|teach|writing-for-agents)$";
                   };
                 };
 
@@ -544,7 +548,10 @@
                 emilkowalski = {
                   path = inputs.emilkowalski-skills.outPath;
                   subdir = "skills";
-                  filter.maxDepth = 2;
+                  filter = {
+                    maxDepth = 2;
+                    nameRegex = "^(animation-vocabulary|apple-design|emil-design-eng|review-animations)$";
+                  };
                 };
 
                 shadcn-improve = {
@@ -794,7 +801,7 @@
                   teach.path = "teach";
 
                   writing-great-skills.from = "mattpocock-productivity";
-                  writing-great-skills.path = "writing-great-skills";
+                  writing-great-skills.path = "writing-for-agents";
 
                   setup-matt-pocock-skills.from = "mattpocock-engineering";
                   setup-matt-pocock-skills.path = "setup-matt-pocock-skills";
@@ -840,15 +847,6 @@
                   # breadboard-reflection.path = "breadboard-reflection";
                 };
 
-              targets = {
-                # Canonical dot-agents target. Other agents get their own
-                # generated target dirs from dotfiles-agent-skills.
-                agents = {
-                  enable = true;
-                  dest = ".agents/skills";
-                  structure = "copy-tree";
-                };
-              };
             };
 
           };
