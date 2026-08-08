@@ -118,10 +118,10 @@ host before adding roles/fallbacks. Never invent hybrid ids like
 
 ## Docs
 
-- [model-roles.md](./model-roles.md) — model-role contracts, prewalk's
-  plan-to-code transition, selector precedence, and provider-session/cache cost.
-- [advisor-watchdog.md](./advisor-watchdog.md) — advisor runtime, roster
-  discovery, cost, role-scoped fallbacks, and project review guidance.
-- [message-queue.md](./message-queue.md) — the three message-queue knobs
-  (`interruptMode` / `steeringMode` / `followUpMode`) with a flow diagram.
-  Also tracks the pending OMP + Herdr theme fix.
+Durable OMP module notes live in [docs/](./docs/README.md). Start with that
+guide, then search `purpose:` and `applies_to:` in the first seven lines of
+files under `docs/` instead of reading every note.
+
+When upstream OMP documentation is missing or ambiguous, add one verified topic
+note there with the canonical YAML summary. Keep transient task progress in
+`.agents/worklogs`.
