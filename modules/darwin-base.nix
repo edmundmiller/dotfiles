@@ -9,7 +9,7 @@
 }:
 with lib;
 {
-  config = mkIf isDarwin {
+  config = optionalAttrs isDarwin {
     # Nix configuration
     nix = {
       settings = {
