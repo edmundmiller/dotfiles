@@ -322,7 +322,11 @@ let
   legacyRoombaStart = findAutomation "roomba_start_last_person_leaves";
   robotCleaningScheduler = findAutomation "robot_cleaning_scheduler";
   robotCleaningArrivalDock = findAutomation "robot_cleaning_arrival_dock";
+  robotCleaningExceptionMonitor = findAutomation "robot_cleaning_exception_monitor";
+  robotCleaningEdmundPresenceVerified = findAutomation "robot_cleaning_edmund_presence_verified";
+  robotCleaningMonicaPresenceVerified = findAutomation "robot_cleaning_monica_presence_verified";
   robotCleaningDispatch = scripts.robot_cleaning_dispatch or null;
+  robotCleaningRefreshPresence = scripts.robot_cleaning_refresh_presence or null;
   robotCleaningRunJob = scripts.robot_cleaning_run_job or null;
   getReadyForBedScript = scripts.get_ready_for_bed or null;
   goodNightScript = scripts.goodnight or null;
@@ -354,6 +358,7 @@ let
   busyBarBedtimeInBedTemplate =
     if busyBarBedtimeProgress == null then "" else busyBarBedtimeProgress.variables.in_bed_ts or "";
   inputNumbers = haConfig.input_number or { };
+  inputDateTimes = haConfig.input_datetime or { };
   timers = haConfig.timer or { };
   applyClimatePolicySequence =
     if applyClimatePolicy == null then [ ] else toList (applyClimatePolicy.sequence or [ ]);
@@ -382,6 +387,10 @@ let
     if climateDoorOpen == null then [ ] else toList (climateDoorOpen.action or [ ]);
   robotCleaningSchedulerJson =
     if robotCleaningScheduler == null then "" else builtins.toJSON robotCleaningScheduler;
+  robotCleaningExceptionMonitorJson =
+    if robotCleaningExceptionMonitor == null then "" else builtins.toJSON robotCleaningExceptionMonitor;
+  robotCleaningRefreshPresenceJson =
+    if robotCleaningRefreshPresence == null then "" else builtins.toJSON robotCleaningRefreshPresence;
   robotCleaningDispatchJson =
     if robotCleaningDispatch == null then "" else builtins.toJSON robotCleaningDispatch;
   robotCleaningRunJobJson =
@@ -426,6 +435,43 @@ let
     {
       test = robotCleaningScheduler != null && hasTimePatternTrigger robotCleaningScheduler "/5";
       msg = "robot cleaning scheduler must evaluate due work every 5 minutes";
+    }
+    {
+      test =
+        inputDateTimes ? robot_cleaning_last_presence_request
+        && inputDateTimes ? robot_cleaning_edmund_presence_verified
+        && inputDateTimes ? robot_cleaning_monica_presence_verified
+        && robotCleaningEdmundPresenceVerified != null
+        && robotCleaningMonicaPresenceVerified != null;
+      expectedFailure = true;
+      msg = "robot cleaning must persist real per-phone presence verification events across HA restarts";
+    }
+    {
+      test =
+        robotCleaningRefreshPresence != null
+        && hasInfix "notify.mobile_app_edmunds_iphone" robotCleaningRefreshPresenceJson
+        && hasInfix "notify.mobile_app_monicas_iphone" robotCleaningRefreshPresenceJson
+        && hasInfix "request_location_update" robotCleaningRefreshPresenceJson
+        && hasInfix "robot_cleaning_last_presence_request" robotCleaningRefreshPresenceJson
+        && hasInfix "00:00:30" robotCleaningRefreshPresenceJson;
+      expectedFailure = true;
+      msg = "robot cleaning presence preflight must silently request both phones and wait boundedly for replies";
+    }
+    {
+      test =
+        hasInfix "script.robot_cleaning_refresh_presence" robotCleaningSchedulerJson
+        && hasInfix "robot_cleaning_edmund_presence_verified" robotCleaningSchedulerJson
+        && hasInfix "robot_cleaning_monica_presence_verified" robotCleaningSchedulerJson;
+      expectedFailure = true;
+      msg = "robot cleaning scheduler must preflight stale presence before dispatch";
+    }
+    {
+      test =
+        hasInfix "input_boolean.vacation_mode" robotCleaningExceptionMonitorJson
+        && hasInfix "script.robot_cleaning_refresh_presence" robotCleaningExceptionMonitorJson
+        && hasInfix "did not answer today's location verification request" robotCleaningExceptionMonitorJson;
+      expectedFailure = true;
+      msg = "robot cleaning exception monitor must retry verified presence and stay silent during vacation";
     }
     {
       test =
