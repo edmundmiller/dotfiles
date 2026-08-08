@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "evals": "vitest run --config vitest.evals.config.ts",
-    "evals:pi": "CALLSTACK_DIFF_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts",
+    "evals:pi": "CALLSTACK_DIFF_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts --reporter=vitest-evals/reporter --reporter=json --outputFile.json=vitest-results.json",
     "lint:setup": "effect-tsgo patch --no-typescript --oxlint",
     "lint": "oxlint --type-aware --deny-warnings src tests evals vite.config.ts vitest.evals.config.ts",
     "lint:fix": "oxlint --type-aware --deny-warnings --fix src tests evals vite.config.ts vitest.evals.config.ts"

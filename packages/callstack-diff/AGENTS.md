@@ -78,7 +78,8 @@ not an automatic fix:
 ```bash
 bun run test       # deterministic Vitest unit and CLI checks
 bun run evals      # load the eval suite; live cases skip without opt-in
-bun run evals:pi   # explicitly run the model-consuming plain-Pi cases
+bun run evals:pi   # run plain Pi and write ignored vitest-results.json
+bunx vitest-evals serve vitest-results.json  # inspect complaint artifacts
 ```
 
 `evals:pi` disables Pi's discovered extensions, skills, prompt templates,
@@ -93,8 +94,9 @@ When an agent finds a bug, limitation, or missing use case:
 1. Reproduce it through `csd` before changing behavior.
 2. Minimize public inputs under `evals/fixtures/` and add a case with the exact
    command, expected evidence, actual evidence, and proposed regression.
-3. Make the deterministic scorer reject vague reports. Keep raw model recordings
-   local under ignored `.vitest-evals/`; never commit secrets or private transcripts.
+3. Make the deterministic scorer reject vague reports. Keep the raw JSON report
+   local; promote only minimized evidence into cases and tests. Never commit
+   secrets or private transcripts.
 4. Add a Vitest spec or regression test before implementing the fix. A model
    eval supplements deterministic coverage; it never replaces it.
 5. Update this file when the complaint changes a documented heuristic or the
