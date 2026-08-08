@@ -154,63 +154,58 @@ in
         };
         omp = {
           enable = true;
-          # TEMPORARY (revert after 2026-08-07 10am): openai-codex quota at 3%,
-          # resets tomorrow ~10am. All roles shifted to non-codex providers.
-          # Normal config: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
-          # Normal roles: K3 designer; Sol default/advisor/slow/plan; Terra smol/task; Luna commit; Composer tiny; Gemini vision.
-          # 1-day mapping: Grok 4.5 default/slow; Kimi K3 advisor/plan/designer; Deepseek V4 Flash smol/task; Composer commit/tiny; Gemini vision.
-          smolModel = "opencode-go/deepseek-v4-flash";
+          # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
+          # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
+          # Roles: K3 designer; Sol default/advisor/slow/plan; Terra smol/task; Luna commit; Composer tiny; Gemini vision.
+          smolModel = "openai-codex/gpt-5.6-terra";
           modelRoles = {
-            smol = "opencode-go/deepseek-v4-flash";
+            smol = "openai-codex/gpt-5.6-terra";
             vision = "google-antigravity/gemini-3-flash";
-            default = "xai-oauth/grok-4.5:low";
+            default = "openai-codex/gpt-5.6-sol:medium";
             designer = "opencode-go/kimi-k3:high";
-            advisor = "opencode-go/kimi-k3:high";
-            slow = "xai-oauth/grok-4.5:high";
-            plan = "opencode-go/kimi-k3:high";
-            task = "opencode-go/deepseek-v4-flash";
-            commit = "xai-oauth/grok-composer-2.5-fast";
+            advisor = "openai-codex/gpt-5.6-sol:high";
+            slow = "openai-codex/gpt-5.6-sol:xhigh";
+            # Shared plan defaults to vibeproxy; override to sol.
+            plan = "openai-codex/gpt-5.6-sol:high";
+            task = "openai-codex/gpt-5.6-terra";
+            commit = "openai-codex/gpt-5.6-luna";
             tiny = "xai-oauth/grok-composer-2.5-fast";
           };
           modelProviderOrder = [
-            "opencode-go"
+            "openai-codex"
             "xai-oauth"
+            "opencode-go"
             "openrouter"
           ];
           retry.modelFallback = true;
           retry.fallbackChains = {
             default = [
+              "xai-oauth/grok-4.5:low"
               "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
-            advisor = [
-              "xai-oauth/grok-4.5:high"
-              "openrouter/moonshotai/kimi-k3:high"
-            ];
             plan = [
-              "xai-oauth/grok-4.5:high"
+              "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             slow = [
+              "openai-codex/gpt-5.6-terra:high"
+              "openai-codex/gpt-5.6-luna:high"
+              "xai-oauth/grok-4.5:high"
               "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             smol = [
-              "xai-oauth/grok-composer-2.5-fast"
-            ];
-            task = [
-              "xai-oauth/grok-composer-2.5-fast"
-            ];
-            commit = [
+              "openai-codex/gpt-5.6-luna"
               "opencode-go/deepseek-v4-flash"
             ];
             tiny = [
               "xai-oauth/grok-4.5:minimal"
+              "openai-codex/gpt-5.6-luna"
             ];
           };
           dailyIntrospection.enable = true;
           dailyIntrospection.commit.enable = true;
-          dailyIntrospection.model = "opencode-go/kimi-k3:high";
           skilloptSleep.enable = true;
           skilloptSleep.maxSessions = 5;
           skilloptSleep.maxTasks = 1;
