@@ -88,7 +88,7 @@ The `devices.yaml` → `apply-devices.py` pattern could be replaced with `hass-c
 Before making changes, fetch the NixOS HA wiki for current best practices:
 
 ```bash
-curl -s https://wiki.nixos.org/wiki/Home_Assistant | bunx mdream --origin https://wiki.nixos.org --preset minimal
+bunx defuddle parse https://wiki.nixos.org/wiki/Home_Assistant --md --frontmatter
 ```
 
 Covers: native `services.home-assistant`, declarative config, component deps, USB passthrough, postgres recorder, nginx reverse proxy, custom components, Zigbee OTA.
