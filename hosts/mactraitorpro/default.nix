@@ -160,7 +160,7 @@ in
           smolModel = "openai-codex/gpt-5.6-terra";
           modelRoles = {
             smol = "openai-codex/gpt-5.6-terra";
-            vision = "google-antigravity/gemini-3-flash";
+            vision = "google-antigravity/gemini-3.5-flash";
             default = "openai-codex/gpt-5.6-sol:medium";
             designer = "opencode-go/kimi-k3:high";
             advisor = "openai-codex/gpt-5.6-sol:high";
