@@ -1,32 +1,34 @@
-import { describe, expect, test } from "bun:test";
-import { Glob } from "bun";
-import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { copyFileSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, test } from "vitest";
 import { buildIndex, resolveEntry } from "../src/project.ts";
 import { buildTree, type BuildOptions } from "../src/tree.ts";
 import { diffTrees } from "../src/diff.ts";
 import { render, toRenderNode } from "../src/render.ts";
 
 const OPTS: BuildOptions = { maxDepth: 6, groupBranches: true, showArgs: false };
-const HERE = new URL(".", import.meta.url).pathname;
+const HERE = fileURLToPath(new URL(".", import.meta.url));
 
 function runCli(...args: string[]) {
-  return Bun.spawnSync({
-    cmd: [process.execPath, "run", join(HERE, "..", "src", "cli.ts"), ...args],
-    stdout: "pipe",
-    stderr: "pipe",
+  const result = spawnSync("bun", ["run", join(HERE, "..", "src", "cli.ts"), ...args], {
+    encoding: "utf8",
   });
+  return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 function git(cwd: string, ...args: string[]): void {
-  const result = Bun.spawnSync({ cmd: ["git", ...args], cwd, stderr: "pipe" });
-  if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (result.status !== 0) throw new Error(result.stderr);
 }
 
 function treeFor(dir: string, entry: string) {
   const root = join(HERE, "fixtures", dir);
-  const files = [...new Glob("**/*.ts").scanSync({ cwd: root })].map((r) => join(root, r));
+  const files = readdirSync(root)
+    .filter((file) => file.endsWith(".ts"))
+    .map((file) => join(root, file));
   const index = buildIndex(files);
   const decl = resolveEntry(index, entry);
   if (!decl) throw new Error(`entry not found: ${entry}`);
@@ -78,8 +80,8 @@ describe("cli", () => {
     );
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout.toString()).toContain("PiService.createAgentSession(options)");
-    expect(result.stderr.toString()).toBe("");
+    expect(result.stdout).toContain("PiService.createAgentSession(options)");
+    expect(result.stderr).toBe("");
   });
 
   test("diffs a git revision against the working tree through the public command", () => {
@@ -117,9 +119,9 @@ describe("cli", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout.toString()).toContain("- ├── AuthStorage.create()");
-      expect(result.stdout.toString()).toContain("+ ├── PiService.getServices()");
-      expect(result.stderr.toString()).toBe("");
+      expect(result.stdout).toContain("- ├── AuthStorage.create()");
+      expect(result.stdout).toContain("+ ├── PiService.getServices()");
+      expect(result.stderr).toBe("");
     } finally {
       rmSync(repository, { recursive: true, force: true });
     }
@@ -151,7 +153,9 @@ describe("diff", () => {
 describe("no-branches mode", () => {
   test("inlines branch bodies without group nodes", () => {
     const root = join(HERE, "fixtures", "after");
-    const files = [...new Glob("**/*.ts").scanSync({ cwd: root })].map((r) => join(root, r));
+    const files = readdirSync(root)
+      .filter((file) => file.endsWith(".ts"))
+      .map((file) => join(root, file));
     const index = buildIndex(files);
     const decl = resolveEntry(index, "PiService.createAgentSession")!;
     const tree = buildTree(index, decl, { ...OPTS, groupBranches: false });

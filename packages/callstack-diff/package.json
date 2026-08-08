@@ -7,10 +7,13 @@
     "csd": "src/cli.ts"
   },
   "scripts": {
-    "test": "bun test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "evals": "vitest run --config vitest.evals.config.ts",
+    "evals:pi": "CALLSTACK_DIFF_EVALS_ENABLED=1 vitest run --config vitest.evals.config.ts",
     "lint:setup": "effect-tsgo patch --no-typescript --oxlint",
-    "lint": "oxlint --type-aware --deny-warnings src tests",
-    "lint:fix": "oxlint --type-aware --deny-warnings --fix src tests"
+    "lint": "oxlint --type-aware --deny-warnings src tests evals vite.config.ts vitest.evals.config.ts",
+    "lint:fix": "oxlint --type-aware --deny-warnings --fix src tests evals vite.config.ts vitest.evals.config.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "4.0.0-beta.105",
@@ -21,6 +24,9 @@
     "@effect/tsgo": "0.35.0",
     "@types/bun": "1.3.14",
     "oxlint": "1.77.0",
-    "oxlint-tsgolint": "7.0.2001"
+    "oxlint-tsgolint": "7.0.2001",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "vitest-evals": "0.16.1"
   }
 }
