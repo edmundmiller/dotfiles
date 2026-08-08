@@ -60,6 +60,6 @@ Codex reads shared generated skills from `~/.agents/skills/`.
 
 ## Model roles
 
-`config/codex/config.toml` seeds Sol Medium for normal interactive work and Luna Medium for narrow, bounded subagents. Codex should proactively delegate independent exploration, testing, and read-heavy or high-volume work when useful, normally to one to three non-recursive Luna workers that return compact summaries. Raise Sol's effort only for exceptional primary work; the concurrency ceiling prevents unbounded delegation.
+`config/codex/config.toml` seeds Sol Medium for normal interactive work and Luna Max for narrow, bounded subagents. Codex should proactively delegate independent exploration, testing, and read-heavy or high-volume work when useful, normally to one to three non-recursive Luna workers that return compact summaries. Raise Sol's effort only for exceptional primary work; the configured ceiling matches Codex's supported session maximum.
 
 The live `~/.codex/config.toml` is writable and may differ after app changes. Compare its model and `[agents]` fields with the source, then verify feature state with `codex features list`.

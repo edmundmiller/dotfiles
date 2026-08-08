@@ -24,9 +24,10 @@ class CodexModelConfigTests(unittest.TestCase):
         self.assertEqual(
             self.config["agents"],
             {
-                "max_concurrent_threads_per_session": 8,
+                "enabled": True,
+                "max_concurrent_threads_per_session": 100,
                 "default_subagent_model": "gpt-5.6-luna",
-                "default_subagent_reasoning_effort": "medium",
+                "default_subagent_reasoning_effort": "max",
             },
         )
         self.assertTrue(self.config["features"]["multi_agent_v2"])
