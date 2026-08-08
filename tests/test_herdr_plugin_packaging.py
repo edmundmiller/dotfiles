@@ -56,6 +56,14 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
     assert "deferring marketplace plugin installation" in module
 
 
+def test_vercel_sandbox_plugin_is_installed_for_persistent_remote_sessions() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    readme = (ROOT / "config" / "herdr" / "README.md").read_text()
+
+    assert "install_plugin vercel-labs herdr-vercel-sandbox-plugin" in module
+    assert "`vercel-labs/herdr-vercel-sandbox-plugin`" in readme
+
+
 def test_smart_rename_is_packaged_started_and_bound() -> None:
     package = ROOT / "packages" / "herdr-tab-smart-rename"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()

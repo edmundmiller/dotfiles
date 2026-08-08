@@ -1168,6 +1168,7 @@ in
           install_plugin smarzban herdr-file-viewer
           install_plugin dutifuldev ghzinga plugins/herdr
           install_plugin dcolinmorgan herdr-remote relay
+          install_plugin vercel-labs herdr-vercel-sandbox-plugin
           install_plugin razajamil herdr-plugin-workspace-manager
           install_plugin paulbkim-dev vim-herdr-navigation
           install_plugin ogulcancelik herdr-plugin-github-start

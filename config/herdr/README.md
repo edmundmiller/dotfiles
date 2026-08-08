@@ -133,6 +133,7 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `smarzban/herdr-file-viewer`
 - `dutifuldev/ghzinga/plugins/herdr`
 - `dcolinmorgan/herdr-remote/relay`
+- `vercel-labs/herdr-vercel-sandbox-plugin`
 - `razajamil/herdr-plugin-workspace-manager`
 - `paulbkim-dev/vim-herdr-navigation`
 - `ogulcancelik/herdr-plugin-github-start`
