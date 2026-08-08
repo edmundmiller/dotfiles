@@ -1,5 +1,5 @@
 <div align="center">
-   
+
 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs)
 [![NixOS 24.11](https://img.shields.io/badge/NixOS-v24.11-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 [![nix-darwin](https://img.shields.io/badge/nix--darwin-24.11-green.svg?style=flat-square&logo=apple&logoColor=white)](https://github.com/nix-darwin/nix-darwin)

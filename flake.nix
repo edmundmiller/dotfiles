@@ -518,27 +518,31 @@
                 includes = [
                   "*.cjs"
                   "*.cts"
+                  "*.css"
+                  "*.graphql"
+                  "*.hbs"
+                  "*.html"
                   "*.js"
+                  "*.json"
+                  "*.json5"
+                  "*.jsonc"
                   "*.jsx"
+                  "*.md"
+                  "*.mdx"
                   "*.mjs"
                   "*.mts"
+                  "*.mustache"
+                  "*.scss"
+                  "*.toml"
                   "*.ts"
                   "*.tsx"
+                  "*.vue"
+                  "*.yaml"
+                  "*.yml"
                 ];
               };
-              prettier.enable = true;
               statix.enable = true;
             };
-            settings.formatter.prettier.excludes = [
-              "*.cjs"
-              "*.cts"
-              "*.js"
-              "*.jsx"
-              "*.mjs"
-              "*.mts"
-              "*.ts"
-              "*.tsx"
-            ];
             settings.global.excludes = [
               "packages/*/dist/**"
               "packages/*/node_modules/**"
@@ -611,16 +615,6 @@
               convco = {
                 enable = true;
                 stages = [ "commit-msg" ];
-              };
-              oxfmt = {
-                enable = true;
-                name = "oxfmt";
-                description = "Check JavaScript and TypeScript formatting with oxfmt";
-                entry = "${pkgs.oxfmt}/bin/oxfmt --check";
-                package = pkgs.oxfmt;
-                language = "system";
-                files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
-                stages = [ "pre-commit" ];
               };
               oxlint = {
                 enable = true;
