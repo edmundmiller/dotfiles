@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Glob } from "bun";
+import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildIndex, resolveEntry } from "../src/project.ts";
 import { buildTree, type BuildOptions } from "../src/tree.ts";
@@ -15,6 +17,11 @@ function runCli(...args: string[]) {
     stdout: "pipe",
     stderr: "pipe",
   });
+}
+
+function git(cwd: string, ...args: string[]): void {
+  const result = Bun.spawnSync({ cmd: ["git", ...args], cwd, stderr: "pipe" });
+  if (result.exitCode !== 0) throw new Error(result.stderr.toString());
 }
 
 function treeFor(dir: string, entry: string) {
@@ -61,7 +68,7 @@ describe("render", () => {
 });
 
 describe("cli", () => {
-  test.failing("renders a fixture through the public command", () => {
+  test("renders a fixture through the public command", () => {
     const result = runCli(
       "PiService.createAgentSession",
       "--root",
@@ -73,6 +80,49 @@ describe("cli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout.toString()).toContain("PiService.createAgentSession(options)");
     expect(result.stderr.toString()).toBe("");
+  });
+
+  test("diffs a git revision against the working tree through the public command", () => {
+    const repository = mkdtempSync(join(tmpdir(), "csd-test-"));
+    try {
+      for (const file of ["pi-service.ts", "tools.ts"]) {
+        copyFileSync(join(HERE, "fixtures", "before", file), join(repository, file));
+      }
+      git(repository, "init", "--quiet");
+      git(repository, "add", "pi-service.ts", "tools.ts");
+      git(
+        repository,
+        "-c",
+        "user.name=callstack-diff test",
+        "-c",
+        "user.email=csd@example.invalid",
+        "commit",
+        "--quiet",
+        "-m",
+        "before"
+      );
+      for (const file of ["pi-service.ts", "tools.ts"]) {
+        copyFileSync(join(HERE, "fixtures", "after", file), join(repository, file));
+      }
+
+      const result = runCli(
+        "diff",
+        "PiService.createAgentSession",
+        "--root",
+        repository,
+        "--from",
+        "HEAD",
+        "--theme",
+        "none"
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout.toString()).toContain("- ├── AuthStorage.create()");
+      expect(result.stdout.toString()).toContain("+ ├── PiService.getServices()");
+      expect(result.stderr.toString()).toBe("");
+    } finally {
+      rmSync(repository, { recursive: true, force: true });
+    }
   });
 });
 
