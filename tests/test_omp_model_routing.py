@@ -46,7 +46,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "opencode-go/kimi-k3:high")
 
-    def test_mactraitorpro_uses_gemini_3_flash_for_vision(self) -> None:
+    def test_mactraitorpro_uses_gemini_3_5_flash_for_vision(self) -> None:
         result = subprocess.run(
             [
                 "nix",
@@ -62,7 +62,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "google-antigravity/gemini-3-flash")
+        self.assertEqual(result.stdout, "google-antigravity/gemini-3.5-flash")
 
     def test_mactraitorpro_prefers_subscription_k3_before_openrouter(self) -> None:
         result = subprocess.run(
@@ -147,7 +147,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
         self.assertEqual(
             omp["modelRoles"]["vision"],
-            "google-antigravity/gemini-3-flash",
+            "google-antigravity/gemini-3.5-flash",
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["plan"],
