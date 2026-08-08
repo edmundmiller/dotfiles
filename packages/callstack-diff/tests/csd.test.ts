@@ -70,6 +70,15 @@ describe("render", () => {
 });
 
 describe("cli", () => {
+  test("prints the bundled agent skill through the public command", () => {
+    const result = runCli("skill");
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toMatch(/^---\nname: callstack-diff\n/);
+    expect(result.stdout).toContain("callstack-diff diff");
+    expect(result.stderr).toBe("");
+  });
+
   test("renders a fixture through the public command", () => {
     const result = runCli(
       "PiService.createAgentSession",
