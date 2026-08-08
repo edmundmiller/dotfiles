@@ -442,8 +442,11 @@ let
         && inputDateTimes ? robot_cleaning_edmund_presence_verified
         && inputDateTimes ? robot_cleaning_monica_presence_verified
         && robotCleaningEdmundPresenceVerified != null
-        && robotCleaningMonicaPresenceVerified != null;
-      expectedFailure = true;
+        && robotCleaningMonicaPresenceVerified != null
+        && hasStateTriggerAny robotCleaningEdmundPresenceVerified "device_tracker.edmunds_iphone"
+        && hasStateTriggerAny robotCleaningMonicaPresenceVerified "device_tracker.monicas_iphone"
+        && hasTargetEntity (toList robotCleaningEdmundPresenceVerified.action) "input_datetime.robot_cleaning_edmund_presence_verified"
+        && hasTargetEntity (toList robotCleaningMonicaPresenceVerified.action) "input_datetime.robot_cleaning_monica_presence_verified";
       msg = "robot cleaning must persist real per-phone presence verification events across HA restarts";
     }
     {
@@ -454,7 +457,6 @@ let
         && hasInfix "request_location_update" robotCleaningRefreshPresenceJson
         && hasInfix "robot_cleaning_last_presence_request" robotCleaningRefreshPresenceJson
         && hasInfix "00:00:30" robotCleaningRefreshPresenceJson;
-      expectedFailure = true;
       msg = "robot cleaning presence preflight must silently request both phones and wait boundedly for replies";
     }
     {
@@ -462,15 +464,13 @@ let
         hasInfix "script.robot_cleaning_refresh_presence" robotCleaningSchedulerJson
         && hasInfix "robot_cleaning_edmund_presence_verified" robotCleaningSchedulerJson
         && hasInfix "robot_cleaning_monica_presence_verified" robotCleaningSchedulerJson;
-      expectedFailure = true;
-      msg = "robot cleaning scheduler must preflight stale presence before dispatch";
+      msg = "robot cleaning scheduler must preflight verified presence before dispatch";
     }
     {
       test =
         hasInfix "input_boolean.vacation_mode" robotCleaningExceptionMonitorJson
         && hasInfix "script.robot_cleaning_refresh_presence" robotCleaningExceptionMonitorJson
         && hasInfix "did not answer today's location verification request" robotCleaningExceptionMonitorJson;
-      expectedFailure = true;
       msg = "robot cleaning exception monitor must retry verified presence and stay silent during vacation";
     }
     {
