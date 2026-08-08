@@ -389,6 +389,21 @@ let
     if robotCleaningScheduler == null then "" else builtins.toJSON robotCleaningScheduler;
   robotCleaningExceptionMonitorJson =
     if robotCleaningExceptionMonitor == null then "" else builtins.toJSON robotCleaningExceptionMonitor;
+  robotCleaningExceptionMonitorActions =
+    if robotCleaningExceptionMonitor == null then
+      [ ]
+    else
+      toList (robotCleaningExceptionMonitor.action or [ ]);
+  robotCleaningExceptionChoices =
+    if length robotCleaningExceptionMonitorActions < 2 then
+      [ ]
+    else
+      (builtins.elemAt robotCleaningExceptionMonitorActions 1).choose or [ ];
+  robotCleaningStaleExceptionConditions =
+    if robotCleaningExceptionChoices == [ ] then
+      [ ]
+    else
+      toList ((head robotCleaningExceptionChoices).conditions or [ ]);
   robotCleaningRefreshPresenceJson =
     if robotCleaningRefreshPresence == null then "" else builtins.toJSON robotCleaningRefreshPresence;
   robotCleaningDispatchJson =
@@ -472,6 +487,11 @@ let
         && hasInfix "script.robot_cleaning_refresh_presence" robotCleaningExceptionMonitorJson
         && hasInfix "did not answer today's location verification request" robotCleaningExceptionMonitorJson;
       msg = "robot cleaning exception monitor must retry verified presence and stay silent during vacation";
+    }
+    {
+      test = hasTemplateConditionContaining robotCleaningStaleExceptionConditions "input_datetime.robot_cleaning_last_dispatch";
+      expectedFailure = true;
+      msg = "robot cleaning stale-response alert must stay silent after a same-day dispatch";
     }
     {
       test =
