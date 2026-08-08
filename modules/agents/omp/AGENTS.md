@@ -118,6 +118,8 @@ host before adding roles/fallbacks. Never invent hybrid ids like
 
 ## Docs
 
+- [model-roles.md](./model-roles.md) — model-role contracts, prewalk's
+  plan-to-code transition, selector precedence, and provider-session/cache cost.
 - [advisor-watchdog.md](./advisor-watchdog.md) — advisor runtime, roster
   discovery, cost, role-scoped fallbacks, and project review guidance.
 - [message-queue.md](./message-queue.md) — the three message-queue knobs
