@@ -22,18 +22,46 @@ let
 
   freshStableAbsenceTemplate = ''
     {% set now_ts = as_timestamp(now()) %}
+    {% set requested = as_timestamp(states('input_datetime.robot_cleaning_last_presence_request'), 0) %}
+    {% set edmund_verified = as_timestamp(states('input_datetime.robot_cleaning_edmund_presence_verified'), 0) %}
+    {% set monica_verified = as_timestamp(states('input_datetime.robot_cleaning_monica_presence_verified'), 0) %}
     {% set edmund = states.device_tracker.edmunds_iphone %}
     {% set monica = states.device_tracker.monicas_iphone %}
-    {{ states('device_tracker.edmunds_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
+    {{ requested > 0
+       and edmund_verified >= requested
+       and monica_verified >= requested
+       and states('device_tracker.edmunds_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
        and states('device_tracker.monicas_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
        and now_ts - as_timestamp(edmund.last_changed, 0) >= 600
        and now_ts - as_timestamp(monica.last_changed, 0) >= 600
-       and now_ts - as_timestamp(edmund.last_updated, 0) <= 7200
-       and now_ts - as_timestamp(monica.last_updated, 0) <= 7200 }}
+       and now_ts - edmund_verified <= 7200
+       and now_ts - monica_verified <= 7200 }}
+  '';
+
+  verifiedPresenceStaleTemplate = ''
+    {% set now_ts = as_timestamp(now()) %}
+    {% set requested = as_timestamp(states('input_datetime.robot_cleaning_last_presence_request'), 0) %}
+    {% set edmund_verified = as_timestamp(states('input_datetime.robot_cleaning_edmund_presence_verified'), 0) %}
+    {% set monica_verified = as_timestamp(states('input_datetime.robot_cleaning_monica_presence_verified'), 0) %}
+    {{ requested <= 0
+       or edmund_verified < requested
+       or monica_verified < requested
+       or now_ts - edmund_verified > 7200
+       or now_ts - monica_verified > 7200 }}
+  '';
+
+  dueJobExistsTemplate = ''
+    {% set now_ts = as_timestamp(now()) %}
+    {{ now_ts - as_timestamp(states('input_datetime.robot_cleaning_rosie_high_traffic_last_success'), 0) >= 48 * 60 * 60
+       or now_ts - as_timestamp(states('input_datetime.robot_cleaning_rosie_remaining_last_success'), 0) >= 7 * 24 * 60 * 60
+       or now_ts - as_timestamp(states('input_datetime.robot_cleaning_squirty_high_traffic_last_success'), 0) >= 3 * 24 * 60 * 60 }}
   '';
 
   dispatchGuardTemplate = manualExpression: dailyExpression: ''
     {% set now_ts = as_timestamp(now()) %}
+    {% set requested = as_timestamp(states('input_datetime.robot_cleaning_last_presence_request'), 0) %}
+    {% set edmund_verified = as_timestamp(states('input_datetime.robot_cleaning_edmund_presence_verified'), 0) %}
+    {% set monica_verified = as_timestamp(states('input_datetime.robot_cleaning_monica_presence_verified'), 0) %}
     {% set edmund = states.device_tracker.edmunds_iphone %}
     {% set monica = states.device_tracker.monicas_iphone %}
     {{ (${manualExpression})
@@ -44,12 +72,15 @@ let
          and is_state('input_boolean.guest_mode', 'off')
          and is_state('input_boolean.goodnight', 'off')
          and (${dailyExpression})
+         and requested > 0
+         and edmund_verified >= requested
+         and monica_verified >= requested
          and states('device_tracker.edmunds_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
          and states('device_tracker.monicas_iphone') not in ['home', 'Parking Lot', 'unknown', 'unavailable']
          and now_ts - as_timestamp(edmund.last_changed, 0) >= 600
          and now_ts - as_timestamp(monica.last_changed, 0) >= 600
-         and now_ts - as_timestamp(edmund.last_updated, 0) <= 7200
-         and now_ts - as_timestamp(monica.last_updated, 0) <= 7200
+         and now_ts - edmund_verified <= 7200
+         and now_ts - monica_verified <= 7200
        ) }}
   '';
 
@@ -92,6 +123,21 @@ in
     input_datetime = {
       robot_cleaning_last_dispatch = {
         name = "Robot Cleaning Last Dispatch";
+        has_date = true;
+        has_time = true;
+      };
+      robot_cleaning_last_presence_request = {
+        name = "Robot Cleaning Last Presence Request";
+        has_date = true;
+        has_time = true;
+      };
+      robot_cleaning_edmund_presence_verified = {
+        name = "Robot Cleaning Edmund Presence Verified";
+        has_date = true;
+        has_time = true;
+      };
+      robot_cleaning_monica_presence_verified = {
+        name = "Robot Cleaning Monica Presence Verified";
         has_date = true;
         has_time = true;
       };
@@ -144,6 +190,42 @@ in
     };
 
     script = {
+      robot_cleaning_refresh_presence = {
+        alias = "Refresh robot cleaning presence";
+        description = "Silently request both iPhone locations and wait for verified post-request tracker events";
+        mode = "single";
+        sequence = [
+          {
+            action = "input_datetime.set_datetime";
+            target.entity_id = "input_datetime.robot_cleaning_last_presence_request";
+            data.datetime = "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}";
+          }
+          {
+            parallel = [
+              {
+                action = "notify.mobile_app_edmunds_iphone";
+                continue_on_error = true;
+                data.message = "request_location_update";
+              }
+              {
+                action = "notify.mobile_app_monicas_iphone";
+                continue_on_error = true;
+                data.message = "request_location_update";
+              }
+            ];
+          }
+          {
+            wait_template = ''
+              {% set requested = as_timestamp(states('input_datetime.robot_cleaning_last_presence_request'), 0) %}
+              {{ as_timestamp(states('input_datetime.robot_cleaning_edmund_presence_verified'), 0) >= requested
+                 and as_timestamp(states('input_datetime.robot_cleaning_monica_presence_verified'), 0) >= requested }}
+            '';
+            timeout = "00:00:30";
+            continue_on_timeout = true;
+          }
+        ];
+      };
+
       robot_cleaning_run_job = {
         alias = "Run one mapped robot cleaning job";
         description = "Fail-closed mapped-room mission; manual smoke tests require explicit manual_test=true";
@@ -502,7 +584,7 @@ in
       {
         alias = "Robot cleaning scheduler";
         id = "robot_cleaning_scheduler";
-        description = "Dispatch the most overdue room job during one stable, fresh, daytime empty-house window";
+        description = "Verify both phones, then dispatch the most overdue job during a stable daytime empty-house window";
         trigger = {
           platform = "time_pattern";
           minutes = "/5";
@@ -535,7 +617,7 @@ in
           }
           {
             condition = "template";
-            value_template = freshStableAbsenceTemplate;
+            value_template = dueJobExistsTemplate;
           }
           {
             condition = "template";
@@ -547,10 +629,72 @@ in
         ];
         action = [
           {
+            "if" = [
+              {
+                condition = "template";
+                value_template = ''
+                  {{ states('input_datetime.robot_cleaning_last_presence_request')[:10]
+                     != now().date().isoformat() }}
+                '';
+              }
+            ];
+            "then" = [
+              {
+                action = "script.robot_cleaning_refresh_presence";
+              }
+            ];
+          }
+          {
+            condition = "template";
+            value_template = freshStableAbsenceTemplate;
+          }
+          {
             action = "script.robot_cleaning_dispatch";
           }
         ];
         mode = "single";
+      }
+      {
+        alias = "Robot cleaning Edmund presence verified";
+        id = "robot_cleaning_edmund_presence_verified";
+        description = "Record real Edmund iPhone tracker events instead of trusting restored HA state timestamps";
+        trigger = {
+          platform = "state";
+          entity_id = "device_tracker.edmunds_iphone";
+        };
+        condition = {
+          condition = "template";
+          value_template = "{{ trigger.to_state is not none and trigger.to_state.state not in ['unknown', 'unavailable'] }}";
+        };
+        action = [
+          {
+            action = "input_datetime.set_datetime";
+            target.entity_id = "input_datetime.robot_cleaning_edmund_presence_verified";
+            data.datetime = "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}";
+          }
+        ];
+        mode = "restart";
+      }
+      {
+        alias = "Robot cleaning Monica presence verified";
+        id = "robot_cleaning_monica_presence_verified";
+        description = "Record real Monica iPhone tracker events instead of trusting restored HA state timestamps";
+        trigger = {
+          platform = "state";
+          entity_id = "device_tracker.monicas_iphone";
+        };
+        condition = {
+          condition = "template";
+          value_template = "{{ trigger.to_state is not none and trigger.to_state.state not in ['unknown', 'unavailable'] }}";
+        };
+        action = [
+          {
+            action = "input_datetime.set_datetime";
+            target.entity_id = "input_datetime.robot_cleaning_monica_presence_verified";
+            data.datetime = "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}";
+          }
+        ];
+        mode = "restart";
       }
       {
         alias = "Robot cleaning arrival dock";
@@ -590,34 +734,63 @@ in
       {
         alias = "Robot cleaning exception monitor";
         id = "robot_cleaning_exception_monitor";
-        description = "One daily exception check for stale phone presence or severely overdue jobs";
+        description = "Retry stale presence once near noon, then report verification or severely overdue failures";
         trigger = {
           platform = "time";
-          at = "12:00:00";
+          at = "12:02:00";
         };
-        condition = {
-          condition = "state";
-          entity_id = "input_boolean.robot_cleaning_enabled";
-          state = "on";
-        };
+        condition = [
+          {
+            condition = "state";
+            entity_id = "input_boolean.robot_cleaning_enabled";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.vacation_mode";
+            state = "off";
+          }
+        ];
         action = [
+          {
+            "if" = [
+              {
+                condition = "template";
+                value_template = dueJobExistsTemplate;
+              }
+              {
+                condition = "template";
+                value_template = verifiedPresenceStaleTemplate;
+              }
+              {
+                condition = "template";
+                value_template = ''
+                  {{ states('input_datetime.robot_cleaning_last_dispatch')[:10]
+                     != now().date().isoformat() }}
+                '';
+              }
+            ];
+            "then" = [
+              {
+                action = "script.robot_cleaning_refresh_presence";
+              }
+            ];
+          }
           {
             choose = [
               {
                 conditions = [
                   {
                     condition = "template";
-                    value_template = ''
-                      {% set now_ts = as_timestamp(now()) %}
-                      {{ states('device_tracker.edmunds_iphone') in ['unknown', 'unavailable']
-                         or states('device_tracker.monicas_iphone') in ['unknown', 'unavailable']
-                         or now_ts - as_timestamp(states.device_tracker.edmunds_iphone.last_updated, 0) > 7200
-                         or now_ts - as_timestamp(states.device_tracker.monicas_iphone.last_updated, 0) > 7200 }}
-                    '';
+                    value_template = dueJobExistsTemplate;
+                  }
+                  {
+                    condition = "template";
+                    value_template = verifiedPresenceStaleTemplate;
                   }
                 ];
                 sequence = [
-                  (notifyException "Automatic cleaning is paused because one or both iPhone presence trackers are stale.")
+                  (notifyException "Automatic cleaning is paused because one or both iPhones did not answer today's location verification request.")
                 ];
               }
               {
