@@ -490,7 +490,6 @@ let
     }
     {
       test = hasTemplateConditionContaining robotCleaningStaleExceptionConditions "input_datetime.robot_cleaning_last_dispatch";
-      expectedFailure = true;
       msg = "robot cleaning stale-response alert must stay silent after a same-day dispatch";
     }
     {
