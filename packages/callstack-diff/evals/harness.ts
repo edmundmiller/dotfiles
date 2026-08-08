@@ -35,7 +35,7 @@ export const TOOL_EXTENSION = `export default function callstackDiffEvalTool(pi)
         signal,
         timeout: 120000,
       });
-      const text = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
+      const text = [result.stdout, result.stderr].filter(Boolean).join("\\n").trim();
       return {
         content: [{ type: "text", text }],
         details: { command: process.env.CALLSTACK_DIFF_EVAL_PUBLIC_COMMAND, exitCode: result.code },
