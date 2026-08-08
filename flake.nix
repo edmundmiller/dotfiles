@@ -626,7 +626,7 @@
                 enable = true;
                 name = "oxlint";
                 description = "Lint JavaScript and TypeScript with oxlint";
-                entry = "${pkgs.oxlint}/bin/oxlint --quiet";
+                entry = "${pkgs.oxlint}/bin/oxlint --quiet --disable-nested-config";
                 package = pkgs.oxlint;
                 language = "system";
                 files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";

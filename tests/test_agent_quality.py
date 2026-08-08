@@ -71,6 +71,14 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn(".#pre-commit-config", hey)
         self.assertEqual(hey.count("--config $precommit_config"), 2)
 
+    def test_repository_oxlint_does_not_load_package_specific_configs(self) -> None:
+        flake = FLAKE.read_text()
+
+        self.assertIn(
+            'entry = "${pkgs.oxlint}/bin/oxlint --quiet --disable-nested-config";',
+            flake,
+        )
+
     def test_packaged_agent_quality_uses_the_active_checkout_and_jujutsu(self) -> None:
         wrapper = HEY_WRAPPER.read_text()
         module = OMP_MODULE.read_text()
