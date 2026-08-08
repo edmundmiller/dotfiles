@@ -5,6 +5,7 @@
 import { Console, Effect } from "effect";
 import { Argument, Command, Flag } from "effect/unstable/cli";
 import { BunRuntime, BunServices } from "@effect/platform-bun";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { analyze } from "./analyze.ts";
 import { diffTrees } from "./diff.ts";
@@ -124,7 +125,16 @@ const diffCommand = Command.make(
   })
 ).pipe(Command.withDescription("Diff the call-stack tree between two git revisions"));
 
-const command = renderCommand.pipe(Command.withSubcommands([diffCommand]));
+const skillCommand = Command.make(
+  "skill",
+  {},
+  Effect.fn("callstack-diff.skill")(function* () {
+    const skill = readFileSync(new URL("../SKILL.md", import.meta.url), "utf8").trimEnd();
+    yield* Console.log(skill);
+  })
+).pipe(Command.withDescription("Print the agent skill bundled with this version"));
+
+const command = renderCommand.pipe(Command.withSubcommands([diffCommand, skillCommand]));
 
 const program = command.pipe(Command.run({ version: VERSION }));
 
