@@ -1,0 +1,15 @@
+{
+  "name": "callstack-diff",
+  "version": "0.1.0",
+  "description": "Render and diff static call-stack trees for JS/TS using Oxc",
+  "type": "module",
+  "bin": {
+    "csd": "src/cli.ts"
+  },
+  "dependencies": {
+    "oxc-parser": "0.99.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14"
+  }
+}
