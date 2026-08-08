@@ -12,11 +12,26 @@ class AgentResponseContractTests(unittest.TestCase):
         rule = (ROOT / "config/agents/rules/01-tone-and-style.md").read_text()
 
         for expected in (
+            "Be concise, direct, and candid",
+            "distinguish verified facts from uncertainty",
             "Lead with the answer or next action.",
             "Number multi-step instructions",
             "State errors as cause, evidence, and fix.",
+            "without noisy progress",
             "Make completed work visible.",
             "Cap lists at five items",
+        ):
+            self.assertIn(expected, rule)
+
+    def test_shared_behavior_rule_requires_evidence_and_real_validation(self) -> None:
+        rule = (ROOT / "config/agents/rules/15-agent-behavior.md").read_text()
+
+        for expected in (
+            "materially ambiguous, risky, or requires approval",
+            "Use Visualize when a visual materially improves an explanation",
+            "Spawn subagents only for genuinely independent work",
+            "Ground research in authoritative, current sources",
+            "validate user-facing work in the real interface when applicable",
         ):
             self.assertIn(expected, rule)
 
