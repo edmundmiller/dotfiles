@@ -294,6 +294,22 @@
         "url": "https://github.com/petergyang/no-ai-slop.git"
       }
     },
+    "obsidian-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780935121,
+        "narHash": "sha256-/Kr3cMaN81WXFxgWMNt/QQhEMzuu3e3WJpspqjrnPss=",
+        "ref": "refs/heads/main",
+        "rev": "a1dc48e68138490d522c04cbf5822214c6eb1202",
+        "revCount": 46,
+        "type": "git",
+        "url": "https://github.com/kepano/obsidian-skills.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/kepano/obsidian-skills.git"
+      }
+    },
     "openai-skills": {
       "flake": false,
       "locked": {
@@ -425,6 +441,7 @@
         "modem-skills": "modem-skills",
         "nixpkgs": "nixpkgs_2",
         "no-ai-slop-repo": "no-ai-slop-repo",
+        "obsidian-skills": "obsidian-skills",
         "openai-skills": "openai-skills",
         "perplexity-api-platform-developers": "perplexity-api-platform-developers",
         "pi-extension-skills": "pi-extension-skills",
