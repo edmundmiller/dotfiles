@@ -1,8 +1,7 @@
 /* @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"); */
 
 @-moz-document url(chrome://browser/content/browser.xul),
-               url(chrome://browser/content/browser.xhtml)
-{
+               url(chrome://browser/content/browser.xhtml) {
   /*** TAB BAR ***/
   /* Ensure tab doesn't show through auto-completion popup */
   .tabbrowser-tab {

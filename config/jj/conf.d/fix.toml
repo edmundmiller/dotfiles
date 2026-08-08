@@ -18,24 +18,32 @@ patterns = ["glob:'**/Snakefile'", "glob:'**/*.smk'"]
 command = ["nextflow", "lint", "-"]
 patterns = ["glob:'**/*.nf'", "glob:'**/nextflow.config'"]
 
-[fix.tools.prettier]
-command = ["prettier", "--stdin-filepath=$path"]
+[fix.tools.oxfmt]
+command = ["oxfmt", "--stdin-filepath=$path"]
 patterns = [
-    "glob:'**/*.md'",
-    "glob:'**/*.json'",
-    "glob:'**/*.yaml'",
-    "glob:'**/*.yml'",
-    "glob:'**/*.css'",
-    "glob:'**/*.html'",
-]
-
-[fix.tools.biome]
-command = ["biome", "format", "--stdin-file-path=$path"]
-patterns = [
-    "glob:'**/*.js'",
-    "glob:'**/*.jsx'",
-    "glob:'**/*.ts'",
-    "glob:'**/*.tsx'",
+  "glob:'**/*.cjs'",
+  "glob:'**/*.cts'",
+  "glob:'**/*.css'",
+  "glob:'**/*.graphql'",
+  "glob:'**/*.hbs'",
+  "glob:'**/*.html'",
+  "glob:'**/*.js'",
+  "glob:'**/*.json'",
+  "glob:'**/*.json5'",
+  "glob:'**/*.jsonc'",
+  "glob:'**/*.jsx'",
+  "glob:'**/*.md'",
+  "glob:'**/*.mdx'",
+  "glob:'**/*.mjs'",
+  "glob:'**/*.mts'",
+  "glob:'**/*.mustache'",
+  "glob:'**/*.scss'",
+  "glob:'**/*.toml'",
+  "glob:'**/*.ts'",
+  "glob:'**/*.tsx'",
+  "glob:'**/*.vue'",
+  "glob:'**/*.yaml'",
+  "glob:'**/*.yml'",
 ]
 
 [fix.tools.intellij-format]

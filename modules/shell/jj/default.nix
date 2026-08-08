@@ -25,6 +25,7 @@ in
   config = mkIf cfg.enable {
     user.packages = with pkgs; [
       jujutsu
+      oxfmt
       my.jj-forklift
       my.jj-hunk
       my.jj-vine

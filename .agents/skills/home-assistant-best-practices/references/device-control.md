@@ -135,7 +135,7 @@ Z2M creates **MQTT device triggers** that are autodiscovered. These are acceptab
 # ✅ Z2M device trigger - autodiscovered
 triggers:
   - trigger: device
-    device_id: abc123def456  # OK for Z2M, managed by autodiscovery
+    device_id: abc123def456 # OK for Z2M, managed by autodiscovery
     domain: mqtt
     type: action
     subtype: single
