@@ -788,6 +788,13 @@ in
                     condition = "template";
                     value_template = verifiedPresenceStaleTemplate;
                   }
+                  {
+                    condition = "template";
+                    value_template = ''
+                      {{ states('input_datetime.robot_cleaning_last_dispatch')[:10]
+                         != now().date().isoformat() }}
+                    '';
+                  }
                 ];
                 sequence = [
                   (notifyException "Automatic cleaning is paused because one or both iPhones did not answer today's location verification request.")
