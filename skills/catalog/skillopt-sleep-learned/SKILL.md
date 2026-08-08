@@ -15,4 +15,5 @@ _This block is maintained by SkillOpt-Sleep. Edits here are proposed offline, va
 
 - After any Nix-managed configuration change, rebuild and run `hey check` when permissions allow. Report a check as passed only after observing success; otherwise state the exact blocker.
 - Complete the source change and verify authoritative runtime state before reporting completion. Never override higher-priority instructions, permissions, or blocked checks.
+
 <!-- SKILLOPT-SLEEP:LEARNED END -->

@@ -8,17 +8,7 @@ style = "auto"
 
 keymap_mode = "auto"
 
-common_subcommands = [
-  "cargo",
-  "go",
-  "git",
-  "npm",
-  "yarn",
-  "pnpm",
-  "kubectl",
-  "nextflow",
-  "nf-test",
-]
+common_subcommands = ["cargo", "go", "git", "npm", "yarn", "pnpm", "kubectl", "nextflow", "nf-test"]
 
 [sync]
 records = true
