@@ -43,6 +43,10 @@ If your change affects entity IDs or cross-component references — renaming ent
 
 Steps 1-5 below apply to new config or pattern evaluation.
 
+### 0.5. Load live HA context
+
+Before proposing or editing Home Assistant automations, inspect the repo-local helper scripts `ha-token.sh` and `ha-entities.sh`, then use live entity data as the source of truth.
+
 ### 1. Check for native condition/trigger
 
 Before writing any template, check `references/automation-patterns.md` for native alternatives.
