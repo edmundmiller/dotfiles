@@ -94,7 +94,7 @@ describe("plain Pi boundary", () => {
     ]);
   });
 
-  test.fails("emits a syntactically valid package tool extension", () => {
+  test("emits a syntactically valid package tool extension", () => {
     const directory = mkdtempSync(join(tmpdir(), "callstack-diff-extension-test-"));
     const extension = join(directory, "callstack-diff-tool.mjs");
     try {
