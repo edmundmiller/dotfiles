@@ -37,6 +37,17 @@ stdenv.mkDerivation {
     makeWrapper
   ];
 
+  # The Effect language service and lint binaries are development tools only.
+  # Keep bun2nix's platform defaults and ask Bun not to install devDependencies.
+  bunInstallFlags = [
+    "--linker=isolated"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [ "--backend=symlink" ]
+  ++ [
+    "--production"
+    "--frozen-lockfile"
+  ];
+
   bunDeps = bun2nix.fetchBunDeps {
     bunNix = ./bun.nix;
   };

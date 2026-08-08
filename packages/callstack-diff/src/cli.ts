@@ -1,169 +1,131 @@
 #!/usr/bin/env bun
 // callstack-diff (csd): render or diff static call-stack trees for JS/TS.
-import { Glob } from "bun";
-import { isAbsolute, join, resolve } from "node:path";
-import { buildIndex, resolveEntry } from "./project.ts";
-import { buildTree, type BuildOptions } from "./tree.ts";
+// Built on Effect v4: the command surface uses effect/unstable/cli and the
+// program runs on the Bun platform runtime.
+import { Console, Effect } from "effect";
+import { Argument, Command, Flag } from "effect/unstable/cli";
+import { BunRuntime, BunServices } from "@effect/platform-bun";
+import { resolve } from "node:path";
+import { analyze } from "./analyze.ts";
 import { diffTrees } from "./diff.ts";
-import { render, toRenderNode, type Theme } from "./render.ts";
+import { render, toRenderNode } from "./render.ts";
+import type { BuildOptions } from "./tree.ts";
 import { materializeRef, repoRoot } from "./git.ts";
+import { describe, type CsdError } from "./errors.ts";
 
-const DEFAULT_GLOB = "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}";
-const IGNORE = ["**/node_modules/**", "**/dist/**", "**/.git/**", "**/build/**"];
+const VERSION = "0.1.0";
 
-interface Args {
-  command: "render" | "diff";
-  entry?: string;
-  paths: string[];
-  root: string;
-  depth: number;
-  groupBranches: boolean;
-  showArgs: boolean;
-  theme: Theme;
-  from: string;
-  to?: string; // undefined => working tree
+// Shared params ------------------------------------------------------------
+
+const entry = Argument.string("entry").pipe(
+  Argument.withDescription("Entry: name, Class.method, or file.ts#name")
+);
+const paths = Argument.string("paths").pipe(
+  Argument.withDescription("Files or globs to scan (default: all JS/TS under --root)"),
+  Argument.variadic
+);
+const root = Flag.string("root").pipe(
+  Flag.withDefault("."),
+  Flag.withDescription("Analysis root directory")
+);
+const depth = Flag.integer("depth").pipe(
+  Flag.withDefault(6),
+  Flag.withDescription("Max recursion depth")
+);
+const noBranches = Flag.boolean("no-branches").pipe(
+  Flag.withDescription("Do not group if/else/switch into branch nodes")
+);
+const showArgs = Flag.boolean("args").pipe(
+  Flag.withDescription("Include raw call arguments in labels")
+);
+const theme = Flag.choice("theme", ["default", "libretto", "none"] as const).pipe(
+  Flag.withDefault("default"),
+  Flag.withDescription("Color theme: default | libretto | none")
+);
+const from = Flag.string("from").pipe(
+  Flag.withDefault("HEAD"),
+  Flag.withDescription("Base git ref")
+);
+const to = Flag.string("to").pipe(
+  Flag.withDefault(""),
+  Flag.withDescription("Target git ref (default: working tree)")
+);
+
+interface Shared {
+  readonly depth: number;
+  readonly noBranches: boolean;
+  readonly showArgs: boolean;
 }
 
-function usage(): string {
-  return `csd — static call-stack trees for JS/TS (powered by Oxc)
+const buildOptions = (c: Shared): BuildOptions => ({
+  maxDepth: c.depth,
+  groupBranches: !c.noBranches,
+  showArgs: c.showArgs,
+});
 
-Usage:
-  csd <entry> [paths...] [options]          render a call-stack tree
-  csd diff <entry> [paths...] [options]     diff the tree between two revisions
+// Report domain errors cleanly and exit non-zero instead of dumping a cause.
+const report = <A, R>(program: Effect.Effect<A, CsdError, R>): Effect.Effect<void, never, R> =>
+  program.pipe(
+    Effect.asVoid,
+    Effect.catch((error) =>
+      Console.error(`csd: ${describe(error)}`).pipe(
+        Effect.andThen(Effect.sync(() => void (process.exitCode = 1)))
+      )
+    )
+  );
 
-Entry:
-  name            bare function/arrow name
-  Class.method    class member (static or instance)
-  file.ts#name    disambiguate by file
+// Commands -----------------------------------------------------------------
 
-Options:
-  --root <dir>        analysis root (default: cwd)
-  --depth <n>         max recursion depth (default: 6)
-  --no-branches       do not group if/else/switch into branch nodes
-  --args              include raw call arguments in labels
-  --theme <t>         color theme: default | libretto | none (default: default)
-  --from <ref>        diff: base git ref (default: HEAD)
-  --to <ref>          diff: target git ref (default: working tree)
-  -h, --help          show this help`;
-}
+const renderCommand = Command.make(
+  "csd",
+  { entry, paths, root, depth, noBranches, showArgs, theme },
+  Effect.fn("callstack-diff.render")(function* (c) {
+    yield* report(
+      Effect.gen(function* () {
+        const tree = yield* analyze({
+          root: resolve(c.root),
+          paths: c.paths,
+          entry: c.entry,
+          options: buildOptions(c),
+        });
+        yield* Console.log(render(toRenderNode(tree), { theme: c.theme, diff: false }));
+      })
+    );
+  })
+).pipe(Command.withDescription("Render a static call-stack tree for JS/TS, powered by Oxc"));
 
-function parseArgs(argv: string[]): Args {
-  const args: Args = {
-    command: "render",
-    paths: [],
-    root: process.cwd(),
-    depth: 6,
-    groupBranches: true,
-    showArgs: false,
-    theme: "default",
-    from: "HEAD",
-  };
-  let rest = argv;
-  if (rest[0] === "diff") {
-    args.command = "diff";
-    rest = rest.slice(1);
-  }
-  const positional: string[] = [];
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i];
-    switch (a) {
-      case "-h":
-      case "--help":
-        console.log(usage());
-        process.exit(0);
-      case "--root":
-        args.root = resolve(rest[++i]);
-        break;
-      case "--depth":
-        args.depth = Number(rest[++i]);
-        break;
-      case "--no-branches":
-        args.groupBranches = false;
-        break;
-      case "--args":
-        args.showArgs = true;
-        break;
-      case "--theme":
-        args.theme = rest[++i] as Theme;
-        break;
-      case "--from":
-        args.from = rest[++i];
-        break;
-      case "--to":
-        args.to = rest[++i];
-        break;
-      default:
-        if (a.startsWith("--")) {
-          process.stderr.write(`unknown option: ${a}\n`);
-          process.exit(2);
-        }
-        positional.push(a);
-    }
-  }
-  args.entry = positional.shift();
-  args.paths = positional;
-  return args;
-}
+const diffCommand = Command.make(
+  "diff",
+  { entry, paths, root, depth, noBranches, showArgs, theme, from, to },
+  Effect.fn("callstack-diff.diff")(function* (c) {
+    yield* report(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const repo = yield* repoRoot(resolve(c.root));
+          const options = buildOptions(c);
+          const beforeRoot = yield* materializeRef(c.from, repo);
+          const before = yield* analyze({
+            root: beforeRoot,
+            paths: c.paths,
+            entry: c.entry,
+            options,
+          });
+          const afterRoot = c.to === "" ? resolve(c.root) : yield* materializeRef(c.to, repo);
+          const after = yield* analyze({
+            root: afterRoot,
+            paths: c.paths,
+            entry: c.entry,
+            options,
+          });
+          yield* Console.log(render(diffTrees(before, after), { theme: c.theme, diff: true }));
+        })
+      )
+    );
+  })
+).pipe(Command.withDescription("Diff the call-stack tree between two git revisions"));
 
-function discover(root: string, paths: string[]): string[] {
-  const patterns = paths.length ? paths : [DEFAULT_GLOB];
-  const seen = new Set<string>();
-  for (const pattern of patterns) {
-    const isConcreteFile =
-      !pattern.includes("*") && /\.(mts|cts|ts|tsx|mjs|cjs|js|jsx)$/.test(pattern);
-    if (isConcreteFile) {
-      seen.add(isAbsolute(pattern) ? pattern : join(root, pattern));
-      continue;
-    }
-    const glob = new Glob(pattern);
-    for (const rel of glob.scanSync({ cwd: root, onlyFiles: true, dot: false })) {
-      if (IGNORE.some((ig) => new Glob(ig).match(rel))) continue;
-      seen.add(join(root, rel));
-    }
-  }
-  return [...seen];
-}
+const command = renderCommand.pipe(Command.withSubcommands([diffCommand]));
 
-function analyze(root: string, args: Args) {
-  const files = discover(root, args.paths);
-  if (!files.length) {
-    process.stderr.write(`csd: no source files under ${root}\n`);
-    process.exit(1);
-  }
-  const index = buildIndex(files);
-  const entry = resolveEntry(index, args.entry!);
-  if (!entry) {
-    process.stderr.write(`csd: could not resolve entry "${args.entry}"\n`);
-    process.exit(1);
-  }
-  const opts: BuildOptions = {
-    maxDepth: args.depth,
-    groupBranches: args.groupBranches,
-    showArgs: args.showArgs,
-  };
-  return buildTree(index, entry, opts);
-}
+const program = command.pipe(Command.run({ version: VERSION }));
 
-function main(): void {
-  const args = parseArgs(process.argv.slice(2));
-  if (!args.entry) {
-    console.log(usage());
-    process.exit(args.command === "render" ? 0 : 2);
-  }
-
-  if (args.command === "render") {
-    const tree = analyze(args.root, args);
-    console.log(render(toRenderNode(tree), { theme: args.theme, diff: false }));
-    return;
-  }
-
-  // diff
-  const root = repoRoot(args.root);
-  const fromDir = materializeRef(args.from, root);
-  const before = analyze(fromDir, args);
-  const after = args.to ? analyze(materializeRef(args.to, root), args) : analyze(root, args);
-  const merged = diffTrees(before, after);
-  console.log(render(merged, { theme: args.theme, diff: true }));
-}
-
-main();
+BunRuntime.runMain(program.pipe(Effect.provide(BunServices.layer)));
