@@ -29,6 +29,7 @@ in
     user.packages = [
       cfg.package
       pkgs.editorconfig-core-c
+      pkgs.oxfmt
       # ctags provided by emacs package
       pkgs.unstable.lua-language-server
       pkgs.lazygit

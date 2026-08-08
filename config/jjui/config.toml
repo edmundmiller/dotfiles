@@ -7,8 +7,8 @@
 # =============================================================================
 
 [ui]
-theme = ""  # Using custom colors below (Catppuccin Mocha)
-auto_refresh_interval = 0  # Manual refresh only (ctrl+r)
+theme = "" # Using custom colors below (Catppuccin Mocha)
+auto_refresh_interval = 0 # Manual refresh only (ctrl+r)
 flash_message_display_seconds = 4
 
 # -----------------------------------------------------------------------------
@@ -16,13 +16,13 @@ flash_message_display_seconds = 4
 # Source: https://github.com/vic/tinted-jjui
 # -----------------------------------------------------------------------------
 [ui.colors]
-"text"      = { fg = "#cdd6f4", bg = "#1e1e2e" }
-"dimmed"    = { fg = "#6c7086", bg = "#1e1e2e" }
-"title"     = { fg = "#89b4fa", bold = true }
-"shortcut"  = { fg = "#cba6f7" }
-"matched"   = { fg = "#f9e2af" }
-"border"    = { fg = "#6c7086" }
-"selected"  = { bg = "#313244", fg = "#cdd6f4", bold = true }
+"text" = { fg = "#cdd6f4", bg = "#1e1e2e" }
+"dimmed" = { fg = "#6c7086", bg = "#1e1e2e" }
+"title" = { fg = "#89b4fa", bold = true }
+"shortcut" = { fg = "#cba6f7" }
+"matched" = { fg = "#f9e2af" }
+"border" = { fg = "#6c7086" }
+"selected" = { bg = "#313244", fg = "#cdd6f4", bold = true }
 
 "source_marker" = { bg = "#94e2d5", fg = "#1e1e2e", bold = true }
 "target_marker" = { bg = "#a6e3a1", fg = "#1e1e2e", bold = true }
@@ -40,7 +40,7 @@ flash_message_display_seconds = 4
 "revset completion selected" = { bg = "#45475a", fg = "#cdd6f4" }
 
 "revisions" = { fg = "#cdd6f4" }
-"revisions selected" = { bg = "#313244"}
+"revisions selected" = { bg = "#313244" }
 "revisions dimmed" = { fg = "#6c7086" }
 "revisions details selected" = { bg = "#45475a" }
 "oplog selected" = { bold = true }
@@ -97,10 +97,10 @@ flash_message_display_seconds = 4
 # =============================================================================
 
 [preview]
-position = "auto"           # auto, right, or bottom
-show_at_start = false       # Don't show preview on startup
-width_percentage = 50.0     # Width when on right
-width_increment_percentage = 5.0  # Ctrl+h/l adjustment size
+position = "auto" # auto, right, or bottom
+show_at_start = false # Don't show preview on startup
+width_percentage = 50.0 # Width when on right
+width_increment_percentage = 5.0 # Ctrl+h/l adjustment size
 revision_command = ["show", "--color", "always", "-r", "$change_id"]
 file_command = ["diff", "--color", "always", "-r", "$change_id", "$file"]
 
@@ -121,8 +121,8 @@ revset = "@ | ancestors(trunk()..(visible_heads() & mine()), 2) | trunk()"
 # =============================================================================
 
 [suggest]
-  [suggest.exec]
-    mode = "fuzzy"  # Fuzzy matching for : commands
+[suggest.exec]
+mode = "fuzzy" # Fuzzy matching for : commands
 
 # =============================================================================
 # CUSTOM COMMANDS

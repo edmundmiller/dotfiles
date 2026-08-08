@@ -3,13 +3,11 @@
   "theme": "catppuccin",
   "tui": {
     "scroll_acceleration": {
-      "enabled": true
-    }
+      "enabled": true,
+    },
   },
   "model": "anthropic/claude-sonnet-4-6",
   "small_model": "anthropic/claude-haiku-4-5",
   "autoupdate": false,
-  "instructions": [
-    "~/.config/opencode/rules/[0-9]*.md"
-  ]
+  "instructions": ["~/.config/opencode/rules/[0-9]*.md"],
 }

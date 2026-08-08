@@ -75,7 +75,7 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
--- Wrap text at 80 chars while typing (doesn't reflow existing lines; prettier handles that)
+-- Wrap text at 80 chars while typing (doesn't reflow existing lines; oxfmt handles that)
 vim.opt.textwidth = 80
 vim.opt.colorcolumn = '80'
 
