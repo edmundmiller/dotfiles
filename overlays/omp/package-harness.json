@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/can1357/oh-my-pi.git",
-  "ref": "v17.2.8",
+  "ref": "v17.2.11",
   "patches": [
     "patches/0001-add-herdr-hunk-internal-urls.patch",
     "patches/0002-add-nextflow-ast-grep-language.patch"
