@@ -10,6 +10,9 @@ update_when: Agent module ownership or integration boundaries change.
 
 This directory contains Nix modules for AI agents:
 
+`default.nix` installs shared command-line tools used by every agent runtime.
+Keep runtime-specific packages and configuration in the matching submodule.
+
 - `agentsview/` - agentsview TUI from numtide/llm-agents.nix
 - `claude/` - Claude Code CLI (Anthropic)
 - `codex/` - Codex CLI (OpenAI)
@@ -51,6 +54,8 @@ Agents (claude, codex, opencode) share a single source of truth in `config/agent
 
 Global skills live in `~/.agents/skills/` and are discovered natively.
 Plannotator installs its shared Codex skills there through `skills/flake.nix`.
+`callstack-diff skill` prints the version-matched skill bundled with the shared
+`callstack-diff`/`csd` package.
 
 ## Agent Runtime Drift Hooks
 
