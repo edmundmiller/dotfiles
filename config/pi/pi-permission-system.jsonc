@@ -10,7 +10,7 @@
       "*.env": "deny",
       "*.env.*": "deny",
       "*.env.example": "allow",
-      "~/.ssh/*": "deny"
+      "~/.ssh/*": "deny",
     },
     "external_directory": "allow",
     "doom_loop": "deny",
@@ -136,7 +136,7 @@
       "pi update*": "deny",
       "*&& pi update*": "deny",
       "pi update --extensions*": "allow",
-      "*&& pi update --extensions*": "allow"
-    }
-  }
+      "*&& pi update --extensions*": "allow",
+    },
+  },
 }

@@ -2,9 +2,9 @@
 
 [general]
 plugin_dirs = [
-    "config/claude/plugins/claude-lint",
-    "config/claude/plugins/github",
-    "config/claude/plugins/json-to-toon"
+  "config/claude/plugins/claude-lint",
+  "config/claude/plugins/github",
+  "config/claude/plugins/json-to-toon",
 ]
 fail_on_warnings = false
 
@@ -33,23 +33,11 @@ javascript_shebang_pattern = "^#!/usr/bin/env (bun|node)"
 require_executable = true
 
 [frontmatter]
-required_command_fields = [
-    "description",
-    "allowed-tools",
-    "arguments"
-]
-required_skill_fields = [
-    "description",
-    "priority"
-]
+required_command_fields = ["description", "allowed-tools", "arguments"]
+required_skill_fields = ["description", "priority"]
 
 [plugin_json]
-required_fields = [
-    "name",
-    "version",
-    "description",
-    "author"
-]
+required_fields = ["name", "version", "description", "author"]
 validate_hooks = true
 validate_hook_paths = true
 validate_commands = true

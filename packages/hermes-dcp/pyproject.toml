@@ -6,9 +6,7 @@ license = "MIT"
 requires-python = ">=3.11"
 dependencies = ["pyyaml>=6.0"]
 readme = "README.md"
-authors = [
-    {name = "Nous Research"},
-]
+authors = [{ name = "Nous Research" }]
 keywords = ["hermes", "dcp", "context-pruning", "agent"]
 
 [project.optional-dependencies]
@@ -25,11 +23,4 @@ build-backend = "hatchling.build"
 packages = ["hermes_dcp"]
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "hermes_dcp/",
-    "plugins/",
-    "tests/",
-    "README.md",
-    "LICENSE",
-    "pyproject.toml",
-]
+include = ["hermes_dcp/", "plugins/", "tests/", "README.md", "LICENSE", "pyproject.toml"]
