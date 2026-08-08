@@ -17,6 +17,11 @@
       flake = false;
     };
 
+    obsidian-skills = {
+      url = "git+https://github.com/kepano/obsidian-skills.git";
+      flake = false;
+    };
+
     plannotator = {
       url = "github:backnotprop/plannotator/v0.25.0";
       flake = false;
@@ -417,6 +422,12 @@
                   filter.maxDepth = 2;
                 };
 
+                obsidian = {
+                  path = inputs.obsidian-skills.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 2;
+                };
+
                 plannotator = {
                   path = inputs.plannotator.outPath;
                   subdir = "apps/skills/core";
@@ -646,6 +657,27 @@
                   diffity-resolve.path = "diffity-resolve";
                 }
                 // {
+                  defuddle = {
+                    from = "obsidian";
+                    path = "defuddle";
+                    transform =
+                      { original, ... }:
+                      ''
+                        ${original}
+
+                        ## Runtime routing
+
+                        Prefer a runtime's native page-reading or browsing tool when it already
+                        returns clean main content. Use Defuddle for shell-based URL extraction,
+                        saving a page as Markdown, or when native extraction includes too much page
+                        chrome. Run it ephemerally with `bunx defuddle`; do not install it globally
+                        during a task.
+
+                        Use a lower-level HTML-to-Markdown converter instead when full-document
+                        fidelity, streaming, or offline stdin conversion is required.
+                      '';
+                  };
+
                   markit.from = "markit";
                   markit.path = ".";
 
