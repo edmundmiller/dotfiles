@@ -143,7 +143,7 @@
             smol = "vibeproxy/claude-sonnet-5:low";
             slow = "vibeproxy/claude-fable-5:high";
             plan = "vibeproxy/claude-fable-5:high";
-            vision = "google-antigravity/gemini-3-flash";
+            vision = "google-antigravity/gemini-3.5-flash";
             designer = "vibeproxy/claude-fable-5:medium";
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
