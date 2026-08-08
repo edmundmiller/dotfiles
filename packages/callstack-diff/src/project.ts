@@ -4,8 +4,38 @@ import { parseSync } from "oxc-parser";
 import { readFileSync } from "node:fs";
 import { extname } from "node:path";
 
-// Oxc emits an ESTree-shaped AST; we keep node types loose on purpose.
-export type Node = any;
+// Oxc emits an ESTree-shaped AST. Validate its dynamic values once at this
+// boundary, then keep the analyzer free of broad type assertions.
+export interface Node extends Record<string, unknown> {
+  readonly type: string;
+  readonly start: number;
+  readonly end: number;
+}
+
+export function isNode(value: unknown): value is Node {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof Reflect.get(value, "type") === "string" &&
+    typeof Reflect.get(value, "start") === "number" &&
+    typeof Reflect.get(value, "end") === "number"
+  );
+}
+
+export function nodeAt(node: Node, key: string): Node | undefined {
+  const value = node[key];
+  return isNode(value) ? value : undefined;
+}
+
+export function nodesAt(node: Node, key: string): Node[] {
+  const value = node[key];
+  return Array.isArray(value) ? value.filter(isNode) : [];
+}
+
+function stringAt(node: Node | undefined, key: string): string | undefined {
+  const value = node?.[key];
+  return typeof value === "string" ? value : undefined;
+}
 
 export type FnKind = "function" | "method" | "arrow" | "constructor";
 
@@ -43,28 +73,31 @@ function langFor(file: string): "js" | "jsx" | "ts" | "tsx" {
 }
 
 function paramNames(params: Node[]): string[] {
-  return (params ?? []).map((p) => {
-    const t = p?.type === "TSParameterProperty" ? p.parameter : p;
-    if (t?.type === "Identifier") return t.name;
-    if (t?.type === "RestElement" && t.argument?.type === "Identifier")
-      return `...${t.argument.name}`;
-    if (t?.type === "AssignmentPattern" && t.left?.type === "Identifier") return t.left.name;
-    if (t?.type === "ObjectPattern") return "{…}";
-    if (t?.type === "ArrayPattern") return "[…]";
+  return params.map((p) => {
+    const t = p.type === "TSParameterProperty" ? nodeAt(p, "parameter") : p;
+    if (!t) return "_";
+    if (t.type === "Identifier") return stringAt(t, "name") ?? "_";
+    const argument = nodeAt(t, "argument");
+    if (t.type === "RestElement" && argument?.type === "Identifier")
+      return `...${stringAt(argument, "name") ?? "_"}`;
+    const left = nodeAt(t, "left");
+    if (t.type === "AssignmentPattern" && left?.type === "Identifier")
+      return stringAt(left, "name") ?? "_";
+    if (t.type === "ObjectPattern") return "{…}";
+    if (t.type === "ArrayPattern") return "[…]";
     return "_";
   });
 }
 
 // Depth-first walk over every child node that carries a `.type`.
 function walk(node: Node, visit: (n: Node) => void): void {
-  if (!node || typeof node !== "object") return;
-  if (typeof node.type === "string") visit(node);
+  visit(node);
   for (const key of Object.keys(node)) {
     if (key === "type" || key === "start" || key === "end") continue;
-    const value = (node as any)[key];
+    const value = node[key];
     if (Array.isArray(value)) {
-      for (const child of value) walk(child, visit);
-    } else if (value && typeof value === "object") {
+      for (const child of value) if (isNode(child)) walk(child, visit);
+    } else if (isNode(value)) {
       walk(value, visit);
     }
   }
@@ -82,61 +115,72 @@ function indexProgram(index: ProjectIndex, program: Node, file: string, source: 
   walk(program, (n) => {
     switch (n.type) {
       case "FunctionDeclaration": {
-        if (n.id?.name)
+        const id = nodeAt(n, "id");
+        const name = stringAt(id, "name");
+        const body = nodeAt(n, "body");
+        if (name && body)
           addFn(index, {
-            name: n.id.name,
+            name,
             kind: "function",
             file,
-            params: paramNames(n.params),
-            body: n.body,
+            params: paramNames(nodesAt(n, "params")),
+            body,
             source,
           });
         break;
       }
       case "VariableDeclarator": {
-        const init = n.init;
+        const id = nodeAt(n, "id");
+        const init = nodeAt(n, "init");
+        const name = stringAt(id, "name");
+        const body = init ? nodeAt(init, "body") : undefined;
         if (
-          n.id?.type === "Identifier" &&
+          id?.type === "Identifier" &&
+          name &&
           init &&
+          body &&
           (init.type === "ArrowFunctionExpression" || init.type === "FunctionExpression")
         )
           addFn(index, {
-            name: n.id.name,
+            name,
             kind: "arrow",
             file,
-            params: paramNames(init.params),
-            body: init.body,
+            params: paramNames(nodesAt(init, "params")),
+            body,
             source,
           });
         break;
       }
       case "ClassDeclaration":
       case "ClassExpression": {
-        const className = n.id?.name;
+        const className = stringAt(nodeAt(n, "id"), "name");
         if (className) index.classNames.add(className);
-        for (const member of n.body?.body ?? []) {
+        const classBody = nodeAt(n, "body");
+        for (const member of classBody ? nodesAt(classBody, "body") : []) {
           if (member.type !== "MethodDefinition" && member.type !== "PropertyDefinition") continue;
+          const value = nodeAt(member, "value");
           const fn =
             member.type === "MethodDefinition"
-              ? member.value
-              : member.value?.type === "ArrowFunctionExpression" ||
-                  member.value?.type === "FunctionExpression"
-                ? member.value
+              ? value
+              : value?.type === "ArrowFunctionExpression" || value?.type === "FunctionExpression"
+                ? value
                 : null;
-          if (!fn?.body) continue;
-          const name =
-            member.key?.name ?? (member.key?.type === "Identifier" ? member.key.name : undefined);
+          const body = fn ? nodeAt(fn, "body") : undefined;
+          if (!fn || !body) continue;
+          const key = nodeAt(member, "key");
+          const name = stringAt(key, "name");
           if (!name) continue;
-          const kind: FnKind = member.kind === "constructor" ? "constructor" : "method";
+          const kind: FnKind =
+            stringAt(member, "kind") === "constructor" ? "constructor" : "method";
           addFn(index, {
             name,
             qualified: className ? `${className}.${name}` : undefined,
             kind,
             className,
-            isStatic: !!member.static,
+            isStatic: member.static === true,
             file,
-            params: paramNames(fn.params),
-            body: fn.body,
+            params: paramNames(nodesAt(fn, "params")),
+            body,
             source,
           });
         }
@@ -158,7 +202,7 @@ export function parseFile(file: string): { program: Node; source: string } | nul
       `callstack-diff: ${res.errors.length} parse issue(s) in ${file}; continuing\n`
     );
   }
-  if (!res.program) return null;
+  if (!isNode(res.program)) return null;
   return { program: res.program, source };
 }
 
@@ -191,6 +235,6 @@ export function resolveEntry(index: ProjectIndex, entry: string): FnDecl | undef
     return list.find((d) => d.file.endsWith(filePart)) ?? list[0];
   }
   if (index.byQualified.has(entry)) return index.byQualified.get(entry);
-  const bare = entry.includes(".") ? entry.split(".").pop()! : entry;
+  const bare = entry.includes(".") ? (entry.split(".").pop() ?? entry) : entry;
   return index.byName.get(bare)?.[0];
 }
