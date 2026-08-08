@@ -46,7 +46,7 @@ These automations have inline actions by design — do not refactor them into sc
 
 - `ambient.nix` — Sun-based scenes (mid-morning, sundown), presence (arrive/leave), entrance occupancy night light
 - `aranet.nix` — Aranet4 CO2 sensor: elevated/poor/cleared push notifications (thresholds: 1000/1500 ppm). Update `prefix` var to match device entity ID.
-- `cleaning.nix` — Fail-closed Rosie/Squirty mapped-room scheduler, mission success tracking, arrival docking, and explicit two-job enablement
+- `cleaning.nix` — Fail-closed Rosie/Squirty mapped-room scheduler, silent iPhone presence preflight, mission success tracking, arrival docking, and explicit two-job enablement
 - `conversation.nix` — Voice/conversation config
 - `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
 - `modes.nix` — DND, guest mode, everything_off script
@@ -68,7 +68,8 @@ vacation.nix (input_boolean.vacation_mode)
   └── ambient.nix skips last-person-leaves during vacation
 cleaning.nix (input_boolean.robot_cleaning_*, input_datetime.robot_cleaning_*)
   ├── reads vacation_mode, guest_mode, and goodnight
-  ├── uses direct iPhone trackers; never person.moni
+  ├── uses direct iPhone tracker events; restored HA timestamps never count as fresh verification
+  ├── requests at most one scheduler refresh plus one noon retry instead of polling phones every five minutes
   └── requires live saved-map IDs before robot_cleaning_enabled may be turned on
 ```
 
