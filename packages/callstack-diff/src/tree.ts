@@ -1,7 +1,7 @@
 // Build a static call-stack tree from an entry declaration by walking its
 // body in source order, grouping control-flow branches, and recursing into
 // resolved callees.
-import type { FnDecl, Node, ProjectIndex } from "./project.ts";
+import { isNode, nodeAt, nodesAt, type FnDecl, type Node, type ProjectIndex } from "./project.ts";
 
 export type NodeKind = "root" | "call" | "new" | "branch" | "note";
 
@@ -17,10 +17,6 @@ export interface BuildOptions {
   showArgs: boolean;
 }
 
-function src(decl: FnDecl, node: Node): string {
-  return decl.source.slice(node.start, node.end);
-}
-
 // Collect the outermost call/new expressions within an expression, in source
 // order. We do not descend into a call's own arguments or callee: those calls
 // belong to the resolution of surrounding statements, not this call's siblings.
@@ -34,9 +30,9 @@ function outermostCalls(expr: Node): Node[] {
     }
     for (const key of Object.keys(n)) {
       if (key === "type" || key === "start" || key === "end") continue;
-      const value = (n as any)[key];
-      if (Array.isArray(value)) value.forEach(visit);
-      else if (value && typeof value === "object") visit(value);
+      const value = n[key];
+      if (Array.isArray(value)) value.filter(isNode).forEach(visit);
+      else if (isNode(value)) visit(value);
     }
   };
   visit(expr);
@@ -52,36 +48,43 @@ interface Ctx {
 }
 
 function calleeText(decl: FnDecl, call: Node): string {
-  const callee = call.callee;
+  const callee = nodeAt(call, "callee");
+  if (!callee) return "";
   return decl.source.slice(callee.start, callee.end);
 }
 
 function argsText(decl: FnDecl, call: Node): string {
-  if (!call.arguments?.length) return "";
-  const first = call.arguments[0];
-  const last = call.arguments[call.arguments.length - 1];
+  const args = nodesAt(call, "arguments");
+  if (args.length === 0) return "";
+  const first = args[0];
+  const last = args[args.length - 1];
   return decl.source.slice(first.start, last.end);
 }
 
 // Find the class name a static member call targets, e.g. `Foo.bar()` -> "Foo".
 function staticClassOf(call: Node): string | undefined {
-  const callee = call.callee;
-  if (callee?.type === "MemberExpression" && callee.object?.type === "Identifier")
-    return callee.object.name;
+  const callee = nodeAt(call, "callee");
+  const object = callee ? nodeAt(callee, "object") : undefined;
+  if (callee?.type === "MemberExpression" && object?.type === "Identifier")
+    return typeof object.name === "string" ? object.name : undefined;
   return undefined;
 }
 
 function methodName(call: Node): string | undefined {
-  const callee = call.callee;
-  if (callee?.type === "MemberExpression" && callee.property?.type === "Identifier")
-    return callee.property.name;
-  if (callee?.type === "Identifier") return callee.name;
+  const callee = nodeAt(call, "callee");
+  const property = callee ? nodeAt(callee, "property") : undefined;
+  if (callee?.type === "MemberExpression" && property?.type === "Identifier")
+    return typeof property.name === "string" ? property.name : undefined;
+  if (callee?.type === "Identifier")
+    return typeof callee.name === "string" ? callee.name : undefined;
   return undefined;
 }
 
 function resolveCall(index: ProjectIndex, call: Node): FnDecl | undefined {
+  const callee = nodeAt(call, "callee");
   if (call.type === "NewExpression") {
-    const name = call.callee?.type === "Identifier" ? call.callee.name : undefined;
+    const name =
+      callee?.type === "Identifier" && typeof callee.name === "string" ? callee.name : undefined;
     if (name) return index.byQualified.get(`${name}.constructor`);
     return undefined;
   }
@@ -93,7 +96,7 @@ function resolveCall(index: ProjectIndex, call: Node): FnDecl | undefined {
   const candidates = index.byName.get(name) ?? [];
   // A bare `foo()` cannot dispatch to an instance/static method without a
   // receiver, so prefer free functions/arrows over class members.
-  if (call.callee?.type === "Identifier")
+  if (callee?.type === "Identifier")
     return candidates.find((d) => d.kind === "function" || d.kind === "arrow") ?? candidates[0];
   return candidates[0];
 }
@@ -143,28 +146,36 @@ function branchLabel(ctx: Ctx, node: Node): string {
 }
 
 function walkStatement(ctx: Ctx, stmt: Node): CallNode[] {
-  if (!stmt) return [];
   switch (stmt.type) {
-    case "ExpressionStatement":
-      return callsFromExpr(ctx, stmt.expression);
+    case "ExpressionStatement": {
+      const expression = nodeAt(stmt, "expression");
+      return expression ? callsFromExpr(ctx, expression) : [];
+    }
     case "VariableDeclaration":
-      return (stmt.declarations ?? []).flatMap((d: Node) =>
-        d.init ? callsFromExpr(ctx, d.init) : []
-      );
+      return nodesAt(stmt, "declarations").flatMap((declaration) => {
+        const init = nodeAt(declaration, "init");
+        return init ? callsFromExpr(ctx, init) : [];
+      });
     case "ReturnStatement":
     case "ThrowStatement":
-    case "AwaitExpression":
-      return stmt.argument ? callsFromExpr(ctx, stmt.argument) : [];
+    case "AwaitExpression": {
+      const argument = nodeAt(stmt, "argument");
+      return argument ? callsFromExpr(ctx, argument) : [];
+    }
     case "BlockStatement":
-      return walkStatements(ctx, stmt.body);
+      return walkStatements(ctx, nodesAt(stmt, "body"));
     case "IfStatement":
       return walkIf(ctx, stmt);
     case "SwitchStatement":
       return walkSwitch(ctx, stmt);
     case "TryStatement": {
-      const out = walkStatements(ctx, stmt.block?.body ?? []);
-      if (stmt.handler?.body) out.push(...walkStatements(ctx, stmt.handler.body.body));
-      if (stmt.finalizer) out.push(...walkStatements(ctx, stmt.finalizer.body));
+      const block = nodeAt(stmt, "block");
+      const out = walkStatements(ctx, block ? nodesAt(block, "body") : []);
+      const handler = nodeAt(stmt, "handler");
+      const handlerBody = handler ? nodeAt(handler, "body") : undefined;
+      if (handlerBody) out.push(...walkStatements(ctx, nodesAt(handlerBody, "body")));
+      const finalizer = nodeAt(stmt, "finalizer");
+      if (finalizer) out.push(...walkStatements(ctx, nodesAt(finalizer, "body")));
       return out;
     }
     case "ForStatement":
@@ -172,10 +183,11 @@ function walkStatement(ctx: Ctx, stmt: Node): CallNode[] {
     case "ForOfStatement":
     case "WhileStatement":
     case "DoWhileStatement": {
-      const body = stmt.body;
-      const inner =
-        body?.type === "BlockStatement" ? walkStatements(ctx, body.body) : walkStatement(ctx, body);
-      return inner;
+      const body = nodeAt(stmt, "body");
+      if (!body) return [];
+      return body.type === "BlockStatement"
+        ? walkStatements(ctx, nodesAt(body, "body"))
+        : walkStatement(ctx, body);
     }
     default:
       return [];
@@ -183,25 +195,29 @@ function walkStatement(ctx: Ctx, stmt: Node): CallNode[] {
 }
 
 function walkIf(ctx: Ctx, stmt: Node): CallNode[] {
+  const consequent = nodeAt(stmt, "consequent");
   const cons =
-    stmt.consequent?.type === "BlockStatement"
-      ? walkStatements(ctx, stmt.consequent.body)
-      : walkStatement(ctx, stmt.consequent);
-  const altNode = stmt.alternate;
+    consequent?.type === "BlockStatement"
+      ? walkStatements(ctx, nodesAt(consequent, "body"))
+      : consequent
+        ? walkStatement(ctx, consequent)
+        : [];
+  const altNode = nodeAt(stmt, "alternate");
   const alt = altNode
     ? altNode.type === "IfStatement"
       ? walkIf(ctx, altNode) // else-if chain
       : altNode.type === "BlockStatement"
-        ? walkStatements(ctx, altNode.body)
+        ? walkStatements(ctx, nodesAt(altNode, "body"))
         : walkStatement(ctx, altNode)
     : [];
 
   if (!ctx.opts.groupBranches) return [...cons, ...alt];
 
   const out: CallNode[] = [];
-  if (cons.length)
+  const test = nodeAt(stmt, "test");
+  if (cons.length && test)
     out.push({
-      label: `if ${branchLabel(ctx, stmt.test)}`,
+      label: `if ${branchLabel(ctx, test)}`,
       kind: "branch",
       children: cons,
     });
@@ -213,10 +229,11 @@ function walkIf(ctx: Ctx, stmt: Node): CallNode[] {
 
 function walkSwitch(ctx: Ctx, stmt: Node): CallNode[] {
   const out: CallNode[] = [];
-  for (const c of stmt.cases ?? []) {
-    const body = walkStatements(ctx, c.consequent ?? []);
+  for (const c of nodesAt(stmt, "cases")) {
+    const body = walkStatements(ctx, nodesAt(c, "consequent"));
     if (!body.length) continue;
-    const label = c.test ? `case ${branchLabel(ctx, c.test)}` : "default";
+    const test = nodeAt(c, "test");
+    const label = test ? `case ${branchLabel(ctx, test)}` : "default";
     if (ctx.opts.groupBranches) out.push({ label, kind: "branch", children: body });
     else out.push(...body);
   }
@@ -228,8 +245,7 @@ function walkStatements(ctx: Ctx, stmts: Node[]): CallNode[] {
 }
 
 function walkBody(ctx: Ctx, body: Node): CallNode[] {
-  if (!body) return [];
-  if (body.type === "BlockStatement") return walkStatements(ctx, body.body);
+  if (body.type === "BlockStatement") return walkStatements(ctx, nodesAt(body, "body"));
   // Concise arrow body: an expression that may contain calls.
   return callsFromExpr(ctx, body);
 }

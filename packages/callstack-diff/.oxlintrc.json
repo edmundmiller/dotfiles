@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/@effect/tsgo/oxlint-schema.json",
+  "options": {
+    "typeAware": true
+  },
+  "plugins": ["effecttsgo"],
+  "ignorePatterns": ["node_modules/**", "dist/**", "tests/fixtures/**"]
+}
