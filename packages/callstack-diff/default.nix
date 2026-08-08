@@ -59,6 +59,11 @@ stdenv.mkDerivation {
   installCheckPhase = ''
     runHook preInstallCheck
     HOME=$TMPDIR $out/bin/csd --help >/dev/null
+    HOME=$TMPDIR $out/bin/callstack-diff --help >/dev/null
+    HOME=$TMPDIR $out/bin/csd skill >csd-skill.md
+    HOME=$TMPDIR $out/bin/callstack-diff skill >callstack-diff-skill.md
+    cmp ${./SKILL.md} csd-skill.md
+    cmp csd-skill.md callstack-diff-skill.md
     runHook postInstallCheck
   '';
 
@@ -68,12 +73,13 @@ stdenv.mkDerivation {
     appDir=$out/lib/callstack-diff
     mkdir -p "$appDir" "$out/bin"
 
-    cp -R src package.json bun.lock "$appDir"/
+    cp -R src SKILL.md package.json bun.lock "$appDir"/
     cp -R node_modules "$appDir/node_modules"
 
     makeWrapper ${bun}/bin/bun $out/bin/csd \
       --add-flags run \
       --add-flags "$appDir/src/cli.ts"
+    ln -s csd $out/bin/callstack-diff
 
     runHook postInstall
   '';
