@@ -9,6 +9,14 @@ import { render, toRenderNode } from "../src/render.ts";
 const OPTS: BuildOptions = { maxDepth: 6, groupBranches: true, showArgs: false };
 const HERE = new URL(".", import.meta.url).pathname;
 
+function runCli(...args: string[]) {
+  return Bun.spawnSync({
+    cmd: [process.execPath, "run", join(HERE, "..", "src", "cli.ts"), ...args],
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+}
+
 function treeFor(dir: string, entry: string) {
   const root = join(HERE, "fixtures", dir);
   const files = [...new Glob("**/*.ts").scanSync({ cwd: root })].map((r) => join(root, r));
@@ -49,6 +57,22 @@ describe("render", () => {
   test("does not self-recurse a name shared by method and free function", () => {
     expect(out).not.toContain("↻ recursive");
     expect(out.trimEnd().endsWith("└── createAgentSession()")).toBe(true);
+  });
+});
+
+describe("cli", () => {
+  test.failing("renders a fixture through the public command", () => {
+    const result = runCli(
+      "PiService.createAgentSession",
+      "--root",
+      join(HERE, "fixtures", "after"),
+      "--theme",
+      "none"
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.toString()).toContain("PiService.createAgentSession(options)");
+    expect(result.stderr.toString()).toBe("");
   });
 });
 
