@@ -17,9 +17,12 @@ deep or ballooning one is a slop signal.
 ## Commands
 
 ```
-csd <entry> [paths...] [options]        # render a call-stack tree
-csd diff <entry> [paths...] --from REF  # diff the tree between two revisions
+callstack-diff <entry> [paths...] [options]        # render a call-stack tree
+callstack-diff diff <entry> [paths...] --from REF  # diff between revisions
+callstack-diff skill                               # print the bundled agent skill
 ```
+
+`csd` is an equivalent short command for every invocation.
 
 `<entry>` is `name`, `Class.method`, or `file.ts#name`. Without `paths`, csd
 scans `**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}` under `--root` (default: cwd),
@@ -59,9 +62,9 @@ not a sound call graph.
 ## Build & packaging
 
 - Runs sources directly on Bun (no bundle step). The runtime uses pinned Effect
-  4 beta packages. `default.nix` installs with `bun --production`, ships `src/`
-  plus the bun2nix-provided runtime `node_modules`, and wraps
-  `bun run src/cli.ts` as `csd`.
+  4 beta packages. `default.nix` installs with `bun --production`, ships `src/`,
+  `SKILL.md`, and the bun2nix-provided runtime `node_modules`, then exposes the
+  CLI as both `callstack-diff` and `csd`.
 - Vite provides the test transform/config boundary; Vitest runs unit and CLI
   tests. Neither Vite nor Vitest is part of the production command or Nix
   runtime closure.

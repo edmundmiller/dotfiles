@@ -4,6 +4,7 @@
   "description": "Render and diff static call-stack trees for JS/TS using Oxc",
   "type": "module",
   "bin": {
+    "callstack-diff": "src/cli.ts",
     "csd": "src/cli.ts"
   },
   "scripts": {
