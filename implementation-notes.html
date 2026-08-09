@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Callstack Diff Logic-Flow Implementation Notes</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        line-height: 1.5;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+      .meta {
+        color: #555;
+      }
+      li {
+        margin-block: 0.5rem;
+      }
+      code {
+        background: #f4f4f4;
+        padding: 0.1rem 0.25rem;
+        border-radius: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Callstack Diff Logic-Flow Implementation Notes</h1>
+    <p class="meta">Updated: 2026-08-08 23:08 CDT</p>
+
+    <h2>Design decisions</h2>
+    <ul>
+      <li>
+        <strong>Decision:</strong> Treat the grievance-routing pipeline only as a concrete
+        branching-flow example.<br /><strong>Why:</strong> The handoff explicitly excludes
+        implementing the endpoint or its integrations.
+      </li>
+      <li>
+        <strong>Decision:</strong> Inspect the current CLI, skill guidance, and history before
+        changing behavior.<br /><strong>Why:</strong> The reported miss may be discoverability or
+        prior-agent misuse rather than an unsupported input model.
+      </li>
+      <li>
+        <strong>Decision:</strong> Classify the miss as a skill discoverability and guidance defect,
+        not a renderer defect.<br /><strong>Why:</strong> The existing CLI rendered the branching
+        grievance flow correctly once represented as a minimal temporary TypeScript model, but the
+        package skill was neither globally deployed nor described for prose architecture flows.
+      </li>
+      <li>
+        <strong>Decision:</strong> Keep one canonical skill at
+        <code>skills/catalog/callstack-diff/SKILL.md</code> and link the package development path to
+        it.<br /><strong>Why:</strong> Global catalog placement makes the skill discoverable while
+        the package CLI can continue bundling the same content without a duplicate source.
+      </li>
+    </ul>
+
+    <h2>Deviations from spec</h2>
+    <ul>
+      <li>None.</li>
+    </ul>
+
+    <h2>Tradeoffs considered</h2>
+    <ul>
+      <li>
+        <strong>Options:</strong> Add a prose-flow renderer, change only the package-local skill, or
+        deploy one canonical skill with a temporary-model workflow.<br /><strong>Chosen:</strong>
+        Deploy one canonical skill and retain the existing renderer.<br /><strong>Reason:</strong>
+        The real CLI already preserves the shared prefix and distinct branches; only discovery and
+        guidance were missing.
+      </li>
+    </ul>
+
+    <h2>Open questions</h2>
+    <ul>
+      <li>None.</li>
+    </ul>
+  </body>
+</html>
