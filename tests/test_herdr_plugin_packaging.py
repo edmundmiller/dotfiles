@@ -1,3 +1,4 @@
+import re
 import tomllib
 from pathlib import Path
 
@@ -76,6 +77,16 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     assert 'command = "vercel.sandbox.start-codex"' in module
     assert 'command = "vercel.sandbox.start-omp"' in module
     assert 'command = "vercel.sandbox.start-opencode-v2"' in module
+    assert re.search(
+        r"key = \"prefix\+S\".*?command = \"vercel\.sandbox\.start-omp\"",
+        module,
+        re.DOTALL,
+    )
+    assert re.search(
+        r"key = \"prefix\+alt\+c\".*?command = \"vercel\.sandbox\.start-codex\"",
+        module,
+        re.DOTALL,
+    )
     assert 'command = "vercel.sandbox.apply-changes"' in module
     assert "herdr.vercelSandbox.enable = true;" in host
     assert '"vercel@58.9.0"' in host
