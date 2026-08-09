@@ -655,6 +655,11 @@ in
         force = true;
       };
 
+      home.file.".omp/agent/commands/qa-triage.md" = {
+        source = "${configDir}/omp/commands/qa-triage.md";
+        force = true;
+      };
+
       home.file.".omp/agent/rules/working-with-jj.md" = {
         source = "${configDir}/omp/rules/working-with-jj.md";
         force = true;
