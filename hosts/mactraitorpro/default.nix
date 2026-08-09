@@ -76,6 +76,7 @@ in
         node.useFnm = true;
         node.bunGlobalPackages = [
           "critique@0.1.139"
+          "vercel@58.9.0"
         ];
         # FIXME: Python disabled - bundled whisper currently includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
@@ -104,6 +105,7 @@ in
         acpx.enable = true;
         herdr.enable = true;
         herdr.mainCodingAgent = "omp";
+        herdr.vercelSandbox.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
