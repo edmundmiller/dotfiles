@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Validate config/omp/config.yml against the live OMP settings registry.
+# Validate config/omp/config.yml against OMP's live settings registry and values.
 # Mirrors modules/agents/pi/test-settings-json.sh for OMP's YAML config.
 # Run: bash modules/agents/omp/test-config-yml.sh
 set -euo pipefail
@@ -13,6 +13,14 @@ if ! command -v "$omp_bin" >/dev/null 2>&1; then
   echo "FAIL: omp not on PATH (set OMP_BIN)" >&2
   exit 1
 fi
+
+# The installed Nix wrapper pins the live config directory. Bypass only that
+# wrapper so this check can load the staged config in its isolated HOME.
+omp_path="$(realpath "$(command -v "$omp_bin")")"
+omp_payload="$(dirname "$omp_path")/../lib/omp/omp"
+if [[ -x "$omp_payload" ]]; then
+  omp_bin="$omp_payload"
+fi
 if ! command -v "$yq_bin" >/dev/null 2>&1; then
   echo "FAIL: yq not on PATH (set OMP_CONFIG_YQ)" >&2
   exit 1
@@ -22,7 +30,7 @@ if [[ ! -f "$config" ]]; then
   exit 1
 fi
 
-# Keep registry dump off user Pi/OMP state (plain omp honors PI_* globals).
+# Keep config loading off user Pi/OMP state (plain omp honors PI_* globals).
 # PI_CONFIG_DIR must be a leaf name under HOME, not an absolute path.
 omp_iso="$(mktemp -d "${TMPDIR:-/tmp}/omp-config-check.XXXXXX")"
 trap 'rm -rf "$omp_iso"' EXIT
@@ -32,8 +40,9 @@ export PI_CONFIG_DIR=".omp"
 export PI_CODING_AGENT_DIR="$omp_iso/.omp/agent"
 unset PI_PERMISSION_SYSTEM_CONFIG_PATH || true
 
-registry_json="$("$omp_bin" config list --json)"
 config_json="$("$yq_bin" -o=json "$config")"
+cp "$config" "$PI_CODING_AGENT_DIR/config.yml"
+registry_json="$("$omp_bin" config list --json)"
 
 OMP_CONFIG_JSON="$config_json" OMP_REGISTRY_JSON="$registry_json" python3 - <<'PY'
 import json
@@ -53,6 +62,9 @@ LEGACY = {
     "hooks.enabled": None,  # hooks load via extensions/, not settings
     "hooks.timeoutMs": None,
 }
+
+# OMP disables this tool when the configured image provider is unavailable.
+RUNTIME_VALUES = {"inspect_image.enabled"}
 
 
 def flatten(obj, prefix=""):
@@ -109,6 +121,11 @@ for path, value in sorted(flat.items()):
         errors.append(
             f"{path}: type {type(value).__name__} incompatible with registry type {expected}"
         )
+    elif path not in RUNTIME_VALUES and reg[path].get("value") != value:
+        errors.append(
+            f"{path}: configured value was not loaded by omp config list "
+            f"(configured {value!r}, effective {reg[path].get('value')!r})"
+        )
 
 if errors:
     print("FAIL: config/omp/config.yml does not match OMP settings registry", file=sys.stderr)
@@ -116,5 +133,5 @@ if errors:
         print(f"  - {err}", file=sys.stderr)
     raise SystemExit(1)
 
-print(f"PASS: config/omp/config.yml ({len(flat)} keys) matches omp config registry")
+print(f"PASS: config/omp/config.yml ({len(flat)} keys) loads through omp config list")
 PY

@@ -51,8 +51,9 @@ bash modules/agents/omp/test-mcp-host-config.sh
 hey check
 ```
 
-`test-config-yml.sh` flattens `config/omp/config.yml` and checks keys/types
-against `omp config list --json`. `test-mcp-json.sh` verifies the shared policy.
+`test-config-yml.sh` loads `config/omp/config.yml` in an isolated OMP home, then
+checks its keys, types, and effective values against `omp config list --json`.
+`test-mcp-json.sh` verifies the shared policy.
 `test-mcp-host-config.sh` builds the resolved MCP configuration for
 MacTraitor-Pro and Seqeratop. Legacy/renamed keys fail closed.
 
