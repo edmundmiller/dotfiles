@@ -575,7 +575,7 @@ in
     // optionalAttrs cfg.vercelSandbox.enable {
       "herdr/plugins/config/vercel.sandbox/config.json".text = ''
         {
-          "agentKind": "codex",
+          "agentKind": "omp",
           "allowCandidateAgents": true,
           "agentArgs": {
             "codex": [],
