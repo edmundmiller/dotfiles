@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/vercel-labs/herdr-vercel-sandbox-plugin.git",
+  "ref": "be8393aac17eae4b67ca58fdcc5ad8233f91b6c5",
+  "patches": ["patches/0001-add-explicit-agent-start-actions.patch"],
+  "checks": [["npm", "run", "check"]]
+}
