@@ -31,6 +31,13 @@
       "description": "Generated capability inventory matches its manifest"
     },
     {
+      "id": "github-actions",
+      "kind": "lint",
+      "command": "actionlint .github/workflows/*.yml",
+      "paths": [".github/workflows/**"],
+      "description": "GitHub Actions workflow syntax and expressions"
+    },
+    {
       "id": "visual-regression",
       "kind": "visual",
       "command": "python3 bin/agent-quality visual-compare tests/visual/baseline tests/visual/current",
