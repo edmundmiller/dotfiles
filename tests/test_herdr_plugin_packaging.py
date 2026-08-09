@@ -56,14 +56,26 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
     assert "deferring marketplace plugin installation" in module
 
 
-def test_vercel_sandbox_plugin_is_mtp_scoped_and_codex_configured() -> None:
+def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
+    package = ROOT / "packages" / "herdr-vercel-sandbox-plugin"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     host = (ROOT / "hosts" / "mactraitorpro" / "default.nix").read_text()
 
+    assert (package / "default.nix").is_file()
+    assert (package / "package-harness.json").is_file()
+    assert list((package / "patches").glob("*.patch"))
+    assert "pkgs.my.herdr-vercel-sandbox-plugin" in module
     assert "vercelSandbox.enable" in module
-    assert "install_plugin vercel-labs herdr-vercel-sandbox-plugin" in module
+    assert "install_plugin vercel-labs herdr-vercel-sandbox-plugin" not in module
     assert '"agentKind": "codex"' in module
-    assert 'command = "vercel.sandbox.start-agent"' in module
+    assert '"allowCandidateAgents": true' in module
+    assert '"omp"' in module
+    assert '"opencode-v2"' in module
+    assert '"17.2.12"' in module
+    assert '"0.0.0-beta-202608091410"' in module
+    assert 'command = "vercel.sandbox.start-codex"' in module
+    assert 'command = "vercel.sandbox.start-omp"' in module
+    assert 'command = "vercel.sandbox.start-opencode-v2"' in module
     assert 'command = "vercel.sandbox.apply-changes"' in module
     assert "herdr.vercelSandbox.enable = true;" in host
     assert '"vercel@58.9.0"' in host

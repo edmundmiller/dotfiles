@@ -1,0 +1,145 @@
+diff --git a/README.md b/README.md
+index 3c53886..0a5c657 100644
+--- a/README.md
++++ b/README.md
+@@ -77,8 +77,20 @@ Herdr 0.7.5 invokes contextual plugin actions through keybindings. Add bindings
+ [[keys.command]]
+ key = "prefix+shift+s"
+ type = "plugin_action"
+-command = "vercel.sandbox.start-agent"
+-description = "start the configured agent in a new Vercel Sandbox"
++command = "vercel.sandbox.start-codex"
++description = "start Codex in a new Vercel Sandbox"
++
++[[keys.command]]
++key = "prefix+alt+m"
++type = "plugin_action"
++command = "vercel.sandbox.start-omp"
++description = "start OMP in a new Vercel Sandbox"
++
++[[keys.command]]
++key = "prefix+alt+o"
++type = "plugin_action"
++command = "vercel.sandbox.start-opencode-v2"
++description = "start OpenCode V2 beta in a new Vercel Sandbox"
+ 
+ [[keys.command]]
+ key = "prefix+shift+v"
+@@ -137,7 +149,7 @@ For example, `prefix+shift+s` follows this path:
+ 
+ ```text
+ Herdr keybinding
+-  -> action ID: vercel.sandbox.start-agent
++  -> explicit Codex, OMP, or OpenCode V2 action ID
+   -> Herdr launches this plugin's src/action.mjs with the focused-pane context
+   -> action.mjs verifies local Vercel authentication and project targeting
+   -> if setup is missing, action.mjs opens a local onboarding pane and stops
+@@ -226,7 +238,7 @@ Custom commands execute inside the Sandbox and are always labeled unverified. Th
+ 
+ - **Connect Vercel account** opens the official Vercel CLI login flow in a local Herdr pane and verifies the resulting identity. It never creates a Sandbox.
+ - **Link this worktree to a Vercel project** opens the official Vercel CLI link flow in a local Herdr pane and verifies `.vercel/project.json`. It never creates a Sandbox.
+-- **Start configured agent in a new Sandbox** verifies target access, records a provisional mapping, and creates one persistent Sandbox with `sandbox create --name`. State advances through `provisional`, `creating`, `created`, `prepared`, and `ready`. If Herdr cannot launch the bridge, a merely provisional mapping is removed. If remote creation succeeded but later setup failed, the mapping is retained with a retry/delete recovery path so the Sandbox is not orphaned.
++- **Start Codex/OMP/OpenCode V2 in a new Sandbox** explicitly selects an adapter, verifies target access, records a provisional mapping, and creates one persistent Sandbox with `sandbox create --name`. State advances through `provisional`, `creating`, `created`, `prepared`, and `ready`. If Herdr cannot launch the bridge, a merely provisional mapping is removed. If remote creation succeeded but later setup failed, the mapping is retained with a retry/delete recovery path so the Sandbox is not orphaned.
+ - **Reconnect agent to this Sandbox** resumes the registered agent in the mapped Sandbox and confirms that reconnection has started.
+ - **Apply Sandbox changes locally** is repeatable and incremental. Each apply exports only the changes since the last applied snapshot, checks them with `git apply --check`, and applies them only if the check passes. After a successful apply the snapshot marker advances, so the next apply brings over only newer work. Applying the same changes twice reports "already present locally" instead of failing.
+ - **Stop this Sandbox** stops compute while preserving its filesystem. The plugin reads the CLI's real output; a failed stop is reported as a failure, never as success.
+@@ -246,7 +258,7 @@ Herdr automation commands (`agent prompt --wait`, `agent wait --until idle`,
+ `agent read`), and can invoke this plugin's actions directly:
+ 
+ ```bash
+-herdr plugin action invoke start-agent --plugin vercel.sandbox
++herdr plugin action invoke start-codex --plugin vercel.sandbox
+ # then poll, selecting the log_id returned by invoke:
+ herdr plugin log list --plugin vercel.sandbox
+ ```
+@@ -267,7 +279,7 @@ prefix and `schemaVersion` are stable contracts; the marker is always the first
+ stdout line, even on startup failures. Failure lines carry `"ok":false` with an
+ `errorKind`.
+ 
+-`start-agent` returns `phase:"setup-launched"`, which means setup was launched
++A `start-*` action returns `phase:"setup-launched"`, which means setup was launched
+ in a new pane, not that the Sandbox exists. The bridge creates the Sandbox
+ asynchronously; poll `info` for `remoteCreated` and `lifecycleState` to learn
+ whether creation and setup actually succeeded.
+diff --git a/herdr-plugin.toml b/herdr-plugin.toml
+index 4ef3d81..1b8c161 100644
+--- a/herdr-plugin.toml
++++ b/herdr-plugin.toml
+@@ -20,9 +20,23 @@ contexts = ["workspace", "pane"]
+ command = ["node", "src/action.mjs"]
+ 
+ [[actions]]
+-id = "start-agent"
+-title = "Start configured agent in a new Sandbox"
+-description = "Copy the current Git worktree into a new persistent Sandbox and open the configured agent in a Herdr pane."
++id = "start-codex"
++title = "Start Codex in a new Sandbox"
++description = "Copy the current Git worktree into a new persistent Sandbox and open Codex in a Herdr pane."
++contexts = ["workspace", "pane"]
++command = ["node", "src/action.mjs"]
++
++[[actions]]
++id = "start-omp"
++title = "Start OMP in a new Sandbox"
++description = "Copy the current Git worktree into a new persistent Sandbox and open OMP in a Herdr pane."
++contexts = ["workspace", "pane"]
++command = ["node", "src/action.mjs"]
++
++[[actions]]
++id = "start-opencode-v2"
++title = "Start OpenCode V2 in a new Sandbox"
++description = "Copy the current Git worktree into a new persistent Sandbox and open the pinned OpenCode V2 beta in a Herdr pane."
+ contexts = ["workspace", "pane"]
+ command = ["node", "src/action.mjs"]
+ 
+diff --git a/src/action-main.mjs b/src/action-main.mjs
+index 2485878..e901fec 100644
+--- a/src/action-main.mjs
++++ b/src/action-main.mjs
+@@ -198,12 +198,12 @@ async function linkVercelProject() {
+   openOnboardingPane("project", sourcePane, root);
+ }
+ 
+-async function startAgent() {
++async function startAgent(requestedAgentKind) {
+   const cwd = contextWorkspace(context);
+   const sourcePane = contextPane(context);
+   if (!cwd || !sourcePane) throw new Error("Start an agent from a Herdr workspace or pane with a Git worktree.");
+   let config = await readConfig(configDir);
+-  const agentKind = resolveAgentKind(config);
++  const agentKind = requestedAgentKind ?? resolveAgentKind(config);
+   const adapter = resolveAgentAdapter(config, agentKind);
+   const root = gitRoot(cwd);
+ 
+@@ -566,6 +566,15 @@ try {
+     case "start-agent":
+       await startAgent();
+       break;
++    case "start-codex":
++      await startAgent("codex");
++      break;
++    case "start-omp":
++      await startAgent("omp");
++      break;
++    case "start-opencode-v2":
++      await startAgent("opencode-v2");
++      break;
+     case "reconnect":
+       await runMapped("reconnect");
+       break;
+diff --git a/test/docs.test.mjs b/test/docs.test.mjs
+index 00eda70..1e7ff58 100644
+--- a/test/docs.test.mjs
++++ b/test/docs.test.mjs
+@@ -36,9 +36,9 @@ test("every README JSON config example parses through the real config loader", a
+ 
+ test("every action ID referenced in the README is declared in herdr-plugin.toml", () => {
+   const declared = new Set(manifestToml.split("[[actions]]").slice(1)
+-    .map((section) => section.match(/^\s*id = "([a-z-]+)"/m)?.[1])
++    .map((section) => section.match(/^\s*id = "([a-z0-9-]+)"/m)?.[1])
+     .filter(Boolean));
+-  const referenced = new Set([...readme.matchAll(/vercel\.sandbox\.([a-z-]+)/g)].map((match) => match[1]));
++  const referenced = new Set([...readme.matchAll(/vercel\.sandbox\.([a-z0-9-]+)/g)].map((match) => match[1]));
+   assert.ok(referenced.size >= 9, "the README shows a keybinding for every action");
+   for (const id of referenced) {
+     assert.ok(declared.has(id), `README references undeclared action: ${id}`);
