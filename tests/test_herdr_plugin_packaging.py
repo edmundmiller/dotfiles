@@ -56,6 +56,19 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
     assert "deferring marketplace plugin installation" in module
 
 
+def test_vercel_sandbox_plugin_is_mtp_scoped_and_codex_configured() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    host = (ROOT / "hosts" / "mactraitorpro" / "default.nix").read_text()
+
+    assert "vercelSandbox.enable" in module
+    assert "install_plugin vercel-labs herdr-vercel-sandbox-plugin" in module
+    assert '"agentKind": "codex"' in module
+    assert 'command = "vercel.sandbox.start-agent"' in module
+    assert 'command = "vercel.sandbox.apply-changes"' in module
+    assert "herdr.vercelSandbox.enable = true;" in host
+    assert '"vercel@58.9.0"' in host
+
+
 def test_smart_rename_is_packaged_started_and_bound() -> None:
     package = ROOT / "packages" / "herdr-tab-smart-rename"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
