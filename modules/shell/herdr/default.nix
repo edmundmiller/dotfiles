@@ -15,7 +15,8 @@ let
       pkgs.my.herdr-plugins
       pkgs.my.herdr-plugin-jj-workspace
       pkgs.my.herdr-tab-smart-rename
-    ];
+    ]
+    ++ optional cfg.vercelSandbox.enable pkgs.my.herdr-vercel-sandbox-plugin;
   };
   launchPath = concatStringsSep ":" [
     "${pkgs.my.rift}/bin"
@@ -575,10 +576,37 @@ in
       "herdr/plugins/config/vercel.sandbox/config.json".text = ''
         {
           "agentKind": "codex",
+          "allowCandidateAgents": true,
           "agentArgs": {
-            "codex": []
+            "codex": [],
+            "omp": [],
+            "opencode-v2": []
           },
-          "runtime": "node24",
+          "customAgents": {
+            "omp": {
+              "title": "OMP",
+              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools bun@1.3.14 @oh-my-pi/pi-coding-agent@17.2.12",
+              "launchCommand": "env PATH=/vercel/sandbox/.herdr-tools/node_modules/.bin:$PATH PI_CONFIG_DIR=.omp PI_CODING_AGENT_DIR=/vercel/sandbox/.omp/agent /vercel/sandbox/.herdr-tools/node_modules/.bin/omp",
+              "versionCommand": "PATH=/vercel/sandbox/.herdr-tools/node_modules/.bin:$PATH /vercel/sandbox/.herdr-tools/node_modules/.bin/omp --version",
+              "expectedVersion": "17.2.12",
+              "authenticationMode": "device-code",
+              "herdrDetectionIdentifier": "omp",
+              "interactiveTTY": true,
+              "resumeSupported": true
+            },
+            "opencode-v2": {
+              "title": "OpenCode V2 beta",
+              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools opencode-ai@0.0.0-beta-202608091410",
+              "launchCommand": "/vercel/sandbox/.herdr-tools/node_modules/.bin/opencode",
+              "versionCommand": "/vercel/sandbox/.herdr-tools/node_modules/.bin/opencode --version",
+              "expectedVersion": "0.0.0-beta-202608091410",
+              "authenticationMode": "provider-dependent",
+              "herdrDetectionIdentifier": "opencode",
+              "interactiveTTY": true,
+              "resumeSupported": true
+            }
+          },
+          "image": "vercel/sandbox/universal:latest",
           "timeout": "1h",
           "uploadExcludes": [],
           "sensitiveFileOverrides": []
@@ -659,6 +687,9 @@ in
               "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop",
               "ogulcancelik.github-start.open",
               "vercel.sandbox.start-agent",
+              "vercel.sandbox.start-codex",
+              "vercel.sandbox.start-omp",
+              "vercel.sandbox.start-opencode-v2",
               "vercel.sandbox.apply-changes",
               "vercel.sandbox.reconnect",
               "vercel.sandbox.stop",
@@ -898,8 +929,20 @@ in
                 "[[keys.command]]",
                 'key = "prefix+S"',
                 'type = "plugin_action"',
-                'command = "vercel.sandbox.start-agent"',
+                'command = "vercel.sandbox.start-codex"',
                 'description = "start Codex in a Vercel Sandbox"',
+                "",
+                "[[keys.command]]",
+                'key = "prefix+alt+m"',
+                'type = "plugin_action"',
+                'command = "vercel.sandbox.start-omp"',
+                'description = "start OMP in a Vercel Sandbox"',
+                "",
+                "[[keys.command]]",
+                'key = "prefix+alt+o"',
+                'type = "plugin_action"',
+                'command = "vercel.sandbox.start-opencode-v2"',
+                'description = "start OpenCode V2 beta in a Vercel Sandbox"',
                 "",
                 "[[keys.command]]",
                 'key = "prefix+A"',
@@ -1234,9 +1277,6 @@ in
           install_plugin 0x5c0f herdr-insight
           install_plugin persiyanov herdr-reviewr
           install_plugin edmundmiller herdr-which-key "" optional
-          ${optionalString cfg.vercelSandbox.enable ''
-            install_plugin vercel-labs herdr-vercel-sandbox-plugin
-          ''}
         '';
 
         home.activation.herdr-agent-integrations =
