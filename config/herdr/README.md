@@ -143,6 +143,13 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
 
+MacTraitor Pro additionally enables `vercel-labs/herdr-vercel-sandbox-plugin`.
+Its managed config selects Codex in a Node 24 Sandbox. Use `prefix+S` to start,
+`prefix+A` to apply remote changes, `prefix+C` to reconnect, `prefix+Q` to stop
+compute, and `prefix+E` to inspect the pane-to-Sandbox mapping. The focused Git
+worktree must be linked with `vercel link`; Vercel and Codex authentication stay
+in their official interactive flows and are never copied from host credentials.
+
 The smart-rename worker starts idempotently during activation and on `workspace.created` or `tab.created`. `prefix+t` remains the explicit current-tab override.
 
 ## Reloading after edits
