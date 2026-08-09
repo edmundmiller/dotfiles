@@ -17,7 +17,7 @@ modules.agents.omp = {
   smolModel = "openai-codex/gpt-5.6-sol:low";
 
   modelRoles = {
-    default = "openai-codex/gpt-5.6-sol:high";
+    default = "openai-codex/gpt-5.6-sol:medium";
     task = "openai-codex/gpt-5.6-terra";
     tiny = "openai-codex/gpt-5.6-luna:low";
     commit = "openai-codex/gpt-5.6-luna:low";
@@ -27,12 +27,26 @@ modules.agents.omp = {
 
 With `prewalk.enabled: true`, the main session follows this sequence:
 
-1. Start on `modelRoles.default`: Sol at high thinking for investigation and planning.
+1. Start on `modelRoles.default`: Sol at medium thinking for investigation and planning.
 2. Stay there until the first mutating `edit` or `write` call.
 3. Prewalk switches once to its destination, which defaults to `@smol`.
 4. Continue on the same Sol model at low thinking for implementation.
 
 A read-only session never switches. A session that mutates pays one transition, not one per turn. Prewalk changes the main session model; it does not create a delegated agent.
+
+## Choose or suppress the prewalk destination
+
+OMP 17.2.11 exposes only `prewalk.enabled` as a persistent setting. It has no persistent destination key in `config.yml`.
+
+Use session flags when the post-trigger model should not be `@smol`:
+
+```sh
+omp --prewalk-into @default
+omp --prewalk-into openai-codex/gpt-5.6-sol:medium
+omp --no-prewalk
+```
+
+`--prewalk-into` changes the destination for that session; `@default` keeps the session on the default role. `--no-prewalk` disables the handoff even when `prewalk.enabled` is true. To make another destination permanent, add the flag to a wrapper or alias rather than inventing an unsupported YAML key. Recheck this contract with `omp --help` and `omp config list --json` after OMP upgrades.
 
 ## Role contracts
 
@@ -44,7 +58,7 @@ A read-only session never switches. A session that mutates pays one transition, 
 | `tiny`    | Lightweight background work such as titles, memory, difficulty classification, and unexpected-stop detection. Set it explicitly when it should not fall back to `smol`.                                |
 | `commit`  | Commit-message work. Set it explicitly when it should not fall back to `smol`.                                                                                                                         |
 
-Thinking suffixes belong on roles whose contract requires a fixed level. The plan-to-code configuration fixes `default` at `high`, `smol` at `low`, and routine `tiny`/`commit` work at `low`, while leaving delegated `task` effort unconstrained.
+Thinking suffixes belong on roles whose contract requires a fixed level. The plan-to-code configuration fixes `default` at `medium`, `smol` at `low`, and routine `tiny`/`commit` work at `low`, while leaving delegated `task` effort unconstrained.
 
 Check current provider support instead of assuming a suffix exists:
 
