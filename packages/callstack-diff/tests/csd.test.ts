@@ -76,6 +76,7 @@ describe("cli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toMatch(/^---\nname: callstack-diff\n/);
     expect(result.stdout).toContain("callstack-diff diff");
+    expect(result.stdout).toContain("Model a prose or architecture flow");
     expect(result.stderr).toBe("");
   });
 

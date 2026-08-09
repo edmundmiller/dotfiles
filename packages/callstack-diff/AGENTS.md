@@ -62,9 +62,10 @@ not a sound call graph.
 ## Build & packaging
 
 - Runs sources directly on Bun (no bundle step). The runtime uses pinned Effect
-  4 beta packages. `default.nix` installs with `bun --production`, ships `src/`,
-  `SKILL.md`, and the bun2nix-provided runtime `node_modules`, then exposes the
-  CLI as both `callstack-diff` and `csd`.
+  4 beta packages. The canonical agent skill lives at
+  `skills/catalog/callstack-diff/SKILL.md`; the package `SKILL.md` symlink serves
+  the development CLI, while `default.nix` copies the canonical file into the
+  Nix package. The package exposes the CLI as both `callstack-diff` and `csd`.
 - Vite provides the test transform/config boundary; Vitest runs unit and CLI
   tests. Neither Vite nor Vitest is part of the production command or Nix
   runtime closure.

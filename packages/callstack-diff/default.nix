@@ -62,7 +62,7 @@ stdenv.mkDerivation {
     HOME=$TMPDIR $out/bin/callstack-diff --help >/dev/null
     HOME=$TMPDIR $out/bin/csd skill >csd-skill.md
     HOME=$TMPDIR $out/bin/callstack-diff skill >callstack-diff-skill.md
-    cmp ${./SKILL.md} csd-skill.md
+    cmp ${../../skills/catalog/callstack-diff/SKILL.md} csd-skill.md
     cmp csd-skill.md callstack-diff-skill.md
     runHook postInstallCheck
   '';
@@ -73,7 +73,8 @@ stdenv.mkDerivation {
     appDir=$out/lib/callstack-diff
     mkdir -p "$appDir" "$out/bin"
 
-    cp -R src SKILL.md package.json bun.lock "$appDir"/
+    cp -R src package.json bun.lock "$appDir"/
+    cp ${../../skills/catalog/callstack-diff/SKILL.md} "$appDir/SKILL.md"
     cp -R node_modules "$appDir/node_modules"
 
     makeWrapper ${bun}/bin/bun $out/bin/csd \
