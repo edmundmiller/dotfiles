@@ -67,7 +67,7 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     assert "pkgs.my.herdr-vercel-sandbox-plugin" in module
     assert "vercelSandbox.enable" in module
     assert "install_plugin vercel-labs herdr-vercel-sandbox-plugin" not in module
-    assert '"agentKind": "codex"' in module
+    assert '"agentKind": "omp"' in module
     assert '"allowCandidateAgents": true' in module
     assert '"omp"' in module
     assert '"opencode-v2"' in module
