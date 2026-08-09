@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_requested_sol_efforts(self) -> None:
-        for role, effort in (("default", "high"), ("slow", "xhigh")):
+        for role, effort in (("default", "medium"), ("slow", "xhigh")):
             with self.subTest(role=role):
                 result = subprocess.run(
                     [
