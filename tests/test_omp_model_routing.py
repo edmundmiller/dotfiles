@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_requested_sol_efforts(self) -> None:
-        for role, effort in (("default", "medium"), ("slow", "xhigh")):
+        for role, effort in (("default", "high"), ("slow", "xhigh")):
             with self.subTest(role=role):
                 result = subprocess.run(
                     [
@@ -27,6 +27,37 @@ class OmpModelRoutingTests(unittest.TestCase):
 
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(result.stdout, f"openai-codex/gpt-5.6-sol:{effort}")
+
+    def test_mactraitorpro_routes_prewalk_and_metadata_roles_separately(
+        self,
+    ) -> None:
+        result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--json",
+                ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        omp = json.loads(result.stdout)
+        self.assertEqual(omp["smolModel"], "openai-codex/gpt-5.6-sol:low")
+        self.assertNotIn("smol", omp["modelRoles"])
+        self.assertEqual(omp["modelRoles"]["task"], "openai-codex/gpt-5.6-terra")
+        self.assertEqual(
+            omp["modelRoles"]["tiny"],
+            "openai-codex/gpt-5.6-luna:low",
+        )
+        self.assertEqual(
+            omp["modelRoles"]["commit"],
+            "openai-codex/gpt-5.6-luna:low",
+        )
 
     def test_mactraitorpro_uses_subscription_k3_for_designer(self) -> None:
         result = subprocess.run(
