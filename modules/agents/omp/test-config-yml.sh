@@ -42,7 +42,17 @@ unset PI_PERMISSION_SYSTEM_CONFIG_PATH || true
 
 config_json="$("$yq_bin" -o=json "$config")"
 cp "$config" "$PI_CODING_AGENT_DIR/config.yml"
-registry_json="$("$omp_bin" config list --json)"
+omp_stderr="$omp_iso/config-list.stderr"
+if ! registry_json="$("$omp_bin" config list --json 2>"$omp_stderr")"; then
+  echo "FAIL: omp config list rejected $config" >&2
+  cat "$omp_stderr" >&2
+  exit 1
+fi
+if [[ -s "$omp_stderr" ]]; then
+  echo "FAIL: omp config list warned while loading $config" >&2
+  cat "$omp_stderr" >&2
+  exit 1
+fi
 
 OMP_CONFIG_JSON="$config_json" OMP_REGISTRY_JSON="$registry_json" python3 - <<'PY'
 import json
