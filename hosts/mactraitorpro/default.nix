@@ -160,7 +160,7 @@ in
           smolModel = "openai-codex/gpt-5.6-sol:low";
           modelRoles = {
             vision = "google-antigravity/gemini-3.5-flash";
-            default = "openai-codex/gpt-5.6-sol:high";
+            default = "openai-codex/gpt-5.6-sol:medium";
             designer = "opencode-go/kimi-k3:high";
             advisor = "openai-codex/gpt-5.6-sol:high";
             slow = "openai-codex/gpt-5.6-sol:xhigh";
