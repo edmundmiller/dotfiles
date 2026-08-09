@@ -5,6 +5,8 @@
 # [tool.uv]
 # exclude-newer = "2026-07-25T00:00:00Z"
 # ///
+from __future__ import annotations
+
 
 import json
 import re

@@ -1,20 +1,23 @@
 import subprocess
 import unittest
+from command_paths import nix_path
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+NIX = nix_path()
 REVIEW_LOOP_SOURCE = (
     "git:github.com/earendil-works/pi-review-loop"
     "#3822e126b8b9ec05d7796b7897512c773ba9a166"
 )
 
 
+@unittest.skipUnless(NIX, "nix is not installed")
 class OmpReviewLoopPluginTests(unittest.TestCase):
     def test_mactraitorpro_installs_pinned_review_loop_plugin(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                NIX,
                 "eval",
                 "--raw",
                 ".#darwinConfigurations.MacTraitor-Pro.config.home-manager.users."

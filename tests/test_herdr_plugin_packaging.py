@@ -1,4 +1,4 @@
-import tomllib
+from toml_compat import loads as toml_loads
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -6,9 +6,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_worktree_events_supersede_legacy_post_create_command() -> None:
     plugin = ROOT / "packages" / "herdr-plugins" / "dotfiles-dev-layout"
-    manifest = tomllib.loads((plugin / "herdr-plugin.toml").read_text())
+    manifest = toml_loads((plugin / "herdr-plugin.toml").read_text())
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
-    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    config = toml_loads((ROOT / "config" / "herdr" / "config.toml").read_text())
 
     assert {event["on"] for event in manifest["events"]} == {
         "workspace.created",
@@ -59,7 +59,7 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
 def test_smart_rename_is_packaged_started_and_bound() -> None:
     package = ROOT / "packages" / "herdr-tab-smart-rename"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
-    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    config = toml_loads((ROOT / "config" / "herdr" / "config.toml").read_text())
     commands = config["keys"]["command"]
 
     assert (package / "default.nix").is_file()

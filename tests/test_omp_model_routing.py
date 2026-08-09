@@ -1,12 +1,15 @@
 import json
 import subprocess
 import unittest
+from command_paths import nix_path
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+NIX = nix_path()
 
 
+@unittest.skipUnless(NIX, "nix is not installed")
 class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_temporary_quota_routing(self) -> None:
         for role, expected in (
@@ -16,7 +19,7 @@ class OmpModelRoutingTests(unittest.TestCase):
             with self.subTest(role=role):
                 result = subprocess.run(
                     [
-                        "nix",
+                        NIX,
                         "eval",
                         "--raw",
                         f".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.{role}",
@@ -34,7 +37,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_subscription_k3_for_designer(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                NIX,
                 "eval",
                 "--raw",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.designer",
@@ -52,7 +55,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_gemini_3_flash_for_vision(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                NIX,
                 "eval",
                 "--raw",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.vision",
@@ -70,7 +73,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_temporary_quota_fallbacks(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                NIX,
                 "eval",
                 "--json",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.retry.fallbackChains",
@@ -106,7 +109,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_seqeratop_routes_prewalk_and_metadata_roles_separately(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                NIX,
                 "eval",
                 "--json",
                 ".#darwinConfigurations.Seqeratop.config.modules.agents.omp",
@@ -173,7 +176,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_seqeratop_watchdog_uses_one_role_resolved_advisor(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                NIX,
                 "eval",
                 "--raw",
                 '.#darwinConfigurations.Seqeratop.config.home-manager.users.edmundmiller.home.file.".omp/agent/WATCHDOG.yml".text',

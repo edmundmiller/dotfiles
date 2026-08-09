@@ -1,5 +1,5 @@
 import json
-import tomllib
+from toml_compat import loads as toml_loads
 import unittest
 from pathlib import Path
 
@@ -21,7 +21,7 @@ class AgentResponseContractTests(unittest.TestCase):
             self.assertIn(expected, rule)
 
     def test_codex_defaults_keep_responses_and_reasoning_summaries_concise(self) -> None:
-        config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
+        config = toml_loads((ROOT / "config/codex/config.toml").read_text())
 
         self.assertEqual(config["personality"], "pragmatic")
         self.assertEqual(config["model_verbosity"], "low")

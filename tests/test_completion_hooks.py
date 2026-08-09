@@ -5,11 +5,13 @@ import stat
 import subprocess
 import tempfile
 import unittest
+from command_paths import bun_path
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "scripts/completion-check"
 HOOK = ROOT / "scripts/codex-validate-stop"
+BUN = bun_path()
 
 
 def write_command(path, name, exit_code=0, stdout="", stderr=""):
@@ -151,9 +153,10 @@ class CompletionHookTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertEqual(commands, [])
 
+    @unittest.skipUnless(BUN, "bun is not installed")
     def test_bun_completion_gate_contract(self):
         result = subprocess.run(
-            ["bun", "test", "tests/omp_completion_gate.test.js"],
+            [BUN, "test", "tests/omp_completion_gate.test.js"],
             cwd=ROOT,
             capture_output=True,
             text=True,
