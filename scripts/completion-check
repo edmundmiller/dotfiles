@@ -5,7 +5,16 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root" || exit 1
 
 python=${COMPLETION_CHECK_PYTHON:-python3}
-hey=${COMPLETION_CHECK_HEY:-hey}
+hey=${COMPLETION_CHECK_HEY:-}
+if [[ -z "$hey" ]]; then
+  if command -v hey >/dev/null 2>&1; then
+    hey=hey
+  elif [[ -x "$root/bin/hey" ]]; then
+    hey="$root/bin/hey"
+  else
+    hey=hey
+  fi
+fi
 
 "$python" -m unittest discover -s tests -p 'test_*.py' >&2 || {
   printf '%s\n' 'Dotfiles regression tests failed; fix them before stopping.'

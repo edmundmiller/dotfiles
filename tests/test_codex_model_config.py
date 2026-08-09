@@ -1,5 +1,5 @@
 import pathlib
-import tomllib
+from toml_compat import loads as toml_loads
 import unittest
 
 
@@ -10,7 +10,7 @@ CONFIG = ROOT / "config" / "codex" / "config.toml"
 class CodexModelConfigTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.config = tomllib.loads(CONFIG.read_text())
+        cls.config = toml_loads(CONFIG.read_text())
 
     def test_primary_model_uses_balanced_default_with_max_opt_in(self):
         self.assertEqual(self.config["model"], "gpt-5.6-sol")
