@@ -362,6 +362,7 @@ in
     environment.systemPackages = with pkgs; [
       clinWithVaultEnv
       llm-agents.qmd
+      my.hex
       my.meat
       my.openwiki
       my.writer
