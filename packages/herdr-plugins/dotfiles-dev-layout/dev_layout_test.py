@@ -38,7 +38,9 @@ class BootstrapLayoutTest(unittest.TestCase):
 
         def fake_tab_create(workspace_id: str, cwd: str, label: str) -> tuple[str, str]:
             self.assertEqual(workspace_id, "workspace-1")
-            self.assertEqual(cwd, ctx["workspace_cwd"])
+            # Hunk opens at the checkout root; OMP opens at the workspace cwd.
+            expected = "/repo" if label == "hunk" else ctx["workspace_cwd"]
+            self.assertEqual(cwd, expected)
             created.append((label, cwd))
             return f"tab-{label}", f"pane-{label}"
 
@@ -134,7 +136,7 @@ class BootstrapLayoutTest(unittest.TestCase):
             seeder.chmod(0o755)
 
             def assert_seeded_before_codex(_pane: str, command: str) -> None:
-                if command == "codex":
+                if command == "omp":
                     self.assertTrue(marker.exists())
 
             self.run_bootstrap(
