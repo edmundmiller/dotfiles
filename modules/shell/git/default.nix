@@ -117,6 +117,7 @@ in
           git-lfs
           pre-commit
           my.git-hunks
+          my.ghui
           (mkIf cfg.ai.enable my.git-ai)
           (mkIf cfg.gitbutler.enable llm-agents.but)
           (mkIf cfg.gitbutler.enable llm-agents.gitbutler)
@@ -244,6 +245,12 @@ in
               text = builtins.readFile "${configDir}/lazygit/config.yml";
               force = true;
             };
+            # ghui reads this at startup; "system" follows the macOS
+            # light/dark appearance.
+            "ghui/config.json".text = builtins.toJSON {
+              theme = "system";
+              systemThemeAutoReload = true;
+            };
           }
           // optionalAttrs cfg.hunk.enable {
             "hunk/config.toml".text = hunkConfigText;
@@ -254,9 +261,5 @@ in
 
       environment.variables.GHUI_PR_FETCH_LIMIT = "100";
     }
-
-    (optionalAttrs isDarwin {
-      homebrew.brews = [ "kitlangton/tap/ghui" ];
-    })
   ]);
 }

@@ -10,6 +10,7 @@
   description = "A grossly incandescent nixos config.";
 
   nixConfig = {
+    extra-experimental-features = [ "dynamic-derivations" ];
     extra-substituters = [ "https://cache.numtide.com" ];
     extra-trusted-public-keys = [
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
@@ -85,6 +86,13 @@
       url = "github:modem-dev/hunk/v0.17.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
+    };
+
+    # ghui pinned to the head of PR #43 (kcosr/ghui), which adds diff hunk
+    # navigation and copy. Repin to kitlangton/ghui once the PR merges.
+    ghui = {
+      url = "github:kcosr/ghui/855649490c25ac5d561e1ded987d72af7b07d3fa";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Canonical authoring/runtime repo for agent specs, renderers, and
@@ -303,6 +311,9 @@
             node-lts = (mkPkgs inputs.nixpkgs-node [ ] final.stdenv.hostPlatform.system).nodejs_24;
             my = self.packages.${final.stdenv.hostPlatform.system} or { };
           };
+
+          # Needs `inputs`, so it cannot be auto-imported by mapModules.
+          ghui = import ./overlays/ghui inputs;
         };
 
         # TODO(dotfiles): Consider a small lib.my helper for package output composition if this
