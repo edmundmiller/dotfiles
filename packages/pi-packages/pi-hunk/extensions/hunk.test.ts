@@ -20,6 +20,28 @@ function createPiMock() {
       if (command === "git" && args.join(" ") === "rev-parse --git-path hunk/last-pi-turn.json") {
         return { code: 0, stdout: ".git/hunk/last-pi-turn.json\n", stderr: "" };
       }
+      if (command === "git" && args.join(" ") === "rev-parse --git-path hunk/last-pi-turn.patch") {
+        return { code: 0, stdout: ".git/hunk/last-pi-turn.patch\n", stderr: "" };
+      }
+      if (command === "git" && args[0] === "diff") {
+        return { code: 0, stdout: "diff --git a/file.txt b/file.txt", stderr: "" };
+      }
+      if (command === "herdr" && args.join(" ") === "plugin list --json") {
+        return {
+          code: 0,
+          stdout: JSON.stringify({
+            result: {
+              plugins: [
+                {
+                  id: "dotfiles.dev-layout",
+                  manifest_path: "/plugins/dotfiles-dev-layout/herdr-plugin.toml",
+                },
+              ],
+            },
+          }),
+          stderr: "",
+        };
+      }
       return { code: 0, stdout: `${command} ${args.join(" ")}`, stderr: "" };
     },
   };
@@ -67,16 +89,32 @@ describe("pi-hunk", () => {
         pathspecs: ["src"],
       });
 
-      expect(calls.map((call) => call.command)).toEqual(["herdr-hunk", "git"]);
+      expect(calls.map((call) => call.command)).toEqual(["git", "git", "git", "herdr", "python3"]);
+      expect(calls[2]!.args).toEqual(["diff", "--staged", "origin/main", "--", "src"]);
+      const scriptCall = calls[4]!;
+      expect(scriptCall.args).toEqual([
+        "/plugins/dotfiles-dev-layout/dev_layout.py",
+        "hunk",
+        "--split",
+        "--staged",
+        "--",
+        "origin/main",
+        "--",
+        "src",
+      ]);
       const marker = JSON.parse(readFileSync(join(repo, ".git/hunk/last-pi-turn.json"), "utf8"));
       expect(marker).toMatchObject({
         version: 1,
         source: "pi-hunk",
-        kind: "vcs",
+        kind: "patch",
+        file: join(repo, ".git/hunk/last-pi-turn.patch"),
         range: "origin/main",
         staged: true,
         pathspecs: ["src"],
       });
+      expect(readFileSync(join(repo, ".git/hunk/last-pi-turn.patch"), "utf8")).toContain(
+        "diff --git"
+      );
     } finally {
       rmSync(repo, { force: true, recursive: true });
     }
