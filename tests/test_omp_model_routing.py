@@ -141,7 +141,18 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         omp = json.loads(result.stdout)
         self.assertIsNone(omp["smolModel"])
-        self.assertEqual(omp["modelRoles"]["smol"], "vibeproxy/claude-sonnet-5:low")
+        self.assertEqual(omp["modelRoles"]["smol"], "vibeproxy/claude-opus-5:low")
+        self.assertEqual(
+            omp["modelRoles"]["default"], "vibeproxy/claude-opus-5:medium"
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["default"],
+            [
+                "openai-codex/gpt-5.6-sol:medium",
+                "cursor/cursor-grok-4.5-low-fast",
+                "cursor/composer-2.5-fast",
+            ],
+        )
         self.assertEqual(
             omp["modelRoles"]["commit"],
             "vibeproxy/claude-haiku-4-5-20251001",
@@ -166,7 +177,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(
             omp["retry"]["fallbackChains"]["smol"],
             [
-                "openai-codex/gpt-5.6-terra:low",
+                "openai-codex/gpt-5.6-sol:low",
                 "cursor/cursor-grok-4.5-low-fast",
                 "cursor/composer-2.5-fast",
             ],

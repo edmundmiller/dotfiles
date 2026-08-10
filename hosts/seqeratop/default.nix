@@ -129,9 +129,10 @@
         omp = {
           enable = true;
           # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic),
-          # google-antigravity (Gemini). Prewalk hands implementation to smol, so
-          # Sonnet is the coding handoff; Haiku stays on commit/tiny metadata work.
+          # Sonnet is the task/coding handoff; Haiku stays on commit/tiny
+          # metadata work.
           # Fable drives slow/plan/designer with Codex Sol as first fallback.
+          # Opus medium is the default; Opus low is smol.
           # Opus remains the primary default. Vision goes to Gemini via the
           # google-antigravity login (run `/login google-antigravity` in omp once).
           # Cursor Grok and Composer fast variants are fallbacks. VibeProxy
@@ -139,8 +140,8 @@
           # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
           # rendered smol and can confuse commit/tiny vs prewalk handoff.
           modelRoles = {
-            default = "vibeproxy/claude-opus-5:low";
-            smol = "vibeproxy/claude-sonnet-5:low";
+            default = "vibeproxy/claude-opus-5:medium";
+            smol = "vibeproxy/claude-opus-5:low";
             slow = "vibeproxy/claude-fable-5:high";
             plan = "vibeproxy/claude-fable-5:high";
             vision = "google-antigravity/gemini-3.5-flash";
@@ -155,12 +156,12 @@
               "vibeproxy/claude-opus-4-8:high"
             ];
             default = [
-              "openai-codex/gpt-5.6-sol:low"
+              "openai-codex/gpt-5.6-sol:medium"
               "cursor/cursor-grok-4.5-low-fast"
               "cursor/composer-2.5-fast"
             ];
             smol = [
-              "openai-codex/gpt-5.6-terra:low"
+              "openai-codex/gpt-5.6-sol:low"
               "cursor/cursor-grok-4.5-low-fast"
               "cursor/composer-2.5-fast"
             ];

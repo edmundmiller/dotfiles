@@ -782,6 +782,27 @@
         "type": "github"
       }
     },
+    "ghui": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1778265130,
+        "narHash": "sha256-ED0BLwWYgCj5sjShxeXjSwEujnOTyOaykpJ/g+XqkQA=",
+        "owner": "kcosr",
+        "repo": "ghui",
+        "rev": "855649490c25ac5d561e1ded987d72af7b07d3fa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kcosr",
+        "repo": "ghui",
+        "rev": "855649490c25ac5d561e1ded987d72af7b07d3fa",
+        "type": "github"
+      }
+    },
     "git-hooks": {
       "inputs": {
         "flake-compat": "flake-compat_3",
@@ -1936,6 +1957,7 @@
         "emacs-overlay": "emacs-overlay",
         "flake-parts": "flake-parts_3",
         "ghostty": "ghostty",
+        "ghui": "ghui",
         "git-hooks": "git-hooks",
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager_3",
@@ -2047,6 +2069,8 @@
         "zele-repo": "zele-repo"
       },
       "locked": {
+        "lastModified": 0,
+        "narHash": "sha256-5Psj+NzCNwMrAUu9/jgMEJidUpDQne+/WmjPo+LgZyo=",
         "path": "./skills",
         "type": "path"
       },
