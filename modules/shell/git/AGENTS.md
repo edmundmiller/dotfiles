@@ -13,7 +13,7 @@ Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/l
 
 ## Packages
 
-git-open, difftastic, git-ai (when `ai.enable`), hunk (when `hunk.enable`), sem, inspect, weave, LGTM, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (Darwin Homebrew: `kitlangton/tap/ghui`)
+git-open, difftastic, git-ai (when `ai.enable`), hunk (when `hunk.enable`), sem, inspect, weave, LGTM, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (`pkgs.my.ghui` from `overlays/ghui`)
 
 ## Config files
 
@@ -21,6 +21,7 @@ git-open, difftastic, git-ai (when `ai.enable`), hunk (when `hunk.enable`), sem,
 - `config/gh/config.yml` seeds a mutable `~/.config/gh/config.yml` once; GitHub CLI owns it thereafter
 - `config/gh-dash/config.yml` → `~/.config/gh-dash/`
 - `config/lazygit/config.yml` → `~/.config/lazygit/` (force-overwrite)
+- `~/.config/ghui/config.json` — generated; `theme = "system"` with `systemThemeAutoReload`
 - `config/git/aliases.zsh` → zsh rcFiles
 
 ## Cross-module deps
