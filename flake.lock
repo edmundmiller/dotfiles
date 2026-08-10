@@ -2069,6 +2069,8 @@
         "zele-repo": "zele-repo"
       },
       "locked": {
+        "lastModified": 0,
+        "narHash": "sha256-5Psj+NzCNwMrAUu9/jgMEJidUpDQne+/WmjPo+LgZyo=",
         "path": "./skills",
         "type": "path"
       },
