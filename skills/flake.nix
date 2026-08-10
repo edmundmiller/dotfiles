@@ -610,6 +610,9 @@
                   gh-fix-ci.from = "openai";
                   gh-fix-ci.path = "gh-fix-ci";
 
+                  define-goal.from = "openai";
+                  define-goal.path = "define-goal";
+
                   plannotator-review.from = "plannotator";
                   plannotator-review.path = "plannotator-review";
 
