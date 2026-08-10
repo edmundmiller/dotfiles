@@ -65,7 +65,14 @@ async function writePiLastTurnMarker(
   input: { range?: string; staged?: boolean; pathspecs?: string[] }
 ) {
   const markerPath = await gitPath(pi, repo, "hunk/last-pi-turn.json");
+  const patchPath = await gitPath(pi, repo, "hunk/last-pi-turn.patch");
+  const diffArgs = ["diff"];
+  if (input.staged) diffArgs.push("--staged");
+  if (input.range) diffArgs.push(input.range);
+  if (input.pathspecs?.length) diffArgs.push("--", ...input.pathspecs);
+  const diff = await runCommand(pi, "git", diffArgs, { cwd: repo });
   await mkdir(dirname(markerPath), { recursive: true });
+  await writeFile(patchPath, `${diff.stdout}\n`);
   await writeFile(
     markerPath,
     `${JSON.stringify(
@@ -73,7 +80,8 @@ async function writePiLastTurnMarker(
         version: 1,
         source: "pi-hunk",
         createdAt: new Date().toISOString(),
-        kind: "vcs",
+        kind: "patch",
+        file: patchPath,
         range: input.range,
         staged: input.staged === true,
         pathspecs: input.pathspecs,
@@ -83,6 +91,19 @@ async function writePiLastTurnMarker(
     )}\n`
   );
   return markerPath;
+}
+async function devLayoutScript(pi: ExtensionAPI): Promise<string> {
+  const result = await runCommand(pi, "herdr", ["plugin", "list", "--json"]);
+  const payload = JSON.parse(result.stdout) as {
+    result?: { plugins?: Array<{ id?: string; plugin_id?: string; manifest_path?: string }> };
+  };
+  const plugin = payload.result?.plugins?.find(
+    (entry) => (entry.id ?? entry.plugin_id) === "dotfiles.dev-layout"
+  );
+  if (!plugin?.manifest_path) {
+    throw new Error("dotfiles.dev-layout Herdr plugin is not installed");
+  }
+  return join(dirname(plugin.manifest_path), "dev_layout.py");
 }
 
 export default function hunkExtension(pi: ExtensionAPI) {
@@ -113,27 +134,31 @@ export default function hunkExtension(pi: ExtensionAPI) {
       ),
     }),
     async execute(_id, params) {
-      const args = [];
-      if (params.placement === "tab") args.push("--tab");
-      if (params.staged) args.push("--staged");
-      args.push("--");
-      if (params.watch) args.push("--watch");
-      if (params.excludeUntracked) args.push("--exclude-untracked");
-      if (params.target) args.push(params.target);
-      if (params.pathspecs?.length) args.push("--", ...params.pathspecs);
-      const result = await runCommand(pi, "herdr-hunk", args, {
-        cwd: repoArg(params.repo),
-        timeout: 10_000,
-      });
       const repo = repoArg(params.repo);
       const markerPath = await writePiLastTurnMarker(pi, repo, {
         range: params.target,
         staged: params.staged,
         pathspecs: params.pathspecs,
       });
+      // Drive the dev-layout plugin script directly so diff options survive;
+      // `herdr plugin action invoke` cannot forward arguments. The script
+      // resolves workspace/pane from HERDR_* env inherited by Pi's pane.
+      const script = await devLayoutScript(pi);
+      const args = [script, "hunk", params.placement === "tab" ? "--tab" : "--split"];
+      if (params.staged) args.push("--staged");
+      const passthrough: string[] = [];
+      if (params.watch) passthrough.push("--watch");
+      if (params.excludeUntracked) passthrough.push("--exclude-untracked");
+      if (params.target) passthrough.push(params.target);
+      if (params.pathspecs?.length) passthrough.push("--", ...params.pathspecs);
+      if (passthrough.length) args.push("--", ...passthrough);
+      const result = await runCommand(pi, "python3", args, {
+        cwd: repo,
+        timeout: 10_000,
+      });
       return textResult(result.stdout || "Opened Hunk diff review in Herdr.", {
         action: "diff",
-        command: "herdr-hunk",
+        command: "python3",
         args,
         markerPath,
         ...result,

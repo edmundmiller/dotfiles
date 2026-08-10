@@ -10,7 +10,7 @@ Pi changes code → Hunk shows diff → user reviews/comments → Pi reads comme
 
 ## Tools
 
-- `hunk_diff` — open a Hunk diff review in Herdr via `herdr-hunk`, optionally watching changes.
+- `hunk_diff` — open a Hunk diff review in Herdr via the `dotfiles.dev-layout` plugin actions (`hunk-split`/`hunk-tab`).
 - `hunk_reload` — reload the active Hunk session for the repo.
 - `hunk_review` — read Hunk's session review/context, including patch and notes when requested.
 - `hunk_comments` — list/apply/clear/remove Hunk comments for the repo.
@@ -22,4 +22,4 @@ Most tools default to the Pi cwd as the repo anchor and use `hunk session ... --
 
 ## Notes
 
-`hunk_diff` intentionally delegates to the existing `herdr-hunk` helper instead of running `hunk diff` directly, because the Hunk diff UI is interactive and should live in its own Herdr pane/tab rather than block Pi's tool call.
+`hunk_diff` intentionally delegates to the `dotfiles.dev-layout` Herdr plugin instead of running `hunk diff` directly, because the Hunk diff UI is interactive and should live in its own Herdr pane/tab rather than block Pi's tool call.
