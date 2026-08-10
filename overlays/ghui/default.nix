@@ -13,6 +13,10 @@ let
   # bun.nix references the `@ghui/keymap` workspace package as a path relative
   # to itself, so it is placed inside the source tree where that relative path
   # resolves.
+  #
+  # TODO: pin upstream `kitlangton/ghui` and apply the PR #43 delta as an
+  # in-tree patch here instead, so we can carry our own changes on top rather
+  # than being limited to whatever is on the fork's branch.
   src = final.runCommand "ghui-source" { } ''
     cp -r ${inputs.ghui} $out
     chmod -R u+w $out
