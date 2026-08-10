@@ -163,6 +163,13 @@ let
       exec ${bettyDjPython}/bin/python ${bettyAgentSpec.automations.bookPlayer.helper} "$@"
     '';
   };
+  wakeMeshify = pkgs.writeShellApplication {
+    name = "wake-meshify";
+    runtimeInputs = [ pkgs.wakeonlan ];
+    text = ''
+      exec wakeonlan -i 192.168.1.255 a8:5e:45:51:a2:e0
+    '';
+  };
 
   discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
     inherit lib;
@@ -1315,6 +1322,7 @@ in
 
   environment.systemPackages = with pkgs; [
     bettyBookPlayer
+    wakeMeshify
     nixPrivateGithub
     taskwarrior3
     sqlite
