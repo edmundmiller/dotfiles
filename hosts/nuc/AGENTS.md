@@ -38,6 +38,7 @@ Intel NUC home server running NixOS. Primary role: Hermes agents, media services
 | sag (nix-steipete-tools) | TTS utility via ElevenLabs                            |
 | sqlite                   | General utility                                       |
 | taskwarrior3             | Task management                                       |
+| wake-meshify             | Send Meshify's Wake-on-LAN packet over the wired LAN  |
 
 ## QMD (llm-agents.nix)
 
