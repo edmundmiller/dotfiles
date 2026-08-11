@@ -51,8 +51,17 @@ let
       exit 0
     fi
     printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$output" >> ${builtins.toJSON "${obsidianGuardDir}/incident.log"}
+    reason="$(printf '%s' "$output" | ${pkgs.jq}/bin/jq -r '.violations[0].message // empty' 2>/dev/null || true)"
+    if [ -z "$reason" ]; then
+      reason="Safety check failed; inspect the incident log."
+    fi
+    notification="$reason Fix the issue, then reopen Obsidian."
     /usr/bin/osascript -e 'tell application "Obsidian" to quit' >/dev/null 2>&1 || true
-    /usr/bin/osascript -e 'display notification "Sync stopped; inspect the incident log." with title "Obsidian Sync safety tripwire"' >/dev/null 2>&1 || true
+    /usr/bin/osascript \
+      -e 'on run argv' \
+      -e 'display notification (item 1 of argv) with title "Obsidian closed to protect your vault" subtitle "Desktop Sync paused by safety guard"' \
+      -e 'end run' \
+      "$notification" >/dev/null 2>&1 || true
     exit "$rc"
   '';
 in
