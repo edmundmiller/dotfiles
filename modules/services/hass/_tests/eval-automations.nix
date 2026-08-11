@@ -54,6 +54,16 @@ let
       t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == state
     ) (toList (automation.trigger or [ ]));
 
+  hasStateTriggerForDuration =
+    automation: entityIds: excludedStates: duration:
+    any (
+      t:
+      (t.platform or null) == "state"
+      && (t.entity_id or null) == entityIds
+      && (t.not_to or null) == excludedStates
+      && (t."for" or null) == duration
+    ) (toList (automation.trigger or [ ]));
+
   hasStateTriggerAny =
     automation: entityId:
     any (t: (t.platform or null) == "state" && (t.entity_id or null) == entityId) (
@@ -1164,6 +1174,24 @@ let
     {
       test = hasTimePatternTrigger climatePolicy "/15";
       msg = "climate_policy must re-evaluate every 15 minutes";
+    }
+    {
+      test =
+        hasStateTriggerForDuration climatePolicy
+          [
+            "person.edmund_miller"
+            "person.moni"
+          ]
+          [
+            "home"
+            "unknown"
+            "unavailable"
+          ]
+          { hours = 1; }
+        && hasInfix "states.person.edmund_miller.last_changed" (builtins.toJSON applyClimatePolicy)
+        && hasInfix "states.person.moni.last_changed" (builtins.toJSON applyClimatePolicy)
+        && hasInfix "3600" (builtins.toJSON applyClimatePolicy);
+      msg = "climate policy must wait one hour after the latest person-state transition before applying away cooling";
     }
     {
       test = applyClimatePolicy != null;
