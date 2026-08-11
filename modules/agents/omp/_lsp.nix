@@ -28,7 +28,12 @@ let
     '';
   };
   typescriptLauncher = pkgs.writeShellScriptBin "omp-typescript-language-server" ''
-    if [ -f package.json ] && ${pkgs.gnugrep}/bin/grep -q '"@effect/tsgo"' package.json; then
+    if [ -f package.json ] && ${pkgs.jq}/bin/jq -e '
+      [.dependencies, .devDependencies, .optionalDependencies, .peerDependencies]
+      | map(. // {})
+      | add
+      | has("@effect/tsgo")
+    ' package.json >/dev/null; then
       exec ${effectTsgo}/bin/effect-tsgo --lsp "$@"
     fi
 
