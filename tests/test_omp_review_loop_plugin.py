@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -10,11 +11,20 @@ REVIEW_LOOP_SOURCE = (
 )
 
 
+def nix_path() -> str:
+    # Prefer the system-managed nix: older profile/PATH versions ignore the
+    # flake's nixConfig as untrusted and fail on dynamic-derivations.
+    system_nix = Path("/run/current-system/sw/bin/nix")
+    if system_nix.is_file():
+        return str(system_nix)
+    return shutil.which("nix") or "nix"
+
+
 class OmpReviewLoopPluginTests(unittest.TestCase):
     def test_mactraitorpro_installs_pinned_review_loop_plugin(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--raw",
                 ".#darwinConfigurations.MacTraitor-Pro.config.home-manager.users."
