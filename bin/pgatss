@@ -3,10 +3,19 @@ set -euo pipefail
 
 vault_root="${PGATSS_VAULT:-${HOME}/obsidian-vault}"
 cli="${vault_root}/.agents/skills/pgatss-simulator-booking/scripts/pgatss.mjs"
+auth_env="${PGATSS_AUTH_ENV:-${HOME}/.config/pgatss/auth.env}"
 
 if [[ ! -f "${cli}" ]]; then
   printf 'pgatss: CLI not found at %s\nSet PGATSS_VAULT to the vault root.\n' "${cli}" >&2
   exit 1
+fi
+
+if [[ -z "${PGTSS_PASSWORD:-}" && -f "${auth_env}" ]]; then
+  if ! command -v op >/dev/null 2>&1; then
+    printf 'pgatss: %s exists, but the 1Password CLI is unavailable.\n' "${auth_env}" >&2
+    exit 1
+  fi
+  exec op run --env-file="${auth_env}" -- node "${cli}" "$@"
 fi
 
 exec node "${cli}" "$@"
