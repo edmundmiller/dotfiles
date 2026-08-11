@@ -1,10 +1,24 @@
 import json
+import re
 import subprocess
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class OmpConfigYmlDefaultsTests(unittest.TestCase):
+    def test_advisor_subagents_disabled_by_default(self) -> None:
+        text = (ROOT / "config" / "omp" / "config.yml").read_text()
+        advisor_block = re.search(r"^advisor:\n((?:[ \t].*\n?)*)", text, re.MULTILINE)
+        self.assertIsNotNone(advisor_block, "advisor: block not found in config.yml")
+
+        subagents_line = re.search(
+            r"^\s*subagents:\s*(\S+)", advisor_block.group(1), re.MULTILINE
+        )
+        self.assertIsNotNone(subagents_line, "advisor.subagents not set in config.yml")
+        self.assertEqual(subagents_line.group(1), "false")
 
 
 class OmpModelRoutingTests(unittest.TestCase):
