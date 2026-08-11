@@ -27,6 +27,13 @@ let
       runHook postInstall
     '';
   };
+  typescriptLauncher = pkgs.writeShellScriptBin "omp-typescript-language-server" ''
+    if [ -f package.json ] && ${pkgs.gnugrep}/bin/grep -q '"@effect/tsgo"' package.json; then
+      exec ${effectTsgo}/bin/effect-tsgo --lsp "$@"
+    fi
+
+    exec ${pkgs.typescript-language-server}/bin/typescript-language-server "$@"
+  '';
   launcher = pkgs.writeShellScriptBin "nextflow-language-server" ''
     # Launcher for the official Nextflow language server.
     #
@@ -116,11 +123,8 @@ in
   configFile = pkgs.writeText "omp-lsp.json" (
     builtins.toJSON {
       "typescript-language-server" = {
-        command = "${effectTsgo}/bin/effect-tsgo";
-        args = [
-          "--lsp"
-          "--stdio"
-        ];
+        command = "${typescriptLauncher}/bin/omp-typescript-language-server";
+        args = [ "--stdio" ];
       };
       nextflow = {
         command = "${launcher}/bin/nextflow-language-server";
