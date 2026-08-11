@@ -30,6 +30,7 @@ assert typescript["command"].endswith("/bin/omp-typescript-language-server"), ty
 assert os.access(typescript["command"], os.X_OK), typescript
 for package, expected_code, expected_output in (
     ({"devDependencies": {"typescript": "^5"}}, 0, ""),
+    ({"scripts": {"check": "echo @effect/tsgo"}}, 0, ""),
     ({"devDependencies": {"@effect/tsgo": "0.36.4"}}, 2, "Usage of lsp:"),
 ):
     with tempfile.TemporaryDirectory() as project:
