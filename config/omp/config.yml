@@ -140,7 +140,7 @@ branchSummary:
   enabled: true
 advisor:
   enabled: true
-  subagents: true
+  subagents: false
   syncBacklog: "3"
 tier:
   advisor: inherit
