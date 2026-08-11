@@ -15,6 +15,7 @@ let
   preStart = nuc.systemd.services.obsidian-sync.serviceConfig.ExecStartPre;
   nucGuard = nuc.systemd.services.obsidian-sync-guard.serviceConfig.ExecStart;
   macGuard = mac.launchd.user.agents.obsidian-sync-guard.command;
+  macHostSource = builtins.readFile ../../../../hosts/mactraitorpro/default.nix;
   nucDirtTimer = nuc.systemd.timers.obsidian-vault-git-dirt-check.timerConfig;
   macDirtTimer =
     mac.launchd.user.agents.obsidian-vault-git-dirt-check.serviceConfig.StartCalendarInterval;
@@ -64,6 +65,18 @@ let
     {
       test = hasInfix "obsidian-desktop-sync-guard" (toString macGuard);
       msg = "Mac Desktop guard must be installed";
+    }
+    {
+      test = hasInfix "Obsidian closed to protect your vault" macHostSource;
+      msg = "Mac guard notification must explain why Obsidian closed";
+    }
+    {
+      test = hasInfix "Desktop Sync paused by safety guard" macHostSource;
+      msg = "Mac guard notification must identify Desktop Sync as paused";
+    }
+    {
+      test = hasInfix ".violations[0].message" macHostSource;
+      msg = "Mac guard notification must include the concrete safety violation";
     }
     {
       test = mac.launchd.user.agents.obsidian-sync-guard.serviceConfig.StartInterval == 30;
