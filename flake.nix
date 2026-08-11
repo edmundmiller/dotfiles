@@ -645,6 +645,15 @@
                 pass_filenames = false;
                 stages = [ "pre-push" ];
               };
+              commit-identity = {
+                enable = true;
+                name = "reject test commit identities";
+                entry = "${./bin/check-commit-identity}";
+                language = "system";
+                pass_filenames = false;
+                always_run = true;
+                stages = [ "pre-push" ];
+              };
               br-sync-merge = {
                 enable = true;
                 name = "br-sync-merge";

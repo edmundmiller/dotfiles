@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (($#)); then
+  commits="$(git rev-list "$@")"
+else
+  commits="$(git rev-list --all --not --remotes)"
+fi
+
+while IFS= read -r commit; do
+  [[ -n "${commit}" ]] || continue
+  identity="$(git show -s --format='%an <%ae>%n%cn <%ce>' "${commit}")"
+  if grep -Eiq '(^|[<[:space:]])test user([>[:space:]]|$)|<test(@|\+)[^>]*>|<test@example\.com>' <<<"${identity}"; then
+    printf 'check-commit-identity: refusing commit %s with forbidden identity:\n%s\n' \
+      "${commit}" "${identity}" >&2
+    exit 1
+  fi
+done <<<"${commits}"
