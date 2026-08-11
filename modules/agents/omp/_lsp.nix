@@ -1,5 +1,32 @@
 { pkgs }:
 let
+  effectTsgoVersion = "0.36.4";
+  effectTsgoPlatform =
+    {
+      aarch64-darwin = {
+        name = "darwin-arm64";
+        hash = "sha512-oOcWdKQucNch6G4CvidHEzmfgeKEPMvFcz+DXuKGonBLwVHX+i1VYGbZwccEOoiitOg7eWVl4e8S0qKMXg3/gg==";
+      };
+      x86_64-linux = {
+        name = "linux-x64";
+        hash = "sha512-+BuwiG5d8dLNrrN1PB5GA3gRkBwvlUYmMkm/XkttaLnppp9jePFkB8CgAiNV8j290q7BVO2nQjao5aPkVwmluw==";
+      };
+    }
+    .${pkgs.stdenv.hostPlatform.system};
+  effectTsgo = pkgs.stdenvNoCC.mkDerivation {
+    pname = "effect-tsgo";
+    version = effectTsgoVersion;
+    src = pkgs.fetchurl {
+      url = "https://registry.npmjs.org/@effect/tsgo-${effectTsgoPlatform.name}/-/tsgo-${effectTsgoPlatform.name}-${effectTsgoVersion}.tgz";
+      inherit (effectTsgoPlatform) hash;
+    };
+    sourceRoot = "package";
+    installPhase = ''
+      runHook preInstall
+      install -Dm755 lib/tsc $out/bin/effect-tsgo
+      runHook postInstall
+    '';
+  };
   launcher = pkgs.writeShellScriptBin "nextflow-language-server" ''
     # Launcher for the official Nextflow language server.
     #
@@ -88,6 +115,13 @@ in
 
   configFile = pkgs.writeText "omp-lsp.json" (
     builtins.toJSON {
+      "typescript-language-server" = {
+        command = "${effectTsgo}/bin/effect-tsgo";
+        args = [
+          "--lsp"
+          "--stdio"
+        ];
+      };
       nextflow = {
         command = "${launcher}/bin/nextflow-language-server";
         fileTypes = [
