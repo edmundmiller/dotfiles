@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/block/buzz.git",
-  "ref": "v0.4.26",
+  "ref": "v0.5.2",
   "patches": ["patches/exact-respond-to-allowlist.patch"],
   "checks": [["cargo", "test", "--locked", "--package=buzz-acp", "author_gate_tests"]]
 }

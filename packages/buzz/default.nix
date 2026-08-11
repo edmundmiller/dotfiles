@@ -7,16 +7,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "buzz";
-  version = "0.4.26";
+  version = "0.5.2";
 
   src = fetchFromGitHub {
     owner = "block";
     repo = "buzz";
     rev = "v${version}";
-    hash = "sha256-4WnTDKw00r1AOsaaAFB/NFPYI0XTB0totLY8shEE+O0=";
+    hash = "sha256-VWqoIS5FMyou6fEuuUq1OUIPycAtn0kVLbm5yCQAsOs=";
   };
 
-  cargoHash = "sha256-rZmZrgbZ2+oWZOzhF3Iq1W5Jev5kYBvT2f0iR+IdiKc=";
+  cargoHash = "sha256-0a0SJqDjSTWXU6k3yZ6iisDaUdnHqzjZU33ItzGs8AY=";
   patches = [ ./patches/exact-respond-to-allowlist.patch ];
 
   cargoBuildFlags = [
