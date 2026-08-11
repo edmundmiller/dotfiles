@@ -331,6 +331,13 @@ else:
                 text=True,
             )
             subprocess.run(
+                ["jj", "bookmark", "track", "main@origin"],
+                cwd=repo,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
                 [
                     "jj",
                     "workspace",
