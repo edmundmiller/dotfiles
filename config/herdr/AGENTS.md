@@ -32,6 +32,12 @@ herdr --default-config
 herdr --default-config | sed -n '/^\[keys\]/,/^\[/p'
 ```
 
+## Current visual conventions
+
+- Hide pane scrollbars and gaps to keep split layouts compact.
+- Hide the tab row when a workspace has one tab.
+- Create tabs immediately with generated names; use smart rename when needed.
+
 ## Current keybinding conventions
 
 Current preferred keys:

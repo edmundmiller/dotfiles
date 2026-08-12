@@ -1101,6 +1101,8 @@ in
               {
                   "agent_panel_sort": '"priority"',
                   "hide_tab_bar_when_single_tab": "true",
+                  "pane_gaps": "false",
+                  "pane_scrollbars": "false",
                   "prompt_new_tab_name": "false",
               },
           )
