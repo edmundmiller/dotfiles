@@ -36,6 +36,13 @@ let
     /usr/bin/osascript -e 'display notification "Unexpected changes outside 00_Inbox; inspect the Git dirt log." with title "Obsidian vault Git audit"' >/dev/null 2>&1 || true
     exit "$rc"
   '';
+  openwikiDailyThreadAudit = pkgs.writeShellScript "openwiki-daily-thread-audit" ''
+    set -eu
+    codex_executable="''${CODEX_EXECUTABLE:-/run/current-system/sw/bin/codex}"
+    exec "$codex_executable" exec resume \
+      019ff3ad-6ad9-75d0-8c9d-62008a15d79e \
+      "Continue the existing OpenWiki recovery monitoring in this thread. Perform a strictly read-only audit of the Mac OpenWiki scheduled ingestion pipeline. Inspect the loaded 02:00 LaunchAgent, latest ingestion logs and connector states, isolated checkout status, and authoritative remote-main equality. Report the latest run's exact timestamp, job ID, failedSourceCount, and source outcomes. If healthy, say so plainly. Do not edit, commit, push, kickstart, or repair anything. If unhealthy, diagnose the cause and give the smallest next action."
+  '';
   obsidianDesktopGuard = pkgs.writeShellScript "obsidian-desktop-sync-guard" ''
     set -u
     mkdir -p ${builtins.toJSON obsidianGuardDir}
@@ -324,6 +331,23 @@ in
         ];
         StandardOutPath = "/tmp/obsidian-vault-git-dirt-check.log";
         StandardErrorPath = "/tmp/obsidian-vault-git-dirt-check.err";
+      };
+    };
+
+    launchd.user.agents.openwiki-daily-thread-audit = {
+      command = "${openwikiDailyThreadAudit}";
+      serviceConfig = {
+        StartCalendarInterval = {
+          Hour = 3;
+          Minute = 0;
+        };
+        WorkingDirectory = obsidianVault;
+        StandardOutPath = "${config.user.home}/.openwiki/logs/daily-thread-audit.log";
+        StandardErrorPath = "${config.user.home}/.openwiki/logs/daily-thread-audit.log";
+        EnvironmentVariables = {
+          HOME = config.user.home;
+          PATH = "/etc/profiles/per-user/${config.user.name}/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+        };
       };
     };
 

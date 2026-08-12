@@ -19,6 +19,7 @@ let
   nucDirtTimer = nuc.systemd.timers.obsidian-vault-git-dirt-check.timerConfig;
   macDirtTimer =
     mac.launchd.user.agents.obsidian-vault-git-dirt-check.serviceConfig.StartCalendarInterval;
+  openwikiDailyAudit = mac.launchd.user.agents.openwiki-daily-thread-audit;
   dirtCheck = pkgs.callPackage ../../../../packages/obsidian-vault-git-dirt-check { };
 
   requiredExclusions = [
@@ -99,6 +100,20 @@ let
           }
         ];
       msg = "Mac Git dirt audit must run at 09:00 and 21:00";
+    }
+    {
+      test = hasInfix "openwiki-daily-thread-audit" (toString openwikiDailyAudit.command);
+      msg = "Mac must run the OpenWiki daily audit in its existing Codex thread";
+    }
+    {
+      test =
+        {
+          inherit (openwikiDailyAudit.serviceConfig.StartCalendarInterval) Hour Minute;
+        } == {
+          Hour = 3;
+          Minute = 0;
+        };
+      msg = "OpenWiki thread audit must run daily at 03:00 local time";
     }
   ];
 
