@@ -1,3 +1,11 @@
+---
+purpose: Route changes to Nix-managed dotfile sources and their owning modules.
+applies_to: Changes under config/ and the module wiring that deploys them.
+entrypoint: Edit the source here, then read the nearest nested AGENTS.md.
+verification: Run the owning subsystem check and `hey re` when activation is authorized.
+update_when: Source ownership, deployment, or rebuild workflow changes.
+---
+
 # Config Directory
 
 Dotfile source files that get symlinked into `$XDG_CONFIG_HOME` (and sometimes `$HOME`) by home-manager. These are the **actual config content** — modules in `modules/` wire them into place.
@@ -14,7 +22,8 @@ The `configDir` variable resolves to this directory (set in `modules/options.nix
 
 ## Key Rule
 
-**These files are read-only at runtime.** They're symlinks from the Nix store. Edit them here, then rebuild (`sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .`).
+**These files are read-only at runtime.** They're symlinks from the Nix store.
+Edit them here, then rebuild with `hey re`.
 
 ## Directory Organization
 

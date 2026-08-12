@@ -9,6 +9,28 @@ FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
+    def test_agents_md_use_guarded_hey_interfaces(self) -> None:
+        root_agents = (ROOT / "AGENTS.md").read_text()
+        for command in ("hey re", "hey skills-update", "hey skills-sync"):
+            self.assertIn(command, root_agents)
+
+        rejected = (
+            "sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .",
+            "nix flake update skills-catalog",
+        )
+        offenders = []
+        for path in ROOT.rglob("AGENTS.md"):
+            if any(part in {".git", "node_modules"} for part in path.parts):
+                continue
+            text = path.read_text()
+            offenders.extend(
+                f"{path.relative_to(ROOT)}: {command}"
+                for command in rejected
+                if command in text
+            )
+
+        self.assertEqual([], offenders)
+
     def test_omp_installs_fix_agents_md_prompt_template(self) -> None:
         prompt = FIX_AGENTS_COMMAND.read_text()
         module = OMP_MODULE.read_text()

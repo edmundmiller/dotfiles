@@ -21,6 +21,8 @@ update_when: A canonical doc is added, moved, or changes ownership.
 
 - Root `AGENTS.md` routes tasks; the nearest nested `AGENTS.md` adds subsystem rules.
 - [../AGENT_WORKFLOW.md](../AGENT_WORKFLOW.md) — canonical risk-gated workflow
+- [agent-guardrails.md](./agent-guardrails.md) — shared safety, documentation,
+  tooling, and landing rules
 - [agent-quality.md](./agent-quality.md) — generated quality capability inventory
 - [../.agents/skills/nix-darwin-reference/SKILL.md](../.agents/skills/nix-darwin-reference/SKILL.md)
   — Darwin/macOS Nix workflow; keep it out of global agent prompts
@@ -39,4 +41,6 @@ update_when: A canonical doc is added, moved, or changes ownership.
 
 ## Conventions
 
-Follow the documentation contract in root `AGENTS.md`. Keep each doc small, linkable, and focused on one question: what exists, why it exists, how it should evolve, or how to recover.
+Follow the documentation contract in [agent-guardrails.md](./agent-guardrails.md).
+Keep each doc small, linkable, and focused on one question: what exists, why
+it exists, how it should evolve, or how to recover.
