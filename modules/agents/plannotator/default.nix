@@ -9,7 +9,7 @@ with lib.my;
 let
   cfg = config.modules.agents.plannotator;
   version = "0.27.0";
-  piExtensionVersion = "0.27.0";
+  piExtensionVersion = "0.26.4";
   system = pkgs.stdenv.hostPlatform.system;
   releases = {
     aarch64-darwin = {
