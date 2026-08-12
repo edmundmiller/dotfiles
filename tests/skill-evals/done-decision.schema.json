@@ -20,19 +20,25 @@
           "commit_task_changes",
           "fetch_remote",
           "rebase_task",
+          "classify_explicit_task_commits",
+          "skip_landed_task_equivalents",
+          "replay_later_local_commits",
           "fast_forward_default",
           "push_default",
           "verify_remote",
           "report_blocked",
           "request_user_cleanup",
           "preserve_unrelated_dirt",
+          "verify_unrelated_dirt",
           "defer_dirty_worktree_cleanup",
           "switch_canonical_branch",
           "create_preservation_branch",
           "stash_unrelated_dirt",
           "reset_unrelated_dirt",
           "commit_unrelated_dirt",
-          "remove_dirty_worktree"
+          "remove_dirty_worktree",
+          "force_push",
+          "bypass_hooks"
         ]
       }
     },

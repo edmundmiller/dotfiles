@@ -4,8 +4,9 @@ import { DONE_SKILL_EVAL_CASES } from "./done-skill-cases";
 import { evaluateDoneSkillOutput } from "./done-skill-scorer";
 
 const dirtyCanonical = DONE_SKILL_EVAL_CASES[0];
-const overlappingDirtyCanonical = DONE_SKILL_EVAL_CASES[1];
-const cleanCanonical = DONE_SKILL_EVAL_CASES[2];
+const concurrentAdvance = DONE_SKILL_EVAL_CASES[1];
+const overlappingDirtyCanonical = DONE_SKILL_EVAL_CASES[2];
+const cleanCanonical = DONE_SKILL_EVAL_CASES[3];
 
 describe("done skill scorer", () => {
   it("accepts safe landing through dirty canonical main", () => {
@@ -24,6 +25,34 @@ describe("done skill scorer", () => {
         explanation: "Non-overlapping dirt remains while main fast-forwards safely.",
       }),
       dirtyCanonical
+    );
+
+    expect(score).toMatchObject({
+      passed: true,
+      errors: [],
+      missingActions: [],
+      forbiddenActions: [],
+    });
+  });
+
+  it("accepts replaying only later local work after task equivalents landed", () => {
+    const score = evaluateDoneSkillOutput(
+      JSON.stringify({
+        status: "continue",
+        canonicalDefaultCheckout: "updated",
+        actions: [
+          "preserve_unrelated_dirt",
+          "fetch_remote",
+          "classify_explicit_task_commits",
+          "skip_landed_task_equivalents",
+          "replay_later_local_commits",
+          "verify_unrelated_dirt",
+          "push_default",
+          "verify_remote",
+        ],
+        explanation: "T1 and T2 are already landed equivalents, so replay only H.",
+      }),
+      concurrentAdvance
     );
 
     expect(score).toMatchObject({

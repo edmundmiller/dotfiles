@@ -3,12 +3,16 @@ export const DONE_ACTIONS = [
   "commit_task_changes",
   "fetch_remote",
   "rebase_task",
+  "classify_explicit_task_commits",
+  "skip_landed_task_equivalents",
+  "replay_later_local_commits",
   "fast_forward_default",
   "push_default",
   "verify_remote",
   "report_blocked",
   "request_user_cleanup",
   "preserve_unrelated_dirt",
+  "verify_unrelated_dirt",
   "defer_dirty_worktree_cleanup",
   "switch_canonical_branch",
   "create_preservation_branch",
@@ -16,6 +20,8 @@ export const DONE_ACTIONS = [
   "reset_unrelated_dirt",
   "commit_unrelated_dirt",
   "remove_dirty_worktree",
+  "force_push",
+  "bypass_hooks",
 ] as const;
 
 export type DoneAction = (typeof DONE_ACTIONS)[number];
@@ -79,6 +85,45 @@ its unrelated dirt. Decide the closeout outcome and actions.
         "stash_unrelated_dirt",
         "reset_unrelated_dirt",
         "commit_unrelated_dirt",
+      ],
+    },
+  },
+  {
+    id: "concurrent-remote-advance-with-later-local-commit",
+    name: "reconciles landed task equivalents and replays only later local work",
+    scenario: `
+The task started from main at A and explicitly produced task commits T1 and T2.
+Before closeout, another agent advanced origin/main with newer commits and
+corrected patch-equivalent versions of T1 and T2. A separate local-only commit
+H was then added after the old task commits, so local main is A-T1-T2-H while
+origin/main has advanced on a different line. The default checkout also has
+unrelated dirty agent-rule files which do not overlap H. Repository policy
+permits direct landing and the remote is writable. Reconcile without
+duplicating T1 or T2, preserve and verify the unrelated dirt, replay only H on
+current origin/main, push without force or hook bypass, and prove local/remote
+equality. Decide the closeout outcome and actions.
+`,
+    expected: {
+      status: "continue",
+      canonicalDefaultCheckout: "updated",
+      requiredActions: [
+        "preserve_unrelated_dirt",
+        "fetch_remote",
+        "classify_explicit_task_commits",
+        "skip_landed_task_equivalents",
+        "replay_later_local_commits",
+        "verify_unrelated_dirt",
+        "push_default",
+        "verify_remote",
+      ],
+      forbiddenActions: [
+        "report_blocked",
+        "rebase_task",
+        "commit_unrelated_dirt",
+        "stash_unrelated_dirt",
+        "reset_unrelated_dirt",
+        "force_push",
+        "bypass_hooks",
       ],
     },
   },
