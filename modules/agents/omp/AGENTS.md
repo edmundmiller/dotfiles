@@ -44,6 +44,12 @@ runtime state remains mutable and OMP-owned.
 The module clears OMP's cached MCP tool metadata during activation so removed
 servers do not reappear from `agent.db`.
 
+Custom slash-command prompt templates live in `config/omp/commands/`. Wire each
+template explicitly to `~/.omp/agent/commands/<name>.md` in `default.nix`, then
+rebuild. Verify discovery without invoking a model through RPC
+`get_available_commands`; the returned command must name the template and show
+`file` as its source.
+
 After changing OMP config or module wiring, run:
 
 ```sh
