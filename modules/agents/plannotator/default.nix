@@ -60,8 +60,7 @@ let
   piEnabled = config.modules.agents.pi.enable;
   ompEnabled = config.modules.agents.omp.enable;
   herdrEnabled = config.modules.shell.herdr.enable;
-  supportedAgentEnabled = codexEnabled || claudeEnabled || piEnabled || ompEnabled || herdrEnabled;
-  command = lib.getExe cfg.package;
+  supportedAgentEnabled = claudeEnabled || piEnabled || ompEnabled || herdrEnabled;
   ompCommand = lib.getExe config.modules.agents.omp.package;
 in
 {
@@ -70,8 +69,7 @@ in
       type = types.bool;
       default = supportedAgentEnabled;
       defaultText = literalExpression ''
-        config.modules.agents.codex.enable
-        || config.modules.agents.claude.enable
+        config.modules.agents.claude.enable
         || config.modules.agents.pi.enable
         || config.modules.agents.omp.enable
         || config.modules.shell.herdr.enable
@@ -85,59 +83,64 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    user.packages = [ cfg.package ];
+  config = mkMerge [
+    (mkIf codexEnabled {
+      home-manager.users.${config.user.name} =
+        { lib, ... }:
+        {
+          home.activation.plannotator-codex-cleanup =
+            lib.hm.dag.entryAfter
+              [
+                "codex-config-bootstrap"
+                "herdr-agent-integrations"
+              ]
+              ''
+                ${pkgs.python3}/bin/python3 ${./cleanup_codex.py} \
+                  --codex-hooks "$HOME/.codex/hooks.json"
+              '';
+        };
+    })
 
-    modules.agents.pi.extraPackages = mkIf piEnabled [
-      "npm:@plannotator/pi-extension@${piExtensionVersion}"
-    ];
+    (mkIf cfg.enable {
+      user.packages = [ cfg.package ];
 
-    home-manager.users.${config.user.name} =
-      { lib, ... }:
-      {
-        home.activation.plannotator-codex = lib.mkIf codexEnabled (
-          lib.hm.dag.entryAfter
-            [
-              "codex-config-bootstrap"
-              "herdr-agent-integrations"
-            ]
-            ''
-              ${pkgs.python3}/bin/python3 ${./configure.py} \
-                --codex-config "$HOME/.codex/config.toml" \
-                --codex-hooks "$HOME/.codex/hooks.json" \
-                --command ${lib.escapeShellArg command}
-            ''
-        );
+      modules.agents.pi.extraPackages = mkIf piEnabled [
+        "npm:@plannotator/pi-extension@${piExtensionVersion}"
+      ];
 
-        home.activation.plannotator-claude-plugin = lib.mkIf claudeEnabled (
-          lib.hm.dag.entryAfter
-            [
-              "claude-settings-bootstrap"
-              "herdr-agent-integrations"
-            ]
-            ''
-              claude_cmd=${lib.escapeShellArg "${pkgs.llm-agents.claude-code}/bin/claude"}
-              if ! "$claude_cmd" plugin list --json \
-                | ${pkgs.gnugrep}/bin/grep -F '"id": "plannotator@plannotator"' >/dev/null; then
-                if ! "$claude_cmd" plugin marketplace list --json \
-                  | ${pkgs.gnugrep}/bin/grep -F '"name": "plannotator"' >/dev/null; then
-                  "$claude_cmd" plugin marketplace add backnotprop/plannotator
+      home-manager.users.${config.user.name} =
+        { lib, ... }:
+        {
+          home.activation.plannotator-claude-plugin = lib.mkIf claudeEnabled (
+            lib.hm.dag.entryAfter
+              [
+                "claude-settings-bootstrap"
+                "herdr-agent-integrations"
+              ]
+              ''
+                claude_cmd=${lib.escapeShellArg "${pkgs.llm-agents.claude-code}/bin/claude"}
+                if ! "$claude_cmd" plugin list --json \
+                  | ${pkgs.gnugrep}/bin/grep -F '"id": "plannotator@plannotator"' >/dev/null; then
+                  if ! "$claude_cmd" plugin marketplace list --json \
+                    | ${pkgs.gnugrep}/bin/grep -F '"name": "plannotator"' >/dev/null; then
+                    "$claude_cmd" plugin marketplace add backnotprop/plannotator
+                  fi
+                  "$claude_cmd" plugin install --scope user plannotator@plannotator
                 fi
-                "$claude_cmd" plugin install --scope user plannotator@plannotator
-              fi
-            ''
-        );
+              ''
+          );
 
-        home.activation.omp-plannotator-plugin = lib.mkIf ompEnabled (
-          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            export PI_SKIP_VERSION_CHECK=1
-            export PI_CONFIG_DIR=.omp
-            export PI_CODING_AGENT_DIR="$HOME/.omp/agent"
-            export PI_PERMISSION_SYSTEM_CONFIG_PATH="$HOME/.omp/agent/extensions/pi-permission-system/config.json"
-            ${ompCommand} plugin uninstall @plannotator/pi-extension --json >/dev/null 2>&1 || true
-            ${ompCommand} plugin install npm:@plannotator/pi-extension@${version} --force --json >/dev/null
-          ''
-        );
-      };
-  };
+          home.activation.omp-plannotator-plugin = lib.mkIf ompEnabled (
+            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+              export PI_SKIP_VERSION_CHECK=1
+              export PI_CONFIG_DIR=.omp
+              export PI_CODING_AGENT_DIR="$HOME/.omp/agent"
+              export PI_PERMISSION_SYSTEM_CONFIG_PATH="$HOME/.omp/agent/extensions/pi-permission-system/config.json"
+              ${ompCommand} plugin uninstall @plannotator/pi-extension --json >/dev/null 2>&1 || true
+              ${ompCommand} plugin install npm:@plannotator/pi-extension@${version} --force --json >/dev/null
+            ''
+          );
+        };
+    })
+  ];
 }
