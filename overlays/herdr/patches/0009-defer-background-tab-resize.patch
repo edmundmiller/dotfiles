@@ -1,8 +1,8 @@
-diff --git i/src/server/headless.rs w/src/server/headless.rs
-index f72d1a9..52171c7 100644
---- i/src/server/headless.rs
-+++ w/src/server/headless.rs
-@@ -8038,7 +8038,7 @@ next_tab = ""
+diff --git a/src/server/headless.rs b/src/server/headless.rs
+index 3425225..d8282fc 100644
+--- a/src/server/headless.rs
++++ b/src/server/headless.rs
+@@ -8845,7 +8845,7 @@ next_tab = ""
      }
  
      #[tokio::test]
@@ -11,7 +11,7 @@ index f72d1a9..52171c7 100644
          let mut server = test_headless_server();
          let mut workspace = crate::workspace::Workspace::test_new("test");
          let active_pane = workspace.tabs[0].root_pane;
-@@ -8127,12 +8127,12 @@ next_tab = ""
+@@ -8934,12 +8934,12 @@ next_tab = ""
          assert_eq!(
              server.app.state.workspaces[0].tabs[background_tab].runtimes[&background_pane]
                  .current_size(),
@@ -26,7 +26,7 @@ index f72d1a9..52171c7 100644
          let mut server = test_headless_server();
          let mut workspace = crate::workspace::Workspace::test_new("test");
          let background_tab = workspace.test_add_tab(Some("background"));
-@@ -8178,6 +8178,19 @@ next_tab = ""
+@@ -8985,6 +8985,19 @@ next_tab = ""
                  .current_size(),
              expected
          );
@@ -46,10 +46,10 @@ index f72d1a9..52171c7 100644
          assert_eq!(
              server
                  .app
-diff --git i/src/ui.rs w/src/ui.rs
-index 60143fe..c618c5c 100644
---- i/src/ui.rs
-+++ w/src/ui.rs
+diff --git a/src/ui.rs b/src/ui.rs
+index 8196442..1631a6a 100644
+--- a/src/ui.rs
++++ b/src/ui.rs
 @@ -59,9 +59,7 @@ use self::status::{
      copy_feedback_rect, render_config_diagnostic, render_copy_feedback, render_toast_notification,
      toast_notification_rect,
@@ -61,7 +61,7 @@ index 60143fe..c618c5c 100644
  use self::tabs::render_tab_bar;
  pub(crate) use self::{
      dialogs::{
-@@ -155,38 +153,6 @@ pub(crate) fn compute_view_without_resizing_panes(
+@@ -155,39 +153,6 @@ pub(crate) fn compute_view_without_resizing_panes(
      );
  }
  
@@ -97,10 +97,11 @@ index 60143fe..c618c5c 100644
 -        }
 -    }
 -}
- 
+-
  fn desktop_tab_bar_and_terminal_area(
      app: &AppState,
-@@ -287,7 +253,6 @@ fn compute_view_internal(
+     ws: &crate::workspace::Workspace,
+@@ -287,7 +252,6 @@ fn compute_view_internal(
          cell_size,
      );
      if resize_panes {
@@ -108,7 +109,7 @@ index 60143fe..c618c5c 100644
          resize_popup_pane(app, terminal_runtimes, terminal_area, cell_size);
      }
  
-@@ -356,7 +321,6 @@ fn compute_mobile_view(
+@@ -356,7 +320,6 @@ fn compute_mobile_view(
          cell_size,
      );
      if resize_panes {
@@ -116,7 +117,7 @@ index 60143fe..c618c5c 100644
          resize_popup_pane(app, terminal_runtimes, terminal_area, cell_size);
      }
      let header_hits = compute_mobile_header_hit_areas(app, header_rect);
-@@ -899,7 +863,7 @@ mod tests {
+@@ -899,7 +862,7 @@ mod tests {
      }
  
      #[tokio::test]
@@ -125,7 +126,7 @@ index 60143fe..c618c5c 100644
          let mut app = crate::app::state::AppState::test_new();
          app.hide_tab_bar_when_single_tab = true;
  
-@@ -929,11 +893,20 @@ mod tests {
+@@ -929,11 +892,20 @@ mod tests {
          let two_tab_size =
              app.workspaces[1].tabs[background_tab].runtimes[&two_tab_pane].current_size();
          assert_eq!(one_tab_size, (20, 53));
@@ -147,7 +148,7 @@ index 60143fe..c618c5c 100644
          let mut app = crate::app::state::AppState::test_new();
  
          let mut workspace = Workspace::test_new("mobile");
-@@ -953,6 +926,14 @@ mod tests {
+@@ -953,6 +925,14 @@ mod tests {
  
          assert_eq!(app.view.layout, ViewLayout::Mobile);
          assert_eq!(app.view.terminal_area, Rect::new(0, 2, 44, 18));
@@ -162,11 +163,11 @@ index 60143fe..c618c5c 100644
          assert_eq!(
              app.workspaces[0].tabs[background_tab].runtimes[&background_pane].current_size(),
              (18, 43)
-diff --git i/src/ui/panes.rs w/src/ui/panes.rs
-index b904ce0..ba8b3fd 100644
---- i/src/ui/panes.rs
-+++ w/src/ui/panes.rs
-@@ -128,20 +128,6 @@ pub(crate) fn apply_pane_chrome(
+diff --git a/src/ui/panes.rs b/src/ui/panes.rs
+index f20b55b..06c2a21 100644
+--- a/src/ui/panes.rs
++++ b/src/ui/panes.rs
+@@ -157,21 +157,6 @@ pub(crate) fn apply_pane_chrome(
          .collect()
  }
  
@@ -184,10 +185,11 @@ index b904ce0..ba8b3fd 100644
 -        .get(terminal_id)
 -        .map(|runtime| (terminal_id, runtime))
 -}
- 
+-
  fn stable_scrollbar_gutter(
      rt: &TerminalRuntime,
-@@ -166,54 +152,6 @@ fn stable_scrollbar_gutter(
+     pane_inner: Rect,
+@@ -195,60 +180,6 @@ fn stable_scrollbar_gutter(
      (inner_rect, scrollbar_rect)
  }
  
@@ -204,13 +206,13 @@ index b904ce0..ba8b3fd 100644
 -    if tab.zoomed {
 -        let focused_id = tab.layout.focused();
 -        if let Some((terminal_id, rt)) = runtime_for_tab_pane(terminal_runtimes, tab, focused_id) {
--            let borders = if multi_pane && app.pane_borders {
+-            let borders = if multi_pane && app.pane_borders && app.pane_outer_borders {
 -                Borders::ALL
 -            } else {
 -                Borders::NONE
 -            };
 -            let pane_inner = pane_inner_rect(area, borders);
--            let inner_rect = stable_terminal_inner_rect(pane_inner, app.pane_scrollbars);
+-            let inner_rect = terminal_inner_rect(rt, pane_inner, app.pane_scrollbars);
 -            if !app.direct_attach_resize_locks.contains(terminal_id) {
 -                rt.resize(
 -                    inner_rect.height,
@@ -223,11 +225,16 @@ index b904ce0..ba8b3fd 100644
 -        return;
 -    }
 -
--    for info in apply_pane_chrome(tab.layout.panes(area), app.pane_borders, app.pane_gaps) {
+-    for info in apply_pane_chrome(
+-        tab.layout.panes(area),
+-        app.pane_borders,
+-        app.pane_gaps,
+-        app.pane_outer_borders,
+-    ) {
 -        let pane_inner = pane_inner_rect(info.rect, info.borders);
 -
 -        if let Some((terminal_id, rt)) = runtime_for_tab_pane(terminal_runtimes, tab, info.id) {
--            let inner_rect = stable_terminal_inner_rect(pane_inner, app.pane_scrollbars);
+-            let inner_rect = terminal_inner_rect(rt, pane_inner, app.pane_scrollbars);
 -            if !app.direct_attach_resize_locks.contains(terminal_id) {
 -                rt.resize(
 -                    inner_rect.height,
@@ -239,13 +246,14 @@ index b904ce0..ba8b3fd 100644
 -        }
 -    }
 -}
- 
+-
  /// Compute pane layout info and optionally resize pane runtimes to match.
  pub(super) fn compute_pane_infos(
-diff --git i/src/ui/tab_surface.rs w/src/ui/tab_surface.rs
-index 1594f83..5e260c7 100644
---- i/src/ui/tab_surface.rs
-+++ w/src/ui/tab_surface.rs
+     app: &AppState,
+diff --git a/src/ui/tab_surface.rs b/src/ui/tab_surface.rs
+index 99ca972..531e5c7 100644
+--- a/src/ui/tab_surface.rs
++++ b/src/ui/tab_surface.rs
 @@ -1,6 +1,6 @@
  use ratatui::{layout::Rect, Frame};
  
@@ -254,7 +262,7 @@ index 1594f83..5e260c7 100644
  use crate::app::state::ViewState;
  use crate::app::{AppState, Mode};
  use crate::layout::{PaneInfo, SplitBorder};
-@@ -53,15 +53,6 @@ pub(crate) fn compute_tab_surface(
+@@ -53,16 +53,6 @@ pub(crate) fn compute_tab_surface(
      }
  }
  
@@ -267,6 +275,7 @@ index 1594f83..5e260c7 100644
 -) {
 -    resize_tab_panes(app, terminal_runtimes, tab, area, cell_size);
 -}
- 
+-
  pub(crate) fn render_tab_surface(
      app: &AppState,
+     terminal_runtimes: &TerminalRuntimeRegistry,

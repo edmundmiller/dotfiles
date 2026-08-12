@@ -14,6 +14,8 @@ Tracked Herdr runtime config lives here and is wired in by `modules/shell/herdr/
 
 - Edit `config/herdr/config.toml` for user-facing Herdr keybindings/settings.
 - The shell module defaults `modules.shell.herdr.configFile` to this tracked file.
+- Activation parses that selected template and reapplies its managed sections;
+  do not duplicate their values in the Nix activation script.
 - The live file is `~/.config/herdr/config.toml`, but it is intentionally writable because Herdr writes some settings itself.
 - Do **not** add `onboarding = false` to the tracked config. Let Herdr manage onboarding/settings state.
 - Do **not** restore `[worktrees].post_create_command`. Use packaged plugin event hooks.
@@ -35,7 +37,10 @@ herdr --default-config | sed -n '/^\[keys\]/,/^\[/p'
 ## Current visual conventions
 
 - Hide pane scrollbars and gaps to keep split layouts compact.
+- Hide outer pane borders while retaining separators between splits.
 - Hide the tab row when a workspace has one tab.
+- Show zoom state and hostname at the right of a visible tab row.
+- Set the host terminal title to `{hostname}: {workspace}` with Herdr's native template.
 - Create tabs immediately with generated names; use smart rename when needed.
 
 ## Current keybinding conventions
