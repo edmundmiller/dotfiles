@@ -42,9 +42,8 @@ kitty_graphics = true
 
 [keys]
 # Show upstream defaults with: herdr --default-config
-# This repo keeps ctrl+c as the tmux-style prefix and mirrors the tmux muscle
-# memory where Herdr has equivalent concepts.
-prefix = "ctrl+c"
+# Keep the Herdr prefix distinct from terminal interrupt and tmux bindings.
+prefix = "ctrl+space"
 settings = "prefix+comma"
 reload_config = "prefix+ctrl+r"
 workspace_picker = "prefix+w"
