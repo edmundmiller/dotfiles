@@ -1073,6 +1073,17 @@
                     touch $out
                   '';
 
+              agent-skills-marker-migration-tests =
+                pkgs.runCommand "agent-skills-marker-migration-tests"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_agent_skills_marker_migration.py
+                    touch $out
+                  '';
+
               ast-grep-tests =
                 pkgs.runCommand "ast-grep-tests"
                   {
