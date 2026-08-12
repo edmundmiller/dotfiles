@@ -655,6 +655,11 @@ in
         force = true;
       };
 
+      home.file.".omp/agent/commands/fix-agents-md.md" = {
+        source = "${configDir}/omp/commands/fix-agents-md.md";
+        force = true;
+      };
+
       home.file.".omp/agent/commands/qa-triage.md" = {
         source = "${configDir}/omp/commands/qa-triage.md";
         force = true;
