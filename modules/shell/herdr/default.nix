@@ -9,6 +9,7 @@ with lib.my;
 let
   cfg = config.modules.shell.herdr;
   tmuxEnabled = config.modules.shell.tmux.enable;
+  herdrAutoTitleInstaller = lib.getExe pkgs.my.herdr-auto-title;
   managedLocalPlugins = pkgs.symlinkJoin {
     name = "dotfiles-managed-herdr-plugins";
     paths = [
@@ -1067,6 +1068,15 @@ in
                   install_integration hermes
               ''}
             '';
+
+        home.activation.herdr-auto-title = lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
+          ${optionalString (cfg.integrations.claude.enable && config.modules.agents.claude.enable) ''
+            ${herdrAutoTitleInstaller} --claude
+          ''}
+          ${optionalString (cfg.integrations.codex.enable && config.modules.agents.codex.enable) ''
+            ${herdrAutoTitleInstaller} --codex
+          ''}
+        '';
       };
 
     modules.shell.tmux.rcFiles = mkIf tmuxEnabled (mkAfter [

@@ -116,6 +116,22 @@ def test_smart_rename_is_packaged_started_and_bound() -> None:
     assert 'command = "tab-smart-rename.rename-now"' not in module
 
 
+def test_auto_title_hook_is_pinned_and_installed_for_codex_and_claude() -> None:
+    package = ROOT / "packages" / "herdr-auto-title" / "default.nix"
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    expression = package.read_text()
+    assert 'owner = "sh1ma";' in expression
+    assert 'repo = "herdr-auto-title";' in expression
+    assert 'rev = "aae70057b0c48b9d80aaecca77079879ce01f694";' in expression
+    assert "herdr_auto_title.py" in expression
+    assert "pkgs.my.herdr-auto-title" in module
+    assert "home.activation.herdr-auto-title" in module
+    assert 'entryAfter [ "herdr-agent-integrations" ]' in module
+    assert "--claude" in module
+    assert "--codex" in module
+
+
 def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
