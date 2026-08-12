@@ -119,7 +119,8 @@ def test_smart_rename_is_packaged_started_and_bound() -> None:
 def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
-    assert '"tab-smart-rename.rename-now",' in module
+    assert 'command["command"]' in module
+    assert "for command in canonical_commands" in module
 
 
 def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
@@ -137,7 +138,7 @@ def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
         ),
         "description": "open browser in a right split",
     } in config["keys"]["command"]
-    assert '"kitty_graphics": "true"' in module
+    assert 'managed_section("experimental")' in module
     assert "official.browser" in module
 
 
@@ -147,8 +148,41 @@ def test_terminal_chrome_is_minimal_and_activation_managed() -> None:
 
     assert config["ui"]["pane_scrollbars"] is False
     assert config["ui"]["pane_gaps"] is False
-    assert '"pane_scrollbars": "false"' in module
-    assert '"pane_gaps": "false"' in module
+    assert 'managed_section("ui")' in module
+    assert '"pane_scrollbars": "false"' not in module
+    assert '"pane_gaps": "false"' not in module
+
+
+def test_native_session_context_replaces_window_title_plugin() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+
+    assert config["keys"]["prefix"] == "ctrl+c"
+    assert config["ui"]["pane_outer_borders"] is False
+    assert config["ui"]["tab_bar_right"] == [
+        {"type": "zoom"},
+        {"type": "hostname"},
+    ]
+    assert config["ui"]["window_title"] == "{hostname}: {workspace}"
+    assert '"pane_outer_borders": "false"' not in module
+    assert '"tab_bar_right": \'[{ type = "zoom" }, { type = "hostname" }]\'' not in module
+    assert '"window_title": \'"{hostname}: {workspace}"\'' not in module
+    assert "install_plugin rjyo herdr-window-title-sync" not in module
+    assert "uninstall_plugin rjyo.window-title-sync" in module
+
+
+def test_writable_config_reads_managed_values_from_tracked_template() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    activation = module.split("home.activation.herdr-config-bootstrap", 1)[1]
+
+    assert "canonical_config = tomllib.loads(template_path.read_text())" in activation
+    assert 'canonical_keys = canonical_config.get("keys", {})' in activation
+    assert 'canonical_commands = canonical_keys.get("command", [])' in activation
+    assert 'managed_section("session")' in activation
+    assert 'managed_section("experimental")' in activation
+    assert 'managed_section("ui")' in activation
+    assert '"settings": "prefix+comma"' not in activation
+    assert '"agent_panel_sort": \'"priority"\'' not in activation
 
 
 def test_omp_integration_install_isolates_pi_agent_dir() -> None:

@@ -31,7 +31,9 @@ Unlike most files under `config/`, Herdr's live config is not a read-only symlin
 Because of that:
 
 - make intentional config changes in `config/herdr/config.toml`
-- keep `modules/shell/herdr/default.nix` in sync when adding managed keys/helpers
+- let activation read managed keys, commands, UI, session, experimental, and
+  worktree values from that selected template
+- keep only host-specific additions, plugin lifecycle, and theme selection in Nix
 - do not track transient Herdr state like `onboarding = false`
 
 ## Current keybindings
@@ -90,6 +92,10 @@ Herdr defaults still provide other common actions. `prefix+a` creates a task-nam
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
+Native session context is intentionally compact: visible tab rows show zoom state
+and hostname, while the host terminal title uses `{hostname}: {workspace}`.
+Herdr owns both directly; no window-title plugin is installed.
+
 ## Herdr 0.8.0 lifecycle
 
 `[worktrees].post_create_command` is obsolete here. Activation removes that key;
@@ -137,7 +143,6 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `paulbkim-dev/vim-herdr-navigation`
 - `ogulcancelik/herdr-plugin-github-start`
 - `ogulcancelik/herdr-browser`
-- `rjyo/herdr-window-title-sync`
 - `wyattjoh/herdr-plugin-gh-pr`
 - `kkckkc/herdr-plugin-gh-workflow`
 - `alon-z/herdr-command-palette`

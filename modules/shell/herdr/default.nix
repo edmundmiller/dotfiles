@@ -52,6 +52,16 @@ let
         pane_history = true
         kitty_graphics = true
 
+        [ui]
+        agent_panel_sort = "priority"
+        hide_tab_bar_when_single_tab = true
+        pane_gaps = false
+        pane_outer_borders = false
+        pane_scrollbars = false
+        prompt_new_tab_name = false
+        tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
+        window_title = "{hostname}: {workspace}"
+
         [keys]
         prefix = "${cfg.prefix}"
         settings = "prefix+comma"
@@ -200,6 +210,9 @@ let
         key = "prefix+V"
         type = "shell"
         command = "obsidian-neovide"
+
+        [worktrees]
+        directory = "~/.local/share/herdr/worktrees"
       '';
 
   # Pi's built-in theme can be too low-contrast in some Herdr/Ghostty stacks
@@ -645,20 +658,47 @@ in
 
           ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
 
-          # Keep the managed prefix in sync even after the initial bootstrap.
-          # Herdr's config stays writable for onboarding/settings, so existing
-          # files need an explicit upsert rather than only copying the template.
-          ${pkgs.python3}/bin/python3 - "$target" ${escapeShellArg cfg.prefix} ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
+          # Herdr's config stays writable for onboarding/settings, so reapply
+          # values from the selected template rather than only copying it once.
+          ${pkgs.python3}/bin/python3 - "$target" "$template" ${escapeShellArg cfg.prefix} ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
           import json
           import pathlib
           import sys
+          import tomllib
 
           path = pathlib.Path(sys.argv[1])
-          prefix = sys.argv[2]
-          theme_name = sys.argv[3]
-          theme_custom = json.loads(sys.argv[4])
+          template_path = pathlib.Path(sys.argv[2])
+          canonical_config = tomllib.loads(template_path.read_text())
+          canonical_keys = canonical_config.get("keys", {})
+          canonical_commands = canonical_keys.get("command", [])
+          prefix = sys.argv[3]
+          theme_name = sys.argv[4]
+          theme_custom = json.loads(sys.argv[5])
           lines = path.read_text().splitlines()
-          managed_commands = {
+
+          def toml_value(value):
+              if isinstance(value, bool):
+                  return "true" if value else "false"
+              if isinstance(value, str):
+                  return json.dumps(value, ensure_ascii=False)
+              if isinstance(value, (int, float)):
+                  return str(value)
+              if isinstance(value, list):
+                  return "[" + ", ".join(toml_value(item) for item in value) + "]"
+              if isinstance(value, dict):
+                  entries = ", ".join(
+                      f"{key} = {toml_value(item)}" for key, item in value.items()
+                  )
+                  return "{ " + entries + " }"
+              raise TypeError(f"unsupported TOML value: {value!r}")
+
+          canonical_command_names = {
+              command["command"]
+              for command in canonical_commands
+              if isinstance(command.get("command"), str)
+          }
+          managed_commands = set(canonical_command_names)
+          managed_commands.update({
               "herdr-tab previous",
               "herdr-tab next",
               "herdr-hunk",
@@ -667,25 +707,7 @@ in
               "herdr hunk",
               "herdr hunk --tab",
               "herdr worktree layout",
-              "alonz.command-palette.open",
-              "edmundmiller.which-key.open",
-              "dotfiles.dev-layout.hunk-split",
-              "dotfiles.dev-layout.hunk-tab",
-              "herdr-file-viewer.open-file-viewer",
-              "herdr-file-viewer.open-file-viewer-tab",
-              "hunk.diff.worktree-split",
-              "hunk.diff.staged-split",
-              "hunk.diff.branch-split",
-              "nathanflurry.jj-workspace.new",
               "nathanflurry.jj-workspace.new-tab",
-              "nathanflurry.jj-workspace.remove",
-              "nathanflurry.jj-workspace.abandon",
-              "tab-smart-rename.rename-now",
-              "herdr-insight.open-timeline-right",
-              "gh-pr.refresh",
-              "dutifuldev.ghzinga.open",
-              "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop",
-              "ogulcancelik.github-start.open",
               "vercel.sandbox.start-agent",
               "vercel.sandbox.start-codex",
               "vercel.sandbox.start-omp",
@@ -694,9 +716,8 @@ in
               "vercel.sandbox.reconnect",
               "vercel.sandbox.stop",
               "vercel.sandbox.info",
-              "''${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus",
               "obsidian-neovide",
-          }
+          })
 
           # Drop old/managed command blocks before appending the canonical ones.
           # This keeps activation idempotent and cleans up stale direct-key
@@ -732,37 +753,9 @@ in
           in_keys = False
           saw_keys = False
           managed_keys = {
-              "prefix": prefix,
-              "settings": "prefix+comma",
-              "reload_config": "prefix+ctrl+r",
-              "workspace_picker": "prefix+w",
-              "new_workspace": "prefix+N",
-              "new_worktree": "prefix+g",
-              "goto": "prefix+/",
-              "open_worktree": "prefix+G",
-              "new_tab": "prefix+c",
-              "rename_tab": "prefix+alt+t",
-              "switch_tab": "prefix+1..9",
-              "focus_agent": "prefix+alt+1..9",
-              "next_agent": "prefix+J",
-              "previous_agent": "prefix+K",
-              "previous_tab": "prefix+p",
-              "next_tab": "prefix+n",
-              "focus_pane_left": "prefix+h",
-              "focus_pane_down": "prefix+j",
-              "focus_pane_up": "prefix+k",
-              "focus_pane_right": "prefix+l",
-              "last_pane": "prefix+ctrl+w",
-              "cycle_pane_next": "prefix+tab",
-              "cycle_pane_previous": "prefix+shift+tab",
-              "split_horizontal": "prefix+s",
-              "split_vertical": "prefix+v",
-              "close_pane": "prefix+x",
-              "zoom": "prefix+z",
-              "resize_mode": "prefix+r",
-              "edit_scrollback": "prefix+enter",
-              "toggle_sidebar": "prefix+b",
+              key: value for key, value in canonical_keys.items() if key != "command"
           }
+          managed_keys["prefix"] = prefix
           wrote_keys = set()
 
           for line in lines:
@@ -771,7 +764,7 @@ in
                   if in_keys:
                       for key, value in managed_keys.items():
                           if key not in wrote_keys:
-                              out.append(f'{key} = "{value}"')
+                              out.append(f"{key} = {toml_value(value)}")
                               wrote_keys.add(key)
                   in_keys = stripped == "[keys]"
                   saw_keys = saw_keys or in_keys
@@ -782,7 +775,7 @@ in
                   key = stripped.split("=", 1)[0].strip()
                   if key in managed_keys:
                       if key not in wrote_keys:
-                          out.append(f'{key} = "{managed_keys[key]}"')
+                          out.append(f"{key} = {toml_value(managed_keys[key])}")
                           wrote_keys.add(key)
                       continue
 
@@ -791,7 +784,7 @@ in
           if saw_keys and in_keys:
               for key, value in managed_keys.items():
                   if key not in wrote_keys:
-                      out.append(f'{key} = "{value}"')
+                      out.append(f"{key} = {toml_value(value)}")
                       wrote_keys.add(key)
 
           if not saw_keys:
@@ -799,129 +792,23 @@ in
                   out.append("")
               out.append("[keys]")
               for key, value in managed_keys.items():
-                  out.append(f'{key} = "{value}"')
+                  out.append(f"{key} = {toml_value(value)}")
 
-          command_block = [
-              "",
-              "[[keys.command]]",
-              'key = "prefix+m"',
-              'type = "plugin_action"',
-              'command = "alonz.command-palette.open"',
-              'description = "open command palette"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+space"',
-              'type = "plugin_action"',
-              'command = "edmundmiller.which-key.open"',
-              'description = "which-key"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+f"',
-              'type = "plugin_action"',
-              'command = "herdr-file-viewer.open-file-viewer"',
-              'description = "open file viewer in a split"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+F"',
-              'type = "plugin_action"',
-              'command = "herdr-file-viewer.open-file-viewer-tab"',
-              'description = "open file viewer in a tab"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+]"',
-              'type = "plugin_action"',
-              'command = "hunk.diff.worktree-split"',
-              'description = "open worktree Hunk diff in a split"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+}"',
-              'type = "plugin_action"',
-              'command = "hunk.diff.staged-split"',
-              'description = "open staged Hunk diff in a split"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+{"',
-              'type = "plugin_action"',
-              'command = "hunk.diff.branch-split"',
-              'description = "open branch Hunk diff in a split"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+u"',
-              'type = "plugin_action"',
-              'command = "dotfiles.dev-layout.hunk-split"',
-              'description = "open dotfiles Hunk diff in a side pane"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+U"',
-              'type = "plugin_action"',
-              'command = "dotfiles.dev-layout.hunk-tab"',
-              'description = "open dotfiles Hunk diff in a tab"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+a"',
-              'type = "plugin_action"',
-              'command = "nathanflurry.jj-workspace.new"',
-              'description = "new jj workspace"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+d"',
-              'type = "plugin_action"',
-              'command = "nathanflurry.jj-workspace.remove"',
-              'description = "remove clean jj workspace after PR closes"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+D"',
-              'type = "plugin_action"',
-              'command = "nathanflurry.jj-workspace.abandon"',
-              'description = "abandon clean jj workspace with typed confirmation"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+t"',
-              'type = "plugin_action"',
-              'command = "tab-smart-rename.rename-now"',
-              'description = "smart rename current tab"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+T"',
-              'type = "plugin_action"',
-              'command = "herdr-insight.open-timeline-right"',
-              'description = "open agent timeline"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+R"',
-              'type = "plugin_action"',
-              'command = "gh-pr.refresh"',
-              'description = "refresh GitHub PR status"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+P"',
-              'type = "plugin_action"',
-              'command = "dutifuldev.ghzinga.open"',
-              'description = "open issue or PR in ghzinga"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+I"',
-              'type = "plugin_action"',
-              'command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"',
-              'description = "start GitHub issue workflow"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+O"',
-              'type = "plugin_action"',
-              'command = "ogulcancelik.github-start.open"',
-              'description = "start from GitHub item"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+B"',
-              'type = "shell"',
-              'command = "''${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus"',
-              'description = "open browser in a right split"',
-              "",
-              "[[keys.command]]",
-              'key = "prefix+V"',
-              'type = "shell"',
-              'command = "obsidian-neovide"',
-          ]
+          command_block = []
+          for command in canonical_commands:
+              command_block.extend(["", "[[keys.command]]"])
+              command_block.extend(
+                  f"{key} = {toml_value(value)}" for key, value in command.items()
+              )
+
+          if "obsidian-neovide" not in canonical_command_names:
+              command_block.extend([
+                  "",
+                  "[[keys.command]]",
+                  'key = "prefix+V"',
+                  'type = "shell"',
+                  'command = "obsidian-neovide"',
+              ])
 
           ${optionalString cfg.vercelSandbox.enable ''
             command_block.extend([
@@ -974,45 +861,25 @@ in
               out.append("")
           out.extend(command_block[1:])
 
-          def upsert_worktree_directory(lines):
+          def remove_deprecated_worktree_keys(lines):
               out = []
               in_worktrees = False
-              saw_worktrees = False
-              wrote_directory = False
 
               for line in lines:
                   stripped = line.strip()
                   if stripped.startswith("[") and stripped.endswith("]"):
-                      if in_worktrees and not wrote_directory:
-                          out.append('directory = "~/.local/share/herdr/worktrees"')
                       in_worktrees = stripped == "[worktrees]"
-                      saw_worktrees = saw_worktrees or in_worktrees
                       out.append(line)
                       continue
 
                   if in_worktrees and "=" in stripped:
                       key = stripped.split("=", 1)[0].strip()
-                      if key == "directory":
-                          if not wrote_directory:
-                              out.append('directory = "~/.local/share/herdr/worktrees"')
-                              wrote_directory = True
-                          continue
                       if key == "post_create_command":
                           # Herdr 0.7 plugin events replace the old dotfiles-only
                           # post-create shell hook.
                           continue
 
                   out.append(line)
-
-              if saw_worktrees and in_worktrees and not wrote_directory:
-                  out.append('directory = "~/.local/share/herdr/worktrees"')
-              elif not saw_worktrees:
-                  if out and out[-1].strip():
-                      out.append("")
-                  out.extend([
-                      "[worktrees]",
-                      'directory = "~/.local/share/herdr/worktrees"',
-                  ])
 
               return out
 
@@ -1085,27 +952,18 @@ in
                   out.extend(body_lines)
               return out
 
-          out = upsert_worktree_directory(out)
-          out = upsert_simple_section(out, "session", {"resume_agents_on_restore": "true"})
-          out = upsert_simple_section(
-              out,
-              "experimental",
-              {
-                  "pane_history": "true",
-                  "kitty_graphics": "true",
-              },
-          )
-          out = upsert_simple_section(
-              out,
-              "ui",
-              {
-                  "agent_panel_sort": '"priority"',
-                  "hide_tab_bar_when_single_tab": "true",
-                  "pane_gaps": "false",
-                  "pane_scrollbars": "false",
-                  "prompt_new_tab_name": "false",
-              },
-          )
+          def managed_section(section):
+              return {
+                  key: toml_value(value)
+                  for key, value in canonical_config.get(section, {}).items()
+                  if not isinstance(value, dict)
+              }
+
+          out = remove_deprecated_worktree_keys(out)
+          out = upsert_simple_section(out, "worktrees", managed_section("worktrees"))
+          out = upsert_simple_section(out, "session", managed_section("session"))
+          out = upsert_simple_section(out, "experimental", managed_section("experimental"))
+          out = upsert_simple_section(out, "ui", managed_section("ui"))
           out = replace_section(out, "[theme]", [f'name = "{theme_name}"'])
           out = replace_section(
               out,
@@ -1257,6 +1115,38 @@ in
             fi
           }
 
+          uninstall_plugin() {
+            plugin_id="$1"
+
+            if [ "$runtime_deferred" -eq 1 ]; then
+              return 0
+            fi
+
+            if ! installed_json=$("$herdr_cmd" plugin list --json 2>&1); then
+              if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+                echo "herdr: warning: runtime unavailable or outdated; deferring marketplace plugin removal" >&2
+                runtime_deferred=1
+                return 0
+              fi
+              printf '%s\n' "$installed_json" >&2
+              echo "herdr: error: failed to list plugins before removing $plugin_id" >&2
+              return 1
+            fi
+
+            if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"plugin_id\":\"$plugin_id\""; then
+              echo "herdr: removing $plugin_id plugin"
+              if ! uninstall_output=$("$herdr_cmd" plugin uninstall "$plugin_id" 2>&1); then
+                if printf '%s\n' "$uninstall_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+                  echo "herdr: warning: runtime unavailable or outdated; deferring $plugin_id removal" >&2
+                  runtime_deferred=1
+                  return 0
+                fi
+                printf '%s\n' "$uninstall_output" >&2
+                return 1
+              fi
+            fi
+          }
+
           jj_plugin_config=$("$herdr_cmd" plugin config-dir nathanflurry.jj-workspace)
           ${pkgs.coreutils}/bin/mkdir -p "$jj_plugin_config"
           ${pkgs.coreutils}/bin/cat > "$jj_plugin_config/.env" <<'EOF'
@@ -1265,6 +1155,7 @@ in
           EOF
 
           # Patched plugins are registered from Nix-managed local packages.
+          uninstall_plugin rjyo.window-title-sync
           install_plugin smarzban herdr-file-viewer
           install_plugin dutifuldev ghzinga plugins/herdr
           install_plugin dcolinmorgan herdr-remote relay
@@ -1272,7 +1163,6 @@ in
           install_plugin paulbkim-dev vim-herdr-navigation
           install_plugin ogulcancelik herdr-plugin-github-start
           install_plugin ogulcancelik herdr-browser
-          install_plugin rjyo herdr-window-title-sync
           install_plugin wyattjoh herdr-plugin-gh-pr
           install_plugin kkckkc herdr-plugin-gh-workflow
           install_plugin alon-z herdr-command-palette
