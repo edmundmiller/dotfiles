@@ -132,6 +132,11 @@
       flake = false;
     };
 
+    anti-slop-repo = {
+      url = "github:dmmulroy/anti-slop";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -590,6 +595,12 @@
                   filter.maxDepth = 2;
                 };
 
+                anti-slop = {
+                  path = inputs.anti-slop-repo.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 5;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -699,6 +710,9 @@
 
                   no-ai-slop.from = "no-ai-slop";
                   no-ai-slop.path = "no-ai-slop";
+
+                  install-anti-slop.from = "anti-slop";
+                  install-anti-slop.path = "install-anti-slop";
 
                   write-discoverable-code.from = "modem";
                   write-discoverable-code.path = "write-discoverable-code";

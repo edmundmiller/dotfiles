@@ -52,6 +52,22 @@
         "type": "github"
       }
     },
+    "anti-slop-repo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786559163,
+        "narHash": "sha256-7V5E0cYgckq3zNORZk5J6R4yO/C374FpYpw1mW1HzZg=",
+        "owner": "dmmulroy",
+        "repo": "anti-slop",
+        "rev": "abaeb63b29e63062f778771d5447bd2e9c3c680f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dmmulroy",
+        "repo": "anti-slop",
+        "type": "github"
+      }
+    },
     "blueprint": {
       "inputs": {
         "nixpkgs": [
@@ -434,6 +450,7 @@
         "acpx-repo": "acpx-repo",
         "agent-skills": "agent-skills",
         "agent-tail-repo": "agent-tail-repo",
+        "anti-slop-repo": "anti-slop-repo",
         "browser-control-repo": "browser-control-repo",
         "diffity-repo": "diffity-repo",
         "emilkowalski-skills": "emilkowalski-skills",
