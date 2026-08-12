@@ -26,7 +26,6 @@ class AgentSkillsMarkerMigrationTests(unittest.TestCase):
             check=False,
         )
 
-    @unittest.expectedFailure
     def test_adopts_legacy_nix_managed_copy_tree(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             destination = Path(tmp) / "skills"
@@ -52,7 +51,6 @@ class AgentSkillsMarkerMigrationTests(unittest.TestCase):
             self.assertEqual(marker["structure"], "copy-tree")
             self.assertTrue((mutable / "local-skill").exists())
 
-    @unittest.expectedFailure
     def test_does_not_adopt_locally_modified_directory(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             destination = Path(tmp) / "skills"
@@ -62,9 +60,20 @@ class AgentSkillsMarkerMigrationTests(unittest.TestCase):
             result = self.run_migrator(destination)
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertFalse(
-                (destination / ".agent-skills-managed.json").exists()
-            )
+            self.assertFalse((destination / ".agent-skills-managed.json").exists())
+
+    def test_adopts_directory_containing_only_excluded_runtime_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            destination = Path(tmp) / "skills"
+            runtime = destination / ".system"
+            runtime.mkdir(parents=True)
+            (runtime / "skill-creator").write_text("runtime state\n")
+
+            result = self.run_migrator(destination)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((destination / ".agent-skills-managed.json").exists())
+            self.assertTrue((runtime / "skill-creator").exists())
 
 
 if __name__ == "__main__":

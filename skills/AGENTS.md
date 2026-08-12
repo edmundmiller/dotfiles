@@ -20,6 +20,13 @@ Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skill
 
 Default skills go only to `agents`. Pi, Codex, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Claude skill deployment is intentionally disabled because OMP also scans `~/.claude/skills`, which would load duplicate skills. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-opencode`, `dot-hermes`).
 
+## Upgrade safety
+
+Marker-aware deployment adopts an older markerless Nix copy-tree only when all
+managed entries retain Nix's epoch timestamp. Mutable `.system` content is
+ignored. A symlink or newer entry leaves the upstream overwrite guard intact,
+so activation stops instead of replacing locally modified content.
+
 **Hermes note:** Hermes builtin skills do not include these dotfiles skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.hermes/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
 
 ## Adding a Global Skill

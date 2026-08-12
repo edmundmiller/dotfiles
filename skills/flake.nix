@@ -376,6 +376,11 @@
                   elif [ -e "$dest" ]; then
                     chmod -R u+w "$dest" 2>/dev/null || true
                   fi
+                ${pkgs.python3}/bin/python3 ${./scripts/adopt-legacy-agent-skills.py} \
+                  "$dest" \
+                  ${lib.escapeShellArg (toString bundles.${target})} \
+                  ${lib.escapeShellArg target} \
+                  ${lib.escapeShellArg targetDefs.${target}.structure}
               '') activeSkillTargets
               + "\n"
               + lib.concatStringsSep "\n" (map (target: syncScripts.${target}) activeSkillTargets)
