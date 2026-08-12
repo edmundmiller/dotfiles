@@ -84,7 +84,6 @@ class PlannotatorSourceContractTests(unittest.TestCase):
         self.assertNotIn("inputs.plannotator", skills)
         self.assertNotIn('from = "plannotator"', skills)
 
-    @unittest.expectedFailure
     def test_other_agent_integrations_remain_declared(self):
         module = (ROOT / "modules/agents/plannotator/default.nix").read_text(
             encoding="utf-8"
