@@ -13,7 +13,8 @@ trap 'rm -rf "$test_root"' EXIT
 remote="$test_root/remote.git"
 seed="$test_root/seed"
 repo="$test_root/repo"
-output="$test_root/output"
+fake_openwiki="$test_root/openwiki"
+invocation="$test_root/invocation"
 
 git init --bare "$remote" >/dev/null
 git init --initial-branch=main "$seed" >/dev/null
@@ -27,19 +28,31 @@ git -C "$seed" push -u origin main >/dev/null
 git --git-dir="$remote" symbolic-ref HEAD refs/heads/main
 
 git clone "$remote" "$repo" >/dev/null
+git -C "$repo" config user.name "OpenWiki recovery test"
+git -C "$repo" config user.email "openwiki-recovery-test@example.invalid"
 git -C "$repo" switch -c automation/openwiki >/dev/null
 printf '%s\n' "interrupted synthesis" >> "$repo/README.md"
 printf '%s\n' "temporary plan" > "$repo/_plan.md"
 
-set +e
+cat > "$fake_openwiki" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" > "$invocation"
+EOF
+chmod +x "$fake_openwiki"
+
 HOME="$test_root/home" \
 OPENWIKI_SCHEDULE_REPO="$repo" \
 OPENWIKI_SCHEDULE_REMOTE="$remote" \
-  "$scheduled_ingestion" >"$output" 2>&1
-status=$?
-set -e
+OPENWIKI_SCHEDULE_EXECUTABLE="$fake_openwiki" \
+  "$scheduled_ingestion"
 
-# Regression witness: the current launcher permanently wedges on dirty state.
-test "$status" -eq 75
-grep -F "preserved dirty isolated checkout" "$output" >/dev/null
-test -n "$(git -C "$repo" status --porcelain=v1)"
+test "$(cat "$invocation")" = "ingest all --scheduled --print"
+test -z "$(git -C "$repo" status --porcelain=v1)"
+test "$(git -C "$repo" branch --show-current)" = "automation/openwiki"
+
+recovery_branch="$(git -C "$repo" for-each-ref \
+  --format='%(refname:short)' 'refs/heads/automation/openwiki-recovery-*')"
+test -n "$recovery_branch"
+test "$(git -C "$repo" show "$recovery_branch:README.md" | tail -n 1)" = \
+  "interrupted synthesis"
+test "$(git -C "$repo" show "$recovery_branch:_plan.md")" = "temporary plan"

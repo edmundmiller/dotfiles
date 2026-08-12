@@ -40,6 +40,7 @@ let
     text = ''
       repo="''${OPENWIKI_SCHEDULE_REPO:-$HOME/.local/state/openwiki/obsidian-vault}"
       remote="''${OPENWIKI_SCHEDULE_REMOTE:-git@github.com:edmundmiller/claude-vault.git}"
+      openwiki_executable="''${OPENWIKI_SCHEDULE_EXECUTABLE:-/run/current-system/sw/bin/openwiki}"
       branch="automation/openwiki"
 
       mkdir -p "$(dirname "$repo")"
@@ -58,8 +59,14 @@ let
         exit 75
       fi
       if [ -n "$(git -C "$repo" status --porcelain=v1)" ]; then
-        echo "openwiki-scheduled-ingestion: preserved dirty isolated checkout" >&2
-        exit 75
+        recovery_branch="automation/openwiki-recovery-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+        git -C "$repo" switch -c "$recovery_branch"
+        git -C "$repo" add --all
+        git -C "$repo" commit --no-gpg-sign --no-verify \
+          -m "chore(openwiki): preserve interrupted scheduled run"
+        echo "openwiki-scheduled-ingestion: preserved interrupted run on $recovery_branch" >&2
+        git -C "$repo" fetch origin main
+        git -C "$repo" switch -C "$branch" origin/main
       fi
 
       if git -C "$repo" show-ref --verify --quiet "refs/heads/$branch"; then
@@ -105,7 +112,7 @@ let
       export OPENWIKI_WIKI_DIR="$repo/04_Resources"
       cd "$repo"
       set +e
-      /run/current-system/sw/bin/openwiki ingest all --scheduled --print
+      "$openwiki_executable" ingest all --scheduled --print
       ingestion_status=$?
       set -e
       publish
