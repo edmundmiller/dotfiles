@@ -1050,11 +1050,11 @@
     "humanlayer-skills": {
       "flake": false,
       "locked": {
-        "lastModified": 1782850091,
-        "narHash": "sha256-P7KBvZqdC4IoSL20CTNyAXRYpSbT4p15vbKI+yk/r/g=",
+        "lastModified": 1786308517,
+        "narHash": "sha256-13OR6Qw7JDJDmAyrpzL8RMCgQ6iIkDh2InjjQac7z68=",
         "owner": "humanlayer",
         "repo": "skills",
-        "rev": "39fb32786ae7a7cd864cf2c237148c38b1e4db07",
+        "rev": "d3138e5898ff1bd98aeaf11c79a8c5880e917a52",
         "type": "github"
       },
       "original": {
