@@ -12,7 +12,9 @@ Close the current repository task completely. Preserve unrelated work.
 A task is done only when:
 
 1. Task changes are shaped into reviewable, green Git commits or jj changes.
-2. The task revision is an ancestor of the repository's actual default branch/bookmark.
+2. The task revision is an ancestor of the repository's actual default
+   branch/bookmark, or every explicit task commit has an exact or
+   patch-equivalent landed commit there.
 3. When a writable remote exists, the authoritative remote default tip equals the local default tip.
 4. After proof, remove a task worktree/workspace and feature branch/bookmark. Use the owning launcher for its active worktree; never delete the agent's original directory directly.
 
@@ -27,6 +29,54 @@ Honor an explicit PR, local-only, no-push, squash, merge, or fast-forward reques
 Discover the remote and default destination from live state. Prefer remote symbolic HEAD, hosting metadata, or jj's `trunk()`/tracked bookmarks. Fall back to `main` or `master` only when the ref exists. Do not assume the remote is `origin`.
 
 ## Git closeout
+
+### Concurrent default-branch advancement
+
+A remote advance is an expected reconciliation event, not a blocker. Before
+fetching, record the explicit task commits, their base and tip, the local
+default tip, and any later local-only commits. Derive that boundary from the
+task worktree, receipt, commits created during the task, or an explicit user
+statement. Never classify commits as task work merely from their subjects or
+their position in the ancestry. If the boundary cannot be established, stop
+for missing authority instead of replaying an ambiguous range.
+
+After fetching:
+
+1. Classify each explicit task commit as already landed by exact ancestry or by
+   stable patch equivalence against the current remote default. `git cherry`
+   over the explicit task range is suitable patch-equivalence evidence. A
+   matching subject is not evidence. Skip landed equivalents; do not duplicate
+   them by rebasing or cherry-picking the old task commits.
+2. List later local-only commits from the recorded task tip through the
+   recorded local default tip, oldest first. Keep them separate from both the
+   explicit task range and unrelated working-tree files.
+3. Replay only those remaining local-only commits onto the fetched remote
+   default, in order. For `A-T1-T2-H` where current remote already contains
+   equivalents of `T1,T2`, replay only `H`. A normal cherry-pick or rebase
+   conflict is actual overlap: stop, preserve the original commits, and report
+   the conflicting paths.
+4. Push the resulting linear default branch normally, fetch again, and prove
+   both local/remote tip equality and exact-or-patch-equivalent containment of
+   every explicit task commit.
+
+When the existing default checkout is dirty, capture a secret-safe fingerprint
+of its status, staged diff, unstaged diff, and untracked-file hashes before
+reconciliation. Do not print file contents. Prefer the clean temporary
+integration worktree path when the existing default can fast-forward. If the
+existing default itself diverged only because the recorded old task commits
+precede later local-only commits, a targeted `git rebase --autostash --onto`
+may replay the proven later range. Use this exception only after the commit
+boundary and non-overlap are proven; never run a manual stash/pop/drop sequence.
+Afterward, require the autostash to be fully reapplied with no new stash entry,
+then verify that unrelated dirt is byte-for-byte unchanged. Any rebase or
+autostash-application conflict is a blocker; never drop the preservation entry.
+
+Do not use `--force` or `--no-verify`, reset a default branch, rewrite unrelated
+commits, or move the dirty checkout to another branch. A pre-push identity hook
+that scans all local refs is separate from ordinary remote advancement. If that
+hook rejects an unrelated local ref, keep the reconciled commits intact and
+report the hook failure as the publication blocker. Do not delete or rewrite
+the ref without authority, and do not weaken or bypass the hook.
 
 ### Dirty default checkout integration
 
@@ -44,12 +94,13 @@ safe Git path:
    prove local/remote equality.
 
 Report `Blocked:` only when Git refuses the fast-forward because the task
-overlaps dirty paths, or when the default histories cannot be reconciled
-without changing user-owned work. Include Git's refusal as evidence. Never move
-that checkout to a preservation branch, create a preservation branch to free
-the default branch, stash, reset, commit its unrelated dirt, or update its
-checked-out branch ref directly. A bare `done` does not authorize changing the
-branch meaning of another checkout.
+overlaps dirty paths, when targeted concurrent-advance reconciliation conflicts,
+or when the histories cannot be classified without missing authority. Include
+Git's refusal as evidence. Never move that checkout to a preservation branch,
+or create a preservation branch to free the default branch. Except for the
+bounded autostash above, never stash, reset, commit its unrelated dirt, or
+update its checked-out branch ref directly. A bare `done` does not authorize
+changing the branch meaning of another checkout.
 
 Unrelated dirt in a non-default task worktree does not block landing its already
 committed task revision through a clean default checkout. Preserve the dirt and
@@ -57,8 +108,11 @@ defer that worktree's cleanup.
 
 1. **Snapshot.** Before any `cd`, record `active_directory=$(pwd -P)` and never recompute it. Record root, path, branch/detached state, worktrees, task tip, default branch, remotes, status, and ahead/behind counts. Identify unrelated files.
 2. **Commit task work.** Split distinct intents. Leave unrelated dirt unstaged. Run focused checks.
-3. **Refresh.** Fetch the chosen remote. Reconcile destination local-only commits and remote tip. Rebase the explicit task commits when safe; rerun checks after changed content or commit IDs.
-4. **Integrate.** Prefer a fast-forward on the default branch. Use its clean checkout directly, or use a temporary integration worktree and then attempt `merge --ff-only` in a dirty default checkout as described above. Never reset, overwrite, or blindly stash unrelated dirt.
+3. **Refresh.** Fetch the chosen remote. Apply the concurrent-advance procedure:
+   skip exact or patch-equivalent task commits already landed, then replay only
+   the proven remaining task commits and later local-only commits. Rerun checks
+   after changed content or commit IDs.
+4. **Integrate.** Prefer a fast-forward on the default branch. Use its clean checkout directly, or use a temporary integration worktree and then attempt `merge --ff-only` in a dirty default checkout as described above. Use the targeted autostash rebase exception only for the proven divergent-default graph above. Never reset, overwrite, or manually stash unrelated dirt.
 5. **Publish.** Push the default branch, not merely the feature branch. Do not bypass hooks.
 6. **Prove.** After a final fetch, run:
 

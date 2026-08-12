@@ -126,7 +126,6 @@ class DoneSkillContractTest(unittest.TestCase):
             self.assertIn("would be overwritten by merge", refused.stderr)
             self.assertEqual("user edit\n", (repo / "state.txt").read_text())
 
-    @unittest.expectedFailure
     def test_concurrent_remote_advance_replays_only_later_local_commits(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
