@@ -2,7 +2,7 @@
 purpose: Route agents for the personal MacTraitor-Pro nix-darwin host.
 applies_to: Changes under hosts/mactraitorpro or laptop-only services.
 entrypoint: Read default.nix, then use the matching host command below.
-verification: Run the focused command, hey check, and sudo darwin-rebuild switch --flake .
+verification: Run the focused command, hey check, and hey re.
 update_when: Host ownership, modules, commands, rebuild, or recovery steps change.
 ---
 
@@ -28,7 +28,7 @@ Read `default.nix` for the current module set, and check `../AGENTS.md` for cros
 - **Homebrew**: no auto-update/upgrade/cleanup on activation — see `homebrew.nix` for cask/formula list
 - **duti file associations**: Zed as default text editor for all source/text files, Gapplin for SVGs
 - **TouchID sudo**: `security.pam.services.sudo_local.touchIdAuth = true`
-- **Passwordless darwin-rebuild**: `emiller` can `sudo darwin-rebuild` without password (agent-friendly)
+- **Passwordless rebuild**: `emiller` can run `hey re` without a sudo prompt
 - **Hermes CLI**: Nix-managed with canonical local profiles through `modules.agents.hermes-local`; run `hey hermes-local` to rebuild and prove profile, login, gateway, and dispatcher health. NUC deployment remains separately owned.
 
 ## Secrets

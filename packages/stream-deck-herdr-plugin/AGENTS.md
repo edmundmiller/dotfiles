@@ -44,7 +44,9 @@ The Stream Deck desktop app itself is installed as the Homebrew cask `elgato-str
 
 ## Manual verification after rebuild
 
-After `hey re` / `darwin-rebuild`, restart the Stream Deck app if it does not pick up the linked plugin automatically. In the Stream Deck app, drag the plugin's `herdr` actions onto keys.
+After `hey re`, restart the Stream Deck app if it does not pick up the linked
+plugin automatically. In the Stream Deck app, drag the plugin's `herdr` actions
+onto keys.
 
 Recommended 6-key Mini layout from upstream:
 

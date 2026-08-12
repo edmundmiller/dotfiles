@@ -34,7 +34,7 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 ## Keep documentation true
 
 - Update canonical docs in the same change as behavior, ownership, commands, or recovery.
-- Start each canonical doc with the YAML summary defined in root `AGENTS.md`; close it by line 7.
+- Start each canonical doc with the YAML summary in [docs/agent-guardrails.md](docs/agent-guardrails.md); close it by line 7.
 - Name the source of truth and a live check. Generate facts that would otherwise be copied.
 - If docs and reality disagree, verify reality, fix the doc and its enforcement, then record recurring friction in worklog `Feedback`.
 - Move repeated feedback into the smallest existing durable surface: doc, rule, skill, linter, or command. Do not create a parallel convention.

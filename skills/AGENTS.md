@@ -69,10 +69,10 @@ programs.dotfiles-agent-skills.targetedExplicit.my-skill = {
 4. **Lock child AND parent** (both steps required):
    ```bash
    cd skills && nix flake lock --update-input my-repo
-   cd .. && nix flake update skills-catalog
+   cd .. && hey skills-sync
    ```
 
-**⚠️ CRITICAL: Whenever you change `skills/flake.nix` or `skills/flake.lock`, you MUST also run `nix flake update skills-catalog` from the repo root to sync the parent lock. Forgetting this causes `attribute 'xxx' missing` errors at rebuild time.**
+**⚠️ CRITICAL: Whenever you change `skills/flake.nix` or `skills/flake.lock`, you MUST also run `hey skills-sync` from the repo root to sync the parent lock. Forgetting this causes `attribute 'xxx' missing` errors at rebuild time.**
 
 ## Updating Remote Skills
 
@@ -82,7 +82,7 @@ cd skills && nix flake update  # update all
 cd skills && nix flake lock --update-input openai-skills  # update one
 
 # THEN sync parent lock (REQUIRED)
-cd .. && nix flake update skills-catalog
+cd .. && hey skills-sync
 ```
 
 Then `hey rebuild`.
