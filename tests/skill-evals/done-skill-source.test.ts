@@ -14,7 +14,7 @@ describe("done skill dirty default checkout contract", () => {
     expect(skill).toMatch(/Never move\s+that checkout to a preservation branch/);
   });
 
-  it.fails("reconciles concurrent remote advancement without duplicating landed task work", () => {
+  it("reconciles concurrent remote advancement without duplicating landed task work", () => {
     expect(skill).toContain("expected reconciliation event");
     expect(skill).toContain("patch-equivalent");
     expect(skill).toContain("later local-only commits");
