@@ -13,4 +13,14 @@ describe("done skill dirty default checkout contract", () => {
     expect(skill).toContain("only when Git refuses");
     expect(skill).toMatch(/Never move\s+that checkout to a preservation branch/);
   });
+
+  it.fails("reconciles concurrent remote advancement without duplicating landed task work", () => {
+    expect(skill).toContain("expected reconciliation event");
+    expect(skill).toContain("patch-equivalent");
+    expect(skill).toContain("later local-only commits");
+    expect(skill).toContain("Replay only those remaining local-only commits");
+    expect(skill).toContain("verify that unrelated dirt is byte-for-byte unchanged");
+    expect(skill).toContain("Do not use `--force` or `--no-verify`");
+    expect(skill).toContain("identity hook");
+  });
 });
