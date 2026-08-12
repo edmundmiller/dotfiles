@@ -5,10 +5,15 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root" || exit 1
 
 python=${COMPLETION_CHECK_PYTHON:-python3}
-hey=${COMPLETION_CHECK_HEY:-hey}
+hey=${COMPLETION_CHECK_HEY:-"$root/bin/hey"}
 
-"$python" -m unittest discover -s tests -p 'test_*.py' >&2 || {
-  printf '%s\n' 'Dotfiles regression tests failed; fix them before stopping.'
+"$python" -m unittest \
+  tests/test_codex_stop_hook.py \
+  tests/test_completion_hooks.py \
+  tests/test_node_config.py \
+  tests/test_omp_model_routing.py \
+  tests/test_omp_review_loop_plugin.py >&2 || {
+  printf '%s\n' 'Dotfiles Nix integration tests failed; fix them before stopping.'
   exit 1
 }
 

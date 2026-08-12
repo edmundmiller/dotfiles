@@ -67,5 +67,7 @@ let
   };
 in
 {
-  my = (prev.my or { }) // { inherit ghui; };
+  my = (prev.my or { }) // {
+    inherit ghui;
+  };
 }

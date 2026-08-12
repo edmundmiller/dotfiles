@@ -2,26 +2,9 @@
   "source": "https://github.com/kcosr/ghui.git",
   "ref": "855649490c25ac5d561e1ded987d72af7b07d3fa",
   "checks": [
-    [
-      "bun",
-      "install",
-      "--frozen-lockfile",
-      "--ignore-scripts"
-    ],
-    [
-      "bun",
-      "run",
-      "typecheck"
-    ],
-    [
-      "bun",
-      "test",
-      "./test/appCommands.test.ts"
-    ],
-    [
-      "bun",
-      "test",
-      "./test/diffStacking.test.ts"
-    ]
+    ["bun", "install", "--frozen-lockfile", "--ignore-scripts"],
+    ["bun", "run", "typecheck"],
+    ["bun", "test", "./test/appCommands.test.ts"],
+    ["bun", "test", "./test/diffStacking.test.ts"]
   ]
 }

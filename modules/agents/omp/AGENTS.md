@@ -77,12 +77,15 @@ modules.agents.omp.enable = true;
 
 ## Completion gate
 
-`scripts/completion-check` is the shared source of truth for Codex and OMP
-completion checks. OMP discovers `.omp/hooks/post/completion-gate.ts` only when
-launched from this repository root; it is not installed in the user-wide OMP
-configuration. Project hook factories are loaded through OMP's extension runner,
-so this hook can register `session_stop` as well as ordinary tool events. It also
-requires Git to track `.codex/hooks.json` and `scripts/codex-validate-stop`.
+`scripts/completion-check` is the shared completion entrypoint for Codex and
+OMP. `checks.<system>.completion-regression-tests` owns sandbox-safe regression
+tests; the script runs host-dependent hook and Nix-daemon integration tests
+before delegating to `hey check`, which builds the regression check on Darwin.
+OMP discovers `.omp/hooks/post/completion-gate.ts` only when launched from this repository
+root; it is not installed in the user-wide OMP configuration. Project hook
+factories are loaded through OMP's extension runner, so this hook can register
+`session_stop` as well as ordinary tool events. It also requires Git to track
+`.codex/hooks.json` and `scripts/codex-validate-stop`.
 
 The model-callable `completion_check` tool records a one-shot content snapshot.
 The next main-session stop must match it or OMP continues the session. OMP core

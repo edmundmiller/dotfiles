@@ -168,6 +168,19 @@ def "main check" [
     }
 
     print ""
+    print "==> Running completion regression tests..."
+    let completion_regression_check = (^nix build $".#checks.($ctx.nix_system).completion-regression-tests" --no-link | complete)
+    if $completion_regression_check.exit_code == 0 {
+      print "✓ Completion regression tests OK"
+    } else {
+      print "✗ Completion regression tests FAILED"
+      if (($completion_regression_check.stderr | str trim) | is-not-empty) {
+        print -e $completion_regression_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
     print "==> Running tmux tests..."
     let tmux_check = (^nix build $".#checks.($ctx.nix_system).zunit-tests" --no-link | complete)
     if $tmux_check.exit_code == 0 {

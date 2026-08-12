@@ -82,7 +82,7 @@ class CompletionHookTests(unittest.TestCase):
         )
         self.assertEqual(hook["timeout"], 1200)
 
-    def test_shared_checker_runs_regressions_then_hey_check(self):
+    def test_shared_checker_runs_host_integrations_then_hey_check(self):
         result, commands = run_checker()
 
         self.assertEqual(result.returncode, 0)
@@ -91,18 +91,30 @@ class CompletionHookTests(unittest.TestCase):
         self.assertEqual(
             commands,
             [
-                "python -m unittest discover -s tests -p test_*.py",
+                "python -m unittest tests/test_codex_stop_hook.py "
+                "tests/test_completion_hooks.py tests/test_node_config.py "
+                "tests/test_omp_model_routing.py tests/test_omp_review_loop_plugin.py",
                 "hey check",
             ],
         )
 
-    def test_shared_checker_reports_regression_failure(self):
+    def test_shared_checker_reports_host_integration_failure(self):
         result, commands = run_checker(python_exit=1)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(result.stdout, "Dotfiles regression tests failed; fix them before stopping.\n")
+        self.assertEqual(
+            result.stdout,
+            "Dotfiles Nix integration tests failed; fix them before stopping.\n",
+        )
         self.assertEqual(result.stderr, "python output\n")
-        self.assertEqual(commands, ["python -m unittest discover -s tests -p test_*.py"])
+        self.assertEqual(
+            commands,
+            [
+                "python -m unittest tests/test_codex_stop_hook.py "
+                "tests/test_completion_hooks.py tests/test_node_config.py "
+                "tests/test_omp_model_routing.py tests/test_omp_review_loop_plugin.py"
+            ],
+        )
 
     def test_shared_checker_reports_hey_failure(self):
         result, commands = run_checker(hey_exit=1)
@@ -112,7 +124,12 @@ class CompletionHookTests(unittest.TestCase):
         self.assertEqual(result.stderr, "python output\nhey output\n")
         self.assertEqual(
             commands,
-            ["python -m unittest discover -s tests -p test_*.py", "hey check"],
+            [
+                "python -m unittest tests/test_codex_stop_hook.py "
+                "tests/test_completion_hooks.py tests/test_node_config.py "
+                "tests/test_omp_model_routing.py tests/test_omp_review_loop_plugin.py",
+                "hey check",
+            ],
         )
 
     def test_codex_wrapper_maps_checker_failure_to_json(self):

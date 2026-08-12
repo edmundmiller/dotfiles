@@ -1048,6 +1048,38 @@
                     touch $out
                   '';
 
+              completion-regression-tests =
+                pkgs.runCommand "completion-regression-tests"
+                  {
+                    nativeBuildInputs = with pkgs; [
+                      bash
+                      bun
+                      git
+                      jq
+                      jujutsu
+                      python3
+                    ];
+                  }
+                  ''
+                    cp -R ${./.} source
+                    chmod -R u+w source
+                    cd source
+                    rm \
+                      tests/test_codex_stop_hook.py \
+                      tests/test_completion_hooks.py \
+                      tests/test_node_config.py \
+                      tests/test_omp_model_routing.py \
+                      tests/test_omp_review_loop_plugin.py \
+                      tests/test_package_policy.py
+                    export HOME="$TMPDIR/home"
+                    mkdir -p "$HOME"
+                    jj config set --user user.name "Completion Tests"
+                    jj config set --user user.email "completion-tests@example.invalid"
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_*.py'
+                    bun test tests/omp_completion_gate.test.js
+                    touch "$out"
+                  '';
+
               package-policy-tests =
                 pkgs.runCommand "package-policy-tests"
                   {

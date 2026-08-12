@@ -7,8 +7,6 @@
 # it manually.
 {
   copyPathToStore,
-  fetchFromGitHub,
-  fetchgit,
   fetchurl,
   ...
 }:
