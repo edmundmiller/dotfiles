@@ -662,8 +662,8 @@ diff --git a/packages/coding-agent/src/prompts/system/system-prompt.md b/package
 index ef82a956f..6d30e677b 100644
 --- a/packages/coding-agent/src/prompts/system/system-prompt.md
 +++ b/packages/coding-agent/src/prompts/system/system-prompt.md
-@@ -67,6 +67,13 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
- - `vault://<vault>/<path>`: Obsidian vault (read/edit). `vault://` lists vaults; `vault://_/…` targets the active vault. File ops `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault ops `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
+@@ -66,6 +66,13 @@ Most FS/bash tools auto-resolve these to FS paths.
+ - `vault://<vault>/<path>`: Obsidian read/edit; `vault://`: vault list; `vault://_/…`: active vault. File `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
  {{/if}}
  - `mcp://<uri>`: MCP resource
 +- `ssh://host/<path>`: configured SSH host files/directories.
@@ -673,9 +673,9 @@ index ef82a956f..6d30e677b 100644
 +{{#if hasHunkInternalUrls}}
 +- `hunk://review|context|comments`: active Hunk review session data for a repo.
 +{{/if}}
- - `issue://<N>` (or `issue://<owner>/<repo>/<N>`): GitHub issue, disk-cached. Bare lists recent issues; `?state=open|closed|all&limit=&author=&label=`.
- - `pr://<N>` (or `pr://<owner>/<repo>/<N>`): GitHub PR, same cache; `?comments=0` drops comments. Bare lists recent PRs; `?state=open|closed|merged|all&limit=&author=&label=`.
- - `omp://`: harness docs; AVOID unless the user asks about the harness itself.
+ - `issue://<N>` / `issue://<owner>/<repo>/<N>`: GitHub issue; bare: recent; `?state=open|closed|all&limit=&author=&label=`.
+ - `pr://<N>` / `pr://<owner>/<repo>/<N>`: same cache; bare: recent; `?comments=0` `?state=open|closed|merged|all&limit=&author=&label=`.
+ - `omp://`: harness docs; AVOID unless user asks about harness.
 diff --git a/packages/coding-agent/src/prompts/tools/read.md b/packages/coding-agent/src/prompts/tools/read.md
 index 47610ccdb..3cdf6d9b4 100644
 --- a/packages/coding-agent/src/prompts/tools/read.md
