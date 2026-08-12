@@ -141,6 +141,16 @@ def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
     assert "official.browser" in module
 
 
+def test_terminal_chrome_is_minimal_and_activation_managed() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+
+    assert config["ui"]["pane_scrollbars"] is False
+    assert config["ui"]["pane_gaps"] is False
+    assert '"pane_scrollbars": "false"' in module
+    assert '"pane_gaps": "false"' in module
+
+
 def test_omp_integration_install_isolates_pi_agent_dir() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
