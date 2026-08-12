@@ -39,182 +39,7 @@ let
     "/sbin"
   ];
 
-  herdrConfigTemplate =
-    if cfg.configFile != null then
-      cfg.configFile
-    else
-      pkgs.writeText "herdr-config.toml" ''
-        # Seeded by nix. Herdr keeps this file writable after bootstrap.
-        [session]
-        resume_agents_on_restore = true
-
-        [experimental]
-        pane_history = true
-        kitty_graphics = true
-
-        [ui]
-        agent_panel_sort = "priority"
-        hide_tab_bar_when_single_tab = true
-        pane_gaps = false
-        pane_outer_borders = false
-        pane_scrollbars = false
-        prompt_new_tab_name = false
-        tab_bar_right = [{ type = "zoom" }, { type = "hostname" }]
-        window_title = "{hostname}: {workspace}"
-
-        [keys]
-        prefix = "${cfg.prefix}"
-        settings = "prefix+comma"
-        reload_config = "prefix+ctrl+r"
-        workspace_picker = "prefix+w"
-        new_workspace = "prefix+N"
-        new_worktree = "prefix+g"
-        goto = "prefix+/"
-        open_worktree = "prefix+G"
-        new_tab = "prefix+c"
-        rename_tab = "prefix+alt+t"
-        switch_tab = "prefix+1..9"
-        previous_tab = "prefix+p"
-        next_tab = "prefix+n"
-        focus_pane_left = "prefix+h"
-        focus_pane_down = "prefix+j"
-        focus_pane_up = "prefix+k"
-        focus_pane_right = "prefix+l"
-        last_pane = "prefix+ctrl+w"
-        cycle_pane_next = "prefix+tab"
-        cycle_pane_previous = "prefix+shift+tab"
-        split_horizontal = "prefix+s"
-        split_vertical = "prefix+v"
-        close_pane = "prefix+x"
-        zoom = "prefix+z"
-        resize_mode = "prefix+r"
-        edit_scrollback = "prefix+enter"
-        toggle_sidebar = "prefix+b"
-
-        [[keys.command]]
-        key = "prefix+m"
-        type = "plugin_action"
-        command = "alonz.command-palette.open"
-        description = "open command palette"
-
-        [[keys.command]]
-        key = "prefix+space"
-        type = "plugin_action"
-        command = "edmundmiller.which-key.open"
-        description = "which-key"
-
-        [[keys.command]]
-        key = "prefix+f"
-        type = "plugin_action"
-        command = "herdr-file-viewer.open-file-viewer"
-        description = "open file viewer in a split"
-
-        [[keys.command]]
-        key = "prefix+F"
-        type = "plugin_action"
-        command = "herdr-file-viewer.open-file-viewer-tab"
-        description = "open file viewer in a tab"
-
-        [[keys.command]]
-        key = "prefix+]"
-        type = "plugin_action"
-        command = "hunk.diff.worktree-split"
-        description = "open worktree Hunk diff in a split"
-
-        [[keys.command]]
-        key = "prefix+}"
-        type = "plugin_action"
-        command = "hunk.diff.staged-split"
-        description = "open staged Hunk diff in a split"
-
-        [[keys.command]]
-        key = "prefix+{"
-        type = "plugin_action"
-        command = "hunk.diff.branch-split"
-        description = "open branch Hunk diff in a split"
-
-        [[keys.command]]
-        key = "prefix+u"
-        type = "plugin_action"
-        command = "dotfiles.dev-layout.hunk-split"
-        description = "open dotfiles Hunk diff in a side pane"
-
-        [[keys.command]]
-        key = "prefix+U"
-        type = "plugin_action"
-        command = "dotfiles.dev-layout.hunk-tab"
-        description = "open dotfiles Hunk diff in a tab"
-
-        [[keys.command]]
-        key = "prefix+a"
-        type = "plugin_action"
-        command = "nathanflurry.jj-workspace.new"
-        description = "new jj workspace"
-
-
-        [[keys.command]]
-        key = "prefix+d"
-        type = "plugin_action"
-        command = "nathanflurry.jj-workspace.remove"
-        description = "remove clean jj workspace after PR closes"
-
-        [[keys.command]]
-        key = "prefix+D"
-        type = "plugin_action"
-        command = "nathanflurry.jj-workspace.abandon"
-        description = "abandon clean jj workspace with typed confirmation"
-
-        [[keys.command]]
-        key = "prefix+t"
-        type = "plugin_action"
-        command = "tab-smart-rename.rename-now"
-        description = "smart rename current tab"
-
-        [[keys.command]]
-        key = "prefix+T"
-        type = "plugin_action"
-        command = "herdr-insight.open-timeline-right"
-        description = "open agent timeline"
-
-        [[keys.command]]
-        key = "prefix+R"
-        type = "plugin_action"
-        command = "gh-pr.refresh"
-        description = "refresh GitHub PR status"
-
-        [[keys.command]]
-        key = "prefix+P"
-        type = "plugin_action"
-        command = "dutifuldev.ghzinga.open"
-        description = "open issue or PR in ghzinga"
-
-        [[keys.command]]
-        key = "prefix+I"
-        type = "plugin_action"
-        command = "kkckkchosts.herdr-plugin-gh-workflow.gh-issue-develop"
-        description = "start GitHub issue workflow"
-
-        [[keys.command]]
-        key = "prefix+O"
-        type = "plugin_action"
-        command = "ogulcancelik.github-start.open"
-        description = "start from GitHub item"
-
-        [[keys.command]]
-        key = "prefix+B"
-        type = "shell"
-        command = "''${HERDR_BIN_PATH} plugin pane open --plugin official.browser --entrypoint browser --placement split --direction right --focus"
-        description = "open browser in a right split"
-
-        [[keys.command]]
-        key = "prefix+V"
-        type = "shell"
-        command = "obsidian-neovide"
-
-        [worktrees]
-        directory = "~/.local/share/herdr/worktrees"
-      '';
-
+  herdrConfigTemplate = cfg.configFile;
   # Pi's built-in theme can be too low-contrast in some Herdr/Ghostty stacks
   # (especially muted prompt text). Ship an optional high-contrast theme for
   # hosts that want Pi managed with Herdr.
@@ -408,7 +233,6 @@ in
     localPluginsPackage = mkOpt package managedLocalPlugins;
     command = mkOpt str "herdr";
     configFile = mkOpt (nullOr (either str path)) null;
-    prefix = mkOpt str "ctrl+c";
     key = mkOpt str "H";
     mainCodingAgent = mkOpt (enum [
       "pi"
@@ -660,7 +484,7 @@ in
 
           # Herdr's config stays writable for onboarding/settings, so reapply
           # values from the selected template rather than only copying it once.
-          ${pkgs.python3}/bin/python3 - "$target" "$template" ${escapeShellArg cfg.prefix} ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
+          ${pkgs.python3}/bin/python3 - "$target" "$template" ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
           import json
           import pathlib
           import sys
@@ -671,9 +495,8 @@ in
           canonical_config = tomllib.loads(template_path.read_text())
           canonical_keys = canonical_config.get("keys", {})
           canonical_commands = canonical_keys.get("command", [])
-          prefix = sys.argv[3]
-          theme_name = sys.argv[4]
-          theme_custom = json.loads(sys.argv[5])
+          theme_name = sys.argv[3]
+          theme_custom = json.loads(sys.argv[4])
           lines = path.read_text().splitlines()
 
           def toml_value(value):
@@ -755,7 +578,6 @@ in
           managed_keys = {
               key: value for key, value in canonical_keys.items() if key != "command"
           }
-          managed_keys["prefix"] = prefix
           wrote_keys = set()
 
           for line in lines:
