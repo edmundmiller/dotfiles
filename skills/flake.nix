@@ -462,6 +462,12 @@
                   filter.maxDepth = 3;
                 };
 
+                humanlayer-show-me = {
+                  path = inputs.humanlayer-skills.outPath;
+                  subdir = "plugins/show-me/skills";
+                  filter.maxDepth = 2;
+                };
+
                 mattpocock-engineering = {
                   path = inputs.mattpocock-skills.outPath;
                   subdir = "skills/engineering";
@@ -609,6 +615,9 @@
 
                   design-control-loop.from = "humanlayer";
                   design-control-loop.path = "design-control-loop";
+
+                  show-me.from = "humanlayer-show-me";
+                  show-me.path = "show-me";
 
                   agent-tail.from = "agent-tail";
                   agent-tail.path = "agent-tail";
