@@ -126,7 +126,6 @@ class DoneSkillContractTest(unittest.TestCase):
             self.assertIn("would be overwritten by merge", refused.stderr)
             self.assertEqual("user edit\n", (repo / "state.txt").read_text())
 
-    @unittest.expectedFailure
     def test_concurrent_remote_advance_replays_only_later_local_commits(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -134,7 +133,6 @@ class DoneSkillContractTest(unittest.TestCase):
             repo = root / "repo"
             task = root / "task"
             updater = root / "updater"
-            integration = root / "integration"
 
             subprocess.run(
                 ["git", "init", "--bare", str(remote)],
@@ -175,7 +173,12 @@ class DoneSkillContractTest(unittest.TestCase):
             (updater / "upstream-two.txt").write_text("upstream two\n")
             git(updater, "add", "upstream-two.txt")
             git(updater, "commit", "-m", "U2")
-            git(updater, "cherry-pick", task_one, task_two)
+            (updater / "task-one.txt").write_text("task one\n")
+            git(updater, "add", "task-one.txt")
+            git(updater, "commit", "-m", "T1 corrected")
+            (updater / "task-two.txt").write_text("task two\n")
+            git(updater, "add", "task-two.txt")
+            git(updater, "commit", "-m", "T2 corrected")
             git(updater, "push", "origin", "main")
 
             (repo / "base.txt").write_text("unrelated tracked edit\n")
@@ -192,10 +195,15 @@ class DoneSkillContractTest(unittest.TestCase):
                 [(line[0], line[2:]) for line in classified],
             )
 
-            git(repo, "worktree", "add", "-b", "integration", str(integration), "origin/main")
-            git(integration, "cherry-pick", later)
-            integration_tip = git(integration, "rev-parse", "HEAD").stdout.strip()
-            git(repo, "merge", "--ff-only", integration_tip)
+            git(
+                repo,
+                "rebase",
+                "--autostash",
+                "--onto",
+                "origin/main",
+                task_two,
+                "main",
+            )
             git(repo, "push", "origin", "main")
             git(repo, "fetch", "origin")
 

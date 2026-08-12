@@ -31,8 +31,21 @@ proof, and preservation proof for unrelated dirty agent-rule files.
   with `git cherry`, replays only `H`, and proves linear history, remote
   equality, and byte-identical dirt. It is a strict expected failure until the
   source contract is fixed.
-- `python3 -m unittest tests.test_done_skill -v`: 9 tests passed with the one
-  intentional expected failure.
+- `python3 -m unittest tests.test_done_skill -v`: 9 tests passed after removing
+  the strict expected-failure marker.
+- `cd tests/skill-evals && bun run test`: 7 files and 72 tests passed.
+- The source now records the task boundary before fetch, distinguishes remote
+  patch equivalents from later local-only commits, replays only remaining
+  commits in a clean integration worktree, fingerprints dirty paths, and
+  separates all-local-refs hook failures from ordinary remote advancement.
+- `nix flake check ./skills`, focused `hey agent-audit-tests`, and `hey check`
+  passed.
+- `hey agent-finish --changed ... --worklog ...` passed repository quality,
+  37 agent-quality tests, instruction validation, test confidence, inventory,
+  and worklog validation.
+- `hey rebuild` completed Darwin/Home Manager activation from the task branch;
+  repository source and installed `~/.agents/skills/done/SKILL.md` are
+  byte-identical.
 - Planned focused checks: the new unittest regression, all done-skill Python
   tests, deterministic skill-eval tests, skills flake check, installed-source
   parity, repository quality gates, and final landing verifier.
@@ -43,7 +56,9 @@ proof, and preservation proof for unrelated dirty agent-rule files.
 --reviewer claude`; the configured reviewer stopped with
   `RUNTIME: Authentication required` before producing findings. The exact
   blocker is recorded; the user-approved incident graph remains authoritative.
-- Landing review pending.
+- Landing review reproduced the same `RUNTIME: Authentication required`
+  boundary before producing findings. Manual semantic review found only the
+  regression graph, skill contract, and this worklog.
 
 ## Feedback
 
@@ -53,11 +68,12 @@ proof, and preservation proof for unrelated dirty agent-rule files.
 
 ## Remaining work
 
-- Add and commit the expected-failure regression.
-- Implement the skill contract and make the regression pass.
-- Run gates, deploy, land, and verify.
+- Land with the installed `done` skill, prove remote equality and dirty-file
+  preservation, finish the receipt, flush task state, and tag the result.
 
 ## Commits
 
-- Regression commit pending. After landing, create annotated tag
+- `1753a1f99` — regression graph with strict expected failure.
+- Fix commit (amended after final evidence) follows. After landing, create
+  annotated tag
   `agent-work/done-concurrent-main-reconciliation`.

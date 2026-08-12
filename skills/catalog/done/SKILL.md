@@ -28,6 +28,55 @@ Discover the remote and default destination from live state. Prefer remote symbo
 
 ## Git closeout
 
+### Concurrent default-branch advancement
+
+Concurrent remote advancement is expected reconciliation work, not a blocker.
+Before fetching, record the explicit task base, task commits, task tip, and the
+then-current local default tip. Do not infer the task range from every ancestor
+of the task tip. Commits after the recorded task tip on the local default are
+later local-only commits and must be classified separately.
+
+After fetching the remote default branch:
+
+1. Compare each explicit task commit and each later local-only commit with the
+   refreshed remote. Exact ancestry or stable patch identity is proof that a
+   change is already landed; commit subjects alone are not. `git cherry` or
+   `git patch-id --stable` can provide the patch comparison.
+2. Create a clean temporary integration worktree at the refreshed remote tip
+   and replay the classified remainder there as a preflight. Replay, in original
+   order, only explicit task commits without a remote equivalent and later
+   local-only commits without a remote equivalent. If the task commits are
+   already landed under corrected or rebased IDs, do not duplicate them.
+3. If the local default has diverged only through remote-equivalent task commits
+   followed by the explicit later commits, rebase that later range onto the
+   remote tip with `git rebase --onto "$remote/$default_branch" "$task_tip"
+"$default_branch"`. With unrelated dirt, the only permitted stash mechanism
+   is that same command's `--autostash`, after the clean preflight and dirty-file
+   fingerprint. Never create a named/manual stash or use autostash for an
+   unclassified range.
+4. If the local default is already an ancestor of the integration tip, use the
+   ordinary fast-forward path instead. Push without force, fetch, and prove
+   task containment plus local/remote equality.
+
+Before integration, fingerprint every unrelated dirty path's status, mode, and
+bytes. Re-read the same paths after the fast-forward and after publication;
+any change is a failed preservation check, not success.
+
+Block only on an actual replay conflict, autostash restoration conflict,
+dirty-path overlap refused by Git, or missing authority to replay or publish a
+local-only commit. Abort a conflicted preflight in the temporary worktree and
+leave the original checkout untouched. If autostash restoration conflicts,
+stop before push, preserve Git's recovery ref, and report it exactly. A changed
+remote tip, divergent commit IDs, or already-landed equivalent task changes are
+not blockers.
+
+Pre-push identity hooks may scan all local refs rather than only the ref being
+pushed. If such a hook rejects an offending local ref, report that hook and ref
+as a separate blocker from ordinary remote advancement. Preserve the ref and
+first prove whether its finished work is contained or patch-equivalent on the
+remote; do not delete or rewrite user-owned refs without authority. Never
+bypass, weaken, or skip the hook to publish.
+
 ### Dirty default checkout integration
 
 Unrelated dirt in the default branch's existing checkout is not itself a
@@ -43,21 +92,22 @@ safe Git path:
 4. When it succeeds, push the default branch without force, fetch again, and
    prove local/remote equality.
 
-Report `Blocked:` only when Git refuses the fast-forward because the task
-overlaps dirty paths, or when the default histories cannot be reconciled
-without changing user-owned work. Include Git's refusal as evidence. Never move
-that checkout to a preservation branch, create a preservation branch to free
-the default branch, stash, reset, commit its unrelated dirt, or update its
-checked-out branch ref directly. A bare `done` does not authorize changing the
-branch meaning of another checkout.
+Report `Blocked:` only for the conflicts, overlaps, or missing authority defined
+above. In this dirty-checkout path, report overlap only when Git refuses the
+fast-forward; include its refusal as evidence. Never move
+that checkout to a preservation branch, or create a preservation branch to free
+the default branch. Except for that bounded autostash, never
+stash, reset, commit its unrelated dirt, or update its checked-out branch ref.
+The exception applies only to an explicitly classified later range. A bare
+`done` does not authorize changing the branch meaning of another checkout.
 
 Unrelated dirt in a non-default task worktree does not block landing its already
 committed task revision through a clean default checkout. Preserve the dirt and
 defer that worktree's cleanup.
 
-1. **Snapshot.** Before any `cd`, record `active_directory=$(pwd -P)` and never recompute it. Record root, path, branch/detached state, worktrees, task tip, default branch, remotes, status, and ahead/behind counts. Identify unrelated files.
+1. **Snapshot.** Before any `cd`, record `active_directory=$(pwd -P)` and never recompute it. Record root, path, branch/detached state, worktrees, explicit task base/commits/tip, the then-current default tip, default branch, remotes, status, and ahead/behind counts. Identify and fingerprint unrelated files.
 2. **Commit task work.** Split distinct intents. Leave unrelated dirt unstaged. Run focused checks.
-3. **Refresh.** Fetch the chosen remote. Reconcile destination local-only commits and remote tip. Rebase the explicit task commits when safe; rerun checks after changed content or commit IDs.
+3. **Refresh.** Fetch the chosen remote. Apply the concurrent-advancement classification above to explicit task commits and later local-only commits. Replay only changes not already remote-equivalent; rerun checks after changed content or commit IDs.
 4. **Integrate.** Prefer a fast-forward on the default branch. Use its clean checkout directly, or use a temporary integration worktree and then attempt `merge --ff-only` in a dirty default checkout as described above. Never reset, overwrite, or blindly stash unrelated dirt.
 5. **Publish.** Push the default branch, not merely the feature branch. Do not bypass hooks.
 6. **Prove.** After a final fetch, run:
