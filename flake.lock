@@ -1753,23 +1753,6 @@
         "type": "github"
       }
     },
-    "plannotator": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1785137959,
-        "narHash": "sha256-0S22SThCQAu9UoWRAMd9SEEsqLUmKh7nXRBiQvb9lzY=",
-        "owner": "backnotprop",
-        "repo": "plannotator",
-        "rev": "68c1291cd72791f75a0275c086dc4005a1550bfe",
-        "type": "github"
-      },
-      "original": {
-        "owner": "backnotprop",
-        "ref": "v0.25.0",
-        "repo": "plannotator",
-        "type": "github"
-      }
-    },
     "prek-repo": {
       "flake": false,
       "locked": {
@@ -2060,7 +2043,6 @@
         "perplexity-api-platform-developers": "perplexity-api-platform-developers",
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
-        "plannotator": "plannotator",
         "prek-repo": "prek-repo",
         "qmd-repo": "qmd-repo",
         "shadcn-improve": "shadcn-improve",
@@ -2069,8 +2051,6 @@
         "zele-repo": "zele-repo"
       },
       "locked": {
-        "lastModified": 0,
-        "narHash": "sha256-5Psj+NzCNwMrAUu9/jgMEJidUpDQne+/WmjPo+LgZyo=",
         "path": "./skills",
         "type": "path"
       },

@@ -53,7 +53,8 @@ Agents (claude, codex, opencode) share a single source of truth in `config/agent
 - `config/agents/modes/` - Shared agent mode definitions
 
 Global skills live in `~/.agents/skills/` and are discovered natively.
-Plannotator installs its shared Codex skills there through `skills/flake.nix`.
+Plannotator is intentionally excluded from Codex because its global `Stop` hook
+interrupts the normal response workflow.
 `callstack-diff skill` prints the version-matched skill bundled with the shared
 `callstack-diff`/`csd` package.
 

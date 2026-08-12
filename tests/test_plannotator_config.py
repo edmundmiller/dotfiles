@@ -10,7 +10,6 @@ CLEANUP = ROOT / "modules/agents/plannotator/cleanup_codex.py"
 
 
 class PlannotatorCodexCleanupTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_cleanup_removes_only_plannotator_hooks_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             hooks = pathlib.Path(directory) / "hooks.json"
@@ -73,14 +72,14 @@ class PlannotatorCodexCleanupTests(unittest.TestCase):
 
 
 class PlannotatorSourceContractTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_codex_integration_is_absent(self):
         module = (ROOT / "modules/agents/plannotator/default.nix").read_text(
             encoding="utf-8"
         )
         skills = (ROOT / "skills/flake.nix").read_text(encoding="utf-8")
 
-        self.assertNotIn("plannotator-codex", module)
+        self.assertNotIn("${./configure.py}", module)
+        self.assertNotIn("--codex-config", module)
         self.assertIn("plannotator-codex-cleanup", module)
         self.assertNotIn("inputs.plannotator", skills)
         self.assertNotIn('from = "plannotator"', skills)
