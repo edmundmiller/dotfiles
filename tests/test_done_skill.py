@@ -126,6 +126,109 @@ class DoneSkillContractTest(unittest.TestCase):
             self.assertIn("would be overwritten by merge", refused.stderr)
             self.assertEqual("user edit\n", (repo / "state.txt").read_text())
 
+    @unittest.expectedFailure
+    def test_concurrent_remote_advance_replays_only_later_local_commits(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "remote.git"
+            repo = root / "repo"
+            task = root / "task"
+            updater = root / "updater"
+            integration = root / "integration"
+
+            subprocess.run(
+                ["git", "init", "--bare", str(remote)],
+                check=True,
+                capture_output=True,
+            )
+            git(root, "init", "-b", "main", str(repo))
+            git(repo, "config", "user.name", "Done Skill Test")
+            git(repo, "config", "user.email", "done-skill@example.invalid")
+            (repo / "base.txt").write_text("base\n")
+            git(repo, "add", "base.txt")
+            git(repo, "commit", "-m", "A")
+            git(repo, "remote", "add", "origin", str(remote))
+            git(repo, "push", "-u", "origin", "main")
+
+            git(repo, "worktree", "add", "-b", "task", str(task), "main")
+            (task / "task-one.txt").write_text("task one\n")
+            git(task, "add", "task-one.txt")
+            git(task, "commit", "-m", "T1")
+            task_one = git(task, "rev-parse", "HEAD").stdout.strip()
+            (task / "task-two.txt").write_text("task two\n")
+            git(task, "add", "task-two.txt")
+            git(task, "commit", "-m", "T2")
+            task_two = git(task, "rev-parse", "HEAD").stdout.strip()
+
+            git(repo, "cherry-pick", task_one, task_two)
+            (repo / "later.txt").write_text("later local-only work\n")
+            git(repo, "add", "later.txt")
+            git(repo, "commit", "-m", "H")
+            later = git(repo, "rev-parse", "HEAD").stdout.strip()
+
+            git(root, "clone", str(remote), str(updater))
+            git(updater, "config", "user.name", "Done Skill Test")
+            git(updater, "config", "user.email", "done-skill@example.invalid")
+            (updater / "upstream-one.txt").write_text("upstream one\n")
+            git(updater, "add", "upstream-one.txt")
+            git(updater, "commit", "-m", "U1")
+            (updater / "upstream-two.txt").write_text("upstream two\n")
+            git(updater, "add", "upstream-two.txt")
+            git(updater, "commit", "-m", "U2")
+            git(updater, "cherry-pick", task_one, task_two)
+            git(updater, "push", "origin", "main")
+
+            (repo / "base.txt").write_text("unrelated tracked edit\n")
+            (repo / "untracked.txt").write_text("unrelated untracked edit\n")
+            dirty_before = {
+                "base.txt": (repo / "base.txt").read_bytes(),
+                "untracked.txt": (repo / "untracked.txt").read_bytes(),
+            }
+            git(repo, "fetch", "origin")
+
+            classified = git(repo, "cherry", "origin/main", "main").stdout.splitlines()
+            self.assertEqual(
+                [("-", task_one), ("-", task_two), ("+", later)],
+                [(line[0], line[2:]) for line in classified],
+            )
+
+            git(repo, "worktree", "add", "-b", "integration", str(integration), "origin/main")
+            git(integration, "cherry-pick", later)
+            integration_tip = git(integration, "rev-parse", "HEAD").stdout.strip()
+            git(repo, "merge", "--ff-only", integration_tip)
+            git(repo, "push", "origin", "main")
+            git(repo, "fetch", "origin")
+
+            self.assertEqual(
+                git(repo, "rev-parse", "main").stdout,
+                git(repo, "rev-parse", "origin/main").stdout,
+            )
+            self.assertEqual("0\n", git(repo, "rev-list", "--count", "--merges", "main").stdout)
+            self.assertEqual("", git(repo, "cherry", "origin/main", "main").stdout)
+            old_task_is_ancestor = subprocess.run(
+                ["git", "-C", str(repo), "merge-base", "--is-ancestor", task_two, "main"],
+                capture_output=True,
+            )
+            self.assertNotEqual(0, old_task_is_ancestor.returncode)
+            self.assertEqual("later local-only work\n", (repo / "later.txt").read_text())
+            self.assertEqual(
+                dirty_before,
+                {
+                    "base.txt": (repo / "base.txt").read_bytes(),
+                    "untracked.txt": (repo / "untracked.txt").read_bytes(),
+                },
+            )
+
+            skill = SKILL.read_text()
+            for phrase in (
+                "expected reconciliation work, not a blocker",
+                "stable patch identity",
+                "later local-only commits",
+                "all local refs",
+            ):
+                with self.subTest(phrase=phrase):
+                    self.assertIn(phrase, skill)
+
     def test_herdr_teardown_script_refuses_unsafe_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
