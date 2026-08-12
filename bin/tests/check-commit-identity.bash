@@ -30,3 +30,21 @@ if (
   echo "expected Test User commit to be rejected" >&2
   exit 1
 fi
+
+git -C "${test_root}" branch bad-local "${bad}"
+git -C "${test_root}" switch -q -c push-good "${good}"
+printf 'push-good\n' >"${test_root}/file"
+git -C "${test_root}" add file
+git -C "${test_root}" commit -qm push-good
+push_good="$(git -C "${test_root}" rev-parse HEAD)"
+
+# Expected failure until the pre-push check honors the range supplied by the
+# hook runner instead of scanning unrelated local refs.
+if (
+  cd "${test_root}"
+  PRE_COMMIT_FROM_REF="${good}" PRE_COMMIT_TO_REF="${push_good}" \
+    "${repo_root}/bin/check-commit-identity"
+) 2>/dev/null; then
+  echo "identity check unexpectedly ignored the known range-scoping bug" >&2
+  exit 1
+fi
