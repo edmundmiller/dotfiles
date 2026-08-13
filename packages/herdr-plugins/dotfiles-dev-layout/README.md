@@ -9,6 +9,8 @@ update_when: Plugin actions, events, layout, or requirements change.
 # Dotfiles Dev Layout
 
 Creates OMP for every workspace and Hunk for Git checkout workspaces, with OMP focused.
+Workspaces created with `HERDR_REVIEW_BOX=1` skip the generic tabs so the
+Review Box launcher can own its Hunk, Critique, agent, and approval layout.
 
 ## Install
 

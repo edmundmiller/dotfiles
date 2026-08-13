@@ -227,6 +227,9 @@ def workspace_lock(workspace_id: str) -> Iterator[None]:
 
 
 def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> None:
+    if os.environ.get("HERDR_REVIEW_BOX") == "1":
+        return
+
     tabs, tab_ids = workspace_tabs(workspace_id)
     omp_tab = tabs.get("omp")
     if not omp_tab:

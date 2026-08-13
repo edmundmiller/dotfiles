@@ -2,6 +2,7 @@
   config,
   cfg,
   lib,
+  piHerdrPackage,
   piSettingsParsed,
 }:
 let
@@ -19,7 +20,7 @@ let
   # that do not run that shell integration, and avoids redundant interactive
   # shell prompts when tmux/herdr are the preferred persistent workspace layer.
   moduleManagedPackageGroups = {
-    herdr = [ "npm:@ogulcancelik/pi-herdr" ];
+    herdr = [ (toString piHerdrPackage) ];
     tmux = [
       "npm:pi-tmux-window-name"
       "git:github.com/ogulcancelik/pi-extensions"
@@ -58,10 +59,16 @@ let
   };
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
+  legacyModuleManagedPackageSources = [ "npm:@ogulcancelik/pi-herdr" ];
 
   dropModuleManagedPackages =
     packages:
-    builtins.filter (pkg: !(builtins.elem (packageSource pkg) moduleManagedPackageSources)) packages;
+    builtins.filter (
+      pkg:
+      !(builtins.elem (packageSource pkg) (
+        moduleManagedPackageSources ++ legacyModuleManagedPackageSources
+      ))
+    ) packages;
 
   moduleManagedPackages =
     lib.optionals config.modules.shell.herdr.enable moduleManagedPackageGroups.herdr

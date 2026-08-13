@@ -39,6 +39,7 @@ let
     piPkgsDir = ../../../packages/pi-packages;
   };
   piCommandPolicyBridge = ../../../packages/pi-packages/pi-command-policy-bridge;
+  piHerdrPackage = ../../../packages/pi-packages/pi-herdr;
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
   honchoEnv = lib.optionalAttrs cfg.honcho.enable (
@@ -182,6 +183,7 @@ let
       config
       cfg
       lib
+      piHerdrPackage
       piSettingsParsed
       ;
   };

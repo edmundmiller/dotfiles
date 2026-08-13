@@ -90,6 +90,13 @@ class BootstrapLayoutTest(unittest.TestCase):
         self.assertEqual(ran, [])
         self.assertEqual(calls, [["tab", "focus", "tab-omp"]])
 
+    def test_review_box_owns_its_tabs(self) -> None:
+        created, ran, calls = self.run_bootstrap(env={"HERDR_REVIEW_BOX": "1"})
+
+        self.assertEqual(created, [])
+        self.assertEqual(ran, [])
+        self.assertEqual(calls, [])
+
     def test_creation_event_closes_only_the_initial_tab(self) -> None:
         _, _, calls = self.run_bootstrap(
             env={"HERDR_PLUGIN_EVENT": "workspace.created"},
