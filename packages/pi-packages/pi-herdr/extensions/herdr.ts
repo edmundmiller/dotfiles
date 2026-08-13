@@ -4,6 +4,25 @@ import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
+// Re-export shared helpers and types from the extracted module for backward compatibility.
+export {
+  slugify,
+  findStringKey,
+  buildReviewPrompt,
+  buildApprovalCommand,
+  parsePrInfo,
+} from "./pr-review-workspace.js";
+export type { PrInfo, ExecFn } from "./pr-review-workspace.js";
+
+// Import extracted primitives and types.
+import {
+  prepareReviewWorktree,
+  createHerdrReviewWorkspace,
+  type PrInfo,
+  type ExecFn,
+} from "./pr-review-workspace.js";
+import { parsePrInfo } from "./pr-review-workspace.js";
+
 const HERDR_TIMEOUT_MS = 10_000;
 
 const stringify = (value: unknown): string =>
@@ -72,15 +91,6 @@ const parseJson = (text: string): unknown => {
   }
 };
 
-export type PrInfo = {
-  number: number;
-  title: string;
-  baseRefName: string;
-  headRefName: string;
-  headRefOid: string;
-  url: string;
-};
-
 type ReviewWorkspaceParams = {
   pr: string;
   repo?: string;
@@ -119,125 +129,10 @@ type ReviewBoxOptions = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-+/g, "-");
-
-const truncate = (value: string, maxLength: number): string =>
-  value.length <= maxLength ? value : value.slice(0, maxLength).replace(/-+$/g, "");
-
-const shellQuote = (value: string): string => `'${value.replace(/'/g, "'\\''")}'`;
-
-const parsePrInfo = (stdout: string): PrInfo => {
-  const parsed: unknown = JSON.parse(stdout);
-  if (!isRecord(parsed)) throw new Error("gh pr view returned non-object JSON");
-  const { number, title, baseRefName, headRefName, headRefOid, url } = parsed;
-  if (
-    typeof number !== "number" ||
-    typeof title !== "string" ||
-    typeof baseRefName !== "string" ||
-    typeof headRefName !== "string" ||
-    typeof headRefOid !== "string" ||
-    typeof url !== "string"
-  ) {
-    throw new Error("gh pr view returned incomplete PR metadata");
-  }
-  return { number, title, baseRefName, headRefName, headRefOid, url };
-};
-
-export const findStringKey = (value: unknown, keys: Set<string>): string | undefined => {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = findStringKey(item, keys);
-      if (found) return found;
-    }
-    return undefined;
-  }
-  if (!isRecord(value)) return undefined;
-  for (const [key, item] of Object.entries(value)) {
-    if (keys.has(key) && typeof item === "string" && item) return item;
-    const found = findStringKey(item, keys);
-    if (found) return found;
-  }
-  return undefined;
-};
-
 const pathExists = async (path: string): Promise<boolean> =>
   stat(path)
     .then(() => true)
     .catch(() => false);
-
-const hunkDiffCommand = (diffTarget: string): string =>
-  [
-    "if command -v hunk >/dev/null 2>&1; then",
-    `exec hunk diff ${shellQuote(diffTarget)} --no-transparent-bg;`,
-    "fi;",
-    `exec bunx hunkdiff diff ${shellQuote(diffTarget)} --no-transparent-bg`,
-  ].join(" ");
-
-const critiqueDiffCommand = (diffBase: string): string =>
-  `exec critique ${shellQuote(diffBase)} HEAD`;
-
-export const buildReviewPrompt = (input: {
-  pr: PrInfo;
-  repo: string;
-  diffTarget: string;
-  hunkTab: string;
-}): string =>
-  [
-    "/review",
-    "",
-    `Review PR #${input.pr.number}: ${input.pr.title}`,
-    `URL: ${input.pr.url}`,
-    `Repo: ${input.repo}`,
-    `Diff: ${input.diffTarget}`,
-    "",
-    `A Herdr tab named ${input.hunkTab} is open with the Hunk diff.`,
-    "Use Hunk as the review surface.",
-    "Start with hunk session review --repo . --json, then include patches only as needed.",
-    "Leave inline Hunk comments for actionable findings using hunk_comments action=apply or hunk session comment apply.",
-    "Prioritize bugs, regressions, missing tests, and merge risks.",
-    "Do not edit code unless asked.",
-    "End with an approve/request-changes recommendation.",
-  ].join("\n");
-
-export const buildApprovalCommand = (prUrl: string): string =>
-  [
-    "printf '%s\\n' 'Review actions:'",
-    `printf '%s\\n' '  gh pr review ${prUrl} --approve'`,
-    `printf '%s\\n' '  gh pr review ${prUrl} --request-changes -b \"<reason>\"'`,
-    `printf '%s\\n' '  gh pr review ${prUrl} --comment -b \"<summary>\"'`,
-    `printf '%s\\n' '  gh pr view ${prUrl} --web'`,
-    "exec ${SHELL:-/bin/zsh} -l",
-  ].join("; ");
-
-const createTabAndRun = async (
-  pi: ExtensionAPI,
-  workspaceId: string,
-  cwd: string,
-  label: string,
-  command: string
-) => {
-  const tab = await runHerdr(pi, [
-    "tab",
-    "create",
-    "--workspace",
-    workspaceId,
-    "--cwd",
-    cwd,
-    "--label",
-    label,
-    "--no-focus",
-  ]);
-  const paneId = findStringKey(parseJson(tab.stdout), new Set(["pane_id"]));
-  if (!paneId) throw new Error(`could not find pane_id for ${label} tab`);
-  await runHerdr(pi, ["pane", "rename", paneId, label]);
-  await runHerdr(pi, ["pane", "run", paneId, command]);
-  return paneId;
-};
 
 const defaultStateRoot = (): string =>
   join(
@@ -249,9 +144,13 @@ const defaultStateRoot = (): string =>
 const manifestPathFor = (pr: PrInfo, stateRoot: string): string => {
   const url = new URL(pr.url);
   const repo = url.pathname.replace(/\/pull\/\d+\/?$/, "");
-  const key = slugify(`${repo}-pr-${pr.number}`) || `pr-${pr.number}`;
+  const key = slugifyManifestKey(`${repo}-pr-${pr.number}`) || `pr-${pr.number}`;
   return join(stateRoot, `${key}.json`);
 };
+
+// Import slugify for manifest key derivation (re-exported above, but we need
+// the value at runtime here too).
+import { slugify as slugifyManifestKey } from "./pr-review-workspace.js";
 
 const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest =>
   isRecord(value) &&
@@ -309,81 +208,14 @@ const refreshCheckout = async (
   });
 };
 
-const createReviewWorkspace = async (
-  pi: ExtensionAPI,
-  input: {
-    pr: PrInfo;
-    worktreePath: string;
-    diffBase: string;
-    diffTarget: string;
-    prompt?: string;
-    agent: "omp" | "pi";
-  }
-): Promise<string> => {
-  const workspaceLabel = truncate(`PR #${input.pr.number} ${input.pr.title}`, 56);
-  const workspace = await runHerdr(pi, [
-    "workspace",
-    "create",
-    "--cwd",
-    input.worktreePath,
-    "--label",
-    workspaceLabel,
-    "--env",
-    "HERDR_REVIEW_BOX=1",
-    "--focus",
-  ]);
-  const workspaceId = findStringKey(parseJson(workspace.stdout), new Set(["workspace_id", "id"]));
-  if (!workspaceId) throw new Error("could not find workspace id in Herdr response");
-
-  const reviewPrompt = `${buildReviewPrompt({
-    pr: input.pr,
-    repo: input.worktreePath,
-    diffTarget: input.diffTarget,
-    hunkTab: "Hunk",
-  })}${input.prompt ? `\n\nExtra instruction:\n${input.prompt}` : ""}`;
-  const reviewCommand =
-    input.agent === "pi"
-      ? `pi ${shellQuote(reviewPrompt)}`
-      : `omp --cwd ${shellQuote(input.worktreePath)} ${shellQuote(reviewPrompt)}`;
-
-  await createTabAndRun(
-    pi,
-    workspaceId,
-    input.worktreePath,
-    "Hunk",
-    hunkDiffCommand(input.diffTarget)
-  );
-  await createTabAndRun(
-    pi,
-    workspaceId,
-    input.worktreePath,
-    "Critique",
-    critiqueDiffCommand(input.diffBase)
-  );
-  await createTabAndRun(
-    pi,
-    workspaceId,
-    input.worktreePath,
-    input.agent === "pi" ? "Pi Review" : "OMP Review",
-    reviewCommand
-  );
-  await createTabAndRun(
-    pi,
-    workspaceId,
-    input.worktreePath,
-    "Approve",
-    buildApprovalCommand(input.pr.url)
-  );
-  await runHerdr(pi, ["workspace", "focus", workspaceId]);
-  return workspaceId;
-};
-
 export const openPrReviewWorkspace = async (
   pi: ExtensionAPI,
   params: ReviewWorkspaceParams,
   startCwd: string,
   options: ReviewBoxOptions = {}
 ): Promise<ReviewBoxResult> => {
+  const exec: ExecFn = (cmd, args, opts) => pi.exec(cmd, args, opts);
+
   const repoRoot = (
     await runCommand(pi, "git", ["rev-parse", "--show-toplevel"], { cwd: params.repo ?? startCwd })
   ).stdout;
@@ -428,12 +260,14 @@ export const openPrReviewWorkspace = async (
         Boolean(params.base)
       );
       if (exists) await runHerdr(pi, ["workspace", "close", manifest.workspaceId]);
-      const workspaceId = await createReviewWorkspace(pi, {
-        pr,
+      const { workspaceId } = await createHerdrReviewWorkspace(exec, {
         worktreePath: manifest.worktreePath,
-        diffBase,
+        prNumber: pr.number,
+        title: pr.title,
+        prUrl: pr.url,
         diffTarget,
-        prompt: params.prompt,
+        diffBase,
+        extraPrompt: params.prompt,
         agent,
       });
       await writeManifest(manifestPath, {
@@ -471,12 +305,14 @@ export const openPrReviewWorkspace = async (
       };
     }
 
-    const workspaceId = await createReviewWorkspace(pi, {
-      pr,
+    const { workspaceId } = await createHerdrReviewWorkspace(exec, {
       worktreePath: manifest.worktreePath,
-      diffBase,
+      prNumber: pr.number,
+      title: pr.title,
+      prUrl: pr.url,
       diffTarget,
-      prompt: params.prompt,
+      diffBase,
+      extraPrompt: params.prompt,
       agent,
     });
     await writeManifest(manifestPath, {
@@ -501,32 +337,25 @@ export const openPrReviewWorkspace = async (
     await runHerdr(pi, ["workspace", "close", manifest.workspaceId]);
   }
 
-  const requestedSlug = truncate(
-    slugify(params.worktreeName ?? `pr-${pr.number}-${pr.headRefName}`) || `pr-${pr.number}`,
-    60
-  );
-  const worktreePath = join(sharedRoot, ".pi", "worktrees", requestedSlug);
-  if (!params.base) {
-    await runCommand(pi, "git", ["fetch", "origin", pr.baseRefName], {
-      cwd: repoRoot,
-      timeout: 60_000,
-    });
-  }
-  if (!(await pathExists(worktreePath))) {
-    await mkdir(dirname(worktreePath), { recursive: true });
-    await runCommand(pi, "git", ["worktree", "add", "--detach", worktreePath, diffBase], {
-      cwd: repoRoot,
-      timeout: 60_000,
-    });
-  }
-  await refreshCheckout(pi, repoRoot, worktreePath, pr, params.pr, true);
+  const { worktreePath } = await prepareReviewWorktree(exec, {
+    repoRoot,
+    sharedRoot,
+    prIdentifier: params.pr,
+    prNumber: pr.number,
+    headRefName: pr.headRefName,
+    baseRefName: pr.baseRefName,
+    worktreeName: params.worktreeName,
+    base: params.base,
+  });
 
-  const workspaceId = await createReviewWorkspace(pi, {
-    pr,
+  const { workspaceId } = await createHerdrReviewWorkspace(exec, {
     worktreePath,
-    diffBase,
+    prNumber: pr.number,
+    title: pr.title,
+    prUrl: pr.url,
     diffTarget,
-    prompt: params.prompt,
+    diffBase,
+    extraPrompt: params.prompt,
     agent,
   });
   await writeManifest(manifestPath, {
