@@ -1,0 +1,27 @@
+{
+  "name": "pi-review-box",
+  "version": "0.1.0",
+  "description": "Thin CLI adapter bridging ghui PR JSON to pi-herdr's shared Review Box decision flow.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "review-box",
+    "herdr",
+    "bridge"
+  ],
+  "license": "MIT",
+  "author": "Edmund Miller",
+  "bin": {
+    "review-box": "src/cli.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.3"
+  }
+}

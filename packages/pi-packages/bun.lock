@@ -201,6 +201,18 @@
         "@sinclair/typebox": "*",
       },
     },
+    "pi-review-box": {
+      "name": "pi-review-box",
+      "version": "0.1.0",
+      "bin": {
+        "review-box": "src/cli.ts",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.14",
+        "@types/node": "^26.1.1",
+        "typescript": "^5.9.3",
+      },
+    },
     "pi-xurl": {
       "name": "pi-xurl",
       "version": "0.1.0",
@@ -1136,6 +1148,8 @@
     "pi-prompt-stash": ["pi-prompt-stash@workspace:pi-prompt-stash"],
 
     "pi-qmd": ["pi-qmd@workspace:pi-qmd"],
+
+    "pi-review-box": ["pi-review-box@workspace:pi-review-box"],
 
     "pi-xurl": ["pi-xurl@workspace:pi-xurl"],
 

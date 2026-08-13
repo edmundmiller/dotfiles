@@ -430,7 +430,7 @@ export type OpenReviewBoxOpts = {
 
 // ─── Manifest helpers (moved from herdr.ts) ───────────────────────────
 
-const defaultStateRoot = (): string =>
+export const defaultStateRoot = (): string =>
   join(
     process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"),
     "pi-herdr",
@@ -446,7 +446,7 @@ const manifestKeyFor = (pr: PrInfo): string => {
 const manifestPathFor = (pr: PrInfo, stateRoot: string): string =>
   join(stateRoot, `${manifestKeyFor(pr)}.json`);
 
-const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest =>
+export const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest =>
   isRecord(value) &&
   value.schemaVersion === 1 &&
   typeof value.repoRoot === "string" &&
@@ -460,13 +460,23 @@ const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest =>
   typeof value.updatedAt === "string";
 
 const readManifest = async (path: string): Promise<ReviewBoxManifest | undefined> => {
+  let content: string;
   try {
-    const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-    if (!isReviewBoxManifest(parsed)) throw new Error(`invalid Review Box manifest: ${path}`);
-    return parsed;
+    content = await readFile(path, "utf8");
   } catch (error) {
     if (isRecord(error) && error.code === "ENOENT") return undefined;
     throw error;
+  }
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (!isReviewBoxManifest(parsed)) throw new Error(`invalid schema: ${path}`);
+    return parsed;
+  } catch {
+    // Corrupt or wrong-schema manifest: back up to .bak, treat as absent.
+    // (VAL-BRIDGE-014 / VAL-BRIDGE-035)
+    await writeFile(`${path}.bak`, content).catch(() => {});
+    await unlink(path).catch(() => {});
+    return undefined;
   }
 };
 
