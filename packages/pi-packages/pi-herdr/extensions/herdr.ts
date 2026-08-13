@@ -1,27 +1,37 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
-import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname } from "node:path";
 
-// Re-export shared helpers and types from the extracted module for backward compatibility.
+// Re-export shared helpers, types, primitives, and the decision flow from the
+// extracted module for backward compatibility and bridge consumption.
 export {
   slugify,
   findStringKey,
   buildReviewPrompt,
   buildApprovalCommand,
   parsePrInfo,
-} from "./pr-review-workspace.js";
-export type { PrInfo, ExecFn } from "./pr-review-workspace.js";
-
-// Import extracted primitives and types.
-import {
+  fetchPrInfo,
   prepareReviewWorktree,
+  refreshReviewWorktree,
   createHerdrReviewWorkspace,
+  openReviewBox,
+} from "./pr-review-workspace.js";
+export type {
+  PrInfo,
+  ExecFn,
+  ReviewBoxManifest,
+  ReviewBoxResult,
+  OpenReviewBoxOpts,
+} from "./pr-review-workspace.js";
+
+// Import the decision flow and fetch helper for delegation.
+import {
+  openReviewBox,
+  fetchPrInfo,
   type PrInfo,
   type ExecFn,
+  type ReviewBoxResult,
 } from "./pr-review-workspace.js";
-import { parsePrInfo } from "./pr-review-workspace.js";
 
 const HERDR_TIMEOUT_MS = 10_000;
 
@@ -100,114 +110,15 @@ type ReviewWorkspaceParams = {
   agent?: "omp" | "pi";
 };
 
-type ReviewBoxManifest = {
-  schemaVersion: 1;
-  repoRoot: string;
-  prNumber: number;
-  prUrl: string;
-  headRefOid: string;
-  worktreePath: string;
-  workspaceId: string;
-  diffTarget: string;
-  agent: "omp" | "pi";
-  updatedAt: string;
-};
-
-export type ReviewBoxResult = {
-  action: "created" | "restored" | "resumed" | "refreshed";
-  pr: PrInfo;
-  worktreePath: string;
-  workspaceId: string;
-  diffTarget: string;
-  agent: "omp" | "pi";
-};
-
 type ReviewBoxOptions = {
   stateRoot?: string;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const pathExists = async (path: string): Promise<boolean> =>
-  stat(path)
-    .then(() => true)
-    .catch(() => false);
-
-const defaultStateRoot = (): string =>
-  join(
-    process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"),
-    "pi-herdr",
-    "review-boxes"
-  );
-
-const manifestPathFor = (pr: PrInfo, stateRoot: string): string => {
-  const url = new URL(pr.url);
-  const repo = url.pathname.replace(/\/pull\/\d+\/?$/, "");
-  const key = slugifyManifestKey(`${repo}-pr-${pr.number}`) || `pr-${pr.number}`;
-  return join(stateRoot, `${key}.json`);
-};
-
-// Import slugify for manifest key derivation (re-exported above, but we need
-// the value at runtime here too).
-import { slugify as slugifyManifestKey } from "./pr-review-workspace.js";
-
-const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest =>
-  isRecord(value) &&
-  value.schemaVersion === 1 &&
-  typeof value.repoRoot === "string" &&
-  typeof value.prNumber === "number" &&
-  typeof value.prUrl === "string" &&
-  typeof value.headRefOid === "string" &&
-  typeof value.worktreePath === "string" &&
-  typeof value.workspaceId === "string" &&
-  typeof value.diffTarget === "string" &&
-  (value.agent === "omp" || value.agent === "pi") &&
-  typeof value.updatedAt === "string";
-
-const readManifest = async (path: string): Promise<ReviewBoxManifest | undefined> => {
-  try {
-    const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-    if (!isReviewBoxManifest(parsed)) throw new Error(`invalid Review Box manifest: ${path}`);
-    return parsed;
-  } catch (error) {
-    if (isRecord(error) && error.code === "ENOENT") return undefined;
-    throw error;
-  }
-};
-
-const writeManifest = async (path: string, manifest: ReviewBoxManifest): Promise<void> => {
-  await mkdir(dirname(path), { recursive: true });
-  const temporary = `${path}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(manifest, null, 2)}\n`, { mode: 0o600 });
-  await rename(temporary, path);
-};
-
-const workspaceExists = async (pi: ExtensionAPI, workspaceId: string): Promise<boolean> =>
-  runHerdr(pi, ["workspace", "get", workspaceId])
-    .then(() => true)
-    .catch(() => false);
-
-const refreshCheckout = async (
-  pi: ExtensionAPI,
-  repoRoot: string,
-  worktreePath: string,
-  pr: PrInfo,
-  target: string,
-  customBase: boolean
-): Promise<void> => {
-  if (!customBase) {
-    await runCommand(pi, "git", ["fetch", "origin", pr.baseRefName], {
-      cwd: repoRoot,
-      timeout: 60_000,
-    });
-  }
-  await runCommand(pi, "gh", ["pr", "checkout", target, "--detach", "--force"], {
-    cwd: worktreePath,
-    timeout: 60_000,
-  });
-};
-
+/**
+ * Thin adapter: derives repoRoot and sharedRoot from the Pi tool's cwd,
+ * fetches PrInfo via the shared helper (one gh call, no state — as today),
+ * then delegates the full decision flow to openReviewBox in the shared module.
+ */
 export const openPrReviewWorkspace = async (
   pi: ExtensionAPI,
   params: ReviewWorkspaceParams,
@@ -217,160 +128,31 @@ export const openPrReviewWorkspace = async (
   const exec: ExecFn = (cmd, args, opts) => pi.exec(cmd, args, opts);
 
   const repoRoot = (
-    await runCommand(pi, "git", ["rev-parse", "--show-toplevel"], { cwd: params.repo ?? startCwd })
+    await runCommand(pi, "git", ["rev-parse", "--show-toplevel"], {
+      cwd: params.repo ?? startCwd,
+    })
   ).stdout;
-  const pr = parsePrInfo(
-    (
-      await runCommand(
-        pi,
-        "gh",
-        ["pr", "view", params.pr, "--json", "number,title,baseRefName,headRefName,headRefOid,url"],
-        { cwd: repoRoot, timeout: 30_000 }
-      )
-    ).stdout
-  );
+
+  const pr = await fetchPrInfo(exec, params.pr, { cwd: repoRoot });
+
   const gitCommonDir = (
     await runCommand(pi, "git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
       cwd: repoRoot,
     })
   ).stdout;
   const sharedRoot = basename(gitCommonDir) === ".git" ? dirname(gitCommonDir) : repoRoot;
-  const stateRoot = options.stateRoot ?? defaultStateRoot();
-  const manifestPath = manifestPathFor(pr, stateRoot);
-  const manifest = await readManifest(manifestPath);
-  const diffBase = params.base ?? `origin/${pr.baseRefName}`;
-  const diffTarget = `${diffBase}...HEAD`;
-  const agent = params.agent ?? manifest?.agent ?? "omp";
 
-  if (
-    manifest &&
-    manifest.repoRoot === sharedRoot &&
-    manifest.prNumber === pr.number &&
-    (await pathExists(manifest.worktreePath))
-  ) {
-    const exists = await workspaceExists(pi, manifest.workspaceId);
-    const headChanged = manifest.headRefOid !== pr.headRefOid;
-    if (headChanged) {
-      await refreshCheckout(
-        pi,
-        repoRoot,
-        manifest.worktreePath,
-        pr,
-        params.pr,
-        Boolean(params.base)
-      );
-      if (exists) await runHerdr(pi, ["workspace", "close", manifest.workspaceId]);
-      const { workspaceId } = await createHerdrReviewWorkspace(exec, {
-        worktreePath: manifest.worktreePath,
-        prNumber: pr.number,
-        title: pr.title,
-        prUrl: pr.url,
-        diffTarget,
-        diffBase,
-        extraPrompt: params.prompt,
-        agent,
-      });
-      await writeManifest(manifestPath, {
-        ...manifest,
-        headRefOid: pr.headRefOid,
-        workspaceId,
-        diffTarget,
-        agent,
-        updatedAt: new Date().toISOString(),
-      });
-      return {
-        action: "refreshed",
-        pr,
-        worktreePath: manifest.worktreePath,
-        workspaceId,
-        diffTarget,
-        agent,
-      };
-    }
-    if (exists) {
-      await runHerdr(pi, ["workspace", "focus", manifest.workspaceId]);
-      await writeManifest(manifestPath, {
-        ...manifest,
-        diffTarget,
-        agent,
-        updatedAt: new Date().toISOString(),
-      });
-      return {
-        action: "resumed",
-        pr,
-        worktreePath: manifest.worktreePath,
-        workspaceId: manifest.workspaceId,
-        diffTarget,
-        agent,
-      };
-    }
-
-    const { workspaceId } = await createHerdrReviewWorkspace(exec, {
-      worktreePath: manifest.worktreePath,
-      prNumber: pr.number,
-      title: pr.title,
-      prUrl: pr.url,
-      diffTarget,
-      diffBase,
-      extraPrompt: params.prompt,
-      agent,
-    });
-    await writeManifest(manifestPath, {
-      ...manifest,
-      headRefOid: pr.headRefOid,
-      workspaceId,
-      diffTarget,
-      agent,
-      updatedAt: new Date().toISOString(),
-    });
-    return {
-      action: "restored",
-      pr,
-      worktreePath: manifest.worktreePath,
-      workspaceId,
-      diffTarget,
-      agent,
-    };
-  }
-
-  if (manifest && (await workspaceExists(pi, manifest.workspaceId))) {
-    await runHerdr(pi, ["workspace", "close", manifest.workspaceId]);
-  }
-
-  const { worktreePath } = await prepareReviewWorktree(exec, {
+  return openReviewBox(exec, {
+    pr,
     repoRoot,
     sharedRoot,
     prIdentifier: params.pr,
-    prNumber: pr.number,
-    headRefName: pr.headRefName,
-    baseRefName: pr.baseRefName,
-    worktreeName: params.worktreeName,
     base: params.base,
+    worktreeName: params.worktreeName,
+    prompt: params.prompt,
+    agent: params.agent,
+    stateRoot: options.stateRoot,
   });
-
-  const { workspaceId } = await createHerdrReviewWorkspace(exec, {
-    worktreePath,
-    prNumber: pr.number,
-    title: pr.title,
-    prUrl: pr.url,
-    diffTarget,
-    diffBase,
-    extraPrompt: params.prompt,
-    agent,
-  });
-  await writeManifest(manifestPath, {
-    schemaVersion: 1,
-    repoRoot: sharedRoot,
-    prNumber: pr.number,
-    prUrl: pr.url,
-    headRefOid: pr.headRefOid,
-    worktreePath,
-    workspaceId,
-    diffTarget,
-    agent,
-    updatedAt: new Date().toISOString(),
-  });
-  return { action: "created", pr, worktreePath, workspaceId, diffTarget, agent };
 };
 
 const reviewBoxSummary = (result: ReviewBoxResult): string =>

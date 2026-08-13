@@ -1,0 +1,175 @@
+[
+  {
+    "cmd": "git",
+    "args": ["rev-parse", "--show-toplevel"],
+    "cwd": "<TEMP>/widget",
+    "timeout": 10000
+  },
+  {
+    "cmd": "gh",
+    "args": ["pr", "view", "42", "--json", "number,title,baseRefName,headRefName,headRefOid,url"],
+    "cwd": "<TEMP>/widget",
+    "timeout": 30000
+  },
+  {
+    "cmd": "git",
+    "args": ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+    "cwd": "<TEMP>/widget",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["workspace", "get", "wABC"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "workspace",
+      "create",
+      "--cwd",
+      "<TEMP>/widget/.pi/worktrees/pr-42-feature-branch",
+      "--label",
+      "PR #42 Fix all the bugs",
+      "--env",
+      "HERDR_REVIEW_BOX=1",
+      "--focus"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "tab",
+      "create",
+      "--workspace",
+      "wABC",
+      "--cwd",
+      "<TEMP>/widget/.pi/worktrees/pr-42-feature-branch",
+      "--label",
+      "Hunk",
+      "--no-focus"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["pane", "rename", "wABC-1", "Hunk"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "pane",
+      "run",
+      "wABC-1",
+      "if command -v hunk >/dev/null 2>&1; then exec hunk diff 'origin/main...HEAD' --no-transparent-bg; fi; exec bunx hunkdiff diff 'origin/main...HEAD' --no-transparent-bg"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "tab",
+      "create",
+      "--workspace",
+      "wABC",
+      "--cwd",
+      "<TEMP>/widget/.pi/worktrees/pr-42-feature-branch",
+      "--label",
+      "Critique",
+      "--no-focus"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["pane", "rename", "wABC-2", "Critique"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["pane", "run", "wABC-2", "exec critique 'origin/main' HEAD"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "tab",
+      "create",
+      "--workspace",
+      "wABC",
+      "--cwd",
+      "<TEMP>/widget/.pi/worktrees/pr-42-feature-branch",
+      "--label",
+      "OMP Review",
+      "--no-focus"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["pane", "rename", "wABC-3", "OMP Review"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "pane",
+      "run",
+      "wABC-3",
+      "omp --cwd '<TEMP>/widget/.pi/worktrees/pr-42-feature-branch' '/review\n\nReview PR #42: Fix all the bugs\nURL: https://github.com/acme/widget/pull/42\nRepo: <TEMP>/widget/.pi/worktrees/pr-42-feature-branch\nDiff: origin/main...HEAD\n\nA Herdr tab named Hunk is open with the Hunk diff.\nUse Hunk as the review surface.\nStart with hunk session review --repo . --json, then include patches only as needed.\nLeave inline Hunk comments for actionable findings using hunk_comments action=apply or hunk session comment apply.\nPrioritize bugs, regressions, missing tests, and merge risks.\nDo not edit code unless asked.\nEnd with an approve/request-changes recommendation.'"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "tab",
+      "create",
+      "--workspace",
+      "wABC",
+      "--cwd",
+      "<TEMP>/widget/.pi/worktrees/pr-42-feature-branch",
+      "--label",
+      "Approve",
+      "--no-focus"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["pane", "rename", "wABC-4", "Approve"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": [
+      "pane",
+      "run",
+      "wABC-4",
+      "printf '%s\\n' 'Review actions:'; printf '%s\\n' '  gh pr review https://github.com/acme/widget/pull/42 --approve'; printf '%s\\n' '  gh pr review https://github.com/acme/widget/pull/42 --request-changes -b \"<reason>\"'; printf '%s\\n' '  gh pr review https://github.com/acme/widget/pull/42 --comment -b \"<summary>\"'; printf '%s\\n' '  gh pr view https://github.com/acme/widget/pull/42 --web'; exec ${SHELL:-/bin/zsh} -l"
+    ],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["workspace", "focus", "wABC"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  }
+]

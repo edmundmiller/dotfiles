@@ -1,0 +1,32 @@
+[
+  {
+    "cmd": "git",
+    "args": ["rev-parse", "--show-toplevel"],
+    "cwd": "<TEMP>/widget",
+    "timeout": 10000
+  },
+  {
+    "cmd": "gh",
+    "args": ["pr", "view", "42", "--json", "number,title,baseRefName,headRefName,headRefOid,url"],
+    "cwd": "<TEMP>/widget",
+    "timeout": 30000
+  },
+  {
+    "cmd": "git",
+    "args": ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+    "cwd": "<TEMP>/widget",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["workspace", "get", "wABC"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  },
+  {
+    "cmd": "herdr",
+    "args": ["workspace", "focus", "wABC"],
+    "cwd": "<CWD>",
+    "timeout": 10000
+  }
+]
