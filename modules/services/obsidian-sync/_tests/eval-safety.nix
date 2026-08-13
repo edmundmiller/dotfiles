@@ -129,10 +129,12 @@ pkgs.runCommand "obsidian-sync-safety-assertions"
       echo "${toString (length failures)} Obsidian Sync structural assertions failed" >&2
       exit 1
     fi
-    # Regression marker: the deployed audit currently defaults to a missing
-    # system-profile Codex path. The fix commit replaces this assertion with
-    # the intended executable-path check.
-    grep -F 'CODEX_EXECUTABLE:-/run/current-system/sw/bin/codex' ${openwikiDailyAudit.command}
+    codex_executable="$(${pkgs.gnused}/bin/sed -n 's#^codex_executable=".*:-\([^}]*\)}"$#\1#p' ${openwikiDailyAudit.command})"
+    case "$codex_executable" in
+      /nix/store/*/bin/codex) ;;
+      *) echo "OpenWiki audit default is not a Nix-store Codex executable: $codex_executable" >&2; exit 1 ;;
+    esac
+    test -x "$codex_executable"
     ${../../../../packages/obsidian-vault-git-dirt-check/git-dirt-check.test.sh} ${dirtCheck}/bin/obsidian-vault-git-dirt-check
     mkdir -p "$out"
     echo "All Obsidian Sync safety assertions passed." > "$out/result"
