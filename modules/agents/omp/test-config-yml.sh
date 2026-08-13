@@ -103,6 +103,21 @@ def flatten(obj, prefix=""):
 flat = flatten(cfg)
 errors = []
 
+REQUIRED_TTSR = {
+    "ttsr.enabled": True,
+    "ttsr.contextMode": "discard",
+    "ttsr.interruptMode": "always",
+    "ttsr.repeatMode": "once",
+    "ttsr.builtinRules": True,
+}
+
+for path, expected_value in REQUIRED_TTSR.items():
+    if flat.get(path) != expected_value:
+        errors.append(
+            f"{path}: thin-harness contract requires {expected_value!r}, "
+            f"found {flat.get(path)!r}"
+        )
+
 for path, value in sorted(flat.items()):
     if path in LEGACY:
         replacement = LEGACY[path]

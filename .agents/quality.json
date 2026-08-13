@@ -9,7 +9,7 @@
     {
       "id": "agent-quality-tests",
       "kind": "test",
-      "command": "python3 -m unittest tests/test_agent_quality.py tests/test_agent_rules.py tests/test_skill_quality_validator.py tests/test_agent_instruction_wiring.py",
+      "command": "python3 -m unittest tests/test_agent_quality.py tests/test_agent_rules.py tests/test_skill_quality_validator.py tests/test_agent_instruction_wiring.py tests/test_omp_ttsr_rules.py",
       "description": "Agent workflow engine behavior"
     },
     {

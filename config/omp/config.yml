@@ -64,6 +64,13 @@ steeringMode: all
 followUpMode: one-at-a-time
 interruptMode: wait
 
+ttsr:
+  enabled: true
+  contextMode: discard
+  interruptMode: always
+  repeatMode: once
+  builtinRules: true
+
 prewalk:
   enabled: true
 

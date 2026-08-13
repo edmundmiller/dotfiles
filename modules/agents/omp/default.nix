@@ -233,14 +233,7 @@ let
     cd ${lib.escapeShellArg "${config.user.home}/.config/dotfiles"}
     ${pkgs.python3}/bin/python3 ${lib.escapeShellArg "${skilloptSleepPlugin}/scripts/skillopt-sleep-autocommit.py"}
   '';
-  rulesDir = "${configDir}/agents/rules";
-  ruleFiles = builtins.sort builtins.lessThan (
-    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (
-      builtins.attrNames (builtins.readDir rulesDir)
-    )
-  );
-  readRule = file: builtins.readFile "${rulesDir}/${file}";
-  concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+  agentCore = builtins.readFile "${configDir}/agents/core.md";
   # config.yml is shared across all omp hosts. Keep machine-specific settings as
   # build-time overlays so Seqeratop and MacTraitorPro can diverge without
   # copying the whole config.
@@ -639,7 +632,7 @@ in
       ++ lib.optional cfg.skilloptSleep.enable skilloptSleepNightly
       ++ lib.optional cfg.skilloptSleep.autoCommit.enable skilloptSleepAutocommit;
 
-      home.file.".omp/agent/AGENTS.md".text = concatenatedRules;
+      home.file.".omp/agent/AGENTS.md".text = agentCore;
 
       home.file.".omp/agent/config.yml" = {
         source = ompConfigFile;
@@ -667,11 +660,6 @@ in
 
       home.file.".omp/agent/rules/working-with-jj.md" = {
         source = "${configDir}/omp/rules/working-with-jj.md";
-        force = true;
-      };
-
-      home.file.".omp/agent/rules/incremental-architecture.md" = {
-        source = "${configDir}/omp/rules/incremental-architecture.md";
         force = true;
       };
 

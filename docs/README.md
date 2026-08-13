@@ -24,6 +24,8 @@ update_when: A canonical doc is added, moved, or changes ownership.
 - [agent-guardrails.md](./agent-guardrails.md) — shared safety, documentation,
   tooling, and landing rules
 - [agent-quality.md](./agent-quality.md) — generated quality capability inventory
+- [adr/0010-omp-ttsr-thin-agent-harness.md](./adr/0010-omp-ttsr-thin-agent-harness.md)
+  — OMP-first thin-harness placement policy and TTSR migration gates
 - [../.agents/skills/nix-darwin-reference/SKILL.md](../.agents/skills/nix-darwin-reference/SKILL.md)
   — Darwin/macOS Nix workflow; keep it out of global agent prompts
 
