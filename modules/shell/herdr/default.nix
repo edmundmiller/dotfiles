@@ -39,6 +39,20 @@ let
     "/usr/sbin"
     "/sbin"
   ];
+  # Herdr inherits OMP's environment, where PI_CODING_AGENT_DIR points at OMP's
+  # own agent dir; drop it so Pi panes use their own default agent dir.
+  herdrPackages = optional (cfg.package != null) (
+    pkgs.symlinkJoin {
+      name = "herdr-isolated-agent-dirs";
+      paths = [ cfg.package ];
+      nativeBuildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        rm "$out/bin/herdr"
+        makeWrapper ${escapeShellArg (lib.getExe cfg.package)} "$out/bin/herdr" \
+          --run 'if [ "''${PI_CONFIG_DIR-}" = .omp ] && [ "''${PI_CODING_AGENT_DIR-}" = "''${HOME-}/.omp/agent" ]; then unset PI_CODING_AGENT_DIR; fi'
+      '';
+    }
+  );
 
   herdrConfigTemplate = cfg.configFile;
   # Pi's built-in theme can be too low-contrast in some Herdr/Ghostty stacks
@@ -341,8 +355,8 @@ in
     modules.shell.herdr.package = mkDefault pkgs.my.herdr;
     modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
-    user.packages = optional (cfg.package != null) cfg.package;
-    environment.systemPackages = optional (cfg.package != null) cfg.package;
+    user.packages = herdrPackages;
+    environment.systemPackages = herdrPackages;
     env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
 
     home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
