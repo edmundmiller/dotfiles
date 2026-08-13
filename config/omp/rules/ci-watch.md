@@ -1,11 +1,13 @@
 ---
 name: ci-watch
 description: Watch GitHub Actions runs when CI determines whether work is complete.
-alwaysApply: true
+condition: "(?m)(?:^|[;&|]\\s*)(?:git\\s+push|jj\\s+git\\s+push|gh\\s+(?:pr\\s+checks|run\\s+watch))\\b"
+scope: "tool:bash"
+interruptMode: "never"
 ---
 
 ## GitHub Actions watch
 
-- After pushing, or when a current-HEAD GitHub Actions run determines whether the task is complete, use `github run_watch` and wait for the run to finish.
-- Use `/green` when CI should be watched, fixed, pushed, and re-watched autonomously until green.
-- Do not stop after merely reporting that CI is pending.
+After an authorized push, watch the current-HEAD GitHub Actions run when CI
+determines completion. Use `/green` when the requested outcome includes fixing,
+pushing, and re-watching until green. Pending CI is not completion.

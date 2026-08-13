@@ -1,0 +1,50 @@
+{
+  "commit-house-style": {
+    "rule": "config/omp/rules/commit-house-style.md",
+    "positive": [
+      "git commit -m 'feat: add parser'",
+      "jj commit -m 'Add parser'",
+      "jj describe -m 'Add parser'"
+    ],
+    "negative": [
+      "git status",
+      "jj status",
+      "git show HEAD",
+      "rg 'git commit' README.md",
+      "rg 'jj describe' docs"
+    ]
+  },
+  "pr-house-style": {
+    "rule": "config/omp/rules/pr-house-style.md",
+    "positive": ["gh pr create --fill", "gh pr edit 42 --title 'Clarify parser'"],
+    "negative": ["gh pr view 42", "gh pr checks 42", "gh issue edit 42", "rg 'gh pr create' docs"]
+  },
+  "working-with-jj": {
+    "rule": "config/omp/rules/working-with-jj.md",
+    "positive": [
+      "HERDR_ENV=1 hey agent-start --repo . --task demo",
+      "herdr agent list",
+      "hunk diff",
+      "jj status",
+      "cd repo && jj diff",
+      "git commit -m demo"
+    ],
+    "negative": [
+      "git status",
+      "rg jj README.md",
+      "rg 'HERDR_ENV' modules",
+      "git show HEAD",
+      "gh pr view 42"
+    ]
+  },
+  "ci-watch": {
+    "rule": "config/omp/rules/ci-watch.md",
+    "positive": [
+      "git push origin HEAD",
+      "jj git push --bookmark feature",
+      "gh pr checks 42 --watch",
+      "gh run watch 123"
+    ],
+    "negative": ["git status", "gh pr view 42", "rg 'git push' docs", "rg 'gh run watch' README.md"]
+  }
+}

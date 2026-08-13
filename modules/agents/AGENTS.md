@@ -47,9 +47,10 @@ modules.agents = {
 
 ## Shared Config Source
 
-Agents (claude, codex, opencode) share a single source of truth in `config/agents/`:
+Agent instruction sources live in `config/agents/`:
 
-- `config/agents/rules/` - Shared rules/instructions (concatenated into each agent's config)
+- `config/agents/core.md` - bounded semantic core used by OMP during the thin-harness pilot
+- `config/agents/rules/` - legacy shared rules used by Claude, Codex, Pi, and OpenCode
 - `config/agents/modes/` - Shared agent mode definitions
 
 Global skills live in `~/.agents/skills/` and are discovered natively.
@@ -88,6 +89,7 @@ These modules are for AI coding agents and managed agent runtimes only. Do NOT p
 
 1. Create `modules/agents/<name>/default.nix`
 2. Use `options.modules.agents.<name>` as the option namespace
-3. Wire shared rules from `config/agents/rules/` (same pattern as claude/codex)
+3. Choose the smallest native instruction surface. Do not copy the legacy rule
+   bundle when the harness supports conditional rules or task-time loading.
 4. Enable in host configs under `modules.agents.<name>.enable = true`
 5. Update this AGENTS.md

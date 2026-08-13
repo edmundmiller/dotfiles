@@ -44,6 +44,26 @@ runtime state remains mutable and OMP-owned.
 The module clears OMP's cached MCP tool metadata during activation so removed
 servers do not reappear from `agent.db`.
 
+## Thin harness and TTSR
+
+`config/agents/core.md` is the only global `AGENTS.md` content installed for
+OMP. Keep it at or below 250 words. Repository routers, skills, and canonical
+docs provide task context; do not move their procedures back into the core.
+
+Rules under `config/omp/rules/` use TTSR when they define `condition` or
+`astCondition`. A rule must have named positive and negative cases in
+`tests/fixtures/omp-ttsr-rules.json`. Validate the public matching behavior with:
+
+```sh
+python3 -m unittest tests/test_omp_ttsr_rules.py
+omp ttsr list --json
+```
+
+Use `interruptMode: "never"` for post-tool reminders that should not abort a
+safe command. Critical authority and safety boundaries belong in deterministic
+policy, not TTSR alone. [ADR 0010](../../../docs/adr/0010-omp-ttsr-thin-agent-harness.md)
+owns the placement policy and migration boundary.
+
 Custom slash-command prompt templates live in `config/omp/commands/`. Wire each
 template explicitly to `~/.omp/agent/commands/<name>.md` in `default.nix`, then
 rebuild. Verify discovery without invoking a model through RPC

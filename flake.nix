@@ -591,6 +591,25 @@
                 files = "^(config/agents/rules/|skills/(catalog|conditional)/|\\.agents/skills/)";
                 stages = [ "pre-commit" ];
               };
+              omp-thin-harness = {
+                enable = true;
+                name = "omp-thin-harness";
+                description = "Validate the bounded OMP core and local TTSR scenarios";
+                entry = toString (
+                  pkgs.writeShellScript "omp-thin-harness" ''
+                    set -eu
+                    cd ${./.}
+                    OMP_BIN=${inputs.llm-agents.packages.${system}.omp}/bin/omp \
+                      ${pkgs.python3}/bin/python3 -m unittest \
+                        tests/test_agent_instruction_wiring.py \
+                        tests/test_omp_ttsr_rules.py
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "^(config/agents/core\\.md|config/omp/(config\\.yml|rules/)|modules/agents/omp/default\\.nix|tests/(fixtures/omp-ttsr-rules\\.json|test_agent_instruction_wiring\\.py|test_omp_ttsr_rules\\.py))";
+                stages = [ "pre-commit" ];
+              };
               check-flake-portability = {
                 enable = true;
                 name = "reject absolute local flake inputs";
@@ -1070,6 +1089,24 @@
                   ''
                     cd ${./.}
                     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_agent_response_contract.py
+                    touch $out
+                  '';
+
+              omp-thin-harness-tests =
+                pkgs.runCommand "omp-thin-harness-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.python3
+                      inputs.llm-agents.packages.${system}.omp
+                    ];
+                  }
+                  ''
+                    cd ${./.}
+                    OMP_BIN=${inputs.llm-agents.packages.${system}.omp}/bin/omp \
+                      PYTHONDONTWRITEBYTECODE=1 \
+                      python3 -m unittest \
+                        tests/test_agent_instruction_wiring.py \
+                        tests/test_omp_ttsr_rules.py
                     touch $out
                   '';
 
