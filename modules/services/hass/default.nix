@@ -305,7 +305,7 @@ in
             latitude = "!secret latitude";
             longitude = "!secret longitude";
             elevation = "!secret elevation";
-            radius = 10; # home zone radius in meters (~33 ft)
+            radius = 30; # smaller than the 33 m Parking Lot zone so Home wins overlaps
           };
 
           http = {
