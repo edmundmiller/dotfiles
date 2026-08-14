@@ -1168,6 +1168,11 @@ let
       msg = "Sundown scene must set window nightstand to 25% brightness";
     }
     {
+      test = (haConfig.homeassistant.radius or null) == 30;
+      expectedFailure = true;
+      msg = "Home zone radius must cover apartment GPS drift without overtaking the 33 m Parking Lot zone";
+    }
+    {
       test = climatePolicy != null;
       msg = "automation 'climate_policy' missing";
     }
