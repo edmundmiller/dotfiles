@@ -21,7 +21,7 @@ import {
   parsePrInfo,
   type PrInfo,
   type ExecFn,
-} from "../../pi-herdr/extensions/pr-review-workspace.ts";
+} from "pi-herdr/extensions/pr-review-workspace.ts";
 
 const USAGE = `usage: review-box [--help|-h] [prune]
 

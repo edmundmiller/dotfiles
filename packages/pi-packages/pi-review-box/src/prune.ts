@@ -14,7 +14,7 @@ import {
   defaultStateRoot,
   isReviewBoxManifest,
   type ReviewBoxManifest,
-} from "../../pi-herdr/extensions/pr-review-workspace.ts";
+} from "pi-herdr/extensions/pr-review-workspace.ts";
 
 export async function pruneReviewBoxes(): Promise<{ removed: string[] }> {
   const stateRoot = defaultStateRoot();

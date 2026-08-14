@@ -207,6 +207,9 @@
       "bin": {
         "review-box": "src/cli.ts",
       },
+      "dependencies": {
+        "pi-herdr": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "^1.3.14",
         "@types/node": "^26.1.1",
