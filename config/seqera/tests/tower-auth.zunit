@@ -21,6 +21,5 @@
     [[ "$(wc -l < "$OP_LOG")" == 1 ]] || exit 15
   '
 
-  # Expected failure until the eager startup load is replaced by tower-auth.
-  assert $state equals 127
+  assert $state equals 0
 }
