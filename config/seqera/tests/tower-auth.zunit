@@ -1,0 +1,26 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export AUTH_FILE="${DOTFILES_TEST_ROOT:-$PWD}/config/seqera/aliases.zsh"
+}
+
+@test 'Tower credentials load only when explicitly requested' {
+  run env AUTH_FILE="$AUTH_FILE" zsh -fc '
+    OP_LOG="${TMPDIR:-/tmp}/tower-auth-op-$$"
+    op() {
+      print -r -- "$*" >> "$OP_LOG"
+      print -r -- test-token
+    }
+
+    source "$AUTH_FILE" || exit
+    [[ ! -e "$OP_LOG" ]] || exit 10
+    tower-auth || exit 11
+    [[ "$TOWER_ACCESS_TOKEN" == test-token ]] || exit 12
+    [[ "$(wc -l < "$OP_LOG")" == 1 ]] || exit 13
+    tower-auth || exit 14
+    [[ "$(wc -l < "$OP_LOG")" == 1 ]] || exit 15
+  '
+
+  # Expected failure until the eager startup load is replaced by tower-auth.
+  assert $state equals 127
+}
