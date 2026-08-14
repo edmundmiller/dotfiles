@@ -104,14 +104,14 @@ describe("pi-herdr review workspace helpers", () => {
         if (command === "herdr" && args[0] === "workspace" && args[1] === "create") {
           return {
             code: 0,
-            stdout: JSON.stringify({ result: { workspace: { workspace_id: "w42" } } }),
+            stdout: JSON.stringify({ id: "cli:workspace:create", result: { workspace_id: "w42" } }),
             stderr: "",
           };
         }
         if (command === "herdr" && args[0] === "workspace" && args[1] === "get") {
           return {
             code: 0,
-            stdout: JSON.stringify({ result: { workspace: { workspace_id: "w42" } } }),
+            stdout: JSON.stringify({ id: "cli:workspace:get", result: { workspace_id: "w42" } }),
             stderr: "",
           };
         }
@@ -119,7 +119,7 @@ describe("pi-herdr review workspace helpers", () => {
           pane += 1;
           return {
             code: 0,
-            stdout: JSON.stringify({ result: { pane: { pane_id: `w42:p${pane}` } } }),
+            stdout: JSON.stringify({ id: "cli:tab:create", result: { pane_id: `w42:p${pane}` } }),
             stderr: "",
           };
         }

@@ -346,7 +346,7 @@ case "$1" in
         ;;
     esac
     ;;
-  tab) case "$2" in create) echo "{\\"pane_id\\":\\"p-stub-1\\"}"; exit 0 ;; esac ;;
+  tab) case "$2" in create) echo "{\\"id\\":\\"cli:tab:create\\",\\"result\\":{\\"pane_id\\":\\"p-stub-1\\"}}"; exit 0 ;; esac ;;
   pane) exit 0 ;;
 esac
 exit 0
@@ -416,7 +416,14 @@ exit 0
       unlinkSync(`${env.stubDir}/herdr`);
     } catch {}
 
-    const result = await runCli(env, { stdin: STD_PR_JSON });
+    // Use a PATH containing the stub dir + essential system dirs (for bash,
+    // env) + bun's bin, but excluding the user profile dir where the system
+    // herdr lives — so the bridge sees a true ENOENT for herdr.
+    const bunDir = await import("node:path").then((p) => p.dirname(process.execPath));
+    const result = await runCli(env, {
+      stdin: STD_PR_JSON,
+      extraEnv: { PATH: `${env.stubDir}:/bin:/usr/bin:${bunDir}` },
+    });
     expect(result.exitCode).toBe(6);
     expect(result.stdout).toContain('"error"');
     expect(result.stderr).toContain("herdr");

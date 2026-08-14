@@ -125,15 +125,30 @@ function respond(
   if (cmd === "gh" && args[0] === "pr" && args[1] === "checkout")
     return { stdout: "", stderr: "", code: 0 };
   // herdr workspace create --cwd ... --label ... --env ... --focus
+  // Real herdr CLI wraps responses in an envelope: {"id":"cli:...","result":{...}}
   if (cmd === "herdr" && args[0] === "workspace" && args[1] === "create")
-    return { stdout: JSON.stringify({ workspace_id: F.workspaceId }), stderr: "", code: 0 };
+    return {
+      stdout: JSON.stringify({
+        id: "cli:workspace:create",
+        result: { workspace_id: F.workspaceId },
+      }),
+      stderr: "",
+      code: 0,
+    };
   // herdr workspace get (for workspaceExists — returns success)
   if (cmd === "herdr" && args[0] === "workspace" && args[1] === "get")
-    return { stdout: JSON.stringify({ workspace_id: F.workspaceId }), stderr: "", code: 0 };
+    return {
+      stdout: JSON.stringify({ id: "cli:workspace:get", result: { workspace_id: F.workspaceId } }),
+      stderr: "",
+      code: 0,
+    };
   // herdr tab create --workspace ... --cwd ... --label ... --no-focus
   if (cmd === "herdr" && args[0] === "tab" && args[1] === "create")
     return {
-      stdout: JSON.stringify({ pane_id: `${F.workspaceId}-${nextTab()}` }),
+      stdout: JSON.stringify({
+        id: "cli:tab:create",
+        result: { pane_id: `${F.workspaceId}-${nextTab()}` },
+      }),
       stderr: "",
       code: 0,
     };

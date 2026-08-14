@@ -185,7 +185,7 @@ case "$1" in
         COUNTER=$((COUNTER + 1))
         echo "$COUNTER" > "$COUNTER_FILE"
         WS_ID="w-stub-$(printf '%03d' $COUNTER)"
-        echo "{\\"workspace_id\\":\\"$WS_ID\\"}"
+        echo "{\\"id\\":\\"cli:workspace:create\\",\\"result\\":{\\"workspace_id\\":\\"$WS_ID\\"}}"
         exit 0
         ;;
       get)
@@ -193,7 +193,7 @@ case "$1" in
           echo "workspace not found" >&2
           exit 1
         fi
-        echo "{\\"workspace_id\\":\\"w-stub-alive\\"}"
+        echo "{\\"id\\":\\"cli:workspace:get\\",\\"result\\":{\\"workspace_id\\":\\"w-stub-alive\\"}}"
         exit 0
         ;;
       close|focus)
@@ -205,7 +205,7 @@ case "$1" in
     case "$2" in
       create)
         TAB_COUNT=$(wc -l < "${logFile}" 2>/dev/null || echo 1)
-        echo "{\\"pane_id\\":\\"p-stub-$TAB_COUNT\\"}"
+        echo "{\\"id\\":\\"cli:tab:create\\",\\"result\\":{\\"pane_id\\":\\"p-stub-$TAB_COUNT\\"}}"
         exit 0
         ;;
     esac
@@ -326,11 +326,11 @@ sleep ${profile.delayMs / 1000}
 case "$1" in
   workspace)
     case "$2" in
-      create) echo "{\\"workspace_id\\":\\"${baseId}\\"}"; exit 0 ;;
-      get) ${deadExists ? 'echo "workspace not found" >&2; exit 1' : `echo "{\\"workspace_id\\":\\"${baseId}\\"}"; exit 0`} ;;
+      create) echo "{\\"id\\":\\"cli:workspace:create\\",\\"result\\":{\\"workspace_id\\":\\"${baseId}\\"}}"; exit 0 ;;
+      get) ${deadExists ? 'echo "workspace not found" >&2; exit 1' : `echo "{\\"id\\":\\"cli:workspace:get\\",\\"result\\":{\\"workspace_id\\":\\"${baseId}\\"}}"; exit 0`} ;;
       close|focus) exit 0 ;;
     esac ;;
-  tab) case "$2" in create) echo "{\\"pane_id\\":\\"p-stub-1\\"}"; exit 0 ;; esac ;;
+  tab) case "$2" in create) echo "{\\"id\\":\\"cli:tab:create\\",\\"result\\":{\\"pane_id\\":\\"p-stub-1\\"}}"; exit 0 ;; esac ;;
   pane) exit 0 ;;
 esac
 exit 0

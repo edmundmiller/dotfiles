@@ -59,6 +59,18 @@ export const findStringKey = (value: unknown, keys: Set<string>): string | undef
     return undefined;
   }
   if (!isRecord(value)) return undefined;
+
+  // Envelope-aware: the real herdr CLI wraps responses as
+  //   {"id":"cli:workspace:create","result":{"workspace_id":"w41",...}}
+  // The top-level "id" is the command name, not a data field. When the
+  // envelope shape is present (id is a string AND result is a record),
+  // search result first so we prefer data fields over the envelope id.
+  // This prevents extracting "cli:workspace:create" as the workspace id.
+  if (typeof value.id === "string" && isRecord(value.result)) {
+    const found = findStringKey(value.result, keys);
+    if (found) return found;
+  }
+
   for (const [key, item] of Object.entries(value)) {
     if (keys.has(key) && typeof item === "string" && item) return item;
     const found = findStringKey(item, keys);

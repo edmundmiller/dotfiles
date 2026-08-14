@@ -113,17 +113,34 @@ function createExecStub(
       return { stdout: "", stderr: "", code: 0 };
     }
     if (cmd === "herdr" && args[0] === "workspace" && args[1] === "create")
-      return { stdout: JSON.stringify({ workspace_id: F.workspaceId }), stderr: "", code: 0 };
+      return {
+        stdout: JSON.stringify({
+          id: "cli:workspace:create",
+          result: { workspace_id: F.workspaceId },
+        }),
+        stderr: "",
+        code: 0,
+      };
     if (cmd === "herdr" && args[0] === "workspace" && args[1] === "get") {
       if (opts.workspaceGetSucceeds === false) return { stdout: "", stderr: "not found", code: 1 };
-      return { stdout: JSON.stringify({ workspace_id: F.workspaceId }), stderr: "", code: 0 };
+      return {
+        stdout: JSON.stringify({
+          id: "cli:workspace:get",
+          result: { workspace_id: F.workspaceId },
+        }),
+        stderr: "",
+        code: 0,
+      };
     }
     if (cmd === "herdr" && args[0] === "workspace" && args[1] === "close")
       return { stdout: "", stderr: "", code: 0 };
     if (cmd === "herdr" && args[0] === "tab" && args[1] === "create") {
       tabCounter++;
       return {
-        stdout: JSON.stringify({ pane_id: `${F.workspaceId}-${tabCounter}` }),
+        stdout: JSON.stringify({
+          id: "cli:tab:create",
+          result: { pane_id: `${F.workspaceId}-${tabCounter}` },
+        }),
         stderr: "",
         code: 0,
       };
