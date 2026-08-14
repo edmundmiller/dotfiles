@@ -17,6 +17,7 @@
         };
       };
       dev = {
+        nextflow.enable = true;
         node.enable = true;
         node.useFnm = true;
         python.enable = true;
