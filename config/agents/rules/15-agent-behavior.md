@@ -24,6 +24,7 @@ Before changing code:
 - Immediately before each external write, verify the active account, organization, project, and target identifier; abort on any mismatch.
 - For non-idempotent creates, treat success as terminal: persist and re-read the returned identifier, and retry only after an unambiguous failure.
 - For scheduled external changes, resolve the next fire time under the provider's timezone and weekday semantics, then re-read the deployed trigger.
+- For scheduled jobs and services, verify the executable path in the deployed environment, require live scheduler, unit, or process evidence rather than leftover state files, and exercise one representative invocation before claiming activation.
 - Before changing behavior for a reported bug, reproduce the reported symptom or explicitly classify it as unverified; never patch from the report alone.
 - Before editing or reviewing, confirm every target path belongs to the assigned checkout and that no rebase or concurrent mutation is active; never fall back to files in another checkout.
 - Do not clean up unrelated code; mention it separately.
