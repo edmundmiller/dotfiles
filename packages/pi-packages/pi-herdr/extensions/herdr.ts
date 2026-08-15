@@ -2,6 +2,8 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import { basename, dirname } from "node:path";
 
+import { fetchPrInfo, openReviewBox } from "./pr-review-workspace.js";
+import type { ExecFn, PrInfo, ReviewBoxResult } from "./pr-review-workspace.js";
 // Re-export shared helpers, types, primitives, and the decision flow from the
 // extracted module for backward compatibility and bridge consumption.
 export {
@@ -22,15 +24,6 @@ export type {
   ReviewBoxManifest,
   ReviewBoxResult,
   OpenReviewBoxOpts,
-} from "./pr-review-workspace.js";
-
-// Import the decision flow and fetch helper for delegation.
-import {
-  openReviewBox,
-  fetchPrInfo,
-  type PrInfo,
-  type ExecFn,
-  type ReviewBoxResult,
 } from "./pr-review-workspace.js";
 
 const HERDR_TIMEOUT_MS = 10_000;
