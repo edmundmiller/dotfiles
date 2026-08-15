@@ -85,13 +85,13 @@ connections active and can wake the Apple TV and HDMI-CEC display.
 
 `climate.nix` is the sole Home Assistant thermostat policy:
 
-- HA owns awake occupied, away, vacation, humidity, door-open, and fresh ERCOT grid adjustments.
+- HA owns occupied, away, vacation, humidity, door-open, and fresh ERCOT grid adjustments at all times; Goodnight does not release the requested target.
 - Awake occupancy is true when either person GPS is `home` or either phone reports the `Aviato` SSID. The SSID is positive climate evidence only: a stale home value may delay energy savings, but cannot cause false-away cooling.
 - Ordinary away cooling starts only after every GPS and home-SSID signal has remained away for two hours, then targets 76 F for the dog. Returning home by either signal reapplies occupied cooling immediately; vacation remains 78 F.
-- Ecobee/HomeKit owns equipment protection and the fallback schedule. Sleep or invalid core state must clear both thermostat holds.
-- Every HA hold uses `timer.climate_policy_hold`; the watchdog clears and re-evaluates it after 45 minutes.
-- An external target change during an HA hold starts `timer.climate_manual_override`; that target wins for two hours, then normal policy resumes.
-- `script.activate_climate_manual_override` provides the explicit HA control path and defaults to 74 F.
+- Ecobee/HomeKit owns equipment protection and the fallback schedule. Invalid core state or the door-open pause clears both thermostat holds.
+- Every HA hold uses `timer.climate_policy_hold`; the watchdog re-evaluates it after 45 minutes without releasing a valid target.
+- An authenticated HA target change starts `timer.climate_manual_override`; that target wins for two hours, then normal policy resumes. Anonymous Ecobee schedule changes are treated as drift and corrected after five seconds.
+- `script.activate_climate_manual_override` provides the explicit HA control path, works during Goodnight, and defaults to 74 F.
 - ERCOT comes from `daily-prc.json`. Grid adjustments require `lastUpdated` within 15 minutes; stale/unavailable grid data is ignored.
 - Smart Meter Texas and Electricity Maps are config-flow integrations. Nix enables their components, but credentials/API keys stay outside the repo.
 - Front-door pause uses `binary_sensor.eve_door_20ebn9901_door`; close must reapply policy.

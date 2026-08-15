@@ -77,12 +77,13 @@ let
     );
 
   hasStateAttributeTrigger =
-    automation: entityIds: attribute:
+    automation: entityIds: attribute: duration:
     any (
       t:
       (t.platform or null) == "state"
       && (t.entity_id or null) == entityIds
       && (t.attribute or null) == attribute
+      && (t."for" or null) == duration
     ) (toList (automation.trigger or [ ]));
 
   hasNumericStateCondition =
@@ -1241,13 +1242,12 @@ let
     {
       test =
         !hasInfix "and is_state('input_boolean.goodnight', 'off')" applyClimatePolicyJson
-        && hasStateAttributeTrigger climatePolicy thermostats "temperature"
+        && hasStateAttributeTrigger climatePolicy thermostats "temperature" { seconds = 5; }
         && hasInfix "context.user_id is not none" (builtins.toJSON climateManualOverrideDetected)
         && !hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
           "button.main_floor_clear_hold"
           "button.master_suite_clear_hold"
         ];
-      expectedFailure = true;
       msg = "explicit climate targets must survive Goodnight and Ecobee schedule transitions";
     }
     {
@@ -1295,14 +1295,14 @@ let
       test =
         climateManualOverrideDetected != null
         && hasInfix "attribute\":\"temperature" (builtins.toJSON climateManualOverrideDetected)
-        && hasInfix "timer.climate_policy_hold" (builtins.toJSON climateManualOverrideDetected)
         && hasInfix "context.parent_id" (builtins.toJSON climateManualOverrideDetected)
+        && hasInfix "context.user_id" (builtins.toJSON climateManualOverrideDetected)
         && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "input_number.set_value"
         && hasActionCall (toList (climateManualOverrideDetected.action or [ ])) "timer.start"
         && hasActionCall (toList (
           climateManualOverrideDetected.action or [ ]
         )) "script.apply_climate_policy";
-      msg = "external thermostat target changes during an HA hold must activate the bounded manual override";
+      msg = "authenticated HA thermostat target changes must activate the bounded manual override";
     }
     {
       test =
@@ -1336,11 +1336,12 @@ let
     {
       test =
         climateHoldWatchdog != null
-        && hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
+        && !hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
           "button.main_floor_clear_hold"
           "button.master_suite_clear_hold"
-        ];
-      msg = "climate hold watchdog must clear both thermostat holds";
+        ]
+        && hasActionCall (toList (climateHoldWatchdog.action or [ ])) "script.apply_climate_policy";
+      msg = "climate hold watchdog must reapply policy without clearing thermostat holds";
     }
     {
       test = climateDoorOpen != null && climateDoorClosed != null;

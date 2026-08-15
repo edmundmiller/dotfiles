@@ -1,4 +1,4 @@
-# Home Assistant owns awake climate policy; Ecobee schedules are the fail-safe.
+# Home Assistant owns climate targets; Ecobee schedules are the fail-safe.
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled;
@@ -91,7 +91,6 @@ in
                       or is_state('sensor.edmunds_iphone_ssid', 'Aviato'))
                  and (states('person.moni') not in ['unknown', 'unavailable']
                       or is_state('sensor.monicas_iphone_ssid', 'Aviato'))
-                 and is_state('input_boolean.goodnight', 'off')
                  and not is_state('binary_sensor.eve_door_20ebn9901_door', 'on') }}
             '';
             target_temperature = ''
@@ -246,7 +245,7 @@ in
       {
         alias = "Climate policy";
         id = "climate_policy";
-        description = "Apply bounded awake targets; combine GPS and home WiFi occupancy; delay ordinary away cooling for two hours; sleep and invalid core state resume Ecobee schedules.";
+        description = "Continuously apply bounded targets; combine GPS and home WiFi occupancy; delay ordinary away cooling for two hours; reconcile Ecobee schedule transitions.";
         mode = "restart";
         trigger = [
           {
@@ -268,6 +267,12 @@ in
                 "input_number.occupied_cooling_target"
                 "sensor.ercot_grid_status"
               ];
+          }
+          {
+            platform = "state";
+            entity_id = thermostats;
+            attribute = "temperature";
+            "for".seconds = 5;
           }
           {
             platform = "state";
@@ -315,7 +320,7 @@ in
       {
         alias = "Climate hold watchdog";
         id = "climate_hold_watchdog";
-        description = "Clear each HA hold after 45 minutes, then re-evaluate instead of leaving an indefinite hold.";
+        description = "Re-evaluate each HA hold after 45 minutes without releasing the active target.";
         trigger = {
           platform = "event";
           event_type = "timer.finished";
@@ -323,21 +328,14 @@ in
         };
         action = [
           {
-            action = "button.press";
-            target.entity_id = clearHoldButtons;
-          }
-          {
-            delay.seconds = 5;
-          }
-          {
             action = "script.apply_climate_policy";
           }
         ];
       }
       {
-        alias = "Respect manual climate target";
+        alias = "Respect HA manual climate target";
         id = "climate_manual_override_detected";
-        description = "Follow an external thermostat target for two hours instead of fighting it.";
+        description = "Follow an authenticated HA thermostat target for two hours; treat anonymous Ecobee schedule changes as drift.";
         mode = "restart";
         trigger = {
           platform = "state";
@@ -346,15 +344,11 @@ in
         };
         condition = [
           {
-            condition = "state";
-            entity_id = "timer.climate_policy_hold";
-            state = "active";
-          }
-          {
             condition = "template";
             value_template = ''
               {{ trigger.to_state is not none
                  and trigger.to_state.context.parent_id is none
+                 and trigger.to_state.context.user_id is not none
                  and trigger.to_state.attributes.temperature is number }}
             '';
           }
