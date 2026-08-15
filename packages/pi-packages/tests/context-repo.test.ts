@@ -42,7 +42,7 @@ function setupMemoryDir(): string {
   // git init + initial commit so the extension sees an existing repo
   execSync("git init", { cwd: memDir });
   execSync("git config core.hooksPath /dev/null", { cwd: memDir });
-  // Later memory_commit calls need an identity even when CI has no global Git config.
+  // Repository-local identity keeps later memory_commit calls independent of CI Git config.
   execSync('git config user.name "Test User"', { cwd: memDir });
   execSync('git config user.email "test@example.com"', { cwd: memDir });
   execSync("git add .", { cwd: memDir });
