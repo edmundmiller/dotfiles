@@ -91,7 +91,19 @@ if [[ $run_all -eq 1 ]]; then
   done < <(find "$ROOT_DIR/packages/pi-packages" -mindepth 1 -maxdepth 1 -type d -name 'pi-*' -exec basename {} \; | sort)
 fi
 
-if [[ ${#packages[@]} -eq 0 ]]; then
+run_integration=0
+if [[ $run_all -eq 1 ]]; then
+  run_integration=1
+elif [[ ${#changed_files[@]} -gt 0 ]]; then
+  for file in "${changed_files[@]}"; do
+    if [[ "$file" == packages/pi-packages/tests/* || "$file" == packages/pi-packages/package.json ||
+      ( "$file" == packages/pi-packages/bun.lock && ${#packages[@]} -gt 0 ) ]]; then
+      run_integration=1
+      break
+    fi
+  done
+fi
+if [[ ${#packages[@]} -eq 0 && $run_integration -eq 0 ]]; then
   echo "qa-changed: no packages/pi-packages changes detected"
   exit 0
 fi
@@ -160,23 +172,6 @@ if [[ ${#existing_packages[@]} -gt 0 ]]; then
   done
 fi
 
-run_integration=0
-if [[ $run_all -eq 1 ]]; then
-  run_integration=1
-else
-  if [[ ${#changed_files[@]} -gt 0 ]]; then
-    for file in "${changed_files[@]}"; do
-      if [[ "$file" == packages/pi-packages/tests/* || "$file" == packages/pi-packages/package.json ]]; then
-        run_integration=1
-        break
-      fi
-      if [[ "$file" == packages/pi-packages/bun.lock && ${#packages[@]} -gt 0 ]]; then
-        run_integration=1
-        break
-      fi
-    done
-  fi
-fi
 
 if [[ ${#packages[@]} -eq 0 && $run_integration -eq 0 ]]; then
   echo "qa-changed: no remaining packages or integration tests to check"
