@@ -36,6 +36,25 @@ published and the authoritative remote passes a bounded history scan.
   scoped source and worklog.
 - `hey check --worktree` passed formatting, hooks, Darwin evaluation, tmux,
   package harness, package policy, and ast-grep checks.
+- Created a permission-restricted recovery mirror and bundle outside the
+  repository before rewriting any remote ref; the bundle checksum is
+  `bca5eb34eafad22a635825fa07320cfc94eccfaa232ec6601e7cd88c77f95b61`.
+- `git-filter-repo` removed the complete audit-log path and neutralized the
+  requested term in historical blobs and commit messages.
+- The rewrite changed 73 branches, 71 tags, and 201 GitHub pull-request heads.
+  An exhaustive reachable-object scan of the rewritten mirror returned zero
+  matches before publication.
+- An atomic push used 148 exact per-ref leases. A fresh GitHub mirror confirmed
+  that every published branch and tag matches the rewrite, the audit path has
+  no reachable commits, and the requested term has no reachable object match.
+- One read-only GitHub pull-request ref still retains the old audit tree. A
+  GitHub Support purge is required to remove PR refs and cached views; doing so
+  would erase historical diff views for affected pull requests.
+- `hey check` passed again against the rewritten tree after the neutral rule
+  commit was reapplied.
+- `hey agent-finish --worklog .agents/worklogs/privacy-neutral-output.md`
+  passed repository quality, 43 agent-quality tests, rule and skill validation,
+  instruction checks, test confidence, and inventory drift.
 
 ## Reviews
 
@@ -45,7 +64,10 @@ published and the authoritative remote passes a bounded history scan.
   `RUNTIME: Authentication required`. No review findings were produced. The
   user's explicit authorization and the bounded recovery/lease plan remain the
   implementation gate.
-- Landing review: pending.
+- Landing review attempted with
+  `hey agent-review landing --active-model-family openai --worklog .agents/worklogs/privacy-neutral-output.md`;
+  the reviewer failed at session creation with
+  `RUNTIME: Authentication required`. No review findings were produced.
 
 ## Feedback
 
@@ -55,10 +77,10 @@ published and the authoritative remote passes a bounded history scan.
 
 ## Remaining work
 
-- Create scoped commits and a private recovery bundle.
-- Rewrite and publish all affected public refs.
-- Verify GitHub readback, record commits, and close the receipt.
+- Obtain explicit approval before asking GitHub Support to remove affected
+  pull-request refs and cached views.
+- After that decision, finalize the worklog, receipt, and task tag.
 
 ## Commits
 
-- Pending.
+- `b61c73668` — `docs(agents): preserve complete concise answers`
