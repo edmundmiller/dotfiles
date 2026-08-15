@@ -1,0 +1,433 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index f3e55fa..14e679c 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -51,9 +51,10 @@ import { CacheService, type PullRequestCacheKey } from "./services/CacheService.
+ import { Clipboard } from "./services/Clipboard.js"
+ import { CommandRunner } from "./services/CommandRunner.js"
+ import { GitHubService } from "./services/GitHubService.js"
++import { ReviewBox } from "./services/ReviewBox.js"
+ import { detectSystemAppearance } from "./systemAppearance.js"
+ import { fixedThemeConfig, resolveThemeId, systemThemeConfigForTheme, themeConfigWithSelection, type ThemeConfig, type ThemeMode } from "./themeConfig.js"
+-import { loadStoredDiffWhitespaceMode, loadStoredThemeConfig, saveStoredDiffWhitespaceMode, saveStoredThemeConfig } from "./themeStore.js"
++import { loadStoredDiffWhitespaceMode, loadStoredReviewBoxCommand, loadStoredThemeConfig, saveStoredDiffWhitespaceMode, saveStoredThemeConfig } from "./themeStore.js"
+ import { colors, filterThemeDefinitions, mixHex, pairedThemeId, setActiveTheme, themeDefinitions, themeToneForThemeId, type ThemeId, type ThemeTone } from "./ui/colors.js"
+ import {
+ 	backspace as editorBackspace,
+@@ -186,15 +187,16 @@ const githubServiceLayer =
+ const cacheServiceLayer = mockPrCount !== null ? CacheService.disabledLayer : CacheService.layerFromPath(config.cachePath)
+ 
+ const githubRuntime = Atom.runtime(
+-	Layer.mergeAll(githubServiceLayer, cacheServiceLayer, Clipboard.layerNoDeps, BrowserOpener.layerNoDeps).pipe(
++	Layer.mergeAll(githubServiceLayer, cacheServiceLayer, Clipboard.layerNoDeps, BrowserOpener.layerNoDeps, ReviewBox.layerNoDeps).pipe(
+ 		Layer.provide(CommandRunner.layer),
+ 		Layer.provideMerge(Observability.layer),
+ 	),
+ )
+-const [initialThemeConfig, initialDiffWhitespaceMode, initialSystemAppearance] = await Promise.all([
++const [initialThemeConfig, initialDiffWhitespaceMode, initialSystemAppearance, initialReviewBoxCommand] = await Promise.all([
+ 	Effect.runPromise(loadStoredThemeConfig),
+ 	Effect.runPromise(loadStoredDiffWhitespaceMode),
+ 	detectSystemAppearance(),
++	Effect.runPromise(loadStoredReviewBoxCommand),
+ ])
+ const initialThemeId = resolveThemeId(initialThemeConfig, initialSystemAppearance)
+ setActiveTheme(initialThemeId)
+@@ -534,6 +536,9 @@ const submitPullRequestReviewAtom = githubRuntime.fn<SubmitPullRequestReviewInpu
+ const copyToClipboardAtom = githubRuntime.fn<string>()((text) => Clipboard.use((clipboard) => clipboard.copy(text)))
+ const openInBrowserAtom = githubRuntime.fn<PullRequestItem>()((pullRequest) => BrowserOpener.use((browser) => browser.openPullRequest(pullRequest)))
+ const openUrlAtom = githubRuntime.fn<string>()((url) => BrowserOpener.use((browser) => browser.openUrl(url)))
++const promoteReviewBoxAtom = githubRuntime.fn<{ readonly commandPath: string; readonly pullRequest: PullRequestItem }>()((input) =>
++	ReviewBox.use((service) => service.promote(input.commandPath, input.pullRequest)),
++)
+ 
+ const pickInitialMergeMethod = (allowed: RepositoryMergeMethods | null, preferred: PullRequestMergeMethod | undefined): PullRequestMergeMethod => {
+ 	if (!allowed) return preferred ?? pullRequestMergeMethods[0]
+@@ -838,6 +843,7 @@ export const App = ({ systemThemeGeneration = 0 }: AppProps) => {
+ 	const copyToClipboard = useAtomSet(copyToClipboardAtom, { mode: "promise" })
+ 	const openInBrowser = useAtomSet(openInBrowserAtom, { mode: "promise" })
+ 	const openUrl = useAtomSet(openUrlAtom, { mode: "promise" })
++	const promoteReviewBox = useAtomSet(promoteReviewBoxAtom, { mode: "promise" })
+ 	const terminalWidth = width ?? 100
+ 	const terminalHeight = height ?? 24
+ 	const contentWidth = Math.max(1, terminalWidth)
+@@ -2461,6 +2467,13 @@ export const App = ({ systemThemeGeneration = 0 }: AppProps) => {
+ 			.catch((error) => flashNotice(errorMessage(error)))
+ 	}
+ 
++	const promoteSelectedReviewBox = (pullRequest: PullRequestItem) => {
++		if (!initialReviewBoxCommand) return
++		void promoteReviewBox({ commandPath: initialReviewBoxCommand, pullRequest })
++			.then((result) => flashNotice(`Review Box ${result.status}: #${pullRequest.number}`))
++			.catch((error) => flashNotice(errorMessage(error)))
++	}
++
+ 	const openLinkInBrowser = (url: string) => {
+ 		void openUrl(url)
+ 			.then(() => flashNotice(`Opened ${url}`))
+@@ -2996,6 +3009,7 @@ export const App = ({ systemThemeGeneration = 0 }: AppProps) => {
+ 		hasMorePullRequests,
+ 		isLoadingMorePullRequests,
+ 		selectedPullRequest,
++		reviewBoxCommand: initialReviewBoxCommand,
+ 		detailFullView,
+ 		diffFullView,
+ 		commentsViewActive,
+@@ -3073,6 +3087,9 @@ export const App = ({ systemThemeGeneration = 0 }: AppProps) => {
+ 			openPullRequestInBrowser: () => {
+ 				if (selectedPullRequest) openSelectedPullRequestInBrowser(selectedPullRequest)
+ 			},
++			promoteReviewBox: () => {
++				if (selectedPullRequest) promoteSelectedReviewBox(selectedPullRequest)
++			},
+ 			copyPullRequestMetadata: copySelectedPullRequestMetadata,
+ 			quit: () => renderer.destroy(),
+ 		},
+diff --git a/src/appCommands.ts b/src/appCommands.ts
+index 3af30a1..33d8571 100644
+--- a/src/appCommands.ts
++++ b/src/appCommands.ts
+@@ -42,6 +42,7 @@ interface AppCommandActions {
+ 	readonly openMergeModal: () => void
+ 	readonly openCloseModal: () => void
+ 	readonly openPullRequestInBrowser: () => void
++	readonly promoteReviewBox: () => void
+ 	readonly copyPullRequestMetadata: () => void
+ 	readonly quit: () => void
+ }
+@@ -57,6 +58,7 @@ interface BuildAppCommandsInput {
+ 	readonly hasMorePullRequests: boolean
+ 	readonly isLoadingMorePullRequests: boolean
+ 	readonly selectedPullRequest: PullRequestItem | null
++	readonly reviewBoxCommand: string | null
+ 	readonly detailFullView: boolean
+ 	readonly diffFullView: boolean
+ 	readonly commentsViewActive: boolean
+@@ -88,6 +90,7 @@ export const buildAppCommands = ({
+ 	hasMorePullRequests,
+ 	isLoadingMorePullRequests,
+ 	selectedPullRequest,
++	reviewBoxCommand,
+ 	detailFullView,
+ 	diffFullView,
+ 	commentsViewActive,
+@@ -227,6 +230,16 @@ export const buildAppCommands = ({
+ 			keywords: ["files", "patch"],
+ 			run: actions.openDiffView,
+ 		}),
++		defineCommand({
++			id: "pull.review-box",
++			title: "Promote/resume Review Box",
++			scope: "Pull request",
++			subtitle: selectedPullRequestLabel,
++			shortcut: "b",
++			keywords: ["box", "promote", "resume", "herdr", "review"],
++			disabledReason: noPullRequestReason ?? (reviewBoxCommand ? null : "Configure reviewBoxCommand in ghui/config.json."),
++			run: actions.promoteReviewBox,
++		}),
+ 		forSelected({
+ 			id: "comments.open",
+ 			title: "Open comments",
+diff --git a/src/keymap/listNav.ts b/src/keymap/listNav.ts
+index 9307fb0..3681ca1 100644
+--- a/src/keymap/listNav.ts
++++ b/src/keymap/listNav.ts
+@@ -27,6 +27,7 @@ export const listNavKeymap = List(
+ 	// Single-key command shortcuts (delegate to existing AppCommand registry)
+ 	{ id: "list.filter", title: "Filter", keys: ["/"], run: (s) => s.runCommandById("filter.open") },
+ 	{ id: "list.refresh", title: "Refresh", keys: ["r"], run: (s) => s.runCommandById("pull.refresh") },
++	{ id: "list.review-box", title: "Promote/resume Review Box", keys: ["b"], run: (s) => s.runCommandById("pull.review-box") },
+ 	{ id: "list.theme", title: "Theme", keys: ["t"], run: (s) => s.runCommandById("theme.open") },
+ 	{ id: "list.diff", title: "Open diff", keys: ["d"], run: (s) => s.runCommandById("diff.open") },
+ 	{ id: "list.comments", title: "Open comments", keys: ["c"], run: (s) => s.runCommandById("comments.open") },
+diff --git a/src/services/ReviewBox.ts b/src/services/ReviewBox.ts
+new file mode 100644
+index 0000000..826b0a5
+--- /dev/null
++++ b/src/services/ReviewBox.ts
+@@ -0,0 +1,77 @@
++import { Context, Effect, Layer, Schema } from "effect"
++import type { PullRequestItem } from "../domain.js"
++import { CommandRunner, type CommandError } from "./CommandRunner.js"
++
++export interface ReviewBoxResult {
++	readonly status: "created" | "resumed" | "restored" | "refreshed"
++	readonly workspaceId: string
++	readonly worktreePath: string
++	readonly headRefOid: string
++}
++
++const reviewBoxStatuses: Record<ReviewBoxResult["status"], true> = {
++	created: true,
++	resumed: true,
++	restored: true,
++	refreshed: true,
++}
++
++export class ReviewBoxOutputError extends Schema.TaggedErrorClass<ReviewBoxOutputError>()("ReviewBoxOutputError", {
++	detail: Schema.String,
++	cause: Schema.Defect,
++}) {}
++
++const parseResult = (stdout: string): Effect.Effect<ReviewBoxResult, ReviewBoxOutputError> =>
++	Effect.try({
++		try: () => {
++			const value = JSON.parse(stdout) as unknown
++			if (
++				typeof value !== "object" ||
++				value === null ||
++				!("status" in value) ||
++				typeof value.status !== "string" ||
++				!(value.status in reviewBoxStatuses) ||
++				!("workspaceId" in value) ||
++				typeof value.workspaceId !== "string" ||
++				!("worktreePath" in value) ||
++				typeof value.worktreePath !== "string" ||
++				!("headRefOid" in value) ||
++				typeof value.headRefOid !== "string"
++			) {
++				throw new Error("unexpected response shape")
++			}
++			return value as ReviewBoxResult
++		},
++		catch: (cause) => new ReviewBoxOutputError({ detail: "invalid review-box output", cause }),
++	})
++
++export class ReviewBox extends Context.Service<
++	ReviewBox,
++	{
++		readonly promote: (commandPath: string, pullRequest: PullRequestItem) => Effect.Effect<ReviewBoxResult, CommandError | ReviewBoxOutputError>
++	}
++>()("ghui/ReviewBox") {
++	static readonly layerNoDeps = Layer.effect(
++		ReviewBox,
++		Effect.gen(function* () {
++			const command = yield* CommandRunner
++
++			const promote = Effect.fn("ReviewBox.promote")(function* (commandPath: string, pullRequest: PullRequestItem) {
++				const input = {
++					repository: pullRequest.repository,
++					number: pullRequest.number,
++					headRefOid: pullRequest.headRefOid,
++					headRefName: pullRequest.headRefName,
++					title: pullRequest.title,
++					url: pullRequest.url,
++				}
++				const result = yield* command.run(commandPath, [], { stdin: JSON.stringify(input) })
++				return yield* parseResult(result.stdout)
++			})
++
++			return ReviewBox.of({ promote })
++		}),
++	)
++
++	static readonly layer = ReviewBox.layerNoDeps.pipe(Layer.provide(CommandRunner.layer))
++}
+diff --git a/src/themeStore.ts b/src/themeStore.ts
+index 28a45e8..08b2b50 100644
+--- a/src/themeStore.ts
++++ b/src/themeStore.ts
+@@ -13,6 +13,7 @@ interface StoredConfig {
+ 	readonly lightTheme?: unknown
+ 	readonly diffWhitespaceMode?: unknown
+ 	readonly systemThemeAutoReload?: unknown
++	readonly reviewBoxCommand?: unknown
+ }
+ 
+ const configDirectory = () => {
+@@ -69,6 +70,14 @@ export const loadStoredSystemThemeAutoReload: Effect.Effect<boolean> = Effect.ca
+ 	() => Effect.succeed(false),
+ )
+ 
++export const loadStoredReviewBoxCommand: Effect.Effect<string | null> = Effect.catchCause(
++	Effect.tryPromise(async () => {
++		const value = (await readStoredConfig()).reviewBoxCommand
++		return typeof value === "string" && value.trim().length > 0 ? value : null
++	}),
++	() => Effect.succeed(null),
++)
++
+ export const saveStoredThemeId = (theme: ThemeId): Effect.Effect<void> =>
+ 	Effect.tryPromise(async () => {
+ 		const config = await readStoredConfig()
+diff --git a/test/appCommands.test.ts b/test/appCommands.test.ts
+index 843609d..ed525ae 100644
+--- a/test/appCommands.test.ts
++++ b/test/appCommands.test.ts
+@@ -7,6 +7,7 @@ const selectedPullRequest: PullRequestItem = {
+ 	repository: "owner/repo",
+ 	author: "kit",
+ 	headRefOid: "abc123",
++	headRefName: "feature/review-box",
+ 	number: 42,
+ 	title: "Review UX",
+ 	body: "",
+@@ -40,6 +41,7 @@ const buildCommands = (overrides: Partial<Parameters<typeof buildAppCommands>[0]
+ 		hasMorePullRequests: false,
+ 		isLoadingMorePullRequests: false,
+ 		selectedPullRequest,
++		reviewBoxCommand: "/bin/review-box",
+ 		detailFullView: false,
+ 		diffFullView: true,
+ 		commentsViewActive: false,
+@@ -95,6 +97,7 @@ const buildCommands = (overrides: Partial<Parameters<typeof buildAppCommands>[0]
+ 			openMergeModal: noop,
+ 			openCloseModal: noop,
+ 			openPullRequestInBrowser: noop,
++			promoteReviewBox: noop,
+ 			copyPullRequestMetadata: noop,
+ 			quit: noop,
+ 		},
+@@ -219,4 +222,22 @@ describe("review UX commands", () => {
+ 			}).disabledReason,
+ 		).toBe("Only your own (synced) comments can be edited or deleted.")
+ 	})
++
++	test("Review Box promotion is available for a selected pull request", () => {
++		const command = commandById("pull.review-box")
++
++		expect(command.title).toBe("Promote/resume Review Box")
++		expect(command.scope).toBe("Pull request")
++		expect(command.shortcut).toBe("b")
++		expect(command.keywords).toEqual(expect.arrayContaining(["box", "promote", "resume", "herdr", "review"]))
++		expect(command.disabledReason).toBeFalsy()
++	})
++
++	test("Review Box promotion requires a selected pull request", () => {
++		expect(commandById("pull.review-box", { selectedPullRequest: null }).disabledReason).toBe("Select a pull request first.")
++	})
++
++	test("Review Box promotion requires a configured command", () => {
++		expect(commandById("pull.review-box", { reviewBoxCommand: null }).disabledReason).toBe("Configure reviewBoxCommand in ghui/config.json.")
++	})
+ })
+diff --git a/test/reviewBox.test.ts b/test/reviewBox.test.ts
+new file mode 100644
+index 0000000..81f01fd
+--- /dev/null
++++ b/test/reviewBox.test.ts
+@@ -0,0 +1,93 @@
++import { describe, expect, test } from "bun:test"
++import { Effect, Layer, Schema } from "effect"
++import type { PullRequestItem } from "../src/domain.js"
++import { CommandRunner, type CommandResult, type RunOptions } from "../src/services/CommandRunner.js"
++import { ReviewBox } from "../src/services/ReviewBox.js"
++
++const pullRequest: PullRequestItem = {
++	repository: "owner/repo",
++	author: "kit",
++	headRefOid: "abc123",
++	headRefName: "feature/review-box",
++	number: 42,
++	title: "Review UX",
++	body: "",
++	labels: [],
++	additions: 1,
++	deletions: 1,
++	changedFiles: 2,
++	state: "open",
++	reviewStatus: "review",
++	checkStatus: "passing",
++	checkSummary: "1/1",
++	checks: [],
++	autoMergeEnabled: false,
++	detailLoaded: true,
++	createdAt: new Date("2026-01-01T00:00:00Z"),
++	closedAt: null,
++	url: "https://github.com/owner/repo/pull/42",
++}
++
++interface RecordedCall {
++	readonly command: string
++	readonly args: readonly string[]
++	readonly options?: RunOptions
++}
++
++const fakeCommandRunner = (result: CommandResult, calls: RecordedCall[]) =>
++	Layer.succeed(
++		CommandRunner,
++		CommandRunner.of({
++			run: (command, args, options) => {
++				calls.push({ command, args: [...args], ...(options ? { options } : {}) })
++				return Effect.succeed(result)
++			},
++			runSchema: <S extends Schema.Top>() => Effect.die("unused") as Effect.Effect<S["Type"], never, S["DecodingServices"]>,
++		}),
++	)
++
++const runWith = <A>(effect: Effect.Effect<A, unknown, ReviewBox>, layer: Layer.Layer<ReviewBox>) => Effect.runPromise(effect.pipe(Effect.provide(layer)) as Effect.Effect<A>)
++
++describe("ReviewBox", () => {
++	test("passes the selected PR contract on stdin and returns bridge status", async () => {
++		const calls: RecordedCall[] = []
++		const response = {
++			status: "created",
++			workspaceId: "w42",
++			worktreePath: "/repo/.pi/worktrees/pr-42-feature-review-box",
++			headRefOid: "abc123",
++		}
++		const layer = ReviewBox.layerNoDeps.pipe(Layer.provide(fakeCommandRunner({ stdout: JSON.stringify(response), stderr: "", exitCode: 0 }, calls)))
++
++		const result = await runWith(
++			ReviewBox.use((service) => service.promote("/bin/review-box", pullRequest)),
++			layer,
++		)
++
++		expect(result).toEqual(response)
++		expect(calls).toHaveLength(1)
++		expect(calls[0]!.command).toBe("/bin/review-box")
++		expect(calls[0]!.args).toEqual([])
++		expect(JSON.parse(calls[0]!.options?.stdin ?? "")).toEqual({
++			repository: "owner/repo",
++			number: 42,
++			headRefOid: "abc123",
++			headRefName: "feature/review-box",
++			title: "Review UX",
++			url: "https://github.com/owner/repo/pull/42",
++		})
++	})
++
++	test.each(["", "not json", '{"status":"unknown"}'])("rejects invalid success output: %s", async (stdout) => {
++		const layer = ReviewBox.layerNoDeps.pipe(Layer.provide(fakeCommandRunner({ stdout, stderr: "", exitCode: 0 }, [])))
++
++		await expect(
++			runWith(
++				ReviewBox.use((service) => service.promote("/bin/review-box", pullRequest)),
++				layer,
++			),
++		).rejects.toMatchObject({
++			detail: "invalid review-box output",
++		})
++	})
++})
+diff --git a/test/themeStore.test.ts b/test/themeStore.test.ts
+index 4ba7517..0320e21 100644
+--- a/test/themeStore.test.ts
++++ b/test/themeStore.test.ts
+@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises"
+ import { tmpdir } from "node:os"
+ import { join } from "node:path"
+ import { Effect } from "effect"
+-import { loadStoredSystemThemeAutoReload } from "../src/themeStore.js"
++import { loadStoredReviewBoxCommand, loadStoredSystemThemeAutoReload } from "../src/themeStore.js"
+ 
+ const originalConfigDir = process.env.GHUI_CONFIG_DIR
+ const tempDirs: string[] = []
+@@ -56,3 +56,17 @@ describe("loadStoredSystemThemeAutoReload", () => {
+ 		expect(await loadSystemThemeAutoReload()).toBe(false)
+ 	})
+ })
++
++describe("loadStoredReviewBoxCommand", () => {
++	test("returns a configured executable", async () => {
++		await useTempConfig('{"reviewBoxCommand":"/bin/review-box"}')
++
++		expect(await Effect.runPromise(loadStoredReviewBoxCommand)).toBe("/bin/review-box")
++	})
++
++	test("returns null for missing or empty values", async () => {
++		await useTempConfig('{"reviewBoxCommand":""}')
++
++		expect(await Effect.runPromise(loadStoredReviewBoxCommand)).toBeNull()
++	})
++})

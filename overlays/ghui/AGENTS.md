@@ -1,9 +1,9 @@
 ---
-purpose: Define ghui overlay source-pin maintenance.
+purpose: Define ghui source-pin and local patch maintenance.
 applies_to: Changes under overlays/ghui/ or the ghui flake input.
 entrypoint: Read package-harness.json.
-verification: Build pkgs.my.ghui and run ghui --version.
-update_when: ghui source pin or bun lockfile changes.
+verification: Run pkg-check ghui, build pkgs.my.ghui, and run ghui --version.
+update_when: The ghui source pin, patch stack, or bun lockfile changes.
 ---
 
 # ghui overlay instructions
@@ -27,6 +27,13 @@ copy). Repin to `kitlangton/ghui` once that PR merges.
 Validate a new pin from a checkout of that rev with ghui's own checks:
 `bun run typecheck` and the targeted `bun test` commands in
 `package-harness.json`.
+
+## Carried patches
+
+`patches/0001-promote-review-box-command.patch` adds the configured
+`reviewBoxCommand`, command-palette action, and `b` list binding that pass the
+selected pull request to the local Review Box bridge. Keep its service and
+command tests in `package-harness.json`.
 
 ## bun.nix
 

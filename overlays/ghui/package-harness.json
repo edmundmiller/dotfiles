@@ -1,10 +1,13 @@
 {
   "source": "https://github.com/kcosr/ghui.git",
   "ref": "855649490c25ac5d561e1ded987d72af7b07d3fa",
+  "patches": ["patches/0001-promote-review-box-command.patch"],
   "checks": [
     ["bun", "install", "--frozen-lockfile", "--ignore-scripts"],
     ["bun", "run", "typecheck"],
     ["bun", "test", "./test/appCommands.test.ts"],
+    ["bun", "test", "./test/reviewBox.test.ts"],
+    ["bun", "test", "./test/themeStore.test.ts"],
     ["bun", "test", "./test/diffStacking.test.ts"]
   ]
 }

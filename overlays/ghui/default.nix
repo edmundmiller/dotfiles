@@ -29,6 +29,10 @@ let
 
     inherit src;
 
+    patches = [
+      ./patches/0001-promote-review-box-command.patch
+    ];
+
     nativeBuildInputs = [
       bun2nix.hook
       final.makeWrapper
