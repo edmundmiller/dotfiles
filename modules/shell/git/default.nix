@@ -118,6 +118,7 @@ in
           pre-commit
           my.git-hunks
           my.ghui
+          my.review-box
           (mkIf cfg.ai.enable my.git-ai)
           (mkIf cfg.gitbutler.enable llm-agents.but)
           (mkIf cfg.gitbutler.enable llm-agents.gitbutler)
@@ -250,6 +251,10 @@ in
             "ghui/config.json".text = builtins.toJSON {
               theme = "system";
               systemThemeAutoReload = true;
+              reviewBoxCommand = "${pkgs.my.review-box}/bin/review-box";
+            };
+            "review-box/config.json".text = builtins.toJSON {
+              "edmundmiller/dotfiles" = "/Users/emiller/.config/dotfiles";
             };
           }
           // optionalAttrs cfg.hunk.enable {

@@ -1,0 +1,19 @@
+{
+  "source": ".",
+  "ref": "HEAD",
+  "patches": [],
+  "checks": [
+    ["mkdir", "-p", "packages/pi-packages/node_modules"],
+    ["ln", "-s", "../pi-herdr", "packages/pi-packages/node_modules/pi-herdr"],
+    [
+      "bun",
+      "build",
+      "--compile",
+      "packages/pi-packages/pi-review-box/src/cli.ts",
+      "--outfile",
+      "review-box"
+    ],
+    ["codesign", "-f", "-s", "-", "review-box"],
+    ["./review-box", "--help"]
+  ]
+}
