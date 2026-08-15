@@ -76,6 +76,15 @@ let
       toList (automation.trigger or [ ])
     );
 
+  hasStateAttributeTrigger =
+    automation: entityIds: attribute:
+    any (
+      t:
+      (t.platform or null) == "state"
+      && (t.entity_id or null) == entityIds
+      && (t.attribute or null) == attribute
+    ) (toList (automation.trigger or [ ]));
+
   hasNumericStateCondition =
     conditions: entityId: above: below:
     any (
@@ -361,6 +370,10 @@ let
   homeWifiSsids = [
     "sensor.edmunds_iphone_ssid"
     "sensor.monicas_iphone_ssid"
+  ];
+  thermostats = [
+    "climate.main_floor"
+    "climate.master_suite"
   ];
   vacationEndPresence = findAutomation "vacation_end_presence";
   vacationEndPresenceActions =
@@ -1224,6 +1237,18 @@ let
     {
       test = applyClimatePolicy != null;
       msg = "script 'apply_climate_policy' missing";
+    }
+    {
+      test =
+        !hasInfix "and is_state('input_boolean.goodnight', 'off')" applyClimatePolicyJson
+        && hasStateAttributeTrigger climatePolicy thermostats "temperature"
+        && hasInfix "context.user_id is not none" (builtins.toJSON climateManualOverrideDetected)
+        && !hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
+          "button.main_floor_clear_hold"
+          "button.master_suite_clear_hold"
+        ];
+      expectedFailure = true;
+      msg = "explicit climate targets must survive Goodnight and Ecobee schedule transitions";
     }
     {
       test =
