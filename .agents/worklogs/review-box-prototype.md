@@ -1,6 +1,6 @@
 # Worklog: review-box-prototype
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -27,12 +27,14 @@ Ship `dotfiles-esav.7`: promote a ghui pull request into a resumable four-tab He
 - `hey check`: Darwin evaluation, formatting, hooks, package harness, policy, and ast-grep checks passed.
 - `hey re`: activation succeeded. Live ghui and Review Box configs retained theme keys, pointed to an executable bridge, and mapped `edmundmiller/dotfiles` to `/Users/emiller/.config/dotfiles`.
 - First amended VAL-BRIDGE-003 run found a fifth initial Herdr tab. After the regression fix and activation, the serialized validator passed: workspace `w4D` had the 56-character PR label, matching worktree cwd, final focus, and exactly Hunk, Critique, OMP Review, and Approve in order. Cleanup restored the baseline workspace IDs and focus with no PR #216 artifacts remaining.
+- `bun test ./tests/*.test.ts --timeout 30000`: all 91 package integration tests passed after making the temporary context repository carry its own Git identity, matching Linux CI.
+- Landing verification matched local and remote `main` at `da88bc67b4c33ae0ace1d67df569ab9e3aa8dc85`; `agent-work/review-box-prototype` was pushed and `dotfiles-esav.7` was closed.
 
 ## Reviews
 
 - Bridge-core scrutiny passed after the workspace-import correction.
 - A targeted code-simplifier review covered the shared module and initial-tab cleanup.
-- Landing review remains pending.
+- Landing review passed after rebasing onto current `origin/main`; the follow-up Linux fixture correction passed the full package integration suite.
 
 ## Feedback
 
@@ -41,7 +43,7 @@ Ship `dotfiles-esav.7`: promote a ghui pull request into a resumable four-tab He
 
 ## Remaining work
 
-- Run final mission gates, close `dotfiles-esav.7`, land, and tag.
+- None.
 
 ## Commits
 
