@@ -86,7 +86,8 @@ connections active and can wake the Apple TV and HDMI-CEC display.
 `climate.nix` is the sole Home Assistant thermostat policy:
 
 - HA owns awake occupied, away, vacation, humidity, door-open, and fresh ERCOT grid adjustments.
-- Away cooling starts only after the latest person-state transition has remained away for one hour; returning home reapplies occupied cooling immediately.
+- Awake occupancy is true when either person GPS is `home` or either phone reports the `Aviato` SSID. The SSID is positive climate evidence only: a stale home value may delay energy savings, but cannot cause false-away cooling.
+- Ordinary away cooling starts only after every GPS and home-SSID signal has remained away for two hours, then targets 76 F for the dog. Returning home by either signal reapplies occupied cooling immediately; vacation remains 78 F.
 - Ecobee/HomeKit owns equipment protection and the fallback schedule. Sleep or invalid core state must clear both thermostat holds.
 - Every HA hold uses `timer.climate_policy_hold`; the watchdog clears and re-evaluates it after 45 minutes.
 - An external target change during an HA hold starts `timer.climate_manual_override`; that target wins for two hours, then normal policy resumes.

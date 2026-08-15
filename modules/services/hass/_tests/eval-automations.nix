@@ -70,6 +70,12 @@ let
       toList (automation.trigger or [ ])
     );
 
+  hasStateTriggerIncluding =
+    automation: entityId:
+    any (t: (t.platform or null) == "state" && builtins.elem entityId (toList (t.entity_id or [ ]))) (
+      toList (automation.trigger or [ ])
+    );
+
   hasNumericStateCondition =
     conditions: entityId: above: below:
     any (
@@ -352,6 +358,10 @@ let
   climateManualOverrideFinished = findAutomation "climate_manual_override_finished";
   applyClimatePolicy = scripts.apply_climate_policy or null;
   activateClimateManualOverride = scripts.activate_climate_manual_override or null;
+  homeWifiSsids = [
+    "sensor.edmunds_iphone_ssid"
+    "sensor.monicas_iphone_ssid"
+  ];
   vacationEndPresence = findAutomation "vacation_end_presence";
   vacationEndPresenceActions =
     if vacationEndPresence == null then [ ] else toList (vacationEndPresence.action or [ ]);
@@ -372,6 +382,13 @@ let
   timers = haConfig.timer or { };
   applyClimatePolicySequence =
     if applyClimatePolicy == null then [ ] else toList (applyClimatePolicy.sequence or [ ]);
+  applyClimatePolicyJson =
+    if applyClimatePolicy == null then "" else builtins.toJSON applyClimatePolicy;
+  climateTargetTemplate =
+    if applyClimatePolicySequence == [ ] then
+      ""
+    else
+      (head applyClimatePolicySequence).variables.target_temperature or "";
   activeClimatePolicyActions =
     if builtins.length applyClimatePolicySequence < 2 then
       [ ]
@@ -1191,15 +1208,38 @@ let
             "unknown"
             "unavailable"
           ]
-          { hours = 1; }
-        && hasInfix "states.person.edmund_miller.last_changed" (builtins.toJSON applyClimatePolicy)
-        && hasInfix "states.person.moni.last_changed" (builtins.toJSON applyClimatePolicy)
-        && hasInfix "3600" (builtins.toJSON applyClimatePolicy);
-      msg = "climate policy must wait one hour after the latest person-state transition before applying away cooling";
+          { hours = 2; }
+        && hasStateTriggerForDuration climatePolicy homeWifiSsids [
+          "Aviato"
+          "unknown"
+          "unavailable"
+        ] { hours = 2; }
+        && hasInfix "states.person.edmund_miller.last_changed" applyClimatePolicyJson
+        && hasInfix "states.person.moni.last_changed" applyClimatePolicyJson
+        && hasInfix "states.sensor.edmunds_iphone_ssid.last_changed" applyClimatePolicyJson
+        && hasInfix "states.sensor.monicas_iphone_ssid.last_changed" applyClimatePolicyJson
+        && hasInfix "7200" applyClimatePolicyJson;
+      msg = "climate policy must wait two hours after the latest GPS or home-WiFi transition before applying away cooling";
     }
     {
       test = applyClimatePolicy != null;
       msg = "script 'apply_climate_policy' missing";
+    }
+    {
+      test =
+        hasStateTriggerIncluding climatePolicy "sensor.edmunds_iphone_ssid"
+        && hasStateTriggerIncluding climatePolicy "sensor.monicas_iphone_ssid"
+        && hasInfix "is_state('sensor.edmunds_iphone_ssid', 'Aviato')" climateTargetTemplate
+        && hasInfix "is_state('sensor.monicas_iphone_ssid', 'Aviato')" climateTargetTemplate;
+      msg = "climate policy must treat either phone on Aviato as occupied and re-evaluate WiFi transitions";
+    }
+    {
+      test =
+        hasInfix "{% set away_target = 76 %}" climateTargetTemplate
+        && hasInfix "{% set vacation_target = 78 %}" climateTargetTemplate
+        && hasInfix "{% elif is_state('input_boolean.vacation_mode', 'on') %}\n  {{ vacation_target }}" climateTargetTemplate
+        && hasInfix "{% elif away_long_enough %}\n  {{ away_target }}" climateTargetTemplate;
+      msg = "climate policy must use 76 F for ordinary away cooling and reserve 78 F for vacation";
     }
     {
       test = hasInfix "lastUpdated" (builtins.toJSON applyClimatePolicy);

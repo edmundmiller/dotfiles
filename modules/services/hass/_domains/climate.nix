@@ -13,6 +13,11 @@ let
     "person.moni"
   ];
 
+  homeWifiSsids = [
+    "sensor.edmunds_iphone_ssid"
+    "sensor.monicas_iphone_ssid"
+  ];
+
   clearHoldButtons = [
     "button.main_floor_clear_hold"
     "button.master_suite_clear_hold"
@@ -82,21 +87,29 @@ in
             policy_active = ''
               {{ states('input_boolean.goodnight') in ['on', 'off']
                  and states('input_boolean.vacation_mode') in ['on', 'off']
-                 and states('person.edmund_miller') not in ['unknown', 'unavailable']
-                 and states('person.moni') not in ['unknown', 'unavailable']
+                 and (states('person.edmund_miller') not in ['unknown', 'unavailable']
+                      or is_state('sensor.edmunds_iphone_ssid', 'Aviato'))
+                 and (states('person.moni') not in ['unknown', 'unavailable']
+                      or is_state('sensor.monicas_iphone_ssid', 'Aviato'))
                  and is_state('input_boolean.goodnight', 'off')
                  and not is_state('binary_sensor.eve_door_20ebn9901_door', 'on') }}
             '';
             target_temperature = ''
               {% set base = states('input_number.occupied_cooling_target') | float(72) %}
+              {% set away_target = 76 %}
+              {% set vacation_target = 78 %}
               {% set occupied = is_state('person.edmund_miller', 'home')
-                                or is_state('person.moni', 'home') %}
+                                or is_state('person.moni', 'home')
+                                or is_state('sensor.edmunds_iphone_ssid', 'Aviato')
+                                or is_state('sensor.monicas_iphone_ssid', 'Aviato') %}
               {% set latest_presence_change = [
                    as_timestamp(states.person.edmund_miller.last_changed, now().timestamp()),
-                   as_timestamp(states.person.moni.last_changed, now().timestamp())
+                   as_timestamp(states.person.moni.last_changed, now().timestamp()),
+                   as_timestamp(states.sensor.edmunds_iphone_ssid.last_changed, now().timestamp()),
+                   as_timestamp(states.sensor.monicas_iphone_ssid.last_changed, now().timestamp())
                  ] | max %}
               {% set away_long_enough = not occupied
-                   and latest_presence_change <= now().timestamp() - 3600 %}
+                   and latest_presence_change <= now().timestamp() - 7200 %}
               {% set condition = state_attr('sensor.ercot_grid_status', 'current_condition') or {} %}
               {% set ercot_fresh = as_timestamp(
                    state_attr('sensor.ercot_grid_status', 'lastUpdated'), 0
@@ -109,8 +122,10 @@ in
                    or states('sensor.master_suite_current_humidity') | float(0) > 60 %}
               {% if is_state('timer.climate_manual_override', 'active') %}
                 {{ states('input_number.climate_manual_override_target') | float(74) }}
-              {% elif is_state('input_boolean.vacation_mode', 'on') or away_long_enough %}
-                78
+              {% elif is_state('input_boolean.vacation_mode', 'on') %}
+                {{ vacation_target }}
+              {% elif away_long_enough %}
+                {{ away_target }}
               {% elif grid_stressed %}
                 {{ [base, 74] | max }}
               {% elif humidity_high %}
@@ -231,7 +246,7 @@ in
       {
         alias = "Climate policy";
         id = "climate_policy";
-        description = "Apply bounded awake targets; delay away cooling for one hour; sleep and invalid core state resume Ecobee schedules.";
+        description = "Apply bounded awake targets; combine GPS and home WiFi occupancy; delay ordinary away cooling for two hours; sleep and invalid core state resume Ecobee schedules.";
         mode = "restart";
         trigger = [
           {
@@ -244,14 +259,15 @@ in
           }
           {
             platform = "state";
-            entity_id = [
-              "person.edmund_miller"
-              "person.moni"
-              "input_boolean.goodnight"
-              "input_boolean.vacation_mode"
-              "input_number.occupied_cooling_target"
-              "sensor.ercot_grid_status"
-            ];
+            entity_id =
+              people
+              ++ homeWifiSsids
+              ++ [
+                "input_boolean.goodnight"
+                "input_boolean.vacation_mode"
+                "input_number.occupied_cooling_target"
+                "sensor.ercot_grid_status"
+              ];
           }
           {
             platform = "state";
@@ -261,7 +277,17 @@ in
               "unknown"
               "unavailable"
             ];
-            "for".hours = 1;
+            "for".hours = 2;
+          }
+          {
+            platform = "state";
+            entity_id = homeWifiSsids;
+            not_to = [
+              "Aviato"
+              "unknown"
+              "unavailable"
+            ];
+            "for".hours = 2;
           }
           {
             platform = "numeric_state";
