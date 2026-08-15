@@ -15,6 +15,14 @@ def --wrapped "main agent-start" [...args: string] {
   agent-quality start ...$args
 }
 
+def --wrapped "main agent-adopt" [...args: string] {
+  agent-quality adopt ...$args
+}
+
+def --wrapped "main agent-checkpoint" [...args: string] {
+  agent-quality checkpoint ...$args
+}
+
 def --wrapped "main agent-complete" [...args: string] {
   agent-quality complete ...$args
 }

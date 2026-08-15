@@ -31,6 +31,9 @@ export function evaluateDoneSkillOutput(
   if (decision.status !== testCase.expected.status) {
     errors.push(`expected status ${testCase.expected.status}, received ${decision.status}`);
   }
+  if (decision.outcome !== testCase.expected.outcome) {
+    errors.push(`expected outcome ${testCase.expected.outcome}, received ${decision.outcome}`);
+  }
   if (decision.canonicalDefaultCheckout !== testCase.expected.canonicalDefaultCheckout) {
     errors.push(
       `expected canonical checkout ${testCase.expected.canonicalDefaultCheckout}, received ${decision.canonicalDefaultCheckout}`
@@ -73,10 +76,21 @@ function parseDoneDecision(output: string, errors: string[]): DoneDecision | und
   }
 
   const status = value.status;
+  const outcome = value.outcome;
   const canonicalDefaultCheckout = value.canonicalDefaultCheckout;
   const actions = value.actions;
   const explanation = value.explanation;
   const parsedStatus = status === "blocked" || status === "continue" ? status : undefined;
+  const allowedOutcomes = new Set([
+    "done",
+    "done_local",
+    "landed_cleanup_deferred",
+    "pr_merge_pending",
+    "local_only",
+    "blocked",
+  ]);
+  const parsedOutcome =
+    typeof outcome === "string" && allowedOutcomes.has(outcome) ? outcome : undefined;
   const parsedCanonicalDefaultCheckout =
     canonicalDefaultCheckout === "unchanged" || canonicalDefaultCheckout === "updated"
       ? canonicalDefaultCheckout
@@ -90,6 +104,9 @@ function parseDoneDecision(output: string, errors: string[]): DoneDecision | und
 
   if (!parsedStatus) {
     errors.push("status must be blocked or continue");
+  }
+  if (!parsedOutcome) {
+    errors.push("outcome must be a finite done closeout outcome");
   }
   if (!parsedCanonicalDefaultCheckout) {
     errors.push("canonicalDefaultCheckout must be unchanged or updated");
@@ -111,6 +128,7 @@ function parseDoneDecision(output: string, errors: string[]): DoneDecision | und
   if (
     errors.length > 0 ||
     !parsedStatus ||
+    !parsedOutcome ||
     !parsedCanonicalDefaultCheckout ||
     !parsedActions ||
     !parsedExplanation
@@ -120,6 +138,7 @@ function parseDoneDecision(output: string, errors: string[]): DoneDecision | und
 
   return {
     status: parsedStatus,
+    outcome: parsedOutcome as DoneDecision["outcome"],
     canonicalDefaultCheckout: parsedCanonicalDefaultCheckout,
     actions: parsedActions as DoneAction[],
     explanation: parsedExplanation,

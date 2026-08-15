@@ -13,6 +13,7 @@ describe("done skill scorer", () => {
     const score = evaluateDoneSkillOutput(
       JSON.stringify({
         status: "continue",
+        outcome: "done",
         canonicalDefaultCheckout: "updated",
         actions: [
           "inspect_state",
@@ -35,22 +36,21 @@ describe("done skill scorer", () => {
     });
   });
 
-  it("accepts replaying only later local work after task equivalents landed", () => {
+  it("accepts blocking unrelated later local work without publication authority", () => {
     const score = evaluateDoneSkillOutput(
       JSON.stringify({
-        status: "continue",
-        canonicalDefaultCheckout: "updated",
+        status: "blocked",
+        outcome: "blocked",
+        canonicalDefaultCheckout: "unchanged",
         actions: [
           "preserve_unrelated_dirt",
           "fetch_remote",
           "classify_explicit_task_commits",
           "skip_landed_task_equivalents",
-          "replay_later_local_commits",
-          "verify_unrelated_dirt",
-          "push_default",
-          "verify_remote",
+          "request_publication_authority",
+          "report_blocked",
         ],
-        explanation: "T1 and T2 are already landed equivalents, so replay only H.",
+        explanation: "T1 and T2 are landed, but H lacks publication authority.",
       }),
       concurrentAdvance
     );
@@ -67,6 +67,7 @@ describe("done skill scorer", () => {
     const score = evaluateDoneSkillOutput(
       JSON.stringify({
         status: "continue",
+        outcome: "done",
         canonicalDefaultCheckout: "updated",
         actions: [
           "create_preservation_branch",
@@ -92,6 +93,7 @@ describe("done skill scorer", () => {
       "```json\n" +
         JSON.stringify({
           status: "blocked",
+          outcome: "blocked",
           canonicalDefaultCheckout: "unchanged",
           actions: ["report_blocked"],
           explanation: "Refusing all integration.",

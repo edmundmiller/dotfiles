@@ -26,7 +26,7 @@ hey agent-start \
   --model gpt-5
 ```
 
-Retain the JSON `receiptPath`. The launcher refuses to initialize jj inside a Codex-created Git worktree; finish that task with Git and initialize jj later from the primary checkout.
+Retain the schema-v2 JSON `receiptPath`. It records stable provenance and resumable closeout state. The launcher refuses to initialize jj inside a Codex-created Git worktree; finish that task with Git and initialize jj later from the primary checkout.
 
 ## Work
 
@@ -53,6 +53,6 @@ Start with `jj restore` for files or explicit revisions. Inspect `jj op log` for
 
 ## Finish
 
-Invoke `done`. It records the task change ID, reconciles only that task range with the fresh remote destination, moves the default bookmark, publishes through jj, fetches again, proves authoritative remote equality, completes the receipt, and cleans the task workspace last.
+Invoke `done`. It records the task change ID, reconciles only that task range with the fresh remote destination, moves the default bookmark, publishes through jj, fetches again, proves authoritative remote equality, completes the receipt, and cleans the task workspace last. If publication or cleanup cannot finish, it checkpoints the exact finite outcome and revalidates live state before resuming.
 
 Raw `git push` and `jj_vcs align_push` are blocked because they can report success without satisfying this proof contract.

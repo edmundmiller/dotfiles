@@ -17,7 +17,9 @@ import uuid
 from pathlib import Path
 
 
-ROOT = Path(os.environ.get("AGENT_QUALITY_ROOT", Path(__file__).resolve().parents[1])).resolve()
+ROOT = Path(
+    os.environ.get("AGENT_QUALITY_ROOT", Path(__file__).resolve().parents[1])
+).resolve()
 DEFAULT_MANIFEST = ROOT / ".agents" / "quality.json"
 DEFAULT_INVENTORY = ROOT / "docs" / "agent-quality.md"
 DEFAULT_RECEIPT_ROOT = (
@@ -32,6 +34,23 @@ WORKLOG_SECTIONS = (
     "Feedback",
     "Remaining work",
     "Commits",
+)
+CLOSEOUT_OUTCOMES = (
+    "active",
+    "done",
+    "done_local",
+    "landed_cleanup_deferred",
+    "pr_merge_pending",
+    "local_only",
+    "blocked",
+    "false_done",
+)
+AUTHORITY_MODES = ("full", "commit-push", "publish-branch", "verify", "local-only")
+PARTIAL_CLOSEOUT_OUTCOMES = (
+    "landed_cleanup_deferred",
+    "pr_merge_pending",
+    "local_only",
+    "blocked",
 )
 
 
@@ -123,7 +142,13 @@ def test_files(paths: list[str]) -> list[Path]:
         if path.is_file():
             found.add(path)
         elif path.is_dir():
-            for pattern in ("test_*.py", "*_test.py", "*.test.ts", "*.test.mjs", "*.test.js"):
+            for pattern in (
+                "test_*.py",
+                "*_test.py",
+                "*.test.ts",
+                "*.test.mjs",
+                "*.test.js",
+            ):
                 found.update(path.rglob(pattern))
     return sorted(path for path in found if "node_modules" not in path.parts)
 
@@ -151,7 +176,10 @@ def changed_paths(args: argparse.Namespace) -> list[str]:
     if args.changed:
         return args.changed
     result = subprocess.run(
-        ["git", "diff", "--name-only", "HEAD"], text=True, capture_output=True, check=False
+        ["git", "diff", "--name-only", "HEAD"],
+        text=True,
+        capture_output=True,
+        check=False,
     )
     untracked = subprocess.run(
         ["git", "ls-files", "--others", "--exclude-standard"],
@@ -159,14 +187,18 @@ def changed_paths(args: argparse.Namespace) -> list[str]:
         capture_output=True,
         check=False,
     )
-    return sorted({line for line in (result.stdout + untracked.stdout).splitlines() if line})
+    return sorted(
+        {line for line in (result.stdout + untracked.stdout).splitlines() if line}
+    )
 
 
 def applies(check: dict, changed: list[str]) -> bool:
     patterns = check.get("paths")
     if not patterns:
         return True
-    return any(fnmatch.fnmatch(path, pattern) for path in changed for pattern in patterns)
+    return any(
+        fnmatch.fnmatch(path, pattern) for path in changed for pattern in patterns
+    )
 
 
 def finish(args: argparse.Namespace) -> int:
@@ -320,6 +352,117 @@ def jj_ids(workspace: Path) -> dict[str, str | None]:
     }
 
 
+def git_destination(repo: Path) -> dict[str, str | None]:
+    upstream = output_line(
+        ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"],
+        repo,
+    )
+    if upstream and "/" in upstream:
+        remote, branch = upstream.split("/", 1)
+        return {"remote": remote, "default": branch}
+    remotes = output_line(["git", "remote"], repo)
+    remote = sorted(remotes.splitlines())[0] if remotes else None
+    if remote:
+        symbolic = output_line(
+            ["git", "symbolic-ref", f"refs/remotes/{remote}/HEAD"], repo
+        )
+        prefix = f"refs/remotes/{remote}/"
+        if symbolic and symbolic.startswith(prefix):
+            return {"remote": remote, "default": symbolic.removeprefix(prefix)}
+    for branch in ("main", "master"):
+        if output_line(["git", "show-ref", "--verify", f"refs/heads/{branch}"], repo):
+            return {"remote": remote, "default": branch}
+    return {"remote": remote, "default": None}
+
+
+def receipt_provenance(
+    backend: str,
+    workspace_root: Path,
+    vcs: dict,
+    *,
+    late_adopted: bool,
+    start_revision: str | None = None,
+) -> dict:
+    if backend == "jj":
+        destination = output_line(
+            [
+                "jj",
+                "log",
+                "--ignore-working-copy",
+                "-r",
+                "trunk()",
+                "--no-graph",
+                "-T",
+                'bookmarks ++ "\\n"',
+            ],
+            workspace_root,
+        )
+        remotes = output_line(["jj", "git", "remote", "list"], workspace_root)
+        remote = (
+            sorted(line.split()[0] for line in remotes.splitlines() if line.split())[0]
+            if remotes
+            else None
+        )
+        return {
+            "lateAdopted": late_adopted,
+            "startRevision": start_revision or vcs.get("commitId"),
+            "startChangeId": vcs.get("changeId"),
+            "startOperationId": vcs.get("operationId"),
+            "destinationAtStart": destination,
+            "remoteAtStart": remote,
+        }
+    destination = git_destination(workspace_root)
+    return {
+        "lateAdopted": late_adopted,
+        "startRevision": start_revision or vcs.get("commitId"),
+        "destinationAtStart": destination["default"],
+        "remoteAtStart": destination["remote"],
+    }
+
+
+def new_receipt(
+    *,
+    task: str,
+    runtime: str,
+    model: str | None,
+    repository_root: Path,
+    workspace_root: Path,
+    backend: str,
+    vcs: dict,
+    late_adopted: bool = False,
+    start_revision: str | None = None,
+    task_revisions: list[str] | None = None,
+    authority: str = "full",
+) -> dict:
+    now = datetime.now(timezone.utc)
+    return {
+        "schemaVersion": 2,
+        "runId": f"{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:12]}",
+        "task": task,
+        "runtime": runtime,
+        "model": model,
+        "repositoryRoot": str(repository_root),
+        "workspaceRoot": str(workspace_root),
+        "backend": backend,
+        "status": "active",
+        "startedAt": now.isoformat().replace("+00:00", "Z"),
+        "metrics": {"retries": 0, "userCorrections": 0},
+        "vcs": vcs,
+        "provenance": receipt_provenance(
+            backend,
+            workspace_root,
+            vcs,
+            late_adopted=late_adopted,
+            start_revision=start_revision,
+        ),
+        "authority": {"mode": authority},
+        "closeout": {
+            "status": "active",
+            "taskRevisions": task_revisions or [],
+        },
+    }
+
+
 def start(args: argparse.Namespace) -> int:
     repo = Path(args.repo).expanduser().resolve()
     if not repo.is_dir():
@@ -367,50 +510,212 @@ def start(args: argparse.Namespace) -> int:
         if current_workspace:
             workspace_root = Path(current_workspace).resolve()
 
-    now = datetime.now(timezone.utc)
-    receipt: dict = {
-        "schemaVersion": 1,
-        "runId": f"{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:12]}",
-        "task": args.task,
-        "runtime": args.runtime,
-        "model": args.model,
-        "repositoryRoot": str(repository_root),
-        "workspaceRoot": str(workspace_root),
-        "backend": backend,
-        "status": "active",
-        "startedAt": now.isoformat().replace("+00:00", "Z"),
-        "metrics": {"retries": 0, "userCorrections": 0},
-    }
     if backend == "jj":
-        receipt["vcs"] = jj_ids(workspace_root)
+        vcs = jj_ids(workspace_root)
     else:
-        receipt["vcs"] = {
+        vcs = {
             "commitId": output_line(["git", "rev-parse", "HEAD"], repository_root),
             "branch": output_line(["git", "branch", "--show-current"], repository_root),
             "isWorktree": git_worktree(repo),
         }
+    receipt = new_receipt(
+        task=args.task,
+        runtime=args.runtime,
+        model=args.model,
+        repository_root=repository_root,
+        workspace_root=workspace_root,
+        backend=backend,
+        vcs=vcs,
+        authority=args.authority,
+    )
     write_receipt(receipt, receipt_root(args.state_dir))
+    print(json.dumps(receipt, sort_keys=True))
+    return 0
+
+
+def adopt(args: argparse.Namespace) -> int:
+    repo = Path(args.repo).expanduser().resolve()
+    if not repo.is_dir():
+        print(f"repository path does not exist: {repo}", file=sys.stderr)
+        return 2
+    jj_root = output_line(["jj", "root", "--ignore-working-copy"], repo)
+    git_root = output_line(["git", "rev-parse", "--show-toplevel"], repo)
+    if not jj_root and not git_root:
+        print(f"not a jj or Git repository: {repo}", file=sys.stderr)
+        return 2
+    backend = "jj" if jj_root else "git"
+    repository_root = Path(jj_root or git_root or repo).resolve()
+    workspace_root = repo
+    if backend == "jj":
+        current_workspace = output_line(["jj", "workspace", "root"], repo)
+        if current_workspace:
+            workspace_root = Path(current_workspace).resolve()
+        vcs = jj_ids(workspace_root)
+        valid_start = output_line(
+            [
+                "jj",
+                "log",
+                "--ignore-working-copy",
+                "-r",
+                args.start_revision,
+                "--no-graph",
+                "-T",
+                'commit_id ++ "\\n"',
+            ],
+            workspace_root,
+        )
+    else:
+        valid_start = output_line(
+            ["git", "rev-parse", "--verify", f"{args.start_revision}^{{commit}}"],
+            repository_root,
+        )
+        vcs = {
+            "commitId": output_line(["git", "rev-parse", "HEAD"], repository_root),
+            "branch": output_line(["git", "branch", "--show-current"], repository_root),
+            "isWorktree": git_worktree(repo),
+        }
+    if not valid_start:
+        print(
+            f"start revision is not valid in this repository: {args.start_revision}",
+            file=sys.stderr,
+        )
+        return 2
+    resolved_task_revisions: list[str] = []
+    for revision in args.task_revision:
+        if backend == "jj":
+            resolved = output_line(
+                [
+                    "jj",
+                    "log",
+                    "--ignore-working-copy",
+                    "-r",
+                    revision,
+                    "--no-graph",
+                    "-T",
+                    'commit_id ++ "\\n"',
+                ],
+                workspace_root,
+            )
+        else:
+            resolved = output_line(
+                ["git", "rev-parse", "--verify", f"{revision}^{{commit}}"],
+                repository_root,
+            )
+        if not resolved:
+            print(
+                f"task revision is not valid in this repository: {revision}",
+                file=sys.stderr,
+            )
+            return 2
+        resolved_task_revisions.append(resolved)
+    receipt = new_receipt(
+        task=args.task,
+        runtime=args.runtime,
+        model=args.model,
+        repository_root=repository_root,
+        workspace_root=workspace_root,
+        backend=backend,
+        vcs=vcs,
+        late_adopted=True,
+        start_revision=valid_start,
+        task_revisions=resolved_task_revisions,
+        authority=args.authority,
+    )
+    write_receipt(receipt, receipt_root(args.state_dir))
+    print(json.dumps(receipt, sort_keys=True))
+    return 0
+
+
+def read_receipt(path: Path) -> dict | None:
+    try:
+        receipt = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"cannot read receipt {path}: {error}", file=sys.stderr)
+        return None
+    if receipt.get("schemaVersion") not in (1, 2):
+        print(
+            f"unsupported receipt schema: {receipt.get('schemaVersion')}",
+            file=sys.stderr,
+        )
+        return None
+    return receipt
+
+
+def upgrade_receipt(receipt: dict) -> dict:
+    if receipt.get("schemaVersion") == 2:
+        return receipt
+    vcs = receipt.get("vcs", {})
+    receipt["schemaVersion"] = 2
+    receipt["provenance"] = {
+        "lateAdopted": False,
+        "startRevision": vcs.get("commitId"),
+        "startChangeId": vcs.get("changeId"),
+        "startOperationId": vcs.get("operationId"),
+        "destinationAtStart": None,
+        "remoteAtStart": None,
+    }
+    receipt["authority"] = {"mode": "full"}
+    receipt["closeout"] = {"status": "active", "taskRevisions": []}
+    return receipt
+
+
+def load_evidence(path: str | None) -> dict:
+    if not path:
+        return {}
+    evidence_path = Path(path).expanduser().resolve()
+    try:
+        evidence = json.loads(evidence_path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(
+            f"cannot read evidence JSON {evidence_path}: {error}"
+        ) from error
+    if not isinstance(evidence, dict):
+        raise ValueError(f"evidence JSON must be an object: {evidence_path}")
+    return evidence
+
+
+def checkpoint(args: argparse.Namespace) -> int:
+    path = Path(args.receipt).expanduser().resolve()
+    receipt = read_receipt(path)
+    if receipt is None:
+        return 2
+    try:
+        evidence = load_evidence(args.evidence_json)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
+    receipt = upgrade_receipt(receipt)
+    receipt["status"] = "active"
+    receipt.pop("completedAt", None)
+    receipt["updatedAt"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    receipt["closeout"] = {
+        "status": args.outcome,
+        "taskRevisions": args.task_revision,
+        "evidence": evidence,
+    }
+    if args.error:
+        receipt["closeout"]["blocker"] = args.error
+    path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     print(json.dumps(receipt, sort_keys=True))
     return 0
 
 
 def complete(args: argparse.Namespace) -> int:
     path = Path(args.receipt).expanduser().resolve()
-    try:
-        receipt = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as error:
-        print(f"cannot read receipt {path}: {error}", file=sys.stderr)
-        return 2
-    if receipt.get("schemaVersion") != 1:
-        print(
-            f"unsupported receipt schema: {receipt.get('schemaVersion')}",
-            file=sys.stderr,
-        )
+    receipt = read_receipt(path)
+    if receipt is None:
         return 2
 
-    aligned = bool(
-        args.local_tip and args.remote_tip and args.local_tip == args.remote_tip
+    aligned = (
+        bool(args.local_tip)
+        if args.outcome == "done_local"
+        else bool(
+            args.local_tip and args.remote_tip and args.local_tip == args.remote_tip
+        )
     )
+    original_schema = receipt.get("schemaVersion")
+    if original_schema == 2:
+        receipt = upgrade_receipt(receipt)
     receipt["status"] = "complete" if aligned else "false_done"
     receipt["completedAt"] = (
         datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -421,6 +726,17 @@ def complete(args: argparse.Namespace) -> int:
         "remoteTip": args.remote_tip,
         "remoteAligned": aligned,
     }
+    if original_schema == 2:
+        try:
+            evidence = load_evidence(args.evidence_json)
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            return 2
+        receipt["closeout"] = {
+            "status": args.outcome if aligned else "false_done",
+            "taskRevisions": args.task_revision,
+            "evidence": evidence,
+        }
     receipt["metrics"] = {
         "retries": args.retries,
         "userCorrections": args.user_corrections,
@@ -448,12 +764,12 @@ def sweep(args: argparse.Namespace) -> int:
             started = datetime.fromisoformat(
                 receipt["startedAt"].replace("Z", "+00:00")
             )
-            if receipt.get("schemaVersion") == 1 and started >= cutoff:
+            if receipt.get("schemaVersion") in (1, 2) and started >= cutoff:
                 receipts.append(receipt)
         except (OSError, KeyError, ValueError, json.JSONDecodeError):
             invalid += 1
     summary = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "runs": len(receipts),
         "active": sum(item.get("status") == "active" for item in receipts),
         "complete": sum(item.get("status") == "complete" for item in receipts),
@@ -465,6 +781,12 @@ def sweep(args: argparse.Namespace) -> int:
         "errors": sum(bool(item.get("error")) for item in receipts),
         "invalidReceipts": invalid,
         "stateDirectory": str(state_dir),
+        "closeoutStatuses": {
+            outcome: sum(
+                item.get("closeout", {}).get("status") == outcome for item in receipts
+            )
+            for outcome in CLOSEOUT_OUTCOMES
+        },
     }
     if args.json:
         print(json.dumps(summary, sort_keys=True))
@@ -527,13 +849,38 @@ def parser() -> argparse.ArgumentParser:
     begin.add_argument("--runtime", default="unknown")
     begin.add_argument("--model")
     begin.add_argument("--state-dir")
+    begin.add_argument("--authority", choices=AUTHORITY_MODES, default="full")
     begin.set_defaults(func=start)
+
+    adopted = sub.add_parser("adopt")
+    adopted.add_argument("--repo", default=".")
+    adopted.add_argument("--task", required=True)
+    adopted.add_argument("--start-revision", required=True)
+    adopted.add_argument("--task-revision", action="append", default=[])
+    adopted.add_argument("--runtime", default="unknown")
+    adopted.add_argument("--model")
+    adopted.add_argument("--state-dir")
+    adopted.add_argument("--authority", choices=AUTHORITY_MODES, default="full")
+    adopted.set_defaults(func=adopt)
+
+    checkpointed = sub.add_parser("checkpoint")
+    checkpointed.add_argument("receipt")
+    checkpointed.add_argument(
+        "--outcome", choices=PARTIAL_CLOSEOUT_OUTCOMES, required=True
+    )
+    checkpointed.add_argument("--task-revision", action="append", default=[])
+    checkpointed.add_argument("--evidence-json")
+    checkpointed.add_argument("--error")
+    checkpointed.set_defaults(func=checkpoint)
 
     completed = sub.add_parser("complete")
     completed.add_argument("receipt")
     completed.add_argument("--revision")
     completed.add_argument("--local-tip", required=True)
-    completed.add_argument("--remote-tip", required=True)
+    completed.add_argument("--remote-tip")
+    completed.add_argument("--outcome", choices=("done", "done_local"), default="done")
+    completed.add_argument("--task-revision", action="append", default=[])
+    completed.add_argument("--evidence-json")
     completed.add_argument("--retries", type=int, default=0)
     completed.add_argument("--user-corrections", type=int, default=0)
     completed.add_argument("--error")

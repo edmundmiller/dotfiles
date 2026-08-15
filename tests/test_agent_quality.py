@@ -15,7 +15,9 @@ HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
 FLAKE = ROOT / "flake.nix"
 AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
-AUTONOMOUS_RULE = ROOT / "config" / "agents" / "rules" / "16-autonomous-goal-progress.md"
+AUTONOMOUS_RULE = (
+    ROOT / "config" / "agents" / "rules" / "16-autonomous-goal-progress.md"
+)
 AUTONOMOUS_SKILL = ROOT / "skills" / "catalog" / "autonomous-agent-loop" / "SKILL.md"
 GOALIZE_PROMPT = ROOT / "config" / "pi" / "prompts" / "goalize.md"
 GOAL_AUDIT_PROMPT = ROOT / "config" / "pi" / "prompts" / "goal-continue-audit.md"
@@ -88,7 +90,7 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("pkgs.jujutsu", module)
         self.assertNotIn("pkgs.jj", module)
         self.assertIn(
-            'export AGENT_QUALITY_ROOT="\'\'${AGENT_QUALITY_ROOT:-${../../..}}"',
+            "export AGENT_QUALITY_ROOT=\"''${AGENT_QUALITY_ROOT:-${../../..}}\"",
             module,
         )
 
@@ -120,13 +122,18 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("planning or passing local checks alone is not completion", audit)
 
     def test_done_skill_preserves_landing_safety_contract(self) -> None:
-        done_skill = DONE_SKILL.read_text()
+        references = DONE_SKILL.parent / "references"
+        done_skill = (
+            DONE_SKILL.read_text()
+            + "\n"
+            + "\n".join(path.read_text() for path in sorted(references.glob("*.md")))
+        )
 
-        self.assertIn("### Dirty default checkout integration", done_skill)
+        self.assertIn("## Dirty default checkout integration", done_skill)
         self.assertIn("temporary integration worktree", done_skill)
         self.assertIn("merge --ff-only", done_skill)
         self.assertIn(
-            "Never report `done` from a clean feature workspace alone.",
+            "A clean feature workspace, successful",
             done_skill,
         )
 
@@ -201,7 +208,9 @@ class AgentQualityTests(unittest.TestCase):
             result = self.run_cli("audit-tests", str(root))
             self.assertEqual(result.returncode, 0, result.stdout)
 
-    def test_finish_reports_inapplicable_checks_without_calling_them_passed(self) -> None:
+    def test_finish_reports_inapplicable_checks_without_calling_them_passed(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             manifest = root / "quality.json"
@@ -219,7 +228,9 @@ class AgentQualityTests(unittest.TestCase):
                     }
                 )
             )
-            result = self.run_cli("finish", "--manifest", str(manifest), "--changed", "README.md")
+            result = self.run_cli(
+                "finish", "--manifest", str(manifest), "--changed", "README.md"
+            )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("NOT_APPLICABLE visual", result.stdout)
             self.assertNotIn("PASS visual", result.stdout)
@@ -282,10 +293,15 @@ class AgentQualityTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             receipt = json.loads(result.stdout)
-            self.assertEqual(receipt["schemaVersion"], 1)
+            self.assertEqual(receipt["schemaVersion"], 2)
             self.assertEqual(receipt["backend"], "git")
             self.assertEqual(receipt["task"], "demo-task")
             self.assertEqual(receipt["status"], "active")
+            self.assertEqual(receipt["closeout"]["status"], "active")
+            self.assertFalse(receipt["provenance"]["lateAdopted"])
+            self.assertEqual(
+                receipt["provenance"]["startRevision"], receipt["vcs"]["commitId"]
+            )
             self.assertEqual(receipt["metrics"], {"retries": 0, "userCorrections": 0})
             self.assertTrue(Path(receipt["receiptPath"]).is_file())
 
@@ -415,6 +431,158 @@ class AgentQualityTests(unittest.TestCase):
             self.assertEqual(summary["falseDone"], 1)
             self.assertEqual(summary["retries"], 2)
             self.assertEqual(summary["userCorrections"], 1)
+
+    def test_checkpoint_keeps_partial_v2_receipt_open(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "run.json"
+            evidence = root / "evidence.txt"
+            receipt.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 2,
+                        "runId": "run-2",
+                        "task": "demo",
+                        "backend": "git",
+                        "status": "active",
+                        "startedAt": "2026-08-15T10:00:00Z",
+                        "metrics": {"retries": 0, "userCorrections": 0},
+                        "closeout": {"status": "active"},
+                    }
+                )
+            )
+            evidence.write_text(json.dumps({"localTip": "abc", "remoteTip": "abc"}))
+
+            result = self.run_cli(
+                "checkpoint",
+                str(receipt),
+                "--outcome",
+                "landed_cleanup_deferred",
+                "--task-revision",
+                "task-1",
+                "--evidence-json",
+                str(evidence),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            updated = json.loads(receipt.read_text())
+            self.assertEqual(updated["status"], "active")
+            self.assertEqual(updated["closeout"]["status"], "landed_cleanup_deferred")
+            self.assertEqual(updated["closeout"]["taskRevisions"], ["task-1"])
+            self.assertNotIn("completedAt", updated)
+
+            swept = self.run_cli(
+                "sweep", "--state-dir", str(root), "--since-days", "36500", "--json"
+            )
+            self.assertEqual(swept.returncode, 0, swept.stderr)
+            summary = json.loads(swept.stdout)
+            self.assertEqual(summary["active"], 1)
+            self.assertEqual(summary["closeoutStatuses"]["landed_cleanup_deferred"], 1)
+
+    def test_adopt_creates_late_v2_receipt_with_explicit_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            state = root / "state"
+            subprocess.run(["git", "init", "-b", "main", str(repo)], check=True)
+            subprocess.run(
+                ["git", "-C", str(repo), "config", "user.name", "Test"], check=True
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repo),
+                    "config",
+                    "user.email",
+                    "test@example.invalid",
+                ],
+                check=True,
+            )
+            (repo / "state.txt").write_text("base\n")
+            subprocess.run(["git", "-C", str(repo), "add", "state.txt"], check=True)
+            subprocess.run(["git", "-C", str(repo), "commit", "-m", "base"], check=True)
+            revision = subprocess.run(
+                ["git", "-C", str(repo), "rev-parse", "HEAD"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+            result = self.run_cli(
+                "adopt",
+                "--repo",
+                str(repo),
+                "--task",
+                "late-task",
+                "--start-revision",
+                revision,
+                "--task-revision",
+                revision,
+                "--authority",
+                "verify",
+                "--state-dir",
+                str(state),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            receipt = json.loads(result.stdout)
+            self.assertEqual(receipt["schemaVersion"], 2)
+            self.assertTrue(receipt["provenance"]["lateAdopted"])
+            self.assertEqual(receipt["provenance"]["startRevision"], revision)
+            self.assertEqual(receipt["closeout"]["taskRevisions"], [revision])
+            self.assertEqual(receipt["authority"]["mode"], "verify")
+
+            invalid = self.run_cli(
+                "adopt",
+                "--repo",
+                str(repo),
+                "--task",
+                "late-task",
+                "--start-revision",
+                revision,
+                "--task-revision",
+                "missing-task-revision",
+                "--state-dir",
+                str(state),
+            )
+            self.assertEqual(invalid.returncode, 2)
+            self.assertIn("task revision is not valid", invalid.stderr)
+
+    def test_v2_done_local_completes_without_inventing_a_remote_tip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = Path(tmp) / "run.json"
+            receipt.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 2,
+                        "runId": "run-local",
+                        "task": "local-task",
+                        "backend": "git",
+                        "status": "active",
+                        "startedAt": "2026-08-15T10:00:00Z",
+                        "metrics": {"retries": 0, "userCorrections": 0},
+                        "closeout": {"status": "active", "taskRevisions": []},
+                    }
+                )
+            )
+
+            result = self.run_cli(
+                "complete",
+                str(receipt),
+                "--outcome",
+                "done_local",
+                "--local-tip",
+                "abc",
+                "--task-revision",
+                "task-1",
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            updated = json.loads(receipt.read_text())
+            self.assertEqual(updated["status"], "complete")
+            self.assertEqual(updated["closeout"]["status"], "done_local")
+            self.assertIsNone(updated["landing"]["remoteTip"])
 
 
 if __name__ == "__main__":

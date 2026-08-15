@@ -8,12 +8,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills/catalog/done/SKILL.md"
+REFERENCES = ROOT / "skills/catalog/done/references"
 FLAKE = ROOT / "skills/flake.nix"
 VERIFIER = ROOT / "skills/catalog/done/scripts/verify-landing.sh"
 JJ_VERIFIER = ROOT / "skills/catalog/done/scripts/verify-jj-landing.sh"
-HERDR_TEARDOWN = (
-    ROOT / "skills/catalog/done/scripts/teardown-herdr-worktree.sh"
-)
+HERDR_TEARDOWN = ROOT / "skills/catalog/done/scripts/teardown-herdr-worktree.sh"
 
 
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -26,8 +25,14 @@ def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class DoneSkillContractTest(unittest.TestCase):
+    def done_contract(self) -> str:
+        references = "\n".join(
+            path.read_text() for path in sorted(REFERENCES.glob("*.md"))
+        )
+        return SKILL.read_text() + "\n" + references
+
     def test_done_lands_and_publishes_before_cleanup(self) -> None:
-        skill = SKILL.read_text()
+        skill = self.done_contract()
         flake = FLAKE.read_text()
 
         for phrase in (
@@ -43,7 +48,7 @@ class DoneSkillContractTest(unittest.TestCase):
         self.assertNotIn('done.from = "bholmesdev";', flake)
 
     def test_launcher_owned_worktrees_use_launcher_teardown(self) -> None:
-        skill = SKILL.read_text()
+        skill = self.done_contract()
 
         for phrase in (
             "HERDR_ENV",
@@ -58,7 +63,7 @@ class DoneSkillContractTest(unittest.TestCase):
                 self.assertIn(phrase, skill)
 
     def test_dirty_default_attempts_safe_fast_forward_before_blocking(self) -> None:
-        skill = SKILL.read_text()
+        skill = self.done_contract()
 
         for phrase in (
             "temporary integration worktree",
@@ -70,6 +75,19 @@ class DoneSkillContractTest(unittest.TestCase):
 
         self.assertIn("preservation branch", skill)
         self.assertIn("stash, reset, commit its unrelated dirt", skill)
+
+    def test_entrypoint_is_a_thin_dispatcher_with_direct_references(self) -> None:
+        skill = SKILL.read_text()
+        self.assertLessEqual(len(skill.splitlines()), 140)
+        for name in ("git.md", "jj.md", "github-pr.md", "cleanup.md"):
+            with self.subTest(name=name):
+                self.assertIn(f"./references/{name}", skill)
+                self.assertTrue((REFERENCES / name).is_file())
+
+    def test_full_done_does_not_publish_unrelated_local_default_commits(self) -> None:
+        contract = self.done_contract()
+        self.assertIn("without publication authority", contract)
+        self.assertIn("Do not publish them", contract)
 
     def test_dirty_default_fast_forward_preserves_non_overlapping_work(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -94,8 +112,12 @@ class DoneSkillContractTest(unittest.TestCase):
             merged = git(repo, "merge", "--ff-only", "feature")
 
             self.assertIn("Fast-forward", merged.stdout)
-            self.assertEqual("unrelated tracked edit\n", (repo / "base.txt").read_text())
-            self.assertEqual("unrelated untracked edit\n", (repo / "untracked.txt").read_text())
+            self.assertEqual(
+                "unrelated tracked edit\n", (repo / "base.txt").read_text()
+            )
+            self.assertEqual(
+                "unrelated untracked edit\n", (repo / "untracked.txt").read_text()
+            )
             self.assertEqual("task\n", (repo / "task.txt").read_text())
 
     def test_dirty_default_fast_forward_refuses_overlapping_work(self) -> None:
@@ -219,9 +241,13 @@ class DoneSkillContractTest(unittest.TestCase):
                 git(repo, "rev-parse", "main").stdout,
                 git(repo, "rev-parse", "origin/main").stdout,
             )
-            self.assertEqual("0\n", git(repo, "rev-list", "--count", "--merges", "main").stdout)
+            self.assertEqual(
+                "0\n", git(repo, "rev-list", "--count", "--merges", "main").stdout
+            )
             self.assertEqual("", git(repo, "cherry", "origin/main", "main").stdout)
-            self.assertEqual("later local-only work\n", (repo / "later.txt").read_text())
+            self.assertEqual(
+                "later local-only work\n", (repo / "later.txt").read_text()
+            )
             self.assertEqual(
                 dirty_before,
                 {
@@ -230,7 +256,7 @@ class DoneSkillContractTest(unittest.TestCase):
                 },
             )
 
-            skill = SKILL.read_text()
+            skill = self.done_contract()
             for phrase in (
                 "expected reconciliation event, not a blocker",
                 "stable patch equivalence",

@@ -15,7 +15,7 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 1. Inspect repository, runtime, issue state, and unrelated dirt.
 2. Copy `.agents/worklogs/TEMPLATE.md` to `.agents/worklogs/<issue-or-slug>.md`.
 3. Define the outcome, stopping condition, and verification surfaces before editing.
-4. Run `hey agent-start --repo "$PWD" --task <issue-or-slug> --runtime <runtime> --model <model>` and retain the JSON receipt path. Outside Herdr, in a jj repository, add `--workspace <path> --base 'trunk()'` to create an isolated workspace. If Herdr already created the current jj task workspace, omit `--workspace` and record that workspace instead; never create a second workspace for the same task. Git-only runs use the base command.
+4. Run `hey agent-start --repo "$PWD" --task <issue-or-slug> --runtime <runtime> --model <model>` and retain the schema-v2 JSON receipt path. Outside Herdr, in a jj repository, add `--workspace <path> --base 'trunk()'` to create an isolated workspace. If Herdr already created the current jj task workspace, omit `--workspace` and record that workspace instead; never create a second workspace for the same task. Git-only runs use the base command. If work began without a receipt, `done` may use `hey agent-adopt` only after proving its start and task revisions.
 5. Route through root and nearest nested `AGENTS.md`. Load every matching skill before acting.
 6. Find canonical docs by searching the first seven lines for `purpose`, `applies_to`, or `update_when`.
 
@@ -44,7 +44,7 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 1. Run focused tests, then `hey agent-audit-tests` and `hey agent-finish --worklog <path>`.
 2. For UI/performance paths, add or update the subsystem manifest command before claiming those checks pass.
 3. Update evidence, feedback, remaining work, commits, worklog status, and issue status.
-4. Use the global `done` skill to commit/shape, reconcile, publish, prove remote equality, and clean up. Complete the run receipt only after proof.
+4. Use the global `done` skill to commit/shape, reconcile, publish, prove remote equality, and clean up. Record partial outcomes with `hey agent-checkpoint`; complete the run receipt only for proved `done` or `done_local` outcomes.
 5. Run `br sync --flush-only`, commit `.beads/` only if task-shaped state changed, and verify upstream again.
 6. Create and push annotated tag `agent-work/<issue-or-slug>`.
 
@@ -52,7 +52,7 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 
 ## Periodic maintenance
 
-- A weekly launchd job runs `agent-sweep` over bounded durable receipts. Run `hey agent-sweep --json` on demand and file concrete false-done, retry, correction, or error patterns in `br`.
+- A weekly launchd job runs `agent-sweep` over bounded durable receipts. Run `hey agent-sweep --json` on demand and file concrete partial, blocked, false-done, retry, correction, or error patterns in `br`.
 - Periodically synthesize repeated worklog feedback into durable rules, skills, linters, docs, or commands.
 - Run false-confidence audits after test infrastructure changes and investigate skips, vacuous assertions, over-mocking, and tests that never reach production behavior.
 

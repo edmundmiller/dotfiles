@@ -7,6 +7,17 @@
       "type": "string",
       "enum": ["blocked", "continue"]
     },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "done",
+        "done_local",
+        "landed_cleanup_deferred",
+        "pr_merge_pending",
+        "local_only",
+        "blocked"
+      ]
+    },
     "canonicalDefaultCheckout": {
       "type": "string",
       "enum": ["unchanged", "updated"]
@@ -27,6 +38,11 @@
           "push_default",
           "verify_remote",
           "report_blocked",
+          "request_publication_authority",
+          "create_or_update_pr",
+          "wait_for_pr_gates",
+          "checkpoint_partial",
+          "verify_aggregate_patch",
           "request_user_cleanup",
           "preserve_unrelated_dirt",
           "verify_unrelated_dirt",
@@ -47,5 +63,5 @@
       "minLength": 1
     }
   },
-  "required": ["status", "canonicalDefaultCheckout", "actions", "explanation"]
+  "required": ["status", "outcome", "canonicalDefaultCheckout", "actions", "explanation"]
 }

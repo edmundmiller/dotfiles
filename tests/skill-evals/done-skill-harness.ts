@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,6 +10,15 @@ import { DONE_ACTIONS, type DoneSkillEvalCase } from "./done-skill-cases";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const skill = readFileSync(`${root}/skills/catalog/done/SKILL.md`, "utf8");
+const referencesRoot = `${root}/skills/catalog/done/references`;
+const references = readdirSync(referencesRoot)
+  .filter((name) => name.endsWith(".md"))
+  .sort()
+  .map(
+    (name) =>
+      `\n<done-reference name="${name}">\n${readFileSync(`${referencesRoot}/${name}`, "utf8")}\n</done-reference>`
+  )
+  .join("\n");
 const decisionSchema = fileURLToPath(new URL("done-decision.schema.json", import.meta.url));
 
 export function createDoneSkillHarness() {
@@ -39,6 +48,7 @@ Do not use tools. Decide from the scenario facts only.
 Return exactly one JSON object with this shape:
 {
   "status": "blocked" | "continue",
+  "outcome": "done" | "done_local" | "landed_cleanup_deferred" | "pr_merge_pending" | "local_only" | "blocked",
   "canonicalDefaultCheckout": "unchanged" | "updated",
   "actions": ["one or more allowed action ids"],
   "explanation": "one concise sentence"
@@ -48,7 +58,7 @@ Allowed action ids:
 ${DONE_ACTIONS.join("\n")}
 
 <done-skill>
-${skill}
+${skill}${references}
 </done-skill>
 
 <scenario>

@@ -54,4 +54,4 @@ Coordinate before `jj undo` or `jj op restore`; the operation log is shared acro
 
 ## Finish
 
-Use `done`. Do not run raw `git push` or `jj_vcs align_push` in jj repositories. The verifier requires task containment plus equality of local, tracked-remote, and authoritative remote bookmark tips before cleanup.
+Use `done`. Do not run raw `git push` or `jj_vcs align_push` in jj repositories. The verifier requires task containment plus equality of local, tracked-remote, and authoritative remote bookmark tips before cleanup. Partial outcomes remain open through `hey agent-checkpoint`; only proved remote or explicitly local-only completion uses `hey agent-complete`.
