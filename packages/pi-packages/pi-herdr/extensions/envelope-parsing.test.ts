@@ -112,12 +112,18 @@ describe("findStringKey envelope awareness", () => {
 // ─── Tests: createHerdrReviewWorkspace with envelope responses ───────
 
 describe("createHerdrReviewWorkspace envelope regression", () => {
-  test("extracts result.workspace_id from envelope-shaped herdr create response", async () => {
+  test("closes the initial workspace tab after creating Hunk", async () => {
     let tabCounter = 0;
+    const calls: string[][] = [];
+    const initialTabId = `${F.workspaceId}:t1`;
     const exec: ExecFn = async (cmd, args) => {
+      calls.push([cmd, ...args]);
       if (cmd === "herdr" && args[0] === "workspace" && args[1] === "create")
         return {
-          stdout: envelope("cli:workspace:create", { workspace_id: F.workspaceId }),
+          stdout: envelope("cli:workspace:create", {
+            workspace_id: F.workspaceId,
+            tab_id: initialTabId,
+          }),
           stderr: "",
           code: 0,
         };
@@ -129,9 +135,6 @@ describe("createHerdrReviewWorkspace envelope regression", () => {
           code: 0,
         };
       }
-      if (cmd === "herdr" && args[0] === "pane") return { stdout: "", stderr: "", code: 0 };
-      if (cmd === "herdr" && args[0] === "workspace" && args[1] === "focus")
-        return { stdout: "", stderr: "", code: 0 };
       return { stdout: "", stderr: "", code: 0 };
     };
 
@@ -145,7 +148,14 @@ describe("createHerdrReviewWorkspace envelope regression", () => {
     });
 
     expect(result.workspaceId).toBe(F.workspaceId);
-    expect(result.workspaceId).not.toBe("cli:workspace:create");
+    const hunkCreateIndex = calls.findIndex(
+      (call) => call[1] === "tab" && call[2] === "create" && call.includes("Hunk")
+    );
+    const initialCloseIndex = calls.findIndex(
+      (call) => call[1] === "tab" && call[2] === "close" && call[3] === initialTabId
+    );
+    expect(hunkCreateIndex).toBeGreaterThanOrEqual(0);
+    expect(initialCloseIndex).toBeGreaterThan(hunkCreateIndex);
   });
 });
 

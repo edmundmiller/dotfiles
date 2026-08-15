@@ -366,8 +366,10 @@ export async function createHerdrReviewWorkspace(
     "HERDR_REVIEW_BOX=1",
     "--focus",
   ]);
-  const workspaceId = findStringKey(parseJson(workspace.stdout), new Set(["workspace_id", "id"]));
+  const workspaceResponse = parseJson(workspace.stdout);
+  const workspaceId = findStringKey(workspaceResponse, new Set(["workspace_id", "id"]));
   if (!workspaceId) throw new Error("could not find workspace id in Herdr response");
+  const initialTabId = findStringKey(workspaceResponse, new Set(["tab_id"]));
 
   const reviewPrompt = `${buildReviewPrompt({
     pr: { number: prNumber, title, baseRefName: "", headRefName: "", headRefOid: "", url: prUrl },
@@ -381,6 +383,7 @@ export async function createHerdrReviewWorkspace(
       : `omp --cwd ${shellQuote(worktreePath)} ${shellQuote(reviewPrompt)}`;
 
   await createTabAndRun(exec, workspaceId, worktreePath, "Hunk", hunkDiffCommand(diffTarget));
+  if (initialTabId) await runHerdr(exec, ["tab", "close", initialTabId]);
   await createTabAndRun(exec, workspaceId, worktreePath, "Critique", critiqueDiffCommand(diffBase));
   await createTabAndRun(
     exec,
