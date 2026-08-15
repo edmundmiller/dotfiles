@@ -1,6 +1,6 @@
 # Worklog: ha-reliable-temperature-control-20260815
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -41,6 +41,20 @@ NUC generation is deployed, and the landed revision equals `origin/main`.
   NUC system closure.
 - `hey agent-finish` passed the repository, agent-quality, instruction,
   confidence, and inventory gates.
+- The first production reload exposed a second bug: the override timer restored
+  as active while `input_number.climate_manual_override_target` reset from 72 F
+  to its configured 74 F initial value.
+- The restart-persistence assertion evaluated `test=false` with a strict
+  expected-failure marker, then `test=true` after removing the helper's
+  `initial` value so Home Assistant restores its recorded state.
+- NUC generation 1332 (`/nix/store/jgwc8v3acfpl9cjrmqknbl7npgfbfba4-nixos-system-nuc-26.11.20260714.18b9261`)
+  is current and `home-assistant.service` is active.
+- Live production verification set both thermostats and the persisted helper to
+  72 F, restarted Home Assistant, and read back 72 F on both with the override
+  still active.
+- Pressing both Ecobee clear-hold buttons produced anonymous 74 F schedule
+  drift. The deployed five-second trigger restored both thermostats to 72 F at
+  the six-second readback and they remained 72 F through 20 seconds.
 
 ## Reviews
 
@@ -52,11 +66,12 @@ None yet.
 
 ## Remaining work
 
-- Publish and deploy the two commits.
-- Re-run the live 72 F control path and simulate Ecobee hold expiry, then prove
-  stable API/recorder state and remote equality.
+None.
 
 ## Commits
 
 - `c714c3a6d` test(hass): capture unreliable Ecobee target control
 - `ad2b1572b` fix(hass): keep Ecobee targets authoritative
+- `d3c965d1c` docs(agent): record Ecobee reliability work
+- `4280c86e1` test(hass): capture climate override restart loss
+- `67f5356c4` fix(hass): persist manual climate target
