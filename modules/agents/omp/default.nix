@@ -135,11 +135,29 @@ let
     url = "https://registry.npmjs.org/@dietrichgebert/ponytail/-/ponytail-4.8.4.tgz";
     hash = "sha256-9E9qa+rdFsyUcE1N2QiMeOeG0NpDuqu5SaeabbcScaI=";
   };
-  agentBrowserPlugin = pkgs.fetchzip {
+  agentBrowserPluginSource = pkgs.fetchzip {
     name = "pi-agent-browser-native-0.2.69";
     url = "https://registry.npmjs.org/pi-agent-browser-native/-/pi-agent-browser-native-0.2.69.tgz";
     hash = "sha256-I5aArdBYLyTMPvaxNv4z+evTBnYSclsTw+3ZBYnZTPc=";
   };
+  agentBrowserPlugin = pkgs.runCommand "pi-agent-browser-native-0.2.69-omp-lazy" { } ''
+    cp -R ${agentBrowserPluginSource} "$out"
+    chmod -R u+w "$out"
+    substituteInPlace "$out/dist/extensions/agent-browser/index.js" \
+      --replace-fail \
+        'import { Text } from "@earendil-works/pi-tui";' \
+        'const { Text } = globalThis.__dotfilesOmpLazyPluginHost;'
+    substituteInPlace "$out/dist/extensions/agent-browser/lib/pi-tool-rendering.js" \
+      --replace-fail \
+        'import { getKeybindings, Text, truncateToWidth } from "@earendil-works/pi-tui";' \
+        'const { getKeybindings, Text, truncateToWidth } = globalThis.__dotfilesOmpLazyPluginHost;'
+  '';
+  lazyExtensionBundle = pkgs.runCommand "omp-lazy-extensions" { } ''
+    mkdir -p "$out/_lib"
+    cp ${../../../config/omp/extensions/_lib/lazy-extension.mjs} "$out/_lib/lazy-extension.mjs"
+    cp ${../../../config/omp/extensions/lazy-agent-browser.mjs} "$out/lazy-agent-browser.mjs"
+    cp ${../../../config/omp/extensions/lazy-plannotator.mjs} "$out/lazy-plannotator.mjs"
+  '';
   agentQuality = pkgs.writeShellApplication {
     name = "agent-quality";
     runtimeInputs = [
@@ -705,6 +723,12 @@ in
 
       home.file.".omp/agent/extensions/permission-policy-guard".source =
         "${configDir}/omp/extensions/permission-policy-guard";
+      home.file.".omp/agent/extensions/_lib/lazy-extension.mjs".source =
+        "${lazyExtensionBundle}/_lib/lazy-extension.mjs";
+      home.file.".omp/agent/extensions/lazy-agent-browser.mjs".source =
+        "${lazyExtensionBundle}/lazy-agent-browser.mjs";
+      home.file.".omp/agent/extensions/lazy-plannotator.mjs".source =
+        "${lazyExtensionBundle}/lazy-plannotator.mjs";
       home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
         "${configDir}/pi/pi-permission-system.jsonc";
 

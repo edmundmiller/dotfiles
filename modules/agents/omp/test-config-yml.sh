@@ -111,12 +111,26 @@ REQUIRED_TTSR = {
     "ttsr.builtinRules": True,
 }
 
+REQUIRED_LAZY_EXTENSIONS = {
+    "extension-module:agent-browser",
+    "extension-module:pi-extension",
+}
+REQUIRED_LAZY_LOADERS = {
+    "~/.omp/agent/extensions/lazy-agent-browser.mjs",
+    "~/.omp/agent/extensions/lazy-plannotator.mjs",
+}
+
 for path, expected_value in REQUIRED_TTSR.items():
     if flat.get(path) != expected_value:
         errors.append(
             f"{path}: thin-harness contract requires {expected_value!r}, "
             f"found {flat.get(path)!r}"
         )
+
+if not REQUIRED_LAZY_EXTENSIONS.issubset(set(flat.get("disabledExtensions", []))):
+    errors.append("disabledExtensions: heavy plugins must load through lazy registrars")
+if not REQUIRED_LAZY_LOADERS.issubset(set(flat.get("extensions", []))):
+    errors.append("extensions: missing an OMP lazy plugin registrar")
 
 for path, value in sorted(flat.items()):
     if path in LEGACY:

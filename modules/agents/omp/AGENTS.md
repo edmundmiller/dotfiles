@@ -41,6 +41,13 @@ window, rewrites its Pi-specific TUI-mode guard to use OMP's `ctx.hasUI`, and
 builds the Glimpse macOS host skipped by OMP's plugin installer. Other OMP
 runtime state remains mutable and OMP-owned.
 
+Plannotator and `pi-agent-browser-native` keep thin registrars eager while their
+full extension graphs load on first relevant use. Their original module ids are
+listed in `disabledExtensions`; the pinned package wiring replaces runtime Pi
+imports with the host bridge supplied by the registrars. Preserve the existing
+commands, tool schema, lifecycle replay, and browser guard when changing this
+wiring.
+
 The module clears OMP's cached MCP tool metadata during activation so removed
 servers do not reappear from `agent.db`.
 

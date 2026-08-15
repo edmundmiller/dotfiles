@@ -139,7 +139,12 @@ features:
 secrets:
   enabled: true
 extensions:
+  - ~/.omp/agent/extensions/lazy-agent-browser.mjs
+  - ~/.omp/agent/extensions/lazy-plannotator.mjs
   - ~/.omp/agent/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js
+disabledExtensions:
+  - extension-module:agent-browser
+  - extension-module:pi-extension
 memory:
   backend: mnemopi
 mnemopi:

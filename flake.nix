@@ -603,11 +603,12 @@
                       ${pkgs.python3}/bin/python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
                         tests/test_omp_ttsr_rules.py
+                    ${pkgs.bun}/bin/bun test ./tests/omp_lazy_extensions.test.js
                   ''
                 );
                 language = "system";
                 pass_filenames = false;
-                files = "^(config/agents/core\\.md|config/omp/(config\\.yml|rules/)|modules/agents/omp/default\\.nix|tests/(fixtures/omp-ttsr-rules\\.json|test_agent_instruction_wiring\\.py|test_omp_ttsr_rules\\.py))";
+                files = "^(config/agents/core\\.md|config/omp/(config\\.yml|extensions/(lazy-|_lib/lazy-extension)|rules/)|modules/agents/(omp|plannotator)/default\\.nix|tests/(fixtures/omp-ttsr-rules\\.json|omp_lazy_extensions\\.test\\.js|test_agent_instruction_wiring\\.py|test_omp_ttsr_rules\\.py))";
                 stages = [ "pre-commit" ];
               };
               check-flake-portability = {
@@ -1096,6 +1097,7 @@
                 pkgs.runCommand "omp-thin-harness-tests"
                   {
                     nativeBuildInputs = [
+                      pkgs.bun
                       pkgs.python3
                       inputs.llm-agents.packages.${system}.omp
                     ];
@@ -1107,6 +1109,7 @@
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
                         tests/test_omp_ttsr_rules.py
+                    bun test ./tests/omp_lazy_extensions.test.js
                     touch $out
                   '';
 

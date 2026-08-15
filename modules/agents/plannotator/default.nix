@@ -136,8 +136,22 @@ in
               export PI_CONFIG_DIR=.omp
               export PI_CODING_AGENT_DIR="$HOME/.omp/agent"
               export PI_PERMISSION_SYSTEM_CONFIG_PATH="$HOME/.omp/agent/extensions/pi-permission-system/config.json"
+              plannotator_dir="$HOME/.omp/plugins/node_modules/@plannotator/pi-extension"
               ${ompCommand} plugin uninstall @plannotator/pi-extension --json >/dev/null 2>&1 || true
               ${ompCommand} plugin install npm:@plannotator/pi-extension@${version} --force --json >/dev/null
+              ${pkgs.gnugrep}/bin/grep -F 'import { Type } from "@earendil-works/pi-ai";' "$plannotator_dir/index.ts" >/dev/null
+              ${pkgs.gnugrep}/bin/grep -F 'import { Key } from "@earendil-works/pi-tui";' "$plannotator_dir/index.ts" >/dev/null
+              ${pkgs.gnused}/bin/sed -i \
+                -e 's|import { Type } from "@earendil-works/pi-ai";|const { Type } = globalThis.__dotfilesOmpLazyPluginHost;|' \
+                -e 's|import { Key } from "@earendil-works/pi-tui";|const { Key } = globalThis.__dotfilesOmpLazyPluginHost;|' \
+                "$plannotator_dir/index.ts"
+              ${pkgs.bun}/bin/bun build "$plannotator_dir/index.ts" \
+                --outfile "$plannotator_dir/omp-lazy-bundle.js" \
+                --target bun \
+                --external @anthropic-ai/claude-agent-sdk \
+                --external @earendil-works/pi-agent-core \
+                --external @earendil-works/pi-coding-agent \
+                --external @opencode-ai/sdk
             ''
           );
         };
