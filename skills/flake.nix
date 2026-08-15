@@ -92,6 +92,11 @@
       flake = false;
     };
 
+    kitlangton-skills = {
+      url = "github:kitlangton/skills";
+      flake = false;
+    };
+
     gitbutler-repo = {
       url = "github:gitbutlerapp/gitbutler";
       flake = false;
@@ -601,6 +606,12 @@
                   filter.maxDepth = 5;
                 };
 
+                kitlangton = {
+                  path = inputs.kitlangton-skills.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 2;
+                };
+
               }
               // lib.optionalAttrs stackEnabled {
                 stack = {
@@ -713,6 +724,9 @@
 
                   install-anti-slop.from = "anti-slop";
                   install-anti-slop.path = "install-anti-slop";
+
+                  effect.from = "kitlangton";
+                  effect.path = "effect";
 
                   write-discoverable-code.from = "modem";
                   write-discoverable-code.path = "write-discoverable-code";

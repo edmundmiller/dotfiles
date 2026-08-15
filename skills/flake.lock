@@ -55,11 +55,11 @@
     "anti-slop-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1786559163,
-        "narHash": "sha256-7V5E0cYgckq3zNORZk5J6R4yO/C374FpYpw1mW1HzZg=",
+        "lastModified": 1786717438,
+        "narHash": "sha256-UM7vVAl+Y/8+q/tAxKMOwcgwOMUWp/S0m2UqrH8xvcA=",
         "owner": "dmmulroy",
         "repo": "anti-slop",
-        "rev": "abaeb63b29e63062f778771d5447bd2e9c3c680f",
+        "rev": "446268e5d15baa968eaec669ff65358d36ae6259",
         "type": "github"
       },
       "original": {
@@ -187,6 +187,22 @@
       },
       "original": {
         "owner": "humanlayer",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
+    "kitlangton-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784431981,
+        "narHash": "sha256-34OuHrDN2F0+r0biwmuhtONE+eV862+UJ2xBEx1WuTE=",
+        "owner": "kitlangton",
+        "repo": "skills",
+        "rev": "0cace2ae0bd65e0cb03ab12860b62ae5e043f0df",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kitlangton",
         "repo": "skills",
         "type": "github"
       }
@@ -456,6 +472,7 @@
         "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",
         "humanlayer-skills": "humanlayer-skills",
+        "kitlangton-skills": "kitlangton-skills",
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",
