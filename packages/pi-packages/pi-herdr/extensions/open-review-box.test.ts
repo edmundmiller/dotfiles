@@ -220,6 +220,26 @@ describe("openReviewBox", () => {
     expect(createCalls).toHaveLength(1);
   });
 
+  test("corrupt manifest is backed up and replaced through the create path", async () => {
+    const manifestPath = join(stateRoot, `${manifestKey}.json`);
+    const corruptManifest = "{not valid json";
+    mkdirSync(stateRoot, { recursive: true });
+    writeFileSync(manifestPath, corruptManifest);
+    const { exec } = createExecStub({ workspaceGetSucceeds: true });
+
+    const result = await openReviewBox(exec, {
+      pr: prInfo,
+      repoRoot,
+      sharedRoot: repoRoot,
+      prIdentifier: "42",
+      stateRoot,
+    });
+
+    expect(result.action).toBe("created");
+    expect(readFileSync(`${manifestPath}.bak`, "utf8")).toBe(corruptManifest);
+    expect(JSON.parse(readFileSync(manifestPath, "utf8")).schemaVersion).toBe(1);
+  });
+
   test("resume path: manifest match + workspace live → focuses, action resumed", async () => {
     seedManifest(F.headRefOid);
     seedWorktree();
@@ -457,6 +477,25 @@ describe("R2 per-PR lockfile", () => {
     expect(result.action).toBe("created");
     expect(existsSync(lockPath)).toBe(false);
   });
+
+  test("live lock holder is never reclaimed and the caller times out", async () => {
+    mkdirSync(stateRoot, { recursive: true });
+    writeFileSync(lockPath, String(process.pid));
+    const { exec, calls } = createExecStub({ workspaceGetSucceeds: true });
+
+    await expect(
+      openReviewBox(exec, {
+        pr: prInfo,
+        repoRoot,
+        sharedRoot: repoRoot,
+        prIdentifier: "42",
+        stateRoot,
+      })
+    ).rejects.toThrow("per-PR lock timeout");
+
+    expect(readFileSync(lockPath, "utf8")).toBe(String(process.pid));
+    expect(calls).toHaveLength(0);
+  }, 35_000);
 });
 
 // ─── Tests: R4 worktree tolerance ────────────────────────────────────

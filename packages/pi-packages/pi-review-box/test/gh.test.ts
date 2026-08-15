@@ -1,4 +1,6 @@
 import { describe, expect, test, afterEach } from "bun:test";
+import { unlinkSync } from "node:fs";
+import { dirname } from "node:path";
 import {
   setupEnv,
   runCli,
@@ -105,12 +107,15 @@ describe("gh revalidation (VAL-BRIDGE-009, 010, 011, 012, 021, 022)", () => {
   test("missing gh binary on PATH exits 4 (R1 ENOENT)", async () => {
     env = setupEnv({ repo: "edmundmiller/dotfiles" });
     setGhProfile(env, { pr: STD_GH_RESPONSE });
-    // Remove gh from stub dir
-    const { unlinkSync } = await import("node:fs");
+    // Remove gh from stub dir and exclude the user profile containing system gh.
     try {
       unlinkSync(`${env.stubDir}/gh`);
     } catch {}
-    const result = await runCli(env, { stdin: STD_PR_JSON });
+    const bunDir = dirname(process.execPath);
+    const result = await runCli(env, {
+      stdin: STD_PR_JSON,
+      extraEnv: { PATH: `${env.stubDir}:/bin:/usr/bin:${bunDir}` },
+    });
     expect(result.exitCode).toBe(4);
     expect(result.stdout).toContain('"error"');
     expect(result.stderr).toContain("gh");

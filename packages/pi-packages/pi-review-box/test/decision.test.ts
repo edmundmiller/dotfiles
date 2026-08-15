@@ -1,4 +1,6 @@
 import { describe, expect, test, afterEach } from "bun:test";
+import { unlinkSync } from "node:fs";
+import { dirname } from "node:path";
 import {
   setupEnv,
   runCli,
@@ -411,7 +413,7 @@ exit 0
   test("missing herdr binary exits 6 (R1 ENOENT)", async () => {
     env = setupEnv({ repo: "edmundmiller/dotfiles" });
     setGhProfile(env, { pr: STD_GH_RESPONSE });
-    const { unlinkSync } = await import("node:fs");
+
     try {
       unlinkSync(`${env.stubDir}/herdr`);
     } catch {}
@@ -419,7 +421,7 @@ exit 0
     // Use a PATH containing the stub dir + essential system dirs (for bash,
     // env) + bun's bin, but excluding the user profile dir where the system
     // herdr lives — so the bridge sees a true ENOENT for herdr.
-    const bunDir = await import("node:path").then((p) => p.dirname(process.execPath));
+    const bunDir = dirname(process.execPath);
     const result = await runCli(env, {
       stdin: STD_PR_JSON,
       extraEnv: { PATH: `${env.stubDir}:/bin:/usr/bin:${bunDir}` },
