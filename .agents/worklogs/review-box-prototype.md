@@ -26,7 +26,7 @@ Ship `dotfiles-esav.7`: promote a ghui pull request into a resumable four-tab He
 - `nix build '.#darwinConfigurations."MacTraitor-Pro".pkgs.my.review-box'`: built; `result/bin/review-box --help` passed.
 - `hey check`: Darwin evaluation, formatting, hooks, package harness, policy, and ast-grep checks passed.
 - `hey re`: activation succeeded. Live ghui and Review Box configs retained theme keys, pointed to an executable bridge, and mapped `edmundmiller/dotfiles` to `/Users/emiller/.config/dotfiles`.
-- First amended VAL-BRIDGE-003 run found a fifth initial Herdr tab. The validator removed only workspace `w4C`, its worktree, and manifest, restoring the baseline workspace ID set. A regression fix now closes the initial tab after Hunk exists; live revalidation remains.
+- First amended VAL-BRIDGE-003 run found a fifth initial Herdr tab. After the regression fix and activation, the serialized validator passed: workspace `w4D` had the 56-character PR label, matching worktree cwd, final focus, and exactly Hunk, Critique, OMP Review, and Approve in order. Cleanup restored the baseline workspace IDs and focus with no PR #216 artifacts remaining.
 
 ## Reviews
 
@@ -41,7 +41,6 @@ Ship `dotfiles-esav.7`: promote a ghui pull request into a resumable four-tab He
 
 ## Remaining work
 
-- Rebuild/activate the initial-tab fix and rerun amended VAL-BRIDGE-003 through the serialized live validator.
 - Run final mission gates, close `dotfiles-esav.7`, land, and tag.
 
 ## Commits
@@ -57,3 +56,5 @@ Ship `dotfiles-esav.7`: promote a ghui pull request into a resumable four-tab He
 - `2a74915db` document workspace imports
 - `4c2753065` add ghui promotion action
 - `99cb6512f` package and configure bridge
+- `ddc6200c0` remove the initial Review Box tab
+- `ea42fbb93` add usage and implementation documentation
