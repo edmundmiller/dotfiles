@@ -42,7 +42,7 @@ class QaChangedTest(unittest.TestCase):
             bun.chmod(0o755)
 
             result = subprocess.run(
-                [str(root / "bin" / "qa-changed"), "--base-ref", "HEAD~1"],
+                ["/bin/bash", str(root / "bin" / "qa-changed"), "--base-ref", "HEAD~1"],
                 cwd=root,
                 env=os.environ | {"PATH": f"{fake_bin}:{os.environ['PATH']}", "BUN_CALLS": str(calls)},
                 text=True,

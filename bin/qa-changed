@@ -123,7 +123,7 @@ if [[ ${#unique_packages[@]} -gt 0 ]]; then
   done
 fi
 
-echo "qa-changed: checking packages: ${packages[*]}"
+echo "qa-changed: checking packages: ${packages[*]-}"
 
 arch_files=()
 if [[ ${#changed_files[@]} -gt 0 ]]; then
