@@ -10,6 +10,10 @@ update_when: Package discovery, patch policy, or maintainer tooling changes.
 
 Auto-discovered with `lib.my.mapModules ./packages`: new packages must use `packages/<name>/default.nix`. Existing `packages/<name>.nix` files are migration exceptions only. Packages are exposed as `pkgs.my.*` via the overlay in `flake.nix` and built per-system (`x86_64-linux` and `aarch64-darwin`).
 
+Cross-package imports under `packages/pi-packages` use workspace package imports
+with a `"workspace:*"` dependency. `bin/lint-ts-architecture` rejects relative
+`../../` imports across packages.
+
 ## Maintainer checks
 
 - Run `pkg-list` to find units with optional adjacent `package-harness.json` metadata.
