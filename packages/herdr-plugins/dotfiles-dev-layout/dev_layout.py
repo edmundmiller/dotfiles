@@ -226,8 +226,34 @@ def workspace_lock(workspace_id: str) -> Iterator[None]:
         yield
 
 
-def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> None:
+REVIEW_BOX_WORKTREE_MARKER = "/.pi/worktrees/"
+
+
+def is_review_box(ctx: dict[str, Any]) -> bool:
+    """Detect Review Box workspaces so the generic bootstrap yields to the
+    Review Box launcher's own tab layout.
+
+    herdr 0.8.0 does not propagate ``workspace create --env`` to plugin hooks
+    (the PluginInvocationContext has no env field), so the HERDR_REVIEW_BOX
+    environment check is a belt-and-suspenders fallback only.  The primary
+    signals come from the hook context JSON: a workspace_label prefixed with
+    ``PR #`` or a workspace_cwd / worktree.checkout_path beneath
+    ``/.pi/worktrees/``.
+    """
     if os.environ.get("HERDR_REVIEW_BOX") == "1":
+        return True
+    label = ctx.get("workspace_label") or ""
+    if isinstance(label, str) and label.startswith("PR #"):
+        return True
+    worktree = ctx.get("worktree") or {}
+    for path in (ctx.get("workspace_cwd"), worktree.get("checkout_path")):
+        if isinstance(path, str) and REVIEW_BOX_WORKTREE_MARKER in path:
+            return True
+    return False
+
+
+def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> None:
+    if is_review_box(ctx):
         return
 
     tabs, tab_ids = workspace_tabs(workspace_id)

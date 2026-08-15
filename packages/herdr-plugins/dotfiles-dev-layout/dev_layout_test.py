@@ -97,6 +97,60 @@ class BootstrapLayoutTest(unittest.TestCase):
         self.assertEqual(ran, [])
         self.assertEqual(calls, [])
 
+    def test_review_box_label_prefix_skips_bootstrap(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={"workspace_label": "PR #216 Fix the bridge CLI"}
+        )
+
+        self.assertEqual(created, [])
+        self.assertEqual(ran, [])
+        self.assertEqual(calls, [])
+
+    def test_review_box_cwd_under_pi_worktrees_skips_bootstrap(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={
+                "workspace_cwd": "/Users/emiller/.config/dotfiles/.pi/worktrees/pr-216-fix-bug"
+            }
+        )
+
+        self.assertEqual(created, [])
+        self.assertEqual(ran, [])
+        self.assertEqual(calls, [])
+
+    def test_review_box_checkout_path_under_pi_worktrees_skips_bootstrap(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={
+                "workspace_cwd": "/repo",
+                "worktree": {
+                    "checkout_path": "/Users/emiller/.config/dotfiles/.pi/worktrees/pr-216-fix-bug",
+                },
+            }
+        )
+
+        self.assertEqual(created, [])
+        self.assertEqual(ran, [])
+        self.assertEqual(calls, [])
+
+    def test_normal_label_still_gets_full_bootstrap(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={"workspace_label": "feature-branch"}
+        )
+
+        self.assertEqual(created, [("omp", "/repo"), ("hunk", "/repo")])
+        self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
+        self.assertIn(["tab", "focus", "tab-omp"], calls)
+
+    def test_normal_cwd_still_gets_full_bootstrap(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={"workspace_cwd": "/Users/emiller/projects/dotfiles"}
+        )
+
+        self.assertEqual(
+            created, [("omp", "/Users/emiller/projects/dotfiles"), ("hunk", "/repo")]
+        )
+        self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
+        self.assertIn(["tab", "focus", "tab-omp"], calls)
+
     def test_creation_event_closes_only_the_initial_tab(self) -> None:
         _, _, calls = self.run_bootstrap(
             env={"HERDR_PLUGIN_EVENT": "workspace.created"},

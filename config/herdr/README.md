@@ -125,7 +125,7 @@ hooks receive `HERDR_PLUGIN_EVENT`, `HERDR_PLUGIN_EVENT_JSON`, and
 Repo-owned plugins are composed into a local package and registered by `modules/shell/herdr/default.nix`:
 
 - `dotfiles.agent-read-command` — copies a `herdr agent read ...` command from pane/tab context menus.
-- `dotfiles.dev-layout` — provides Hunk actions plus idempotent OMP bootstrap, adding Hunk only for Git checkout workspaces.
+- `dotfiles.dev-layout` — provides Hunk actions plus idempotent OMP bootstrap, adding Hunk only for Git checkout workspaces. Review Box workspaces (label prefix `PR #` or cwd/checkout_path under `/.pi/worktrees/`) skip the generic bootstrap so the Review Box launcher owns the tab layout.
 - `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
 - `nathanflurry.jj-workspace` — built from a pinned upstream revision plus the ordered safety patch under `packages/herdr-plugin-jj-workspace/`.
 - `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
