@@ -16,6 +16,14 @@ statusLine:
 terminal:
   showProgress: true
 
+bash:
+  autoBackground:
+    enabled: true
+bashInterceptor:
+  enabled: true
+shellMinimizer:
+  sourceOutlineLevel: aggressive
+
 tui:
   renderMermaid: true
   hyperlinks: auto
@@ -31,6 +39,8 @@ defaultThinkingLevel: low
 hideThinkingBlock: true
 proseOnlyThinking: true
 omitThinking: false
+eval:
+  jl: true
 
 model:
   loopGuard:
