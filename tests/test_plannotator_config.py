@@ -95,6 +95,7 @@ class PlannotatorSourceContractTests(unittest.TestCase):
         self.assertIn('version = "0.27.0"', module)
         self.assertIn('piExtensionVersion = "0.26.4"', module)
         self.assertIn("npm:@plannotator/pi-extension@${piExtensionVersion}", module)
+        self.assertIn("extensions = [ ];", module)
         self.assertIn("omp-plannotator-plugin", module)
         self.assertIn("plannotator-claude-plugin", module)
         self.assertIn("herdrEnabled = config.modules.shell.herdr.enable;", module)

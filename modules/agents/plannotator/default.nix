@@ -105,7 +105,12 @@ in
       user.packages = [ cfg.package ];
 
       modules.agents.pi.extraPackages = mkIf piEnabled [
-        "npm:@plannotator/pi-extension@${piExtensionVersion}"
+        {
+          source = "npm:@plannotator/pi-extension@${piExtensionVersion}";
+          # The local thin registrar keeps commands, --plan, shortcut, and tool
+          # available while deferring the package entrypoint until first use.
+          extensions = [ ];
+        }
       ];
 
       home-manager.users.${config.user.name} =

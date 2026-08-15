@@ -279,9 +279,9 @@ in
       '';
     };
     extraPackages = mkOption {
-      type = types.listOf types.str;
+      type = types.listOf (types.either types.str types.attrs);
       default = [ ];
-      description = "Additional pi package paths to inject into settings.json packages list";
+      description = "Additional pi package paths or filtered package entries to inject into settings.json packages list";
     };
   };
 

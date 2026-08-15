@@ -36,6 +36,12 @@ promptLinks
   ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";
   ".pi/agent/extensions/commit-review.ts".source = "${configDir}/pi/extensions/commit-review.ts";
   ".pi/agent/extensions/review.ts".source = "${configDir}/pi/extensions/review.ts";
+  ".pi/agent/extensions/lazy-plannotator.ts".source =
+    "${configDir}/pi/extensions/lazy-plannotator.ts";
+  ".pi/agent/extensions/lazy-agent-browser.ts".source =
+    "${configDir}/pi/extensions/lazy-agent-browser.ts";
+  ".pi/agent/extensions/lib/lazy-extension.ts".source =
+    "${configDir}/pi/extensions/lib/lazy-extension.ts";
   ".pi/agent/extensions/lib/commit-review-logic.ts".source =
     "${configDir}/pi/extensions/lib/commit-review-logic.ts";
   ".pi/agent/extensions/lib/commit-config.ts".source =
