@@ -1287,16 +1287,10 @@ let
     }
     {
       test =
-        (inputNumbers.climate_manual_override_target.initial or null) == 74
-        && (timers.climate_manual_override.duration or null) == "02:00:00";
-      msg = "manual climate override must provide a 74 F target and expire after two hours";
-    }
-    {
-      test =
         !(inputNumbers.climate_manual_override_target ? initial)
-        && (activateClimateManualOverride.fields.temperature.default or null) == 74;
-      expectedFailure = true;
-      msg = "manual climate override target must survive a Home Assistant restart";
+        && (activateClimateManualOverride.fields.temperature.default or null) == 74
+        && (timers.climate_manual_override.duration or null) == "02:00:00";
+      msg = "manual climate override must default to 74 F, persist its target across restarts, and expire after two hours";
     }
     {
       test =

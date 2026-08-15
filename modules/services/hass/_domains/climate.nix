@@ -41,7 +41,6 @@ in
       min = 68;
       max = 76;
       step = 0.5;
-      initial = 74;
       unit_of_measurement = "F";
     };
 

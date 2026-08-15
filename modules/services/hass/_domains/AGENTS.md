@@ -91,7 +91,7 @@ connections active and can wake the Apple TV and HDMI-CEC display.
 - Ecobee/HomeKit owns equipment protection and the fallback schedule. Invalid core state or the door-open pause clears both thermostat holds.
 - Every HA hold uses `timer.climate_policy_hold`; the watchdog re-evaluates it after 45 minutes without releasing a valid target.
 - An authenticated HA target change starts `timer.climate_manual_override`; that target wins for two hours, then normal policy resumes. Anonymous Ecobee schedule changes are treated as drift and corrected after five seconds.
-- `script.activate_climate_manual_override` provides the explicit HA control path, works during Goodnight, and defaults to 74 F.
+- `script.activate_climate_manual_override` provides the explicit HA control path, works during Goodnight, defaults to 74 F, and preserves its active target across Home Assistant restarts.
 - ERCOT comes from `daily-prc.json`. Grid adjustments require `lastUpdated` within 15 minutes; stale/unavailable grid data is ignored.
 - Smart Meter Texas and Electricity Maps are config-flow integrations. Nix enables their components, but credentials/API keys stay outside the repo.
 - Front-door pause uses `binary_sensor.eve_door_20ebn9901_door`; close must reapply policy.
