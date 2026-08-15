@@ -367,6 +367,8 @@ let
   climateManualOverrideDetected = findAutomation "climate_manual_override_detected";
   climateManualOverrideFinished = findAutomation "climate_manual_override_finished";
   applyClimatePolicy = scripts.apply_climate_policy or null;
+  applyEcobeeProfile = scripts.apply_ecobee_profile or null;
+  applyEcobeeTarget = scripts.apply_ecobee_target or null;
   activateClimateManualOverride = scripts.activate_climate_manual_override or null;
   homeWifiSsids = [
     "sensor.edmunds_iphone_ssid"
@@ -1205,6 +1207,40 @@ let
     {
       test = climatePolicy != null;
       msg = "automation 'climate_policy' missing";
+    }
+    {
+      test =
+        applyEcobeeProfile != null
+        && applyEcobeeTarget != null
+        && hasActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "select.select_option"
+        && hasActionCallDeep (toList (applyEcobeeTarget.sequence or [ ])) "climate.set_temperature";
+      expectedFailure = true;
+      msg = "climate policy must separate verified Ecobee profile transitions from exceptional raw targets";
+    }
+    {
+      test =
+        !hasTimePatternTrigger climatePolicy "/15"
+        && climateHoldWatchdog == null
+        && !(timers ? climate_policy_hold)
+        && !hasStateAttributeTrigger climatePolicy thermostats "temperature" { seconds = 5; };
+      expectedFailure = true;
+      msg = "profile-based climate control must not continuously enforce targets or run a hold watchdog";
+    }
+    {
+      test =
+        !(goodNightScene.entities ? "select.master_suite_current_mode")
+        && !(sleepScene.entities ? "select.master_suite_current_mode")
+        && !(goodMorningScene.entities ? "select.master_suite_current_mode");
+      expectedFailure = true;
+      msg = "sleep scenes must not compete with the climate policy for Ecobee profile ownership";
+    }
+    {
+      test =
+        !(inputNumbers ? occupied_cooling_target)
+        && !hasInfix "sensor.ercot_grid_status" applyClimatePolicyJson
+        && !hasInfix "current_humidity" applyClimatePolicyJson;
+      expectedFailure = true;
+      msg = "profile-based climate control must not apply hidden ERCOT or humidity target adjustments";
     }
     {
       test = hasTimePatternTrigger climatePolicy "/15";
