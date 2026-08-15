@@ -1293,6 +1293,13 @@ let
     }
     {
       test =
+        !(inputNumbers.climate_manual_override_target ? initial)
+        && (activateClimateManualOverride.fields.temperature.default or null) == 74;
+      expectedFailure = true;
+      msg = "manual climate override target must survive a Home Assistant restart";
+    }
+    {
+      test =
         climateManualOverrideDetected != null
         && hasInfix "attribute\":\"temperature" (builtins.toJSON climateManualOverrideDetected)
         && hasInfix "context.parent_id" (builtins.toJSON climateManualOverrideDetected)
