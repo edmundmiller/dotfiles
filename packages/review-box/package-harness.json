@@ -13,7 +13,7 @@
       "--outfile",
       "review-box"
     ],
-    ["codesign", "-f", "-s", "-", "review-box"],
+    ["sh", "-c", "if command -v codesign >/dev/null 2>&1; then codesign -f -s - review-box; fi"],
     ["./review-box", "--help"]
   ]
 }

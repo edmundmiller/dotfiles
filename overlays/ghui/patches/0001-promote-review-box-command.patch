@@ -1,7 +1,7 @@
-diff --git a/src/App.tsx b/src/App.tsx
+diff --git c/src/App.tsx w/src/App.tsx
 index f3e55fa..14e679c 100644
---- a/src/App.tsx
-+++ b/src/App.tsx
+--- c/src/App.tsx
++++ w/src/App.tsx
 @@ -51,9 +51,10 @@ import { CacheService, type PullRequestCacheKey } from "./services/CacheService.
  import { Clipboard } from "./services/Clipboard.js"
  import { CommandRunner } from "./services/CommandRunner.js"
@@ -83,10 +83,10 @@ index f3e55fa..14e679c 100644
  			copyPullRequestMetadata: copySelectedPullRequestMetadata,
  			quit: () => renderer.destroy(),
  		},
-diff --git a/src/appCommands.ts b/src/appCommands.ts
+diff --git c/src/appCommands.ts w/src/appCommands.ts
 index 3af30a1..33d8571 100644
---- a/src/appCommands.ts
-+++ b/src/appCommands.ts
+--- c/src/appCommands.ts
++++ w/src/appCommands.ts
 @@ -42,6 +42,7 @@ interface AppCommandActions {
  	readonly openMergeModal: () => void
  	readonly openCloseModal: () => void
@@ -128,10 +128,10 @@ index 3af30a1..33d8571 100644
  		forSelected({
  			id: "comments.open",
  			title: "Open comments",
-diff --git a/src/keymap/listNav.ts b/src/keymap/listNav.ts
+diff --git c/src/keymap/listNav.ts w/src/keymap/listNav.ts
 index 9307fb0..3681ca1 100644
---- a/src/keymap/listNav.ts
-+++ b/src/keymap/listNav.ts
+--- c/src/keymap/listNav.ts
++++ w/src/keymap/listNav.ts
 @@ -27,6 +27,7 @@ export const listNavKeymap = List(
  	// Single-key command shortcuts (delegate to existing AppCommand registry)
  	{ id: "list.filter", title: "Filter", keys: ["/"], run: (s) => s.runCommandById("filter.open") },
@@ -140,12 +140,12 @@ index 9307fb0..3681ca1 100644
  	{ id: "list.theme", title: "Theme", keys: ["t"], run: (s) => s.runCommandById("theme.open") },
  	{ id: "list.diff", title: "Open diff", keys: ["d"], run: (s) => s.runCommandById("diff.open") },
  	{ id: "list.comments", title: "Open comments", keys: ["c"], run: (s) => s.runCommandById("comments.open") },
-diff --git a/src/services/ReviewBox.ts b/src/services/ReviewBox.ts
+diff --git c/src/services/ReviewBox.ts w/src/services/ReviewBox.ts
 new file mode 100644
-index 0000000..826b0a5
+index 0000000..d35fb68
 --- /dev/null
-+++ b/src/services/ReviewBox.ts
-@@ -0,0 +1,77 @@
++++ w/src/services/ReviewBox.ts
+@@ -0,0 +1,83 @@
 +import { Context, Effect, Layer, Schema } from "effect"
 +import type { PullRequestItem } from "../domain.js"
 +import { CommandRunner, type CommandError } from "./CommandRunner.js"
@@ -205,6 +205,12 @@ index 0000000..826b0a5
 +			const command = yield* CommandRunner
 +
 +			const promote = Effect.fn("ReviewBox.promote")(function* (commandPath: string, pullRequest: PullRequestItem) {
++				if (!pullRequest.headRefName) {
++					return yield* new ReviewBoxOutputError({
++						detail: "refresh pull request data before promoting Review Box",
++						cause: new Error("missing headRefName"),
++					})
++				}
 +				const input = {
 +					repository: pullRequest.repository,
 +					number: pullRequest.number,
@@ -223,10 +229,10 @@ index 0000000..826b0a5
 +
 +	static readonly layer = ReviewBox.layerNoDeps.pipe(Layer.provide(CommandRunner.layer))
 +}
-diff --git a/src/themeStore.ts b/src/themeStore.ts
+diff --git c/src/themeStore.ts w/src/themeStore.ts
 index 28a45e8..08b2b50 100644
---- a/src/themeStore.ts
-+++ b/src/themeStore.ts
+--- c/src/themeStore.ts
++++ w/src/themeStore.ts
 @@ -13,6 +13,7 @@ interface StoredConfig {
  	readonly lightTheme?: unknown
  	readonly diffWhitespaceMode?: unknown
@@ -250,10 +256,10 @@ index 28a45e8..08b2b50 100644
  export const saveStoredThemeId = (theme: ThemeId): Effect.Effect<void> =>
  	Effect.tryPromise(async () => {
  		const config = await readStoredConfig()
-diff --git a/test/appCommands.test.ts b/test/appCommands.test.ts
+diff --git c/test/appCommands.test.ts w/test/appCommands.test.ts
 index 843609d..ed525ae 100644
---- a/test/appCommands.test.ts
-+++ b/test/appCommands.test.ts
+--- c/test/appCommands.test.ts
++++ w/test/appCommands.test.ts
 @@ -7,6 +7,7 @@ const selectedPullRequest: PullRequestItem = {
  	repository: "owner/repo",
  	author: "kit",
@@ -301,12 +307,12 @@ index 843609d..ed525ae 100644
 +		expect(commandById("pull.review-box", { reviewBoxCommand: null }).disabledReason).toBe("Configure reviewBoxCommand in ghui/config.json.")
 +	})
  })
-diff --git a/test/reviewBox.test.ts b/test/reviewBox.test.ts
+diff --git c/test/reviewBox.test.ts w/test/reviewBox.test.ts
 new file mode 100644
-index 0000000..81f01fd
+index 0000000..bf2a9b3
 --- /dev/null
-+++ b/test/reviewBox.test.ts
-@@ -0,0 +1,93 @@
++++ w/test/reviewBox.test.ts
+@@ -0,0 +1,112 @@
 +import { describe, expect, test } from "bun:test"
 +import { Effect, Layer, Schema } from "effect"
 +import type { PullRequestItem } from "../src/domain.js"
@@ -387,6 +393,25 @@ index 0000000..81f01fd
 +		})
 +	})
 +
++	test("rejects stale cached PR data before spawning the bridge", async () => {
++		const calls: RecordedCall[] = []
++		const layer = ReviewBox.layerNoDeps.pipe(
++			Layer.provide(fakeCommandRunner({ stdout: "", stderr: "", exitCode: 0 }, calls)),
++		)
++
++		await expect(
++			runWith(
++				ReviewBox.use((service) =>
++					service.promote("/bin/review-box", { ...pullRequest, headRefName: "" }),
++				),
++				layer,
++			),
++		).rejects.toMatchObject({
++			detail: "refresh pull request data before promoting Review Box",
++		})
++		expect(calls).toHaveLength(0)
++	})
++
 +	test.each(["", "not json", '{"status":"unknown"}'])("rejects invalid success output: %s", async (stdout) => {
 +		const layer = ReviewBox.layerNoDeps.pipe(Layer.provide(fakeCommandRunner({ stdout, stderr: "", exitCode: 0 }, [])))
 +
@@ -400,10 +425,10 @@ index 0000000..81f01fd
 +		})
 +	})
 +})
-diff --git a/test/themeStore.test.ts b/test/themeStore.test.ts
+diff --git c/test/themeStore.test.ts w/test/themeStore.test.ts
 index 4ba7517..0320e21 100644
---- a/test/themeStore.test.ts
-+++ b/test/themeStore.test.ts
+--- c/test/themeStore.test.ts
++++ w/test/themeStore.test.ts
 @@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises"
  import { tmpdir } from "node:os"
  import { join } from "node:path"
