@@ -50,6 +50,10 @@ published and the authoritative remote passes a bounded history scan.
 - One read-only GitHub pull-request ref still retains the old audit tree. A
   GitHub Support purge is required to remove PR refs and cached views; doing so
   would erase historical diff views for affected pull requests.
+- The user explicitly approved that consequence. An authenticated request was
+  submitted to GitHub Support with the repository, affected PR count, first
+  changed commits, LFS status, fork status, and requested PR-ref/cache purge;
+  the portal readback shows the ticket open under the personal account.
 - `hey check` passed again against the rewritten tree after the neutral rule
   commit was reapplied.
 - `hey agent-finish --worklog .agents/worklogs/privacy-neutral-output.md`
@@ -77,10 +81,10 @@ published and the authoritative remote passes a bounded history scan.
 
 ## Remaining work
 
-- Obtain explicit approval before asking GitHub Support to remove affected
-  pull-request refs and cached views.
-- After that decision, finalize the worklog, receipt, and task tag.
+- Wait for GitHub Support to complete the PR-ref and cached-view purge.
+- Re-scan GitHub-owned refs, then finalize the worklog, receipt, and task tag.
 
 ## Commits
 
 - `b61c73668` — `docs(agents): preserve complete concise answers`
+- `25932fd9c` — `docs(agents): record privacy rewrite evidence`
