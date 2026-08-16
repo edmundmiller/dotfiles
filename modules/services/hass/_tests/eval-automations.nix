@@ -1200,6 +1200,14 @@ let
     }
     {
       test =
+        hasInfix "for_each" (builtins.toJSON applyEcobeeProfile)
+        && hasInfix "repeat.item.selector" (builtins.toJSON applyEcobeeProfile)
+        && hasInfix "repeat.item.clear_hold" (builtins.toJSON applyEcobeeProfile);
+      expectedFailure = true;
+      msg = "Ecobee profile changes must serialize and verify each HomeKit thermostat independently";
+    }
+    {
+      test =
         !hasTimePatternTrigger climatePolicy "/15"
         && climateHoldWatchdog == null
         && !(timers ? climate_policy_hold)
