@@ -9,7 +9,10 @@
     "openclaw/tap" # Discrawl Discord export CLI
     "rockorager/tap" # Prise terminal multiplexer
     "steipete/tap" # Codexbar
-    "tornikegomareli/talkify" # Talkify voice dictation
+    {
+      name = "tornikegomareli/talkify";
+      trusted = true;
+    }
     "tw93/tap" # Mole
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
