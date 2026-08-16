@@ -44,7 +44,7 @@ in
 
     script.apply_ecobee_profile = {
       alias = "Apply Ecobee Comfort Profile";
-      description = "Select one native profile on each Ecobee serially, verify readback, retry once, and report failure.";
+      description = "Select one native profile on each Ecobee serially, verify the cooling target, retry once, and report failure.";
       icon = "mdi:thermostat-auto";
       mode = "restart";
       fields = {
@@ -124,11 +124,10 @@ in
               }
               {
                 wait_template = ''
-                  {{ states(repeat.item.selector) == profile
-                     and (state_attr(repeat.item.climate, 'temperature') | float(0)
-                          - expected_temperature | float) | abs <= 0.4 }}
+                  {{ (state_attr(repeat.item.climate, 'temperature') | float(0)
+                      - expected_temperature | float) | abs <= 0.4 }}
                 '';
-                timeout.seconds = 60;
+                timeout.seconds = 20;
                 continue_on_timeout = true;
               }
               {
@@ -152,11 +151,10 @@ in
                   }
                   {
                     wait_template = ''
-                      {{ states(repeat.item.selector) == profile
-                         and (state_attr(repeat.item.climate, 'temperature') | float(0)
-                              - expected_temperature | float) | abs <= 0.4 }}
+                      {{ (state_attr(repeat.item.climate, 'temperature') | float(0)
+                          - expected_temperature | float) | abs <= 0.4 }}
                     '';
-                    timeout.seconds = 60;
+                    timeout.seconds = 20;
                     continue_on_timeout = true;
                   }
                 ];
@@ -174,7 +172,7 @@ in
                     data = {
                       notification_id = climateFailureNotification;
                       title = "Ecobee profile change failed";
-                      message = "{{ repeat.item.name }} did not reach the {{ profile }} profile at {{ expected_temperature }} F after two attempts.";
+                      message = "{{ repeat.item.name }} did not reach the {{ expected_temperature }} F target for the {{ profile }} profile after two attempts.";
                     };
                   }
                 ];

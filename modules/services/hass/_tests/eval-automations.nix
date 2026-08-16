@@ -1207,7 +1207,6 @@ let
       test =
         !hasInfix "states(repeat.item.selector) == profile" (builtins.toJSON applyEcobeeProfile)
         && hasInfix "state_attr(repeat.item.climate, 'temperature')" (builtins.toJSON applyEcobeeProfile);
-      expectedFailure = true;
       msg = "Ecobee profile verification must trust the thermostat target instead of stale HomeKit mode labels";
     }
     {
