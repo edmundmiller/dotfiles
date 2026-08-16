@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class AgentResponseContractTests(unittest.TestCase):
     def test_shared_rule_is_action_first_and_bounded(self) -> None:
         rule = (ROOT / "config/agents/rules/01-tone-and-style.md").read_text()
+        normalized_rule = " ".join(rule.split())
 
         for expected in (
             "Be concise, direct, and candid",
@@ -20,8 +21,32 @@ class AgentResponseContractTests(unittest.TestCase):
             "without noisy progress",
             "Make completed work visible.",
             "Cap lists at five items",
+            "return it without a wrapper unless context is required for correctness or safety",
+            "re-anchor with the current outcome and next active step",
         ):
-            self.assertIn(expected, rule)
+            self.assertIn(expected, normalized_rule)
+
+    def test_omp_core_keeps_the_same_compact_response_contract(self) -> None:
+        core = (ROOT / "config/agents/core.md").read_text()
+        normalized = " ".join(core.split())
+
+        self.assertLessEqual(len(core.split()), 250)
+        for expected in (
+            "lead with the outcome or next action",
+            "preserve warnings, exact thresholds, and scope",
+            "give requested depth",
+            "return requested deliverables without a wrapper",
+            "re-anchor long work",
+        ):
+            self.assertIn(expected, normalized)
+
+    def test_agent_quality_gate_runs_the_response_contract(self) -> None:
+        manifest = json.loads((ROOT / ".agents/quality.json").read_text())
+        check = next(
+            item for item in manifest["checks"] if item["id"] == "agent-quality-tests"
+        )
+
+        self.assertIn("tests/test_agent_response_contract.py", check["command"])
 
     def test_shared_behavior_rule_requires_evidence_and_real_validation(self) -> None:
         rule = (ROOT / "config/agents/rules/15-agent-behavior.md").read_text()

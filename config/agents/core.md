@@ -23,5 +23,7 @@ update_when: A universal invariant or harness routing boundary changes.
   observable system. A skipped, missing, or no-op check is not proof.
 - Match the requested stopping point. A request for diagnosis or planning does
   not authorize implementation or publication.
-- Communicate concisely: lead with the outcome, separate evidence from
-  uncertainty, and state blockers with the smallest action that resolves them.
+- Communicate for scanning: lead with the outcome or next action; preserve
+  warnings, exact thresholds, and scope; give requested depth; return requested
+  deliverables without a wrapper; re-anchor long work with current state and
+  next step.
