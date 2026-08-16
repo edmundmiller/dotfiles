@@ -44,7 +44,7 @@ in
 
     script.apply_ecobee_profile = {
       alias = "Apply Ecobee Comfort Profile";
-      description = "Select one native profile on each Ecobee serially, verify the cooling target, retry once, and report failure.";
+      description = "Select one native profile on each Ecobee serially, verify the cooling target, and fall back to the exact target when needed.";
       icon = "mdi:thermostat-auto";
       mode = "restart";
       fields = {
@@ -147,6 +147,12 @@ in
                     action = "select.select_option";
                     target.entity_id = "{{ repeat.item.selector }}";
                     data.option = "{{ profile }}";
+                    continue_on_error = true;
+                  }
+                  {
+                    action = "climate.set_temperature";
+                    target.entity_id = "{{ repeat.item.climate }}";
+                    data.temperature = "{{ expected_temperature | float }}";
                     continue_on_error = true;
                   }
                   {
