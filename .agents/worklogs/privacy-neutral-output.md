@@ -1,6 +1,6 @@
 # Worklog: privacy-neutral-output
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -22,6 +22,9 @@ published and the authoritative remote passes a bounded history scan.
   `git-filter-repo`, after creating a private local recovery bundle.
 - Use an exact remote object ID as the force-with-lease expectation and re-read
   repository identity immediately before publication.
+- Treat clean published branches and tags as sufficient after the user declined
+  the more destructive provider-side purge. Preserve historical pull-request
+  views and accept the residual read-only GitHub pull ref and cached objects.
 
 ## Evidence
 
@@ -47,13 +50,16 @@ published and the authoritative remote passes a bounded history scan.
 - An atomic push used 148 exact per-ref leases. A fresh GitHub mirror confirmed
   that every published branch and tag matches the rewrite, the audit path has
   no reachable commits, and the requested term has no reachable object match.
-- One read-only GitHub pull-request ref still retains the old audit tree. A
-  GitHub Support purge is required to remove PR refs and cached views; doing so
-  would erase historical diff views for affected pull requests.
-- The user explicitly approved that consequence. An authenticated request was
-  submitted to GitHub Support with the repository, affected PR count, first
-  changed commits, LFS status, fork status, and requested PR-ref/cache purge;
-  the portal readback shows the ticket open under the personal account.
+- One read-only GitHub pull-request ref still retains the old audit tree. It is
+  outside the published branch and tag set; removing it would require GitHub
+  Support and would erase historical diff views for affected pull requests.
+- The user initially approved that consequence, and an authenticated request
+  was submitted to GitHub Support. The user later decided that the residual ref
+  did not warrant such an aggressive scrub. Ticket `4668748` was closed, and
+  the authenticated portal readback now offers `Reopen and comment`.
+- A final fresh-mirror audit found 73 published branches and 75 tags, zero audit
+  path, requested-content, or commit-message hits, exact remote ref equality,
+  and `main` at `799bbd5d94d82336e1a24d72a5f9996602ba797e` before closeout.
 - `hey check` passed again against the rewritten tree after the neutral rule
   commit was reapplied.
 - `hey agent-finish --worklog .agents/worklogs/privacy-neutral-output.md`
@@ -81,10 +87,11 @@ published and the authoritative remote passes a bounded history scan.
 
 ## Remaining work
 
-- Wait for GitHub Support to complete the PR-ref and cached-view purge.
-- Re-scan GitHub-owned refs, then finalize the worklog, receipt, and task tag.
+- None. The residual GitHub-owned pull ref and cached objects are explicitly
+  accepted, and the provider purge request is closed.
 
 ## Commits
 
 - `b61c73668` — `docs(agents): preserve complete concise answers`
 - `25932fd9c` — `docs(agents): record privacy rewrite evidence`
+- `799bbd5d9` — `docs(agents): record support purge request`
