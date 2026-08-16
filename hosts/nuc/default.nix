@@ -776,6 +776,51 @@ let
     exec ${ob} sync --path '${millDocsVaultPath}' --continuous
   '';
 
+  millDocsGitUntrackedCollisionGuardScript = pkgs.writeShellScript "mill-docs-git-untracked-collision-guard" ''
+    set -euo pipefail
+
+    repo="$1"
+    upstream="$2"
+    identical_paths=()
+    conflicting_paths=()
+
+    while IFS= read -r -d "" candidate; do
+      if ! ${pkgs.git}/bin/git -C "$repo" cat-file -e "$upstream:$candidate" 2>/dev/null; then
+        continue
+      fi
+
+      local_blob="$(${pkgs.git}/bin/git -C "$repo" hash-object -- "$candidate")"
+      remote_blob="$(${pkgs.git}/bin/git -C "$repo" rev-parse "$upstream:$candidate")"
+      if [ "$local_blob" = "$remote_blob" ]; then
+        identical_paths+=("$candidate")
+      else
+        conflicting_paths+=("$candidate")
+      fi
+    done < <(${pkgs.git}/bin/git -C "$repo" ls-files --others --exclude-standard -z)
+
+    if [ "''${#conflicting_paths[@]}" -ne 0 ]; then
+      echo "untracked files differ from their upstream versions; refusing to remove them:" >&2
+      for candidate in "''${conflicting_paths[@]}"; do
+        printf '  %s\n' "$candidate" >&2
+      done
+      exit 1
+    fi
+
+    for candidate in "''${identical_paths[@]}"; do
+      current_blob="$(${pkgs.git}/bin/git -C "$repo" hash-object -- "$candidate")"
+      remote_blob="$(${pkgs.git}/bin/git -C "$repo" rev-parse "$upstream:$candidate")"
+      if [ "$current_blob" != "$remote_blob" ]; then
+        echo "untracked file changed during collision check; refusing to remove it: $candidate" >&2
+        exit 1
+      fi
+    done
+
+    for candidate in "''${identical_paths[@]}"; do
+      ${pkgs.coreutils}/bin/rm -- "$repo/$candidate"
+      printf 'removed byte-identical untracked upstream collision: %s\n' "$candidate"
+    done
+  '';
+
   millDocsGitPullScript = pkgs.writeShellScript "mill-docs-git-pull" ''
     set -euo pipefail
 
@@ -809,7 +854,7 @@ let
       exit 1
     fi
 
-    if ! ${pkgs.git}/bin/git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    if ! upstream="$(${pkgs.git}/bin/git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"; then
       echo "current branch has no upstream; skipping git pull"
       exit 0
     fi
@@ -819,6 +864,8 @@ let
       exit 1
     fi
 
+    ${pkgs.git}/bin/git fetch --quiet
+    ${millDocsGitUntrackedCollisionGuardScript} '${millDocsVaultPath}' "$upstream"
     ${pkgs.git}/bin/git pull --rebase --autostash
   '';
 
