@@ -17,6 +17,8 @@ update_when: A universal invariant or harness routing boundary changes.
 - Follow the root and nearest nested `AGENTS.md`. Load a matching skill or
   canonical document when the task needs a procedure; do not improvise around
   an existing guarded interface.
+- For ADHD resources, run QMD in `~/obsidian-vault`; search the dedicated ADHD
+  collections, retrieve matches, and cite vault-relative paths.
 - Prefer the smallest correct change. Preserve useful capabilities and avoid
   unrelated cleanup or speculative architecture.
 - Do not claim completion without fresh evidence from the changed artifact or
