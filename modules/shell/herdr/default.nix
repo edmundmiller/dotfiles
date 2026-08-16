@@ -883,7 +883,7 @@ in
           for plugin_root in "$plugins_root"/*; do
             if [ -f "$plugin_root/herdr-plugin.toml" ]; then
               if ! link_output=$("$herdr_cmd" plugin link "$plugin_root" 2>&1); then
-                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+                if printf '%s\n' "$link_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
                   echo "herdr: warning: runtime unavailable; deferring local plugin link for $plugin_root" >&2
                 else
                   printf '%s\n' "$link_output" >&2
@@ -898,7 +898,7 @@ in
           export PATH=$PATH:${escapeShellArg launchPath}
           herdr_cmd=${escapeShellArg cfg.command}
           if ! start_output=$("$herdr_cmd" plugin action invoke start --plugin tab-smart-rename 2>&1); then
-            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
               echo "herdr: warning: runtime unavailable; deferring smart rename worker start" >&2
             else
               printf '%s\n' "$start_output" >&2
@@ -927,7 +927,7 @@ in
             fi
 
             if ! installed_json=$("$herdr_cmd" plugin list --json 2>&1); then
-              if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+              if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
                 echo "herdr: warning: runtime unavailable or outdated; deferring marketplace plugin installation" >&2
                 runtime_deferred=1
                 return 0
@@ -960,7 +960,7 @@ in
             fi
 
             if ! installed_json=$("$herdr_cmd" plugin list --json 2>&1); then
-              if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+              if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
                 echo "herdr: warning: runtime unavailable or outdated; deferring marketplace plugin removal" >&2
                 runtime_deferred=1
                 return 0
@@ -973,7 +973,7 @@ in
             if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"plugin_id\":\"$plugin_id\""; then
               echo "herdr: removing $plugin_id plugin"
               if ! uninstall_output=$("$herdr_cmd" plugin uninstall "$plugin_id" 2>&1); then
-                if printf '%s\n' "$uninstall_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch"; then
+                if printf '%s\n' "$uninstall_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
                   echo "herdr: warning: runtime unavailable or outdated; deferring $plugin_id removal" >&2
                   runtime_deferred=1
                   return 0

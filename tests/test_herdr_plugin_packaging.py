@@ -2,8 +2,6 @@ import re
 import tomllib
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -51,10 +49,6 @@ def test_local_plugin_link_defers_unavailable_runtime() -> None:
     assert "deferring local plugin link" in module
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Herdr reports a stopped runtime as server_not_running",
-)
 def test_herdr_runtime_activations_defer_when_server_is_not_running() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     runtime_error_checks = [
