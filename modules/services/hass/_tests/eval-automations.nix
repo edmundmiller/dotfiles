@@ -1185,10 +1185,8 @@ let
         && applyEcobeeTarget != null
         && hasActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "select.select_option"
         && hasActionTarget (toList (applyEcobeeProfile.sequence or [ ])) "climate.set_hvac_mode" thermostats
-        && hasActionTarget (toList (applyEcobeeProfile.sequence or [ ])) "button.press" [
-          "button.main_floor_clear_hold"
-          "button.master_suite_clear_hold"
-        ]
+        && hasInfix "button.main_floor_clear_hold" (builtins.toJSON applyEcobeeProfile)
+        && hasInfix "button.master_suite_clear_hold" (builtins.toJSON applyEcobeeProfile)
         && countActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "select.select_option" == 2
         && hasInfix "wait_template" (builtins.toJSON applyEcobeeProfile)
         && hasInfix "persistent_notification.create" (builtins.toJSON applyEcobeeProfile)
@@ -1203,7 +1201,6 @@ let
         hasInfix "for_each" (builtins.toJSON applyEcobeeProfile)
         && hasInfix "repeat.item.selector" (builtins.toJSON applyEcobeeProfile)
         && hasInfix "repeat.item.clear_hold" (builtins.toJSON applyEcobeeProfile);
-      expectedFailure = true;
       msg = "Ecobee profile changes must serialize and verify each HomeKit thermostat independently";
     }
     {

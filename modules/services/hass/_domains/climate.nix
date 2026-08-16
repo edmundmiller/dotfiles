@@ -8,11 +8,6 @@ let
     "climate.master_suite"
   ];
 
-  profileSelectors = [
-    "select.main_floor_current_mode"
-    "select.master_suite_current_mode"
-  ];
-
   people = [
     "person.edmund_miller"
     "person.moni"
@@ -49,7 +44,7 @@ in
 
     script.apply_ecobee_profile = {
       alias = "Apply Ecobee Comfort Profile";
-      description = "Select one native profile on both Ecobees, verify readback, retry once, and report failure.";
+      description = "Select one native profile on each Ecobee serially, verify readback, retry once, and report failure.";
       icon = "mdi:thermostat-auto";
       mode = "restart";
       fields = {
@@ -81,102 +76,111 @@ in
           continue_on_error = true;
         }
         {
-          "if" = [
-            {
-              condition = "template";
-              value_template = ''
-                {{ states('select.main_floor_current_mode') != profile
-                   or states('select.master_suite_current_mode') != profile
-                   or (state_attr('climate.main_floor', 'temperature') | float(0)
-                       - expected_temperature | float) | abs > 0.4
-                   or (state_attr('climate.master_suite', 'temperature') | float(0)
-                       - expected_temperature | float) | abs > 0.4 }}
-              '';
-            }
-          ];
-          "then" = [
-            {
-              action = "button.press";
-              target.entity_id = clearHoldButtons;
-              continue_on_error = true;
-            }
-            {
-              action = "select.select_option";
-              target.entity_id = profileSelectors;
-              data.option = "{{ profile }}";
-              continue_on_error = true;
-            }
-          ];
+          action = "persistent_notification.dismiss";
+          data.notification_id = climateFailureNotification;
+          continue_on_error = true;
         }
         {
-          wait_template = ''
-            {{ states('select.main_floor_current_mode') == profile
-               and states('select.master_suite_current_mode') == profile
-               and (state_attr('climate.main_floor', 'temperature') | float(0)
-                    - expected_temperature | float) | abs <= 0.4
-               and (state_attr('climate.master_suite', 'temperature') | float(0)
-                    - expected_temperature | float) | abs <= 0.4 }}
-          '';
-          timeout.seconds = 20;
-          continue_on_timeout = true;
-        }
-        {
-          "if" = [
-            {
-              condition = "template";
-              value_template = "{{ not wait.completed }}";
-            }
-          ];
-          "then" = [
-            {
-              action = "button.press";
-              target.entity_id = clearHoldButtons;
-              continue_on_error = true;
-            }
-            {
-              action = "select.select_option";
-              target.entity_id = profileSelectors;
-              data.option = "{{ profile }}";
-              continue_on_error = true;
-            }
-            {
-              wait_template = ''
-                {{ states('select.main_floor_current_mode') == profile
-                   and states('select.master_suite_current_mode') == profile
-                   and (state_attr('climate.main_floor', 'temperature') | float(0)
-                        - expected_temperature | float) | abs <= 0.4
-                   and (state_attr('climate.master_suite', 'temperature') | float(0)
-                        - expected_temperature | float) | abs <= 0.4 }}
-              '';
-              timeout.seconds = 20;
-              continue_on_timeout = true;
-            }
-          ];
-        }
-        {
-          "if" = [
-            {
-              condition = "template";
-              value_template = "{{ not wait.completed }}";
-            }
-          ];
-          "then" = [
-            {
-              action = "persistent_notification.create";
-              data = {
-                notification_id = climateFailureNotification;
-                title = "Ecobee profile change failed";
-                message = "Both thermostats did not reach the {{ profile }} profile at {{ expected_temperature }} F after two attempts.";
-              };
-            }
-          ];
-          "else" = [
-            {
-              action = "persistent_notification.dismiss";
-              data.notification_id = climateFailureNotification;
-              continue_on_error = true;
-            }
-          ];
+          repeat = {
+            for_each = [
+              {
+                name = "Main Floor";
+                climate = "climate.main_floor";
+                selector = "select.main_floor_current_mode";
+                clear_hold = "button.main_floor_clear_hold";
+              }
+              {
+                name = "Master Suite";
+                climate = "climate.master_suite";
+                selector = "select.master_suite_current_mode";
+                clear_hold = "button.master_suite_clear_hold";
+              }
+            ];
+            sequence = [
+              {
+                "if" = [
+                  {
+                    condition = "template";
+                    value_template = ''
+                      {{ states(repeat.item.selector) != profile
+                         or (state_attr(repeat.item.climate, 'temperature') | float(0)
+                             - expected_temperature | float) | abs > 0.4 }}
+                    '';
+                  }
+                ];
+                "then" = [
+                  {
+                    action = "button.press";
+                    target.entity_id = "{{ repeat.item.clear_hold }}";
+                    continue_on_error = true;
+                  }
+                  {
+                    action = "select.select_option";
+                    target.entity_id = "{{ repeat.item.selector }}";
+                    data.option = "{{ profile }}";
+                    continue_on_error = true;
+                  }
+                ];
+              }
+              {
+                wait_template = ''
+                  {{ states(repeat.item.selector) == profile
+                     and (state_attr(repeat.item.climate, 'temperature') | float(0)
+                          - expected_temperature | float) | abs <= 0.4 }}
+                '';
+                timeout.seconds = 60;
+                continue_on_timeout = true;
+              }
+              {
+                "if" = [
+                  {
+                    condition = "template";
+                    value_template = "{{ not wait.completed }}";
+                  }
+                ];
+                "then" = [
+                  {
+                    action = "button.press";
+                    target.entity_id = "{{ repeat.item.clear_hold }}";
+                    continue_on_error = true;
+                  }
+                  {
+                    action = "select.select_option";
+                    target.entity_id = "{{ repeat.item.selector }}";
+                    data.option = "{{ profile }}";
+                    continue_on_error = true;
+                  }
+                  {
+                    wait_template = ''
+                      {{ states(repeat.item.selector) == profile
+                         and (state_attr(repeat.item.climate, 'temperature') | float(0)
+                              - expected_temperature | float) | abs <= 0.4 }}
+                    '';
+                    timeout.seconds = 60;
+                    continue_on_timeout = true;
+                  }
+                ];
+              }
+              {
+                "if" = [
+                  {
+                    condition = "template";
+                    value_template = "{{ not wait.completed }}";
+                  }
+                ];
+                "then" = [
+                  {
+                    action = "persistent_notification.create";
+                    data = {
+                      notification_id = climateFailureNotification;
+                      title = "Ecobee profile change failed";
+                      message = "{{ repeat.item.name }} did not reach the {{ profile }} profile at {{ expected_temperature }} F after two attempts.";
+                    };
+                  }
+                ];
+              }
+            ];
+          };
         }
       ];
     };
