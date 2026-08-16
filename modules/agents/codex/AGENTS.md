@@ -15,6 +15,7 @@ Remote control deliberately uses a second, installer-managed Codex binary for it
 
 - `config.toml` — bootstrapped from `config/codex/config.toml` if missing; kept as a writable local file so Codex can mutate settings
 - `AGENTS.md` — built from concatenated `config/agents/rules/*.md` (shared w/ Claude, OpenCode)
+- `agents/*.toml` — Nix-managed custom agent profiles sourced from `config/codex/agents/`
 - `rules/` — sandbox allow-rules, bootstrapped into `~/.codex/rules/` during activation as local writable files
 
 ## Not Managed by Nix
@@ -60,6 +61,6 @@ Codex reads shared generated skills from `~/.agents/skills/`.
 
 ## Model roles
 
-`config/codex/config.toml` seeds Sol Medium for normal interactive work and Luna Max for narrow, bounded subagents. Codex should proactively delegate independent exploration, testing, and read-heavy or high-volume work when useful, normally to one to three non-recursive Luna workers that return compact summaries. Raise Sol's effort only for exceptional primary work; the configured ceiling matches Codex's supported session maximum.
+`config/codex/config.toml` seeds Sol Medium for normal interactive work and Luna Max as the unnamed subagent default. Named profiles add three explicit fresh-context lanes: Luna Max for narrow repeatable work, Terra High for scoped work requiring material judgment, and a read-only Sol High reviewer for high-risk, wide, or release-bound changes. Use normally one to three non-recursive workers, then have the primary inspect the diff and rerun verification. Raise the primary Sol effort only for exceptional work; the configured ceiling matches Codex's supported session maximum.
 
 The live `~/.codex/config.toml` is writable and may differ after app changes. Compare its model and `[agents]` fields with the source, then verify feature state with `codex features list`.
