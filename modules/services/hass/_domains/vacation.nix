@@ -13,7 +13,7 @@
 # What it does NOT override:
 #   Last-person-leaves automation (patched in ambient.nix to skip during Vacation)
 #
-# Climate policy owns `climate.main_floor`, `climate.master_suite`, and both clear-hold buttons.
+# Climate policy owns both Ecobee profile selectors, exceptional targets, and clear-hold buttons.
 # 8Sleep sensors: sensor.edmund_s_eight_sleep_side_sleep_stage
 #                     sensor.monica_s_eight_sleep_side_sleep_stage
 { lib, ... }:
@@ -39,7 +39,7 @@ let
       action = "eight_sleep.away_mode_start";
       target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
     }
-    # Thermostats — apply the HA-owned 78°F vacation target with hold watchdog
+    # Thermostats — apply the explicit 78°F vacation target
     {
       action = "script.apply_climate_policy";
     }
@@ -59,14 +59,7 @@ let
       action = "eight_sleep.away_mode_stop";
       target.entity_id = "sensor.monica_s_eight_sleep_side_sleep_stage";
     }
-    # Release the vacation hold before recalculating occupied policy.
-    {
-      action = "button.press";
-      target.entity_id = [
-        "button.main_floor_clear_hold"
-        "button.master_suite_clear_hold"
-      ];
-    }
+    # Replacing the hold with Home, Sleep, or Away is owned by the climate policy.
     {
       action = "script.apply_climate_policy";
     }

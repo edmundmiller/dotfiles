@@ -334,7 +334,6 @@ in
         icon = "mdi:bed";
         entities = {
           "input_boolean.goodnight" = "on";
-          "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "cover.smartwings_window_covering" = "closed";
           "light.essentials_a19_a60" = "off";
@@ -354,7 +353,6 @@ in
         icon = "mdi:sleep";
         entities = {
           "input_boolean.goodnight" = "on";
-          "select.master_suite_current_mode" = "sleep";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
@@ -383,7 +381,6 @@ in
           "input_boolean.goodnight_done" = "off";
           "input_boolean.sleep_done" = "off";
           "input_text.sleep_schedule_key" = "";
-          "select.master_suite_current_mode" = "home";
           "cover.smartwings_window_covering" = {
             state = "open";
             current_position = 20;

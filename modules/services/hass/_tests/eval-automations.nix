@@ -382,7 +382,6 @@ let
   vacationEndPresenceActions =
     if vacationEndPresence == null then [ ] else toList (vacationEndPresence.action or [ ]);
   extraComponents = nixosConfig.config.services.home-assistant.extraComponents;
-  restConfig = haConfig.rest or [ ];
   restCommands = haConfig.rest_command or { };
   busyBarBedtimeDraw = restCommands.busy_bar_bedtime_draw or null;
   busyBarBedtimeClear = restCommands.busy_bar_bedtime_clear or null;
@@ -396,36 +395,8 @@ let
   inputNumbers = haConfig.input_number or { };
   inputDateTimes = haConfig.input_datetime or { };
   timers = haConfig.timer or { };
-  applyClimatePolicySequence =
-    if applyClimatePolicy == null then [ ] else toList (applyClimatePolicy.sequence or [ ]);
   applyClimatePolicyJson =
     if applyClimatePolicy == null then "" else builtins.toJSON applyClimatePolicy;
-  climateTargetTemplate =
-    if applyClimatePolicySequence == [ ] then
-      ""
-    else
-      (head applyClimatePolicySequence).variables.target_temperature or "";
-  activeClimatePolicyActions =
-    if builtins.length applyClimatePolicySequence < 2 then
-      [ ]
-    else
-      let
-        policyChoice = builtins.elemAt applyClimatePolicySequence 1;
-      in
-      if !(policyChoice ? choose) || policyChoice.choose == [ ] then
-        [ ]
-      else
-        toList ((builtins.elemAt policyChoice.choose 0).sequence or [ ]);
-  climateHvacModeThenActions =
-    if builtins.length activeClimatePolicyActions < 1 then
-      [ ]
-    else
-      toList ((builtins.elemAt activeClimatePolicyActions 0)."then" or [ ]);
-  climateTemperatureThenActions =
-    if builtins.length activeClimatePolicyActions < 2 then
-      [ ]
-    else
-      toList ((builtins.elemAt activeClimatePolicyActions 1)."then" or [ ]);
   climateDoorOpenActions =
     if climateDoorOpen == null then [ ] else toList (climateDoorOpen.action or [ ]);
   robotCleaningSchedulerJson =
@@ -1213,8 +1184,18 @@ let
         applyEcobeeProfile != null
         && applyEcobeeTarget != null
         && hasActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "select.select_option"
-        && hasActionCallDeep (toList (applyEcobeeTarget.sequence or [ ])) "climate.set_temperature";
-      expectedFailure = true;
+        && hasActionTarget (toList (applyEcobeeProfile.sequence or [ ])) "climate.set_hvac_mode" thermostats
+        && hasActionTarget (toList (applyEcobeeProfile.sequence or [ ])) "button.press" [
+          "button.main_floor_clear_hold"
+          "button.master_suite_clear_hold"
+        ]
+        && countActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "select.select_option" == 2
+        && hasInfix "wait_template" (builtins.toJSON applyEcobeeProfile)
+        && hasInfix "persistent_notification.create" (builtins.toJSON applyEcobeeProfile)
+        && hasActionCallDeep (toList (applyEcobeeTarget.sequence or [ ])) "climate.set_temperature"
+        && countActionCallDeep (toList (applyEcobeeTarget.sequence or [ ])) "climate.set_temperature" == 2
+        && hasInfix "wait_template" (builtins.toJSON applyEcobeeTarget)
+        && hasInfix "persistent_notification.create" (builtins.toJSON applyEcobeeTarget);
       msg = "climate policy must separate verified Ecobee profile transitions from exceptional raw targets";
     }
     {
@@ -1223,7 +1204,6 @@ let
         && climateHoldWatchdog == null
         && !(timers ? climate_policy_hold)
         && !hasStateAttributeTrigger climatePolicy thermostats "temperature" { seconds = 5; };
-      expectedFailure = true;
       msg = "profile-based climate control must not continuously enforce targets or run a hold watchdog";
     }
     {
@@ -1231,7 +1211,6 @@ let
         !(goodNightScene.entities ? "select.master_suite_current_mode")
         && !(sleepScene.entities ? "select.master_suite_current_mode")
         && !(goodMorningScene.entities ? "select.master_suite_current_mode");
-      expectedFailure = true;
       msg = "sleep scenes must not compete with the climate policy for Ecobee profile ownership";
     }
     {
@@ -1239,12 +1218,7 @@ let
         !(inputNumbers ? occupied_cooling_target)
         && !hasInfix "sensor.ercot_grid_status" applyClimatePolicyJson
         && !hasInfix "current_humidity" applyClimatePolicyJson;
-      expectedFailure = true;
       msg = "profile-based climate control must not apply hidden ERCOT or humidity target adjustments";
-    }
-    {
-      test = hasTimePatternTrigger climatePolicy "/15";
-      msg = "climate_policy must re-evaluate every 15 minutes";
     }
     {
       test =
@@ -1277,38 +1251,30 @@ let
     }
     {
       test =
-        !hasInfix "and is_state('input_boolean.goodnight', 'off')" applyClimatePolicyJson
-        && hasStateAttributeTrigger climatePolicy thermostats "temperature" { seconds = 5; }
-        && hasInfix "context.user_id is not none" (builtins.toJSON climateManualOverrideDetected)
-        && !hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
-          "button.main_floor_clear_hold"
-          "button.master_suite_clear_hold"
-        ];
-      msg = "explicit climate targets must survive Goodnight and Ecobee schedule transitions";
+        hasInfix "input_boolean.vacation_mode" applyClimatePolicyJson
+        && hasInfix "timer.climate_manual_override" applyClimatePolicyJson
+        && hasInfix "away_long_enough" applyClimatePolicyJson
+        && hasInfix "input_boolean.goodnight" applyClimatePolicyJson
+        && hasInfix "script.apply_ecobee_profile" applyClimatePolicyJson
+        && hasInfix "script.apply_ecobee_target" applyClimatePolicyJson
+        && hasInfix "temperature\":78" applyClimatePolicyJson;
+      msg = "climate policy must resolve Vacation, manual override, Away, Sleep, and Home through one controller";
     }
     {
       test =
         hasStateTriggerIncluding climatePolicy "sensor.edmunds_iphone_ssid"
         && hasStateTriggerIncluding climatePolicy "sensor.monicas_iphone_ssid"
-        && hasInfix "is_state('sensor.edmunds_iphone_ssid', 'Aviato')" climateTargetTemplate
-        && hasInfix "is_state('sensor.monicas_iphone_ssid', 'Aviato')" climateTargetTemplate;
+        && hasInfix "is_state('sensor.edmunds_iphone_ssid', 'Aviato')" applyClimatePolicyJson
+        && hasInfix "is_state('sensor.monicas_iphone_ssid', 'Aviato')" applyClimatePolicyJson;
       msg = "climate policy must treat either phone on Aviato as occupied and re-evaluate WiFi transitions";
     }
     {
       test =
-        hasInfix "{% set away_target = 76 %}" climateTargetTemplate
-        && hasInfix "{% set vacation_target = 78 %}" climateTargetTemplate
-        && hasInfix "{% elif is_state('input_boolean.vacation_mode', 'on') %}\n  {{ vacation_target }}" climateTargetTemplate
-        && hasInfix "{% elif away_long_enough %}\n  {{ away_target }}" climateTargetTemplate;
-      msg = "climate policy must use 76 F for ordinary away cooling and reserve 78 F for vacation";
-    }
-    {
-      test = hasInfix "lastUpdated" (builtins.toJSON applyClimatePolicy);
-      msg = "apply_climate_policy must guard ERCOT decisions with source freshness";
-    }
-    {
-      test = hasActionCallDeep (toList (applyClimatePolicy.sequence or [ ])) "climate.set_temperature";
-      msg = "apply_climate_policy must apply bounded thermostat targets";
+        hasInfix "expected_profile_temperature" applyClimatePolicyJson
+        && hasInfix "76" applyClimatePolicyJson
+        && hasInfix "72" applyClimatePolicyJson
+        && !hasActionCallDeep (toList (applyClimatePolicy.sequence or [ ])) "climate.set_temperature";
+      msg = "normal policy must select 72 F Home/Sleep and 76 F Away profiles instead of raw targets";
     }
     {
       test = hasActionTarget (toList (applyClimatePolicy.sequence or [ ])) "button.press" [
@@ -1316,10 +1282,6 @@ let
         "button.master_suite_clear_hold"
       ];
       msg = "apply_climate_policy must clear both holds on fallback";
-    }
-    {
-      test = (timers.climate_policy_hold.duration or null) == "00:45:00";
-      msg = "timer.climate_policy_hold must bound HA thermostat holds to 45 minutes";
     }
     {
       test =
@@ -1339,7 +1301,7 @@ let
         && hasActionCall (toList (
           climateManualOverrideDetected.action or [ ]
         )) "script.apply_climate_policy";
-      msg = "authenticated HA thermostat target changes must activate the bounded manual override";
+      msg = "authenticated HA thermostat target changes must activate one shared bounded manual override";
     }
     {
       test =
@@ -1351,7 +1313,7 @@ let
         )) "script.apply_climate_policy"
         && hasInfix "timer.climate_manual_override" (builtins.toJSON applyClimatePolicy)
         && hasInfix "input_number.climate_manual_override_target" (builtins.toJSON applyClimatePolicy);
-      msg = "explicit manual override must apply its target without humidity or grid adjustment";
+      msg = "explicit manual override must apply its target to both Ecobees without profile adjustment";
     }
     {
       test =
@@ -1361,24 +1323,7 @@ let
         && hasActionCall (toList (
           climateManualOverrideFinished.action or [ ]
         )) "script.apply_climate_policy";
-      msg = "manual climate override expiry must resume the normal climate policy";
-    }
-    {
-      test =
-        !hasActionCall activeClimatePolicyActions "timer.start"
-        && hasActionCall climateHvacModeThenActions "timer.start"
-        && hasActionCall climateTemperatureThenActions "timer.start";
-      msg = "apply_climate_policy must start the watchdog for each action that creates a thermostat hold";
-    }
-    {
-      test =
-        climateHoldWatchdog != null
-        && !hasActionTarget (toList (climateHoldWatchdog.action or [ ])) "button.press" [
-          "button.main_floor_clear_hold"
-          "button.master_suite_clear_hold"
-        ]
-        && hasActionCall (toList (climateHoldWatchdog.action or [ ])) "script.apply_climate_policy";
-      msg = "climate hold watchdog must reapply policy without clearing thermostat holds";
+      msg = "manual climate override expiry must resume the active comfort profile";
     }
     {
       test = climateDoorOpen != null && climateDoorClosed != null;
@@ -1390,9 +1335,13 @@ let
     }
     {
       test =
-        hasActionCall climateDoorOpenActions "timer.start"
-        && !hasActionCall climateDoorOpenActions "timer.cancel";
-      msg = "front-door pause must keep a bounded watchdog for HVAC-off state";
+        hasActionTarget climateDoorOpenActions "button.press" [
+          "button.main_floor_clear_hold"
+          "button.master_suite_clear_hold"
+        ]
+        && hasActionTarget climateDoorOpenActions "climate.set_hvac_mode" thermostats
+        && !hasActionCall climateDoorOpenActions "timer.start";
+      msg = "front-door pause must release both holds and stop HVAC without a watchdog";
     }
     {
       test = hasStateTrigger climateDoorClosed "binary_sensor.eve_door_20ebn9901_door" "off";
@@ -1403,15 +1352,13 @@ let
       msg = "automation 'vacation_end_presence' missing";
     }
     {
-      test = hasActionTarget vacationEndPresenceActions "button.press" [
-        "button.main_floor_clear_hold"
-        "button.master_suite_clear_hold"
-      ];
-      msg = "vacation end must clear both Ecobee holds";
-    }
-    {
-      test = hasActionCall vacationEndPresenceActions "script.apply_climate_policy";
-      msg = "vacation end must reapply the Home Assistant climate policy";
+      test =
+        !hasActionTarget vacationEndPresenceActions "button.press" [
+          "button.main_floor_clear_hold"
+          "button.master_suite_clear_hold"
+        ]
+        && hasActionCall vacationEndPresenceActions "script.apply_climate_policy";
+      msg = "vacation end must delegate hold replacement to the profile controller";
     }
     {
       test = (scripts.cool_down or null) == null;
@@ -1428,10 +1375,6 @@ let
     {
       test = builtins.elem "rest_command" extraComponents;
       msg = "REST command component must be available for BUSY Bar Canvas actions";
-    }
-    {
-      test = hasInfix "daily-prc.json" (builtins.toJSON restConfig);
-      msg = "ERCOT grid status REST sensor missing";
     }
   ];
 

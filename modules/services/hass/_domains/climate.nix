@@ -1,4 +1,4 @@
-# Home Assistant owns climate targets; Ecobee schedules are the fail-safe.
+# Ecobee comfort profiles own normal targets; Home Assistant owns profile transitions and exceptions.
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled;
@@ -6,6 +6,11 @@ let
   thermostats = [
     "climate.main_floor"
     "climate.master_suite"
+  ];
+
+  profileSelectors = [
+    "select.main_floor_current_mode"
+    "select.master_suite_current_mode"
   ];
 
   people = [
@@ -22,19 +27,11 @@ let
     "button.main_floor_clear_hold"
     "button.master_suite_clear_hold"
   ];
+
+  climateFailureNotification = "ecobee_climate_transition_failed";
 in
 {
   services.home-assistant.config = {
-    input_number.occupied_cooling_target = {
-      name = "Occupied Cooling Target";
-      icon = "mdi:snowflake-thermometer";
-      min = 68;
-      max = 76;
-      step = 0.5;
-      initial = 72;
-      unit_of_measurement = "F";
-    };
-
     input_number.climate_manual_override_target = {
       name = "Temporary Cooling Target";
       icon = "mdi:thermometer-chevron-up";
@@ -44,40 +41,251 @@ in
       unit_of_measurement = "F";
     };
 
-    timer.climate_policy_hold = {
-      name = "Climate Policy Hold";
-      duration = "00:45:00";
-      restore = true;
-    };
-
     timer.climate_manual_override = {
       name = "Temporary Climate Override";
       duration = "02:00:00";
       restore = true;
     };
 
-    rest = lib.mkAfter [
-      {
-        resource = "https://www.ercot.com/api/1/services/read/dashboards/daily-prc.json";
-        scan_interval = 300;
-        timeout = 15;
-        sensor = [
-          {
-            name = "ERCOT Grid Status";
-            unique_id = "ercot_grid_status";
-            icon = "mdi:transmission-tower";
-            value_template = "{{ value_json.current_condition.state }}";
-            json_attributes = [
-              "lastUpdated"
-              "current_condition"
-            ];
-          }
-        ];
-      }
-    ];
+    script.apply_ecobee_profile = {
+      alias = "Apply Ecobee Comfort Profile";
+      description = "Select one native profile on both Ecobees, verify readback, retry once, and report failure.";
+      icon = "mdi:thermostat-auto";
+      mode = "restart";
+      fields = {
+        profile = {
+          name = "Comfort profile";
+          required = true;
+          selector.select.options = [
+            "home"
+            "sleep"
+            "away"
+          ];
+        };
+        expected_temperature = {
+          name = "Expected cooling target";
+          required = true;
+          selector.number = {
+            min = 68;
+            max = 78;
+            step = 0.5;
+            unit_of_measurement = "F";
+          };
+        };
+      };
+      sequence = [
+        {
+          action = "climate.set_hvac_mode";
+          target.entity_id = thermostats;
+          data.hvac_mode = "cool";
+          continue_on_error = true;
+        }
+        {
+          "if" = [
+            {
+              condition = "template";
+              value_template = ''
+                {{ states('select.main_floor_current_mode') != profile
+                   or states('select.master_suite_current_mode') != profile
+                   or (state_attr('climate.main_floor', 'temperature') | float(0)
+                       - expected_temperature | float) | abs > 0.4
+                   or (state_attr('climate.master_suite', 'temperature') | float(0)
+                       - expected_temperature | float) | abs > 0.4 }}
+              '';
+            }
+          ];
+          "then" = [
+            {
+              action = "button.press";
+              target.entity_id = clearHoldButtons;
+              continue_on_error = true;
+            }
+            {
+              action = "select.select_option";
+              target.entity_id = profileSelectors;
+              data.option = "{{ profile }}";
+              continue_on_error = true;
+            }
+          ];
+        }
+        {
+          wait_template = ''
+            {{ states('select.main_floor_current_mode') == profile
+               and states('select.master_suite_current_mode') == profile
+               and (state_attr('climate.main_floor', 'temperature') | float(0)
+                    - expected_temperature | float) | abs <= 0.4
+               and (state_attr('climate.master_suite', 'temperature') | float(0)
+                    - expected_temperature | float) | abs <= 0.4 }}
+          '';
+          timeout.seconds = 20;
+          continue_on_timeout = true;
+        }
+        {
+          "if" = [
+            {
+              condition = "template";
+              value_template = "{{ not wait.completed }}";
+            }
+          ];
+          "then" = [
+            {
+              action = "button.press";
+              target.entity_id = clearHoldButtons;
+              continue_on_error = true;
+            }
+            {
+              action = "select.select_option";
+              target.entity_id = profileSelectors;
+              data.option = "{{ profile }}";
+              continue_on_error = true;
+            }
+            {
+              wait_template = ''
+                {{ states('select.main_floor_current_mode') == profile
+                   and states('select.master_suite_current_mode') == profile
+                   and (state_attr('climate.main_floor', 'temperature') | float(0)
+                        - expected_temperature | float) | abs <= 0.4
+                   and (state_attr('climate.master_suite', 'temperature') | float(0)
+                        - expected_temperature | float) | abs <= 0.4 }}
+              '';
+              timeout.seconds = 20;
+              continue_on_timeout = true;
+            }
+          ];
+        }
+        {
+          "if" = [
+            {
+              condition = "template";
+              value_template = "{{ not wait.completed }}";
+            }
+          ];
+          "then" = [
+            {
+              action = "persistent_notification.create";
+              data = {
+                notification_id = climateFailureNotification;
+                title = "Ecobee profile change failed";
+                message = "Both thermostats did not reach the {{ profile }} profile at {{ expected_temperature }} F after two attempts.";
+              };
+            }
+          ];
+          "else" = [
+            {
+              action = "persistent_notification.dismiss";
+              data.notification_id = climateFailureNotification;
+              continue_on_error = true;
+            }
+          ];
+        }
+      ];
+    };
+
+    script.apply_ecobee_target = {
+      alias = "Apply Exceptional Ecobee Target";
+      description = "Apply one temporary target to both Ecobees, verify readback, retry once, and report failure.";
+      icon = "mdi:thermometer-check";
+      mode = "restart";
+      fields.temperature = {
+        name = "Cooling target";
+        required = true;
+        selector.number = {
+          min = 68;
+          max = 78;
+          step = 0.5;
+          unit_of_measurement = "F";
+        };
+      };
+      sequence = [
+        {
+          action = "climate.set_hvac_mode";
+          target.entity_id = thermostats;
+          data.hvac_mode = "cool";
+          continue_on_error = true;
+        }
+        {
+          action = "climate.set_temperature";
+          target.entity_id = thermostats;
+          data.temperature = "{{ temperature | float }}";
+          continue_on_error = true;
+        }
+        {
+          wait_template = ''
+            {{ states('climate.main_floor') == 'cool'
+               and states('climate.master_suite') == 'cool'
+               and (state_attr('climate.main_floor', 'temperature') | float(0)
+                    - temperature | float) | abs <= 0.4
+               and (state_attr('climate.master_suite', 'temperature') | float(0)
+                    - temperature | float) | abs <= 0.4 }}
+          '';
+          timeout.seconds = 20;
+          continue_on_timeout = true;
+        }
+        {
+          "if" = [
+            {
+              condition = "template";
+              value_template = "{{ not wait.completed }}";
+            }
+          ];
+          "then" = [
+            {
+              action = "climate.set_hvac_mode";
+              target.entity_id = thermostats;
+              data.hvac_mode = "cool";
+              continue_on_error = true;
+            }
+            {
+              action = "climate.set_temperature";
+              target.entity_id = thermostats;
+              data.temperature = "{{ temperature | float }}";
+              continue_on_error = true;
+            }
+            {
+              wait_template = ''
+                {{ states('climate.main_floor') == 'cool'
+                   and states('climate.master_suite') == 'cool'
+                   and (state_attr('climate.main_floor', 'temperature') | float(0)
+                        - temperature | float) | abs <= 0.4
+                   and (state_attr('climate.master_suite', 'temperature') | float(0)
+                        - temperature | float) | abs <= 0.4 }}
+              '';
+              timeout.seconds = 20;
+              continue_on_timeout = true;
+            }
+          ];
+        }
+        {
+          "if" = [
+            {
+              condition = "template";
+              value_template = "{{ not wait.completed }}";
+            }
+          ];
+          "then" = [
+            {
+              action = "persistent_notification.create";
+              data = {
+                notification_id = climateFailureNotification;
+                title = "Ecobee target change failed";
+                message = "Both thermostats did not reach {{ temperature }} F after two attempts.";
+              };
+            }
+          ];
+          "else" = [
+            {
+              action = "persistent_notification.dismiss";
+              data.notification_id = climateFailureNotification;
+              continue_on_error = true;
+            }
+          ];
+        }
+      ];
+    };
 
     script.apply_climate_policy = {
       alias = "Apply Climate Policy";
+      description = "Resolve Vacation, manual override, Away, Sleep, and Home in that order and apply one Ecobee state.";
       icon = "mdi:home-thermometer";
       mode = "restart";
       sequence = [
@@ -87,49 +295,50 @@ in
               {{ states('input_boolean.goodnight') in ['on', 'off']
                  and states('input_boolean.vacation_mode') in ['on', 'off']
                  and (states('person.edmund_miller') not in ['unknown', 'unavailable']
-                      or is_state('sensor.edmunds_iphone_ssid', 'Aviato'))
+                      or states('sensor.edmunds_iphone_ssid') not in ['unknown', 'unavailable'])
                  and (states('person.moni') not in ['unknown', 'unavailable']
-                      or is_state('sensor.monicas_iphone_ssid', 'Aviato'))
+                      or states('sensor.monicas_iphone_ssid') not in ['unknown', 'unavailable'])
                  and not is_state('binary_sensor.eve_door_20ebn9901_door', 'on') }}
             '';
-            target_temperature = ''
-              {% set base = states('input_number.occupied_cooling_target') | float(72) %}
-              {% set away_target = 76 %}
-              {% set vacation_target = 78 %}
-              {% set occupied = is_state('person.edmund_miller', 'home')
-                                or is_state('person.moni', 'home')
-                                or is_state('sensor.edmunds_iphone_ssid', 'Aviato')
-                                or is_state('sensor.monicas_iphone_ssid', 'Aviato') %}
-              {% set latest_presence_change = [
+            occupied = ''
+              {{ is_state('person.edmund_miller', 'home')
+                 or is_state('person.moni', 'home')
+                 or is_state('sensor.edmunds_iphone_ssid', 'Aviato')
+                 or is_state('sensor.monicas_iphone_ssid', 'Aviato') }}
+            '';
+            latest_presence_change = ''
+              {{ [
                    as_timestamp(states.person.edmund_miller.last_changed, now().timestamp()),
                    as_timestamp(states.person.moni.last_changed, now().timestamp()),
                    as_timestamp(states.sensor.edmunds_iphone_ssid.last_changed, now().timestamp()),
                    as_timestamp(states.sensor.monicas_iphone_ssid.last_changed, now().timestamp())
-                 ] | max %}
-              {% set away_long_enough = not occupied
-                   and latest_presence_change <= now().timestamp() - 7200 %}
-              {% set condition = state_attr('sensor.ercot_grid_status', 'current_condition') or {} %}
-              {% set ercot_fresh = as_timestamp(
-                   state_attr('sensor.ercot_grid_status', 'lastUpdated'), 0
-                 ) > now().timestamp() - 900 %}
-              {% set grid_stressed = ercot_fresh
-                   and (states('sensor.ercot_grid_status') != 'normal'
-                        or condition.get('eea_level', 0) | int(0) > 0) %}
-              {% set humidity_high =
-                   states('sensor.main_floor_current_humidity') | float(0) > 60
-                   or states('sensor.master_suite_current_humidity') | float(0) > 60 %}
-              {% if is_state('timer.climate_manual_override', 'active') %}
-                {{ states('input_number.climate_manual_override_target') | float(74) }}
-              {% elif is_state('input_boolean.vacation_mode', 'on') %}
-                {{ vacation_target }}
-              {% elif away_long_enough %}
-                {{ away_target }}
-              {% elif grid_stressed %}
-                {{ [base, 74] | max }}
-              {% elif humidity_high %}
-                {{ [base, 71.5] | min }}
+                 ] | max }}
+            '';
+          };
+        }
+        {
+          variables.away_long_enough = ''
+            {{ not occupied
+               and latest_presence_change | float > 0
+               and latest_presence_change | float <= now().timestamp() - 7200 }}
+          '';
+        }
+        {
+          variables = {
+            desired_profile = ''
+              {% if away_long_enough %}
+                away
+              {% elif is_state('input_boolean.goodnight', 'on') %}
+                sleep
               {% else %}
-                {{ base }}
+                home
+              {% endif %}
+            '';
+            expected_profile_temperature = ''
+              {% if away_long_enough %}
+                76
+              {% else %}
+                72
               {% endif %}
             '';
           };
@@ -140,67 +349,58 @@ in
               conditions = [
                 {
                   condition = "template";
-                  value_template = "{{ policy_active }}";
+                  value_template = "{{ not policy_active }}";
                 }
               ];
               sequence = [
                 {
-                  "if" = [
-                    {
-                      condition = "template";
-                      value_template = ''
-                        {{ states('climate.main_floor') != 'cool'
-                           or states('climate.master_suite') != 'cool' }}
-                      '';
-                    }
-                  ];
-                  "then" = [
-                    {
-                      action = "climate.set_hvac_mode";
-                      target.entity_id = thermostats;
-                      data.hvac_mode = "cool";
-                    }
-                    {
-                      action = "timer.start";
-                      target.entity_id = "timer.climate_policy_hold";
-                    }
-                  ];
+                  action = "button.press";
+                  target.entity_id = clearHoldButtons;
+                }
+              ];
+            }
+            {
+              conditions = [
+                {
+                  condition = "state";
+                  entity_id = "input_boolean.vacation_mode";
+                  state = "on";
+                }
+              ];
+              sequence = [
+                {
+                  action = "timer.cancel";
+                  target.entity_id = "timer.climate_manual_override";
                 }
                 {
-                  "if" = [
-                    {
-                      condition = "template";
-                      value_template = ''
-                        {{ (state_attr('climate.main_floor', 'temperature') | float(0)
-                            - target_temperature | float) | abs > 0.4
-                           or (state_attr('climate.master_suite', 'temperature') | float(0)
-                               - target_temperature | float) | abs > 0.4 }}
-                      '';
-                    }
-                  ];
-                  "then" = [
-                    {
-                      action = "climate.set_temperature";
-                      target.entity_id = thermostats;
-                      data.temperature = "{{ target_temperature | float }}";
-                    }
-                    {
-                      action = "timer.start";
-                      target.entity_id = "timer.climate_policy_hold";
-                    }
-                  ];
+                  action = "script.apply_ecobee_target";
+                  data.temperature = 78;
+                }
+              ];
+            }
+            {
+              conditions = [
+                {
+                  condition = "state";
+                  entity_id = "timer.climate_manual_override";
+                  state = "active";
+                }
+              ];
+              sequence = [
+                {
+                  action = "script.apply_ecobee_target";
+                  data.temperature = "{{ states('input_number.climate_manual_override_target') | float(74) }}";
                 }
               ];
             }
           ];
           default = [
             {
-              action = "timer.cancel";
-              target.entity_id = "timer.climate_policy_hold";
-            }
-            {
-              action = "button.press";
-              target.entity_id = clearHoldButtons;
+              action = "script.apply_ecobee_profile";
+              data = {
+                profile = "{{ desired_profile | trim }}";
+                expected_temperature = "{{ expected_profile_temperature | float }}";
+              };
             }
           ];
         }
@@ -209,11 +409,11 @@ in
 
     script.activate_climate_manual_override = {
       alias = "Use Temporary Climate Target";
+      description = "Apply one target to both thermostats for two hours, then restore the active comfort profile.";
       icon = "mdi:dog-side";
       mode = "restart";
       fields.temperature = {
         name = "Cooling target";
-        description = "Ignore automatic humidity and grid adjustments for two hours.";
         required = true;
         default = 74;
         selector.number = {
@@ -244,16 +444,12 @@ in
       {
         alias = "Climate policy";
         id = "climate_policy";
-        description = "Continuously apply bounded targets; combine GPS and home WiFi occupancy; delay ordinary away cooling for two hours; reconcile Ecobee schedule transitions.";
+        description = "Apply Ecobee profiles only on startup, presence, sleep, and vacation transitions; ordinary Away waits two hours.";
         mode = "restart";
         trigger = [
           {
             platform = "homeassistant";
             event = "start";
-          }
-          {
-            platform = "time_pattern";
-            minutes = "/15";
           }
           {
             platform = "state";
@@ -263,15 +459,7 @@ in
               ++ [
                 "input_boolean.goodnight"
                 "input_boolean.vacation_mode"
-                "input_number.occupied_cooling_target"
-                "sensor.ercot_grid_status"
               ];
-          }
-          {
-            platform = "state";
-            entity_id = thermostats;
-            attribute = "temperature";
-            "for".seconds = 5;
           }
           {
             platform = "state";
@@ -293,38 +481,7 @@ in
             ];
             "for".hours = 2;
           }
-          {
-            platform = "numeric_state";
-            entity_id = [
-              "sensor.main_floor_current_humidity"
-              "sensor.master_suite_current_humidity"
-            ];
-            above = 60;
-          }
-          {
-            platform = "numeric_state";
-            entity_id = [
-              "sensor.main_floor_current_humidity"
-              "sensor.master_suite_current_humidity"
-            ];
-            below = 58;
-          }
         ];
-        action = [
-          {
-            action = "script.apply_climate_policy";
-          }
-        ];
-      }
-      {
-        alias = "Climate hold watchdog";
-        id = "climate_hold_watchdog";
-        description = "Re-evaluate each HA hold after 45 minutes without releasing the active target.";
-        trigger = {
-          platform = "event";
-          event_type = "timer.finished";
-          event_data.entity_id = "timer.climate_policy_hold";
-        };
         action = [
           {
             action = "script.apply_climate_policy";
@@ -334,7 +491,7 @@ in
       {
         alias = "Respect HA manual climate target";
         id = "climate_manual_override_detected";
-        description = "Follow an authenticated HA thermostat target for two hours; treat anonymous Ecobee schedule changes as drift.";
+        description = "Apply an authenticated HA thermostat change to both Ecobees for two hours.";
         mode = "restart";
         trigger = {
           platform = "state";
@@ -363,18 +520,14 @@ in
             target.entity_id = "timer.climate_manual_override";
           }
           {
-            action = "timer.cancel";
-            target.entity_id = "timer.climate_policy_hold";
-          }
-          {
             action = "script.apply_climate_policy";
           }
         ];
       }
       {
-        alias = "Resume climate policy after manual override";
+        alias = "Resume climate profile after manual override";
         id = "climate_manual_override_finished";
-        description = "Resume automatic humidity and grid adjustments after the temporary target expires.";
+        description = "Restore the active Home, Sleep, or Away profile when the two-hour target expires.";
         trigger = {
           platform = "event";
           event_type = "timer.finished";
@@ -389,7 +542,7 @@ in
       {
         alias = "Pause climate when front door stays open";
         id = "climate_pause_front_door_open";
-        description = "Pause cooling after the front door remains open for five minutes.";
+        description = "Release holds and stop both systems after the front door remains open for five minutes.";
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.eve_door_20ebn9901_door";
@@ -406,16 +559,12 @@ in
             target.entity_id = thermostats;
             data.hvac_mode = "off";
           }
-          {
-            action = "timer.start";
-            target.entity_id = "timer.climate_policy_hold";
-          }
         ];
       }
       {
         alias = "Resume climate when front door closes";
         id = "climate_resume_front_door_closed";
-        description = "Re-evaluate the climate policy when the front door closes.";
+        description = "Restore the active exception or comfort profile when the front door closes.";
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.eve_door_20ebn9901_door";
