@@ -1211,6 +1211,12 @@ let
     }
     {
       test =
+        countActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "climate.set_temperature" == 1;
+      expectedFailure = true;
+      msg = "Ecobee profile transitions must fall back to a raw target when clearing the prior hold does not restore temperature";
+    }
+    {
+      test =
         !hasTimePatternTrigger climatePolicy "/15"
         && climateHoldWatchdog == null
         && !(timers ? climate_policy_hold)
