@@ -11,6 +11,7 @@
     "steipete/tap" # Codexbar
     {
       name = "tornikegomareli/talkify";
+      clone_target = "https://github.com/tornikegomareli/Talkify";
       trusted = true;
     }
     "tw93/tap" # Mole
