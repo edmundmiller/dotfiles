@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+nix_profile="/nix/var/nix/profiles/default"
+
+if [[ ! -x "$nix_profile/bin/nix" ]]; then
+  echo "Nix is missing; rerun .agents/setup" >&2
+  exit 1
+fi
+
+if ! systemctl is-active --quiet nix-daemon.service; then
+  sudo systemctl start nix-daemon.service
+fi
+
+echo "Orb prerequisites are ready."

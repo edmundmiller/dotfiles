@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+step() {
+  printf '\n==> %s\n' "$1"
+}
+
+repo_root="$(git rev-parse --show-toplevel)"
+nix_profile="/nix/var/nix/profiles/default"
+nix_env="$nix_profile/etc/profile.d/nix-daemon.sh"
+
+step "Install Nix when missing"
+if [[ ! -x "$nix_profile/bin/nix" ]]; then
+  curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+    https://install.determinate.systems/nix \
+    | sh -s -- install --no-confirm
+fi
+
+# The installer cannot update this running process.
+# shellcheck disable=SC1090
+source "$nix_env"
+
+step "Trust the repository binary cache"
+nix_custom_conf="/etc/nix/nix.custom.conf"
+nix_config_changed=0
+for setting in \
+  "trusted-users = root $(id -un)" \
+  "extra-substituters = https://cache.numtide.com" \
+  "extra-trusted-substituters = https://cache.numtide.com" \
+  "extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="; do
+  if ! sudo grep -Fqx "$setting" "$nix_custom_conf" 2>/dev/null; then
+    printf '%s\n' "$setting" | sudo tee -a "$nix_custom_conf" >/dev/null
+    nix_config_changed=1
+  fi
+done
+if ((nix_config_changed)); then
+  sudo systemctl restart nix-daemon.service
+fi
+
+step "Warm the headless agent development shell"
+nix --accept-flake-config develop --no-write-lock-file "$repo_root#agent" --command true
+
+step "Make the agent shell available to orb login shells"
+orb_env="$HOME/.config/amp/dotfiles-orb-env.sh"
+mkdir -p "$(dirname "$orb_env")"
+cat > "$orb_env" <<EOF
+if [[ "\${AMP_ORB:-}" == "1" && "\${PWD:-}" == "$repo_root" && -z "\${DOTFILES_AGENT_ENV_ACTIVE:-}" ]]; then
+  source "$nix_env"
+  export DOTFILES_AGENT_ENV_ACTIVE=1
+  eval "\$("$nix_profile/bin/nix" --accept-flake-config print-dev-env --no-write-lock-file '$repo_root#agent')"
+  export PATH="$nix_profile/bin:\$PATH"
+fi
+EOF
+
+profile_marker="# dotfiles orb agent shell"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<'EOF'
+
+# dotfiles orb agent shell
+source "$HOME/.config/amp/dotfiles-orb-env.sh"
+EOF
+fi
+
+printf '\nOrb setup complete.\n'
