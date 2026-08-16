@@ -174,7 +174,7 @@ in
           enable = true;
           # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
           # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
-          # Roles: Sol default/smol/advisor/slow/plan; Terra task; K3 designer; Luna commit/tiny; Gemini vision.
+          # Roles: Sol default/smol/advisor/slow/plan; Luna xhigh task; K3 designer; Luna commit/tiny; Gemini vision.
           smolModel = "openai-codex/gpt-5.6-sol:low";
           modelRoles = {
             vision = "google-antigravity/gemini-3.5-flash";
@@ -184,7 +184,7 @@ in
             slow = "openai-codex/gpt-5.6-sol:xhigh";
             # Shared plan defaults to vibeproxy; override to sol.
             plan = "openai-codex/gpt-5.6-sol:high";
-            task = "openai-codex/gpt-5.6-terra";
+            task = "openai-codex/gpt-5.6-luna:xhigh";
             commit = "openai-codex/gpt-5.6-luna:low";
             tiny = "openai-codex/gpt-5.6-luna:low";
           };
@@ -197,28 +197,45 @@ in
           retry.modelFallback = true;
           retry.fallbackChains = {
             default = [
-              "xai-oauth/grok-4.5:low"
+              "openai-codex/gpt-5.6-luna:medium"
+              "xai-oauth/grok-4.6"
               "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             plan = [
+              "openai-codex/gpt-5.6-luna:high"
               "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
+            ];
+            advisor = [
+              "openai-codex/gpt-5.6-luna:high"
+              "xai-oauth/grok-4.6"
+              "opencode-go/kimi-k3:high"
+            ];
+            task = [
+              "openai-codex/gpt-5.6-sol:xhigh"
+              "xai-oauth/grok-4.6"
+              "opencode-go/deepseek-v4-flash"
+            ];
+            commit = [
+              "openai-codex/gpt-5.6-sol:low"
+              "xai-oauth/grok-4.6"
             ];
             slow = [
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
-              "xai-oauth/grok-4.5:high"
+              "xai-oauth/grok-4.6"
               "opencode-go/kimi-k3:high"
               "openrouter/moonshotai/kimi-k3:high"
             ];
             smol = [
               "openai-codex/gpt-5.6-luna"
+              "openai-codex/gpt-5.6-sol:low"
               "opencode-go/deepseek-v4-flash"
             ];
             tiny = [
-              "xai-oauth/grok-4.5:minimal"
-              "openai-codex/gpt-5.6-luna"
+              "openai-codex/gpt-5.6-sol:low"
+              "xai-oauth/grok-4.6"
             ];
           };
           dailyIntrospection.enable = true;

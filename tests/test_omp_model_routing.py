@@ -63,7 +63,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         omp = json.loads(result.stdout)
         self.assertEqual(omp["smolModel"], "openai-codex/gpt-5.6-sol:low")
         self.assertNotIn("smol", omp["modelRoles"])
-        self.assertEqual(omp["modelRoles"]["task"], "openai-codex/gpt-5.6-terra")
+        self.assertEqual(omp["modelRoles"]["task"], "openai-codex/gpt-5.6-luna:xhigh")
         self.assertEqual(
             omp["modelRoles"]["tiny"],
             "openai-codex/gpt-5.6-luna:low",
@@ -136,6 +136,10 @@ class OmpModelRoutingTests(unittest.TestCase):
                         "openrouter/moonshotai/kimi-k3:high",
                     ],
                 )
+        self.assertEqual(chains["task"][0], "openai-codex/gpt-5.6-sol:xhigh")
+        self.assertEqual(chains["commit"][0], "openai-codex/gpt-5.6-sol:low")
+        self.assertEqual(chains["tiny"][0], "openai-codex/gpt-5.6-sol:low")
+        self.assertIn("openai-codex/gpt-5.6-sol:low", chains["smol"])
 
     def test_seqeratop_routes_prewalk_and_metadata_roles_separately(self) -> None:
         result = subprocess.run(
