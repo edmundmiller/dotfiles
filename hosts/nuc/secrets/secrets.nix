@@ -128,6 +128,10 @@ in
     edmundmiller
     nuc
   ];
+  "nut-monitor-password.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hermes-scintillate-api-server-key.age".publicKeys = [
     edmundmiller
     nuc

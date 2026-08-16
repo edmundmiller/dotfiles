@@ -79,6 +79,7 @@ Timer-driven profiles declare their executor in `$HERMES_HOME/cron/executor.json
 - **Home Assistant** — With PostgreSQL backend, Homebridge, Tailscale
 - Extra components: homekit_controller, apple_tv, samsungtv, cast, mobile_app, bluetooth
 - **HA state persists across Nix rebuilds** — Automation on/off states, entity states, etc. are stored in `/var/lib/hass/.storage/` and survive `hey nuc` redeploys. Toggling an automation off via API does not need a corresponding Nix change.
+- **UPS telemetry** — NUT owns the CyberPower USB device and low-battery shutdown; HA is a loopback-only read client. Follow [UPS.md](UPS.md), and never edit HA `.storage` or invoke NUT power-cut commands during routine testing.
 
 ### Monitoring
 

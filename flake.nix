@@ -1368,6 +1368,11 @@
                 inherit pkgs;
               };
 
+              nuc-ups-monitoring = import ./hosts/nuc/_tests/ups-monitoring.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               # Validate the tracked Herdr config template with Herdr's own
               # `config check`, which rejects unknown keys. Cheap and runs
               # everywhere; the VM test below covers the activated config.

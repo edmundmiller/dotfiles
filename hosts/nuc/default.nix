@@ -1362,6 +1362,7 @@ in
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
+    ./ups.nix
   ];
 
   services.hermes-agent = {
