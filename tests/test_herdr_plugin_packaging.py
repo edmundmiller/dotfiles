@@ -2,6 +2,8 @@ import re
 import tomllib
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -47,6 +49,22 @@ def test_local_plugin_link_defers_unavailable_runtime() -> None:
     assert "Connection refused" in module
     assert "protocol_mismatch" in module
     assert "deferring local plugin link" in module
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Herdr reports a stopped runtime as server_not_running",
+)
+def test_herdr_runtime_activations_defer_when_server_is_not_running() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    runtime_error_checks = [
+        line
+        for line in module.splitlines()
+        if "grep -Eqi" in line and "protocol_mismatch" in line
+    ]
+
+    assert runtime_error_checks
+    assert all("server_not_running" in line for line in runtime_error_checks)
 
 
 def test_marketplace_activation_defers_protocol_mismatch() -> None:
