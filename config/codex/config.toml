@@ -15,8 +15,12 @@ Runtime defaults:
 
 Delegation defaults:
 - Keep Sol as the primary coordinator and final decision-maker.
-- Proactively delegate independent, bounded exploration, testing, and read-heavy or high-volume work to Luna subagents when it reduces latency or keeps noisy context out of the primary thread.
+- Select `luna_worker` with fresh context for independent, fully specified searches, tests, mechanical edits, log analysis, or summarization when delegation reduces latency or keeps noisy context out of the primary thread.
+- Select `terra_worker` with fresh context for scoped implementation or review that requires cross-file reasoning, risk assessment, or material judgment.
+- Select `sol_reviewer` with fresh context only when an independent read-only review materially reduces risk for a high-risk, wide, or release-bound change; do not require it for routine small edits.
+- Give every worker the outcome, exact file ownership, settled interfaces and constraints, verification commands with success criteria, and required return shape.
 - Spawn the smallest useful set, normally one to three; never delegate recursively, and require compact summaries back to Sol.
+- Treat worker reports as claims: the primary must inspect the actual diff and rerun the requested verification before acceptance.
 """
 
 [agents]

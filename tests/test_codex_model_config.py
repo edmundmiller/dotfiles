@@ -5,6 +5,8 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "codex" / "config.toml"
+AGENTS = ROOT / "config" / "codex" / "agents"
+MODULE = ROOT / "modules" / "agents" / "codex" / "default.nix"
 
 
 class CodexModelConfigTests(unittest.TestCase):
@@ -43,6 +45,34 @@ class CodexModelConfigTests(unittest.TestCase):
             self.config["mcp_servers"]["openaiDeveloperDocs"]["url"],
             "https://developers.openai.com/mcp",
         )
+
+    def test_custom_agent_lanes_pin_models_and_are_deployed(self):
+        expected = {
+            "luna_worker.toml": ("luna_worker", "gpt-5.6-luna", "max", None),
+            "terra_worker.toml": ("terra_worker", "gpt-5.6-terra", "high", None),
+            "sol_reviewer.toml": ("sol_reviewer", "gpt-5.6-sol", "high", "read-only"),
+        }
+        module = MODULE.read_text(encoding="utf-8")
+
+        for filename, values in expected.items():
+            profile = tomllib.loads((AGENTS / filename).read_text(encoding="utf-8"))
+            name, model, effort, sandbox = values
+            self.assertEqual(profile["name"], name)
+            self.assertEqual(profile["model"], model)
+            self.assertEqual(profile["model_reasoning_effort"], effort)
+            self.assertEqual(profile.get("sandbox_mode"), sandbox)
+            self.assertTrue(profile["description"])
+            self.assertTrue(profile["developer_instructions"])
+            self.assertIn(f'".codex/agents/{filename}"', module)
+
+    def test_primary_routes_fresh_context_to_named_agent_lanes(self):
+        guidance = self.config["developer_instructions"]
+
+        for agent_name in ("luna_worker", "terra_worker", "sol_reviewer"):
+            self.assertIn(agent_name, guidance)
+        self.assertIn("fresh context", guidance)
+        self.assertIn("actual diff", guidance)
+        self.assertIn("rerun the requested verification", guidance)
 
 
 if __name__ == "__main__":

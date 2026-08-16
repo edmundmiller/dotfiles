@@ -43,6 +43,9 @@ in
     home.file = {
       # AGENTS.md built from shared agent rules (same source as Claude/OpenCode)
       ".codex/AGENTS.md".text = concatenatedRules;
+      ".codex/agents/luna_worker.toml".source = "${configDir}/codex/agents/luna_worker.toml";
+      ".codex/agents/terra_worker.toml".source = "${configDir}/codex/agents/terra_worker.toml";
+      ".codex/agents/sol_reviewer.toml".source = "${configDir}/codex/agents/sol_reviewer.toml";
     };
 
     home-manager.users.${config.user.name} =
