@@ -264,6 +264,50 @@ class DoneCloseoutTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
 
+    @unittest.expectedFailure
+    def test_publish_clean_uses_authoritative_default_over_stale_cached_head(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, remote = self.init_repo(root)
+
+            updater = root / "updater"
+            git(root, "clone", str(remote), str(updater))
+            git(updater, "config", "user.name", "Done Test")
+            git(updater, "config", "user.email", "done@example.invalid")
+            git(updater, "switch", "-c", "develop")
+            (updater / "develop.txt").write_text("develop\n")
+            git(updater, "add", "develop.txt")
+            git(updater, "commit", "-m", "develop")
+            git(updater, "push", "origin", "develop")
+            git(remote, "symbolic-ref", "HEAD", "refs/heads/develop")
+            self.assertEqual(
+                "refs/remotes/origin/main",
+                git(repo, "symbolic-ref", "refs/remotes/origin/HEAD"),
+            )
+
+            _, task_revision = self.create_task_revision(repo, root)
+            before = self.source_state(repo)
+            result = self.run_publish_clean(
+                "--source-repo",
+                str(repo),
+                "--task-revision",
+                task_revision,
+                cwd=repo,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual("develop", payload["defaultBranch"])
+            self.assertEqual(before, self.source_state(repo))
+            self.assertEqual(
+                {"base.txt", "develop.txt", "task.txt"},
+                set(git(remote, "ls-tree", "-r", "--name-only", "develop").splitlines()),
+            )
+            self.assertEqual(
+                {"base.txt"},
+                set(git(remote, "ls-tree", "-r", "--name-only", "main").splitlines()),
+            )
+
     def test_publish_clean_leaves_dirty_source_untouched(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
