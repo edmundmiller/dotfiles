@@ -13,6 +13,13 @@ $ARGUMENTS
 3. If `.beads/` exists and the request is empty, run `br scheduler --robot --limit 5`, choose the first ready recommendation, inspect it, and claim it. If there is no tracker, no ready issue, stale state, or a conflicting live claim, stop with the exact blocker; never use `--allow-stale`.
 4. Outside a Beads repository, use non-empty input as the outcome and OMP Todo only for session-local tracking. Empty input stops with `no Beads queue and no outcome supplied`; do not invent Todo selection or another durable tracker.
 5. For broad or high-risk dotfiles work, follow `AGENT_WORKFLOW.md`: create a worklog, run the plan gate, keep evidence current, and run the full landing gate. Smaller work still requires focused behavioral evidence.
-6. Decompose by real dependencies. Launch one Task batch for independent research or non-overlapping edits; use read-only scout agents when file scope is unknown. The main agent owns shared files, integration, commits, rebase/push, and issue closure. Parallel workers never commit or push.
-7. Continue after partial failures without user kicks. Close with `br close <id> --reason done --suggest-next` only after every acceptance criterion has fresh evidence and the branch is current upstream.
+6. Decompose by real dependencies. Launch one Task batch for independent research or non-overlapping edits; use read-only scout agents when file scope is unknown. The main agent owns shared files, integration, commits, rebase/push, and issue closure. Parallel workers never commit or push. Wait for every worker before deciding the next step.
+   Require each Task worker to return one machine-readable return envelope with:
+   - `status`: `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`.
+   - `changed_paths`: every created, modified, or deleted path.
+   - `verification`: exact checks and evidence, including failures.
+   - `landing_state`: `UNLANDED`, `READY_FOR_DONE`, `LANDED`, or `BLOCKED`.
+   - `next_action`: exactly one concrete follow-up, or `none` when no follow-up is needed.
+     Treat `DONE` as bounded assignment completion, not landing. Follow up `CONTINUE` and `PARTIAL` results or take the next bounded step. Beads and OMP Todo record state; they do not wake a stopped worker.
+7. Continue after partial failures without user kicks. Keep the issue open through `done`; a worker report or passing local checks is not landing proof. Close with `br close <id> --reason done --suggest-next` only after every acceptance criterion has fresh evidence, `landing_state` is `LANDED`, and the branch is current upstream. If genuinely blocked, leave the issue open and report the exact unmet criterion.
 8. If blocked, leave the issue open or in progress and report attempted paths, the exact blocker, unmet criteria, and the smallest needed input.

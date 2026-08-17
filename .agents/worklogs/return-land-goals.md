@@ -30,6 +30,19 @@ genuine blocker is proven.
 tests.test_codex_model_config tests.test_agent_quality` — 32 tests, OK.
 - The green commit's pre-commit checks passed: agent instructions, merge
   conflicts, treefmt, skills-lock sync, and conventional commit validation.
+- OMP source mapping confirms `config/agents/core.md` is the only global
+  `AGENTS.md` content, while `config/omp/commands/go.md` is deployed as the
+  task-oriented `/go` prompt by `modules/agents/omp/default.nix`.
+- Existing `/go` guidance already made the main agent own integration and told it
+  to continue after partial failures, but had no explicit worker wait, structured
+  return envelope, or landing-state proof requirement. OMP does not consume the
+  Codex `AGENT-16` rule or durable goal runtime.
+- Red OMP contract test passed as one strict expected failure:
+  `python3 -m unittest tests.test_agent_quality -v` — 26 tests, OK.
+- Green OMP-focused run passed: `python3 -m unittest tests.test_agent_quality -v` —
+  26 tests, OK.
+- The OMP green commit's pre-commit checks passed: OMP config, treefmt, skills-lock
+  sync, and conventional commit validation.
 
 ## Reviews
 
@@ -48,4 +61,6 @@ tests.test_codex_model_config tests.test_agent_quality` — 32 tests, OK.
 ## Commits
 
 - `25fe1cdd6` — red tests for the return-and-land contract.
-- Green implementation commit pending.
+- `abed3e5c5` — Codex return-and-land contract.
+- `f35616224` — red OMP `/go` return-and-land test.
+- `7e07afab1` — OMP `/go` return-and-land contract.

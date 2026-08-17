@@ -162,7 +162,6 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("durable goals are checkpoints, not wake schedulers", primary)
         self.assertIn("keep the goal open through `done`", primary)
 
-    @unittest.expectedFailure
     def test_omp_go_command_requires_parent_worker_return_and_landing_contract(self) -> None:
         command = OMP_GO_COMMAND.read_text().lower()
 
