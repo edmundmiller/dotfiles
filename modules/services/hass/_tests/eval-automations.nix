@@ -1212,7 +1212,6 @@ let
     {
       test =
         countActionCallDeep (toList (applyEcobeeProfile.sequence or [ ])) "climate.set_temperature" == 2;
-      expectedFailure = true;
       msg = "Ecobee profile transitions must always send the exact target and retry once when cached HomeKit state looks correct";
     }
     {

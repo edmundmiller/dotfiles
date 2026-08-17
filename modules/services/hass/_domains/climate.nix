@@ -44,7 +44,7 @@ in
 
     script.apply_ecobee_profile = {
       alias = "Apply Ecobee Comfort Profile";
-      description = "Select one native profile on each Ecobee serially, verify the cooling target, and fall back to the exact target when needed.";
+      description = "Select one native profile and exact target on each Ecobee serially, verify readback, and retry once.";
       icon = "mdi:thermostat-auto";
       mode = "restart";
       fields = {
@@ -98,29 +98,21 @@ in
             ];
             sequence = [
               {
-                "if" = [
-                  {
-                    condition = "template";
-                    value_template = ''
-                      {{ states(repeat.item.selector) != profile
-                         or (state_attr(repeat.item.climate, 'temperature') | float(0)
-                             - expected_temperature | float) | abs > 0.4 }}
-                    '';
-                  }
-                ];
-                "then" = [
-                  {
-                    action = "button.press";
-                    target.entity_id = "{{ repeat.item.clear_hold }}";
-                    continue_on_error = true;
-                  }
-                  {
-                    action = "select.select_option";
-                    target.entity_id = "{{ repeat.item.selector }}";
-                    data.option = "{{ profile }}";
-                    continue_on_error = true;
-                  }
-                ];
+                action = "button.press";
+                target.entity_id = "{{ repeat.item.clear_hold }}";
+                continue_on_error = true;
+              }
+              {
+                action = "select.select_option";
+                target.entity_id = "{{ repeat.item.selector }}";
+                data.option = "{{ profile }}";
+                continue_on_error = true;
+              }
+              {
+                action = "climate.set_temperature";
+                target.entity_id = "{{ repeat.item.climate }}";
+                data.temperature = "{{ expected_temperature | float }}";
+                continue_on_error = true;
               }
               {
                 wait_template = ''
