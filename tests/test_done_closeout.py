@@ -264,7 +264,6 @@ class DoneCloseoutTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
 
-    @unittest.expectedFailure
     def test_publish_clean_uses_authoritative_default_over_stale_cached_head(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -286,6 +285,7 @@ class DoneCloseoutTest(unittest.TestCase):
             )
 
             _, task_revision = self.create_task_revision(repo, root)
+            (repo / "untracked.txt").write_text("source dirt\n")
             before = self.source_state(repo)
             result = self.run_publish_clean(
                 "--source-repo",

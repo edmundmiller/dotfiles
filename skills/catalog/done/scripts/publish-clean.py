@@ -99,12 +99,7 @@ def discover_remote(source: Path, requested: str | None) -> str:
     raise PublishError("cannot discover a unique remote; pass --remote")
 
 
-def branch_from_remote_head(source: Path, remote: str, url: str) -> str | None:
-    symbolic = optional_git_output(source, "symbolic-ref", f"refs/remotes/{remote}/HEAD")
-    prefix = f"refs/remotes/{remote}/"
-    if symbolic and symbolic.startswith(prefix):
-        return symbolic.removeprefix(prefix)
-
+def branch_from_remote_head(url: str) -> str | None:
     result = run_git(None, ["ls-remote", "--symref", url, "HEAD"], check=False)
     if result.returncode != 0:
         return None
@@ -119,7 +114,7 @@ def discover_branch(
 ) -> str:
     if requested:
         return requested
-    branch = branch_from_remote_head(source, remote, url)
+    branch = branch_from_remote_head(url)
     if branch:
         return branch
     raise PublishError(f"cannot discover default branch for remote {remote}; pass --default-branch")

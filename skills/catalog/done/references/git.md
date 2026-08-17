@@ -82,8 +82,10 @@ python3 "${HOME}/.agents/skills/done/scripts/publish-clean.py" \
 ```
 
 The source repository and every task revision are required arguments. Remote
-and default branch discovery uses live configured state; pass `--remote` or
-`--default-branch` only when discovery is ambiguous. The helper clones the
+selection uses live configured state, while default-branch discovery always
+queries authoritative `git ls-remote --symref <url> HEAD`; cached
+`refs/remotes/<remote>/HEAD` is never trusted. Pass `--remote` or
+`--default-branch` only when discovery is ambiguous or unavailable. The helper clones the
 authoritative default into a temporary directory, fetches the explicit task
 objects from the source repository, skips exact or patch-equivalent revisions,
 and cherry-picks only unlanded revisions in the order supplied. It pushes with

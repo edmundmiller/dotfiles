@@ -19,6 +19,8 @@ equality with structured JSON.
 - Keep the lane separate from automatic `$done` fallback because project
   policy may prohibit the publication write.
 - Redact credential-bearing HTTP(S)/SSH URLs from command errors.
+- Resolve the default branch from authoritative remote `ls-remote` output;
+  cached remote-tracking HEAD metadata may be stale.
 
 ## Evidence
 
@@ -27,7 +29,9 @@ equality with structured JSON.
   task replay, competitor preservation, default discovery, and structured
   credential-safe failure output.
 - `python3 -m unittest tests/test_done_closeout.py tests/test_done_skill.py`
-  passed all 21 tests.
+  passed all 22 tests.
+- The stale cached `origin/HEAD=main` versus authoritative remote `HEAD=develop`
+  regression proved publication targets `develop` only.
 - `python3 -m py_compile skills/catalog/done/scripts/publish-clean.py` and
   `git diff --check` passed.
 
@@ -49,3 +53,5 @@ None.
 
 - `160b23a2f` — expected-failure clean publication contract.
 - Green implementation, documentation, and regression tests — this commit.
+- `005c36fa9` — expected-failure authoritative-default regression.
+- Green authoritative-default fix and regression — this commit.
