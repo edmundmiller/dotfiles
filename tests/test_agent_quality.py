@@ -188,6 +188,21 @@ class AgentQualityTests(unittest.TestCase):
             with self.subTest(state=state):
                 self.assertIn(state, command)
 
+    @unittest.expectedFailure
+    def test_return_contract_uses_structured_wording_without_machine_readable_claims(self) -> None:
+        sources = {
+            "primary": CODEX_CONFIG.read_text(),
+            "worker": LUNA_PROFILE.read_text(),
+            "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
+            "omp go command": OMP_GO_COMMAND.read_text(),
+        }
+
+        for name, source in sources.items():
+            with self.subTest(source=name):
+                normalized = source.lower()
+                self.assertNotIn("machine-readable", normalized)
+                self.assertIn("structured", normalized)
+
     def test_done_skill_preserves_landing_safety_contract(self) -> None:
         references = DONE_SKILL.parent / "references"
         done_skill = (
