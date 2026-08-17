@@ -8,6 +8,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 CLOSEOUT = ROOT / "skills/catalog/done/scripts/closeout.py"
+PUBLISH_CLEAN = ROOT / "skills/catalog/done/scripts/publish-clean.py"
 
 
 def git(repo: Path, *args: str) -> str:
@@ -46,6 +47,39 @@ class DoneCloseoutTest(unittest.TestCase):
             capture_output=True,
             text=True,
         )
+
+    def run_publish_clean(
+        self,
+        *args: str,
+        cwd: Path,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", str(PUBLISH_CLEAN), *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+    def source_state(self, repo: Path) -> dict[str, object]:
+        return {
+            "head": git(repo, "rev-parse", "HEAD"),
+            "branch": git(repo, "branch", "--show-current"),
+            "status": git(repo, "status", "--porcelain=v1", "--untracked-files=all"),
+            "cached": git(repo, "diff", "--cached", "--binary", "--no-ext-diff"),
+            "unstaged": git(repo, "diff", "--binary", "--no-ext-diff"),
+            "base": (repo / "base.txt").read_bytes(),
+            "untracked": (repo / "untracked.txt").read_bytes(),
+        }
+
+    def create_task_revision(self, repo: Path, root: Path) -> tuple[Path, str]:
+        task = root / "task"
+        git(repo, "worktree", "add", "-b", "task", str(task), "main")
+        (task / "task.txt").write_text("task\n")
+        git(task, "add", "task.txt")
+        git(task, "commit", "-m", "task")
+        return task, git(task, "rev-parse", "HEAD")
 
     def test_snapshot_is_structured_secret_safe_and_repeatable(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -228,6 +262,102 @@ class DoneCloseoutTest(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.expectedFailure
+    def test_publish_clean_leaves_dirty_source_untouched(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, remote = self.init_repo(root)
+            _, task_revision = self.create_task_revision(repo, root)
+
+            (repo / "base.txt").write_text("staged source work\n")
+            git(repo, "add", "base.txt")
+            (repo / "base.txt").write_text("unstaged source work\n")
+            (repo / "untracked.txt").write_text("untracked source work\n")
+            before = self.source_state(repo)
+
+            result = self.run_publish_clean(
+                "--source-repo",
+                str(repo),
+                "--task-revision",
+                task_revision,
+                cwd=repo,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "published")
+            self.assertEqual(payload["defaultBranch"], "main")
+            self.assertEqual(payload["taskRevisions"][0]["evidence"], "unlanded")
+            self.assertEqual(before, self.source_state(repo))
+            self.assertEqual(
+                task_revision,
+                git(remote, "rev-parse", "refs/heads/main"),
+            )
+
+    @unittest.expectedFailure
+    def test_publish_clean_retries_one_non_fast_forward(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, remote = self.init_repo(root)
+            _, task_revision = self.create_task_revision(repo, root)
+
+            updater = root / "updater"
+            git(root, "clone", str(remote), str(updater))
+            git(updater, "config", "user.name", "Done Test")
+            git(updater, "config", "user.email", "done@example.invalid")
+            (updater / "competitor.txt").write_text("competitor\n")
+            git(updater, "add", "competitor.txt")
+            git(updater, "commit", "-m", "competitor")
+
+            real_git = shutil.which("git")
+            self.assertIsNotNone(real_git)
+            wrapper_dir = root / "bin"
+            wrapper_dir.mkdir()
+            marker = root / "race.marker"
+            wrapper = wrapper_dir / "git"
+            wrapper.write_text(
+                "#!/usr/bin/env python3\n"
+                "import os\n"
+                "from pathlib import Path\n"
+                "import subprocess\n\n"
+                "real = os.environ[\"PUBLISH_REAL_GIT\"]\n"
+                "marker = Path(os.environ[\"PUBLISH_RACE_MARKER\"])\n"
+                "if len(os.sys.argv) > 1 and os.sys.argv[1] == \"push\" and not marker.exists():\n"
+                "    subprocess.run([real, \"-C\", os.environ[\"PUBLISH_RACE_UPDATER\"], \"push\", \"origin\", \"main\"], check=True)\n"
+                "    marker.write_text(\"raced\\n\")\n"
+                "os.execv(real, [real, *os.sys.argv[1:]])\n"
+            )
+            wrapper.chmod(0o755)
+            env = os.environ.copy()
+            env.update(
+                {
+                    "PATH": f"{wrapper_dir}:{env['PATH']}",
+                    "PUBLISH_REAL_GIT": real_git,
+                    "PUBLISH_RACE_MARKER": str(marker),
+                    "PUBLISH_RACE_UPDATER": str(updater),
+                }
+            )
+            before = self.source_state(repo)
+
+            result = self.run_publish_clean(
+                "--source-repo",
+                str(repo),
+                "--task-revision",
+                task_revision,
+                cwd=repo,
+                env=env,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "published")
+            self.assertEqual(payload["attempts"], 2)
+            self.assertEqual(before, self.source_state(repo))
+            self.assertEqual(
+                {"task.txt", "competitor.txt"},
+                set(git(remote, "ls-tree", "-r", "--name-only", "main").splitlines()),
+            )
 
     @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_jj_snapshot_and_verify_classification_are_structured(self) -> None:
