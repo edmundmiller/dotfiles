@@ -305,6 +305,11 @@
             - name: Sol
         '';
 
+        # Seqeratop-only: `hey re` needs a TTY for sudo, so it must run in the
+        # current Herdr session rather than a piped bash call.
+        home.file.".omp/agent/rules/hey-rebuilds.md".source =
+          "${config.dotfiles.configDir}/omp/rules/hey-rebuilds.md";
+
         # Shared config-seqera pins signingkey to the literal pubkey, which
         # routes ssh-keygen through the 1Password SSH agent (-U) and blocks
         # headless agents on auth prompts. Sign with the on-disk key instead.
