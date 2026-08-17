@@ -85,7 +85,7 @@ connections active and can wake the Apple TV and HDMI-CEC display.
 
 `climate.nix` is the sole Home Assistant thermostat policy:
 
-- Native Ecobee comfort profiles own normal cooling targets: Home 72 F, Sleep 72 F, and Away 76 F on both thermostats. The Ecobee schedule is the safe fallback when HA is unavailable.
+- Native Ecobee comfort profiles own normal cooling targets: Home 72 F, Sleep 72 F, Work 72 F, and Away 76 F on both thermostats. The Ecobee schedule is the safe fallback when HA is unavailable.
 - HA selects one profile only on startup, presence, Goodnight, and vacation transitions. Vacation has highest precedence, followed by the two-hour shared manual override, Away after two hours, Sleep, and Home.
 - Awake occupancy is true when either person GPS is `home` or either phone reports the `Aviato` SSID. The SSID is positive climate evidence only: a stale home value may delay energy savings, but cannot cause false-away cooling.
 - Ordinary Away starts only after every GPS and home-SSID signal has remained away for two hours. Returning home by either signal selects Home or Sleep immediately; Vacation remains an explicit 78 F exception.
