@@ -104,6 +104,22 @@
         "type": "github"
       }
     },
+    "anti-slop": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786717438,
+        "narHash": "sha256-UM7vVAl+Y/8+q/tAxKMOwcgwOMUWp/S0m2UqrH8xvcA=",
+        "owner": "dmmulroy",
+        "repo": "anti-slop",
+        "rev": "446268e5d15baa968eaec669ff65358d36ae6259",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dmmulroy",
+        "repo": "anti-slop",
+        "type": "github"
+      }
+    },
     "anti-slop-repo": {
       "flake": false,
       "locked": {
@@ -1353,6 +1369,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-anti-slop": {
+      "locked": {
+        "lastModified": 1786987418,
+        "narHash": "sha256-YFespwm5tJqJ43M5/sga9dq74SIoOUiZS4qXciA7kcA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2a747aca22036dce3677fd41877427e3cd33e87a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2a747aca22036dce3677fd41877427e3cd33e87a",
+        "type": "github"
+      }
+    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1782614948,
@@ -1963,6 +1995,7 @@
       "inputs": {
         "agenix": "agenix",
         "agents-workspace": "agents-workspace",
+        "anti-slop": "anti-slop",
         "brew-src": "brew-src",
         "bun2nix": "bun2nix",
         "clin": "clin",
@@ -1983,6 +2016,7 @@
         "nix-homebrew": "nix-homebrew",
         "nix-steipete-tools": "nix-steipete-tools",
         "nixpkgs": "nixpkgs_6",
+        "nixpkgs-anti-slop": "nixpkgs-anti-slop",
         "nixpkgs-node": "nixpkgs-node",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "op-shell-plugins": "op-shell-plugins",

@@ -1,0 +1,9 @@
+{
+  "name": "anti-slop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@oxlint/plugins": "1.78.0"
+  }
+}

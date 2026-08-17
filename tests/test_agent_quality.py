@@ -13,6 +13,7 @@ SCRIPT = ROOT / "bin" / "agent-quality"
 HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-quality.nu"
 HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
 FLAKE = ROOT / "flake.nix"
+ORB_SETUP = ROOT / ".agents" / "setup"
 AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 AUTONOMOUS_RULE = (
@@ -73,11 +74,19 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn(".#pre-commit-config", hey)
         self.assertEqual(hey.count("--config $precommit_config"), 2)
 
-    def test_repository_oxlint_does_not_load_package_specific_configs(self) -> None:
+    def test_repository_oxlint_loads_anti_slop_without_package_configs(self) -> None:
         flake = FLAKE.read_text()
+        setup = ORB_SETUP.read_text()
 
         self.assertIn(
-            'entry = "${pkgs.oxlint}/bin/oxlint --quiet --disable-nested-config";',
+            'entry = "${antiSlopOxlint}/bin/oxlint --threads=1 --quiet --disable-nested-config --config ${antiSlopConfig}";',
+            flake,
+        )
+        self.assertIn("sudo sysctl -w vm.overcommit_memory=1", setup)
+        self.assertIn('url = "github:dmmulroy/anti-slop";', flake)
+        self.assertIn('"anti-slop/no-chained-type-assertions" = "error";', flake)
+        self.assertIn(
+            '"anti-slop/require-safety-comment-for-type-assertion" = "error";',
             flake,
         )
 

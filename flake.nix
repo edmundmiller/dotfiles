@@ -46,6 +46,14 @@
     bun2nix.url = "github:nix-community/bun2nix";
     bun2nix.inputs.nixpkgs.follows = "nixpkgs";
 
+    anti-slop = {
+      url = "github:dmmulroy/anti-slop";
+      flake = false;
+    };
+    # Keep the linter and plugin API on the same release until the main
+    # nixpkgs input catches up.
+    nixpkgs-anti-slop.url = "github:NixOS/nixpkgs/2a747aca22036dce3677fd41877427e3cd33e87a";
+
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     ghostty.url = "github:ghostty-org/ghostty";
@@ -456,6 +464,42 @@
         }:
         let
           unstable = mkPkgs nixpkgs-unstable [ ] system;
+          antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
+          antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
+            builtins.toJSON {
+              ignorePatterns = [
+                ".agents/**"
+                ".claude/**"
+                ".codex/**"
+                ".omp/**"
+                ".opencode/**"
+                ".pi/**"
+              ];
+              jsPlugins = [
+                {
+                  name = "anti-slop";
+                  specifier = "${self.packages.${system}.anti-slop}/lib/anti-slop/index.ts";
+                }
+              ];
+              rules = {
+                "anti-slop/no-chained-type-assertions" = "error";
+                "anti-slop/no-conditional-empty-object-spread" = "error";
+                "anti-slop/no-known-value-widening" = "error";
+                "anti-slop/no-module-mocking" = "error";
+                "anti-slop/no-object-parameters" = "error";
+                "anti-slop/no-reflect-apply" = "error";
+                "anti-slop/no-reflect-get" = "error";
+                "anti-slop/no-runtime-typeof" = "error";
+                "anti-slop/no-shape-in-symbol-names" = "error";
+                "anti-slop/no-unknown-parameters" = "error";
+                "anti-slop/no-unknown-returns" = "error";
+                "anti-slop/no-unknown-type-aliases" = "error";
+                "anti-slop/no-unsafe-dictionary-type" = "error";
+                "anti-slop/no-widen-then-assert" = "error";
+                "anti-slop/require-safety-comment-for-type-assertion" = "error";
+              };
+            }
+          );
           preCommitShellHook = ''
             if git rev-parse --git-dir >/dev/null 2>&1; then
               repo_root=$(git rev-parse --show-toplevel)
@@ -650,9 +694,9 @@
               oxlint = {
                 enable = true;
                 name = "oxlint";
-                description = "Lint JavaScript and TypeScript with oxlint";
-                entry = "${pkgs.oxlint}/bin/oxlint --quiet --disable-nested-config";
-                package = pkgs.oxlint;
+                description = "Lint JavaScript and TypeScript with oxlint and anti-slop";
+                entry = "${antiSlopOxlint}/bin/oxlint --threads=1 --quiet --disable-nested-config --config ${antiSlopConfig}";
+                package = antiSlopOxlint;
                 language = "system";
                 files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
                 stages = [ "pre-commit" ];

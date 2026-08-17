@@ -37,6 +37,13 @@ if ((nix_config_changed)); then
   sudo systemctl restart nix-daemon.service
 fi
 
+step "Allow sparse virtual memory reservations"
+# Oxlint JS plugins reserve one sparse 4 GiB arena per worker. Orbs do not
+# commit that memory, but Linux's default heuristic rejects the reservation.
+if [[ "$(sysctl -n vm.overcommit_memory)" != "1" ]]; then
+  sudo sysctl -w vm.overcommit_memory=1 >/dev/null
+fi
+
 step "Warm the headless agent development shell"
 nix --accept-flake-config develop --no-write-lock-file "$repo_root#agent" --command true
 
