@@ -19,6 +19,10 @@ Delegation defaults:
 - Select `terra_worker` with fresh context for scoped implementation or review that requires cross-file reasoning, risk assessment, or material judgment.
 - Select `sol_reviewer` with fresh context only when an independent read-only review materially reduces risk for a high-risk, wide, or release-bound change; do not require it for routine small edits.
 - Give every worker the outcome, exact file ownership, settled interfaces and constraints, verification commands with success criteria, and required return shape.
+- Keep the primary live for each active goal: wait for each worker before deciding the next step. If a worker returns `CONTINUE` or `PARTIAL`, follow up that worker or take the next bounded step; do not treat a worker's exit as goal completion.
+- Require every worker to return one compact machine-readable envelope with `status`, `changed_paths`, `verification`, `landing_state`, and `next_action`. Worker `status` is one of `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`; `landing_state` is one of `UNLANDED`, `READY_FOR_DONE`, `LANDED`, or `BLOCKED`.
+- Durable goals are checkpoints, not wake schedulers: an active goal does not relaunch a stopped worker, so keep execution in the live primary session and re-dispatch from fresh evidence when needed.
+- Keep the goal open through `done`; a worker's `DONE` report or passing local checks is not landing proof. The primary may close the goal only after `landing_state = LANDED` or a genuine `BLOCKED` outcome with the exact unmet requirement.
 - Spawn the smallest useful set, normally one to three; never delegate recursively, and require compact summaries back to Sol.
 - Treat worker reports as claims: the primary must inspect the actual diff and rerun the requested verification before acceptance.
 """

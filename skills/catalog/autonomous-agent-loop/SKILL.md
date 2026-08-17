@@ -31,6 +31,23 @@ Repeat until the only valid return state is `done` or genuine `blocked`:
 
 Do not stop at a plan, agent-actionable next steps, untriaged validation failures, or partial completion. Do not add a scheduler, dashboard, coordinator process, or notification policy; existing durable-goal tools are the execution mechanism.
 
+## Delegation return contract
+
+When a primary delegates a bounded task, require one compact machine-readable
+progress envelope from the worker:
+
+- `status`: `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`.
+- `changed_paths`: every created, modified, or deleted path.
+- `verification`: exact checks and evidence, including failures.
+- `landing_state`: `UNLANDED`, `READY_FOR_DONE`, `LANDED`, or `BLOCKED`.
+- `next_action`: exactly one concrete follow-up, or `none` when no follow-up is needed.
+
+The primary must wait for each worker. Follow up `CONTINUE` and `PARTIAL` results
+or take the next bounded step; a worker's `DONE` only completes its assignment.
+Durable goals are checkpoints, not wake schedulers: an active goal does not relaunch
+a stopped worker. Keep the goal open through `done`, and close it only after
+`landing_state` is `LANDED` or the outcome is genuinely `BLOCKED`.
+
 ## Evidence-first debugging
 
 When behavior is “rough” or repeatedly needs kicks:

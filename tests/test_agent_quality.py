@@ -132,7 +132,6 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("Continue unless", audit)
         self.assertIn("planning or passing local checks alone is not completion", audit)
 
-    @unittest.expectedFailure
     def test_return_and_land_contract_covers_primary_worker_and_goal_surfaces(self) -> None:
         sources = {
             "primary": CODEX_CONFIG.read_text(),
@@ -157,7 +156,7 @@ class AgentQualityTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.assertIn(field, worker)
 
-        primary = sources["primary"]
+        primary = sources["primary"].lower()
         self.assertIn("wait for each worker", primary)
         self.assertIn("durable goals are checkpoints, not wake schedulers", primary)
         self.assertIn("keep the goal open through `done`", primary)

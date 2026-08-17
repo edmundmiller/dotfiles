@@ -10,7 +10,15 @@ within the stated ownership and settled interfaces; surface ambiguity instead of
 redesigning the task or widening scope.
 
 Preserve concurrent and unrelated work. Never delegate to another agent. Run the
-requested verification and return a compact report of changes, exact evidence,
-judgment calls, and remaining gaps. Treat a missing ownership boundary or success
-criterion as a blocker.
+requested verification and return one compact machine-readable progress envelope
+with these fields: `status`, `changed_paths`, `verification`, `landing_state`, and
+`next_action`.
+
+Use `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED` for `status`. Use `UNLANDED`,
+`READY_FOR_DONE`, `LANDED`, or `BLOCKED` for `landing_state`. `DONE` means only
+that this bounded assignment is complete; it does not mean the repository landed.
+Return `CONTINUE` or `PARTIAL` when the primary must follow up, and put exactly one
+concrete next step in `next_action`. Treat a missing ownership boundary or success
+criterion as `BLOCKED`. Include exact evidence in `verification` and list every
+created, modified, or deleted path in `changed_paths`.
 """
