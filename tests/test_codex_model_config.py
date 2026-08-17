@@ -89,7 +89,7 @@ class CodexModelConfigTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase.lower(), normalized)
 
-    def test_luna_returns_machine_readable_progress_envelope(self):
+    def test_luna_returns_structured_progress_report(self):
         profile = tomllib.loads(
             (AGENTS / "luna_worker.toml").read_text(encoding="utf-8")
         )

@@ -5,7 +5,7 @@ Status: active
 ## Objective
 
 Define and test a Codex primary/worker return contract that keeps the primary live,
-requires machine-readable Luna progress, treats durable goals as checkpoints rather
+requires structured Luna progress, treats durable goals as checkpoints rather
 than wake schedulers, and keeps the goal open through `done` until landing or a
 genuine blocker is proven.
 
@@ -17,13 +17,13 @@ genuine blocker is proven.
   `CONTINUE`/`PARTIAL` results. A worker `DONE` report is bounded-task completion,
   not repository landing.
 - Require `status`, `changed_paths`, `verification`, `landing_state`, and
-  `next_action` in every Luna return envelope.
+  `next_action` in every Luna structured return envelope.
 - Keep final landing with the primary and the existing `done` workflow.
 
 ## Evidence
 
 - Red contract tests initially failed because the primary and Luna instructions had
-  no explicit terminal states or machine-readable return fields.
+  no explicit terminal states or structured return fields.
 - Red focused suite passed with three strict expected failures:
   `python3 -m unittest tests.test_codex_model_config tests.test_agent_quality -v`.
 - Post-green focused run passed: `python3 -m unittest
@@ -43,6 +43,10 @@ tests.test_codex_model_config tests.test_agent_quality` — 32 tests, OK.
   26 tests, OK.
 - The OMP green commit's pre-commit checks passed: OMP config, treefmt, skills-lock
   sync, and conventional commit validation.
+- Green wording run passed: `python3 -m unittest tests.test_codex_model_config
+tests.test_agent_quality -v` — 34 tests, OK. The prompts and worklog now use
+  structured return envelope/report wording; no runtime parser or coordinator was
+  added.
 
 ## Reviews
 
@@ -63,4 +67,6 @@ tests.test_codex_model_config tests.test_agent_quality` — 32 tests, OK.
 - `25fe1cdd6` — red tests for the return-and-land contract.
 - `abed3e5c5` — Codex return-and-land contract.
 - `f35616224` — red OMP `/go` return-and-land test.
-- `7e07afab1` — OMP `/go` return-and-land contract.
+- `375693e32` — OMP `/go` return-and-land contract.
+- `a98778cd9` — red regression forbidding the unsupported parser-capability claim.
+- `08a6a9513` — structured return wording correction.

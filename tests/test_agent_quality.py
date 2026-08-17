@@ -167,7 +167,7 @@ class AgentQualityTests(unittest.TestCase):
 
         for phrase in (
             "wait for every worker",
-            "machine-readable return envelope",
+            "structured return envelope",
             "landing proof",
             "keep the issue open through `done`",
         ):
@@ -188,7 +188,6 @@ class AgentQualityTests(unittest.TestCase):
             with self.subTest(state=state):
                 self.assertIn(state, command)
 
-    @unittest.expectedFailure
     def test_return_contract_uses_structured_wording_without_machine_readable_claims(self) -> None:
         sources = {
             "primary": CODEX_CONFIG.read_text(),

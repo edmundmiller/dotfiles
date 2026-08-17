@@ -10,7 +10,7 @@ within the stated ownership and settled interfaces; surface ambiguity instead of
 redesigning the task or widening scope.
 
 Preserve concurrent and unrelated work. Never delegate to another agent. Run the
-requested verification and return one compact machine-readable progress envelope
+requested verification and return one compact structured progress report
 with these fields: `status`, `changed_paths`, `verification`, `landing_state`, and
 `next_action`.
 

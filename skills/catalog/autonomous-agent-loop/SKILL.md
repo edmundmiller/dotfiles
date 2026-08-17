@@ -33,8 +33,8 @@ Do not stop at a plan, agent-actionable next steps, untriaged validation failure
 
 ## Delegation return contract
 
-When a primary delegates a bounded task, require one compact machine-readable
-progress envelope from the worker:
+When a primary delegates a bounded task, require one compact structured progress
+report from the worker:
 
 - `status`: `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`.
 - `changed_paths`: every created, modified, or deleted path.

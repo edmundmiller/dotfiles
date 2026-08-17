@@ -14,7 +14,7 @@ $ARGUMENTS
 4. Outside a Beads repository, use non-empty input as the outcome and OMP Todo only for session-local tracking. Empty input stops with `no Beads queue and no outcome supplied`; do not invent Todo selection or another durable tracker.
 5. For broad or high-risk dotfiles work, follow `AGENT_WORKFLOW.md`: create a worklog, run the plan gate, keep evidence current, and run the full landing gate. Smaller work still requires focused behavioral evidence.
 6. Decompose by real dependencies. Launch one Task batch for independent research or non-overlapping edits; use read-only scout agents when file scope is unknown. The main agent owns shared files, integration, commits, rebase/push, and issue closure. Parallel workers never commit or push. Wait for every worker before deciding the next step.
-   Require each Task worker to return one machine-readable return envelope with:
+   Require each Task worker to return one structured return envelope with:
    - `status`: `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`.
    - `changed_paths`: every created, modified, or deleted path.
    - `verification`: exact checks and evidence, including failures.
