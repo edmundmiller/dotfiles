@@ -16,6 +16,8 @@ FLAKE = ROOT / "flake.nix"
 ORB_SETUP = ROOT / ".agents" / "setup"
 AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
+CODEX_CONFIG = ROOT / "config" / "codex" / "config.toml"
+LUNA_PROFILE = ROOT / "config" / "codex" / "agents" / "luna_worker.toml"
 AUTONOMOUS_RULE = (
     ROOT / "config" / "agents" / "rules" / "16-autonomous-goal-progress.md"
 )
@@ -129,6 +131,36 @@ class AgentQualityTests(unittest.TestCase):
             self.assertIn(state, audit)
         self.assertIn("Continue unless", audit)
         self.assertIn("planning or passing local checks alone is not completion", audit)
+
+    @unittest.expectedFailure
+    def test_return_and_land_contract_covers_primary_worker_and_goal_surfaces(self) -> None:
+        sources = {
+            "primary": CODEX_CONFIG.read_text(),
+            "worker": LUNA_PROFILE.read_text(),
+            "shared rule": AUTONOMOUS_RULE.read_text(),
+            "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
+        }
+
+        for name, source in sources.items():
+            with self.subTest(source=name):
+                for token in ("CONTINUE", "PARTIAL", "LANDED", "BLOCKED"):
+                    self.assertIn(token, source)
+
+        worker = sources["worker"]
+        for field in (
+            "status",
+            "changed_paths",
+            "verification",
+            "landing_state",
+            "next_action",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, worker)
+
+        primary = sources["primary"]
+        self.assertIn("wait for each worker", primary)
+        self.assertIn("durable goals are checkpoints, not wake schedulers", primary)
+        self.assertIn("keep the goal open through `done`", primary)
 
     def test_done_skill_preserves_landing_safety_contract(self) -> None:
         references = DONE_SKILL.parent / "references"

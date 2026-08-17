@@ -74,6 +74,42 @@ class CodexModelConfigTests(unittest.TestCase):
         self.assertIn("actual diff", guidance)
         self.assertIn("rerun the requested verification", guidance)
 
+    @unittest.expectedFailure
+    def test_primary_keeps_work_live_until_landed_or_blocked(self):
+        guidance = self.config["developer_instructions"]
+        for phrase in (
+            "wait for each worker",
+            "CONTINUE",
+            "PARTIAL",
+            "LANDED",
+            "BLOCKED",
+            "durable goals are checkpoints, not wake schedulers",
+            "keep the goal open through `done`",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, guidance)
+
+    @unittest.expectedFailure
+    def test_luna_returns_machine_readable_progress_envelope(self):
+        profile = tomllib.loads(
+            (AGENTS / "luna_worker.toml").read_text(encoding="utf-8")
+        )
+        instructions = profile["developer_instructions"]
+
+        for field in (
+            "status",
+            "changed_paths",
+            "verification",
+            "landing_state",
+            "next_action",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, instructions)
+
+        for state in ("CONTINUE", "PARTIAL", "BLOCKED"):
+            with self.subTest(state=state):
+                self.assertIn(state, instructions)
+
 
 if __name__ == "__main__":
     unittest.main()
