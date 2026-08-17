@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -263,7 +264,6 @@ class DoneCloseoutTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
 
-    @unittest.expectedFailure
     def test_publish_clean_leaves_dirty_source_untouched(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -288,19 +288,21 @@ class DoneCloseoutTest(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertEqual(payload["status"], "published")
             self.assertEqual(payload["defaultBranch"], "main")
-            self.assertEqual(payload["taskRevisions"][0]["evidence"], "unlanded")
+            self.assertEqual(payload["taskRevisions"][0]["initialEvidence"], "unlanded")
+            self.assertEqual(payload["taskRevisions"][0]["evidence"], "patch-equivalent")
             self.assertEqual(before, self.source_state(repo))
             self.assertEqual(
-                task_revision,
+                payload["remoteTip"],
                 git(remote, "rev-parse", "refs/heads/main"),
             )
+            self.assertEqual("task\n", (root / "task" / "task.txt").read_text())
 
-    @unittest.expectedFailure
     def test_publish_clean_retries_one_non_fast_forward(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             repo, remote = self.init_repo(root)
             _, task_revision = self.create_task_revision(repo, root)
+            (repo / "untracked.txt").write_text("source dirt\n")
 
             updater = root / "updater"
             git(root, "clone", str(remote), str(updater))
@@ -355,9 +357,34 @@ class DoneCloseoutTest(unittest.TestCase):
             self.assertEqual(payload["attempts"], 2)
             self.assertEqual(before, self.source_state(repo))
             self.assertEqual(
-                {"task.txt", "competitor.txt"},
+                {"base.txt", "task.txt", "competitor.txt"},
                 set(git(remote, "ls-tree", "-r", "--name-only", "main").splitlines()),
             )
+
+    def test_publish_clean_redacts_remote_credentials_on_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, _ = self.init_repo(root)
+            _, task_revision = self.create_task_revision(repo, root)
+            git(
+                repo,
+                "remote",
+                "set-url",
+                "origin",
+                "https://user:secret-token@127.0.0.1:1/repo.git",
+            )
+
+            result = self.run_publish_clean(
+                "--source-repo",
+                str(repo),
+                "--task-revision",
+                task_revision,
+                cwd=repo,
+            )
+
+            self.assertEqual(result.returncode, 1)
+            self.assertNotIn("secret-token", result.stdout + result.stderr)
+            self.assertEqual("blocked", json.loads(result.stdout)["status"])
 
     @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_jj_snapshot_and_verify_classification_are_structured(self) -> None:

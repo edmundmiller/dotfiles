@@ -68,6 +68,35 @@ Unrelated dirt in a non-default task worktree does not block landing already
 committed task revisions through a clean integration path. Preserve it and
 defer that worktree's cleanup.
 
+## Isolated clean publication lane
+
+When repository policy forbids mutating the canonical checkout, or the default
+checkout contains dirt that must remain byte-for-byte untouched, an explicitly
+authorized caller may use the clean publication helper:
+
+```bash
+python3 "${HOME}/.agents/skills/done/scripts/publish-clean.py" \
+  --source-repo "$source_repo" \
+  --task-revision "$task_revision_one" \
+  --task-revision "$task_revision_two"
+```
+
+The source repository and every task revision are required arguments. Remote
+and default branch discovery uses live configured state; pass `--remote` or
+`--default-branch` only when discovery is ambiguous. The helper clones the
+authoritative default into a temporary directory, fetches the explicit task
+objects from the source repository, skips exact or patch-equivalent revisions,
+and cherry-picks only unlanded revisions in the order supplied. It pushes with
+an ordinary push without force. One rejection triggers a fetch,
+reclassification, replay, and one retry; a second rejection is `Blocked`.
+
+It then fetches the default again and checks its tip against
+`git ls-remote`. Results are structured JSON. The source checkout is never
+reset, stashed, merged, checked out, or given a branch-ref update; the only
+reset is inside the disposable clone. This helper is not an automatic fallback
+for `$done`: project policy may forbid invoking it, and invoking it is itself
+an explicit publication decision.
+
 ## Direct landing and proof
 
 Prefer fast-forward integration. Push the default branch normally, fetch again,
