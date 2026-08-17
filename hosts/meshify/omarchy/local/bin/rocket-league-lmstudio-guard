@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Keep LM Studio from competing with Rocket League for GPU memory.
+while sleep 2; do
+  if pgrep -f '[R]ocketLeague.exe' >/dev/null; then
+    pkill -TERM -x llama-server 2>/dev/null || true
+    pkill -TERM -x llmster 2>/dev/null || true
+    pkill -TERM -x lm-studio 2>/dev/null || true
+  fi
+done
