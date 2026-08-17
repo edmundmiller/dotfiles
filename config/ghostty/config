@@ -7,9 +7,9 @@ config-file = behavior.conf
 config-file = macos.conf
 config-file = keybindings.conf
 
-# TMUX INTEGRATION:
-# This config uses tmux (ctrl+c prefix) for all split/tab/window management.
-# Ghostty passes ctrl+c through to tmux without interception.
+# WORKSPACE OWNER INTEGRATION:
+# The base keybindings target tmux. Herdr-enabled hosts append overrides for
+# Herdr's ctrl+space prefix, while the Nix module selects the startup owner.
 #
 # For reference, Ghostty native tmux-style bindings are archived in:
 # tmux-style-keybindings.conf.disabled

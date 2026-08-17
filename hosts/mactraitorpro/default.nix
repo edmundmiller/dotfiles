@@ -274,6 +274,13 @@ in
         apps.neovide.enable = true;
         term = {
           ghostty.enable = true;
+          ghostty.keybindingsInit = ''
+            # Herdr's Ctrl-Space prefix is encoded as NUL in the terminal.
+            keybind = super+h=text:\x00h
+            keybind = super+j=text:\x00j
+            keybind = super+k=text:\x00k
+            keybind = super+l=text:\x00l
+          '';
           themeStack = {
             enable = true;
             variant = "catppuccin";
