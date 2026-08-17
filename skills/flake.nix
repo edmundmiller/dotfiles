@@ -303,6 +303,47 @@
           "tmux"
           "enable"
         ];
+        mattpocockSkillsRoot = inputs.mattpocock-skills.outPath + "/skills";
+        mattpocockSkillCategories = builtins.readDir mattpocockSkillsRoot;
+        mattpocockSkillEntries =
+          lib.concatMap
+            (
+              category:
+              let
+                categoryPath = mattpocockSkillsRoot + "/${category}";
+                categoryEntries = builtins.readDir categoryPath;
+              in
+              map
+                (name: {
+                  inherit name;
+                  path = "${category}/${name}";
+                })
+                (
+                  lib.filter (
+                    name:
+                    categoryEntries.${name} == "directory" && builtins.pathExists (categoryPath + "/${name}/SKILL.md")
+                  ) (builtins.attrNames categoryEntries)
+                )
+            )
+            (
+              lib.filter (category: mattpocockSkillCategories.${category} == "directory") (
+                builtins.attrNames mattpocockSkillCategories
+              )
+            );
+        mattpocockSkillNames = map (skill: skill.name) mattpocockSkillEntries;
+        mattpocockExplicit =
+          if builtins.length mattpocockSkillNames != builtins.length (lib.unique mattpocockSkillNames) then
+            throw "mattpocock/skills contains duplicate skill names across categories"
+          else
+            builtins.listToAttrs (
+              map (skill: {
+                inherit (skill) name;
+                value = {
+                  from = "mattpocock";
+                  inherit (skill) path;
+                };
+              }) (lib.filter (skill: skill.name != "grill-me") mattpocockSkillEntries)
+            );
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -478,31 +519,11 @@
                   filter.maxDepth = 2;
                 };
 
-                mattpocock-engineering = {
+                mattpocock = {
                   path = inputs.mattpocock-skills.outPath;
-                  subdir = "skills/engineering";
-                  filter = {
-                    maxDepth = 1;
-                    nameRegex = "^(ask-matt|codebase-design|diagnosing-bugs|domain-modeling|grill-with-docs|implement|improve-codebase-architecture|prototype|resolving-merge-conflicts|setup-matt-pocock-skills|to-spec|to-tickets|triage|wayfinder)$";
-                  };
-                };
-
-                mattpocock-productivity = {
-                  path = inputs.mattpocock-skills.outPath;
-                  subdir = "skills/productivity";
-                  filter = {
-                    maxDepth = 1;
-                    nameRegex = "^(grill-me|grilling|handoff|teach|writing-for-agents)$";
-                  };
-                };
-
-                mattpocock-in-progress = {
-                  path = inputs.mattpocock-skills.outPath;
-                  subdir = "skills/in-progress";
-                  filter = {
-                    maxDepth = 1;
-                    nameRegex = "^loop-me$";
-                  };
+                  subdir = "skills";
+                  idPrefix = "mattpocock";
+                  filter.maxDepth = 2;
                 };
 
                 hunk = {
@@ -747,8 +768,8 @@
                   improve.path = "improve";
 
                   grill-me = {
-                    from = "mattpocock-productivity";
-                    path = "grill-me";
+                    from = "mattpocock";
+                    path = "productivity/grill-me";
                     transform =
                       { original, ... }:
                       ''
@@ -777,63 +798,8 @@
                       '';
                   };
 
-                  to-spec.from = "mattpocock-engineering";
-                  to-spec.path = "to-spec";
-
-                  to-tickets.from = "mattpocock-engineering";
-                  to-tickets.path = "to-tickets";
-
-                  codebase-design.from = "mattpocock-engineering";
-                  codebase-design.path = "codebase-design";
-
-                  domain-modeling.from = "mattpocock-engineering";
-                  domain-modeling.path = "domain-modeling";
-
-                  improve-codebase-architecture.from = "mattpocock-engineering";
-                  improve-codebase-architecture.path = "improve-codebase-architecture";
-
-                  grill-with-docs.from = "mattpocock-engineering";
-                  grill-with-docs.path = "grill-with-docs";
-
-                  ask-matt.from = "mattpocock-engineering";
-                  ask-matt.path = "ask-matt";
-
-                  diagnosing-bugs.from = "mattpocock-engineering";
-                  diagnosing-bugs.path = "diagnosing-bugs";
-
-                  implement.from = "mattpocock-engineering";
-                  implement.path = "implement";
-
-                  prototype.from = "mattpocock-engineering";
-                  prototype.path = "prototype";
-
-                  resolving-merge-conflicts.from = "mattpocock-engineering";
-                  resolving-merge-conflicts.path = "resolving-merge-conflicts";
-
-                  triage.from = "mattpocock-engineering";
-                  triage.path = "triage";
-
-                  wayfinder.from = "mattpocock-engineering";
-                  wayfinder.path = "wayfinder";
-
-                  grilling.from = "mattpocock-productivity";
-                  grilling.path = "grilling";
-
-                  handoff.from = "mattpocock-productivity";
-                  handoff.path = "handoff";
-
-                  teach.from = "mattpocock-productivity";
-                  teach.path = "teach";
-
-                  writing-great-skills.from = "mattpocock-productivity";
-                  writing-great-skills.path = "writing-for-agents";
-
-                  setup-matt-pocock-skills.from = "mattpocock-engineering";
-                  setup-matt-pocock-skills.path = "setup-matt-pocock-skills";
-
-                  loop-me.from = "mattpocock-in-progress";
-                  loop-me.path = "loop-me";
                 }
+                // mattpocockExplicit
                 // lib.optionalAttrs acpxEnabled {
                   acpx.from = "acpx";
                   acpx.path = "acpx";
