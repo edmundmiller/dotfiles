@@ -294,8 +294,8 @@ EOF
   assert "$log" contains '--read'
   [[ "$log" != *'%%'* ]]
 
-  local name expected actual
-  for name in 'space name' "single'quote" 'double"quote' '$(touch /tmp/nope)' '`touch /tmp/nope`' '-leading'; do
+  local name expected actual sentinel="$TEST_DIR/nope"
+  for name in 'space name' "single'quote" 'double"quote' "\$(touch $sentinel)" "\`touch $sentinel\`" '-leading'; do
     run env PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX_BIN="$MOCK_BIN/tmux" BASH_BIN="$BASH_BIN" TMUX_HOME="$MOCK_TMUX_HOME" TMUX_LOG="$TMUX_LOG" PROMPT="$PROMPT" PROMPT_ARGV="$PROMPT_ARGV" PROMPT_VALUE="$name" "$BASH_BIN" -c 'printf "%s\n" "$PROMPT_VALUE" | "$PROMPT" --read pi'
     assert $state equals 0
     expected=$(printf '%s' "$name" | "$REAL_BASE64" | tr -d '\n')
@@ -303,7 +303,7 @@ EOF
     [[ "$(sed -n '1p' "$PROMPT_ARGV")" == 'argc=3' ]]
     [[ "$actual" == "$expected" ]]
   done
-  [[ ! -e /tmp/nope ]]
+  [[ ! -e "$sentinel" ]]
 
   : > "$TMUX_LOG"
   run env PATH="$MOCK_BIN:$ORIGINAL_PATH" TMUX_BIN="$MOCK_BIN/tmux" TMUX_HOME="$ROOT/config/tmux" TMUX_LOG="$TMUX_LOG" "$PROMPT" invalid
