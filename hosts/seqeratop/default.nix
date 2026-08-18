@@ -264,6 +264,23 @@
     # Override the primary user for this host
     system.primaryUser = "edmundmiller";
 
+    # Source checkouts contain hundreds of thousands of duplicated dependency
+    # files. Keep them out of Spotlight's semantic index.
+    system.activationScripts.spotlightExcludeSrc.text = ''
+      SPOTLIGHT_PRIVACY_PLIST="/System/Volumes/Data/.Spotlight-V100/VolumeConfiguration.plist"
+      SPOTLIGHT_EXCLUDED_PATH="${config.user.home}/src"
+
+      if [ ! -f "$SPOTLIGHT_PRIVACY_PLIST" ]; then
+        echo "warning: Spotlight privacy configuration is unavailable" >&2
+      elif ! /usr/libexec/PlistBuddy -c "Print :Exclusions" "$SPOTLIGHT_PRIVACY_PLIST" 2>/dev/null \
+        | /usr/bin/grep -Fq -- "$SPOTLIGHT_EXCLUDED_PATH"; then
+        /usr/libexec/PlistBuddy -c "Add :Exclusions array" "$SPOTLIGHT_PRIVACY_PLIST" 2>/dev/null || true
+        /usr/libexec/PlistBuddy -c "Add :Exclusions:0 string $SPOTLIGHT_EXCLUDED_PATH" "$SPOTLIGHT_PRIVACY_PLIST"
+        /bin/launchctl kickstart -k system/com.apple.metadata.mds || \
+          echo "warning: restart Spotlight to apply the src exclusion" >&2
+      fi
+    '';
+
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {
       enable = true;
