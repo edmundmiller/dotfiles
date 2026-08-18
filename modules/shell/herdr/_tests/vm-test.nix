@@ -134,7 +134,6 @@ dotfilesLib.my.mkServiceVmTest {
         codex.enable = false;
         opencode.enable = false;
         omp.enable = false;
-        droid.enable = false;
         hermes.enable = false;
       };
       # Pin the template explicitly. The module default points at
