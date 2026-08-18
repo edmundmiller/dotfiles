@@ -1253,8 +1253,6 @@
                     echo "All tmux tests passed" > $out/result
                   '';
 
-              kittylitter-smoke = self.packages.${system}.kittylitter.passthru.tests.smoke;
-
               nix-private-github =
                 let
                   wrapper = pkgs.writeShellApplication {

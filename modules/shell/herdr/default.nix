@@ -330,15 +330,6 @@ in
         '';
       };
 
-      droid.enable = mkOption {
-        type = bool;
-        default = true;
-        description = ''
-          Automatically install Herdr's Droid integration when the
-          `modules.services.kittylitter` Droid bridge is enabled.
-        '';
-      };
-
       hermes.enable = mkOption {
         type = bool;
         default = true;
@@ -1062,18 +1053,6 @@ in
                 # keeps OMP on ~/.omp/agent.
                 PI_CODING_AGENT_DIR= PI_CONFIG_DIR=.omp install_integration omp
               ''}
-
-              ${optionalString
-                (
-                  cfg.integrations.droid.enable
-                  && config.modules.services.kittylitter.enable
-                  && elem "droid" config.modules.services.kittylitter.enabledAgents
-                )
-                ''
-                  ${pkgs.coreutils}/bin/mkdir -p "$HOME/.factory"
-                  install_integration droid
-                ''
-              }
 
               ${optionalString (cfg.integrations.hermes.enable && config.modules.agents.hermes.enable) ''
                 ${pkgs.coreutils}/bin/mkdir -p ${escapeShellArg config.modules.agents.hermes.homeDir}

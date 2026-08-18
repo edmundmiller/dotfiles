@@ -8,8 +8,8 @@
 
   `pkgs.testers.runNixOSTest` pins `nixpkgs.config` itself, which conflicts with
   the per-node overlays/allowUnfree some modules need, so we use the
-  `testing-python.nix` driver directly — the same choice the kittylitter and
-  herdr tests made by hand.
+  `testing-python.nix` driver directly — the same choice the herdr tests made
+  by hand.
 
   Usage:
 

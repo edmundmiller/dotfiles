@@ -130,12 +130,9 @@ invariants, but they are not a substitute for native config validation.
 git push && hey nuc
 ```
 
-For user-facing bridge/agent services like `kittylitter`, always verify the target host after deploying. A local build or macOS rebuild does not update the NUC service; run `hey nuc` before debugging mobile/client connectivity to NUC.
-
-```bash
-ssh nuc 'systemctl --user status kittylitter --no-pager'
-ssh nuc 'kittylitter probe --timeout-secs 15'
-```
+For user-facing bridge/agent services, always verify the target host after
+deploying. A local build or macOS rebuild does not update the NUC service; run
+`hey nuc` before debugging client connectivity.
 
 ---
 

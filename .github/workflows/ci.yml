@@ -102,7 +102,6 @@ jobs:
       - name: Build service VM checks
         run: |
           echo "::group::vm-services-gatus-vm-test" && time nix build .#checks.x86_64-linux.vm-services-gatus-vm-test --no-link && echo "::endgroup::"
-          echo "::group::vm-services-kittylitter-vm-test" && time nix build .#checks.x86_64-linux.vm-services-kittylitter-vm-test --no-link && echo "::endgroup::"
 
   # Run flake checks on macOS (Darwin configurations)
   check-darwin:

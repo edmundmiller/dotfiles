@@ -2299,15 +2299,6 @@ in
         # snipdApiKeyFile = config.age.secrets.snipd-api-key.path;
       };
       opencode.enable = false;
-      kittylitter = {
-        enable = true;
-        enabledAgents = [
-          "pi"
-          "hermes"
-          "droid"
-        ];
-      };
-
       open-wearables = {
         enable = true;
         # API only for now (historical Apple XML import + agent access)

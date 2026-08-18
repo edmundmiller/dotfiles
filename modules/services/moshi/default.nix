@@ -77,18 +77,6 @@ let
     ++ optionals config.modules.agents.pi.enable [ "pi" ]
   );
 
-  # Droid is custom because `moshi-hook install --target` does not expose a
-  # Droid target. Droid accepts Claude-style hooks, so merge Moshi commands into
-  # Factory's hook config when the Kittylitter Droid bridge is enabled.
-  droidHookEnabled =
-    config.modules.services.kittylitter.enable
-    && elem "droid" config.modules.services.kittylitter.enabledAgents;
-  droidHookCommand =
-    if isDarwin then
-      "'/run/current-system/sw/bin/moshi-hook' claude-hook"
-    else
-      "'/run/current-system/sw/bin/moshi-hook' claude-hook";
-
   hookTargets = unique (
     (optionals cfg.hooks.autoTargets.enable autoHookTargets) ++ cfg.hooks.extraTargets
   );
@@ -116,8 +104,7 @@ in
       extraTargets = mkOpt' (types.listOf (types.enum supportedHookTargets)) [ ] ''
         Additional upstream moshi-hook install targets to install on this host.
         Enabled agent modules are discovered automatically when autoTargets is
-        enabled. Droid is handled separately because moshi-hook does not expose
-        it as an install target.
+        enabled.
       '';
     };
 
@@ -205,87 +192,6 @@ in
               }
             ))
 
-            (mkIf (cfg.hooks.enable && droidHookEnabled) {
-              moshi-droid-hook-install = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                ${pkgs.python3}/bin/python3 <<'PY'
-                import json
-                import os
-                import pathlib
-                import tempfile
-
-                factory_dir = pathlib.Path.home() / ".factory"
-                hooks_path = factory_dir / "hooks.json"
-                settings_path = factory_dir / "settings.json"
-                path = hooks_path if hooks_path.exists() or not settings_path.exists() else settings_path
-                command = ${builtins.toJSON droidHookCommand}
-                events = [
-                    "Notification",
-                    "SessionEnd",
-                    "SessionStart",
-                    "Stop",
-                    "UserPromptSubmit",
-                ]
-
-                factory_dir.mkdir(parents=True, exist_ok=True)
-                if path.exists():
-                    try:
-                        data = json.loads(path.read_text())
-                    except Exception as exc:
-                        print(f"warning: invalid Droid hook JSON in {path}; skipping Moshi hook install: {exc}", file=os.sys.stderr)
-                        raise SystemExit(0)
-                else:
-                    data = {}
-
-                if not isinstance(data, dict):
-                    print(f"warning: Droid hook JSON root in {path} is not an object; skipping Moshi hook install", file=os.sys.stderr)
-                    raise SystemExit(0)
-
-                if path == hooks_path:
-                    hooks = data
-                else:
-                    hooks = data.setdefault("hooks", {})
-                    if not isinstance(hooks, dict):
-                        print(f"warning: Droid hooks in {path} is not an object; skipping Moshi hook install", file=os.sys.stderr)
-                        raise SystemExit(0)
-
-                hook = {
-                    "type": "command",
-                    "command": command,
-                    "timeout": 10,
-                }
-                changed = False
-
-                for event in events:
-                    groups = hooks.setdefault(event, [])
-                    if not isinstance(groups, list):
-                        print(f"warning: Droid hook event {event} is not a list; skipping it", file=os.sys.stderr)
-                        continue
-                    if any(
-                        isinstance(group, dict)
-                        and any(
-                            isinstance(item, dict)
-                            and item.get("type") == "command"
-                            and item.get("command") == command
-                            for item in group.get("hooks", [])
-                        )
-                        for group in groups
-                    ):
-                        continue
-                    groups.append({"hooks": [hook]})
-                    changed = True
-
-                if not changed:
-                    raise SystemExit(0)
-
-                fd, tmp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
-                with os.fdopen(fd, "w") as tmp:
-                    json.dump(data, tmp, indent=2)
-                    tmp.write("\n")
-                os.chmod(tmp_name, 0o600)
-                os.replace(tmp_name, path)
-                PY
-              '';
-            })
           ];
         };
     }
