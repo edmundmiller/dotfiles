@@ -38,8 +38,8 @@ for script in open-plain-terminal.sh open-tmux-terminal.sh open-herdr-terminal.s
   test -x "$scripts_dir/$script"
 done
 
-grep -Fxq 'cmd - return : "$HOME/Scripts/raycast/open-plain-terminal.sh"' "$skhd_config"
-grep -Fxq 'cmd + alt - return : "$HOME/Scripts/raycast/open-tmux-terminal.sh"' "$skhd_config"
-grep -Fxq 'cmd + ctrl - return : "$HOME/Scripts/raycast/open-herdr-terminal.sh"' "$skhd_config"
+grep -Fxq 'rcmd - return : "$HOME/Scripts/raycast/open-plain-terminal.sh"' "$skhd_config"
+grep -Fxq 'rcmd + alt - return : "$HOME/Scripts/raycast/open-tmux-terminal.sh"' "$skhd_config"
+grep -Fxq 'rcmd + ctrl - return : "$HOME/Scripts/raycast/open-herdr-terminal.sh"' "$skhd_config"
 
 echo "PASS terminal launchers"

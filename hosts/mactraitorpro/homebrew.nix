@@ -5,6 +5,7 @@
   taps = [
     # "jimeh/emacs-builds"  # Not needed, using Nix emacs instead
     "jnsahaj/lumen" # Diff viewer and code-review TUI
+    "jackielii/tap" # skhd.zig hotkey daemon
     "keith/formulae" # reminders-cli
     "openclaw/tap" # Discrawl Discord export CLI
     "rockorager/tap" # Prise terminal multiplexer
@@ -134,6 +135,7 @@
     "visual-studio-code"
     "claude"
     "repo-prompt"
+    "jackielii/tap/skhd-zig" # ponytail: replace with pkgs.my.skhd when packages/skhd/default.nix lands
     "warp@preview"
     "tuist"
     "neovide-app" # GUI for Neovim — used by Raycast quake/toggle scripts

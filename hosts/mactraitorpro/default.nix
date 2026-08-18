@@ -309,13 +309,6 @@ in
       enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
-    services.skhd = {
-      enable = true;
-      skhdConfig = builtins.readFile "${config.dotfiles.configDir}/skhd/skhdrc";
-    };
-
-    launchd.user.agents.skhd.serviceConfig.EnvironmentVariables.USER = config.system.primaryUser;
-
     # Mirror LookAway's meeting detection to the USB busylight. LookAway's built-in
     # automations only cover break start/end, so this tails its debug log for
     # meeting start/end transitions and calls bin/busylight-status.py.
@@ -459,6 +452,7 @@ in
           "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
         home.file."Library/Application Support/com.clin.clin/config.toml".source =
           "${config.dotfiles.configDir}/clin/config.toml";
+        home.file.".config/skhd/skhdrc".source = "${config.dotfiles.configDir}/skhd/skhdrc";
 
         # Keep the Seqera work wallpaper in a stable location and apply it to the desktop.
         # macOS wallpaper automation reliably accepts the PNG export; the SVG sibling

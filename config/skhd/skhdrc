@@ -1,4 +1,4 @@
 # Omarchy-style terminal entry points.
-cmd - return : "$HOME/Scripts/raycast/open-plain-terminal.sh"
-cmd + alt - return : "$HOME/Scripts/raycast/open-tmux-terminal.sh"
-cmd + ctrl - return : "$HOME/Scripts/raycast/open-herdr-terminal.sh"
+rcmd - return : "$HOME/Scripts/raycast/open-plain-terminal.sh"
+rcmd + alt - return : "$HOME/Scripts/raycast/open-tmux-terminal.sh"
+rcmd + ctrl - return : "$HOME/Scripts/raycast/open-herdr-terminal.sh"
