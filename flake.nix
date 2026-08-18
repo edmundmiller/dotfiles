@@ -1450,7 +1450,7 @@
               # everywhere; the VM test below covers the activated config.
               herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
                 inherit pkgs;
-                herdrPackage = inputs.llm-agents.packages.${system}.herdr;
+                herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
             }

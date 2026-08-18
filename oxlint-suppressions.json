@@ -1,0 +1,1004 @@
+{
+  ".omp/hooks/post/completion-gate.ts": {
+    "anti-slop/no-conditional-empty-object-spread": {
+      "count": 1
+    }
+  },
+  "config/claude/plugins/json-to-toon/hooks/json-to-toon.mjs": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    }
+  },
+  "config/claude/plugins/json-to-toon/hooks/toon.mjs": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 12
+    }
+  },
+  "config/omp/extensions/_lib/lazy-extension.mjs": {
+    "anti-slop/no-reflect-get": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    }
+  },
+  "config/omp/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    }
+  },
+  "config/pi/extensions/commit-review.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 3
+    },
+    "anti-slop/no-reflect-get": {
+      "count": 7
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 8
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 3
+    }
+  },
+  "config/pi/extensions/context.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 5
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 10
+    }
+  },
+  "config/pi/extensions/diff-renderer.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "config/pi/extensions/direnv.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "config/pi/extensions/generate-commit-message.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 7
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 8
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/gitbutler-guard-logic.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/lazy-agent-browser.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 4
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 21
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/lazy-extensions.test.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 7
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 10
+    }
+  },
+  "config/pi/extensions/lazy-plannotator.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 10
+    }
+  },
+  "config/pi/extensions/lib/commit-config.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 3
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 3
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 2
+    }
+  },
+  "config/pi/extensions/lib/lazy-extension.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 6
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 2
+    }
+  },
+  "config/pi/extensions/lib/review-git.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/lib/review-screen.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/process-info.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/prompt-stash-logic.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/prompt-stash.test.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/prompt-url-widget.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/review.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 2
+    }
+  },
+  "config/pi/extensions/sub-limits.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "config/pi/extensions/you-are-right-killer.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "config/tmux/agent-hunk-sessions.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 2
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 3
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 3
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 2
+    }
+  },
+  "packages/callstack-diff/evals/complaint.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 2
+    }
+  },
+  "packages/callstack-diff/src/project.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-reflect-get": {
+      "count": 3
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 5
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/callstack-diff/src/render.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/callstack-diff/src/tree.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 5
+    }
+  },
+  "packages/callstack-diff/tests/fixtures/after/pi-service.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/callstack-diff/tests/fixtures/before/pi-service.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/claude-max-api-proxy-patches/openai-to-cli.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    }
+  },
+  "packages/dmux/lib/dmux-openrouter-shim.cjs": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 3
+    }
+  },
+  "packages/opencode-tmux-namer/src/index.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 7
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/omp-skillopt-sleep/extensions/skillopt-sleep.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-agentmap/tests/extension.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-ast-grep/extensions/pi-ast-grep.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 4
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 6
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 5
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-bash-live-view/index.ts": {
+    "anti-slop/no-chained-type-assertions": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-bash-live-view/pty-kill.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-bash-live-view/terminal-emulator.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 3
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-beads/src/backend/adapters/beads.test.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 2
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 34
+    }
+  },
+  "packages/pi-packages/pi-beads/src/backend/adapters/beads.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-beads/src/controllers/list.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 2
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-beads/src/controllers/show.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-beads/src/extension.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-beads/src/models/list-item.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-beads/src/models/task.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-beads/src/ui/components/min-height.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-beads/src/ui/pages/show.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-command-policy-bridge/index.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 2
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 6
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 2
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 4
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 4
+    }
+  },
+  "packages/pi-packages/pi-context-repo/index.test.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-context-repo/index.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 3
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 19
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 5
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 4
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 5
+    }
+  },
+  "packages/pi-packages/pi-dcp/index.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/__tests__/tool-pairing.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 11
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/cmds/tools-expanded.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/config.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 3
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/dumb-zone-bridge.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/events/context.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 7
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/logger.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 6
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/metadata.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 7
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 7
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/registry.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/tokens.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/tool-cache.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 2
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/tools/distill.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/tools/prune.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/src/types.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 4
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-dcp/tests/fix-verification.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/tests/llm-tools.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dcp/tests/thinking-blocks.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 13
+    }
+  },
+  "packages/pi-packages/pi-dcp/tests/tool-cache.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-dcp/tests/tool-pairing.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-direnv/index.test.ts": {
+    "anti-slop/no-chained-type-assertions": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-direnv/index.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-dumb-zone/src/checks.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-dumb-zone/src/notifications.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-dumb-zone/src/signal.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-git-ai/index.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-git-ai/index.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 3
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 4
+    }
+  },
+  "packages/pi-packages/pi-git-ai/tests/pure-functions.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 6
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/decision-flow-golden.test.ts": {
+    "anti-slop/no-chained-type-assertions": {
+      "count": 1
+    },
+    "anti-slop/no-known-value-widening": {
+      "count": 15
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/envelope-parsing.test.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/herdr.test.ts": {
+    "anti-slop/no-chained-type-assertions": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/herdr.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/open-review-box.test.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/pr-review-workspace.test.ts": {
+    "anti-slop/no-chained-type-assertions": {
+      "count": 1
+    },
+    "anti-slop/no-known-value-widening": {
+      "count": 13
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 3
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-herdr/extensions/pr-review-workspace.ts": {
+    "anti-slop/no-conditional-empty-object-spread": {
+      "count": 1
+    },
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 18
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 3
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-hunk/extensions/hunk.test.ts": {
+    "anti-slop/no-unknown-returns": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 3
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-hunk/extensions/hunk.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/no-unknown-returns": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-image-attachments/index.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 6
+    }
+  },
+  "packages/pi-packages/pi-image-attachments/src/editor-factory.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 4
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-image-attachments/src/path-utils.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 2
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-image-attachments/test/editor-factory.test.ts": {
+    "anti-slop/no-chained-type-assertions": {
+      "count": 1
+    },
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-prompt-stash/src/logic.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-prompt-stash/tests/logic.test.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-qmd/__tests__/core/qmd-store.test.ts": {
+    "anti-slop/no-module-mocking": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-qmd/__tests__/extension/runtime.test.ts": {
+    "anti-slop/no-module-mocking": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-qmd/__tests__/ui/data.test.ts": {
+    "anti-slop/no-module-mocking": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-qmd/core/errors.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-qmd/core/qmd-store.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 3
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 4
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-qmd/core/types.ts": {
+    "anti-slop/no-shape-in-symbol-names": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-qmd/domain/onboarding.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-shape-in-symbol-names": {
+      "count": 7
+    }
+  },
+  "packages/pi-packages/pi-qmd/ui/data.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-qmd/ui/panel.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 8
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-review-box/src/cli.ts": {
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-review-box/src/config.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "packages/pi-packages/pi-review-box/src/prune.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-review-box/src/stdin.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 7
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-review-box/test/decision.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "packages/pi-packages/pi-review-box/test/gh.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-review-box/test/helpers.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/pi-review-box/test/interface.test.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/tests/dumb-zone-bridge.test.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/tests/qmd.test.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 1
+    }
+  },
+  "packages/pi-packages/tests/sub-limits-pace.test.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 3
+    }
+  },
+  "packages/tmux-smart-name/src/menu.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/tmux-smart-name/src/naming.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/tmux-smart-name/src/process.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "packages/tmux-smart-name/src/status.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 4
+    }
+  },
+  "tests/omp_completion_gate.test.js": {
+    "anti-slop/no-shape-in-symbol-names": {
+      "count": 3
+    }
+  },
+  "tests/skill-evals/done-skill-scorer.ts": {
+    "anti-slop/no-runtime-typeof": {
+      "count": 4
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "tests/skill-evals/herdr-corpus.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "tests/skill-evals/herdr-interception.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 3
+    }
+  },
+  "tests/skill-evals/herdr-shim.test.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "tests/skill-evals/herdr-skill-harness.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 4
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 4
+    },
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 2
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 2
+    }
+  },
+  "tests/skill-evals/herdr-skill-scorer.test.ts": {
+    "anti-slop/no-shape-in-symbol-names": {
+      "count": 6
+    }
+  },
+  "tests/skill-evals/herdr-skill-scorer.ts": {
+    "anti-slop/no-known-value-widening": {
+      "count": 1
+    }
+  },
+  "tests/skill-evals/herdr-skill.eval.ts": {
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  },
+  "tests/skill-evals/herdr-understanding-judge.ts": {
+    "anti-slop/no-unsafe-dictionary-type": {
+      "count": 1
+    },
+    "anti-slop/require-safety-comment-for-type-assertion": {
+      "count": 1
+    }
+  }
+}

@@ -55,7 +55,7 @@ let
         SDKROOT = sdk;
       };
   });
-  herdr = if isDarwin then patchedHerdr else prev.llm-agents.herdr;
+  herdr = patchedHerdr;
 in
 {
   llm-agents = (prev.llm-agents or { }) // {

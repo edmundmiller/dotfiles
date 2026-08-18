@@ -11,7 +11,7 @@
 # $XDG_CONFIG_HOME/herdr/config.toml and exits non-zero on unknown keys.
 { pkgs, inputs }:
 let
-  herdrPackage = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
+  herdrPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
 
   dotfilesLib = pkgs.lib.extend (
     self: _super: {
