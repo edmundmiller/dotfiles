@@ -109,6 +109,18 @@ in
             source = "${configDir}/raycast-scripts/open-daily-note.sh";
             executable = true;
           };
+          "Scripts/raycast/open-plain-terminal.sh" = {
+            source = "${configDir}/raycast-scripts/open-plain-terminal.sh";
+            executable = true;
+          };
+          "Scripts/raycast/open-tmux-terminal.sh" = {
+            source = "${configDir}/raycast-scripts/open-tmux-terminal.sh";
+            executable = true;
+          };
+          "Scripts/raycast/open-herdr-terminal.sh" = {
+            source = "${configDir}/raycast-scripts/open-herdr-terminal.sh";
+            executable = true;
+          };
           "Scripts/raycast/neovide-simple-toggle.swift" = {
             source = "${config.dotfiles.binDir}/raycast-scripts/neovide-simple-toggle.swift";
             executable = true;

@@ -1242,6 +1242,13 @@
                       fi
                     done
 
+                    for test in config/*/tests/*.bash; do
+                      if [ -f "$test" ]; then
+                        echo "Running $test..."
+                        bash "$test"
+                      fi
+                    done
+
                     bun test ./config/tmux/tests/agent-hunk-sessions.test.ts
 
                     # Cleanup

@@ -309,6 +309,13 @@ in
       enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
+    services.skhd = {
+      enable = true;
+      skhdConfig = builtins.readFile "${config.dotfiles.configDir}/skhd/skhdrc";
+    };
+
+    launchd.user.agents.skhd.serviceConfig.EnvironmentVariables.USER = config.system.primaryUser;
+
     # Mirror LookAway's meeting detection to the USB busylight. LookAway's built-in
     # automations only cover break start/end, so this tails its debug log for
     # meeting start/end transitions and calls bin/busylight-status.py.
