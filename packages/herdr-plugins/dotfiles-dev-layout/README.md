@@ -8,7 +8,8 @@ update_when: Plugin actions, events, layout, or requirements change.
 
 # Dotfiles Dev Layout
 
-Creates OMP for every workspace and Hunk for Git checkout workspaces, with OMP focused.
+Creates OMP, and Hunk for Git checkout workspaces, when the bootstrap action is
+run explicitly. New workspaces get no tabs automatically.
 Review Box workspaces skip the generic tabs so the Review Box launcher can own
 its Hunk, Critique, agent, and approval layout. The plugin detects Review
 Boxes from the hook context (`HERDR_PLUGIN_CONTEXT_JSON`): a `workspace_label`
@@ -29,12 +30,11 @@ herdr plugin install edmundmiller/dotfiles/packages/herdr-plugins/dotfiles-dev-l
 - Action: `dotfiles.dev-layout.bootstrap`
 - Action: `dotfiles.dev-layout.hunk-split`
 - Action: `dotfiles.dev-layout.hunk-tab`
-- Events: `workspace.created` and `worktree.created` (serialized per workspace)
 - Prelaunch: optional repo-local QMD index seeding before Codex starts
 
-`worktree.create` emits both creation events. The bootstrap is locked and
-idempotent because `workspace.created` is also required for ordinary workspaces,
-including Herdr workspaces created around jj checkouts.
+No creation events are registered, so ordinary new workspaces stay plain. Run
+`dotfiles.dev-layout.bootstrap` to set up OMP and Hunk on demand. The Review Box
+builds its own Hunk, Critique, and agent tabs, so it needs nothing from here.
 
 ## Requirements
 

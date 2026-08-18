@@ -5,16 +5,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_worktree_events_supersede_legacy_post_create_command() -> None:
+def test_dev_layout_declares_no_creation_events_and_no_legacy_post_create() -> None:
     plugin = ROOT / "packages" / "herdr-plugins" / "dotfiles-dev-layout"
     manifest = tomllib.loads((plugin / "herdr-plugin.toml").read_text())
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
 
-    assert {event["on"] for event in manifest["events"]} == {
-        "workspace.created",
-        "worktree.created",
-    }
+    assert "events" not in manifest
     assert "post_create_command" not in config.get("worktrees", {})
     assert 'if key == "post_create_command":' in module
 

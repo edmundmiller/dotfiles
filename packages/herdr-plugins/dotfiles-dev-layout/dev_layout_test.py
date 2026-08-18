@@ -274,13 +274,12 @@ class CommandTest(unittest.TestCase):
 
 
 class ManifestTest(unittest.TestCase):
-    def test_uses_literal_supported_creation_events(self) -> None:
+    def test_declares_no_workspace_creation_events(self) -> None:
         manifest = tomllib.loads(
             Path(__file__).with_name("herdr-plugin.toml").read_text()
         )
 
-        events = {event["on"] for event in manifest["events"]}
-        self.assertEqual(events, {"workspace.created", "worktree.created"})
+        self.assertNotIn("events", manifest)
 
 
 class HunkThemeArgsTest(unittest.TestCase):

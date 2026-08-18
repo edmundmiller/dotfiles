@@ -210,7 +210,7 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep checkout layout seeding in the local `dotfiles.dev-layout` plugin's `workspace.created` and `worktree.created` hooks. The bootstrap serializes per workspace, is idempotent, and opens Hunk only from a Git checkout.
+- Keep the local `dotfiles.dev-layout` plugin free of `workspace.created` / `worktree.created` hooks so ordinary new workspaces open plain. Its `bootstrap` action is run explicitly; it serializes per workspace, is idempotent, and opens Hunk only from a Git checkout.
 - `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
