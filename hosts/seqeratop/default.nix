@@ -109,10 +109,14 @@
       agents = {
         pi = {
           enable = true;
+          # OpenAI credits are exhausted. Cursor is Grok-only (no Cursor Claude);
+          # Claude subscription is vibeproxy via omp.
+          defaultProvider = "cursor";
+          defaultModel = "cursor-grok-4.6-medium";
           enabledModels = [
-            "gpt-5.6-sol"
-            "gpt-5.6-terra"
-            "gpt-5.6-luna"
+            "cursor/cursor-grok-4.6-medium"
+            "cursor/cursor-grok-4.6-high"
+            "cursor/cursor-grok-4.6-low-fast"
             "cursor/composer-2.5"
           ];
           cursorSdk.enable = true;
@@ -129,15 +133,19 @@
         };
         omp = {
           enable = true;
-          # Work laptop providers: cursor, openai-codex, vibeproxy (Claude/Anthropic),
-          # Sonnet is the task/coding handoff; Haiku stays on commit/tiny
-          # metadata work.
-          # Fable drives slow/plan/designer with Codex Sol as first fallback.
-          # Opus medium is the default; Opus low is smol.
-          # Opus remains the primary default. Vision goes to Gemini via the
-          # google-antigravity login (run `/login google-antigravity` in omp once).
-          # Cursor Grok and Composer fast variants are fallbacks. VibeProxy
-          # exposes Claude only; do not invent xai-oauth ids.
+          # Work laptop providers: vibeproxy (Claude subscription), cursor,
+          # google-antigravity. OpenAI credits are exhausted — do NOT add
+          # openai-codex/* here (see dailyIntrospection below too).
+          # Burn the Claude subscription first: every primary role and the first
+          # fallback hop stays on vibeproxy. Cursor Grok 4.6 / Composer are the
+          # cross-provider safety net after Claude is rate-limited or down.
+          # Cursor Grok and Composer report thinking `-` in `omp models cursor`,
+          # so their ids carry no `:level` suffix and encode the level in the
+          # model name instead.
+          # Vision goes to Gemini via the google-antigravity login (run
+          # `/login google-antigravity` in omp once); vision fallbacks need
+          # images=yes, which rules out every cursor-grok id.
+          # VibeProxy exposes Claude only; do not invent xai-oauth ids.
           # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
           # rendered smol and can confuse commit/tiny vs prewalk handoff.
           modelRoles = {
@@ -150,49 +158,57 @@
             commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "vibeproxy/claude-haiku-4-5-20251001";
             task = "vibeproxy/claude-sonnet-5:low";
-            advisor = "openai-codex/gpt-5.6-sol:high";
+            advisor = "vibeproxy/claude-opus-5:high";
           };
           retry.fallbackChains = {
             advisor = [
-              "vibeproxy/claude-opus-4-8:high"
+              "vibeproxy/claude-fable-5:high"
+              "cursor/cursor-grok-4.6-high"
+              "cursor/composer-2.5-fast"
             ];
             default = [
-              "openai-codex/gpt-5.6-sol:medium"
-              "cursor/cursor-grok-4.5-low-fast"
+              "vibeproxy/claude-sonnet-5:medium"
+              "cursor/cursor-grok-4.6-medium"
               "cursor/composer-2.5-fast"
             ];
             smol = [
-              "openai-codex/gpt-5.6-sol:low"
-              "cursor/cursor-grok-4.5-low-fast"
+              "vibeproxy/claude-haiku-4-5-20251001:low"
+              "cursor/cursor-grok-4.6-low-fast"
               "cursor/composer-2.5-fast"
             ];
             slow = [
-              "openai-codex/gpt-5.6-sol:high"
+              "vibeproxy/claude-opus-5:high"
+              "cursor/cursor-grok-4.6-xhigh"
             ];
             plan = [
-              "openai-codex/gpt-5.6-sol:high"
+              "vibeproxy/claude-opus-5:high"
+              "cursor/cursor-grok-4.6-high"
             ];
             task = [
-              "openai-codex/gpt-5.6-terra:low"
-              "cursor/cursor-grok-4.5-low-fast"
+              "vibeproxy/claude-haiku-4-5-20251001:medium"
+              "cursor/cursor-grok-4.6-low-fast"
               "cursor/composer-2.5-fast"
             ];
             vision = [
-              "openai-codex/gpt-5.6-sol:medium"
-              "openai-codex/gpt-5.6-luna:medium"
+              "vibeproxy/claude-opus-5:medium"
+              "cursor/gemini-3.5-flash"
             ];
             designer = [
-              "openai-codex/gpt-5.6-sol:medium"
+              "vibeproxy/claude-opus-5:medium"
+              "cursor/cursor-grok-4.6-medium"
             ];
             commit = [
-              "openai-codex/gpt-5.6-luna:low"
               "cursor/composer-2.5-fast"
+              "cursor/cursor-grok-4.6-low-fast"
             ];
             tiny = [
               "cursor/composer-2.5-fast"
-              "openai-codex/gpt-5.6-luna:low"
+              "cursor/cursor-grok-4.6-low-fast"
             ];
           };
+          # Module default is openai-codex/gpt-5.6-sol:high; override so the
+          # nightly introspection job doesn't hit the dead OpenAI credits.
+          dailyIntrospection.model = "vibeproxy/claude-opus-5:high";
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
           # keeps the shared Catppuccin default.
@@ -347,9 +363,10 @@
         home.sessionVariables = {
           SF_DISABLE_TELEMETRY = "true";
 
-          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.6-terra";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
-          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.6-luna";
+          # Pi has no vibeproxy wiring — Cursor Grok only (no Cursor Claude).
+          PI_MODEL_SWITCH_INTENT = "cursor/cursor-grok-4.6-high";
+          PI_MODEL_SWITCH_CODING = "cursor/cursor-grok-4.6-medium";
+          PI_MODEL_SWITCH_DONE = "cursor/cursor-grok-4.6-low-fast";
         };
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =

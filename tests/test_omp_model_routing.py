@@ -166,8 +166,8 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(
             omp["retry"]["fallbackChains"]["default"],
             [
-                "openai-codex/gpt-5.6-sol:medium",
-                "cursor/cursor-grok-4.5-low-fast",
+                "vibeproxy/claude-sonnet-5:medium",
+                "cursor/cursor-grok-4.6-medium",
                 "cursor/composer-2.5-fast",
             ],
         )
@@ -182,21 +182,25 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(omp["modelRoles"]["slow"], "vibeproxy/claude-fable-5:high")
         self.assertEqual(
             omp["modelRoles"]["advisor"],
-            "openai-codex/gpt-5.6-sol:high",
+            "vibeproxy/claude-opus-5:high",
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["advisor"],
-            ["vibeproxy/claude-opus-4-8:high"],
+            [
+                "vibeproxy/claude-fable-5:high",
+                "cursor/cursor-grok-4.6-high",
+                "cursor/composer-2.5-fast",
+            ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["slow"],
-            ["openai-codex/gpt-5.6-sol:high"],
+            ["vibeproxy/claude-opus-5:high", "cursor/cursor-grok-4.6-xhigh"],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["smol"],
             [
-                "openai-codex/gpt-5.6-sol:low",
-                "cursor/cursor-grok-4.5-low-fast",
+                "vibeproxy/claude-haiku-4-5-20251001:low",
+                "cursor/cursor-grok-4.6-low-fast",
                 "cursor/composer-2.5-fast",
             ],
         )
@@ -211,11 +215,15 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["plan"],
-            ["openai-codex/gpt-5.6-sol:high"],
+            ["vibeproxy/claude-opus-5:high", "cursor/cursor-grok-4.6-high"],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["designer"],
-            ["openai-codex/gpt-5.6-sol:medium"],
+            ["vibeproxy/claude-opus-5:medium", "cursor/cursor-grok-4.6-medium"],
+        )
+        self.assertEqual(
+            omp["dailyIntrospection"]["model"],
+            "vibeproxy/claude-opus-5:high",
         )
 
 

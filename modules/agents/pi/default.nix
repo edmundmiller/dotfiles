@@ -201,6 +201,16 @@ in
       default = piSettingsParsed.enabledModels or [ ];
       description = "Base Pi models enabled for model cycling. Defaults to config/pi/settings.jsonc.";
     };
+    defaultProvider = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Optional override for Pi settings defaultProvider. Null keeps config/pi/settings.jsonc.";
+    };
+    defaultModel = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Optional override for Pi settings defaultModel. Null keeps config/pi/settings.jsonc.";
+    };
     mcp.enable = mkOption {
       type = types.bool;
       default = true;

@@ -106,6 +106,12 @@ let
         packages = dropModuleManagedPackages piSettingsParsed.packages;
         enabledModels = lib.unique cfg.enabledModels;
       }
+      // lib.optionalAttrs (cfg.defaultProvider != null) {
+        inherit (cfg) defaultProvider;
+      }
+      // lib.optionalAttrs (cfg.defaultModel != null) {
+        inherit (cfg) defaultModel;
+      }
     )
     //
       lib.optionalAttrs (config.modules.shell.herdr.enable && config.modules.shell.herdr.managePiTheme)
