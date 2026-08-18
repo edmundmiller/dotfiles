@@ -27,7 +27,7 @@ Winding Down  →  Get Ready for Bed  →  Good Night  →  Sleep  →  Smart Wa
 
 Timing rules:
 
-- **Latest Wake:** Eight Sleep alarm timestamp, or fallback latest wake time (7:45 AM weekdays / 8:00 AM weekends)
+- **Latest Wake:** Eight Sleep alarm timestamp, or a 7:30 AM daily fallback. A readable Eight Sleep alarm is the explicit per-night exception.
 - **Ideal Wake:** Latest Wake minus 30 minutes (start of smart-alarm window)
 - **Sleep:** Ideal Wake minus six 90-minute cycles (9h)
 - **Good Night:** Sleep minus 15 minutes (fall-asleep buffer)

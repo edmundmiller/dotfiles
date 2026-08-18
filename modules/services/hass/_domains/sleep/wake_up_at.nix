@@ -270,9 +270,9 @@ in
       variables = {
         raw_alarm = "{{ states('${edmund.nextAlarm}') }}";
         # Default latest wake time if Eight Sleep has no readable next alarm:
-        # 7:45 AM for Monday-Friday wake days, 8:00 AM for Saturday/Sunday wake
-        # days. The ideal wake target is 30 minutes earlier, at the start of the
-        # Eight Sleep smart-alarm window.
+        # 7:30 AM every day. The ideal wake target is 30 minutes earlier, at the
+        # start of the Eight Sleep smart-alarm window. A readable Eight Sleep
+        # alarm remains an explicit per-night exception.
         #
         # HA renders automation variables independently, so derived timestamps
         # intentionally duplicate the wake-time expression instead of referring
@@ -282,8 +282,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ as_timestamp(raw_alarm, fallback) }}
           {%- else -%}
@@ -295,8 +294,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ raw_alarm }}
           {%- else -%}
@@ -313,8 +311,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
           {{ latest_wake - 30 * 60 }}
         '';
@@ -323,8 +320,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
           {%- set ideal_wake = latest_wake - 30 * 60 -%}
           {{ ideal_wake - 6 * 90 * 60 }}
@@ -334,8 +330,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
           {%- set ideal_wake = latest_wake - 30 * 60 -%}
           {{ ideal_wake - 6 * 90 * 60 - 60 * 60 }}
@@ -345,8 +340,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
           {%- set ideal_wake = latest_wake - 30 * 60 -%}
           {{ ideal_wake - 6 * 90 * 60 - 15 * 60 }}
@@ -356,8 +350,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
           {%- set ideal_wake = latest_wake - 30 * 60 -%}
           {{ ideal_wake - 6 * 90 * 60 - 25 * 60 }}
@@ -372,8 +365,7 @@ in
             {%- set test_now = trigger.event.data.now if trigger.event.data.now is defined else none -%}
             {%- set base_now = as_datetime(test_now) if test_now else now() -%}
             {%- set wake = base_now + timedelta(days=1) -%}
-            {%- set weekend = wake.isoweekday() in [6, 7] -%}
-            {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+            {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
             {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
             {%- set ideal_wake = latest_wake - 30 * 60 -%}
             {{ ideal_wake - 6 * 90 * 60 - 25 * 60 }}
@@ -387,8 +379,7 @@ in
             {%- set test_now = trigger.event.data.now if trigger.event.data.now is defined else none -%}
             {%- set base_now = as_datetime(test_now) if test_now else now() -%}
             {%- set wake = base_now + timedelta(days=1) -%}
-            {%- set weekend = wake.isoweekday() in [6, 7] -%}
-            {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+            {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
             {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
             {%- set ideal_wake = latest_wake - 30 * 60 -%}
             {{ ideal_wake - 6 * 90 * 60 - 15 * 60 }}
@@ -405,8 +396,7 @@ in
           {%- set test_now = trigger.event.data.now if trigger.id == 'test_tick' and trigger.event.data.now is defined else none -%}
           {%- set base_now = as_datetime(test_now) if test_now else now() -%}
           {%- set wake = base_now + timedelta(days=1) -%}
-          {%- set weekend = wake.isoweekday() in [6, 7] -%}
-          {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+          {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
           {%- if raw_alarm not in ['unknown', 'unavailable', 'none', ""] -%}
             {{ states('input_text.sleep_schedule_key') != raw_alarm }}
           {%- else -%}
@@ -588,8 +578,7 @@ in
             {%- set raw_alarm = states('${edmund.nextAlarm}') -%}
             {%- set base_now = now() -%}
             {%- set wake = base_now + timedelta(days=1) -%}
-            {%- set weekend = wake.isoweekday() in [6, 7] -%}
-            {%- set fallback = as_timestamp(wake.replace(hour=(8 if weekend else 7), minute=(0 if weekend else 45), second=0, microsecond=0)) -%}
+            {%- set fallback = as_timestamp(wake.replace(hour=7, minute=30, second=0, microsecond=0)) -%}
             {%- set latest_wake = as_timestamp(raw_alarm, fallback) if raw_alarm not in ['unknown', 'unavailable', 'none', ""] else fallback -%}
             {%- set ideal_wake = latest_wake - 30 * 60 -%}
             {{ ideal_wake - 6 * 90 * 60 - 15 * 60 }}

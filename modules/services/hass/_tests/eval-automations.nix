@@ -650,6 +650,28 @@ let
       msg = "circadian_sleep_homeostasis must target six 90-minute cycles before ideal wake";
     }
     {
+      test =
+        let
+          variables = circadianSleepHomeostasis.variables or { };
+          fallbackTemplates = map (name: variables.${name} or "") [
+            "alarm_ts"
+            "schedule_key"
+            "ideal_wake_ts"
+            "sleep_ts"
+            "winding_down_ts"
+            "goodnight_ts"
+            "get_ready_ts"
+            "get_ready_done_ts"
+            "goodnight_done_ts"
+            "is_new_schedule"
+          ];
+        in
+        builtins.all (
+          template: hasInfix "hour=7, minute=30" template && !(hasInfix "weekend" template)
+        ) fallbackTemplates;
+      msg = "circadian_sleep_homeostasis must default to the shared 7:30 AM alarm every day";
+    }
+    {
       test = hasEventTrigger circadianSleepHomeostasis "sleep_homeostasis_test_tick";
       msg = "circadian_sleep_homeostasis missing hidden sleep_homeostasis_test_tick debug trigger";
     }
@@ -769,7 +791,10 @@ let
     }
     {
       test =
-        hasInfix "- 15 * 60" busyBarBedtimeInBedTemplate && hasInfix "1800" busyBarBedtimeProgressJson;
+        hasInfix "- 15 * 60" busyBarBedtimeInBedTemplate
+        && hasInfix "hour=7, minute=30" busyBarBedtimeInBedTemplate
+        && !(hasInfix "weekend" busyBarBedtimeInBedTemplate)
+        && hasInfix "1800" busyBarBedtimeProgressJson;
       msg = "BUSY Bar widget must share the in-bed offset and 30-minute activation window";
     }
     {
