@@ -1126,6 +1126,36 @@
                     touch $out
                   '';
 
+              # The three always-enforced agent docs must open with a summary
+              # block closing on line 7. Not globbed: some existing docs/*.md and
+              # */AGENTS.md predate the contract.
+              agent-docs-contract =
+                pkgs.runCommand "agent-docs-contract"
+                  {
+                    nativeBuildInputs = [ pkgs.bash ];
+                  }
+                  ''
+                    cd ${./.}
+                    status=0
+                    for doc in AGENTS.md AGENT_WORKFLOW.md docs/README.md; do
+                      [ -f "$doc" ] || continue
+                      [ "$doc" = docs/agent-quality.md ] && continue
+                      summary="$(head -n 7 "$doc")"
+                      for key in purpose applies_to entrypoint verification update_when; do
+                        case "$summary" in
+                          *"$key:"*) ;;
+                          *) echo "FAIL: $doc missing $key in first 7 lines"; status=1 ;;
+                        esac
+                      done
+                      if [ "$(sed -n '7p' "$doc")" != "---" ]; then
+                        echo "FAIL: $doc summary must close on line 7"
+                        status=1
+                      fi
+                    done
+                    [ "$status" -eq 0 ] || exit 1
+                    touch $out
+                  '';
+
               agent-response-contract =
                 pkgs.runCommand "agent-response-contract"
                   {

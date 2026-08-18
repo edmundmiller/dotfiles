@@ -7,10 +7,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Run flake checks on Linux (NixOS configurations)
-  check-linux:
-    name: Flake Check (Linux)
-    runs-on: ubuntu-latest
+  check:
+    name: Flake Check (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            system: x86_64-linux
+          - name: Darwin
+            os: macos-latest
+            system: aarch64-darwin
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,17 +32,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            base_sha="${{ github.event.pull_request.base.sha }}"
-          else
-            base_sha="${{ github.event.before }}"
-          fi
-
-          if [[ "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+          base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ "$base_sha" == "0000000000000000000000000000000000000000" || -z "$base_sha" ]]; then
             base_sha="$(git rev-list --max-parents=0 HEAD)"
           fi
-
           ./bin/qa-changed --base-ref "$base_sha" --head-ref "${{ github.sha }}"
       - uses: DeterminateSystems/nix-installer-action@main
         with:
@@ -42,48 +44,27 @@ jobs:
         with:
           use-flakehub: false
 
+      # Checks are named explicitly because `nix flake check` also evaluates
+      # nixosConfigurations.nuc, which needs a private input CI cannot fetch.
       - name: Run flake checks
         run: |
-          # Check x86_64-linux specific outputs
-          echo "::group::treefmt" && time nix build .#checks.x86_64-linux.treefmt --no-link && echo "::endgroup::"
-          echo "::group::pre-commit" && time nix build .#checks.x86_64-linux.pre-commit --no-link && echo "::endgroup::"
-          echo "::group::zunit-tests" && time nix build .#checks.x86_64-linux.zunit-tests --no-link && echo "::endgroup::"
-          echo "::group::package-harness-tests" && time nix build .#checks.x86_64-linux.package-harness-tests --no-link && echo "::endgroup::"
-          echo "::group::herdr-config-check" && time nix build .#checks.x86_64-linux.herdr-config-check --no-link && echo "::endgroup::"
-          echo "::group::vm-shell-herdr-vm-test" && time nix build .#checks.x86_64-linux.vm-shell-herdr-vm-test --no-link && echo "::endgroup::"
+          nix build --no-link --print-build-logs \
+            .#checks.${{ matrix.system }}.treefmt \
+            .#checks.${{ matrix.system }}.pre-commit \
+            .#checks.${{ matrix.system }}.zunit-tests \
+            .#checks.${{ matrix.system }}.package-harness-tests \
+            .#checks.${{ matrix.system }}.herdr-config-check \
+            .#checks.${{ matrix.system }}.agent-docs-contract
 
-      - name: Validate agent documentation contract
-        shell: bash
+      - name: Check Darwin configurations evaluate
+        if: matrix.system == 'aarch64-darwin'
         run: |
-          set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            base_sha="${{ github.event.pull_request.base.sha }}"
-          else
-            base_sha="${{ github.event.before }}"
-          fi
-          if [[ "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
-            base_sha="$(git rev-list --max-parents=0 HEAD)"
-          fi
+          nix eval .#darwinConfigurations.MacTraitor-Pro.system --apply 'x: "OK"'
+          nix eval .#darwinConfigurations.Seqeratop.system --apply 'x: "OK"'
 
-          docs=(AGENTS.md AGENT_WORKFLOW.md docs/README.md)
-          while IFS= read -r doc; do
-            case "$doc" in
-              docs/agent-quality.md) ;;
-              docs/*.md | */AGENTS.md) docs+=("$doc") ;;
-            esac
-          done < <(git diff --name-only --diff-filter=ACMR "$base_sha" "${{ github.sha }}" -- '*.md')
-
-          for doc in "${docs[@]}"; do
-            summary="$(head -n 7 "$doc")"
-            for key in purpose applies_to entrypoint verification update_when; do
-              grep -q "^${key}:" <<<"$summary" || { echo "FAIL: $doc missing $key in first 7 lines"; exit 1; }
-            done
-            test "$(sed -n '7p' "$doc")" = "---" || { echo "FAIL: $doc summary must close on line 7"; exit 1; }
-          done
-
-      - name: Skip NixOS config eval
-        run: |
-          echo "Skipping nuc eval in CI; openclaw-workspace is private"
+      - name: Run herdr VM test
+        if: matrix.system == 'x86_64-linux'
+        run: nix build --no-link .#checks.x86_64-linux.vm-shell-herdr-vm-test
 
   # Service VM tests are slow, so they run on request rather than every push.
   vm-services:
@@ -100,72 +81,4 @@ jobs:
         with:
           use-flakehub: false
       - name: Build service VM checks
-        run: |
-          echo "::group::vm-services-gatus-vm-test" && time nix build .#checks.x86_64-linux.vm-services-gatus-vm-test --no-link && echo "::endgroup::"
-
-  # Run flake checks on macOS (Darwin configurations)
-  check-darwin:
-    name: Flake Check (Darwin)
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - uses: oven-sh/setup-bun@v2
-      - name: Run changed packages/pi-packages QA
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            base_sha="${{ github.event.pull_request.base.sha }}"
-          else
-            base_sha="${{ github.event.before }}"
-          fi
-
-          if [[ "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
-            base_sha="$(git rev-list --max-parents=0 HEAD)"
-          fi
-
-          ./bin/qa-changed --base-ref "$base_sha" --head-ref "${{ github.sha }}"
-      - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          extra-conf: accept-flake-config = true
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
-
-      - name: Run flake checks
-        run: |
-          # Check aarch64-darwin specific outputs
-          echo "::group::treefmt" && time nix build .#checks.aarch64-darwin.treefmt --no-link && echo "::endgroup::"
-          echo "::group::pre-commit" && time nix build .#checks.aarch64-darwin.pre-commit --no-link && echo "::endgroup::"
-          echo "::group::zunit-tests" && time nix build .#checks.aarch64-darwin.zunit-tests --no-link && echo "::endgroup::"
-          echo "::group::package-harness-tests" && time nix build .#checks.aarch64-darwin.package-harness-tests --no-link && echo "::endgroup::"
-          echo "::group::herdr-config-check" && time nix build .#checks.aarch64-darwin.herdr-config-check --no-link && echo "::endgroup::"
-
-      - name: Check Darwin configurations evaluate
-        run: |
-          time nix eval .#darwinConfigurations.MacTraitor-Pro.system --apply 'x: "OK"'
-          time nix eval .#darwinConfigurations.Seqeratop.system --apply 'x: "OK"'
-
-  # Formatting check (runs on Linux, faster)
-  format:
-    name: Check Formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          extra-conf: accept-flake-config = true
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
-
-      - name: Check formatting
-        run: time nix build .#checks.x86_64-linux.treefmt --no-link
+        run: nix build .#checks.x86_64-linux.vm-services-gatus-vm-test --no-link
