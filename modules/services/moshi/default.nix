@@ -197,6 +197,16 @@ in
     }
 
     (optionalAttrs isDarwin {
+      # nix-darwin only reloads unchanged launch agents when their plist changes.
+      # Reconcile Moshi on every activation so a registered dormant job heals.
+      system.activationScripts.postActivation.text = mkAfter ''
+        moshi_uid=$(/usr/bin/id -u ${escapeShellArg config.user.name})
+        if /bin/launchctl print "gui/$moshi_uid/org.nixos.moshi-hook" >/dev/null 2>&1; then
+          /bin/launchctl asuser "$moshi_uid" /usr/bin/sudo --user=${escapeShellArg config.user.name} -- \
+            /bin/launchctl kickstart -k "gui/$moshi_uid/org.nixos.moshi-hook"
+        fi
+      '';
+
       launchd.user.agents.moshi-hook = {
         command = "${moshiHook}/bin/moshi-hook serve";
         serviceConfig = {
