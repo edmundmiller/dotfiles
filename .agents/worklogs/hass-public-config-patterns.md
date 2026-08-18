@@ -1,6 +1,6 @@
 # Worklog: hass-public-config-patterns
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -41,8 +41,8 @@ Create a durable, agent-facing guide to useful patterns in public Home Assistant
 
 ## Remaining work
 
-- Commit, land on main, and verify remote equality.
+- None.
 
 ## Commits
 
-- Pending.
+- `c33a39d7c` — `docs(hass): add public configuration research guide`
