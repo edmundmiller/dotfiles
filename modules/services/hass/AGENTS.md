@@ -1,3 +1,11 @@
+---
+purpose: Route agents working on the Nix-managed Home Assistant module.
+applies_to: Changes under modules/services/hass.
+entrypoint: Classify the change, then follow the matching module or domain guidance.
+verification: Run the focused HA evaluation and the repository finish checks.
+update_when: Module boundaries, operational commands, or agent research guidance changes.
+---
+
 # Home Assistant Module
 
 Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
@@ -10,6 +18,11 @@ Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
 - `apply-devices.py` — Script to apply devices.yaml (runs as systemd oneshot after HA starts)
 - `blueprints/` — Custom automation blueprints
 - `README.md` — Human docs with migration guide and home-ops parity table
+
+Before redesigning the module or adding a new configuration pattern, use the
+[public configuration research guide](./docs/public-config-patterns.md). It
+provides reproducible GitHub searches, representative Nix examples, and
+rejection criteria. Public repositories are examples, not behavioral authority.
 
 ## Custom Components
 
