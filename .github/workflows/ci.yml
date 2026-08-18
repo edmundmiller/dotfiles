@@ -32,9 +32,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Manual runs and new branches have no usable "before" sha.
           base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
-          if [[ "$base_sha" == "0000000000000000000000000000000000000000" || -z "$base_sha" ]]; then
-            base_sha="$(git rev-list --max-parents=0 HEAD)"
+          if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+            base_sha="$(git rev-parse HEAD^)"
           fi
           ./bin/qa-changed --base-ref "$base_sha" --head-ref "${{ github.sha }}"
       - uses: DeterminateSystems/nix-installer-action@main
