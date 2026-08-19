@@ -7,8 +7,8 @@ let
     src = final.fetchFromGitHub {
       owner = "herdrdev";
       repo = "herdr";
-      rev = "350f001320ec4a119f09c38157973126962a6121";
-      hash = "sha256-VZRCmoK9TC+GejYncmZrnKcKhoI/ammHQA63Lg2OKu4=";
+      rev = "3667151744e379ac5c8f76d57203b675de8a6ebc";
+      hash = "sha256-ODwlj4ghPMh/Yfe2uuFwXEgi7NNTyHNicMrqsH7jE6I=";
     };
     patches = [
       ./patches/0001-libghostty-bench-gated.patch # bead: dotfiles-lq7y
@@ -55,7 +55,7 @@ let
         SDKROOT = sdk;
       };
   });
-  herdr = if isDarwin then patchedHerdr else prev.llm-agents.herdr;
+  herdr = patchedHerdr;
 in
 {
   llm-agents = (prev.llm-agents or { }) // {

@@ -22,7 +22,7 @@ The public `/docs/subagents` page is a client-rendered overview. Use the files a
 
 An advisor is a separate agent with its own model usage and append-only context. It receives each new primary transcript delta after a turn, can inspect the workspace with read-only tools by default, and returns at most one deduplicated advisory per update.
 
-Every active roster entry is a separate advisor runtime. Two entries therefore create two independent review streams; their token and cost totals are visible with `/advisor status`. `advisor.subagents: true` also attaches advisors to eligible task/eval subagents.
+Every active roster entry is a separate advisor runtime. Two entries therefore create two independent review streams; their token and cost totals are visible with `/advisor status`.
 
 Seqeratop intentionally uses one normal advisor stream:
 

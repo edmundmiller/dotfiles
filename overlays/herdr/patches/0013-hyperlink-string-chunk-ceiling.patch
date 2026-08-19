@@ -1,8 +1,8 @@
-diff --git i/vendor/libghostty-vt/src/terminal/PageList.zig w/vendor/libghostty-vt/src/terminal/PageList.zig
-index 6315596..b178996 100644
---- i/vendor/libghostty-vt/src/terminal/PageList.zig
-+++ w/vendor/libghostty-vt/src/terminal/PageList.zig
-@@ -1613,10 +1613,15 @@ const ReflowCursor = struct {
+diff --git a/vendor/libghostty-vt/src/terminal/PageList.zig b/vendor/libghostty-vt/src/terminal/PageList.zig
+index 79aa96f1..7523ba59 100644
+--- a/vendor/libghostty-vt/src/terminal/PageList.zig
++++ b/vendor/libghostty-vt/src/terminal/PageList.zig
+@@ -1899,10 +1899,15 @@ const ReflowCursor = struct {
  
              // Ensure that the string alloc has sufficient capacity
              // to dupe the link (and the ID if it's not implicit).
@@ -20,7 +20,7 @@ index 6315596..b178996 100644
                      .implicit => 0,
                  };
              // Keep trying until we have enough capacity.
-@@ -11914,6 +11919,74 @@ test "PageList resize reflow exceeds hyperlink memory forcing capacity increase"
+@@ -14522,6 +14527,74 @@ test "PageList resize reflow exceeds hyperlink memory forcing capacity increase"
      try s.resize(.{ .cols = s.cols + 1, .reflow = true });
  }
  

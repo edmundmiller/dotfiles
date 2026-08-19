@@ -100,8 +100,9 @@ The `mattpocock` source auto-discovers every directory containing `SKILL.md`
 under the pinned repository's `skills/` tree and enables it by skill name. This
 keeps `ask-matt`, `setup-matt-pocock-skills`, and every skill they route to in
 one complete set. Evaluation fails if upstream adds the same skill name in two
-categories instead of silently choosing one. `grill-me` retains its local Pi
-integration transform.
+categories instead of silently choosing one. `grilling` retains its local
+structured-dialog transform for OMP, Codex, and Pi; `grill-me` is only its thin
+launcher.
 
 ## Adding a skilld-Generated Skill
 

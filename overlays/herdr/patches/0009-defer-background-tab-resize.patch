@@ -1,8 +1,8 @@
 diff --git a/src/server/headless.rs b/src/server/headless.rs
-index 3425225..d8282fc 100644
+index ae0d7b20..fddebd04 100644
 --- a/src/server/headless.rs
 +++ b/src/server/headless.rs
-@@ -8845,7 +8845,7 @@ next_tab = ""
+@@ -8942,7 +8942,7 @@ next_tab = ""
      }
  
      #[tokio::test]
@@ -11,7 +11,7 @@ index 3425225..d8282fc 100644
          let mut server = test_headless_server();
          let mut workspace = crate::workspace::Workspace::test_new("test");
          let active_pane = workspace.tabs[0].root_pane;
-@@ -8934,12 +8934,12 @@ next_tab = ""
+@@ -9031,12 +9031,12 @@ next_tab = ""
          assert_eq!(
              server.app.state.workspaces[0].tabs[background_tab].runtimes[&background_pane]
                  .current_size(),
@@ -26,7 +26,7 @@ index 3425225..d8282fc 100644
          let mut server = test_headless_server();
          let mut workspace = crate::workspace::Workspace::test_new("test");
          let background_tab = workspace.test_add_tab(Some("background"));
-@@ -8985,6 +8985,19 @@ next_tab = ""
+@@ -9082,6 +9082,19 @@ next_tab = ""
                  .current_size(),
              expected
          );
@@ -47,7 +47,7 @@ index 3425225..d8282fc 100644
              server
                  .app
 diff --git a/src/ui.rs b/src/ui.rs
-index 8196442..1631a6a 100644
+index 8adc31ef..10dcdc9f 100644
 --- a/src/ui.rs
 +++ b/src/ui.rs
 @@ -59,9 +59,7 @@ use self::status::{
@@ -164,7 +164,7 @@ index 8196442..1631a6a 100644
              app.workspaces[0].tabs[background_tab].runtimes[&background_pane].current_size(),
              (18, 43)
 diff --git a/src/ui/panes.rs b/src/ui/panes.rs
-index f20b55b..06c2a21 100644
+index f20b55b5..06c2a21d 100644
 --- a/src/ui/panes.rs
 +++ b/src/ui/panes.rs
 @@ -157,21 +157,6 @@ pub(crate) fn apply_pane_chrome(
@@ -251,7 +251,7 @@ index f20b55b..06c2a21 100644
  pub(super) fn compute_pane_infos(
      app: &AppState,
 diff --git a/src/ui/tab_surface.rs b/src/ui/tab_surface.rs
-index 99ca972..531e5c7 100644
+index 99ca9727..531e5c7a 100644
 --- a/src/ui/tab_surface.rs
 +++ b/src/ui/tab_surface.rs
 @@ -1,6 +1,6 @@

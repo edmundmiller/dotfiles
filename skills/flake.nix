@@ -336,13 +336,23 @@
             throw "mattpocock/skills contains duplicate skill names across categories"
           else
             builtins.listToAttrs (
-              map (skill: {
-                inherit (skill) name;
-                value = {
-                  from = "mattpocock";
-                  inherit (skill) path;
-                };
-              }) (lib.filter (skill: skill.name != "grill-me") mattpocockSkillEntries)
+              map
+                (skill: {
+                  inherit (skill) name;
+                  value = {
+                    from = "mattpocock";
+                    inherit (skill) path;
+                  };
+                })
+                (
+                  lib.filter (
+                    skill:
+                    !(builtins.elem skill.name [
+                      "grill-me"
+                      "grilling"
+                    ])
+                  ) mattpocockSkillEntries
+                )
             );
       in
       {
@@ -770,31 +780,39 @@
                   grill-me = {
                     from = "mattpocock";
                     path = "productivity/grill-me";
+                  };
+
+                  grilling = {
+                    from = "mattpocock";
+                    path = "productivity/grilling";
                     transform =
                       { original, ... }:
                       ''
                         ${original}
 
-                        ## Pi integration
+                        ## Structured question dialogs
 
-                        When running in Pi and the `ask_user` tool is available, use it for every
-                        user-facing grilling question instead of asking in plain chat. Keep the
-                        interview adaptive: ask one question per `ask_user` call, inspect the answer,
-                        then choose the next question.
+                        This section overrides the Markdown question format above whenever the
+                        runtime provides a structured question tool. Do not print the frontier as
+                        Markdown Q/A and then call the tool; put the decisions directly in the tool.
 
-                        For each `ask_user` call:
-                        - Use `type: "single"` for normal decision questions, `type: "multi"` when
-                          several answers can be true, and `type: "preview"` for comparing longer
-                          designs/options.
-                        - Include your recommended answer as an option or clearly mark it in an
-                          option description.
-                        - Include an `other` / `needs_custom_answer` option when the provided choices
-                          may not fit, so the user can add notes.
-                        - Keep prompts short and direct; put tradeoffs in option descriptions or
-                          preview text.
+                        - In OMP, use `ask`. Put the whole frontier in one call. Give every question
+                          a stable `id`, concise `header`, direct `question`, and options with short
+                          tradeoff descriptions. Set `recommended` to the zero-based index of your
+                          recommended option. Use `multi: true` only when several options can be true.
+                        - In Codex, use `request_user_input`. Preserve the whole frontier as the
+                          current round, but split it into calls of at most three questions. Put the
+                          recommended option first and suffix its label with `(Recommended)`; Codex
+                          adds its own free-form Other option.
+                        - In Pi, use `ask_user`. Put the whole frontier in one call. Use `type:
+                          "single"` normally, `type: "multi"` when several answers can be true, and
+                          `type: "preview"` for longer comparisons. Mark the recommended option with
+                          `recommended: true`.
 
-                        If `ask_user` is not available, fall back to asking one question at a time in
-                        plain chat.
+                        Keep dependent questions out of the current frontier. If a Codex round needs
+                        multiple calls, collect every answer in that round before recomputing the
+                        frontier. Only fall back to the Markdown format when none of these structured
+                        tools is available.
                       '';
                   };
 
