@@ -1,10 +1,20 @@
 import json
+import shutil
 import subprocess
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def nix_path() -> str:
+    # Prefer the system-managed nix: older profile/PATH versions ignore the
+    # flake's nixConfig as untrusted and fail on dynamic-derivations.
+    system_nix = Path("/run/current-system/sw/bin/nix")
+    if system_nix.is_file():
+        return str(system_nix)
+    return shutil.which("nix") or "nix"
+
 
 
 class OmpConfigYmlDefaultsTests(unittest.TestCase):
@@ -19,7 +29,7 @@ class OmpModelRoutingTests(unittest.TestCase):
             with self.subTest(role=role):
                 result = subprocess.run(
                     [
-                        "nix",
+                        nix_path(),
                         "eval",
                         "--raw",
                         f".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.{role}",
@@ -39,7 +49,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     ) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp",
@@ -68,7 +78,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_subscription_k3_for_designer(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--raw",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.designer",
@@ -86,7 +96,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_uses_gemini_3_5_flash_for_vision(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--raw",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.modelRoles.vision",
@@ -104,7 +114,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_mactraitorpro_prefers_subscription_k3_before_openrouter(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 ".#darwinConfigurations.MacTraitor-Pro.config.modules.agents.omp.retry.fallbackChains",
@@ -136,7 +146,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_seqeratop_routes_prewalk_and_metadata_roles_separately(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 ".#darwinConfigurations.Seqeratop.config.modules.agents.omp",
@@ -222,7 +232,7 @@ class OmpModelRoutingTests(unittest.TestCase):
     def test_seqeratop_watchdog_uses_one_role_resolved_advisor(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--raw",
                 '.#darwinConfigurations.Seqeratop.config.home-manager.users.edmundmiller.home.file.".omp/agent/WATCHDOG.yml".text',

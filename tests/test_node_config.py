@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import unittest
 from pathlib import Path
@@ -7,14 +8,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def nix_path() -> str:
+    # Prefer the system-managed nix: older profile/PATH versions ignore the
+    # flake's nixConfig as untrusted and fail on dynamic-derivations.
+    system_nix = Path("/run/current-system/sw/bin/nix")
+    if system_nix.is_file():
+        return str(system_nix)
+    return shutil.which("nix") or "nix"
+
+
 class NodeConfigTests(unittest.TestCase):
     def test_bun_global_install_has_global_bin_on_path(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 f"{ROOT}#darwinConfigurations",
+                "--no-write-lock-file",
                 "--apply",
                 """
                 configs: builtins.mapAttrs (_: cfg:
@@ -43,10 +54,11 @@ class NodeConfigTests(unittest.TestCase):
     def test_darwin_node_config_is_nvm_compatible(self) -> None:
         result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 f"{ROOT}#darwinConfigurations",
+                "--no-write-lock-file",
                 "--apply",
                 """
                 configs: builtins.mapAttrs (_: cfg: {

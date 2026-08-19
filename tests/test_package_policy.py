@@ -1,6 +1,7 @@
 import json
 import re
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -41,7 +42,7 @@ class PackagePolicyTest(unittest.TestCase):
 
         validated = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 ROOT / "bin/import-renovate-patch-repair",
                 "hunk",
                 ROOT,
@@ -70,7 +71,7 @@ class PackagePolicyTest(unittest.TestCase):
 
         validated = subprocess.run(
             [
-                "python3",
+                sys.executable,
                 ROOT / "bin/import-renovate-patch-repair",
                 "herdr",
                 ROOT,
@@ -87,7 +88,7 @@ class PackagePolicyTest(unittest.TestCase):
             trusted.write_text(json.dumps({**metadata, "checks": [["false"]]}) + "\n")
             rejected = subprocess.run(
                 [
-                    "python3",
+                    sys.executable,
                     ROOT / "bin/import-renovate-patch-repair",
                     "herdr",
                     ROOT,
@@ -219,7 +220,7 @@ class PackagePolicyTest(unittest.TestCase):
             (source / "overlays/hunk/patches/0002-add.patch").write_text("add\n")
 
             imported = subprocess.run(
-                ["python3", script, "hunk", source, destination],
+                [sys.executable, script, "hunk", source, destination],
                 capture_output=True,
                 text=True,
             )
@@ -242,7 +243,7 @@ class PackagePolicyTest(unittest.TestCase):
             )
             (source / "overlays/hunk/patches/not-a-patch.txt").write_text("reject\n")
             rejected_extra = subprocess.run(
-                ["python3", script, "hunk", source, destination],
+                [sys.executable, script, "hunk", source, destination],
                 capture_output=True,
                 text=True,
             )
@@ -296,7 +297,7 @@ class PackagePolicyTest(unittest.TestCase):
             )
 
             imported = subprocess.run(
-                ["python3", script, "herdr", source, destination],
+                [sys.executable, script, "herdr", source, destination],
                 capture_output=True,
                 text=True,
             )
@@ -323,7 +324,7 @@ class PackagePolicyTest(unittest.TestCase):
             (source / "overlays/herdr/default.nix").unlink()
             (source / "overlays/herdr/default.nix").symlink_to("/etc/passwd")
             rejected_symlink = subprocess.run(
-                ["python3", script, "herdr", source],
+                [sys.executable, script, "herdr", source],
                 capture_output=True,
                 text=True,
             )
