@@ -1,8 +1,8 @@
-diff --git i/src/ghostty/mod.rs w/src/ghostty/mod.rs
-index 685c073..1e18093 100644
---- i/src/ghostty/mod.rs
-+++ w/src/ghostty/mod.rs
-@@ -878,6 +878,15 @@ impl Terminal {
+diff --git a/src/ghostty/mod.rs b/src/ghostty/mod.rs
+index cea7c283..cd139a7c 100644
+--- a/src/ghostty/mod.rs
++++ b/src/ghostty/mod.rs
+@@ -915,6 +915,15 @@ impl Terminal {
              cell_width: cell_width_px,
              cell_height: cell_height_px,
          };
@@ -18,7 +18,7 @@ index 685c073..1e18093 100644
          // SAFETY: self.raw is valid and sizes are plain values.
          unsafe {
              ffi::ghostty_terminal_resize(
-@@ -3232,6 +3241,19 @@ mod tests {
+@@ -3295,6 +3304,19 @@ mod tests {
          out
      }
  

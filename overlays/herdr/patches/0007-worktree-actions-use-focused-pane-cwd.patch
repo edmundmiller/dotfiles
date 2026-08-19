@@ -1,8 +1,10 @@
---- i/src/app/worktrees.rs
-+++ w/src/app/worktrees.rs
-@@ -38,6 +38,13 @@
+diff --git a/src/app/worktrees.rs b/src/app/worktrees.rs
+index 0087c8fe..b5211294 100644
+--- a/src/app/worktrees.rs
++++ b/src/app/worktrees.rs
+@@ -37,6 +37,13 @@ impl App {
          }
-
+ 
          let git_space = ws.git_space().cloned().or_else(|| {
 +            ws.focused_pane_id()
 +                .and_then(|pane_id| ws.active_tab().and_then(|tab| {
@@ -14,4 +16,3 @@
              ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
                  .as_deref()
                  .and_then(crate::workspace::git_space_metadata)
-         });
