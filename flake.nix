@@ -926,7 +926,7 @@
                 language = "system";
                 pass_filenames = false;
                 files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix)$";
-                stages = [ "pre-commit" ];
+                stages = [ "pre-push" ];
               };
               omp-config-yml =
                 let

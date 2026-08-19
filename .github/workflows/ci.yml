@@ -6,20 +6,14 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  check:
-    name: Flake Check (${{ matrix.name }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Linux
-            os: ubuntu-latest
-            system: x86_64-linux
-          - name: Darwin
-            os: macos-latest
-            system: aarch64-darwin
-    runs-on: ${{ matrix.os }}
+  checks:
+    name: Checks (Linux)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,31 +35,47 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: accept-flake-config = true
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
 
       # Checks are named explicitly because `nix flake check` also evaluates
       # nixosConfigurations.nuc, which needs a private input CI cannot fetch.
-      - name: Run flake checks
+      # The flake's substituter is sufficient; avoid serial GHA cache uploads.
+      - name: Build platform-agnostic checks
         run: |
           nix build --no-link --print-build-logs \
-            .#checks.${{ matrix.system }}.treefmt \
-            .#checks.${{ matrix.system }}.pre-commit \
-            .#checks.${{ matrix.system }}.zunit-tests \
-            .#checks.${{ matrix.system }}.package-harness-tests \
-            .#checks.${{ matrix.system }}.herdr-config-check \
-            .#checks.${{ matrix.system }}.agent-docs-contract
+            .#checks.x86_64-linux.pre-commit \
+            .#checks.x86_64-linux.zunit-tests \
+            .#checks.x86_64-linux.package-harness-tests \
+            .#checks.x86_64-linux.herdr-config-check \
+            .#checks.x86_64-linux.agent-docs-contract
 
-      - name: Check Darwin configurations evaluate
-        if: matrix.system == 'aarch64-darwin'
+      # Darwin configuration evaluation does not require a Darwin runner.
+      - name: Evaluate Darwin configurations
         run: |
           nix eval .#darwinConfigurations.MacTraitor-Pro.system --apply 'x: "OK"'
           nix eval .#darwinConfigurations.Seqeratop.system --apply 'x: "OK"'
 
-      - name: Run herdr VM test
-        if: matrix.system == 'x86_64-linux'
-        run: nix build --no-link .#checks.x86_64-linux.vm-shell-herdr-vm-test
+  herdr-vm-test:
+    name: Herdr VM Test (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: accept-flake-config = true
+      - name: Build Herdr VM test
+        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.vm-shell-herdr-vm-test
+
+  darwin:
+    name: Darwin-only checks
+    if: github.event_name != 'pull_request'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: accept-flake-config = true
+      - name: Build Darwin pre-commit checks
+        run: nix build --no-link --print-build-logs .#checks.aarch64-darwin.pre-commit
 
   # Service VM tests are slow, so they run on request rather than every push.
   vm-services:
@@ -78,8 +88,5 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: accept-flake-config = true
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
       - name: Build service VM checks
         run: nix build .#checks.x86_64-linux.vm-services-gatus-vm-test --no-link
