@@ -36,8 +36,11 @@ timestamped branch.
 - All retained Herdr and OMP patches passed `git apply --check` from fresh,
   clean upstream checkouts at the target revisions.
 - The overlaid Herdr package built successfully on Linux as
-  `herdr-0.8.1`; the OMP Cargo vendor derivation realized successfully with
-  the refreshed hash.
+  `herdr-0.8.1`, and the overlaid OMP package built successfully as
+  `omp-17.3.5`.
+- `pkg-check` was not run: the `nix develop` shell stalled materializing a
+  very large cross-platform closure.
+- No Darwin configuration was evaluated.
 
 ## Reviews
 
@@ -55,5 +58,6 @@ None.
 
 ## Commits
 
-Three one-intent commits were created on the requested branch; their hashes
-are reported in the handoff.
+One-intent commits on the requested branch: Herdr bump, llm-agents input bump,
+OMP overlay patch/hash refresh, and a follow-up restoring the `github` lock
+type for the `llm-agents` node.
