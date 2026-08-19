@@ -1,6 +1,6 @@
 # Worklog: ci-speedup
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -50,9 +50,9 @@ start here.
 
 ## Remaining work
 
-Review, commit, and push. The VM check requires a runner with Nix `kvm`
-feature access.
+The VM check requires a runner with Nix `kvm` feature access; no source
+changes remain.
 
 ## Commits
 
-None.
+- `227e9645` — `ci: speed up GitHub Actions checks`
