@@ -8,8 +8,7 @@ config-file = macos.conf
 config-file = keybindings.conf
 
 # WORKSPACE OWNER INTEGRATION:
-# The base keybindings target tmux. Herdr-enabled hosts append overrides for
-# Herdr's ctrl+space prefix, while the Nix module selects the startup owner.
+# The base keybindings target tmux; the Nix module selects the startup owner.
 #
 # For reference, Ghostty native tmux-style bindings are archived in:
 # tmux-style-keybindings.conf.disabled

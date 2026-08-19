@@ -43,8 +43,8 @@ kitty_graphics = true
 
 [keys]
 # Show upstream defaults with: herdr --default-config
-# Keep the Herdr prefix distinct from terminal interrupt and tmux bindings.
-prefix = "ctrl+space"
+# Keep tmux-style muscle memory for equivalent Herdr actions.
+prefix = "ctrl+c"
 settings = "prefix+comma"
 reload_config = "prefix+ctrl+r"
 workspace_picker = "prefix+w"

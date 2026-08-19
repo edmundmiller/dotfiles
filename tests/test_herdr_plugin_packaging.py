@@ -182,9 +182,9 @@ def test_native_session_context_replaces_window_title_plugin() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
 
-    assert config["keys"]["prefix"] == "ctrl+space"
+    assert config["keys"]["prefix"] == "ctrl+c"
     assert "herdrConfigTemplate = cfg.configFile;" in module
-    assert 'prefix = "ctrl+space"' not in module
+    assert 'prefix = "ctrl+c"' not in module
     assert "prefix = mkOpt" not in module
     assert 'managed_keys["prefix"]' not in module
     assert config["ui"]["pane_outer_borders"] is False

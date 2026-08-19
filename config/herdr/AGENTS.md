@@ -49,7 +49,7 @@ Current preferred keys:
 
 ```toml
 [keys]
-prefix = "ctrl+space"
+prefix = "ctrl+c"
 settings = "prefix+comma"
 reload_config = "prefix+ctrl+r"
 workspace_picker = "prefix+w"
