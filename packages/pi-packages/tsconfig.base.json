@@ -2,6 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@mariozechner/clipboard": [
+        "./pi-bash-live-view/node_modules/@mariozechner/clipboard/index.d.ts"
+      ],
       "@mariozechner/pi-coding-agent": [
         "./pi-bash-live-view/node_modules/@mariozechner/pi-coding-agent/dist/index.d.ts"
       ],

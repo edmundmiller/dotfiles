@@ -33,6 +33,9 @@
     "task-management",
     "tui"
   ],
+  "dependencies": {
+    "@mariozechner/clipboard": "^0.3.2"
+  },
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*",
     "@mariozechner/pi-tui": "*"

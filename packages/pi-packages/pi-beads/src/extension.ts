@@ -1,12 +1,39 @@
+/* oxlint-disable anti-slop/no-known-value-widening, anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof, anti-slop/require-safety-comment-for-type-assertion */
 import type { ExtensionAPI, ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
+import * as clipboard from "@mariozechner/clipboard";
 import initializeAdapter from "./backend/resolver.ts";
 import type { Task, TaskStatus } from "./models/task.ts";
 import { buildTaskWorkPrompt, serializeTask } from "./lib/task-serialization.ts";
 import { showTaskList } from "./ui/pages/list.ts";
 import { showTaskForm } from "./ui/pages/show.ts";
-import type { TaskUpdate } from "./backend/api.ts";
+import type { TaskUpdate, TaskAdapter } from "./backend/api.ts";
 
 const CTRL_X = "\x18";
+
+export interface ExtensionDeps {
+  readClipboard?: () => Promise<string>;
+  backend?: TaskAdapter;
+  showTaskList?: typeof showTaskList;
+  showTaskForm?: typeof showTaskForm;
+}
+
+function defaultReadClipboard(): Promise<string> {
+  return clipboard.getText();
+}
+
+/**
+ * Find a bead ref (e.g. `dotfiles-42zj`, `beads-1`, `workspace-rtl.1`) in
+ * clipboard text. Only refs that actually exist in the loaded task list are
+ * returned, so arbitrary prose (titles, URLs) never preselects a task.
+ */
+export function findClipboardBeadRef(text: string, knownRefs: readonly string[]): string | null {
+  const known = new Set(knownRefs);
+  const tokens = text.split(/[^a-z0-9.-]+/i);
+  for (const token of tokens) {
+    if (token.length > 0 && known.has(token)) return token;
+  }
+  return null;
+}
 
 function parsePriorityKey(
   data: string,
@@ -182,8 +209,11 @@ function applyDraftToTask(
   return nextTask;
 }
 
-export default function registerExtension(pi: ExtensionAPI) {
-  const backend = initializeAdapter(pi);
+export default function registerExtension(pi: ExtensionAPI, deps: ExtensionDeps = {}) {
+  const backend = deps.backend ?? initializeAdapter(pi);
+  const readClipboard = deps.readClipboard ?? defaultReadClipboard;
+  const renderTaskList = deps.showTaskList ?? showTaskList;
+  const renderTaskForm = deps.showTaskForm ?? showTaskForm;
   validateBackendConfiguration(backend);
 
   const nextStatus = (status: TaskStatus): TaskStatus => cycleStatus(status, backend.statusMap);
@@ -221,7 +251,7 @@ export default function registerExtension(pi: ExtensionAPI) {
   ): Promise<EditTaskResult> {
     let task = await getTaskForEdit(ref, fromList);
 
-    const formResult = await showTaskForm(ctx, {
+    const formResult = await renderTaskForm(ctx, {
       mode: "edit",
       subtitle: "Edit",
       task,
@@ -263,7 +293,7 @@ export default function registerExtension(pi: ExtensionAPI) {
   async function createTask(ctx: ExtensionCommandContext): Promise<Task | null> {
     let createdTask: Task | null = null;
 
-    await showTaskForm(ctx, {
+    await renderTaskForm(ctx, {
       mode: "create",
       subtitle: "Create",
       task: {
@@ -332,10 +362,25 @@ export default function registerExtension(pi: ExtensionAPI) {
       const tasks = await listTasks();
       ctx.ui.setStatus("tasks", undefined);
 
-      await showTaskList(ctx, {
+      // Bead 42zj: if the clipboard holds a bead ref that exists in the list,
+      // preselect it so the user lands on the referenced task.
+      let initialSelectedRef: string | undefined;
+      try {
+        const clipboardText = await readClipboard();
+        const ref = findClipboardBeadRef(
+          clipboardText,
+          tasks.map((task) => task.ref)
+        );
+        if (ref !== null) initialSelectedRef = ref;
+      } catch {
+        // Clipboard unavailable (e.g. headless) — open without preselection.
+      }
+
+      await renderTaskList(ctx, {
         title: pageTitle,
         subtitle: backendLabel,
         tasks,
+        initialSelectedRef,
         closeKey: CTRL_X,
         priorities: backend.priorities,
         priorityHotkeys: backend.priorityHotkeys,

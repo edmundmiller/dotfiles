@@ -27,6 +27,7 @@ export interface ListPageConfig {
   title: string;
   subtitle?: string;
   tasks: Task[];
+  initialSelectedRef?: string;
   allowPriority?: boolean;
   allowSearch?: boolean;
   filterTerm?: string;
@@ -86,7 +87,7 @@ export async function showTaskList(
 
   const displayTasks = [...tasks];
   let filterTerm = config.filterTerm || "";
-  let rememberedSelectedRef: string | undefined;
+  let rememberedSelectedRef: string | undefined = config.initialSelectedRef;
 
   while (true) {
     const visible = filterTerm

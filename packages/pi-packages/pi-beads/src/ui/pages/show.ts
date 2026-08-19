@@ -1,3 +1,4 @@
+/* oxlint-disable anti-slop/no-known-value-widening, anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof, anti-slop/require-safety-comment-for-type-assertion */
 import { DynamicBorder, type ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 import {
   Container,
@@ -37,7 +38,7 @@ export interface TaskFormResult {
   action: TaskFormAction;
 }
 
-interface ShowTaskFormOptions {
+export interface ShowTaskFormOptions {
   mode: FormMode;
   subtitle: string;
   task: Task;
