@@ -1,3 +1,4 @@
+/* oxlint-disable anti-slop/no-known-value-widening, anti-slop/no-unknown-parameters, anti-slop/no-runtime-typeof, anti-slop/require-safety-comment-for-type-assertion */
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -48,6 +49,19 @@ interface BeadsIssue {
   dependency_count?: number;
   dependent_count?: number;
   comment_count?: number;
+}
+
+function isBeadsIssue(value: unknown): value is BeadsIssue {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    "title" in value &&
+    typeof value.title === "string" &&
+    "status" in value &&
+    typeof value.status === "string"
+  );
 }
 
 function toPriorityLabel(value: number | undefined): string | undefined {
@@ -170,7 +184,27 @@ function parseJsonArray<T>(stdout: string, context: string): T[] {
     return parsed as T[];
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    throw new Error(`Failed to parse bd output (${context}): ${msg}`);
+    throw new Error(`Failed to parse br output (${context}): ${msg}`);
+  }
+}
+
+function parseIssueList(stdout: string, context: string): BeadsIssue[] {
+  try {
+    const parsed: unknown = JSON.parse(stdout);
+    if (
+      parsed === null ||
+      Array.isArray(parsed) ||
+      typeof parsed !== "object" ||
+      !("issues" in parsed) ||
+      !Array.isArray(parsed.issues) ||
+      !parsed.issues.every(isBeadsIssue)
+    ) {
+      throw new Error("expected JSON object with issues array");
+    }
+    return parsed.issues;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Failed to parse br output (${context}): ${msg}`);
   }
 }
 
@@ -183,14 +217,14 @@ function parseJsonObject<T>(stdout: string, context: string): T {
     return parsed as T;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    throw new Error(`Failed to parse bd output (${context}): ${msg}`);
+    throw new Error(`Failed to parse br output (${context}): ${msg}`);
   }
 }
 
 function isApplicable(): boolean {
   if (!existsSync(resolve(process.cwd(), ".beads"))) return false;
 
-  const result = spawnSync("bd", ["--version"], {
+  const result = spawnSync("br", ["--version"], {
     stdio: "ignore",
   });
 
@@ -198,12 +232,12 @@ function isApplicable(): boolean {
 }
 
 function initialize(pi: ExtensionAPI): TaskAdapter {
-  async function execBd(args: string[], timeout = 30_000): Promise<string> {
-    const result = await pi.exec("bd", args, { timeout });
+  async function execBr(args: string[], timeout = 30_000): Promise<string> {
+    const result = await pi.exec("br", args, { timeout });
     if (result.code !== 0) {
       const details = (result.stderr || result.stdout || "").trim();
       throw new Error(
-        details.length > 0 ? details : `bd ${args.join(" ")} failed (code ${result.code})`
+        details.length > 0 ? details : `br ${args.join(" ")} failed (code ${result.code})`
       );
     }
     return result.stdout;
@@ -213,7 +247,7 @@ function initialize(pi: ExtensionAPI): TaskAdapter {
     const args = fromTaskUpdateToBeadsArgs(update);
     if (args.length === 0) return;
 
-    await execBd(["update", ref, ...args]);
+    await execBr(["update", ref, ...args]);
   }
 
   return {
@@ -224,14 +258,14 @@ function initialize(pi: ExtensionAPI): TaskAdapter {
     priorityHotkeys: PRIORITY_HOTKEYS,
 
     async list(): Promise<Task[]> {
-      // Sequential — bd uses dolt, which panics on concurrent DB access
-      const openOut = await execBd(makeListArgs(STATUS_MAP.open));
-      const inProgressOut = await execBd(makeListArgs(STATUS_MAP.inProgress!));
-      const blockedOut = await execBd(makeListArgs(STATUS_MAP.blocked!));
+      // Sequential — br uses dolt, which panics on concurrent DB access
+      const openOut = await execBr(makeListArgs(STATUS_MAP.open));
+      const inProgressOut = await execBr(makeListArgs(STATUS_MAP.inProgress!));
+      const blockedOut = await execBr(makeListArgs(STATUS_MAP.blocked!));
 
-      const openIssues = parseJsonArray<BeadsIssue>(openOut, "list open");
-      const inProgressIssues = parseJsonArray<BeadsIssue>(inProgressOut, "list in_progress");
-      const blockedIssues = parseJsonArray<BeadsIssue>(blockedOut, "list blocked");
+      const openIssues = parseIssueList(openOut, "list open");
+      const inProgressIssues = parseIssueList(inProgressOut, "list in_progress");
+      const blockedIssues = parseIssueList(blockedOut, "list blocked");
 
       const dedupedById = new Map<string, Task>();
       for (const issue of [...inProgressIssues, ...openIssues, ...blockedIssues]) {
@@ -242,7 +276,7 @@ function initialize(pi: ExtensionAPI): TaskAdapter {
     },
 
     async show(ref: string): Promise<Task> {
-      const out = await execBd(["show", ref, "--json"]);
+      const out = await execBr(["show", ref, "--json"]);
       const beadsIssues = parseJsonArray<BeadsIssue>(out, `show ${ref}`);
       const task = beadsIssues[0];
       if (!task) throw new Error(`Task not found: ${ref}`);
@@ -274,7 +308,7 @@ function initialize(pi: ExtensionAPI): TaskAdapter {
         createArgs.splice(3, 0, "--due", input.dueAt);
       }
 
-      const out = await execBd(createArgs);
+      const out = await execBr(createArgs);
       const created = toTask(parseJsonObject<BeadsIssue>(out, "create"));
 
       if (status !== "open") {

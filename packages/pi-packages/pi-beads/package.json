@@ -1,7 +1,7 @@
 {
   "name": "pi-beads",
   "version": "0.2.0",
-  "description": "pi extension for beads (bd) task management",
+  "description": "pi extension for beads (br) task management",
   "type": "module",
   "license": "MIT",
   "repository": {

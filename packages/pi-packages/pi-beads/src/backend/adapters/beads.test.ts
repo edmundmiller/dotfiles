@@ -1,14 +1,15 @@
+/* oxlint-disable anti-slop/no-known-value-widening, anti-slop/no-unknown-parameters, anti-slop/require-safety-comment-for-type-assertion */
 /**
- * Tests for the beads (bd) adapter.
+ * Tests for the beads (br) adapter.
  *
  * Internal pure functions are tested indirectly via the public adapter interface.
- * pi.exec is mocked to avoid requiring a real bd installation.
+ * pi.exec is mocked to avoid requiring a real br installation.
  */
 
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 
 // ---- Module mocks (hoisted before imports) ----
-// These let us control isApplicable() without a real filesystem or bd binary.
+// These let us control isApplicable() without a real filesystem or br binary.
 
 const fsMock = {
   existsSync: (_path: string): boolean => false,
@@ -55,7 +56,7 @@ function makePi(handler: ExecHandler) {
   return pi;
 }
 
-/** A beads issue fixture for use in mock bd responses. */
+/** A beads issue fixture for use in mock br responses. */
 function makeIssue(
   overrides: Partial<{
     id: string;
@@ -81,10 +82,14 @@ function makeIssue(
   };
 }
 
+function listResponse(...issues: unknown[]): string {
+  return JSON.stringify({ issues });
+}
+
 // ---- Status mapping tests ----
 
 describe("fromBackendStatus (via list/show)", () => {
-  test("maps bd statuses to internal statuses", async () => {
+  test("maps br statuses to internal statuses", async () => {
     const cases: [string, TaskStatus][] = [
       ["open", "open"],
       ["in_progress", "inProgress"],
@@ -93,16 +98,16 @@ describe("fromBackendStatus (via list/show)", () => {
       ["closed", "closed"],
     ];
 
-    for (const [bdStatus, expectedInternal] of cases) {
-      const issue = makeIssue({ status: bdStatus });
+    for (const [brStatus, expectedInternal] of cases) {
+      const issue = makeIssue({ status: brStatus });
       const pi = makePi(() => ({ code: 0, stdout: JSON.stringify([issue]), stderr: "" }));
       const adapter = beadsAdapter.initialize(pi as any);
       const task = await adapter.show("beads-1");
-      expect(task.status, `mapping '${bdStatus}'`).toBe(expectedInternal);
+      expect(task.status, `mapping '${brStatus}'`).toBe(expectedInternal);
     }
   });
 
-  test("unknown bd status falls back to 'open'", async () => {
+  test("unknown br status falls back to 'open'", async () => {
     const issue = makeIssue({ status: "future_unknown_status" });
     const pi = makePi(() => ({ code: 0, stdout: JSON.stringify([issue]), stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
@@ -114,8 +119,8 @@ describe("fromBackendStatus (via list/show)", () => {
 // ---- list() ----
 
 describe("list()", () => {
-  test("fires exactly 3 bd calls: open, in_progress, blocked", async () => {
-    const pi = makePi(() => ({ code: 0, stdout: "[]", stderr: "" }));
+  test("fires exactly 3 br calls: open, in_progress, blocked", async () => {
+    const pi = makePi(() => ({ code: 0, stdout: listResponse(), stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
     await adapter.list();
 
@@ -142,12 +147,11 @@ describe("list()", () => {
 
     const pi = makePi((_cmd, args) => {
       const status = args[2];
-      if (status === "open") return { code: 0, stdout: JSON.stringify([openIssue]), stderr: "" };
+      if (status === "open") return { code: 0, stdout: listResponse(openIssue), stderr: "" };
       if (status === "in_progress")
-        return { code: 0, stdout: JSON.stringify([inProgressIssue]), stderr: "" };
-      if (status === "blocked")
-        return { code: 0, stdout: JSON.stringify([blockedIssue]), stderr: "" };
-      return { code: 0, stdout: "[]", stderr: "" };
+        return { code: 0, stdout: listResponse(inProgressIssue), stderr: "" };
+      if (status === "blocked") return { code: 0, stdout: listResponse(blockedIssue), stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);
@@ -167,9 +171,9 @@ describe("list()", () => {
 
     const pi = makePi((_cmd, args) => {
       const status = args[2];
-      if (status === "open") return { code: 0, stdout: JSON.stringify([asOpen]), stderr: "" };
-      if (status === "blocked") return { code: 0, stdout: JSON.stringify([asBlocked]), stderr: "" };
-      return { code: 0, stdout: "[]", stderr: "" };
+      if (status === "open") return { code: 0, stdout: listResponse(asOpen), stderr: "" };
+      if (status === "blocked") return { code: 0, stdout: listResponse(asBlocked), stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);
@@ -188,11 +192,10 @@ describe("list()", () => {
 
     const pi = makePi((_cmd, args) => {
       const status = args[2];
-      if (status === "in_progress")
-        return { code: 0, stdout: JSON.stringify([tasks[2]]), stderr: "" };
-      if (status === "open") return { code: 0, stdout: JSON.stringify([tasks[1]]), stderr: "" };
-      if (status === "blocked") return { code: 0, stdout: JSON.stringify([tasks[0]]), stderr: "" };
-      return { code: 0, stdout: "[]", stderr: "" };
+      if (status === "in_progress") return { code: 0, stdout: listResponse(tasks[2]), stderr: "" };
+      if (status === "open") return { code: 0, stdout: listResponse(tasks[1]), stderr: "" };
+      if (status === "blocked") return { code: 0, stdout: listResponse(tasks[0]), stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);
@@ -212,8 +215,8 @@ describe("list()", () => {
 
     const pi = makePi((_cmd, args) => {
       const status = args[2];
-      if (status === "open") return { code: 0, stdout: JSON.stringify(issues), stderr: "" };
-      return { code: 0, stdout: "[]", stderr: "" };
+      if (status === "open") return { code: 0, stdout: listResponse(...issues), stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);
@@ -232,8 +235,8 @@ describe("list()", () => {
 
     const pi = makePi((_cmd, args) => {
       const status = args[2];
-      if (status === "open") return { code: 0, stdout: JSON.stringify(issues), stderr: "" };
-      return { code: 0, stdout: "[]", stderr: "" };
+      if (status === "open") return { code: 0, stdout: listResponse(...issues), stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);
@@ -247,7 +250,7 @@ describe("list()", () => {
 // ---- show() ----
 
 describe("show()", () => {
-  test("calls bd show <ref> --json", async () => {
+  test("calls br show <ref> --json", async () => {
     const issue = makeIssue({ id: "beads-42" });
     const pi = makePi(() => ({ code: 0, stdout: JSON.stringify([issue]), stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
@@ -255,10 +258,11 @@ describe("show()", () => {
     await adapter.show("beads-42");
 
     expect(pi._calls.length).toBe(1);
+    expect(pi._calls[0].cmd).toBe("br");
     expect(pi._calls[0].args).toEqual(["show", "beads-42", "--json"]);
   });
 
-  test("maps all bd issue fields onto Task", async () => {
+  test("maps all br issue fields onto Task", async () => {
     const issue = makeIssue({
       id: "beads-7",
       title: "My task",
@@ -281,7 +285,7 @@ describe("show()", () => {
     expect(task.owner).toBe("alice");
   });
 
-  test("throws when bd returns empty array (task not found)", async () => {
+  test("throws when br returns empty array (task not found)", async () => {
     const pi = makePi(() => ({ code: 0, stdout: "[]", stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
 
@@ -324,8 +328,8 @@ describe("create()", () => {
     expect(args[args.indexOf("--description") + 1]).toBe("Details here");
   });
 
-  test("does NOT include --priority in bd calls without sort flag (regression: bd nil-ptr panic)", async () => {
-    // The panic was caused by --sort priority being passed to bd when tasks have null priority.
+  test("does NOT include --priority in br calls without sort flag (regression: br nil-ptr panic)", async () => {
+    // The panic was caused by --sort priority being passed to br when tasks have null priority.
     // Verify we never send --sort in any create/list call.
     const created = makeIssue({ id: "beads-new" });
     const pi = makePi(() => ({ code: 0, stdout: JSON.stringify(created), stderr: "" }));
@@ -338,8 +342,8 @@ describe("create()", () => {
     }
   });
 
-  test("list() calls never pass --sort flag (regression: bd nil-ptr panic)", async () => {
-    const pi = makePi(() => ({ code: 0, stdout: "[]", stderr: "" }));
+  test("list() calls never pass --sort flag (regression: br nil-ptr panic)", async () => {
+    const pi = makePi(() => ({ code: 0, stdout: listResponse(), stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
     await adapter.list();
 
@@ -457,15 +461,15 @@ describe("isApplicable()", () => {
     expect(beadsAdapter.isApplicable()).toBe(false);
   });
 
-  test("returns true when .beads/ exists and bd is in PATH", () => {
+  test("returns true when .beads/ exists and br is in PATH", () => {
     fsMock.existsSync = () => true;
     childProcessMock.spawnSync = () => ({ error: null });
     expect(beadsAdapter.isApplicable()).toBe(true);
   });
 
-  test("returns false when .beads/ exists but bd is not in PATH", () => {
+  test("returns false when .beads/ exists but br is not in PATH", () => {
     fsMock.existsSync = () => true;
-    childProcessMock.spawnSync = () => ({ error: new Error("command not found: bd") });
+    childProcessMock.spawnSync = () => ({ error: new Error("command not found: br") });
     expect(beadsAdapter.isApplicable()).toBe(false);
   });
 });
@@ -474,11 +478,11 @@ describe("isApplicable()", () => {
 
 describe("error handling", () => {
   /**
-   * Regression: bd panics with a nil-pointer dereference when tasks have null priority
+   * Regression: br panics with a nil-pointer dereference when tasks have null priority
    * and --sort priority was passed. The stderr panic message must surface as an Error
    * so the user knows what went wrong (not a silent failure or empty error).
    */
-  test("bd Go panic on stderr propagates as Error with full message", async () => {
+  test("br Go panic on stderr propagates as Error with full message", async () => {
     const panicMsg = [
       "panic: runtime error: invalid memory address or nil pointer dereference",
       "[signal SIGSEGV: segmentation violation code=0x2 addr=0x0 pc=0x106cbc7dc]",
@@ -496,7 +500,7 @@ describe("error handling", () => {
     expect(error.message).toContain("nil pointer dereference");
   });
 
-  test("bd non-zero exit with stdout fallback surfaces stdout when stderr empty", async () => {
+  test("br non-zero exit with stdout fallback surfaces stdout when stderr empty", async () => {
     const pi = makePi(() => ({ code: 1, stdout: "something went wrong", stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
 
@@ -505,7 +509,7 @@ describe("error handling", () => {
     expect(error.message).toContain("something went wrong");
   });
 
-  test("bd non-zero exit with no output includes command info", async () => {
+  test("br non-zero exit with no output includes command info", async () => {
     const pi = makePi(() => ({ code: 1, stdout: "", stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
 
@@ -515,34 +519,33 @@ describe("error handling", () => {
     expect(error.message).toContain("1"); // exit code
   });
 
-  test("malformed JSON from bd throws descriptive parse error", async () => {
+  test("malformed JSON from br throws descriptive parse error", async () => {
     const pi = makePi(() => ({ code: 0, stdout: "not valid json {{}", stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
 
     const error = await adapter.list().catch((e) => e);
     expect(error).toBeInstanceOf(Error);
-    expect(error.message).toContain("Failed to parse bd output");
+    expect(error.message).toContain("Failed to parse br output");
   });
 
-  test("non-array JSON from bd list throws descriptive error", async () => {
+  test("JSON without an issues array from br list throws descriptive error", async () => {
     const pi = makePi(() => ({ code: 0, stdout: '{"not": "an array"}', stderr: "" }));
     const adapter = beadsAdapter.initialize(pi as any);
 
     const error = await adapter.list().catch((e) => e);
     expect(error).toBeInstanceOf(Error);
-    expect(error.message).toContain("Failed to parse bd output");
+    expect(error.message).toContain("Failed to parse br output");
   });
 
-  test("panic from in_progress bd call propagates out of list()", async () => {
-    // This specifically tests that Promise.all() properly rejects when one of the
-    // three parallel bd calls panics — the panic should not be swallowed.
+  test("panic from in_progress br call propagates out of list()", async () => {
+    // The three sequential status calls must propagate a panic rather than swallowing it.
     const panicMsg = "panic: runtime error: invalid memory address or nil pointer dereference";
 
     const pi = makePi((_cmd, args) => {
       if (args[2] === "in_progress") {
         return { code: 2, stdout: "", stderr: panicMsg };
       }
-      return { code: 0, stdout: "[]", stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);
@@ -556,11 +559,11 @@ describe("error handling", () => {
 
 describe("dolt concurrency (regression)", () => {
   /**
-   * Regression: bd uses dolt as its database backend. Running 3 bd processes
+   * Regression: br uses dolt as its database backend. Running 3 br processes
    * in parallel (Promise.all) causes a race in DoltDB.SetCrashOnFatalError,
    * resulting in a SIGSEGV nil-pointer panic. The fix is sequential execution.
    */
-  test("list() calls bd sequentially, not in parallel", async () => {
+  test("list() calls br sequentially, not in parallel", async () => {
     // Track call order — each call must START after the previous FINISHED.
     // We simulate async delay to catch if calls overlap.
     const timeline: { status: string; event: "start" | "end"; time: number }[] = [];
@@ -573,7 +576,7 @@ describe("dolt concurrency (regression)", () => {
       // Simulate async work (if parallel, starts would bunch before ends)
       await new Promise((r) => setTimeout(r, 5));
       timeline.push({ status, event: "end", time: idx });
-      return { code: 0, stdout: "[]", stderr: "" };
+      return { code: 0, stdout: listResponse(), stderr: "" };
     });
 
     const adapter = beadsAdapter.initialize(pi as any);

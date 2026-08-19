@@ -1,19 +1,19 @@
 # @edmundmiller/pi-beads
 
-pi extension for [beads (bd)](https://github.com/steveyegge/beads) task management.
+pi extension for [beads (`br`)](https://github.com/Dicklesworthstone/beads_rust) task management.
 
-Fork of [@soleone/pi-tasks](https://github.com/Soleone/pi-tasks) stripped down to beads-only, with bd 0.55+ support.
+Fork of [@soleone/pi-tasks](https://github.com/Soleone/pi-tasks) stripped down to beads-only, with `br` support.
 
 ## Changes from upstream
 
 - **beads-only**: removed todo-md adapter and generic resolver
-- **bd 0.55+**: added `blocked` and `deferred` status support
+- **br**: added `blocked` and `deferred` status support
 - **list view**: includes blocked tasks alongside open/in-progress
 
 ## Requirements
 
-- `bd` CLI in PATH
-- `.beads/` directory in project (run `bd init` once)
+- `br` CLI in PATH
+- `.beads/` directory in project (run `br init` once)
 
 ## Quick start
 
