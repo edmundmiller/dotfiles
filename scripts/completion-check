@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# Keep the checker independent of stale inherited Nix paths (mirrors bin/hey):
+# the official-installer profile at /nix/var/nix/profiles/default (2.25) shadows
+# the nix-darwin-managed nix in /run/current-system/sw (2.35) on PATH, and the
+# older nix rejects the committed skills-catalog path input when updating the
+# lock. Prefer the system-managed toolchain so regression tests that invoke
+# `nix` (test_node_config, test_omp_model_routing) always use it.
+export PATH="/run/current-system/sw/bin:$PATH"
+
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root" || exit 1
 

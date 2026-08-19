@@ -104,6 +104,39 @@ class CompletionHookTests(unittest.TestCase):
         self.assertEqual(result.stderr, "python output\n")
         self.assertEqual(commands, ["python -m unittest discover -s tests -p test_*.py"])
 
+    def test_shared_checker_prefers_system_nix_path(self):
+        # The official-installer profile nix (2.25) shadows the nix-darwin
+        # system nix (2.35) on ambient PATH, and the older nix rejects the
+        # committed skills-catalog path input when updating the lock. The
+        # checker must run tests with the system-managed toolchain first,
+        # mirroring bin/hey.
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = pathlib.Path(directory)
+            log = temporary / "commands.log"
+            python = write_command(temporary, "python")
+            hey = write_command(temporary, "hey")
+            result = subprocess.run(
+                ["bash", str(CHECKER)],
+                cwd=temporary,
+                env={
+                    **os.environ,
+                    "COMPLETION_CHECK_HEY": str(hey),
+                    "COMPLETION_CHECK_PYTHON": str(python),
+                    "COMPLETION_TEST_LOG": str(log),
+                    "PATH": "/nix/var/nix/profiles/default/bin:/usr/bin:/bin",
+                },
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                log.read_text().splitlines(),
+                [
+                    "python -m unittest discover -s tests -p test_*.py",
+                    "hey check",
+                ],
+            )
+
     def test_shared_checker_reports_hey_failure(self):
         result, commands = run_checker(hey_exit=1)
 
