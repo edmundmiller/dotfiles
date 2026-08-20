@@ -137,6 +137,49 @@ class CompletionHookTests(unittest.TestCase):
                 ],
             )
 
+
+    def test_shared_checker_skips_emscripten_python(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = pathlib.Path(directory)
+            log = temporary / "commands.log"
+            bindir = temporary / "bin"
+            bindir.mkdir()
+            emscripten = bindir / "python3.13"
+            emscripten.write_text(
+                "#!/usr/bin/env bash\n"
+                'printf \'emscripten %s\\n\' "$*" >>"$COMPLETION_TEST_LOG"\n'
+                'if [ "$1" = "-c" ]; then\n'
+                "  exit 1\n"
+                "fi\n"
+                "exit 0\n"
+            )
+            emscripten.chmod(emscripten.stat().st_mode | stat.S_IXUSR)
+            write_command(bindir, "python3", stderr="python output\n")
+            hey = write_command(temporary, "hey", stderr="hey output\n")
+            env = {
+                **os.environ,
+                "COMPLETION_CHECK_HEY": str(hey),
+                "COMPLETION_TEST_LOG": str(log),
+                "PATH": f"{bindir}:/usr/bin:/bin",
+            }
+            env.pop("COMPLETION_CHECK_PYTHON", None)
+            result = subprocess.run(
+                ["bash", str(CHECKER)],
+                cwd=temporary,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            commands = log.read_text().splitlines()
+            self.assertTrue(
+                any(line.startswith("emscripten -c ") for line in commands),
+                commands,
+            )
+            self.assertFalse(any(line.startswith("emscripten -m ") for line in commands), commands)
+            self.assertIn("python3 -m unittest discover -s tests -p test_*.py", commands)
+            self.assertIn("hey check", commands)
+
     def test_shared_checker_reports_hey_failure(self):
         result, commands = run_checker(hey_exit=1)
 

@@ -16,9 +16,11 @@ python=${COMPLETION_CHECK_PYTHON:-}
 if [ -z "$python" ]; then
   # Regression tests require Python 3.11+ (tomllib, PEP 604 unions); macOS
   # /usr/bin/python3 is 3.9, so probe for a modern interpreter on PATH.
+  # Skip Emscripten/WASI shims (e.g. ~/.local/bin/python3.13 from a WASM
+  # kernel): they report 3.13 but cannot spawn subprocesses.
   for candidate in python3.13 python3.12 python3.11 python3; do
     if command -v "$candidate" >/dev/null 2>&1 \
-      && "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
+      && "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) and sys.platform not in {"emscripten", "wasi"} else 1)' >/dev/null 2>&1; then
       python="$candidate"
       break
     fi
