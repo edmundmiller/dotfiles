@@ -25,6 +25,8 @@ in
     }
     // optionalAttrs isDarwin {
       services.containerization.enable = true;
+      # Orchard is the native GUI for Apple Container; Homebrew keeps it current.
+      homebrew.casks = [ "orchard" ];
     }
   );
 }

@@ -5,12 +5,15 @@
   pkgs,
 }:
 let
-  inherit (builtins) filter length;
+  inherit (builtins) filter isAttrs length;
   inherit (pkgs.lib) any;
   inherit (pkgs.lib.strings) hasInfix;
 
   personal = macTraitorConfig.config;
   work = seqeratopConfig.config;
+
+  itemName = item: if isAttrs item then (item.name or "") else item;
+  hasCask = name: host: any (cask: itemName cask == name) (host.homebrew.casks or [ ]);
 
   assertions = [
     {
@@ -20,6 +23,10 @@ let
     {
       test = personal.services.containerization.enable or false;
       msg = "MacTraitor-Pro must enable the upstream Apple Container runtime";
+    }
+    {
+      test = hasCask "orchard" personal;
+      msg = "MacTraitor-Pro must declare the Homebrew orchard cask";
     }
     {
       test = !(personal.modules.services.docker.enable or false);
@@ -39,6 +46,10 @@ let
     {
       test = !(work.modules.services.appleContainer.enable or false);
       msg = "Seqeratop must not enable the Apple Container pilot";
+    }
+    {
+      test = !(hasCask "orchard" work);
+      msg = "Seqeratop must not declare the Homebrew orchard cask";
     }
     {
       test = work.modules.services.docker.enable or false;
