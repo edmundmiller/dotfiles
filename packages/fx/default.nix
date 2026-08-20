@@ -2,17 +2,18 @@
   lib,
   fetchurl,
   stdenvNoCC,
+  makeWrapper,
 }:
 let
-  version = "0.0.3";
+  version = "0.0.4";
   sources = {
     aarch64-darwin = fetchurl {
       url = "https://releases.fx.sh/v${version}/fx-macos-aarch64.tar.gz";
-      hash = "sha256-h8STliGwwCjkUG8YQWuHIt7Q26zmNYOAARQAyO0Seos=";
+      hash = "sha256-OVrDgy9vbCMfa6eka6bscO763baGYub9bE+44NbXL1k=";
     };
     x86_64-linux = fetchurl {
       url = "https://releases.fx.sh/v${version}/fx-linux-x86_64.tar.gz";
-      hash = "sha256-I9MuYCM7JFgbnOGWW2W6tqRtVpOiSt14F4VK7zrfW/s=";
+      hash = "sha256-vpQoY2r7EZbLZitI7Ve77TuV58N/K8eEngLAlg+uHwE=";
     };
   };
   src =
@@ -23,11 +24,14 @@ stdenvNoCC.mkDerivation {
   pname = "fx";
   inherit version src;
   dontUnpack = true;
+  nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     runHook preInstall
     tar -xzf "$src"
     install -Dm755 fx "$out/bin/fx"
+    # Nix store binaries cannot be replaced in place.
+    wrapProgram "$out/bin/fx" --set FX_AUTO_UPGRADE 0
     runHook postInstall
   '';
 
