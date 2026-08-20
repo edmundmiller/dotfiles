@@ -1,8 +1,8 @@
 <div align="center">
 
 [![Made with Doom Emacs](https://img.shields.io/badge/Made_with-Doom_Emacs-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)](https://github.com/hlissner/doom-emacs)
-[![NixOS 24.11](https://img.shields.io/badge/NixOS-v24.11-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
-[![nix-darwin](https://img.shields.io/badge/nix--darwin-24.11-green.svg?style=flat-square&logo=apple&logoColor=white)](https://github.com/nix-darwin/nix-darwin)
+[![NixOS unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+[![nix-darwin](https://img.shields.io/badge/nix--darwin-master-green.svg?style=flat-square&logo=apple&logoColor=white)](https://github.com/nix-darwin/nix-darwin)
 
 </div>
 
@@ -41,7 +41,7 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 4. `git clone https://github.com/edmundmiller/dotfiles /etc/nixos`
 5. Install NixOS: `nixos-install --root /mnt --flake /etc/nixos#XYZ`, where `XYZ` is your
    hostname. Use `#generic` for a simple, universal config.
-6. OPTIONAL: Create a sub-directory in `hosts/` for your device. See [host/kuro]
+6. OPTIONAL: Create a sub-directory in `hosts/` for your device. See [host/nuc]
    as an example.
 7. Reboot!
 
@@ -103,9 +103,8 @@ host that enables `modules.shell.skillkit`. If you manually reinstall
   convenient place. But basically: everything is a flake now, resistance is futile.
 
 [doom-emacs]: https://github.com/hlissner/doom-emacs
-[vim]: https://github.com/hlissner/.vim
-[nixos]: https://releases.nixos.org/?prefix=nixos/24.11/
-[host/kuro]: https://github.com/hlissner/dotfiles/tree/master/hosts/kuro
+[nixos]: https://releases.nixos.org/?prefix=nixos/unstable/
+[host/nuc]: https://github.com/edmundmiller/dotfiles/tree/main/hosts
 
 ## Usage as a flake
 
