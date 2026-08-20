@@ -71,3 +71,7 @@ qmk_firmware/
 config/nvim/lua/custom/private/obsidian-project-aliases.lua
 # br doctor per-run artifacts
 .doctor/
+
+# Stray runtime/debug logs and generated skill artifacts
+*.log
+implementation-notes.html
