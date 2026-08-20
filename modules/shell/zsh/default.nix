@@ -78,6 +78,12 @@ in
 
       };
 
+      # macOS Sequoia/Tahoe updates restore stock /etc/zshrc and abort
+      # nix-darwin activation. This is the 2026-08-19 vendor file.
+      environment.etc.zshrc.knownSha256Hashes = [
+        "e883d7097b48bd3b2bde8ee40013c7a145abd6bf675cea2a6233d81c748ef970"
+      ];
+
       modules.shell.zsh = {
         rcFiles = mkBefore ([ (configDir + "/zsh/prompt.zsh") ] ++ autoRcFiles);
         envFiles = mkBefore autoEnvFiles;
