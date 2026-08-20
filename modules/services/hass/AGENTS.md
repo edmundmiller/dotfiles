@@ -53,6 +53,7 @@ Built via `pkgs.buildHomeAssistantComponent` in `default.nix`:
 - PostgreSQL recorder via `postgres.enable` (provisions db + psycopg2)
 - Firewall only opens on `tailscale0` interface
 - Host config: `hosts/nuc/default.nix` enables hass + postgres + homebridge + tailscale
+- Zigbee: ZHA via ZBT-2 dongle; sleepy end devices need a router on the mesh before pairing — see [docs/zigbee-mesh.md](docs/zigbee-mesh.md)
 
 ## hass-cli (agent-friendly API wrapper)
 
