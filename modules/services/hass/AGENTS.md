@@ -53,6 +53,7 @@ Built via `pkgs.buildHomeAssistantComponent` in `default.nix`:
 - PostgreSQL recorder via `postgres.enable` (provisions db + psycopg2)
 - Firewall only opens on `tailscale0` interface
 - Host config: `hosts/nuc/default.nix` enables hass + postgres + homebridge + tailscale
+- Native backup integration is intentionally disabled (restic covers `/var/lib/hass` nightly; the HA integration has no backup agent on NixOS and fails with `backup_manager_error`). See `README.md` → "Native backup integration is intentionally disabled" for the full rationale and why deletion is not durable.
 - Zigbee: ZHA via ZBT-2 dongle; sleepy end devices need a router on the mesh before pairing — see [docs/zigbee-mesh.md](docs/zigbee-mesh.md)
 
 ## hass-cli (agent-friendly API wrapper)

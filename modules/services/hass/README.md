@@ -70,6 +70,14 @@ The Nix config rebuilds everything else: components, input helpers, scenes, scri
 
 The recorder database (sensor history, energy data) is in PostgreSQL, **not** in `/var/lib/hass`. It's not currently backed up by restic. This is acceptable if history is non-critical, but add a `pg_dump` pre-backup hook if you want it preserved.
 
+### Native backup integration is intentionally disabled
+
+HA's built-in backup integration (`backup` domain) is disabled at the config-entry level (`disabled_by: "user"` in `.storage/core.config_entries`). On a native NixOS install (not HAOS), the integration has no backup agent (no Supervisor, no configured network share), so every automatic backup attempt fails with `backup_manager_error` and generates a persistent "Automatic backup could not be created" warning.
+
+The backup integration auto-creates its config entry on every HA startup via `discovery_flow.async_create_flow` in `backup/__init__.py`, so deleting the entry is not durable — it returns on restart. Disabling it (not deleting) persists across restarts.
+
+Restic covers `/var/lib/hass` nightly (see schedule above). The native backup integration adds no value here and is intentionally left disabled.
+
 ## Declarative Device Management
 
 `devices.yaml` maps devices to areas and room icons. `apply-devices.py` applies both via the HA WebSocket API:
