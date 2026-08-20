@@ -1,3 +1,11 @@
+---
+purpose: Describe Tailscale ownership, ACLs, and Darwin vs NixOS wiring.
+applies_to: Tailscale module, host tunnel, or tailnet service changes.
+entrypoint: Read this doc, then modules/services/tailscale.nix.
+verification: On Darwin, build darwin-tailscale-app-owner-assertions and check Tailscale.app is Connected with a 100.x address. On NixOS, check tailscaled is active.
+update_when: Tunnel ownership, Homebrew cask, ACLs, or Tailscale service wiring changes.
+---
+
 # Tailscale
 
 ## ACL Policy (GitOps)
@@ -49,7 +57,8 @@ Without the ACL grant, you get "Advertising the service, but some required ports
 Enables Tailscale with:
 
 - Shell aliases (`tsc`, `tsu`, `tsd`, `tss`)
-- NixOS: open firewall, operator mode (no sudo for `tailscale serve`), MagicDNS via resolved
+- NixOS: `tailscaled`, open firewall, operator mode (no sudo for `tailscale serve`), MagicDNS via resolved
+- Darwin: Homebrew `tailscale-app` plus MagicDNS resolver. Do **not** start Nix `tailscaled`, install `pkgs.tailscale`, or add the Homebrew `tailscale` formula or CLI-only cask; the official `Tailscale.app` Network Extension owns the tunnel. A second daemon leaves the GUI stuck Connecting and `/usr/local/bin/tailscale` returning `Tailscale.CLIError error 1`. Login and Network Extension approval stay out of Nix.
 
 ## Tailnet Info
 

@@ -1347,6 +1347,11 @@
                 inherit pkgs;
               };
 
+              darwin-tailscale-app-owner-assertions = import ./modules/services/tailscale/_tests/eval-darwin.nix {
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
               # Pure Nix eval: keep the Desktop dashboard enabled across
               # automatic NUC upgrades from the default branch.
               nuc-hermes-dashboard-enabled = import ./hosts/nuc/_tests/hermes-dashboard-enabled.nix {

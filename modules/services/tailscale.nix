@@ -16,8 +16,6 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      services.tailscale.enable = true;
-
       environment.shellAliases = {
         # Note: 'ts' conflicts with 'task sync' alias in modules/shell/zsh/default.nix
         tsc = "tailscale";
@@ -27,8 +25,12 @@ in
       };
     }
 
-    # NixOS-specific networking configuration
+    # NixOS owns tailscaled. On Darwin the official Tailscale.app / Network
+    # Extension owns the tunnel; starting a second logged-out daemon leaves
+    # the GUI stuck Connecting and the CLI returning CLIError 1.
+
     (optionalAttrs (!isDarwin) {
+      services.tailscale.enable = true;
       services.tailscale.openFirewall = true;
       # Allow user to run `tailscale serve` without sudo for locally managed services
       services.tailscale.extraSetFlags = [ "--operator=${config.user.name}" ];
@@ -43,8 +45,10 @@ in
       networking.search = [ "cinnamon-rooster.ts.net" ];
     })
 
-    # macOS resolver override for tailnet domains
+    # macOS: official Tailscale.app owns the tunnel. Homebrew keeps the
+    # standalone app current; Nix only adds MagicDNS resolver + aliases.
     (optionalAttrs isDarwin {
+      homebrew.casks = [ "tailscale-app" ];
       environment.etc = {
         "resolver/cinnamon-rooster.ts.net".text = ''
           nameserver 100.100.100.100
