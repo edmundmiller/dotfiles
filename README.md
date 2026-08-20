@@ -38,7 +38,7 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 1. Acquire [NixOS 24.11][nixos] (or close enough).
 2. Boot into the installer.
 3. Do your partitions and mount your root to `/mnt` (or don't, I'm not your supervisor)
-4. `git clone https://github.com/emiller88/dotfiles /etc/nixos`
+4. `git clone https://github.com/edmundmiller/dotfiles /etc/nixos`
 5. Install NixOS: `nixos-install --root /mnt --flake /etc/nixos#XYZ`, where `XYZ` is your
    hostname. Use `#generic` for a simple, universal config.
 6. OPTIONAL: Create a sub-directory in `hosts/` for your device. See [host/kuro]
@@ -52,7 +52,7 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
    ```
    Why this installer? It handles macOS quirks, enables flakes by default, and won't leave you troubleshooting for hours.
-2. `git clone https://github.com/emiller88/dotfiles ~/.config/dotfiles`
+2. `git clone https://github.com/edmundmiller/dotfiles ~/.config/dotfiles`
 3. `cd ~/.config/dotfiles`
 4. `./bin/hey re` (or if `hey` isn't in your PATH yet: `nix run .#darwinConfigurations.HOSTNAME.system.build.darwin-rebuild -- switch --flake .`)
    - Use `MacTraitor-Pro` or `Seqeratop` for HOSTNAME, or check `flake.nix` for available configs
@@ -109,13 +109,13 @@ host that enables `modules.shell.skillkit`. If you manually reinstall
 
 ## Usage as a flake
 
-[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/Emiller88/dotfiles/badge)](https://flakehub.com/flake/Emiller88/dotfiles)
+[![FlakeHub](https://img.shields.io/endpoint?url=https://flakehub.com/f/edmundmiller/dotfiles/badge)](https://flakehub.com/flake/edmundmiller/dotfiles)
 
 Add dotfiles to your `flake.nix`:
 
 ```nix
 {
-  inputs.dotfiles.url = "https://flakehub.com/f/Emiller88/dotfiles/*.tar.gz";
+  inputs.dotfiles.url = "https://flakehub.com/f/edmundmiller/dotfiles/*.tar.gz";
 
   outputs = { self, dotfiles }: {
     # Use in your outputs
