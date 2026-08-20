@@ -1,7 +1,7 @@
 # flake.nix
 #
 # Author:  Edmund Miller <edmund.a.miller@gmail.com>
-# URL:     https://github.com/emiller88/dotfiles
+# URL:     https://github.com/edmundmiller/dotfiles
 # License: MIT
 #
 # Welcome to ground zero. Where the whole flake gets set up and all its modules
