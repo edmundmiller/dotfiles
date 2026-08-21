@@ -53,12 +53,15 @@ def context() -> dict[str, Any]:
 
 
 def ctx_worktree_path(ctx: dict[str, Any]) -> str | None:
+    focused_cwd = ctx.get("focused_pane_cwd")
+    if focused_cwd:
+        return str(focused_cwd)
     worktree = ctx.get("worktree") or {}
     for key in ("checkout_path", "path"):
         value = worktree.get(key)
         if value:
             return str(value)
-    return ctx.get("workspace_cwd") or ctx.get("focused_pane_cwd")
+    return ctx.get("workspace_cwd")
 
 
 def command_exists(command: str) -> bool:
@@ -85,8 +88,28 @@ def git_output(cwd: str, args: list[str]) -> str | None:
     value = result.stdout.strip()
     return value or None
 
+
 def checkout_root(cwd: str) -> str | None:
+    if not os.path.isdir(cwd):
+        return None
     return git_output(cwd, ["rev-parse", "--show-toplevel"])
+
+
+def ctx_checkout_root(ctx: dict[str, Any]) -> str | None:
+    worktree = ctx.get("worktree") or {}
+    requested_cwds = (
+        ctx.get("focused_pane_cwd"),
+        worktree.get("checkout_path"),
+        worktree.get("path"),
+        ctx.get("workspace_cwd"),
+        os.getcwd(),
+    )
+    for requested_cwd in requested_cwds:
+        if requested_cwd and (root := checkout_root(str(requested_cwd))):
+            return root
+    return None
+
+
 def default_base_ref(cwd: str) -> str | None:
     for candidate in ("origin/main", "origin/master", "main", "master"):
         if git_output(cwd, ["rev-parse", "--verify", candidate]):
@@ -196,10 +219,9 @@ def hunk(
     open_tab: bool, mode: str = "worktree", passthrough: list[str] | None = None
 ) -> None:
     ctx = context()
-    requested_cwd = ctx_worktree_path(ctx) or os.getcwd()
-    cwd = checkout_root(requested_cwd)
+    cwd = ctx_checkout_root(ctx)
     if not cwd:
-        raise SystemExit(f"Hunk requires a Git checkout; {requested_cwd} is not inside one")
+        raise SystemExit("Hunk requires a Git checkout; the focused pane and workspace are outside one")
     workspace_id = ctx.get("workspace_id") or os.environ.get("HERDR_WORKSPACE_ID")
     pane_id = ctx.get("focused_pane_id") or os.environ.get("HERDR_PANE_ID")
     if not workspace_id:
@@ -262,7 +284,7 @@ def bootstrap_workspace(ctx: dict[str, Any], workspace_id: str, cwd: str) -> Non
         omp_tab, pane = tab_create(workspace_id, cwd, "omp")
         pane_rename(pane, "omp")
         pane_run(pane, "omp")
-    hunk_cwd = checkout_root(cwd)
+    hunk_cwd = ctx_checkout_root(ctx)
     if "hunk" not in tabs and hunk_cwd:
         _, pane = tab_create(workspace_id, hunk_cwd, "hunk")
         pane_rename(pane, "hunk")

@@ -36,6 +36,11 @@ No creation events are registered, so ordinary new workspaces stay plain. Run
 `dotfiles.dev-layout.bootstrap` to set up OMP and Hunk on demand. The Review Box
 builds its own Hunk, Critique, and agent tabs, so it needs nothing from here.
 
+Bootstrap follows the focused pane's live working directory before stale
+workspace or worktree metadata. Hunk opens at that directory's Git root; when
+the focused pane is outside Git, it falls back through the recorded worktree,
+workspace, and plugin process directories until it finds a checkout.
+
 ## Requirements
 
 - Herdr `0.7.0` or newer

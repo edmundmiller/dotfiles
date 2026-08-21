@@ -7,7 +7,8 @@ import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import call, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -25,21 +26,26 @@ class BootstrapLayoutTest(unittest.TestCase):
         self,
         *,
         env: dict[str, str] | None = None,
-        context: dict[str, str] | None = None,
+        context: dict[str, Any] | None = None,
         existing: dict[str, str] | None = None,
         tab_ids: set[str] | None = None,
         before_pane_run: Callable[[str, str], None] | None = None,
+        checkout_roots: dict[str, str | None] | None = None,
     ):
         created: list[tuple[str, str]] = []
         ran: list[tuple[str, str]] = []
         calls: list[list[str]] = []
-        ctx = {"workspace_id": "workspace-1", "workspace_cwd": "/repo"}
+        ctx: dict[str, Any] = {"workspace_id": "workspace-1", "workspace_cwd": "/repo"}
         ctx.update(context or {})
 
         def fake_tab_create(workspace_id: str, cwd: str, label: str) -> tuple[str, str]:
             self.assertEqual(workspace_id, "workspace-1")
-            # Hunk opens at the checkout root; OMP opens at the workspace cwd.
-            expected = "/repo" if label == "hunk" else ctx["workspace_cwd"]
+            # Hunk opens at the checkout root; OMP opens at the live pane cwd.
+            expected = (
+                "/repo"
+                if label == "hunk"
+                else ctx.get("focused_pane_cwd") or ctx["workspace_cwd"]
+            )
             self.assertEqual(cwd, expected)
             created.append((label, cwd))
             return f"tab-{label}", f"pane-{label}"
@@ -53,7 +59,15 @@ class BootstrapLayoutTest(unittest.TestCase):
             patch.dict(os.environ, env or {}, clear=True),
             patch.object(dev_layout, "context", return_value=ctx),
             patch.object(dev_layout, "command_exists", return_value=True),
-            patch.object(dev_layout, "checkout_root", return_value="/repo"),
+            patch.object(
+                dev_layout,
+                "checkout_root",
+                side_effect=(
+                    (lambda path: checkout_roots.get(path))
+                    if checkout_roots is not None
+                    else (lambda _path: "/repo")
+                ),
+            ),
             patch.object(
                 dev_layout,
                 "workspace_tabs",
@@ -151,6 +165,39 @@ class BootstrapLayoutTest(unittest.TestCase):
         self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
         self.assertIn(["tab", "focus", "tab-omp"], calls)
 
+    def test_bootstrap_prefers_focused_pane_cwd_over_stale_workspace_paths(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={
+                "workspace_cwd": "/Users/emiller/.config/dotfiles",
+                "focused_pane_cwd": "/Users/emiller/.config/herdr/worktrees/task",
+                "worktree": {"checkout_path": "/Users/emiller/.config/dotfiles"},
+            }
+        )
+
+        self.assertEqual(
+            created,
+            [
+                ("omp", "/Users/emiller/.config/herdr/worktrees/task"),
+                ("hunk", "/repo"),
+            ],
+        )
+        self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
+        self.assertIn(["tab", "focus", "tab-omp"], calls)
+
+    def test_bootstrap_hunk_falls_back_to_recorded_worktree_from_outside_git(self) -> None:
+        created, ran, calls = self.run_bootstrap(
+            context={
+                "workspace_cwd": "/tmp",
+                "focused_pane_cwd": "/tmp",
+                "worktree": {"checkout_path": "/repo"},
+            },
+            checkout_roots={"/tmp": None, "/repo": "/repo"},
+        )
+
+        self.assertEqual(created, [("omp", "/tmp"), ("hunk", "/repo")])
+        self.assertEqual(ran, [("pane-omp", "omp"), ("pane-hunk", "hunk --worktree")])
+        self.assertIn(["tab", "focus", "tab-omp"], calls)
+
     def test_creation_event_closes_only_the_initial_tab(self) -> None:
         _, _, calls = self.run_bootstrap(
             env={"HERDR_PLUGIN_EVENT": "workspace.created"},
@@ -236,6 +283,49 @@ class CommandTest(unittest.TestCase):
 
         self.assertEqual(run.call_args.args[0], ["herdr", "pane", "run", "pane-1", "omp"])
 
+    def test_checkout_root_skips_a_missing_candidate_without_running_git(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            missing = str(Path(directory, "deleted-worktree"))
+            with patch("dev_layout.subprocess.run") as run:
+                self.assertIsNone(dev_layout.checkout_root(missing))
+
+        run.assert_not_called()
+
+    def test_checkout_root_does_not_hide_a_missing_git_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            error = FileNotFoundError(2, "No such file or directory", "git")
+            with patch("dev_layout.subprocess.run", side_effect=error):
+                with self.assertRaises(FileNotFoundError):
+                    dev_layout.checkout_root(directory)
+
+    def test_hunk_tab_prefers_focused_pane_checkout_over_stale_workspace_paths(self) -> None:
+        roots = {
+            "/Users/emiller/.config/herdr/worktrees/task/src": "/Users/emiller/.config/herdr/worktrees/task",
+            "/Users/emiller/.config/dotfiles": "/Users/emiller/.config/dotfiles",
+        }
+        with (
+            patch.object(
+                dev_layout,
+                "context",
+                return_value={
+                    "workspace_id": "workspace-1",
+                    "workspace_cwd": "/Users/emiller/.config/dotfiles",
+                    "focused_pane_cwd": "/Users/emiller/.config/herdr/worktrees/task/src",
+                    "worktree": {"checkout_path": "/Users/emiller/.config/dotfiles"},
+                },
+            ),
+            patch.object(dev_layout, "checkout_root", side_effect=roots.get),
+            patch.object(dev_layout, "tab_create", return_value=("tab-hunk", "pane-hunk")) as create,
+            patch.object(dev_layout, "pane_rename"),
+            patch.object(dev_layout, "pane_run"),
+            patch.object(dev_layout, "hunk_command", return_value="hunk diff"),
+        ):
+            dev_layout.hunk(open_tab=True)
+
+        create.assert_called_once_with(
+            "workspace-1", "/Users/emiller/.config/herdr/worktrees/task", "hunk"
+        )
+
     def test_hunk_tab_uses_workspace_checkout_not_focused_pane_cwd(self) -> None:
         with (
             patch.object(
@@ -247,7 +337,11 @@ class CommandTest(unittest.TestCase):
                     "focused_pane_cwd": "/tmp",
                 },
             ),
-            patch.object(dev_layout, "checkout_root", return_value="/repo"),
+            patch.object(
+                dev_layout,
+                "checkout_root",
+                side_effect=lambda path: "/repo" if path == "/repo" else None,
+            ) as checkout,
             patch.object(dev_layout, "tab_create", return_value=("tab-hunk", "pane-hunk")) as create,
             patch.object(dev_layout, "pane_rename"),
             patch.object(dev_layout, "pane_run"),
@@ -255,6 +349,36 @@ class CommandTest(unittest.TestCase):
         ):
             dev_layout.hunk(open_tab=True)
 
+        self.assertEqual(checkout.call_args_list[:2], [call("/tmp"), call("/repo")])
+        create.assert_called_once_with("workspace-1", "/repo", "hunk")
+
+    def test_hunk_tab_skips_a_deleted_recorded_checkout(self) -> None:
+        roots = {"/tmp": None, "/deleted-worktree": None, "/repo": "/repo"}
+        with (
+            patch.object(
+                dev_layout,
+                "context",
+                return_value={
+                    "workspace_id": "workspace-1",
+                    "focused_pane_cwd": "/tmp",
+                    "worktree": {
+                        "checkout_path": "/deleted-worktree",
+                        "path": "/repo",
+                    },
+                },
+            ),
+            patch.object(dev_layout, "checkout_root", side_effect=roots.get) as checkout,
+            patch.object(dev_layout, "tab_create", return_value=("tab-hunk", "pane-hunk")) as create,
+            patch.object(dev_layout, "pane_rename"),
+            patch.object(dev_layout, "pane_run"),
+            patch.object(dev_layout, "hunk_command", return_value="hunk diff"),
+        ):
+            dev_layout.hunk(open_tab=True)
+
+        self.assertEqual(
+            checkout.call_args_list[:3],
+            [call("/tmp"), call("/deleted-worktree"), call("/repo")],
+        )
         create.assert_called_once_with("workspace-1", "/repo", "hunk")
 
     def test_hunk_action_refuses_to_open_outside_a_git_checkout(self) -> None:
