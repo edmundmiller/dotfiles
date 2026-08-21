@@ -413,20 +413,6 @@ in
             action = "script.tv_off_if_on";
           }
           {
-            action = "media_player.volume_set";
-            continue_on_error = true;
-            data.volume_level = 0.48;
-            target.entity_id = "media_player.bedtime_bedroom";
-          }
-          {
-            action = "script.book_player_start";
-            continue_on_error = true;
-            data = {
-              book_uri = "library://audiobook/83";
-              player_entity_id = "media_player.bedtime_bedroom";
-            };
-          }
-          {
             action = "input_boolean.turn_on";
             target.entity_id = "input_boolean.get_ready_for_bed_done";
           }
@@ -445,30 +431,6 @@ in
             action = "script.tv_off_if_on";
           }
           {
-            "if" = [
-              {
-                condition = "template";
-                value_template = "{{ states('media_player.bedtime_bedroom') not in ['playing', 'buffering'] }}";
-              }
-            ];
-            "then" = [
-              {
-                action = "media_player.volume_set";
-                continue_on_error = true;
-                data.volume_level = 0.48;
-                target.entity_id = "media_player.bedtime_bedroom";
-              }
-              {
-                action = "script.book_player_start";
-                continue_on_error = true;
-                data = {
-                  book_uri = "library://audiobook/83";
-                  player_entity_id = "media_player.bedtime_bedroom";
-                };
-              }
-            ];
-          }
-          {
             action = "input_boolean.turn_on";
             target.entity_id = "input_boolean.goodnight_done";
           }
@@ -485,11 +447,6 @@ in
           }
           {
             action = "script.tv_off_if_on";
-          }
-          {
-            action = "media_player.media_stop";
-            continue_on_error = true;
-            target.entity_id = "media_player.bedtime_bedroom";
           }
           {
             action = "input_boolean.turn_on";

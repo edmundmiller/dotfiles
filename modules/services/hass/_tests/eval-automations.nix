@@ -787,71 +787,21 @@ let
     {
       test =
         getReadyForBedScript != null
-        && any (
-          action:
-          (action.action or null) == "script.book_player_start"
-          && (action.continue_on_error or false)
-          && (action.data.book_uri or null) == "library://audiobook/83"
-          && (action.data.player_entity_id or null) == "media_player.bedtime_bedroom"
-        ) (toList (getReadyForBedScript.sequence or [ ]));
-      msg = "script.get_ready_for_bed must resume Prisoner of Azkaban on the Bedtime group";
-    }
-    {
-      test =
-        getReadyForBedScript != null
-        && any (
-          action:
-          (action.action or null) == "media_player.volume_set"
-          && (action.continue_on_error or false)
-          && (action.data.volume_level or null) == 0.48
-          && (action.target.entity_id or null) == "media_player.bedtime_bedroom"
-        ) (toList (getReadyForBedScript.sequence or [ ]));
-      msg = "script.get_ready_for_bed must set Bedtime volume to 48 percent";
-    }
-    {
-      test =
-        goodNightScript != null
-        && any (
-          action:
-          builtins.hasAttr "if" action
-          && any (
-            fallback:
-            (fallback.action or null) == "media_player.volume_set"
-            && (fallback.continue_on_error or false)
-            && (fallback.data.volume_level or null) == 0.48
-            && (fallback.target.entity_id or null) == "media_player.bedtime_bedroom"
-          ) (toList (action."then" or [ ]))
-        ) (toList (goodNightScript.sequence or [ ]));
-      msg = "script.goodnight fallback must set Bedtime volume to 48 percent";
-    }
-    {
-      test =
-        goodNightScript != null
-        && any (
-          action:
-          builtins.hasAttr "if" action
-          && hasTemplateConditionContaining (toList action."if") "media_player.bedtime_bedroom"
-          && hasTemplateConditionContaining (toList action."if") "not in ['playing', 'buffering']"
-          && any (
-            fallback:
-            (fallback.action or null) == "script.book_player_start"
-            && (fallback.continue_on_error or false)
-            && (fallback.data.book_uri or null) == "library://audiobook/83"
-            && (fallback.data.player_entity_id or null) == "media_player.bedtime_bedroom"
-          ) (toList (action."then" or [ ]))
-        ) (toList (goodNightScript.sequence or [ ]));
-      msg = "script.goodnight must start Prisoner of Azkaban only when Bedtime is not already playing";
-    }
-    {
-      test =
-        sleepScript != null
-        && any (
-          action:
-          (action.action or null) == "media_player.media_stop"
-          && (action.continue_on_error or false)
-          && (action.target.entity_id or null) == "media_player.bedtime_bedroom"
-        ) (toList (sleepScript.sequence or [ ]));
-      msg = "script.sleep must stop the Bedtime group";
+        && goodNightScript != null
+        && sleepScript != null
+        && (
+          let
+            eveningSleepScripts = builtins.toJSON [
+              (toList (getReadyForBedScript.sequence or [ ]))
+              (toList (goodNightScript.sequence or [ ]))
+              (toList (sleepScript.sequence or [ ]))
+            ];
+          in
+          !(hasInfix "script.book_player_start" eveningSleepScripts)
+          && !(hasInfix "music_assistant." eveningSleepScripts)
+          && !(hasInfix "media_player." eveningSleepScripts)
+        );
+      msg = "evening sleep scripts must not control Music Assistant or media players";
     }
     {
       test = whiteNoiseWithBedtimeAudiobook != null;
