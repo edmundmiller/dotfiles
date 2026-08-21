@@ -109,15 +109,21 @@
       agents = {
         pi = {
           enable = true;
-          # OpenAI credits are exhausted. Cursor is Grok-only (no Cursor Claude);
-          # Claude subscription is vibeproxy via omp.
-          defaultProvider = "cursor";
-          defaultModel = "cursor-grok-4.6-medium";
+          # Seqera Enterprise OpenAI is back. Default follows shared
+          # settings.jsonc (openai-codex gpt-5.6-sol). Sol/Terra/Luna stay on
+          # the cycling list; Cursor Grok / Composer are the cross-provider
+          # fallback. No opencode-go on this host.
           enabledModels = [
+            "openai-codex/gpt-5.6-sol"
+            "openai-codex/gpt-5.6-terra"
+            "openai-codex/gpt-5.6-luna"
             "cursor/cursor-grok-4.6-medium"
             "cursor/cursor-grok-4.6-high"
+            "cursor/cursor-grok-4.6-xhigh"
             "cursor/cursor-grok-4.6-low-fast"
             "cursor/composer-2.5"
+            "cursor/composer-2.5-fast"
+            "cursor/kimi-k3-high"
           ];
           cursorSdk.enable = true;
           secretReferences = {
@@ -133,82 +139,93 @@
         };
         omp = {
           enable = true;
-          # Work laptop providers: vibeproxy (Claude subscription), cursor,
-          # google-antigravity. OpenAI credits are exhausted — do NOT add
-          # openai-codex/* here (see dailyIntrospection below too).
-          # Burn the Claude subscription first: every primary role and the first
-          # fallback hop stays on vibeproxy. Cursor Grok 4.6 / Composer are the
-          # cross-provider safety net after Claude is rate-limited or down.
-          # Cursor Grok and Composer report thinking `-` in `omp models cursor`,
-          # so their ids carry no `:level` suffix and encode the level in the
-          # model name instead.
-          # Vision goes to Gemini via the google-antigravity login (run
-          # `/login google-antigravity` in omp once); vision fallbacks need
-          # images=yes, which rules out every cursor-grok id.
+          # Work laptop providers: openai-codex (Seqera Enterprise), cursor,
+          # vibeproxy (Claude subscription, Ctrl+P), google-antigravity.
+          # Roles match MacTraitor-Pro's Sol/Luna split. Cursor replaces
+          # xai-oauth / opencode-go / openrouter as the cross-provider net.
+          # Cursor catalog from `omp models cursor` on this host: grok-4.6
+          # medium/high/xhigh/low-fast, composer-2.5, composer-2.5-fast,
+          # kimi-k3-high, and gemini-3.5-flash all exist. Grok and Composer
+          # report thinking `-`, so those ids carry no `:level` suffix.
+          # `cursor/kimi-k3-high` already encodes effort (thinking low,high,max).
+          # Vision goes to Gemini via google-antigravity (run
+          # `/login google-antigravity` in omp once). Vision fallbacks need
+          # images=yes, which rules out every cursor-grok id; the Cursor hop
+          # is cursor/gemini-3.5-flash. Overlay modelRoles.smol so the shared
+          # xai-oauth smol id does not leak into the built config.yml.
           # VibeProxy exposes Claude only; do not invent xai-oauth ids.
-          # modelRoles only — avoid smolModel/PI_SMOL_MODEL, which overrides
-          # rendered smol and can confuse commit/tiny vs prewalk handoff.
+          smolModel = "openai-codex/gpt-5.6-sol:low";
           modelRoles = {
-            default = "vibeproxy/claude-opus-5:medium";
-            smol = "vibeproxy/claude-opus-5:low";
-            slow = "vibeproxy/claude-fable-5:high";
-            plan = "vibeproxy/claude-fable-5:high";
             vision = "google-antigravity/gemini-3.5-flash";
-            designer = "vibeproxy/claude-fable-5:medium";
-            commit = "vibeproxy/claude-haiku-4-5-20251001";
-            tiny = "vibeproxy/claude-haiku-4-5-20251001";
-            task = "vibeproxy/claude-sonnet-5:low";
-            advisor = "vibeproxy/claude-opus-5:high";
+            default = "openai-codex/gpt-5.6-sol:medium";
+            smol = "openai-codex/gpt-5.6-sol:low";
+            designer = "openai-codex/gpt-5.6-sol:high";
+            advisor = "openai-codex/gpt-5.6-sol:high";
+            slow = "openai-codex/gpt-5.6-sol:xhigh";
+            plan = "openai-codex/gpt-5.6-sol:high";
+            task = "openai-codex/gpt-5.6-luna:xhigh";
+            commit = "openai-codex/gpt-5.6-luna:low";
+            tiny = "openai-codex/gpt-5.6-luna:low";
           };
+          modelProviderOrder = [
+            "openai-codex"
+            "cursor"
+            "vibeproxy"
+            "google-antigravity"
+          ];
+          retry.modelFallback = true;
           retry.fallbackChains = {
-            advisor = [
-              "vibeproxy/claude-fable-5:high"
-              "cursor/cursor-grok-4.6-high"
-              "cursor/composer-2.5-fast"
-            ];
             default = [
-              "vibeproxy/claude-sonnet-5:medium"
+              "openai-codex/gpt-5.6-luna:medium"
               "cursor/cursor-grok-4.6-medium"
               "cursor/composer-2.5-fast"
             ];
-            smol = [
-              "vibeproxy/claude-haiku-4-5-20251001:low"
-              "cursor/cursor-grok-4.6-low-fast"
-              "cursor/composer-2.5-fast"
-            ];
-            slow = [
-              "vibeproxy/claude-opus-5:high"
-              "cursor/cursor-grok-4.6-xhigh"
-            ];
             plan = [
-              "vibeproxy/claude-opus-5:high"
+              "openai-codex/gpt-5.6-luna:high"
               "cursor/cursor-grok-4.6-high"
+              "cursor/kimi-k3-high"
+            ];
+            advisor = [
+              "openai-codex/gpt-5.6-luna:high"
+              "cursor/cursor-grok-4.6-high"
+              "cursor/composer-2.5-fast"
             ];
             task = [
-              "vibeproxy/claude-haiku-4-5-20251001:medium"
+              "openai-codex/gpt-5.6-sol:xhigh"
+              "cursor/cursor-grok-4.6-xhigh"
+              "cursor/composer-2.5-fast"
+            ];
+            commit = [
+              "openai-codex/gpt-5.6-sol:low"
+              "cursor/composer-2.5-fast"
+              "cursor/cursor-grok-4.6-low-fast"
+            ];
+            slow = [
+              "openai-codex/gpt-5.6-terra:high"
+              "openai-codex/gpt-5.6-luna:high"
+              "cursor/cursor-grok-4.6-xhigh"
+            ];
+            smol = [
+              "openai-codex/gpt-5.6-luna"
               "cursor/cursor-grok-4.6-low-fast"
               "cursor/composer-2.5-fast"
             ];
+            tiny = [
+              "openai-codex/gpt-5.6-sol:low"
+              "cursor/composer-2.5-fast"
+              "cursor/cursor-grok-4.6-low-fast"
+            ];
             vision = [
-              "vibeproxy/claude-opus-5:medium"
+              "openai-codex/gpt-5.6-sol:medium"
+              "openai-codex/gpt-5.6-luna:medium"
               "cursor/gemini-3.5-flash"
             ];
             designer = [
-              "vibeproxy/claude-opus-5:medium"
+              "openai-codex/gpt-5.6-luna:high"
+              "cursor/kimi-k3-high"
               "cursor/cursor-grok-4.6-medium"
             ];
-            commit = [
-              "cursor/composer-2.5-fast"
-              "cursor/cursor-grok-4.6-low-fast"
-            ];
-            tiny = [
-              "cursor/composer-2.5-fast"
-              "cursor/cursor-grok-4.6-low-fast"
-            ];
           };
-          # Module default is openai-codex/gpt-5.6-sol:high; override so the
-          # nightly introspection job doesn't hit the dead OpenAI credits.
-          dailyIntrospection.model = "vibeproxy/claude-opus-5:high";
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
           # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
           # keeps the shared Catppuccin default.
@@ -332,7 +349,7 @@
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty Seqera Key\n";
 
         # Keep one cross-family reviewer active on every turn. Advisor runtimes
-        # use retry.fallbackChains, so Opus runs only when Sol fails.
+        # use retry.fallbackChains, so Cursor Grok runs only when Sol fails.
         home.file.".omp/agent/WATCHDOG.yml".text = ''
           advisors:
             - name: Sol
@@ -363,10 +380,11 @@
         home.sessionVariables = {
           SF_DISABLE_TELEMETRY = "true";
 
-          # Pi has no vibeproxy wiring — Cursor Grok only (no Cursor Claude).
-          PI_MODEL_SWITCH_INTENT = "cursor/cursor-grok-4.6-high";
-          PI_MODEL_SWITCH_CODING = "cursor/cursor-grok-4.6-medium";
-          PI_MODEL_SWITCH_DONE = "cursor/cursor-grok-4.6-low-fast";
+          # Sol for coding, Terra for intent, Luna for done. Cursor stays on
+          # Pi's cycling list as the fallback when Codex is down.
+          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.6-terra";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
+          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.6-luna";
         };
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =

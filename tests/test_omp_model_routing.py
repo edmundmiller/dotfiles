@@ -160,56 +160,62 @@ class OmpModelRoutingTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         omp = json.loads(result.stdout)
-        self.assertIsNone(omp["smolModel"])
-        self.assertEqual(omp["modelRoles"]["smol"], "vibeproxy/claude-opus-5:low")
+        self.assertEqual(omp["smolModel"], "openai-codex/gpt-5.6-sol:low")
+        self.assertEqual(omp["modelRoles"]["smol"], "openai-codex/gpt-5.6-sol:low")
         self.assertEqual(
-            omp["modelRoles"]["default"], "vibeproxy/claude-opus-5:medium"
+            omp["modelRoles"]["default"],
+            "openai-codex/gpt-5.6-sol:medium",
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["default"],
             [
-                "vibeproxy/claude-sonnet-5:medium",
+                "openai-codex/gpt-5.6-luna:medium",
                 "cursor/cursor-grok-4.6-medium",
                 "cursor/composer-2.5-fast",
             ],
         )
         self.assertEqual(
             omp["modelRoles"]["commit"],
-            "vibeproxy/claude-haiku-4-5-20251001",
+            "openai-codex/gpt-5.6-luna:low",
         )
         self.assertEqual(
             omp["modelRoles"]["tiny"],
-            "vibeproxy/claude-haiku-4-5-20251001",
+            "openai-codex/gpt-5.6-luna:low",
         )
-        self.assertEqual(omp["modelRoles"]["slow"], "vibeproxy/claude-fable-5:high")
+        self.assertEqual(omp["modelRoles"]["task"], "openai-codex/gpt-5.6-luna:xhigh")
+        self.assertEqual(omp["modelRoles"]["slow"], "openai-codex/gpt-5.6-sol:xhigh")
         self.assertEqual(
             omp["modelRoles"]["advisor"],
-            "vibeproxy/claude-opus-5:high",
+            "openai-codex/gpt-5.6-sol:high",
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["advisor"],
             [
-                "vibeproxy/claude-fable-5:high",
+                "openai-codex/gpt-5.6-luna:high",
                 "cursor/cursor-grok-4.6-high",
                 "cursor/composer-2.5-fast",
             ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["slow"],
-            ["vibeproxy/claude-opus-5:high", "cursor/cursor-grok-4.6-xhigh"],
+            [
+                "openai-codex/gpt-5.6-terra:high",
+                "openai-codex/gpt-5.6-luna:high",
+                "cursor/cursor-grok-4.6-xhigh",
+            ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["smol"],
             [
-                "vibeproxy/claude-haiku-4-5-20251001:low",
+                "openai-codex/gpt-5.6-luna",
                 "cursor/cursor-grok-4.6-low-fast",
                 "cursor/composer-2.5-fast",
             ],
         )
-        self.assertEqual(omp["modelRoles"]["plan"], "vibeproxy/claude-fable-5:high")
+        self.assertEqual(omp["modelRoles"]["plan"], "openai-codex/gpt-5.6-sol:high")
         self.assertEqual(
             omp["modelRoles"]["designer"],
-            "vibeproxy/claude-fable-5:medium",
+            "openai-codex/gpt-5.6-sol:high",
         )
         self.assertEqual(
             omp["modelRoles"]["vision"],
@@ -217,17 +223,136 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["plan"],
-            ["vibeproxy/claude-opus-5:high", "cursor/cursor-grok-4.6-high"],
+            [
+                "openai-codex/gpt-5.6-luna:high",
+                "cursor/cursor-grok-4.6-high",
+                "cursor/kimi-k3-high",
+            ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["designer"],
-            ["vibeproxy/claude-opus-5:medium", "cursor/cursor-grok-4.6-medium"],
+            [
+                "openai-codex/gpt-5.6-luna:high",
+                "cursor/kimi-k3-high",
+                "cursor/cursor-grok-4.6-medium",
+            ],
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["task"],
+            [
+                "openai-codex/gpt-5.6-sol:xhigh",
+                "cursor/cursor-grok-4.6-xhigh",
+                "cursor/composer-2.5-fast",
+            ],
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["commit"],
+            [
+                "openai-codex/gpt-5.6-sol:low",
+                "cursor/composer-2.5-fast",
+                "cursor/cursor-grok-4.6-low-fast",
+            ],
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["tiny"],
+            [
+                "openai-codex/gpt-5.6-sol:low",
+                "cursor/composer-2.5-fast",
+                "cursor/cursor-grok-4.6-low-fast",
+            ],
+        )
+        self.assertEqual(
+            omp["retry"]["fallbackChains"]["vision"],
+            [
+                "openai-codex/gpt-5.6-sol:medium",
+                "openai-codex/gpt-5.6-luna:medium",
+                "cursor/gemini-3.5-flash",
+            ],
         )
         self.assertEqual(
             omp["dailyIntrospection"]["model"],
-            "vibeproxy/claude-opus-5:high",
+            "openai-codex/gpt-5.6-sol:high",
         )
+        self.assertEqual(
+            omp["modelProviderOrder"][:2],
+            ["openai-codex", "cursor"],
+        )
+        seqeratop_cursor_ids = {
+            "cursor/cursor-grok-4.6-medium",
+            "cursor/cursor-grok-4.6-high",
+            "cursor/cursor-grok-4.6-xhigh",
+            "cursor/cursor-grok-4.6-low-fast",
+            "cursor/composer-2.5-fast",
+            "cursor/kimi-k3-high",
+            "cursor/gemini-3.5-flash",
+        }
+        for role, chain in omp["retry"]["fallbackChains"].items():
+            with self.subTest(no_vibeproxy=role):
+                self.assertTrue(
+                    all(not entry.startswith("vibeproxy/") for entry in chain),
+                    chain,
+                )
+            for entry in chain:
+                if entry.startswith("cursor/"):
+                    with self.subTest(cursor_id=entry, role=role):
+                        self.assertIn(entry, seqeratop_cursor_ids)
 
+    def test_seqeratop_pi_prefers_openai_then_cursor(self) -> None:
+        models_result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--json",
+                ".#darwinConfigurations.Seqeratop.config.modules.agents.pi.enabledModels",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(models_result.returncode, 0, models_result.stderr)
+        models = json.loads(models_result.stdout)
+        self.assertEqual(
+            models[:3],
+            [
+                "openai-codex/gpt-5.6-sol",
+                "openai-codex/gpt-5.6-terra",
+                "openai-codex/gpt-5.6-luna",
+            ],
+        )
+        self.assertIn("cursor/cursor-grok-4.6-medium", models)
+        self.assertIn("cursor/cursor-grok-4.6-xhigh", models)
+        self.assertIn("cursor/composer-2.5-fast", models)
+        self.assertIn("cursor/kimi-k3-high", models)
+
+        vars_result = subprocess.run(
+            [
+                "nix",
+                "eval",
+                "--json",
+                ".#darwinConfigurations.Seqeratop.config.home-manager.users.edmundmiller.home.sessionVariables",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(vars_result.returncode, 0, vars_result.stderr)
+        session_vars = json.loads(vars_result.stdout)
+        self.assertEqual(
+            session_vars["PI_MODEL_SWITCH_INTENT"],
+            "openai-codex/gpt-5.6-terra",
+        )
+        self.assertEqual(
+            session_vars["PI_MODEL_SWITCH_CODING"],
+            "openai-codex/gpt-5.6-sol",
+        )
+        self.assertEqual(
+            session_vars["PI_MODEL_SWITCH_DONE"],
+            "openai-codex/gpt-5.6-luna",
+        )
 
     def test_seqeratop_watchdog_uses_one_role_resolved_advisor(self) -> None:
         result = subprocess.run(

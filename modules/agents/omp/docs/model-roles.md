@@ -90,7 +90,20 @@ In OMP 17.2.11, prewalk applies a temporary model switch. The OpenAI Codex Respo
 
 Keeping Sol on both sides still avoids a cross-model transcript handoff and preserves better model-local cache locality than switching to Terra. It does not guarantee a provider cache hit; describe the design as one controlled reset with stable model identity, not as a zero-reset transition.
 
-Recheck this section when OMP changes provider-session reset behavior.
+OpenAI's [prompt caching guide](https://platform.openai.com/docs/guides/prompt-caching) confirms this by omission: cache routing is keyed by `prompt_cache_key` plus a hash of the prompt prefix, and a hit requires an exact prefix match on a machine that already served that prefix. The guide never describes cache sharing across model ids. Sol, Luna, and Terra are distinct models, so a prewalk (or fallback) hop between them is a routing change, not a same-cache effort change — treat any Sol-to-Luna/Terra hop as a full cache reset, same as Sol-to-Terra.
+
+Recheck this section when OMP changes provider-session reset behavior or OpenAI's guide adds cross-model cache sharing.
+
+## Anthropic/VibeProxy sessions and prewalk
+
+Prewalk's destination is the static `@smol` role (see above); it cannot detect that a session is already running on `vibeproxy/claude-opus-*` and cannot route "stay on Opus" automatically. If a Ctrl+P session is on a cache-hot Opus id and should stay there through the first edit, use the same session flags as any other non-`@smol` destination:
+
+```sh
+omp --prewalk-into @default   # if modelRoles.default is also the Opus id in use
+omp --no-prewalk              # disable the handoff for this session
+```
+
+Do not add an Anthropic branch to `modelRoles`/`retry.fallbackChains` to chase this — those roles are evaluated before the session's live model is known, so they cannot express "whatever Opus id Ctrl+P already picked." The launch flag is the only lever.
 
 ## Verification
 
