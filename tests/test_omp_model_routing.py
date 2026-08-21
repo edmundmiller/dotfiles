@@ -171,7 +171,6 @@ class OmpModelRoutingTests(unittest.TestCase):
             [
                 "openai-codex/gpt-5.6-luna:medium",
                 "cursor/cursor-grok-4.6-medium",
-                "cursor/composer-2.5-fast",
             ],
         )
         self.assertEqual(
@@ -193,7 +192,6 @@ class OmpModelRoutingTests(unittest.TestCase):
             [
                 "openai-codex/gpt-5.6-luna:high",
                 "cursor/cursor-grok-4.6-high",
-                "cursor/composer-2.5-fast",
             ],
         )
         self.assertEqual(
@@ -209,7 +207,6 @@ class OmpModelRoutingTests(unittest.TestCase):
             [
                 "openai-codex/gpt-5.6-luna",
                 "cursor/cursor-grok-4.6-low-fast",
-                "cursor/composer-2.5-fast",
             ],
         )
         self.assertEqual(omp["modelRoles"]["plan"], "openai-codex/gpt-5.6-sol:high")
@@ -226,15 +223,13 @@ class OmpModelRoutingTests(unittest.TestCase):
             [
                 "openai-codex/gpt-5.6-luna:high",
                 "cursor/cursor-grok-4.6-high",
-                "cursor/kimi-k3-high",
             ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["designer"],
             [
                 "openai-codex/gpt-5.6-luna:high",
-                "cursor/kimi-k3-high",
-                "cursor/cursor-grok-4.6-medium",
+                "cursor/cursor-grok-4.6-high",
             ],
         )
         self.assertEqual(
@@ -242,14 +237,12 @@ class OmpModelRoutingTests(unittest.TestCase):
             [
                 "openai-codex/gpt-5.6-sol:xhigh",
                 "cursor/cursor-grok-4.6-xhigh",
-                "cursor/composer-2.5-fast",
             ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["commit"],
             [
                 "openai-codex/gpt-5.6-sol:low",
-                "cursor/composer-2.5-fast",
                 "cursor/cursor-grok-4.6-low-fast",
             ],
         )
@@ -257,7 +250,6 @@ class OmpModelRoutingTests(unittest.TestCase):
             omp["retry"]["fallbackChains"]["tiny"],
             [
                 "openai-codex/gpt-5.6-sol:low",
-                "cursor/composer-2.5-fast",
                 "cursor/cursor-grok-4.6-low-fast",
             ],
         )
@@ -282,14 +274,20 @@ class OmpModelRoutingTests(unittest.TestCase):
             "cursor/cursor-grok-4.6-high",
             "cursor/cursor-grok-4.6-xhigh",
             "cursor/cursor-grok-4.6-low-fast",
-            "cursor/composer-2.5-fast",
-            "cursor/kimi-k3-high",
             "cursor/gemini-3.5-flash",
         }
         for role, chain in omp["retry"]["fallbackChains"].items():
             with self.subTest(no_vibeproxy=role):
                 self.assertTrue(
                     all(not entry.startswith("vibeproxy/") for entry in chain),
+                    chain,
+                )
+            with self.subTest(no_composer_or_kimi=role):
+                self.assertTrue(
+                    all(
+                        "composer-2.5" not in entry and "kimi-k3" not in entry
+                        for entry in chain
+                    ),
                     chain,
                 )
             for entry in chain:
@@ -321,10 +319,21 @@ class OmpModelRoutingTests(unittest.TestCase):
                 "openai-codex/gpt-5.6-luna",
             ],
         )
-        self.assertIn("cursor/cursor-grok-4.6-medium", models)
-        self.assertIn("cursor/cursor-grok-4.6-xhigh", models)
-        self.assertIn("cursor/composer-2.5-fast", models)
-        self.assertIn("cursor/kimi-k3-high", models)
+        self.assertEqual(
+            models,
+            [
+                "openai-codex/gpt-5.6-sol",
+                "openai-codex/gpt-5.6-terra",
+                "openai-codex/gpt-5.6-luna",
+                "cursor/cursor-grok-4.6-medium",
+                "cursor/cursor-grok-4.6-high",
+                "cursor/cursor-grok-4.6-xhigh",
+                "cursor/cursor-grok-4.6-low-fast",
+            ],
+        )
+        self.assertNotIn("cursor/composer-2.5", models)
+        self.assertNotIn("cursor/composer-2.5-fast", models)
+        self.assertNotIn("cursor/kimi-k3-high", models)
 
         vars_result = subprocess.run(
             [

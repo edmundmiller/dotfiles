@@ -28,7 +28,7 @@ Seqeratop intentionally uses one normal advisor stream:
 
 - role: `advisor`
 - primary: `openai-codex/gpt-5.6-sol:high`
-- fallback: `openai-codex/gpt-5.6-luna:high`, then `cursor/cursor-grok-4.6-high`, then `cursor/composer-2.5-fast`
+- fallback: `openai-codex/gpt-5.6-luna:high`, then `cursor/cursor-grok-4.6-high`
 - roster name: `Sol`
 
 The roster omits `model`, so it resolves through `modelRoles.advisor`. This lets `retry.fallbackChains.advisor` own the fallback without changing other roles that happen to use Sol.

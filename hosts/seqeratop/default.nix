@@ -111,8 +111,9 @@
           enable = true;
           # Seqera Enterprise OpenAI is back. Default follows shared
           # settings.jsonc (openai-codex gpt-5.6-sol). Sol/Terra/Luna stay on
-          # the cycling list; Cursor Grok / Composer are the cross-provider
-          # fallback. No opencode-go on this host.
+          # the cycling list; Cursor Grok is the cross-provider fallback.
+          # Composer and Kimi K3 stay off this host's automatic lists.
+          # No opencode-go on this host.
           enabledModels = [
             "openai-codex/gpt-5.6-sol"
             "openai-codex/gpt-5.6-terra"
@@ -121,9 +122,6 @@
             "cursor/cursor-grok-4.6-high"
             "cursor/cursor-grok-4.6-xhigh"
             "cursor/cursor-grok-4.6-low-fast"
-            "cursor/composer-2.5"
-            "cursor/composer-2.5-fast"
-            "cursor/kimi-k3-high"
           ];
           cursorSdk.enable = true;
           secretReferences = {
@@ -141,19 +139,19 @@
           enable = true;
           # Work laptop providers: openai-codex (Seqera Enterprise), cursor,
           # vibeproxy (Claude subscription, Ctrl+P), google-antigravity.
-          # Roles match MacTraitor-Pro's Sol/Luna split. Cursor replaces
+          # Roles match MacTraitor-Pro's Sol/Luna split. Cursor Grok replaces
           # xai-oauth / opencode-go / openrouter as the cross-provider net.
           # Cursor catalog from `omp models cursor` on this host: grok-4.6
-          # medium/high/xhigh/low-fast, composer-2.5, composer-2.5-fast,
-          # kimi-k3-high, and gemini-3.5-flash all exist. Grok and Composer
-          # report thinking `-`, so those ids carry no `:level` suffix.
-          # `cursor/kimi-k3-high` already encodes effort (thinking low,high,max).
-          # Vision goes to Gemini via google-antigravity (run
-          # `/login google-antigravity` in omp once). Vision fallbacks need
-          # images=yes, which rules out every cursor-grok id; the Cursor hop
-          # is cursor/gemini-3.5-flash. Overlay modelRoles.smol so the shared
-          # xai-oauth smol id does not leak into the built config.yml.
-          # VibeProxy exposes Claude only; do not invent xai-oauth ids.
+          # medium/high/xhigh/low-fast and gemini-3.5-flash. Grok reports
+          # thinking `-`, so those ids carry no `:level` suffix. Composer
+          # and Kimi K3 remain in the Cursor catalog but are not automatic
+          # fallbacks or Pi cycle entries. Vision goes to Gemini via
+          # google-antigravity (run `/login google-antigravity` in omp once).
+          # Vision fallbacks need images=yes, which rules out every
+          # cursor-grok id; the Cursor hop is cursor/gemini-3.5-flash.
+          # Overlay modelRoles.smol so the shared xai-oauth smol id does not
+          # leak into the built config.yml. VibeProxy exposes Claude only;
+          # do not invent xai-oauth ids.
           smolModel = "openai-codex/gpt-5.6-sol:low";
           modelRoles = {
             vision = "google-antigravity/gemini-3.5-flash";
@@ -178,26 +176,21 @@
             default = [
               "openai-codex/gpt-5.6-luna:medium"
               "cursor/cursor-grok-4.6-medium"
-              "cursor/composer-2.5-fast"
             ];
             plan = [
               "openai-codex/gpt-5.6-luna:high"
               "cursor/cursor-grok-4.6-high"
-              "cursor/kimi-k3-high"
             ];
             advisor = [
               "openai-codex/gpt-5.6-luna:high"
               "cursor/cursor-grok-4.6-high"
-              "cursor/composer-2.5-fast"
             ];
             task = [
               "openai-codex/gpt-5.6-sol:xhigh"
               "cursor/cursor-grok-4.6-xhigh"
-              "cursor/composer-2.5-fast"
             ];
             commit = [
               "openai-codex/gpt-5.6-sol:low"
-              "cursor/composer-2.5-fast"
               "cursor/cursor-grok-4.6-low-fast"
             ];
             slow = [
@@ -208,11 +201,9 @@
             smol = [
               "openai-codex/gpt-5.6-luna"
               "cursor/cursor-grok-4.6-low-fast"
-              "cursor/composer-2.5-fast"
             ];
             tiny = [
               "openai-codex/gpt-5.6-sol:low"
-              "cursor/composer-2.5-fast"
               "cursor/cursor-grok-4.6-low-fast"
             ];
             vision = [
@@ -222,8 +213,7 @@
             ];
             designer = [
               "openai-codex/gpt-5.6-luna:high"
-              "cursor/kimi-k3-high"
-              "cursor/cursor-grok-4.6-medium"
+              "cursor/cursor-grok-4.6-high"
             ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
