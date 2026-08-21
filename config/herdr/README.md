@@ -76,8 +76,6 @@ Custom/current mappings:
 | `prefix+]`                        | Hunk worktree diff                                 |
 | `prefix+}`                        | Hunk staged diff                                   |
 | `prefix+{`                        | Hunk branch diff                                   |
-| `prefix+u`                        | Dotfiles Hunk split                                |
-| `prefix+U`                        | Dotfiles Hunk tab                                  |
 | `prefix+a`                        | New jj workspace                                   |
 | `prefix+d`                        | Remove clean closed-PR jj workspace                |
 | `prefix+D`                        | Abandon clean jj workspace with typed confirmation |
@@ -88,7 +86,7 @@ Custom/current mappings:
 | `prefix+O`                        | Start from GitHub item                             |
 | `prefix+B`                        | Open Herdr Browser in a right split                |
 
-Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. The `dotfiles.dev-layout` plugin registers no creation events, so new workspaces open plain. Run its `bootstrap` action to create and focus OMP, plus Hunk when the workspace is inside a Git checkout.
+Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. Both receive the declarative `dev` layout from `workspace-manager.yml`: OMP first, then Hunk. Ordinary workspaces stay plain.
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
@@ -111,7 +109,8 @@ Herdr emits these lifecycle sequences:
 
 Current and potential repo uses:
 
-- `dotfiles.dev-layout` already uses `worktree.created` for native Git checkout bootstrap and `workspace.created` for ordinary or jj-created Herdr workspaces. Its lock and idempotence absorb the create sequence safely.
+- Workspace Manager applies `workspace-manager.yml` automatically to linked Git worktrees under `~/.local/share/herdr/worktrees`.
+- The patched jj workspace plugin applies the same named layout explicitly after creating its generic Herdr workspace.
 - `worktree.opened` would fit rehydrating plugin-owned state when an existing checkout opens. No separate hook is needed now because layout state persists and a newly opened workspace emits `workspace.created`.
 - `worktree.removed` would fit deleting plugin-owned per-checkout cache. Do not use it to replace the explicit safe removal in the `done` skill; no such cache exists today.
 - Smart rename should remain on `workspace.created` and `tab.created`; it is workspace/tab lifecycle, not Git checkout lifecycle.
@@ -125,9 +124,8 @@ hooks receive `HERDR_PLUGIN_EVENT`, `HERDR_PLUGIN_EVENT_JSON`, and
 Repo-owned plugins are composed into a local package and registered by `modules/shell/herdr/default.nix`:
 
 - `dotfiles.agent-read-command` — copies a `herdr agent read ...` command from pane/tab context menus.
-- `dotfiles.dev-layout` — provides Hunk actions plus idempotent OMP bootstrap, adding Hunk only for Git checkout workspaces. It follows the focused pane's live CWD before recorded workspace metadata, and Hunk normalizes that location to its Git root. Review Box workspaces (label prefix `PR #` or cwd/checkout_path under `/.pi/worktrees/`) skip the generic bootstrap so the Review Box launcher owns the tab layout.
 - `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
-- `nathanflurry.jj-workspace` — built from a pinned upstream revision plus the ordered safety patch under `packages/herdr-plugin-jj-workspace/`.
+- `nathanflurry.jj-workspace` — built from a pinned upstream revision plus lifecycle-safety and Workspace Manager integration patches under `packages/herdr-plugin-jj-workspace/`.
 - `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
 
 Herdr 0.8.0 makes installed/linked plugins and enabled state global per user.
@@ -147,6 +145,11 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `kkckkc/herdr-plugin-gh-workflow`
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
+
+Workspace Manager reads the Nix-managed `config/herdr/workspace-manager.yml`.
+Its path matcher covers native Herdr worktrees but not Review Boxes under
+`/.pi/worktrees/`; the Review Box launcher therefore remains the sole owner of
+its Hunk, Critique, agent, and approval tabs.
 
 MacTraitor Pro additionally enables `vercel-labs/herdr-vercel-sandbox-plugin`.
 Its managed config selects Codex in a Node 24 Sandbox. Use `prefix+S` to start,

@@ -22,6 +22,7 @@ rustPlatform.buildRustPackage {
   # provenance only, not a deployment dependency.
   patches = [
     ./patches/0001-make-jj-workspace-lifecycle-safe.patch
+    ./patches/0002-apply-workspace-manager-layout.patch
   ];
 
   postPatch = ''

@@ -5,13 +5,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_dev_layout_declares_no_creation_events_and_no_legacy_post_create() -> None:
-    plugin = ROOT / "packages" / "herdr-plugins" / "dotfiles-dev-layout"
-    manifest = tomllib.loads((plugin / "herdr-plugin.toml").read_text())
+def test_workspace_manager_owns_dev_layout_and_no_legacy_post_create() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    layout = (ROOT / "config" / "herdr" / "workspace-manager.yml").read_text()
 
-    assert "events" not in manifest
+    assert 'retired = {"dotfiles.dev-layout"}' in module
+    assert "uninstall_plugin dotfiles.dev-layout unlink" in module
+    assert "dotfiles.dev-layout" not in str(config)
+    assert "herdr-plugin-workspace-manager/config.yml" in module
+    assert "id: dev" in layout
+    assert "agent: omp" in layout
+    assert "title: hunk" in layout
     assert "post_create_command" not in config.get("worktrees", {})
     assert 'if key == "post_create_command":' in module
 
@@ -27,6 +32,9 @@ def test_jj_workspace_plugin_is_a_patched_local_package() -> None:
     assert "install_plugin NathanFlurry herdr-plugin-jj-workspace" not in module
     assert "ensure_pinned_plugin" not in module
     assert "edmundmiller/herdr-plugin-jj-workspace" not in module
+    assert "0002-apply-workspace-manager-layout.patch" in (
+        package / "package-harness.json"
+    ).read_text()
 
 
 def test_jj_workspace_fixture_uses_packaged_mkdir() -> None:

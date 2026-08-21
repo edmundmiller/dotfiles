@@ -355,6 +355,8 @@ in
 
     home.configFile = {
       "ghzinga/config.toml".source = "${config.dotfiles.configDir}/ghzinga/config.toml";
+      "herdr/plugins/config/herdr-plugin-workspace-manager/config.yml".source =
+        "${config.dotfiles.configDir}/herdr/workspace-manager.yml";
 
       "tmux/open-herdr.sh" = {
         executable = true;
@@ -536,6 +538,8 @@ in
               "herdr hunk",
               "herdr hunk --tab",
               "herdr worktree layout",
+              "dotfiles.dev-layout.hunk-split",
+              "dotfiles.dev-layout.hunk-tab",
               "nathanflurry.jj-workspace.new-tab",
               "vercel.sandbox.start-agent",
               "vercel.sandbox.start-codex",
@@ -865,7 +869,13 @@ in
 
           existing = load_existing()
           managed = {entry["plugin_id"]: entry for entry in map(manifest_entry, managed_roots)}
-          merged = [entry for entry in existing if entry.get("plugin_id") not in managed]
+          retired = {"dotfiles.dev-layout"}
+          merged = [
+              entry
+              for entry in existing
+              if entry.get("plugin_id") not in managed
+              and entry.get("plugin_id") not in retired
+          ]
           merged.extend(managed[plugin_id] for plugin_id in sorted(managed))
           registry.write_text(json.dumps(merged, indent=2) + "\n")
           PY
@@ -945,6 +955,7 @@ in
 
           uninstall_plugin() {
             plugin_id="$1"
+            removal="''${2:-uninstall}"
 
             if [ "$runtime_deferred" -eq 1 ]; then
               return 0
@@ -962,8 +973,8 @@ in
             fi
 
             if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"plugin_id\":\"$plugin_id\""; then
-              echo "herdr: removing $plugin_id plugin"
-              if ! uninstall_output=$("$herdr_cmd" plugin uninstall "$plugin_id" 2>&1); then
+              echo "herdr: removing $plugin_id plugin with $removal"
+              if ! uninstall_output=$("$herdr_cmd" plugin "$removal" "$plugin_id" 2>&1); then
                 if printf '%s\n' "$uninstall_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
                   echo "herdr: warning: runtime unavailable or outdated; deferring $plugin_id removal" >&2
                   runtime_deferred=1
@@ -984,6 +995,7 @@ in
 
           # Patched plugins are registered from Nix-managed local packages.
           uninstall_plugin rjyo.window-title-sync
+          uninstall_plugin dotfiles.dev-layout unlink
           install_plugin smarzban herdr-file-viewer
           install_plugin dutifuldev ghzinga plugins/herdr
           install_plugin dcolinmorgan herdr-remote relay

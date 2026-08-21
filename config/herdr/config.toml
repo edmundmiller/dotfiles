@@ -120,18 +120,6 @@ command = "hunk.diff.branch-split"
 description = "open branch Hunk diff in a split"
 
 [[keys.command]]
-key = "prefix+u"
-type = "plugin_action"
-command = "dotfiles.dev-layout.hunk-split"
-description = "open dotfiles Hunk diff in a side pane"
-
-[[keys.command]]
-key = "prefix+U"
-type = "plugin_action"
-command = "dotfiles.dev-layout.hunk-tab"
-description = "open dotfiles Hunk diff in a tab"
-
-[[keys.command]]
 key = "prefix+a"
 type = "plugin_action"
 command = "nathanflurry.jj-workspace.new"

@@ -26,19 +26,10 @@ function createPiMock() {
       if (command === "git" && args[0] === "diff") {
         return { code: 0, stdout: "diff --git a/file.txt b/file.txt", stderr: "" };
       }
-      if (command === "herdr" && args.join(" ") === "plugin list --json") {
+      if (command === "herdr" && args[0] === "pane" && args[1] === "split") {
         return {
           code: 0,
-          stdout: JSON.stringify({
-            result: {
-              plugins: [
-                {
-                  id: "dotfiles.dev-layout",
-                  manifest_path: "/plugins/dotfiles-dev-layout/herdr-plugin.toml",
-                },
-              ],
-            },
-          }),
+          stdout: JSON.stringify({ result: { pane: { pane_id: "pane-hunk" } } }),
           stderr: "",
         };
       }
@@ -80,6 +71,10 @@ describe("pi-hunk", () => {
   test("hunk_diff writes Last Pi turn marker for Hunk source switching", async () => {
     const repo = mkdtempSync(join(tmpdir(), "pi-hunk-marker-"));
     const { calls, tools } = createPiMock();
+    const previousWorkspace = process.env.HERDR_WORKSPACE_ID;
+    const previousPane = process.env.HERDR_PANE_ID;
+    process.env.HERDR_WORKSPACE_ID = "workspace-1";
+    process.env.HERDR_PANE_ID = "pane-pi";
 
     try {
       await tools.hunk_diff!.execute("1", {
@@ -89,19 +84,29 @@ describe("pi-hunk", () => {
         pathspecs: ["src"],
       });
 
-      expect(calls.map((call) => call.command)).toEqual(["git", "git", "git", "herdr", "python3"]);
-      expect(calls[2]!.args).toEqual(["diff", "--staged", "origin/main", "--", "src"]);
-      const scriptCall = calls[4]!;
-      expect(scriptCall.args).toEqual([
-        "/plugins/dotfiles-dev-layout/dev_layout.py",
-        "hunk",
-        "--split",
-        "--staged",
-        "--",
-        "origin/main",
-        "--",
-        "src",
+      expect(calls.map((call) => call.command)).toEqual([
+        "git",
+        "git",
+        "git",
+        "herdr",
+        "herdr",
+        "herdr",
       ]);
+      expect(calls[2]!.args).toEqual(["diff", "--staged", "origin/main", "--", "src"]);
+      expect(calls[3]!.args).toEqual([
+        "pane",
+        "split",
+        "pane-pi",
+        "--direction",
+        "right",
+        "--cwd",
+        repo,
+        "--focus",
+      ]);
+      expect(calls[4]!.args).toEqual(["pane", "rename", "pane-hunk", "hunk"]);
+      expect(calls[5]!.args.slice(0, 2)).toEqual(["pane", "run"]);
+      expect(calls[5]!.args[2]).toBe("pane-hunk");
+      expect(calls[5]!.args[3]).toContain("hunk 'diff' '--staged' 'origin/main' '--' 'src'");
       const marker = JSON.parse(readFileSync(join(repo, ".git/hunk/last-pi-turn.json"), "utf8"));
       expect(marker).toMatchObject({
         version: 1,
@@ -116,6 +121,10 @@ describe("pi-hunk", () => {
         "diff --git"
       );
     } finally {
+      if (previousWorkspace === undefined) delete process.env.HERDR_WORKSPACE_ID;
+      else process.env.HERDR_WORKSPACE_ID = previousWorkspace;
+      if (previousPane === undefined) delete process.env.HERDR_PANE_ID;
+      else process.env.HERDR_PANE_ID = previousPane;
       rmSync(repo, { force: true, recursive: true });
     }
   });

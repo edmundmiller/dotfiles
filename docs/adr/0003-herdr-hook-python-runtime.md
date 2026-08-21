@@ -1,8 +1,8 @@
 ---
 purpose: Preserve the superseded Python launcher decision for Herdr helpers.
 applies_to: Historical Herdr hook work and standalone Python helper scripts.
-entrypoint: Use the dotfiles.dev-layout plugin for current worktree automation.
-verification: Inspect its manifest events and run dev_layout_test.py.
+entrypoint: Use Workspace Manager for current worktree layout automation.
+verification: Inspect config/herdr/workspace-manager.yml and validate it with the plugin action.
 update_when: Herdr plugin events or helper runtime ownership changes.
 ---
 
@@ -10,9 +10,9 @@ update_when: Herdr plugin events or helper runtime ownership changes.
 
 ## Status
 
-Superseded by the Herdr plugin migration. Historical launcher guidance remains
-relevant only for standalone helper scripts. Checkout layout now lives in
-`packages/herdr-plugins/dotfiles-dev-layout/`.
+Superseded first by the Herdr plugin migration and then by Workspace Manager.
+Historical launcher guidance remains relevant only for standalone helper
+scripts. Checkout layout now lives in `config/herdr/workspace-manager.yml`.
 
 ## Context
 
@@ -52,7 +52,7 @@ The key reason to prefer `uv` is not just speed: `uv` script metadata gives chec
 
 ## Decision
 
-Current worktree automation belongs in a Herdr plugin event hook. Do not restore
+Current worktree layout automation belongs in Workspace Manager. Do not restore
 `[worktrees].post_create_command`; activation removes that legacy key.
 
 For checked-in Herdr helper scripts that benefit from Python and may need lightweight Python package dependencies, prefer a `uv run --script` shebang with inline script metadata.
@@ -73,7 +73,7 @@ The Herdr module/package wiring must ensure `uv` is available in the environment
 
 ## Consequences
 
-- Herdr worktree lifecycle code runs through the packaged plugin and its declared runtime.
+- Herdr worktree layouts run through Workspace Manager and its declarative config.
 - Standalone `uv` helpers still depend on `uv` being available declaratively.
 - `nix-shell` shebangs remain appropriate when Nix-provided runtime purity matters more than startup latency or inline Python dependency ergonomics.
 - `cached-nix-shell` remains a possible manual optimization, but it is not the default for this repo's Herdr hook scripts.

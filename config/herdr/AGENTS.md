@@ -114,16 +114,6 @@ type = "plugin_action"
 command = "hunk.diff.branch-split"
 
 [[keys.command]]
-key = "prefix+u"
-type = "plugin_action"
-command = "dotfiles.dev-layout.hunk-split"
-
-[[keys.command]]
-key = "prefix+U"
-type = "plugin_action"
-command = "dotfiles.dev-layout.hunk-tab"
-
-[[keys.command]]
 key = "prefix+a"
 type = "plugin_action"
 command = "nathanflurry.jj-workspace.new"
@@ -173,7 +163,7 @@ Meaning:
 
 - `prefix+w` opens the workspace picker.
 - `prefix+N` creates a workspace.
-- `prefix+g` creates a native Git worktree. Creation bootstraps OMP and, only inside a Git checkout, Hunk; OMP is focused.
+- `prefix+g` creates a native Git worktree. Workspace Manager replaces its initial tab with the declarative OMP tab and adds Hunk.
 - `prefix+G` opens an existing worktree.
 - `prefix+/` opens Herdr goto/navigation.
 - `prefix+c` creates a tab.
@@ -192,8 +182,7 @@ Meaning:
 - `prefix+space` opens which-key.
 - `prefix+f` / `prefix+F` open the file viewer in a split/tab.
 - `prefix+]` / `prefix+}` / `prefix+{` open Hunk worktree/staged/branch diffs.
-- `prefix+u` / `prefix+U` keep the dotfiles dev-layout Hunk split/tab actions.
-- `prefix+a` creates a stable task-named jj workspace as a new Herdr workspace.
+- `prefix+a` creates a stable task-named jj workspace, then applies the same Workspace Manager `dev` layout.
 - `prefix+d` removes a clean jj workspace only after its PR closes or merges.
 - `prefix+D` abandons a clean jj workspace after exact typed task-name confirmation.
 - `prefix+t` smart-renames the current agent tab from its task context.
@@ -210,15 +199,16 @@ Meaning:
 - Keep `toggle_sidebar` bound unless Herdr adds a real way to disable navigate-mode `q`; configured actions are handled before reserved keys.
 - `H`/`L` should remain available for pane/window navigation, not workspace movement.
 - Attempts to bind workspace navigation to `(`/`)`, `shift+9`/`shift+0`, and `shift+(`/`shift+)` were unreliable in this terminal/Herdr stack.
-- Keep the local `dotfiles.dev-layout` plugin free of `workspace.created` / `worktree.created` hooks so ordinary new workspaces open plain. Its `bootstrap` action is run explicitly; it serializes per workspace, is idempotent, and opens Hunk only from a Git checkout.
+- Keep persistent tab/pane topology in `workspace-manager.yml`; dynamic tools may create their own temporary panes directly through Herdr.
+- Keep the native-worktree path matcher scoped to `~/.local/share/herdr/worktrees` so Review Boxes under `/.pi/worktrees/` retain their launcher-owned layout.
 - `herdr workspace` was experimental and is not part of the active keymap unless deliberately reintroduced.
 
 ## Related files
 
 - `modules/shell/herdr/default.nix` bootstraps and upserts selected live config keys.
-- `packages/herdr-plugins/dotfiles-dev-layout/` implements Hunk split/tab actions and the OMP/Hunk checkout bootstrap.
+- `config/herdr/workspace-manager.yml` declares the shared OMP/Hunk development layout.
 - `packages/herdr-plugins/dotfiles-github-link-preview/` implements Ctrl-click GitHub issue/PR previews.
-- `packages/herdr-plugin-jj-workspace/` owns the pinned upstream source and local lifecycle-safety patch.
+- `packages/herdr-plugin-jj-workspace/` owns the pinned upstream source plus lifecycle-safety and layout-application patches.
 - `packages/herdr-tab-smart-rename/` owns the pinned upstream source, OMP provider patch, and automatic worker lifecycle.
 - `ogulcancelik/herdr-browser` is installed from GitHub; it requires `[experimental].kitty_graphics = true`.
 - Other marketplace plugins are installed by `modules/shell/herdr/default.nix`.

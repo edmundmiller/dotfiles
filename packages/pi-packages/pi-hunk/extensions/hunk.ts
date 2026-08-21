@@ -92,18 +92,76 @@ async function writePiLastTurnMarker(
   );
   return markerPath;
 }
-async function devLayoutScript(pi: ExtensionAPI): Promise<string> {
-  const result = await runCommand(pi, "herdr", ["plugin", "list", "--json"]);
-  const payload = JSON.parse(result.stdout) as {
-    result?: { plugins?: Array<{ id?: string; plugin_id?: string; manifest_path?: string }> };
-  };
-  const plugin = payload.result?.plugins?.find(
-    (entry) => (entry.id ?? entry.plugin_id) === "dotfiles.dev-layout"
-  );
-  if (!plugin?.manifest_path) {
-    throw new Error("dotfiles.dev-layout Herdr plugin is not installed");
+
+function contextValue(key: string): string | undefined {
+  const direct = process.env[key];
+  if (direct) return direct;
+  try {
+    const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    const contextKey = key === "HERDR_WORKSPACE_ID" ? "workspace_id" : "focused_pane_id";
+    const value = context[contextKey];
+    return typeof value === "string" ? value : undefined;
+  } catch {
+    return undefined;
   }
-  return join(dirname(plugin.manifest_path), "dev_layout.py");
+}
+
+function responseString(payload: unknown, path: string[]): string | undefined {
+  let value = payload;
+  for (const key of path) {
+    if (!value || typeof value !== "object") return undefined;
+    value = (value as Record<string, unknown>)[key];
+  }
+  return typeof value === "string" ? value : undefined;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'"'"'`)}'`;
+}
+
+async function openHunk(
+  pi: ExtensionAPI,
+  repo: string,
+  placement: "pane" | "tab",
+  hunkArgs: string[]
+) {
+  const herdr = process.env.HERDR_BIN_PATH || "herdr";
+  const workspaceId = contextValue("HERDR_WORKSPACE_ID");
+  if (!workspaceId) throw new Error("hunk_diff must run inside a Herdr workspace");
+
+  let paneId: string | undefined;
+  if (placement === "tab") {
+    const created = await runCommand(
+      pi,
+      herdr,
+      ["tab", "create", "--workspace", workspaceId, "--cwd", repo, "--label", "hunk"],
+      { cwd: repo, timeout: 10_000 }
+    );
+    paneId = responseString(parseJson(created.stdout), ["result", "root_pane", "pane_id"]);
+  } else {
+    const focusedPaneId = contextValue("HERDR_PANE_ID");
+    if (!focusedPaneId) throw new Error("hunk_diff split placement requires a Herdr pane");
+    const created = await runCommand(
+      pi,
+      herdr,
+      ["pane", "split", focusedPaneId, "--direction", "right", "--cwd", repo, "--focus"],
+      { cwd: repo, timeout: 10_000 }
+    );
+    paneId = responseString(parseJson(created.stdout), ["result", "pane", "pane_id"]);
+  }
+  if (!paneId) throw new Error("Herdr created the Hunk target but returned no pane id");
+
+  await runCommand(pi, herdr, ["pane", "rename", paneId, "hunk"], { cwd: repo, timeout: 10_000 });
+  const args = [...hunkArgs];
+  if (process.env.HUNK_THEME) args.push("--theme", process.env.HUNK_THEME);
+  args.push("--no-transparent-bg");
+  const quotedArgs = args.map(shellQuote).join(" ");
+  const command = `if command -v hunk >/dev/null 2>&1; then exec hunk ${quotedArgs}; else exec bunx hunkdiff ${quotedArgs}; fi`;
+  await runCommand(pi, herdr, ["pane", "run", paneId, command], { cwd: repo, timeout: 10_000 });
+  return { herdr, paneId, command };
 }
 
 export default function hunkExtension(pi: ExtensionAPI) {
@@ -140,25 +198,15 @@ export default function hunkExtension(pi: ExtensionAPI) {
         staged: params.staged,
         pathspecs: params.pathspecs,
       });
-      // Drive the dev-layout plugin script directly so diff options survive;
-      // `herdr plugin action invoke` cannot forward arguments. The script
-      // resolves workspace/pane from HERDR_* env inherited by Pi's pane.
-      const script = await devLayoutScript(pi);
-      const args = [script, "hunk", params.placement === "tab" ? "--tab" : "--split"];
+      const args = ["diff"];
       if (params.staged) args.push("--staged");
-      const passthrough: string[] = [];
-      if (params.watch) passthrough.push("--watch");
-      if (params.excludeUntracked) passthrough.push("--exclude-untracked");
-      if (params.target) passthrough.push(params.target);
-      if (params.pathspecs?.length) passthrough.push("--", ...params.pathspecs);
-      if (passthrough.length) args.push("--", ...passthrough);
-      const result = await runCommand(pi, "python3", args, {
-        cwd: repo,
-        timeout: 10_000,
-      });
-      return textResult(result.stdout || "Opened Hunk diff review in Herdr.", {
+      if (params.watch) args.push("--watch");
+      if (params.excludeUntracked) args.push("--exclude-untracked");
+      if (params.target) args.push(params.target);
+      if (params.pathspecs?.length) args.push("--", ...params.pathspecs);
+      const result = await openHunk(pi, repo, params.placement === "tab" ? "tab" : "pane", args);
+      return textResult("Opened Hunk diff review in Herdr.", {
         action: "diff",
-        command: "python3",
         args,
         markerPath,
         ...result,

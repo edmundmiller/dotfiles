@@ -122,8 +122,8 @@ OMP now matches Herdr and ghostty on Catppuccin, both modes:
   Ghostty/Herdr Latte backgrounds while raising light-mode text contrast.
 
 Herdr's own UI theme is `name = "terminal"` (inherits the terminal palette),
-and its dev-layout maps macOS dark→mocha / light→latte
-(`config/herdr/plugins/dotfiles-dev-layout/`).
+and persistent OMP/Hunk tabs are declared in
+`config/herdr/workspace-manager.yml`.
 
 ### Seqera brand themes (added 2026-07-04)
 

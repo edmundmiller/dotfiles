@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/razajamil/herdr-plugin-workspace-manager/main/schema.json
+
+layouts:
+  - id: dev
+    setup:
+      command: "if [ -x scripts/qmd-seed-worktree.sh ]; then scripts/qmd-seed-worktree.sh; fi"
+      blocking: true
+    tabs:
+      - title: omp
+        panes:
+          - title: omp
+            agent: omp
+            setup: true
+      - title: hunk
+        panes:
+          - title: hunk
+            command: "if command -v hunk >/dev/null 2>&1; then exec hunk diff --no-transparent-bg; else exec bunx hunkdiff diff --no-transparent-bg; fi"
+
+workspaces:
+  - path: ~/.local/share/herdr/worktrees
+    defaultLayout: dev

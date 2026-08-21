@@ -1,0 +1,133 @@
+diff --git a/src/main.rs b/src/main.rs
+index abd7c98..0067250 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -235,13 +235,55 @@ fn create_workspace(
+             branch,
+             "--focus",
+         ]);
+-        if !run(open) {
++        let output = open.output().map_err(|err| {
++            rollback_failure_message(
++                repo,
++                &dest_path,
++                branch,
++                true,
++                &format!("herdr workspace create failed to start: {err}"),
++            )
++        })?;
++        io::stderr().write_all(&output.stderr).ok();
++        if !output.status.success() {
+             return Err(rollback_failure_message(
+                 repo,
+                 &dest_path,
+                 branch,
+                 true,
+-                "herdr workspace create failed",
++                &format!(
++                    "herdr workspace create failed (exit {})",
++                    output.status.code().unwrap_or(-1)
++                ),
++            ));
++        }
++        let stdout = String::from_utf8_lossy(&output.stdout);
++        let workspace_id = json_string_field(&stdout, "workspace_id")
++            .ok_or_else(|| "workspace created but Herdr returned no workspace id".to_string())?;
++        eprintln!("+ workspace manager apply dev");
++        let mut plugins = Command::new(&herdr);
++        plugins.args(["plugin", "list", "--json"]);
++        let plugins = plugins
++            .output()
++            .map_err(|err| format!("could not locate Workspace Manager: {err}"))?;
++        if !plugins.status.success() {
++            return Err("workspace was created, but Workspace Manager is not available".into());
++        }
++        let plugins_json = String::from_utf8_lossy(&plugins.stdout);
++        let plugin_root =
++            plugin_root(&plugins_json, "herdr-plugin-workspace-manager").ok_or_else(|| {
++                "workspace was created, but Workspace Manager is not installed".to_string()
++            })?;
++        let mut layout = Command::new("sh");
++        layout
++            .args(["bin/herdr-workspace-manager", "apply", "dev"])
++            .current_dir(plugin_root)
++            .env("HERDR_WSM_WORKSPACE", &workspace_id)
++            .env("HERDR_WSM_CWD", &dest)
++            .env("HERDR_BIN_PATH", &herdr);
++        if !run(layout) {
++            return Err(format!(
++                "workspace {workspace_id} was created, but Workspace Manager could not apply the dev layout"
+             ));
+         }
+     }
+@@ -1129,6 +1171,13 @@ fn json_string_field(json: &str, key: &str) -> Option<String> {
+     None
+ }
+ 
++fn plugin_root(json: &str, plugin_id: &str) -> Option<String> {
++    let id = format!("\"{plugin_id}\"");
++    let id_offset = json.find(&id)?;
++    let object_start = json[..id_offset].rfind('{')?;
++    json_string_field(&json[object_start..], "plugin_root")
++}
++
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+@@ -1410,4 +1459,56 @@ mod tests {
+         assert!(commands.contains("jj workspace forget"));
+         assert!(!commands.contains("jj git fetch"));
+     }
++
++    #[test]
++    fn new_herdr_workspace_applies_the_workspace_manager_dev_layout() {
++        let _env = ENV_LOCK.lock().expect("lock environment");
++        let temp = TempDir::new("workspace-layout");
++        let bin = temp.path.join("bin");
++        let repo = temp.path.join("source-repo");
++        let workspace_root = temp.path.join("workspaces");
++        let log = temp.path.join("commands.log");
++        let workspace_manager = temp.path.join("workspace-manager");
++        fs::create_dir_all(&bin).expect("create fake bin");
++        fs::create_dir_all(&repo).expect("create source repo");
++        fs::create_dir_all(workspace_manager.join("bin")).expect("create fake plugin");
++        write_executable(
++            &bin.join("jj"),
++            "#!/bin/sh\nprintf 'jj %s\\n' \"$*\" >> \"$TEST_LOG\"\nif [ \"$1\" = workspace ] && [ \"$2\" = add ]; then\n  for destination; do :; done\n  /bin/mkdir -p \"$destination/.jj\"\n  : > \"$destination/.jj/repo\"\nfi\nexit 0\n",
++        );
++        write_executable(&bin.join("sh"), "#!/bin/sh\nexec /bin/sh \"$@\"\n");
++        let herdr = bin.join("herdr");
++        write_executable(
++            &herdr,
++            "#!/bin/sh\nprintf 'herdr %s\\n' \"$*\" >> \"$TEST_LOG\"\nif [ \"$1\" = workspace ] && [ \"$2\" = create ]; then\n  printf '%s\\n' '{\"result\":{\"workspace\":{\"workspace_id\":\"workspace-new\"}}}'\nelif [ \"$1\" = plugin ] && [ \"$2\" = list ]; then\n  printf '{\"result\":{\"plugins\":[{\"plugin_id\":\"herdr-plugin-workspace-manager\",\"plugin_root\":\"%s\"}]}}\\n' \"$TEST_WORKSPACE_MANAGER\"\nfi\nexit 0\n",
++        );
++        write_executable(
++            &workspace_manager.join("bin/herdr-workspace-manager"),
++            "#!/bin/sh\nprintf 'workspace-manager %s | workspace=%s cwd=%s herdr=%s\\n' \"$*\" \"$HERDR_WSM_WORKSPACE\" \"$HERDR_WSM_CWD\" \"$HERDR_BIN_PATH\" >> \"$TEST_LOG\"\n",
++        );
++
++        let _path = EnvVarGuard::set("PATH", &bin);
++        let _log = EnvVarGuard::set("TEST_LOG", &log);
++        let _herdr = EnvVarGuard::set("HERDR_BIN_PATH", &herdr);
++        let _manager = EnvVarGuard::set("TEST_WORKSPACE_MANAGER", &workspace_manager);
++        let result = create_workspace(
++            repo.to_str().expect("utf-8 source repo"),
++            &workspace_root,
++            "task-layout",
++            "trunk()",
++            "workspace",
++        );
++
++        assert!(
++            result.is_ok(),
++            "workspace and layout should be created: {result:?}"
++        );
++        let destination = workspace_root.join("source-repo").join("task-layout");
++        let commands = fs::read_to_string(log).expect("read fake command log");
++        assert!(commands.contains("herdr plugin list --json"));
++        assert!(commands.contains("workspace-manager apply dev"));
++        assert!(commands.contains("workspace=workspace-new"));
++        assert!(commands.contains(&format!("cwd={}", destination.display())));
++        assert!(commands.contains(&format!("herdr={}", herdr.display())));
++    }
+ }
