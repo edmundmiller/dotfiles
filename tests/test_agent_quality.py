@@ -93,6 +93,16 @@ class AgentQualityTests(unittest.TestCase):
             flake,
         )
 
+    def test_orb_setup_limits_nix_parallelism(self) -> None:
+        setup = ORB_SETUP.read_text()
+
+        self.assertIn('"eval-cores = 1"', setup)
+        self.assertIn('"max-jobs = 1"', setup)
+        self.assertIn('"cores = 1"', setup)
+        self.assertIn('swapfile="/swapfile"', setup)
+        self.assertIn('sudo fallocate -l 4G "$swapfile"', setup)
+        self.assertIn('sudo /usr/sbin/swapon "$swapfile"', setup)
+
     def test_packaged_agent_quality_uses_the_active_checkout_and_jujutsu(self) -> None:
         wrapper = HEY_WRAPPER.read_text()
         module = OMP_MODULE.read_text()

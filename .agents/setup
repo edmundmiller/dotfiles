@@ -20,14 +20,18 @@ fi
 # shellcheck disable=SC1090
 source "$nix_env"
 
-step "Trust the repository binary cache"
+step "Configure Nix for the orb"
 nix_custom_conf="/etc/nix/nix.custom.conf"
 nix_config_changed=0
+# Full flake evaluation can exhaust a small orb when Nix uses every core.
 for setting in \
   "trusted-users = root $(id -un)" \
   "extra-substituters = https://cache.numtide.com" \
   "extra-trusted-substituters = https://cache.numtide.com" \
-  "extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="; do
+  "extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=" \
+  "eval-cores = 1" \
+  "max-jobs = 1" \
+  "cores = 1"; do
   if ! sudo grep -Fqx "$setting" "$nix_custom_conf" 2>/dev/null; then
     printf '%s\n' "$setting" | sudo tee -a "$nix_custom_conf" >/dev/null
     nix_config_changed=1
@@ -42,6 +46,18 @@ step "Allow sparse virtual memory reservations"
 # commit that memory, but Linux's default heuristic rejects the reservation.
 if [[ "$(sysctl -n vm.overcommit_memory)" != "1" ]]; then
   sudo sysctl -w vm.overcommit_memory=1 >/dev/null
+fi
+
+step "Provide swap for full Nix evaluation"
+# The evaluator retains the full flake graph, even with one evaluation thread.
+swapfile="/swapfile"
+if ! /usr/sbin/swapon --show=NAME --noheadings | grep -Fxq "$swapfile"; then
+  if [[ ! -f "$swapfile" ]]; then
+    sudo fallocate -l 4G "$swapfile"
+    sudo chmod 600 "$swapfile"
+  fi
+  sudo /usr/sbin/mkswap "$swapfile" >/dev/null
+  sudo /usr/sbin/swapon "$swapfile"
 fi
 
 step "Warm the headless agent development shell"
