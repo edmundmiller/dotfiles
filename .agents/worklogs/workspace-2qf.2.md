@@ -24,9 +24,10 @@ Deploy a reversible Scintillate-only Hermes v0.20.5 native Buzz UX pilot without
 - The first switch activated the new generation but left Scintillate's guarded gateway on its prior process; the cron tick exposed an `IndentationError` because the external-executor patch used a zero-context line-number hunk against v0.20.5.
 - The cron patch is now anchored to `cron_status()` context and applies with zero fuzz to both the fleet source and v0.20.5. The rebuilt pilot install check passes the 7 Buzz cases, 1 cron compile regression, and 5 external-executor cases.
 - The repaired NUC build produced `/nix/store/c9hl16vaviygihlqkmqm3k7z8gjnsp7s-nixos-system-nuc-26.11.20260714.18b9261`.
-- The final generation is `/nix/store/c6yq83pqw5dy3n150m445lmksf3gpllh-nixos-system-nuc-26.11.20260714.18b9261`; its Scintillate container was recreated because the package PATH changed.
-- Live readback reports Hermes Agent v0.20.5 from both bare and explicit package commands, Buzz connected as Scintillate, presence online, and a successful cron tick.
-- The final deployment left Amos Burton, Anne, Betty, Finn, and Orchestrator active on the same PIDs with `NRestarts=0`.
+- The final reviewed build produced `/nix/store/zk4xk4bbjc33lnj8ms40bkvmyrzmk5zd-nixos-system-nuc-26.11.20260714.18b9261`; the focused `nuc-buzz-hermes-community-runtime` check passed on the NUC.
+- The host timer now atomically writes a `0600` executor heartbeat after each successful tick. The gateway container reads the shared marker and `hermes cron status` reports the external timer running without container access to host systemd.
+- The guarded gateway required one explicit restart to adopt the reviewed package. Live readback reports Hermes Agent v0.20.5, Buzz connected as Scintillate with five gateway platforms running, presence online, and a fresh successful cron heartbeat.
+- The final deployment left Amos Burton, Anne, Betty, Finn, and Orchestrator active with `NRestarts=0`; their PID changes were the expected serialized activation restart.
 - Activation also surfaced an unrelated existing `mill-docs-git-pull.service` failure caused by unmerged files; the mill-docs checkout was not touched.
 
 ## Reviews
@@ -34,6 +35,7 @@ Deploy a reversible Scintillate-only Hermes v0.20.5 native Buzz UX pilot without
 - Two-axis pre-deploy review found one hard packaging-ownership violation plus partial live proof, group reply scope, and overlapping reaction cleanup gaps.
 - The implementation now uses the required `overlays/hermes-agent/` seam; flat replies are DM-only; working reactions are per turn and cleaned on disconnect; live proof remains intentionally open until deployment.
 - Follow-up review's failed-cleanup gap is closed: failed reaction removals remain tracked for retry, with a seventh regression test. The optional RTK duplication finding was also removed.
+- Final standards review found that container-side cron status could not query the host timer. A red/green regression pair now uses the existing CLI and evaluated-service seams: six external-executor tests pass, and the deployed shared heartbeat is authoritative and fresh.
 
 ## Feedback
 
@@ -49,3 +51,5 @@ None yet.
 - `d827921` — expected-failure regression for the v0.20.5 cron patch syntax.
 - `a6012c7` — context-anchored cron patch and latest-source behavior checks.
 - `6439c18` — package-aware container recreation pin.
+- `5ccc23e` — expected-failure regressions for container-visible cron health.
+- `4f252be` — host heartbeat reporting, materialization, and evaluated service coverage.
