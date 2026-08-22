@@ -1474,12 +1474,29 @@ in
           pnpm
           prek
           himalaya
+          my.buzz
           whisper-cpp
           rtk
         ];
         settings = {
           stt.provider = "local_command";
           terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
+          gateway.platforms.buzz = {
+            enabled = true;
+            extra = {
+              relay_url = "https://millers.communities.buzz.xyz";
+              cli_path = "${pkgs.my.buzz}/bin/buzz";
+              channels = map buzzChannelId buzzBindings.profiles.scintillate.channels;
+              home_channel = buzzChannelId buzzBindings.profiles.scintillate.home;
+              allowed_users = [
+                buzzBindings.identities.edmund.pubkey
+                buzzBindings.identities.moni.pubkey
+              ];
+              require_mention = true;
+              allow_all_users = false;
+              transport = "auto";
+            };
+          };
         };
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
@@ -1490,7 +1507,10 @@ in
           "${hermesSharedHome}" = hermesSharedHome;
           "/home/emiller/.ssh" = "/home/ubuntu/.ssh";
         };
-        environmentFiles = [ "/run/hermes-scintillate-env/secrets.env" ];
+        environmentFiles = [
+          "/run/hermes-scintillate-env/secrets.env"
+          config.age.secrets.buzz-hermes-scintillate-agent-env.path
+        ];
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
@@ -1609,8 +1629,8 @@ in
   systemd.services.hermes-gateway-amosburton.enable = false;
 
   systemd.services.hermes-gateway-scintillate = {
-    enable = false;
-    # Scintillate is an interactive Telegram gateway.  A routine NixOS
+    enable = true;
+    # Scintillate is an interactive messaging gateway.  A routine NixOS
     # auto-upgrade/switch should not SIGTERM it mid-turn and send
     # "Gateway shutting down -- Your current task will be interrupted".
     # Apply unit/package changes on the next explicit service restart instead.
@@ -1619,10 +1639,11 @@ in
     wants = [ "opnix-secrets.service" ];
     serviceConfig.ExecStartPre = lib.mkAfter [
       himalayaFastmailSetupScript
-      (pkgs.writeShellScript "hermes-scintillate-telegram-dotenv" ''
+      (pkgs.writeShellScript "hermes-scintillate-gateway-dotenv" ''
         set -eu
         env_file=/var/lib/hermes-scintillate/.hermes/.env
-        secrets_file=/run/hermes-scintillate-env/secrets.env
+        profile_secrets_file=/run/hermes-scintillate-env/secrets.env
+        buzz_secrets_file=${lib.escapeShellArg config.age.secrets.buzz-hermes-scintillate-agent-env.path}
         tmp_file="$env_file.tmp.$$"
 
         install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
@@ -1630,8 +1651,14 @@ in
         chown emiller:users "$env_file"
         chmod 0600 "$env_file"
 
-        grep -v '^TELEGRAM_' "$env_file" > "$tmp_file"
-        grep '^TELEGRAM_' "$secrets_file" >> "$tmp_file"
+        if ! grep -q '^BUZZ_PRIVATE_KEY=' "$buzz_secrets_file"; then
+          echo "Scintillate Buzz identity secret is missing BUZZ_PRIVATE_KEY" >&2
+          exit 1
+        fi
+
+        grep -Ev '^(TELEGRAM_|BUZZ_)' "$env_file" > "$tmp_file"
+        grep '^TELEGRAM_' "$profile_secrets_file" >> "$tmp_file"
+        grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
         install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
         rm -f "$tmp_file"
       '')
@@ -2364,7 +2391,6 @@ in
   systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
   systemd.services.buzz-hermes-finn = mkBuzzHermesService "finn";
   systemd.services.buzz-hermes-orchestrator = mkBuzzHermesService "orchestrator";
-  systemd.services.buzz-hermes-scintillate = mkBuzzHermesService "scintillate";
 
   systemd.services.obsidian-sync-mill-docs = {
     description = "Obsidian Headless Sync (mill-docs)";

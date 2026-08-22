@@ -9,13 +9,16 @@
 let
   cfg = nixosConfig.config;
   profiles = builtins.attrNames cfg.modules.services.hermes.agents;
-  services = map (profile: cfg.systemd.services."buzz-hermes-${profile}") profiles;
-  identityFiles = map (
-    service:
-    builtins.elemAt service.serviceConfig.EnvironmentFile (
-      builtins.length service.serviceConfig.EnvironmentFile - 1
-    )
-  ) services;
+  acpProfiles = builtins.filter (profile: profile != "scintillate") profiles;
+  services = map (profile: cfg.systemd.services."buzz-hermes-${profile}") acpProfiles;
+  identityFiles =
+    map (
+      service:
+      builtins.elemAt service.serviceConfig.EnvironmentFile (
+        builtins.length service.serviceConfig.EnvironmentFile - 1
+      )
+    ) services
+    ++ [ cfg.age.secrets.buzz-hermes-scintillate-agent-env.path ];
   identitySourceFiles = map (
     profile: cfg.age.secrets."buzz-hermes-${profile}-agent-env".file
   ) profiles;
@@ -52,6 +55,16 @@ let
     "betty"
     "scintillate"
   ];
+  scintillateProfile = cfg.services.hermes-agent.profiles.scintillate;
+  scintillateGateway = cfg.systemd.services.hermes-gateway-scintillate;
+  scintillateBuzz = scintillateProfile.settings.gateway.platforms.buzz or { };
+  scintillateBuzzDisplay = scintillateProfile.settings.display.platforms.buzz or { };
+  scintillateBuzzPackages = builtins.filter (
+    package: pkgs.lib.getName package == "buzz"
+  ) scintillateProfile.extraPackages;
+  scintillatePreStartScripts = pkgs.lib.concatMapStringsSep "\n" (
+    script: if builtins.pathExists script then builtins.readFile script else script
+  ) scintillateGateway.serviceConfig.ExecStartPre;
 
   profileAssertions =
     profile:
@@ -208,8 +221,45 @@ let
       test = builtins.length (pkgs.lib.unique identitySourceFiles) == builtins.length profiles;
       msg = "Every Buzz/Hermes runtime must have a distinct encrypted identity source.";
     }
+    {
+      test = !(builtins.hasAttr "buzz-hermes-scintillate" cfg.systemd.services);
+      msg = "Scintillate's legacy buzz-acp unit must be absent during the native gateway pilot.";
+    }
+    {
+      test =
+        scintillateGateway.enable
+        && !scintillateGateway.restartIfChanged
+        && scintillateProfile.stateDir == "/var/lib/hermes-scintillate";
+      msg = "Scintillate's native gateway must be enabled on its persistent profile state without automatic mid-turn restarts.";
+    }
+    {
+      test =
+        scintillateBuzz.enabled
+        && scintillateBuzz.extra.relay_url == "https://millers.communities.buzz.xyz"
+        && scintillateBuzz.extra.cli_path == "${builtins.head scintillateBuzzPackages}/bin/buzz"
+        && scintillateBuzz.extra.channels == map channelId buzzBindings.profiles.scintillate.channels
+        && scintillateBuzz.extra.home_channel == expectedHomes.scintillate
+        &&
+          scintillateBuzz.extra.allowed_users == [
+            buzzBindings.identities.edmund.pubkey
+            buzzBindings.identities.moni.pubkey
+          ]
+        && scintillateBuzz.extra.require_mention
+        && !scintillateBuzz.extra.allow_all_users
+        && scintillateBuzz.extra.transport == "auto";
+      msg = "Scintillate's native Buzz adapter must preserve relay, routing, mention, and author boundaries.";
+    }
+    {
+      test =
+        !(scintillateBuzzDisplay.interim_assistant_messages or true)
+        && !(scintillateBuzzDisplay.streaming or true)
+        && builtins.length scintillateBuzzPackages == 1
+        && builtins.elem cfg.age.secrets.buzz-hermes-scintillate-agent-env.path scintillateProfile.environmentFiles
+        && pkgs.lib.hasInfix "grep '^BUZZ_'" scintillatePreStartScripts;
+      msg = "Scintillate's native Buzz gateway must publish coherent final replies and load the packaged CLI plus its dedicated identity secret.";
+    }
   ]
-  ++ builtins.concatMap profileAssertions profiles;
+  ++ builtins.concatMap profileAssertions acpProfiles;
 
   failures = builtins.filter (assertion: !assertion.test) assertions;
 in
