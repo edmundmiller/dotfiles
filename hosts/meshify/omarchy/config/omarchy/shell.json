@@ -42,7 +42,8 @@
         },
         {
           "id": "akitaonrails.ai-usagebar",
-          "lastSelectedEntryId": "openai"
+          "lastSelectedEntryId": "openai",
+          "showValue": true
         },
         {
           "id": "io.github.thisisgm.omapods"

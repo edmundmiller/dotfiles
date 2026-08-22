@@ -10,7 +10,7 @@ update_when: Omarchy state ownership, plugin installation, secret recovery, or r
 
 ## Status
 
-Accepted; implementation planned
+Accepted and implemented
 
 ## Date
 

@@ -1,69 +1,161 @@
 ---
-purpose: Preserve meshify's user-owned Omarchy Quattro overrides.
-applies_to: Restoring or reviewing Omarchy on the meshify host.
-entrypoint: Install plugins, then copy config/ and local/ under $HOME.
-verification: Run the checks below, then confirm hyprctl configerrors is empty.
-update_when: A tracked meshify Omarchy override changes.
+purpose: Operate and recover meshify's rigorously reproducible Omarchy state.
+applies_to: Restoring, checking, snapshotting, or updating Omarchy on meshify.
+entrypoint: Run `./manage check`, then use the matching `manage` subcommand.
+verification: Run the temporary-home drill and a full live `./manage check`.
+update_when: State ownership, dependencies, plugins, secrets, or restore behavior changes.
 ---
 
-# Meshify Omarchy configuration
+# Meshify Omarchy recovery
 
-This directory stores only meshify-specific overrides. Omarchy continues to own
-and update its packaged defaults under `/usr/share/omarchy/`.
+This directory is the source of truth for meshify's user-owned Omarchy state.
+Omarchy continues to own its packaged defaults under `/usr/share/omarchy/`.
+ADR 0011 defines the recovery boundary.
 
-The repository paths mirror the home directory without leading dots:
-
-- `config/hypr/` → `~/.config/hypr/`
-- `config/omarchy/` → `~/.config/omarchy/`
-- `local/bin/` → `~/.local/bin/`
-- `plugins.txt` → third-party plugin IDs and source URLs
-
-Legacy Hyprland `.conf` files, timestamped backups, logs, session state, sample
-hooks, and packaged shader symlinks are intentionally excluded.
-
-## Restore
-
-Back up the live files first. Install the third-party plugins and their runtime
-dependencies, then copy these overrides into place:
+## Supported interface
 
 ```bash
 cd ~/.config/dotfiles/hosts/meshify/omarchy
-omarchy pkg aur add ai-usagebar-bin
-while read -r plugin_id plugin_url; do
-  if [[ ! -d "$HOME/.config/omarchy/plugins/$plugin_id" ]]; then
-    omarchy plugin add "$plugin_url" --enable
-  fi
-done < plugins.txt
-"$HOME/.config/omarchy/plugins/io.github.thisisgm.omapods/setup"
+./manage restore
+./manage check
+./manage snapshot
+./manage update
+```
 
-install -Dm644 config/hypr/*.lua ~/.config/hypr/
-install -Dm644 config/omarchy/shell.json ~/.config/omarchy/shell.json
-install -Dm755 local/bin/rocket-league-lmstudio-guard \
-  ~/.local/bin/rocket-league-lmstudio-guard
-hyprctl reload
+- `restore` installs the declared files, exact plugin revisions, packages,
+  plugin setup, private state, and keyring entries. It is idempotent and ends
+  with `check`.
+- `check` is read-only. It detects file and mode drift, unknown active paths,
+  package or command gaps, plugin drift, disabled plugins, service failures,
+  missing private state, keyring absence, Omarchy incompatibility, shell
+  availability, and Hyprland errors.
+- `snapshot` copies only allowlisted non-secret files from the live home into
+  Git. It refuses to run while an active path is unclassified.
+- `update` fetches plugin changes, displays their commits and diff statistics,
+  requires confirmation, validates them, and advances `plugins.lock.json`.
+  Review third-party source before confirming an update.
+
+Mutating commands use a host-local lock. Changed live files are backed up under
+`~/.local/state/meshify-omarchy/backups/`. Interrupted secret reads are bounded
+and their protected temporary files are removed on the next restore.
+
+Useful options:
+
+```text
+--home PATH   target another home directory
+--no-system   skip host packages, services, shell IPC, and Hyprland operations
+--no-secrets  do not read 1Password or inspect the system keyring
+--yes         confirm reviewed plugin updates non-interactively
+```
+
+## Sources of truth
+
+- `manifest.json` declares file mappings and modes, packages, services, private
+  state, manual recovery gates, the tested Omarchy version, and inventory
+  classifications.
+- `plugins.lock.json` declares plugin IDs, URLs, exact commits, enablement, and
+  trusted setup adapters.
+- `config/` and `local/` contain safe desired state.
+- The 1Password item described below owns private files and credentials.
+- `/usr/share/omarchy/` owns stock branding, extension templates, sample hooks,
+  and packaged defaults.
+
+Plugin repositories, build output, logs, backups, lock files, and session state
+are generated and intentionally excluded from Git. AirPods hardware pairing is
+a documented human recovery gate rather than exported secret material.
+
+Generate the current plugin inventory instead of copying it into documentation:
+
+```bash
+jq -r '.plugins[] | [.id, .url, .revision] | @tsv' plugins.lock.json
+```
+
+## 1Password recovery item
+
+Create a secure item named `meshify-omarchy` in the `Private` vault. Add these
+concealed or multiline fields using the 1Password desktop application:
+
+| Field                     | Contents                                             |
+| ------------------------- | ---------------------------------------------------- |
+| `hass-config`             | Entire `~/.config/omarchy/hass/config.json` file     |
+| `hass-token`              | Home Assistant long-lived access token               |
+| `ai-usagebar-config`      | Entire `~/.config/ai-usagebar/config.toml` file      |
+| `ai-usagebar-credentials` | Entire `~/.config/ai-usagebar/credentials.json` file |
+
+The references are declared in `manifest.json`. Do not commit the resolved
+values. Restore writes private files with mode `0600`; the Home Assistant token
+is streamed to `secret-tool` on stdin and never appears in argv or command
+output.
+
+If 1Password is locked or an item is absent, restore preserves existing live
+private state and reports warnings. A fresh host remains partially recovered
+until the item is available. Initial 1Password login and AirPods pairing stay
+human steps.
+
+## Fresh-host restore
+
+1. Install the Omarchy version declared by `.omarchy.version` in
+   `manifest.json`.
+2. Clone this repository to `~/.config/dotfiles`.
+3. Sign in to the 1Password CLI through the desktop application.
+4. Run:
+
+   ```bash
+   cd ~/.config/dotfiles/hosts/meshify/omarchy
+   ./manage restore
+   ```
+
+5. Complete any reported manual recovery gates, then rerun `./manage check`.
+
+Do not copy plugin repositories or generated binaries from a previous home.
+Restore rebuilds them from the lockfile.
+
+## Safe snapshot workflow
+
+After intentionally changing a tracked Omarchy or Hyprland setting:
+
+```bash
+cd ~/.config/dotfiles/hosts/meshify/omarchy
+./manage snapshot
+./manage check
+
+git diff -- config local manifest.json plugins.lock.json
+```
+
+Snapshot never reads declared private files. An unknown file under an inventoried
+configuration root must be classified in `manifest.json` before snapshot can
+continue.
+
+## Temporary-home regression drill
+
+This exercises file installation and exact plugin checkout without reading live
+private state or changing host services:
+
+```bash
+cd ~/.config/dotfiles/hosts/meshify/omarchy
+test_home=$(mktemp -d)
+./manage restore --home "$test_home" --no-system --no-secrets
+./manage check --home "$test_home" --no-system --no-secrets
+rm -rf "$test_home"
+```
+
+The automated CLI regression suite uses isolated local plugin repositories:
+
+```bash
+cd ~/.config/dotfiles
+python3 tests/test_meshify_omarchy_manage.py
+```
+
+## Live verification
+
+```bash
+cd ~/.config/dotfiles/hosts/meshify/omarchy
+./manage check
+systemctl --user is-active librepods.service
 hyprctl configerrors
 ```
 
-The shell reloads `shell.json` automatically.
-
-## Verify the snapshot
-
-```bash
-cd ~/.config/dotfiles/hosts/meshify/omarchy
-for file in config/hypr/*.lua; do
-  diff "$file" "$HOME/.config/hypr/${file##*/}"
-done
-diff config/omarchy/shell.json ~/.config/omarchy/shell.json
-cmp local/bin/rocket-league-lmstudio-guard \
-  ~/.local/bin/rocket-league-lmstudio-guard
-while read -r plugin_id plugin_url; do
-  test "$(git -C "$HOME/.config/omarchy/plugins/$plugin_id" \
-    remote get-url origin)" = "$plugin_url"
-  omarchy plugin list --json | jq -e --arg id "$plugin_id" \
-    'any(.[]; .id == $id and .enabled)'
-done < plugins.txt
-command -v ai-usagebar
-systemctl --user is-active --quiet librepods.service
-jq empty config/omarchy/shell.json
-bash -n local/bin/rocket-league-lmstudio-guard
-```
+`manage check` is authoritative. A successful result may include informational
+manual gates, but it must contain no errors. Restore warnings about unavailable
+1Password fields mean existing state was preserved, not that a fresh private
+state recovery was proved.

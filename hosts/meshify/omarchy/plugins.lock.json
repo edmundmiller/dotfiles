@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "id": "io.github.thisisgm.omapods",
+      "url": "https://github.com/thisisgm/omarchy-pods",
+      "revision": "b5170517089e8788480bd35f705761d7b3c7d330",
+      "enabled": true,
+      "setup": "omapods"
+    },
+    {
+      "id": "akitaonrails.ai-usagebar",
+      "url": "https://github.com/akitaonrails/ai-usagebar.git",
+      "revision": "526ea17c36b081894d18f4b72246b590f390ab1e",
+      "enabled": true,
+      "setup": "none"
+    },
+    {
+      "id": "hass",
+      "url": "https://github.com/konradk/hass.git",
+      "revision": "3901ccf77dbb0bc87c9542a66f98071e82413977",
+      "enabled": true,
+      "setup": "none"
+    },
+    {
+      "id": "io.github.fabean.herdr",
+      "url": "https://github.com/fabean/omarchy-herdr.git",
+      "revision": "8831976d3528c9679ced5d1259d9b63ae4543a3f",
+      "enabled": true,
+      "setup": "none"
+    }
+  ]
+}

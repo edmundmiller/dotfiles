@@ -1,0 +1,893 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+readonly MANIFEST="$SCRIPT_DIR/manifest.json"
+readonly LOCKFILE="$SCRIPT_DIR/plugins.lock.json"
+readonly OP_TIMEOUT="${MESHIFY_OMARCHY_OP_TIMEOUT:-5s}"
+
+COMMAND=""
+TARGET_HOME="$HOME"
+NO_SYSTEM=0
+NO_SECRETS=0
+ASSUME_YES=0
+ERRORS=0
+WARNINGS=0
+BACKUP_DIR=""
+TEMP_FILES=()
+
+cleanup_temp_files() {
+  local temp
+  for temp in "${TEMP_FILES[@]}"; do
+    [[ -n $temp ]] && rm -f -- "$temp"
+  done
+}
+trap cleanup_temp_files EXIT HUP INT TERM
+
+usage() {
+  cat <<'EOF'
+Usage: manage <restore|check|snapshot|update> [options]
+
+Reproduce and verify meshify's declared Omarchy state.
+
+Commands:
+  restore   Install the locked desired state, then check it
+  check     Report drift without changing state
+  snapshot  Capture allowlisted non-secret live state
+  update    Intentionally advance and validate plugin locks
+
+Options:
+  --home PATH   Use PATH as the target home directory
+  --no-system   Do not inspect or mutate host services and packages
+  --no-secrets  Do not read 1Password or restore private state
+  --yes         Confirm an intentional plugin update non-interactively
+  -h, --help    Show this help
+EOF
+}
+
+fail() {
+  printf 'manage: %s\n' "$*" >&2
+  exit 1
+}
+
+report_error() {
+  printf 'ERROR: %s\n' "$*" >&2
+  ERRORS=$((ERRORS + 1))
+}
+
+report_warning() {
+  printf 'WARNING: %s\n' "$*" >&2
+  WARNINGS=$((WARNINGS + 1))
+}
+
+report_info() {
+  printf 'INFO: %s\n' "$*"
+}
+
+parse_arguments() {
+  while (( $# > 0 )); do
+    case "$1" in
+    restore | check | snapshot | update)
+      [[ -z $COMMAND ]] || fail "only one command may be specified"
+      COMMAND="$1"
+      shift
+      ;;
+    --home)
+      [[ $# -ge 2 ]] || fail "--home requires a path"
+      TARGET_HOME="$2"
+      shift 2
+      ;;
+    --no-system)
+      NO_SYSTEM=1
+      shift
+      ;;
+    --no-secrets)
+      NO_SECRETS=1
+      shift
+      ;;
+    --yes | -y)
+      ASSUME_YES=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unknown argument: $1"
+      ;;
+    esac
+  done
+
+  [[ -n $COMMAND ]] || {
+    usage >&2
+    exit 64
+  }
+  [[ $OP_TIMEOUT =~ ^[0-9]+([.][0-9]+)?[smh]?$ ]] \
+    || fail "invalid MESHIFY_OMARCHY_OP_TIMEOUT: $OP_TIMEOUT"
+  TARGET_HOME="$(realpath -m -- "$TARGET_HOME")"
+  [[ -n $TARGET_HOME && $TARGET_HOME != / ]] || fail "refusing unsafe target home: $TARGET_HOME"
+}
+
+acquire_mutation_lock() {
+  local state_dir="$TARGET_HOME/.local/state/meshify-omarchy"
+  [[ ! -L $state_dir ]] || fail "refusing symlinked state directory: $state_dir"
+  mkdir -p -- "$state_dir"
+  exec {MANAGE_LOCK_FD}>"$state_dir/manage.lock"
+  flock -n "$MANAGE_LOCK_FD" || fail "another meshify Omarchy operation is running"
+}
+
+safe_relative_path() {
+  local path="$1"
+  [[ -n $path && $path != /* && $path != .. && $path != ../* && $path != */../* && $path != */.. ]]
+}
+
+validate_metadata() {
+  local failed=0 source target mode pattern
+
+  [[ -f $MANIFEST ]] || {
+    report_error "missing manifest: $MANIFEST"
+    return 1
+  }
+  [[ -f $LOCKFILE ]] || {
+    report_error "missing plugin lock: $LOCKFILE"
+    return 1
+  }
+
+  if ! jq -e '
+    .schemaVersion == 1
+    and .host == "meshify"
+    and (.omarchy.version | type == "string" and length > 0)
+    and (.files | type == "array")
+    and (.packages | type == "array")
+    and (.services | type == "array")
+    and (.privateState | type == "array")
+    and (.keyringSecrets | type == "array")
+    and (.manualRecovery | type == "array")
+    and (all(.manualRecovery[];
+      (.id | type == "string" and length > 0)
+      and (.message | type == "string" and length > 0)))
+    and (.inventory.roots | type == "array")
+    and (.inventory.omarchyDefaults | type == "array")
+    and (.inventory.generated | type == "array")
+    and (.inventory.manual | type == "array")
+    and (all(.files[];
+      (.source | type == "string" and length > 0)
+      and (.target | type == "string" and length > 0)
+      and (.mode | type == "string" and test("^0[0-7]{3}$"))
+      and (.sourceMode | type == "string" and test("^0[0-7]{3}$"))))
+    and (all(.packages[];
+      (.name | type == "string" and length > 0)
+      and (.manager == "repo" or .manager == "aur")
+      and (.command | type == "string" and length > 0)))
+    and (all(.services[];
+      (.name | type == "string" and length > 0)
+      and (.setup == "omapods")
+      and ((.commands // []) | type == "array")
+      and (all((.commands // [])[]; type == "string" and length > 0))))
+    and (all(.privateState[];
+      (.id | type == "string" and length > 0)
+      and (.target | type == "string" and length > 0)
+      and (.mode | type == "string" and test("^0[0-7]{3}$"))
+      and (.onePasswordRef | type == "string" and startswith("op://"))
+      and (.format == "json" or .format == "toml")))
+    and (all(.keyringSecrets[];
+      (.id | type == "string" and length > 0)
+      and (.onePasswordRef | type == "string" and startswith("op://"))
+      and (.adapter == "hass-token")
+      and (.configTarget | type == "string" and length > 0)))
+    and (([.files[].target] | length) == ([.files[].target] | unique | length))
+    and (([.files[].source] | length) == ([.files[].source] | unique | length))
+    and (([.privateState[].target] | length) == ([.privateState[].target] | unique | length))
+    and (([.packages[].name] | length) == ([.packages[].name] | unique | length))
+  ' "$MANIFEST" >/dev/null 2>&1; then
+    report_error "manifest schema validation failed"
+    failed=1
+  fi
+
+  if ! jq -e '
+    .schemaVersion == 1
+    and (.plugins | type == "array")
+    and (all(.plugins[];
+      (.id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$") and (contains("..") | not))
+      and (.url | type == "string" and test("^(https|file)://"))
+      and (.revision | type == "string" and test("^[0-9a-f]{40}$"))
+      and (.enabled | type == "boolean")
+      and (.setup == "none" or .setup == "omapods")))
+    and (([.plugins[].id] | length) == ([.plugins[].id] | unique | length))
+  ' "$LOCKFILE" >/dev/null 2>&1; then
+    report_error "plugin lock schema validation failed"
+    failed=1
+  fi
+
+  if (( failed == 0 )); then
+    while IFS=$'\t' read -r source target mode; do
+      if ! safe_relative_path "$source" || ! safe_relative_path "$target"; then
+        report_error "unsafe declared file path: $source -> $target"
+        failed=1
+        continue
+      fi
+      if [[ ! -f $SCRIPT_DIR/$source || -L $SCRIPT_DIR/$source ]]; then
+        report_error "declared source is not a regular file: $source"
+        failed=1
+      fi
+      if [[ $target != .config/* && $target != .local/* ]]; then
+        report_error "target must be under .config or .local: $target"
+        failed=1
+      fi
+    done < <(jq -r '.files[] | [.source, .target, .mode] | @tsv' "$MANIFEST")
+
+    while IFS= read -r target; do
+      if ! safe_relative_path "$target"; then
+        report_error "unsafe private-state target: $target"
+        failed=1
+      fi
+      if jq -e --arg target "$target" 'any(.files[]; .target == $target)' "$MANIFEST" >/dev/null; then
+        report_error "target is both desired and private state: $target"
+        failed=1
+      fi
+    done < <(jq -r '.privateState[].target' "$MANIFEST")
+
+    while IFS= read -r target; do
+      if ! safe_relative_path "$target"; then
+        report_error "unsafe keyring config target: $target"
+        failed=1
+      fi
+      if ! jq -e --arg target "$target" 'any(.privateState[]; .target == $target)' "$MANIFEST" >/dev/null; then
+        report_error "keyring config target is not declared private state: $target"
+        failed=1
+      fi
+    done < <(jq -r '.keyringSecrets[].configTarget' "$MANIFEST")
+
+    while IFS= read -r pattern; do
+      if ! safe_relative_path "$pattern"; then
+        report_error "unsafe inventory path or pattern: $pattern"
+        failed=1
+      fi
+    done < <(jq -r '.inventory | [.roots[], .omarchyDefaults[], .generated[], .manual[]] | .[]' "$MANIFEST")
+  fi
+
+  (( failed == 0 ))
+}
+
+path_matches_manifest_pattern() {
+  local relative="$1" group="$2" pattern
+  while IFS= read -r pattern; do
+    # shellcheck disable=SC2053 # Manifest entries are intentionally glob patterns.
+    [[ $relative == $pattern ]] && return 0
+  done < <(jq -r --arg group "$group" '.inventory[$group][]' "$MANIFEST")
+  return 1
+}
+
+path_is_declared() {
+  local relative="$1"
+  jq -e --arg path "$relative" '
+    any(.files[]; .target == $path) or any(.privateState[]; .target == $path)
+  ' "$MANIFEST" >/dev/null
+}
+
+plugin_source_url() {
+  local id="$1"
+  jq -r --arg id "$id" '.plugins[] | select(.id == $id) | .url' "$LOCKFILE"
+}
+
+check_plugins() {
+  local id url revision enabled setup checkout actual
+  while IFS=$'\t' read -r id url revision enabled setup; do
+    url="$(plugin_source_url "$id")"
+    checkout="$TARGET_HOME/.config/omarchy/plugins/$id"
+    if [[ ! -d $checkout/.git ]]; then
+      report_error "missing plugin checkout: $id"
+      continue
+    fi
+    actual="$(git -C "$checkout" remote get-url origin 2>/dev/null || true)"
+    [[ $actual == "$url" ]] || report_error "plugin origin drift: $id"
+    actual="$(git -C "$checkout" rev-parse HEAD 2>/dev/null || true)"
+    [[ $actual == "$revision" ]] || report_error "plugin revision drift: $id"
+    git -C "$checkout" cat-file -e "$revision^{commit}" 2>/dev/null \
+      || report_error "locked plugin commit is unavailable locally: $id"
+    [[ -z $(git -C "$checkout" status --porcelain 2>/dev/null) ]] \
+      || report_error "plugin checkout is dirty: $id"
+    [[ $(jq -r '.id // empty' "$checkout/manifest.json" 2>/dev/null) == "$id" ]] \
+      || report_error "plugin manifest id mismatch: $id"
+  done < <(jq -r '.plugins[] | [.id, .url, .revision, (.enabled | tostring), .setup] | @tsv' "$LOCKFILE")
+}
+
+cleanup_stale_secret_temps() {
+  local target directory state_dir
+  while IFS= read -r target; do
+    directory="$TARGET_HOME/$(dirname "$target")"
+    [[ -d $directory && ! -L $directory ]] || continue
+    find "$directory" -maxdepth 1 -type f -name '.meshify-private.*' -delete
+  done < <(jq -r '.privateState[].target' "$MANIFEST")
+  state_dir="$TARGET_HOME/.local/state/meshify-omarchy"
+  if [[ -d $state_dir && ! -L $state_dir ]]; then
+    find "$state_dir" -maxdepth 1 -type f -name '.keyring-secret.*' -delete
+  fi
+}
+
+restore_private_state() {
+  local id target mode reference format target_path temp actual_mode
+  if (( NO_SECRETS )); then
+    report_info "private-state restore disabled"
+    return 0
+  fi
+  if ! command -v op >/dev/null 2>&1; then
+    report_warning "1Password CLI unavailable; existing private state was preserved"
+    return 0
+  fi
+
+  while IFS=$'\t' read -r id target mode reference format; do
+    target_path="$TARGET_HOME/$target"
+    mkdir -p -- "$(dirname "$target_path")"
+    temp="$(mktemp "$(dirname "$target_path")/.meshify-private.XXXXXX")"
+    TEMP_FILES+=("$temp")
+    chmod 0600 "$temp"
+    if ! timeout --foreground "$OP_TIMEOUT" op read --no-newline "$reference" >"$temp" 2>/dev/null; then
+      rm -f -- "$temp"
+      if [[ -e $target_path ]]; then
+        if [[ -f $target_path && ! -L $target_path ]]; then
+          chmod "$mode" "$target_path"
+        fi
+        report_warning "1Password item unavailable for $id; preserved existing private state"
+      else
+        report_warning "1Password item unavailable for $id; private state still requires setup"
+      fi
+      continue
+    fi
+    if [[ $format == json ]] && ! jq empty "$temp" >/dev/null 2>&1; then
+      rm -f -- "$temp"
+      fail "1Password item for $id is not valid JSON"
+    fi
+    if [[ ! -s $temp ]]; then
+      rm -f -- "$temp"
+      fail "1Password item for $id is empty"
+    fi
+    if [[ -f $target_path && ! -L $target_path ]] && cmp -s -- "$temp" "$target_path"; then
+      rm -f -- "$temp"
+      actual_mode="$(stat -c '%a' "$target_path")"
+      [[ $actual_mode == "${mode#0}" ]] || chmod "$mode" "$target_path"
+      continue
+    fi
+    chmod "$mode" "$temp"
+    mv -f -- "$temp" "$target_path"
+    printf 'restore: restored private state %s\n' "$id"
+  done < <(jq -r '.privateState[] | [.id, .target, .mode, .onePasswordRef, .format] | @tsv' "$MANIFEST")
+}
+
+hass_origin_from_config() {
+  local config="$1"
+  jq -r '.baseUrl // empty' "$config" | python3 -c '
+import sys
+from urllib.parse import urlsplit
+value = sys.stdin.read().strip()
+if value and "://" not in value:
+    value = "https://" + value.lstrip("/")
+try:
+    parts = urlsplit(value)
+    scheme = {"https": "https", "wss": "https", "http": "http", "ws": "http"}.get(parts.scheme.lower(), "")
+    host = (parts.hostname or "").lower()
+    port = parts.port or (443 if scheme == "https" else 80)
+    if not scheme or not host or parts.username or parts.password:
+        raise ValueError
+    if ":" in host:
+        host = "[" + host + "]"
+    print(f"{scheme}://{host}:{port}")
+except (TypeError, ValueError):
+    pass
+'
+}
+
+restore_keyring_secrets() {
+  local id reference adapter config_target config_path origin temp
+  (( NO_SECRETS )) && return 0
+  if ! command -v op >/dev/null 2>&1 || ! command -v secret-tool >/dev/null 2>&1; then
+    report_warning "keyring restore unavailable; existing keyring entries were preserved"
+    return 0
+  fi
+
+  while IFS=$'\t' read -r id reference adapter config_target; do
+    config_path="$TARGET_HOME/$config_target"
+    if [[ ! -f $config_path || -L $config_path ]]; then
+      report_warning "cannot restore $id without private config $config_target"
+      continue
+    fi
+    case "$adapter" in
+    hass-token)
+      origin="$(hass_origin_from_config "$config_path")"
+      if [[ -z $origin ]]; then
+        report_warning "cannot restore $id because Home Assistant baseUrl is invalid"
+        continue
+      fi
+      mkdir -p -- "$TARGET_HOME/.local/state/meshify-omarchy"
+      temp="$(mktemp "$TARGET_HOME/.local/state/meshify-omarchy/.keyring-secret.XXXXXX")"
+      TEMP_FILES+=("$temp")
+      chmod 0600 "$temp"
+      if ! timeout --foreground "$OP_TIMEOUT" op read --no-newline "$reference" >"$temp" 2>/dev/null; then
+        rm -f -- "$temp"
+        report_warning "1Password item unavailable for $id; preserved existing keyring entry"
+        continue
+      fi
+      if [[ ! -s $temp ]]; then
+        rm -f -- "$temp"
+        fail "1Password item for $id is empty"
+      fi
+      if ! secret-tool store --label='Home Assistant (Omarchy)' \
+        service hass origin "$origin" <"$temp" >/dev/null; then
+        rm -f -- "$temp"
+        fail "failed to store $id in the system keyring"
+      fi
+      rm -f -- "$temp"
+      printf 'restore: restored keyring secret %s\n' "$id"
+      ;;
+    *)
+      fail "unknown keyring adapter: $adapter"
+      ;;
+    esac
+  done < <(jq -r '.keyringSecrets[] | [.id, .onePasswordRef, .adapter, .configTarget] | @tsv' "$MANIFEST")
+}
+
+restore_plugins() {
+  local id _url revision enabled setup url checkout stage
+  mkdir -p -- "$TARGET_HOME/.config/omarchy/plugins"
+  while IFS=$'\t' read -r id _url revision enabled setup; do
+    url="$(plugin_source_url "$id")"
+    checkout="$TARGET_HOME/.config/omarchy/plugins/$id"
+    if [[ -e $checkout && ! -d $checkout/.git ]]; then
+      fail "refusing to replace non-git plugin path: $checkout"
+    fi
+    if [[ ! -d $checkout/.git ]]; then
+      stage="$TARGET_HOME/.config/omarchy/plugins/.restore-$id-$$"
+      rm -rf -- "$stage"
+      git clone --quiet -- "$url" "$stage"
+      mv -- "$stage" "$checkout"
+      printf 'restore: cloned plugin %s\n' "$id"
+    fi
+    [[ -z $(git -C "$checkout" status --porcelain) ]] \
+      || fail "refusing to overwrite dirty plugin checkout: $id"
+    [[ $(git -C "$checkout" remote get-url origin) == "$url" ]] \
+      || fail "plugin origin does not match lock: $id"
+    if ! git -C "$checkout" cat-file -e "$revision^{commit}" 2>/dev/null; then
+      git -C "$checkout" fetch --quiet origin "$revision"
+    fi
+    if [[ $(git -C "$checkout" rev-parse HEAD 2>/dev/null || true) != "$revision" ]]; then
+      git -C "$checkout" checkout --quiet --detach "$revision"
+      printf 'restore: pinned plugin %s at %s\n' "$id" "${revision:0:12}"
+    fi
+    [[ $(jq -r '.id // empty' "$checkout/manifest.json") == "$id" ]] \
+      || fail "plugin manifest id does not match lock: $id"
+    if (( ! NO_SYSTEM )); then
+      omarchy plugin validate "$checkout" >/dev/null
+    fi
+  done < <(jq -r '.plugins[] | [.id, .url, .revision, (.enabled | tostring), .setup] | @tsv' "$LOCKFILE")
+}
+
+check_system_state() {
+  local expected_version actual_version package command_name service errors plugins id enabled
+  (( NO_SYSTEM )) && return 0
+
+  if ! command -v omarchy >/dev/null 2>&1; then
+    report_error "missing command: omarchy"
+  else
+    actual_version="$(omarchy version 2>/dev/null || true)"
+    expected_version="$(jq -r '.omarchy.version' "$MANIFEST")"
+    [[ $actual_version == "$expected_version" ]] \
+      || report_error "incompatible Omarchy version: expected $expected_version, got ${actual_version:-unavailable}"
+  fi
+
+  while IFS=$'\t' read -r package command_name; do
+    pacman -Q "$package" >/dev/null 2>&1 || report_error "missing package: $package"
+    command -v "$command_name" >/dev/null 2>&1 || report_error "missing command: $command_name"
+  done < <(jq -r '.packages[] | [.name, .command] | @tsv' "$MANIFEST")
+
+  while IFS= read -r service; do
+    systemctl --user is-active --quiet "$service" 2>/dev/null \
+      || report_error "inactive user service: $service"
+    systemctl --user is-enabled --quiet "$service" >/dev/null 2>&1 \
+      || report_error "disabled user service: $service"
+  done < <(jq -r '.services[].name' "$MANIFEST")
+  while IFS= read -r command_name; do
+    command -v "$command_name" >/dev/null 2>&1 \
+      || report_error "missing generated command: $command_name"
+  done < <(jq -r '.services[] | (.commands // [])[]' "$MANIFEST")
+
+  if ! omarchy-shell shell ping >/dev/null 2>&1; then
+    report_error "Omarchy shell is not responding"
+  fi
+  if plugins="$(omarchy plugin list --json 2>/dev/null)" && jq -e 'type == "array"' <<<"$plugins" >/dev/null 2>&1; then
+    while IFS=$'\t' read -r id enabled; do
+      if [[ $enabled == true ]] && ! jq -e --arg id "$id" 'any(.[]; .id == $id and .enabled)' <<<"$plugins" >/dev/null; then
+        report_error "plugin is not enabled: $id"
+      fi
+    done < <(jq -r '.plugins[] | [.id, (.enabled | tostring)] | @tsv' "$LOCKFILE")
+  else
+    report_error "cannot inspect Omarchy shell plugins"
+  fi
+
+  if ! errors="$(hyprctl configerrors 2>&1)"; then
+    report_error "hyprctl configerrors failed"
+  elif [[ -n $errors ]]; then
+    report_error "Hyprland configuration errors are present"
+  fi
+}
+
+run_setup_adapters() {
+  local id revision setup checkout marker service needs_setup
+  (( NO_SYSTEM )) && return 0
+  mkdir -p -- "$TARGET_HOME/.local/state/meshify-omarchy/setup"
+  while IFS=$'\t' read -r id revision setup; do
+    [[ $setup != none ]] || continue
+    case "$setup" in
+    omapods)
+      [[ $id == io.github.thisisgm.omapods ]] \
+        || fail "omapods setup adapter assigned to unexpected plugin: $id"
+      checkout="$TARGET_HOME/.config/omarchy/plugins/$id"
+      marker="$TARGET_HOME/.local/state/meshify-omarchy/setup/$id"
+      needs_setup=0
+      [[ -f $marker && $(<"$marker") == "$revision" ]] || needs_setup=1
+      while IFS= read -r service; do
+        systemctl --user is-active --quiet "$service" 2>/dev/null || needs_setup=1
+        systemctl --user is-enabled --quiet "$service" >/dev/null 2>&1 || needs_setup=1
+      done < <(jq -r --arg setup "$setup" '.services[] | select(.setup == $setup) | .name' "$MANIFEST")
+      while IFS= read -r service; do
+        command -v "$service" >/dev/null 2>&1 || needs_setup=1
+      done < <(jq -r --arg setup "$setup" '.services[] | select(.setup == $setup) | (.commands // [])[]' "$MANIFEST")
+      if (( needs_setup )); then
+        [[ -f $checkout/setup && -x $checkout/setup && ! -L $checkout/setup ]] \
+          || fail "trusted setup adapter is missing or unsafe: $id/setup"
+        "$checkout/setup"
+        printf '%s\n' "$revision" >"$marker"
+        chmod 0600 "$marker"
+        printf 'restore: completed setup for %s\n' "$id"
+      fi
+      ;;
+    *)
+      fail "unknown setup adapter: $setup"
+      ;;
+    esac
+  done < <(jq -r '.plugins[] | [.id, .revision, .setup] | @tsv' "$LOCKFILE")
+}
+
+restore_runtime_state() {
+  local plugins id enabled
+  (( NO_SYSTEM )) && return 0
+  omarchy-shell shell rescanPlugins >/dev/null
+  plugins="$(omarchy plugin list --json)"
+  while IFS=$'\t' read -r id enabled; do
+    [[ $enabled == true ]] || continue
+    if ! jq -e --arg id "$id" 'any(.[]; .id == $id and .enabled)' <<<"$plugins" >/dev/null; then
+      omarchy plugin enable "$id" >/dev/null
+    fi
+  done < <(jq -r '.plugins[] | [.id, (.enabled | tostring)] | @tsv' "$LOCKFILE")
+  hyprctl reload >/dev/null
+}
+
+check_inventory() {
+  local root path relative
+  while IFS= read -r root; do
+    [[ -e $TARGET_HOME/$root ]] || continue
+    while IFS= read -r -d '' path; do
+      relative="${path#"$TARGET_HOME"/}"
+      if path_is_declared "$relative" \
+        || path_matches_manifest_pattern "$relative" omarchyDefaults \
+        || path_matches_manifest_pattern "$relative" generated \
+        || path_matches_manifest_pattern "$relative" manual; then
+        continue
+      fi
+      report_error "unclassified active path: $relative"
+    done < <(find "$TARGET_HOME/$root" -mindepth 1 \( -type f -o -type l \) -print0)
+  done < <(jq -r '.inventory.roots[]' "$MANIFEST")
+}
+
+check_files() {
+  local source target expected_mode actual_mode format
+  while IFS=$'\t' read -r source target expected_mode format; do
+    if [[ ! -f $TARGET_HOME/$target || -L $TARGET_HOME/$target ]]; then
+      report_error "missing declared file: $target"
+      continue
+    fi
+    if ! cmp -s -- "$SCRIPT_DIR/$source" "$TARGET_HOME/$target"; then
+      report_error "declared file drift: $target"
+    fi
+    actual_mode="$(stat -c '%a' "$TARGET_HOME/$target")"
+    if [[ $actual_mode != "${expected_mode#0}" ]]; then
+      report_error "mode drift for $target: expected ${expected_mode#0}, got $actual_mode"
+    fi
+    if [[ $format == json ]] && ! jq empty "$TARGET_HOME/$target" >/dev/null 2>&1; then
+      report_error "invalid JSON in declared file: $target"
+    fi
+  done < <(jq -r '.files[] | [.source, .target, .mode, (.format // "text")] | @tsv' "$MANIFEST")
+}
+
+restore_packages() {
+  local package manager command_name
+  (( NO_SYSTEM )) && return 0
+  while IFS=$'\t' read -r package manager command_name; do
+    if pacman -Q "$package" >/dev/null 2>&1; then
+      continue
+    fi
+    case "$manager" in
+    repo)
+      omarchy pkg add "$package"
+      ;;
+    aur)
+      omarchy pkg aur add "$package"
+      ;;
+    *)
+      fail "unknown package manager for $package: $manager"
+      ;;
+    esac
+    pacman -Q "$package" >/dev/null 2>&1 || fail "package installation did not provide $package"
+    command -v "$command_name" >/dev/null 2>&1 \
+      || fail "package $package did not provide required command $command_name"
+  done < <(jq -r '.packages[] | [.name, .manager, .command] | @tsv' "$MANIFEST")
+}
+
+backup_live_file() {
+  local target="$1" target_path="$TARGET_HOME/$1" backup_path
+  [[ -f $target_path && ! -L $target_path ]] || return 0
+  if [[ -z $BACKUP_DIR ]]; then
+    BACKUP_DIR="$TARGET_HOME/.local/state/meshify-omarchy/backups/$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  fi
+  backup_path="$BACKUP_DIR/$target"
+  mkdir -p -- "$(dirname "$backup_path")"
+  cp -p -- "$target_path" "$backup_path"
+}
+
+restore_files() {
+  local source target target_path expected_mode actual_mode changed=0
+  while IFS=$'\t' read -r source target expected_mode; do
+    target_path="$TARGET_HOME/$target"
+    actual_mode=""
+    [[ -e $target_path && ! -L $target_path ]] && actual_mode="$(stat -c '%a' "$target_path")"
+    if [[ -f $target_path && ! -L $target_path ]] \
+      && cmp -s -- "$SCRIPT_DIR/$source" "$target_path" \
+      && [[ $actual_mode == "${expected_mode#0}" ]]; then
+      continue
+    fi
+    [[ ! -L $target_path ]] || fail "refusing to replace symlinked declared file: $target"
+    backup_live_file "$target"
+    mkdir -p -- "$(dirname "$target_path")"
+    install -m "$expected_mode" -- "$SCRIPT_DIR/$source" "$target_path"
+    printf 'restore: installed %s\n' "$target"
+    changed=$((changed + 1))
+  done < <(jq -r '.files[] | [.source, .target, .mode] | @tsv' "$MANIFEST")
+
+  if (( changed == 0 )); then
+    printf 'restore: unchanged\n'
+  else
+    printf 'restore: changed %d file(s)\n' "$changed"
+  fi
+}
+
+check_keyring_secrets() {
+  local id adapter config_target config_path origin
+  (( NO_SECRETS )) && return 0
+  if ! command -v secret-tool >/dev/null 2>&1; then
+    report_error "missing command for keyring verification: secret-tool"
+    return 0
+  fi
+  while IFS=$'\t' read -r id adapter config_target; do
+    config_path="$TARGET_HOME/$config_target"
+    [[ -f $config_path && ! -L $config_path ]] || {
+      report_error "cannot verify $id without private config $config_target"
+      continue
+    }
+    case "$adapter" in
+    hass-token)
+      origin="$(hass_origin_from_config "$config_path")"
+      if [[ -z $origin ]]; then
+        report_error "cannot verify $id because Home Assistant baseUrl is invalid"
+      elif ! secret-tool lookup service hass origin "$origin" >/dev/null 2>&1; then
+        report_error "missing keyring secret: $id"
+      fi
+      ;;
+    *)
+      report_error "unknown keyring adapter: $adapter"
+      ;;
+    esac
+  done < <(jq -r '.keyringSecrets[] | [.id, .adapter, .configTarget] | @tsv' "$MANIFEST")
+}
+
+check_private_file_modes() {
+  local target expected_mode actual_mode format required
+  while IFS=$'\t' read -r target expected_mode format required; do
+    if [[ ! -e $TARGET_HOME/$target ]]; then
+      if (( NO_SECRETS )); then
+        report_info "private state not checked because --no-secrets is active: $target"
+      elif [[ $required == true ]]; then
+        report_error "private state requires recovery or setup: $target"
+      else
+        report_info "optional private state requires setup: $target"
+      fi
+      continue
+    fi
+    if [[ ! -f $TARGET_HOME/$target || -L $TARGET_HOME/$target ]]; then
+      report_error "private state is not a regular file: $target"
+      continue
+    fi
+    actual_mode="$(stat -c '%a' "$TARGET_HOME/$target")"
+    if [[ $actual_mode != "${expected_mode#0}" ]]; then
+      report_error "private-state mode drift for $target: expected ${expected_mode#0}, got $actual_mode"
+    fi
+    if [[ $format == json ]] && ! jq empty "$TARGET_HOME/$target" >/dev/null 2>&1; then
+      report_error "invalid JSON in private state: $target"
+    fi
+  done < <(jq -r '.privateState[] | [.target, .mode, .format, ((.required // true) | tostring)] | @tsv' "$MANIFEST")
+}
+
+report_manual_recovery() {
+  local id message
+  while IFS=$'\t' read -r id message; do
+    report_info "manual recovery gate ($id): $message"
+  done < <(jq -r '.manualRecovery[] | [.id, .message] | @tsv' "$MANIFEST")
+}
+
+confirm_plugin_update() {
+  local id="$1" answer
+  (( ASSUME_YES )) && return 0
+  [[ -t 0 && -t 1 ]] || fail "update requires confirmation; pass --yes after reviewing the plugin changes"
+  printf 'Advance locked plugin %s? [y/N] ' "$id" >&2
+  read -r answer
+  [[ $answer == y || $answer == Y || $answer == yes || $answer == YES ]]
+}
+
+write_plugin_revision() {
+  local id="$1" revision="$2" temp
+  temp="$(mktemp "$SCRIPT_DIR/.plugins.lock.XXXXXX")"
+  jq --arg id "$id" --arg revision "$revision" '
+    (.plugins[] | select(.id == $id) | .revision) = $revision
+  ' "$LOCKFILE" >"$temp"
+  chmod 0644 "$temp"
+  mv -f -- "$temp" "$LOCKFILE"
+}
+
+run_update() {
+  local id url old_revision enabled setup checkout new_revision changed=0
+  ERRORS=0
+  WARNINGS=0
+  validate_metadata || true
+  (( ERRORS == 0 )) || return 1
+
+  while IFS=$'\t' read -r id url old_revision enabled setup; do
+    checkout="$TARGET_HOME/.config/omarchy/plugins/$id"
+    [[ -d $checkout/.git ]] || fail "cannot update missing plugin checkout: $id"
+    [[ -z $(git -C "$checkout" status --porcelain) ]] \
+      || fail "refusing to update dirty plugin checkout: $id"
+    [[ $(git -C "$checkout" remote get-url origin) == "$url" ]] \
+      || fail "plugin origin does not match lock: $id"
+    [[ $(git -C "$checkout" rev-parse HEAD) == "$old_revision" ]] \
+      || fail "plugin revision drift must be restored before update: $id"
+
+    git -C "$checkout" fetch --quiet origin HEAD
+    new_revision="$(git -C "$checkout" rev-parse FETCH_HEAD)"
+    [[ $new_revision != "$old_revision" ]] || continue
+    git -C "$checkout" merge-base --is-ancestor "$old_revision" "$new_revision" \
+      || fail "plugin update is not a fast-forward: $id"
+
+    printf 'Changes for %s:\n' "$id"
+    git -C "$checkout" log --oneline --no-decorate "$old_revision..$new_revision"
+    git -C "$checkout" diff --stat "$old_revision..$new_revision"
+    git -C "$checkout" diff --no-ext-diff --no-color "$old_revision..$new_revision"
+    if ! confirm_plugin_update "$id"; then
+      printf 'update: skipped %s\n' "$id"
+      continue
+    fi
+
+    git -C "$checkout" checkout --quiet --detach "$new_revision"
+    if [[ $(jq -r '.id // empty' "$checkout/manifest.json" 2>/dev/null) != "$id" ]]; then
+      git -C "$checkout" checkout --quiet --detach "$old_revision"
+      fail "updated plugin manifest id mismatch: $id"
+    fi
+    if (( ! NO_SYSTEM )) && ! omarchy plugin validate "$checkout" >/dev/null; then
+      git -C "$checkout" checkout --quiet --detach "$old_revision"
+      fail "updated plugin failed Omarchy validation: $id"
+    fi
+    write_plugin_revision "$id" "$new_revision"
+    printf 'update: advanced %s to %s\n' "$id" "${new_revision:0:12}"
+    changed=$((changed + 1))
+  done < <(jq -r '.plugins[] | [.id, .url, .revision, (.enabled | tostring), .setup] | @tsv' "$LOCKFILE")
+
+  if (( changed == 0 )); then
+    printf 'update: unchanged\n'
+  fi
+  run_restore
+  if [[ -f $SCRIPT_DIR/../../../tests/test_meshify_omarchy_manage.py ]]; then
+    python3 "$SCRIPT_DIR/../../../tests/test_meshify_omarchy_manage.py"
+  fi
+}
+
+run_snapshot() {
+  local source target source_mode live_path changed=0
+  ERRORS=0
+  WARNINGS=0
+  validate_metadata || true
+  (( ERRORS == 0 )) || return 1
+  check_inventory
+  if (( ERRORS > 0 )); then
+    printf 'snapshot: refused (%d unclassified or invalid path(s))\n' "$ERRORS" >&2
+    return 1
+  fi
+
+  while IFS=$'\t' read -r source target source_mode; do
+    live_path="$TARGET_HOME/$target"
+    if [[ ! -f $live_path || -L $live_path ]]; then
+      report_error "cannot snapshot missing or non-regular declared file: $target"
+      continue
+    fi
+    if cmp -s -- "$live_path" "$SCRIPT_DIR/$source"; then
+      continue
+    fi
+    install -m "$source_mode" -- "$live_path" "$SCRIPT_DIR/$source"
+    printf 'snapshot: captured %s\n' "$target"
+    changed=$((changed + 1))
+  done < <(jq -r '.files[] | [.source, .target, .sourceMode] | @tsv' "$MANIFEST")
+
+  (( ERRORS == 0 )) || return 1
+  if (( changed == 0 )); then
+    printf 'snapshot: unchanged\n'
+  else
+    printf 'snapshot: changed %d file(s)\n' "$changed"
+  fi
+}
+
+run_restore() {
+  ERRORS=0
+  WARNINGS=0
+  validate_metadata || true
+  (( ERRORS == 0 )) || return 1
+  cleanup_stale_secret_temps
+  restore_packages
+  restore_files
+  restore_plugins
+  run_setup_adapters
+  restore_private_state
+  restore_keyring_secrets
+  restore_runtime_state
+  run_check preserve
+}
+
+run_check() {
+  if [[ ${1:-reset} != preserve ]]; then
+    ERRORS=0
+    WARNINGS=0
+  fi
+  validate_metadata || true
+  if (( ERRORS == 0 )); then
+    check_files
+    check_plugins
+    check_private_file_modes
+    check_keyring_secrets
+    check_inventory
+    check_system_state
+  fi
+
+  report_manual_recovery
+  if (( ERRORS > 0 )); then
+    printf 'check: failed (%d error(s), %d warning(s))\n' "$ERRORS" "$WARNINGS" >&2
+    return 1
+  fi
+  printf 'check: ok (%d warning(s))\n' "$WARNINGS"
+}
+
+parse_arguments "$@"
+if [[ $COMMAND != check ]]; then
+  acquire_mutation_lock
+fi
+
+case "$COMMAND" in
+check)
+  run_check
+  ;;
+restore)
+  run_restore
+  ;;
+snapshot)
+  run_snapshot
+  ;;
+update)
+  run_update
+  ;;
+esac

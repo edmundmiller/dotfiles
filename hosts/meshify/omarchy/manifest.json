@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "host": "meshify",
+  "omarchy": {
+    "version": "4.0.0-1"
+  },
+  "files": [
+    {
+      "source": "config/hypr/autostart.lua",
+      "target": ".config/hypr/autostart.lua",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/hypr/input.lua",
+      "target": ".config/hypr/input.lua",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/hypr/monitors.lua",
+      "target": ".config/hypr/monitors.lua",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/omarchy/defaults/agent",
+      "target": ".config/omarchy/defaults/agent",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/omarchy/shell.json",
+      "target": ".config/omarchy/shell.json",
+      "mode": "0600",
+      "sourceMode": "0644",
+      "format": "json"
+    },
+    {
+      "source": "local/bin/rocket-league-lmstudio-guard",
+      "target": ".local/bin/rocket-league-lmstudio-guard",
+      "mode": "0755",
+      "sourceMode": "0755"
+    }
+  ],
+  "packages": [
+    {
+      "name": "ai-usagebar-bin",
+      "manager": "aur",
+      "command": "ai-usagebar"
+    },
+    {
+      "name": "cmake",
+      "manager": "repo",
+      "command": "cmake"
+    },
+    {
+      "name": "git",
+      "manager": "repo",
+      "command": "git"
+    },
+    {
+      "name": "herdr",
+      "manager": "repo",
+      "command": "herdr"
+    },
+    {
+      "name": "jq",
+      "manager": "repo",
+      "command": "jq"
+    },
+    {
+      "name": "libpulse",
+      "manager": "repo",
+      "command": "pactl"
+    },
+    {
+      "name": "libsecret",
+      "manager": "repo",
+      "command": "secret-tool"
+    },
+    {
+      "name": "networkmanager",
+      "manager": "repo",
+      "command": "nmcli"
+    },
+    {
+      "name": "ninja",
+      "manager": "repo",
+      "command": "ninja"
+    },
+    {
+      "name": "pkgconf",
+      "manager": "repo",
+      "command": "pkgconf"
+    },
+    {
+      "name": "python",
+      "manager": "repo",
+      "command": "python3"
+    },
+    {
+      "name": "qt6-connectivity",
+      "manager": "repo",
+      "command": "qml6"
+    },
+    {
+      "name": "qt6-declarative",
+      "manager": "repo",
+      "command": "qml6"
+    },
+    {
+      "name": "qt6-tools",
+      "manager": "repo",
+      "command": "lrelease6"
+    }
+  ],
+  "services": [
+    {
+      "name": "librepods.service",
+      "setup": "omapods",
+      "commands": ["librepods", "librepods-ctl"]
+    }
+  ],
+  "privateState": [
+    {
+      "id": "hass-config",
+      "target": ".config/omarchy/hass/config.json",
+      "mode": "0600",
+      "onePasswordRef": "op://Private/meshify-omarchy/hass-config",
+      "format": "json"
+    },
+    {
+      "id": "ai-usagebar-config",
+      "target": ".config/ai-usagebar/config.toml",
+      "mode": "0600",
+      "onePasswordRef": "op://Private/meshify-omarchy/ai-usagebar-config",
+      "format": "toml"
+    },
+    {
+      "id": "ai-usagebar-credentials",
+      "target": ".config/ai-usagebar/credentials.json",
+      "mode": "0600",
+      "onePasswordRef": "op://Private/meshify-omarchy/ai-usagebar-credentials",
+      "format": "json"
+    }
+  ],
+  "keyringSecrets": [
+    {
+      "id": "hass-token",
+      "onePasswordRef": "op://Private/meshify-omarchy/hass-token",
+      "adapter": "hass-token",
+      "configTarget": ".config/omarchy/hass/config.json"
+    }
+  ],
+  "manualRecovery": [
+    {
+      "id": "onepassword-bootstrap",
+      "message": "Sign in to 1Password before restoring private state on a fresh host."
+    },
+    {
+      "id": "airpods-pairing",
+      "message": "Re-pair AirPods after hardware or Bluetooth state is replaced."
+    }
+  ],
+  "inventory": {
+    "roots": [".config/omarchy", ".config/ai-usagebar", ".config/AirPodsTrayApp"],
+    "omarchyDefaults": [
+      ".config/omarchy/branding/about.txt",
+      ".config/omarchy/branding/screensaver.txt",
+      ".config/omarchy/extensions/omarchy-menu.jsonc",
+      ".config/omarchy/hooks/*.sample",
+      ".config/omarchy/hooks/post-update.d/setup-agent.hook",
+      ".config/omarchy/themed/*.sample"
+    ],
+    "generated": [
+      ".config/omarchy/plugins/*",
+      ".config/omarchy/shell.json.bak.*",
+      ".config/ai-usagebar/credentials.json.lock"
+    ],
+    "manual": [".config/AirPodsTrayApp/*"]
+  }
+}
