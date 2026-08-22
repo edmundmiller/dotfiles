@@ -28,6 +28,8 @@ let
         python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_singuloid_pilot.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_latest_source.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${../../tests/test_hermes_cron_external_executor.py}
     '';
     passthru = (old.passthru or { }) // {
       pilotHermesVersion = "0.20.5";

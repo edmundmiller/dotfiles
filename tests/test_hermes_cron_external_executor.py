@@ -38,6 +38,7 @@ def _load_cron_module(source: Path):
     lifecycle_guard = types.ModuleType("cron.lifecycle_guard")
     lifecycle_guard.contains_gateway_lifecycle_command = lambda _text: False
     jobs = types.ModuleType("cron.jobs")
+    jobs.effective_job_state = lambda job: job.get("state")
     jobs.list_jobs = lambda include_disabled=False: [
         {
             "id": "job-1",
@@ -53,6 +54,8 @@ def _load_cron_module(source: Path):
     jobs.get_ticker_heartbeat_age = lambda: 1
     jobs.get_ticker_last_error = lambda: None
     jobs.get_ticker_success_age = lambda: 1
+    scheduler = types.ModuleType("cron.scheduler")
+    scheduler._is_fd_exhaustion_text = lambda _text: False
     gateway = types.ModuleType("hermes_cli.gateway")
     gateway.find_gateway_pids = lambda: []
 
@@ -63,6 +66,7 @@ def _load_cron_module(source: Path):
         "cron": cron_package,
         "cron.lifecycle_guard": lifecycle_guard,
         "cron.jobs": jobs,
+        "cron.scheduler": scheduler,
     }
     sys.modules.update(stubs)
     spec = importlib.util.spec_from_file_location(

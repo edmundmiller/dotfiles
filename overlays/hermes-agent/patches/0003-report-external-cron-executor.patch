@@ -64,9 +64,15 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 +            print(color(f"     Check status: systemctl status {unit}", Colors.DIM))
 +        return
 +
-@@ -222,0 +275,2 @@ def cron_status():
+@@ -219,6 +272,8 @@ def cron_status():
+     from hermes_cli.gateway import find_gateway_pids
+ 
+     print()
 +    external = _external_systemd_executor_status()
 +
+ 
+     provider = _active_cron_provider_name()
+     if provider != "builtin":
 @@ -304,7 +359,22 @@ def cron_status():
              print(f"  PID: {', '.join(map(str, pids))}")
              if hb_age is not None:

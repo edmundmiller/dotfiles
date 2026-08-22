@@ -21,6 +21,9 @@ Deploy a reversible Scintillate-only Hermes v0.20.5 native Buzz UX pilot without
 - The maintained `llm-agents` overlay built `hermes-agent-buzz-pilot-2026.8.19-runtime`; its install check reported Hermes Agent v0.20.5 and `Ran 7 tests ... OK`.
 - Focused NUC builds passed for `nuc-hermes-buzz-pilot` and `nuc-buzz-hermes-community-runtime`.
 - The rendered module keeps the fleet package unchanged and assigns the pilot package only to Scintillate's gateway profile and cron executor.
+- The first switch activated the new generation but left Scintillate's guarded gateway on its prior process; the cron tick exposed an `IndentationError` because the external-executor patch used a zero-context line-number hunk against v0.20.5.
+- The cron patch is now anchored to `cron_status()` context and applies with zero fuzz to both the fleet source and v0.20.5. The rebuilt pilot install check passes the 7 Buzz cases, 1 cron compile regression, and 5 external-executor cases.
+- The repaired NUC build produced `/nix/store/c9hl16vaviygihlqkmqm3k7z8gjnsp7s-nixos-system-nuc-26.11.20260714.18b9261`.
 
 ## Reviews
 
@@ -39,4 +42,5 @@ None yet.
 
 ## Commits
 
-None yet.
+- `7491443` — Scintillate-only v0.20.5 pilot package and deployment wiring.
+- `d827921` — expected-failure regression for the v0.20.5 cron patch syntax.
