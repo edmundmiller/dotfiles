@@ -1665,6 +1665,65 @@ in
     ];
   };
 
+  systemd.services.buzz-presence-scintillate = {
+    description = "Buzz presence publisher for Scintillate";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "hermes-gateway-scintillate.service"
+      "network-online.target"
+    ];
+    wants = [ "network-online.target" ];
+    requires = [ "hermes-gateway-scintillate.service" ];
+    bindsTo = [ "hermes-gateway-scintillate.service" ];
+    partOf = [ "hermes-gateway-scintillate.service" ];
+    environment = {
+      HOME = "/var/empty";
+      NO_BROWSER = "1";
+      BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
+      BUZZ_ACP_AGENT_COMMAND = "${pkgs.coreutils}/bin/false";
+      BUZZ_ACP_AGENTS = "1";
+      BUZZ_ACP_CHANNELS = buzzChannelId buzzBindings.profiles.scintillate.home;
+      BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
+      BUZZ_ACP_LAZY_POOL = "true";
+      BUZZ_ACP_NO_BASE_PROMPT = "true";
+      BUZZ_ACP_NO_MEMORY = "true";
+      BUZZ_ACP_NO_TYPING = "true";
+      BUZZ_ACP_RESPOND_TO = "nobody";
+      BUZZ_ACP_TURN_LIVENESS_SECS = "0";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      EnvironmentFile = [ config.age.secrets.buzz-hermes-scintillate-agent-env.path ];
+      ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
+      Restart = "always";
+      RestartSec = "10s";
+      UMask = "0077";
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      NoNewPrivileges = true;
+      PrivateTmp = true;
+      PrivateDevices = true;
+      CapabilityBoundingSet = "";
+      LockPersonality = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      RestrictAddressFamilies = [
+        "AF_UNIX"
+        "AF_INET"
+        "AF_INET6"
+      ];
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      SystemCallArchitectures = "native";
+    };
+  };
+
   # Music Assistant player protocols allocate dynamic ports and require an
   # unrestricted local interface; eno1 is the NUC's private home LAN.
   networking.firewall.trustedInterfaces = [ "eno1" ];

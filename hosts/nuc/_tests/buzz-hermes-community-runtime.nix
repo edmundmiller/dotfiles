@@ -57,6 +57,7 @@ let
   ];
   scintillateProfile = cfg.services.hermes-agent.profiles.scintillate;
   scintillateGateway = cfg.systemd.services.hermes-gateway-scintillate;
+  scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
   scintillateBuzz = scintillateProfile.settings.gateway.platforms.buzz or { };
   scintillateBuzzDisplay = scintillateProfile.settings.display.platforms.buzz or { };
   scintillateBuzzPackages = builtins.filter (
@@ -226,10 +227,27 @@ let
       msg = "Scintillate's legacy buzz-acp unit must be absent during the native gateway pilot.";
     }
     {
-      # Expected-failure marker: Buzz currently reports the native gateway
-      # offline because no process publishes Scintillate's presence.
-      test = !(builtins.hasAttr "buzz-presence-scintillate" cfg.systemd.services);
-      msg = "Known regression: Scintillate's native Buzz gateway still lacks a presence publisher.";
+      test =
+        scintillatePresence.enable
+        && builtins.elem "hermes-gateway-scintillate.service" scintillatePresence.after
+        && scintillatePresence.bindsTo == [ "hermes-gateway-scintillate.service" ]
+        && scintillatePresence.partOf == [ "hermes-gateway-scintillate.service" ]
+        && scintillatePresence.requires == [ "hermes-gateway-scintillate.service" ]
+        && scintillatePresence.environment.BUZZ_ACP_RESPOND_TO == "nobody"
+        && scintillatePresence.environment.BUZZ_ACP_AGENT_COMMAND == "${pkgs.coreutils}/bin/false"
+        && scintillatePresence.environment.BUZZ_ACP_CHANNELS == expectedHomes.scintillate
+        && scintillatePresence.environment.BUZZ_ACP_LAZY_POOL == "true"
+        && scintillatePresence.environment.BUZZ_ACP_NO_BASE_PROMPT == "true"
+        && scintillatePresence.environment.BUZZ_ACP_NO_MEMORY == "true"
+        && scintillatePresence.environment.BUZZ_ACP_NO_TYPING == "true"
+        &&
+          scintillatePresence.serviceConfig.EnvironmentFile == [
+            cfg.age.secrets.buzz-hermes-scintillate-agent-env.path
+          ]
+        &&
+          scintillatePresence.serviceConfig.ExecStart
+          == "${builtins.head scintillateBuzzPackages}/bin/buzz-acp";
+      msg = "Scintillate's native Buzz gateway must have a lifecycle-bound, non-routing presence publisher.";
     }
     {
       test =

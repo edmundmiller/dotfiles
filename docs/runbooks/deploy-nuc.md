@@ -189,6 +189,11 @@ email and does not load Buzz delivery credentials. Buzz executors load the
 same dedicated identity as their profile's inbound runtime. `buzz-acp` remains
 mention-scoped inbound transport.
 
+Scintillate's native gateway does not publish Buzz presence itself, so
+`buzz-presence-scintillate.service` keeps the same dedicated identity online.
+The companion is bound to `hermes-gateway-scintillate.service`, responds to
+nobody, and cannot launch an agent; Hermes remains the only message handler.
+
 MillDocs Buzz replies are owned by the dedicated Cloudflare `mill-docs-buzz`
 Worker. The NUC keeps only `mill-docs-coding-agent.timer`, which processes typed
 Linear feedback and posts authenticated status callbacks. Its rotated encrypted
@@ -199,6 +204,7 @@ Verify after a deploy or recovery:
 ```bash
 ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
 ssh nuc "systemctl show 'buzz-hermes-*.service' -p Id -p ActiveState -p MainPID -p NRestarts"
+ssh nuc 'systemctl show buzz-presence-scintillate.service -p ActiveState -p MainPID -p NRestarts -p BindsTo'
 ssh nuc 'systemctl show mill-docs-coding-agent.timer mill-docs-coding-agent.service -p ActiveState -p NextElapseUSecRealtime'
 ssh nuc 'systemctl status buzz-mill-docs-codex.service --no-pager'
 ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
@@ -207,6 +213,8 @@ ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
 Expected: every configured Hermes unit is active with zero restarts and connected to
 `wss://millers.communities.buzz.xyz`. Lazy mode starts the Hermes ACP child
 only after an accepted mention. The services expose no listener.
+`buzz-presence-scintillate.service` is active, bound to the native Scintillate
+gateway, and does not start an ACP child.
 `mill-docs-coding-agent.timer` is active with a future next trigger, and
 `buzz-mill-docs-codex.service` is not found.
 
