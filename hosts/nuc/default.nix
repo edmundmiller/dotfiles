@@ -9,6 +9,7 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   hermesAgentUpstream = inputs.hermes-agent.packages.${hostSystem}.messaging;
+  hermesAgentBuzzPilot = pkgs.llm-agents."hermes-agent-buzz-pilot";
   hermesPhotonSidecar = pkgs.buildNpmPackage {
     pname = "hermes-photon-sidecar";
     version = hermesAgentUpstream.version or "0.17.0";
@@ -34,17 +35,7 @@ let
     ];
     doCheck = false;
   };
-  rtkHermes = pkgs.python313Packages.buildPythonPackage rec {
-    pname = "rtk-hermes";
-    version = "1.2.3";
-    pyproject = true;
-    src = pkgs.fetchPypi {
-      pname = "rtk_hermes";
-      inherit version;
-      hash = "sha256-tOljjbIXSZIdbuNfkb4AkHtZw3EKjEavq7BCs4/vFK8=";
-    };
-    build-system = with pkgs.python313Packages; [ setuptools ];
-  };
+  rtkHermes = pkgs.llm-agents."hermes-agent".rtkHermes;
   hermesCronPython =
     pkgs.runCommand "hermes-cron-executor-health"
       {
@@ -1466,6 +1457,7 @@ in
         # Codex OAuth refresh tokens are single-use. Do not seed Hermes from
         # ~/.codex/auth.json or share Codex CLI credentials; Scintillate owns
         # its Codex login in /var/lib/hermes-scintillate/.hermes/auth.json.
+        package = hermesAgentBuzzPilot;
         extraPackages = with pkgs; [
           bun
           nix
@@ -1495,6 +1487,8 @@ in
               require_mention = true;
               allow_all_users = false;
               transport = "auto";
+              reply_in_thread = false;
+              working_reaction = "⚙️";
             };
           };
         };
@@ -2079,7 +2073,7 @@ in
       "opnix-secrets.service"
     ];
     path = [
-      hermesAgentBase
+      hermesAgentBuzzPilot
       pkgs.bashInteractive
       pkgs.coreutils
       pkgs.findutils
@@ -2112,7 +2106,7 @@ in
         "/run/hermes-scintillate-env/secrets.env"
         config.age.secrets.buzz-hermes-scintillate-agent-env.path
       ];
-      ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
+      ExecStart = "${hermesAgentBuzzPilot}/bin/hermes cron tick";
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;

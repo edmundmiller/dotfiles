@@ -106,7 +106,7 @@
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults.
     agents-workspace = {
-      url = "github:edmundmiller/agents-workspace/main";
+      url = "github:edmundmiller/agents-workspace/ad74cf3aed9883ac91384b3739d1db0dfe15c8ac";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -114,6 +114,13 @@
     hermes-agent = {
       url = "github:NousResearch/hermes-agent/5b5932886ce6477a0f4a3d25ca465392288d5126";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Scintillate-only native Buzz UX pilot. Keep the fleet package pinned
+    # independently until the pilot's live DM contract is accepted.
+    hermes-agent-buzz-pilot-source = {
+      url = "github:NousResearch/hermes-agent/v2026.8.19";
+      flake = false;
     };
 
     nix-steipete-tools.url = "github:openclaw/nix-steipete-tools";
@@ -322,6 +329,7 @@
 
           # Needs `inputs`, so it cannot be auto-imported by mapModules.
           ghui = import ./overlays/ghui inputs;
+          hermes-agent = import ./overlays/hermes-agent { inherit inputs; };
         };
 
         # TODO(dotfiles): Consider a small lib.my helper for package output composition if this
@@ -1411,6 +1419,15 @@
                       python3 ${./tests/test_hermes_cron_external_executor.py}
                     touch "$out"
                   '';
+
+              nuc-hermes-buzz-pilot = pkgs.runCommand "nuc-hermes-buzz-pilot" { } ''
+                package=${self.nixosConfigurations.nuc.config.services.hermes-agent.profiles.scintillate.package}
+                "$package/bin/hermes" --version \
+                  | grep -F 'Hermes Agent v0.20.5 (2026.8.19)'
+                grep -q _should_reply_in_thread \
+                  "$package/share/hermes/plugins/platforms/buzz/adapter.py"
+                touch "$out"
+              '';
 
               nuc-hermes-cron-failure-summary =
                 pkgs.runCommand "nuc-hermes-cron-failure-summary"

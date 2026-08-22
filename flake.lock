@@ -90,17 +90,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1787409303,
-        "narHash": "sha256-25itbptMkkdjyqeZHawaonSRZuii5lNyt4J7nDXxwhU=",
+        "lastModified": 1787427564,
+        "narHash": "sha256-1gfasHa+v1w3Z8fs3MUn5eO8MZRPeuhoac+MN03m4ko=",
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "f76e6edec0075b288254f9b2f27fc106294b2616",
+        "rev": "ad74cf3aed9883ac91384b3739d1db0dfe15c8ac",
         "type": "github"
       },
       "original": {
         "owner": "edmundmiller",
-        "ref": "main",
         "repo": "agents-workspace",
+        "rev": "ad74cf3aed9883ac91384b3739d1db0dfe15c8ac",
         "type": "github"
       }
     },
@@ -948,6 +948,23 @@
         "owner": "NousResearch",
         "repo": "hermes-agent",
         "rev": "5b5932886ce6477a0f4a3d25ca465392288d5126",
+        "type": "github"
+      }
+    },
+    "hermes-agent-buzz-pilot-source": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787314587,
+        "narHash": "sha256-oeFJlEoFybqKkbuWT4mW8PRauusjt3y44ZJXAcA7TPY=",
+        "owner": "NousResearch",
+        "repo": "hermes-agent",
+        "rev": "fcbd1076a93841fa88855acce810e342a5b78101",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NousResearch",
+        "ref": "v2026.8.19",
+        "repo": "hermes-agent",
         "type": "github"
       }
     },
@@ -2008,6 +2025,7 @@
         "ghui": "ghui",
         "git-hooks": "git-hooks",
         "hermes-agent": "hermes-agent",
+        "hermes-agent-buzz-pilot-source": "hermes-agent-buzz-pilot-source",
         "home-manager": "home-manager_3",
         "hunk": "hunk",
         "llm-agents": "llm-agents",

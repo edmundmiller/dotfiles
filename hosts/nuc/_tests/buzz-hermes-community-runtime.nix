@@ -57,6 +57,7 @@ let
   ];
   scintillateProfile = cfg.services.hermes-agent.profiles.scintillate;
   scintillateGateway = cfg.systemd.services.hermes-gateway-scintillate;
+  scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
   scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
   scintillateBuzz = scintillateProfile.settings.gateway.platforms.buzz or { };
   scintillateBuzzDisplay = scintillateProfile.settings.display.platforms.buzz or { };
@@ -253,8 +254,12 @@ let
       test =
         scintillateGateway.enable
         && !scintillateGateway.restartIfChanged
-        && scintillateProfile.stateDir == "/var/lib/hermes-scintillate";
-      msg = "Scintillate's native gateway must be enabled on its persistent profile state without automatic mid-turn restarts.";
+        && scintillateProfile.stateDir == "/var/lib/hermes-scintillate"
+        && scintillateProfile.package != cfg.services.hermes-agent.package
+        && pkgs.lib.hasInfix "-buzz-pilot" (toString scintillateProfile.package)
+        && scintillateProfile.package.pilotHermesVersion == "0.20.5"
+        && scintillateCron.serviceConfig.ExecStart == "${scintillateProfile.package}/bin/hermes cron tick";
+      msg = "Scintillate's gateway and cron executor must exclusively use the Hermes 0.20.5 Buzz pilot package without automatic mid-turn restarts.";
     }
     {
       test =
@@ -270,8 +275,10 @@ let
           ]
         && scintillateBuzz.extra.require_mention
         && !scintillateBuzz.extra.allow_all_users
-        && scintillateBuzz.extra.transport == "auto";
-      msg = "Scintillate's native Buzz adapter must preserve relay, routing, mention, and author boundaries.";
+        && scintillateBuzz.extra.transport == "auto"
+        && !scintillateBuzz.extra.reply_in_thread
+        && scintillateBuzz.extra.working_reaction == "⚙️";
+      msg = "Scintillate's native Buzz adapter must preserve routing boundaries while enabling flat replies and a transient working reaction.";
     }
     {
       test =
