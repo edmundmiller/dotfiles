@@ -7,7 +7,7 @@
 }:
 let
   pname = "nf-core";
-  version = "4.0.2";
+  version = "4.1.0";
   py = python3.pkgs;
   mkPypi =
     {

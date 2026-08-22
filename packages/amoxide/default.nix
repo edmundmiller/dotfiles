@@ -6,7 +6,7 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "amoxide";
-  version = "0.10.2";
+  version = "0.10.6";
 
   outputs = [
     "out"
@@ -17,10 +17,10 @@ rustPlatform.buildRustPackage rec {
     owner = "sassman";
     repo = "amoxide-rs";
     rev = "v${version}";
-    hash = "sha256-LaYAVdSTDDtjDh+GGWivZQCWrotJUizAPpGIAnKXWAY=";
+    hash = "sha256-jX30GomQZlwmx5hCkvOFQux7EVvLMyHtUQL79tFmsgA=";
   };
 
-  cargoHash = "sha256-ZNdfzXP/0aU/kam4fAc6NvcEzq4/MSZTnfMDRcT5+Mo=";
+  cargoHash = "sha256-HlVtBAdj6spo6XTHrNnHWRbSebVNmN6UhEAQZWxRb1g=";
 
   doCheck = false;
 

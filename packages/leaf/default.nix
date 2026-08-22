@@ -6,7 +6,7 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "leaf";
-  version = "1.26.1";
+  version = "1.28.0";
 
   src = fetchFromGitHub {
     owner = "rivolink";

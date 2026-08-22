@@ -8,7 +8,7 @@
 
 buildNpmPackage {
   pname = "herdr-tab-smart-rename";
-  version = "0.1.1-omp";
+  version = "v0.1.1";
 
   src = fetchFromGitHub {
     owner = "iurysza";
