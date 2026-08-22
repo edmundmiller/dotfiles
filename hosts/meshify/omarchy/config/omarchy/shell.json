@@ -35,6 +35,9 @@
           "id": "omarchy.tray"
         },
         {
+          "id": "io.github.thisisgm.omapods"
+        },
+        {
           "id": "omarchy.tailscale"
         },
         {
