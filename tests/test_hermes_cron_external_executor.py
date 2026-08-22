@@ -12,6 +12,7 @@ import sys
 import tempfile
 import types
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -130,6 +131,34 @@ class ExternalExecutorHealthTest(unittest.TestCase):
         self.assertIn("External cron executor is not running", output)
         self.assertIn("hermes-example-cron-tick.timer", output)
         self.assertNotIn("Gateway is not running", output)
+
+    @unittest.expectedFailure
+    def test_recent_host_heartbeat_reports_active_timer_without_systemctl(self):
+        marker = self.home / "cron" / "executor.json"
+        marker.write_text(
+            json.dumps(
+                {
+                    "kind": "systemd",
+                    "unit": "hermes-example-cron-tick.timer",
+                    "heartbeat_at": datetime.now(timezone.utc).isoformat(),
+                    "max_age_seconds": 180,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        output = io.StringIO()
+        with (
+            patch.dict(os.environ, {"HERMES_HOME": str(self.home)}, clear=False),
+            patch("subprocess.run", side_effect=FileNotFoundError),
+            contextlib.redirect_stdout(output),
+        ):
+            self.cron.cron_status()
+
+        rendered = output.getvalue()
+        self.assertIn("External cron executor is running", rendered)
+        self.assertNotIn("External cron executor is not running", rendered)
 
     def test_missing_marker_preserves_gateway_warning(self):
         (self.home / "cron" / "executor.json").unlink()

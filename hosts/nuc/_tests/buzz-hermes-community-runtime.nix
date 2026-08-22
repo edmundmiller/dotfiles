@@ -59,6 +59,10 @@ let
   scintillateGateway = cfg.systemd.services.hermes-gateway-scintillate;
   scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
   scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
+  scintillateCronHeartbeatExpectedFailure = true;
+  scintillateCronHeartbeatConfigured = builtins.any (
+    command: pkgs.lib.hasInfix "executor.json" command
+  ) (scintillateCron.serviceConfig.ExecStartPost or [ ]);
   scintillateBuzz = scintillateProfile.settings.gateway.platforms.buzz or { };
   scintillateBuzzDisplay = scintillateProfile.settings.display.platforms.buzz or { };
   scintillateBuzzPackages = builtins.filter (
@@ -260,6 +264,14 @@ let
         && scintillateProfile.package.pilotHermesVersion == "0.20.5"
         && scintillateCron.serviceConfig.ExecStart == "${scintillateProfile.package}/bin/hermes cron tick";
       msg = "Scintillate's gateway and cron executor must exclusively use the Hermes 0.20.5 Buzz pilot package without automatic mid-turn restarts.";
+    }
+    {
+      test =
+        if scintillateCronHeartbeatExpectedFailure then
+          !scintillateCronHeartbeatConfigured
+        else
+          scintillateCronHeartbeatConfigured;
+      msg = "Scintillate's host cron executor must publish a heartbeat that the gateway container can read.";
     }
     {
       test =
