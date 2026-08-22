@@ -1,6 +1,6 @@
 # Worklog: meshify-omarchy-recovery
 
-Status: landing
+Status: done_local
 
 ## Objective
 
@@ -43,8 +43,9 @@ Implement ADR 0011 so `hosts/meshify/omarchy/manage` can restore, check, snapsho
 ## Remaining work
 
 - Human gate: populate the `Private/meshify-omarchy` 1Password fields documented in the README to prove fresh private-state recovery.
-- Commit, push, tag, and verify remote equality.
+- Human gate: unlock/approve the 1Password SSH agent, then fetch/rebase, push, create `agent-work/meshify-omarchy-recovery`, and prove remote equality. GitHub signing currently times out; no alternate credential is configured.
 
 ## Commits
 
-Pending landing commits.
+- `ff8d0e99 feat(meshify): make Omarchy recovery reproducible`
+- Closeout worklog update: this commit.
