@@ -1,6 +1,6 @@
 # Worklog: workspace-2qf.2
 
-Status: active
+Status: pilot running
 
 ## Objective
 
@@ -24,6 +24,10 @@ Deploy a reversible Scintillate-only Hermes v0.20.5 native Buzz UX pilot without
 - The first switch activated the new generation but left Scintillate's guarded gateway on its prior process; the cron tick exposed an `IndentationError` because the external-executor patch used a zero-context line-number hunk against v0.20.5.
 - The cron patch is now anchored to `cron_status()` context and applies with zero fuzz to both the fleet source and v0.20.5. The rebuilt pilot install check passes the 7 Buzz cases, 1 cron compile regression, and 5 external-executor cases.
 - The repaired NUC build produced `/nix/store/c9hl16vaviygihlqkmqm3k7z8gjnsp7s-nixos-system-nuc-26.11.20260714.18b9261`.
+- The final generation is `/nix/store/c6yq83pqw5dy3n150m445lmksf3gpllh-nixos-system-nuc-26.11.20260714.18b9261`; its Scintillate container was recreated because the package PATH changed.
+- Live readback reports Hermes Agent v0.20.5 from both bare and explicit package commands, Buzz connected as Scintillate, presence online, and a successful cron tick.
+- The final deployment left Amos Burton, Anne, Betty, Finn, and Orchestrator active on the same PIDs with `NRestarts=0`.
+- Activation also surfaced an unrelated existing `mill-docs-git-pull.service` failure caused by unmerged files; the mill-docs checkout was not touched.
 
 ## Reviews
 
@@ -37,10 +41,11 @@ None yet.
 
 ## Remaining work
 
-- Deploy and verify live behavior.
-- Commit, push, and prove remote equality.
+- Observe one post-deploy natural DM in Buzz to confirm the working reaction and flat visible reply in the real client; automated adapter coverage is green, but no post-deploy user turn has arrived yet.
 
 ## Commits
 
 - `7491443` — Scintillate-only v0.20.5 pilot package and deployment wiring.
 - `d827921` — expected-failure regression for the v0.20.5 cron patch syntax.
+- `a6012c7` — context-anchored cron patch and latest-source behavior checks.
+- `6439c18` — package-aware container recreation pin.
