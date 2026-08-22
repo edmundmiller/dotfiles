@@ -1,6 +1,6 @@
 # Worklog: meshify-omarchy-recovery
 
-Status: done_local
+Status: done
 
 ## Objective
 
@@ -27,6 +27,7 @@ Implement ADR 0011 so `hosts/meshify/omarchy/manage` can restore, check, snapsho
 - Secret regression tests prove keyring values use stdin, do not appear in argv/output, are time-bounded, and preserve existing values when 1Password is unavailable.
 - Repository-wide attempt `uvx --with pytest pytest -q tests`: 162 passed, 11 skipped, and 19 failed because this Omarchy host lacks `nix`, `bun`, and `jj`. No failure involved the meshify Omarchy suite.
 - `hey` is unavailable on this Omarchy host, so `hey agent-start`, `hey agent-audit-tests`, and `hey agent-finish` cannot run. This is an exact tooling blocker, not a skipped successful check.
+- The 1Password SSH agent was unlocked, the implementation was rebased onto `origin/main`, and GitHub accepted the landing push.
 
 ## Reviews
 
@@ -43,9 +44,9 @@ Implement ADR 0011 so `hosts/meshify/omarchy/manage` can restore, check, snapsho
 ## Remaining work
 
 - Human gate: populate the `Private/meshify-omarchy` 1Password fields documented in the README to prove fresh private-state recovery.
-- Human gate: unlock/approve the 1Password SSH agent, then fetch/rebase, push, create `agent-work/meshify-omarchy-recovery`, and prove remote equality. GitHub signing currently times out; no alternate credential is configured.
 
 ## Commits
 
-- `ff8d0e99 feat(meshify): make Omarchy recovery reproducible`
-- Closeout worklog update: this commit.
+- `4d3ab29e feat(meshify): make Omarchy recovery reproducible`
+- `898548c6 docs(meshify): record Omarchy recovery evidence`
+- Final shipping evidence: this commit.
