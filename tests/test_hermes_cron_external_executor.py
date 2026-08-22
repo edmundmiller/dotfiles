@@ -132,7 +132,6 @@ class ExternalExecutorHealthTest(unittest.TestCase):
         self.assertIn("hermes-example-cron-tick.timer", output)
         self.assertNotIn("Gateway is not running", output)
 
-    @unittest.expectedFailure
     def test_recent_host_heartbeat_reports_active_timer_without_systemctl(self):
         marker = self.home / "cron" / "executor.json"
         marker.write_text(

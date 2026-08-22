@@ -1,10 +1,11 @@
 diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 --- a/hermes_cli/cron.py
 +++ b/hermes_cli/cron.py
-@@ -8,0 +9,2 @@ import json
+@@ -8,0 +9,3 @@ import json
 +import os
 +import subprocess
-@@ -65,0 +68,35 @@ def _active_cron_provider_name() -> str:
++from datetime import datetime, timezone
+@@ -65,0 +69,54 @@ def _active_cron_provider_name() -> str:
 +def _external_systemd_executor_status():
 +    """Return ``(unit, active)`` for a host-declared systemd executor.
 +
@@ -26,6 +27,25 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 +        return None
 +    unit = unit.strip()
 +
++    heartbeat_at = executor.get("heartbeat_at")
++    if heartbeat_at is not None:
++        max_age_seconds = executor.get("max_age_seconds")
++        if (
++            not isinstance(heartbeat_at, str)
++            or isinstance(max_age_seconds, bool)
++            or not isinstance(max_age_seconds, (int, float))
++            or max_age_seconds <= 0
++        ):
++            return unit, False
++        try:
++            seen_at = datetime.fromisoformat(heartbeat_at.replace("Z", "+00:00"))
++            if seen_at.tzinfo is None:
++                return unit, False
++            age_seconds = (datetime.now(timezone.utc) - seen_at).total_seconds()
++        except (OverflowError, TypeError, ValueError):
++            return unit, False
++        return unit, 0 <= age_seconds <= max_age_seconds
++
 +    try:
 +        result = subprocess.run(
 +            ["systemctl", "is-active", "--quiet", unit],
@@ -40,16 +60,16 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 +    return unit, active
 +
 +
-@@ -67 +104 @@ def _warn_if_gateway_not_running() -> None:
+@@ -67 +124 @@ def _warn_if_gateway_not_running() -> None:
 -    """Warn that scheduled jobs won't fire unless the gateway is running.
 +    """Report the configured executor when no gateway process is running.
-@@ -70,2 +107,3 @@ def _warn_if_gateway_not_running() -> None:
+@@ -70,2 +127,3 @@ def _warn_if_gateway_not_running() -> None:
 -    gateway/run.py); there is no standalone cron daemon. Without a running
 -    gateway, ``next_run_at`` passes but jobs never fire and ``last_run_at``
 +    gateway/run.py) unless a deployment invokes ``hermes cron tick`` from an
 +    external systemd timer. Without either executor, ``next_run_at`` passes
 +    but jobs never fire and ``last_run_at``
-@@ -92,0 +131,14 @@ def _warn_if_gateway_not_running() -> None:
+@@ -92,0 +151,14 @@ def _warn_if_gateway_not_running() -> None:
 +    external = _external_systemd_executor_status()
 +    if external is not None:
 +        unit, active = external
@@ -64,7 +84,7 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
 +            print(color(f"     Check status: systemctl status {unit}", Colors.DIM))
 +        return
 +
-@@ -219,6 +272,8 @@ def cron_status():
+@@ -219,6 +292,8 @@ def cron_status():
      from hermes_cli.gateway import find_gateway_pids
  
      print()
@@ -73,7 +93,7 @@ diff --git a/hermes_cli/cron.py b/hermes_cli/cron.py
  
      provider = _active_cron_provider_name()
      if provider != "builtin":
-@@ -304,7 +359,22 @@ def cron_status():
+@@ -304,7 +379,22 @@ def cron_status():
              print(f"  PID: {', '.join(map(str, pids))}")
              if hb_age is not None:
                  print(f"  Ticker heartbeat: {int(hb_age)}s ago")

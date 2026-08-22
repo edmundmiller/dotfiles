@@ -59,10 +59,11 @@ let
   scintillateGateway = cfg.systemd.services.hermes-gateway-scintillate;
   scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
   scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
-  scintillateCronHeartbeatExpectedFailure = true;
-  scintillateCronHeartbeatConfigured = builtins.any (
-    command: pkgs.lib.hasInfix "executor.json" command
+  scintillateCronHeartbeatExpectedFailure = false;
+  scintillateCronPostStartScripts = pkgs.lib.concatMapStringsSep "\n" (
+    script: if builtins.pathExists script then builtins.readFile script else script
   ) (scintillateCron.serviceConfig.ExecStartPost or [ ]);
+  scintillateCronHeartbeatConfigured = pkgs.lib.hasInfix "executor.json" scintillateCronPostStartScripts;
   scintillateBuzz = scintillateProfile.settings.gateway.platforms.buzz or { };
   scintillateBuzzDisplay = scintillateProfile.settings.display.platforms.buzz or { };
   scintillateBuzzPackages = builtins.filter (

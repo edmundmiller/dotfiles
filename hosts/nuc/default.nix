@@ -36,6 +36,22 @@ let
     doCheck = false;
   };
   rtkHermes = pkgs.llm-agents."hermes-agent".rtkHermes;
+  scintillateCronExecutorHeartbeat = pkgs.writeShellScript "hermes-scintillate-cron-executor-heartbeat" ''
+    set -eu
+
+    marker_dir="$HERMES_HOME/cron"
+    marker="$marker_dir/executor.json"
+    tmp="$marker.$$"
+
+    ${pkgs.coreutils}/bin/mkdir -p "$marker_dir"
+    trap '${pkgs.coreutils}/bin/rm -f "$tmp"' EXIT
+    ${pkgs.coreutils}/bin/printf '%s\n' \
+      '{"kind":"systemd","unit":"hermes-scintillate-cron-tick.timer","heartbeat_at":"'"$(${pkgs.coreutils}/bin/date --iso-8601=seconds)"'","max_age_seconds":180}' \
+      > "$tmp"
+    ${pkgs.coreutils}/bin/chmod 0600 "$tmp"
+    ${pkgs.coreutils}/bin/mv "$tmp" "$marker"
+    trap - EXIT
+  '';
   hermesCronPython =
     pkgs.runCommand "hermes-cron-executor-health"
       {
@@ -2107,6 +2123,7 @@ in
         config.age.secrets.buzz-hermes-scintillate-agent-env.path
       ];
       ExecStart = "${hermesAgentBuzzPilot}/bin/hermes cron tick";
+      ExecStartPost = [ scintillateCronExecutorHeartbeat ];
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
