@@ -106,7 +106,7 @@
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable OpenClaw defaults.
     agents-workspace = {
-      url = "github:edmundmiller/agents-workspace/575cc2a1e8e313010e52e336a25dbf93445b5b97";
+      url = "github:edmundmiller/agents-workspace/e21e22c7240958e7c381255af6788246e43e12e3";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
