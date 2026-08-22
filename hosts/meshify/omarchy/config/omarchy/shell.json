@@ -35,7 +35,11 @@
           "id": "omarchy.tray"
         },
         {
-          "id": "akitaonrails.ai-usagebar"
+          "id": "hass"
+        },
+        {
+          "id": "akitaonrails.ai-usagebar",
+          "lastSelectedEntryId": "openai"
         },
         {
           "id": "io.github.thisisgm.omapods"
