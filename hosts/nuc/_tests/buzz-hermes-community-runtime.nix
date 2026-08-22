@@ -226,6 +226,12 @@ let
       msg = "Scintillate's legacy buzz-acp unit must be absent during the native gateway pilot.";
     }
     {
+      # Expected-failure marker: Buzz currently reports the native gateway
+      # offline because no process publishes Scintillate's presence.
+      test = !(builtins.hasAttr "buzz-presence-scintillate" cfg.systemd.services);
+      msg = "Known regression: Scintillate's native Buzz gateway still lacks a presence publisher.";
+    }
+    {
       test =
         scintillateGateway.enable
         && !scintillateGateway.restartIfChanged
