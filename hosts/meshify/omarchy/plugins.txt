@@ -1,1 +1,2 @@
-https://github.com/thisisgm/omarchy-pods
+io.github.thisisgm.omapods https://github.com/thisisgm/omarchy-pods
+akitaonrails.ai-usagebar https://github.com/akitaonrails/ai-usagebar.git

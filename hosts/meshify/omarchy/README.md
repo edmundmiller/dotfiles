@@ -16,23 +16,25 @@ The repository paths mirror the home directory without leading dots:
 - `config/hypr/` → `~/.config/hypr/`
 - `config/omarchy/` → `~/.config/omarchy/`
 - `local/bin/` → `~/.local/bin/`
-- `plugins.txt` → third-party plugins installed with `omarchy plugin add`
+- `plugins.txt` → third-party plugin IDs and source URLs
 
 Legacy Hyprland `.conf` files, timestamped backups, logs, session state, sample
 hooks, and packaged shader symlinks are intentionally excluded.
 
 ## Restore
 
-Back up the live files first. Install the third-party plugin and its daemon,
-then copy these overrides into place:
+Back up the live files first. Install the third-party plugins and their runtime
+dependencies, then copy these overrides into place:
 
 ```bash
 cd ~/.config/dotfiles/hosts/meshify/omarchy
-plugin_id=io.github.thisisgm.omapods
-if [[ ! -d "$HOME/.config/omarchy/plugins/$plugin_id" ]]; then
-  omarchy plugin add "$(< plugins.txt)" --enable
-fi
-"$HOME/.config/omarchy/plugins/$plugin_id/setup"
+omarchy pkg aur add ai-usagebar-bin
+while read -r plugin_id plugin_url; do
+  if [[ ! -d "$HOME/.config/omarchy/plugins/$plugin_id" ]]; then
+    omarchy plugin add "$plugin_url" --enable
+  fi
+done < plugins.txt
+"$HOME/.config/omarchy/plugins/io.github.thisisgm.omapods/setup"
 
 install -Dm644 config/hypr/*.lua ~/.config/hypr/
 install -Dm644 config/omarchy/shell.json ~/.config/omarchy/shell.json
@@ -54,10 +56,13 @@ done
 diff config/omarchy/shell.json ~/.config/omarchy/shell.json
 cmp local/bin/rocket-league-lmstudio-guard \
   ~/.local/bin/rocket-league-lmstudio-guard
-test "$(git -C ~/.config/omarchy/plugins/io.github.thisisgm.omapods \
-  remote get-url origin)" = "$(< plugins.txt)"
-omarchy plugin list --json | jq -e \
-  'any(.[]; .id == "io.github.thisisgm.omapods" and .enabled)'
+while read -r plugin_id plugin_url; do
+  test "$(git -C "$HOME/.config/omarchy/plugins/$plugin_id" \
+    remote get-url origin)" = "$plugin_url"
+  omarchy plugin list --json | jq -e --arg id "$plugin_id" \
+    'any(.[]; .id == $id and .enabled)'
+done < plugins.txt
+command -v ai-usagebar
 systemctl --user is-active --quiet librepods.service
 jq empty config/omarchy/shell.json
 bash -n local/bin/rocket-league-lmstudio-guard
