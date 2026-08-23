@@ -1,6 +1,6 @@
 # Worklog: retire-openclaw-trim-skills
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -18,6 +18,13 @@ Reduce shared skill-routing conflicts and retire OpenClaw-owned configuration. S
 - Baseline: detached Git worktree at `d78d1c8dc6be26c4d02524aea315a9ec2f2b3b63`.
 - Unrelated dirt to preserve: `modules/services/hass/default.nix` and `packages/herdr-plugins/default.nix`.
 - Host: `MacTraitor-Pro.local`, Darwin arm64.
+- Cleanup validation: `skill-quality` checked 54 skills with zero findings; `tests.test_agent_quality` ran 27 passing tests; Nix, YAML, and Nu parsing passed.
+- Source update: `hey skills-update` refreshed both lockfiles, removed the retired Matt Pocock source, and `hey skills-sync` activated the shared, Codex, Pi, and OMP targets.
+- Live Mac readback: 64 shared skills; removed overlaps are absent; `extending-pi` exists only in Pi; OMP has the expected eight ignored skills.
+- Current-main validation: the scoped commits were replayed onto `origin/main` at `2a0e12147`; `hey check` and the NUC configuration build exercise the integrated tree.
+- Live NUC readback: `/run/current-system` is `/nix/store/fb8h7kn8p9pnma39q1pj8q4b3ryxsfwf-nixos-system-nuc-26.11.20260714.18b9261`; Home Assistant is active; the system closure has zero OpenClaw or Clawdbot references; no matching units or processes remain.
+- Retired state: `/home/emiller/.openclaw` is absent; its recoverable archive is `/home/emiller/.local/state/retired/openclaw-20260822` with mode `0700`. The Mac copy was moved to Trash.
+- Scope preservation: the assigned worktree still contains only the user's pre-existing Bluetooth adapter and Herdr plugin permission hunks outside the committed task changes.
 
 ## Reviews
 
@@ -27,12 +34,18 @@ Plan gate not required; no external reviewer requested.
 
 The prior audit was read-only; cleanup recommendations must not be described as already applied.
 
+- `hey skills-update` initially hit GitHub's anonymous API limit; a single authenticated retry via the existing `gh` session succeeded without persisting a token.
+- `hey skills-sync` still warns about an obsolete `dotfiles-repo` input name.
+- The NUC deployment guard correctly rejected the first stale-base snapshot after concurrent `main` changes; replaying the task on current `origin/main` resolved it.
+- NUC activation preserved existing Hermes values when 1Password rate-limited reads. `opnix-secrets.service` remained failed for that unrelated provider error; the requested generation and Home Assistant service are live.
+- Home Assistant has unrelated missing-package and stale-entity startup errors; none reference OpenClaw.
+
 ## Remaining work
 
-- Classify exact skill and OpenClaw cuts.
-- Apply and validate cleanup.
-- Commit cleanup, update skill inputs, activate, verify, and commit update-only changes.
+None within this task. The 1Password/OpNix recovery and unrelated Home Assistant dependency errors are parked for separately scoped repairs.
 
 ## Commits
 
-None yet.
+- `5f89fe3c5` — remove redundant shared workflows and narrow runtime routing.
+- `544e52f93` — retire OpenClaw-owned configuration and integrations.
+- `95e518385` — refresh skill-source pins after the cleanup commit.
