@@ -209,10 +209,6 @@ in
     edmundmiller
     nuc
   ];
-  "buzz-hermes-orchestrator-agent-env.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   "buzz-hermes-scintillate-agent-env.age".publicKeys = [
     edmundmiller
     nuc

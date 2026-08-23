@@ -2477,11 +2477,6 @@ in
     group = "users";
     mode = "0400";
   };
-  age.secrets.buzz-hermes-orchestrator-agent-env = {
-    owner = "emiller";
-    group = "users";
-    mode = "0400";
-  };
   age.secrets.buzz-hermes-scintillate-agent-env = {
     owner = "emiller";
     group = "users";
@@ -2492,8 +2487,6 @@ in
   systemd.services.buzz-hermes-anne = mkBuzzHermesService "anne";
   systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
   systemd.services.buzz-hermes-finn = mkBuzzHermesService "finn";
-  systemd.services.buzz-hermes-orchestrator = mkBuzzHermesService "orchestrator";
-
   systemd.services.obsidian-sync-mill-docs = {
     description = "Obsidian Headless Sync (mill-docs)";
     after = [
