@@ -3,6 +3,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MANAGE = REPO_ROOT / "hosts" / "meshify" / "omarchy" / "manage"
 
 
+@unittest.skipIf(sys.platform == "darwin", "Omarchy is Linux-only")
 class ManageCliTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
