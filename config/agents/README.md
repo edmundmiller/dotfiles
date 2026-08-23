@@ -41,8 +41,6 @@ Use two lanes only:
 - `skills/catalog/` — global skills installed into `~/.agents/skills`
 - `.agents/skills/` — project-local skills checked into this repo; never install these into `~/.agents/skills/`
 
-OpenClaw keeps its own skills in `~/.openclaw/skills/`.
-
 Skills use the [skills.sh](https://skills.sh/docs) format with YAML frontmatter:
 
 ```markdown

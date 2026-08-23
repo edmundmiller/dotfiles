@@ -104,7 +104,7 @@
     };
 
     # Canonical authoring/runtime repo for agent specs, renderers, and
-    # reusable OpenClaw defaults.
+    # reusable Hermes profiles.
     agents-workspace = {
       url = "github:edmundmiller/agents-workspace/9bab5275e8f8792dbb4fc972fad09db12914caee";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -221,8 +221,8 @@
             # Set primary user for nix-darwin 25.05
             { system.primaryUser = primaryUser; }
 
-            # Add openclaw to home-manager modules. Stylix's darwin module
-            # auto-imports its Home Manager module when `stylix.enable = true`.
+            # Add the shared skills catalog to home-manager modules. Stylix's
+            # Darwin module auto-imports its Home Manager module when enabled.
             {
               home-manager.extraSpecialArgs = { inherit inputs; };
               home-manager.sharedModules = [ inputs.skills-catalog.homeManagerModules.default ];

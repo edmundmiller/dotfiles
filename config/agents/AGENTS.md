@@ -31,7 +31,6 @@ Unified skills, modes, and rules for Codex, Claude, OpenCode, Pi, and Hermes age
 - Rules are numbered (01-, 02-, etc.) for ordered concatenation
 - Skills default only to `dot-agents`; other agent dirs are for target-specific skills.
 - Target-specific skills set `meta.targets` in `programs.dotfiles-agent-skills.targetedExplicit`.
-- OpenClaw skills live separately in `~/.openclaw/skills/`
 
 ## Adding Skills
 

@@ -98,28 +98,16 @@ Timer-driven profiles declare their executor in `$HERMES_HOME/cron/executor.json
 - **OpenCode** — AI coding service
 - **deploy-rs** — Self-deployment target
 
-## Linear Agent Bridge (OAuth Token Lifecycle)
+## Linear OAuth Token Lifecycle
 
-The NUC runs a **linear-agent-bridge** gateway extension that lets Linear @mentions trigger autonomous agent runs. It authenticates as "Norbot" (an app-user) via OAuth.
-
-### Architecture
-
-```
-Linear @mention → webhook → gateway → linear-agent-bridge → agent run
-                                ↑
-                        LINEAR_API_KEY (from token file)
-```
+Scintillate's Hermes profile reads its Linear app-user token from
+`~/.local/state/hermes-linear/token`. Agenix supplies the bootstrap token.
 
 ### Token Chain
 
-Linear OAuth tokens expire every 24h. The system auto-rotates them:
-
-1. **Agenix seed** (`linear-api-token.age`, `linear-refresh-token.age`) — bootstrap values, encrypted for edmundmiller + nuc keys
-2. **`linear-token-init.service`** (oneshot, runs before gateway) — refreshes token on first boot using the refresh token
-3. **`linear-token-refresh.timer`** — fires every 12h, calls the refresh script, restarts gateway
-4. **Persisted state** (`~/.local/state/hermes-linear/`) — `token` (access) and `refresh-token` (rotated)
-
-**Critical detail:** Linear rotates refresh tokens on every use. The refresh script persists the new refresh token to `STATE_DIRECTORY/refresh-token`, preferring it over the agenix seed. This prevents token chain death.
+The Nix activation bootstraps `~/.local/state/hermes-linear/token` from
+`linear-api-token.age` only when the runtime token is absent. The recovery
+script writes a fresh access and refresh token to that state directory.
 
 ### Recovery (when refresh token dies)
 
@@ -132,21 +120,12 @@ linear-oauth-refresh --no-deploy  # just tokens, skip hey nuc
 
 The script starts a callback server on `:9999`, opens the OAuth consent page, exchanges the code, encrypts with agenix, seeds on NUC, and deploys. Requires: logged into Linear in browser, SSH access to NUC.
 
-### Smoke Test
-
-```bash
-bin/test-linear-agent          # fires fake webhook, tails gateway log
-```
-
-Expect: HTTP 202, `agentActivityCreate failed: Entity not found: AgentSession` (normal — test uses fake session ID).
-
 ### Key Files
 
 | File                                         | Purpose                             |
 | -------------------------------------------- | ----------------------------------- |
-| `hosts/nuc/default.nix` (lines 12-43)        | Refresh script with persist logic   |
+| `hosts/nuc/default.nix`                      | Token bootstrap and Hermes wiring   |
 | `bin/linear-oauth-refresh`                   | Manual re-bootstrap from Mac        |
-| `bin/test-linear-agent`                      | Smoke test script                   |
 | `hosts/nuc/secrets/linear-api-token.age`     | Agenix-encrypted access token seed  |
 | `hosts/nuc/secrets/linear-refresh-token.age` | Agenix-encrypted refresh token seed |
 
@@ -168,9 +147,8 @@ Located in `hosts/nuc/secrets/`:
 - `gemini-api-key.age` — Gemini API
 - `elevenlabs-api-key.age` — ElevenLabs TTS
 - `telegram-bot-token.age` — Telegram bot token (used by Gatus alerting)
-- `linear-api-token.age` — Linear OAuth access token (see Linear Agent Bridge section)
-- `linear-refresh-token.age` — Linear OAuth refresh token (see Linear Agent Bridge section)
-- `linear-webhook-secret.age` — Linear webhook signature verification
+- `linear-api-token.age` — Linear OAuth access token (see Linear OAuth Token Lifecycle)
+- `linear-refresh-token.age` — Linear OAuth refresh token (see Linear OAuth Token Lifecycle)
 
 ## Deployment
 
@@ -219,7 +197,7 @@ du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
 - **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
 - **`tnote` path is canonicalized**: `~/.local/bin/tnote` points at `~/src/personal/tnote`. No legacy `tn-monorepo` fallback is kept; fix the canonical repo path directly if `tnote` is stale or missing.
 - **Scintillate vault path nuance**: declarative config points Hermes/Scintillate at `/home/hermes/repos/obsidian-vault`, but Docker may show the bind mount as `/home/emiller/obsidian-vault -> /home/emiller/obsidian-vault`. That is expected as long as `docker exec hermes-agent-scintillate realpath /home/hermes/repos/obsidian-vault` resolves to `/home/emiller/obsidian-vault` and `.git` exists there.
-- **New agenix secrets**: If a first deploy lands new secrets before a service has picked them up, verify the current gateway/service model before restarting anything. On the current NUC, Hermes runs as system service `hermes-agent.service`, so check `sudo systemctl status hermes-agent.service` and restart that if needed. `systemctl --user restart openclaw-gateway` only applies to older OpenClaw deployments.
+- **New agenix secrets**: If a first deploy lands new secrets before a service has picked them up, verify the current gateway/service model before restarting anything. Hermes runs as system service `hermes-agent.service`; check `sudo systemctl status hermes-agent.service` and restart that if needed.
 - **QMD now comes from llm-agents.nix**: if packaging breaks again, check `numtide/llm-agents.nix/packages/qmd/` and the upstream QMD note at https://github.com/tobi/qmd/pull/285#issuecomment-4012495904 before reviving a local wrapper.
 - **nix-ld libraries**: Any new generic linux binary that fails with "cannot run dynamically linked executable" needs its missing libs added to `programs.nix-ld.libraries`. Use `ldd /path/to/binary` to find missing `.so` files.
 - **ZFS/znapzend**: Currently disabled (FIXME). Backup config exists but not active.

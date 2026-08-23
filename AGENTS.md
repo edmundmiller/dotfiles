@@ -33,5 +33,5 @@ catalog changes.
   the operation.
 - NUC deployment: [deploy-nuc.md](docs/runbooks/deploy-nuc.md).
 - Agent quality gates: [agent-quality.md](docs/agent-quality.md).
-- OpenClaw or Hermes runtime behavior: work in `agents-workspace`; this repo
+- Hermes runtime behavior: work in `agents-workspace`; this repo
   owns only host deployment wiring.

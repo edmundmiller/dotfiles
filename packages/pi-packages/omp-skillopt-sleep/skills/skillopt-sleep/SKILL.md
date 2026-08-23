@@ -6,7 +6,7 @@ description: Use when the user wants OMP to run Microsoft SkillOpt-Sleep, learn 
 # SkillOpt-Sleep for OMP
 
 This is the OMP thin shell for Microsoft SkillOpt-Sleep. It follows the upstream
-Claude Code, Codex, Devin, and OpenClaw pattern: harvest local agent sessions,
+Claude Code, Codex, and Devin pattern: harvest local agent sessions,
 mine recurring tasks, replay them offline, gate proposed memory/skill edits on a
 held-out score, and stage improvements for review before adoption.
 
