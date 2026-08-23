@@ -56,7 +56,6 @@ let
 
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
-  bettyOpnixPathsExpectedFailure = false;
   cronTickCadenceExpectedFailure = false;
   cronTickCadenceMatches = builtins.all (
     timer:
@@ -169,12 +168,8 @@ let
       msg = "Betty cron executor must resolve bare Discord delivery through Betty's deployment binding.";
     }
     {
-      test =
-        if bettyOpnixPathsExpectedFailure then
-          !hasInfix "/var/lib/opnix/secrets" bettySecretMaterialization
-        else
-          hasInfix "/var/lib/opnix/secrets" bettySecretMaterialization;
-      msg = "Betty secrets must be materialized from OpNix-managed paths.";
+      test = hasInfix "/etc/opnix-token" bettySecretMaterialization;
+      msg = "Betty secrets must be materialized by root with the NUC 1Password service token.";
     }
     {
       test =
