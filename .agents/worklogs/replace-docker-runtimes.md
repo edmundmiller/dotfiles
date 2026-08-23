@@ -1,6 +1,6 @@
 # Worklog: replace-docker-runtimes
 
-Status: active (live cutover complete; landing in progress)
+Status: blocked only on macOS admin cleanup; source and NUC deployment landed
 
 ## Objective
 
@@ -62,6 +62,16 @@ workloads without a workload-by-workload Podman readback.
   not-found), `/var/run/docker.sock` points to Podman, all affected units are
   active, healthchecks are green where defined, and HTTP checks returned
   Latitude web 200, SparkyFitness 200, and Open Wearables `/docs` 200.
+- Published NUC switch created system generation 1383 from the task source;
+  the same unit, API, container, HTTP, and durable-data checks passed after
+  the real switch. The masked `hermes-runtime-smoke` unit is intentionally
+  disabled and was not used as a false success signal.
+- After app removal, a surviving user-owned Docker sandbox process was found
+  and terminated by exact PID; fresh readback shows no Docker.app process or
+  user launch agent. The sole residual is root-owned
+  `/Library/PrivilegedHelperTools/com.docker.vmnetd` (with its matching launch
+  daemon), which cannot be stopped or moved without native administrator
+  authorization. OrbStack still reports context `orbstack`, server `29.4.0`.
 - `hey nuc-wt test` returned 4 because unrelated pre-existing Mill Docs timer
   jobs failed (canonical checkout merge conflict and TypeScript syntax error);
   none of the affected container units failed in the final activation.
@@ -80,11 +90,10 @@ before any stop/remove action.
 ## Remaining work
 
 - Complete macOS admin-authorized removal of the exact Docker Desktop helper
-  launchd items and Docker-only root symlinks, if the native authorization
-  prompt can be completed; do not touch OrbStack or Docker data.
-- Run the repository landing workflow, publish the scoped commit, and perform
-  authoritative source/deployment readback.
+  launchd items and Docker-only root symlinks; do not touch OrbStack or Docker
+  data. The app and caskroom are already recoverably in `~/.Trash`.
 
 ## Commits
 
-None.
+- `e96e228ad` — `feat(containers): use OrbStack and Podman runtimes`; pushed
+  directly to `origin/main` and verified local/remote/advertised SHA equality.
