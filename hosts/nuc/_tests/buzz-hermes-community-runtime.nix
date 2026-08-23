@@ -60,7 +60,7 @@ let
   scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
   scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
   scintillateCronHeartbeatExpectedFailure = false;
-  scintillateRetiredTelegramEnvExpectedFailure = true;
+  scintillateRetiredTelegramEnvExpectedFailure = false;
   scintillateSecretsMaterializeScript =
     cfg.system.activationScripts.hermesScintillateSecretsMaterialize.text;
   scintillateCronPostStartScripts = pkgs.lib.concatMapStringsSep "\n" (

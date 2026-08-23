@@ -1034,9 +1034,6 @@ in
             printf '%s=%s\n' ${lib.escapeShellArg secret.envVar} "$secret_value" >> "$ENV_FILE"
           fi
         '') hermesScintillateSecrets}
-        printf 'TELEGRAM_ALLOWED_USERS=%s\n' '8357890648' >> "$ENV_FILE"
-        printf 'TELEGRAM_HOME_CHANNEL=%s\n' '8357890648' >> "$ENV_FILE"
-
         ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" <<'PY'
         import json
         import pathlib
@@ -1651,44 +1648,54 @@ in
     restartIfChanged = false;
     after = [ "opnix-secrets.service" ];
     wants = [ "opnix-secrets.service" ];
-    serviceConfig.ExecStartPre = lib.mkAfter [
-      himalayaFastmailSetupScript
-      (pkgs.writeShellScript "hermes-scintillate-gateway-dotenv" ''
-        set -eu
-        env_file=/var/lib/hermes-scintillate/.hermes/.env
-        buzz_secrets_file=${lib.escapeShellArg config.age.secrets.buzz-hermes-scintillate-agent-env.path}
-        tmp_file="$env_file.tmp.$$"
+    serviceConfig.ExecStartPre = lib.mkMerge [
+      (lib.mkBefore [
+        (pkgs.writeShellScript "hermes-scintillate-container-refresh" ''
+          if ${pkgs.docker}/bin/docker inspect hermes-agent-scintillate >/dev/null 2>&1; then
+            echo "Refreshing Scintillate gateway container to apply channel environment"
+            ${pkgs.docker}/bin/docker rm -f hermes-agent-scintillate >/dev/null
+          fi
+        '')
+      ])
+      (lib.mkAfter [
+        himalayaFastmailSetupScript
+        (pkgs.writeShellScript "hermes-scintillate-gateway-dotenv" ''
+            set -eu
+            env_file=/var/lib/hermes-scintillate/.hermes/.env
+            buzz_secrets_file=${lib.escapeShellArg config.age.secrets.buzz-hermes-scintillate-agent-env.path}
+            tmp_file="$env_file.tmp.$$"
 
-        install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
-        touch "$env_file"
-        chown emiller:users "$env_file"
-        chmod 0600 "$env_file"
+            install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
+            touch "$env_file"
+            chown emiller:users "$env_file"
+            chmod 0600 "$env_file"
 
-        if ! grep -q '^BUZZ_PRIVATE_KEY=' "$buzz_secrets_file"; then
-          echo "Scintillate Buzz identity secret is missing BUZZ_PRIVATE_KEY" >&2
-          exit 1
-        fi
+            if ! grep -q '^BUZZ_PRIVATE_KEY=' "$buzz_secrets_file"; then
+              echo "Scintillate Buzz identity secret is missing BUZZ_PRIVATE_KEY" >&2
+              exit 1
+            fi
 
-        grep -Ev '^(TELEGRAM_|BUZZ_)' "$env_file" > "$tmp_file"
-        grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
-        install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
-        rm -f "$tmp_file"
+            grep -Ev '^(TELEGRAM_|BUZZ_)' "$env_file" > "$tmp_file"
+            grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
+            install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
+            rm -f "$tmp_file"
 
-        gateway_state=/var/lib/hermes-scintillate/.hermes/gateway_state.json
-        if [ -f "$gateway_state" ]; then
-          ${pkgs.python3}/bin/python3 - "$gateway_state" <<'PY'
-        import json
-        import pathlib
-        import sys
+            gateway_state=/var/lib/hermes-scintillate/.hermes/gateway_state.json
+            if [ -f "$gateway_state" ]; then
+              ${pkgs.python3}/bin/python3 - "$gateway_state" <<'PY'
+          import json
+          import pathlib
+          import sys
 
-        path = pathlib.Path(sys.argv[1])
-        state = json.loads(path.read_text(encoding="utf-8"))
-        platforms = state.get("platforms")
-        if isinstance(platforms, dict) and platforms.pop("telegram", None) is not None:
-            path.write_text(json.dumps(state, separators=(",", ":")), encoding="utf-8")
-        PY
-        fi
-      '')
+          path = pathlib.Path(sys.argv[1])
+          state = json.loads(path.read_text(encoding="utf-8"))
+          platforms = state.get("platforms")
+          if isinstance(platforms, dict) and platforms.pop("telegram", None) is not None:
+              path.write_text(json.dumps(state, separators=(",", ":")), encoding="utf-8")
+          PY
+            fi
+        '')
+      ])
     ];
   };
 
