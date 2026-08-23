@@ -1433,6 +1433,9 @@ in
     user = "emiller";
     group = "users";
     createUser = false;
+    # Run Hermes OCI profiles through the host's Podman runtime. The upstream
+    # module otherwise defaults to Docker and enables Docker Engine implicitly.
+    container.backend = "podman";
     profiles = {
       anne = {
         authFile = "/home/emiller/.codex/auth.json";
@@ -1658,9 +1661,9 @@ in
     serviceConfig.ExecStartPre = lib.mkMerge [
       (lib.mkBefore [
         (pkgs.writeShellScript "hermes-scintillate-container-refresh" ''
-          if ${pkgs.docker}/bin/docker inspect hermes-agent-scintillate >/dev/null 2>&1; then
+          if ${pkgs.podman}/bin/podman inspect hermes-agent-scintillate >/dev/null 2>&1; then
             echo "Refreshing Scintillate gateway container to apply channel environment"
-            ${pkgs.docker}/bin/docker rm -f hermes-agent-scintillate >/dev/null
+            ${pkgs.podman}/bin/podman rm -f hermes-agent-scintillate >/dev/null
           fi
         '')
       ])
@@ -2189,8 +2192,8 @@ in
   systemd.services.hermes-runtime-smoke = {
     enable = false;
     description = "Run read-only Hermes runtime smoke checks";
-    after = [ "docker.service" ] ++ hermesGatewayUnits;
-    wants = [ "docker.service" ];
+    after = [ "podman.socket" ] ++ hermesGatewayUnits;
+    wants = [ "podman.socket" ];
     serviceConfig = {
       Type = "oneshot";
       TimeoutStartSec = "15min";
@@ -2307,7 +2310,7 @@ in
       };
     }
     // {
-      docker.enable = true;
+      containers.enable = true;
       music-assistant = {
         enable = true;
         tailscaleService.enable = true;

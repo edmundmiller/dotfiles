@@ -80,7 +80,7 @@
     };
 
     services = {
-      docker.enable = true;
+      containers.enable = true;
       ollama.enable = true;
       ssh.enable = true;
       syncthing.enable = true;

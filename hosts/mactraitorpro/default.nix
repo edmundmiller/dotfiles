@@ -251,7 +251,10 @@ in
       services = {
         appleContainer.enable = true;
         obsidian-sync.enable = false;
-        docker.enable = false;
+        containers = {
+          enable = true;
+          provider = "orbstack";
+        };
         mosh.enable = true;
         moshi.enable = true;
         tailscale.enable = true;

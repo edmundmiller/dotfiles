@@ -123,8 +123,8 @@ in
     optionalAttrs (!isDarwin) {
       assertions = [
         {
-          assertion = config.modules.services.docker.enable;
-          message = "modules.services.sparkyfitness requires modules.services.docker.enable = true";
+          assertion = config.modules.services.containers.enable;
+          message = "modules.services.sparkyfitness requires modules.services.containers.enable = true";
         }
         {
           assertion = cfg.environmentFile != null;
@@ -140,14 +140,15 @@ in
       ];
 
       systemd.services.sparkyfitness = {
-        description = "SparkyFitness Docker Compose stack";
+        description = "SparkyFitness Podman-compatible Compose stack";
+        environment.DOCKER_HOST = "unix:///run/podman/podman.sock";
         wantedBy = [ "multi-user.target" ];
         after = [
-          "docker.service"
+          "podman.socket"
           "network-online.target"
         ];
         wants = [ "network-online.target" ];
-        requires = [ "docker.service" ];
+        requires = [ "podman.socket" ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;

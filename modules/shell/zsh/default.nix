@@ -16,11 +16,11 @@ let
   );
 
   claudeEnabled = attrByPath [ "modules" "shell" "claude" "enable" ] false config;
-  dockerEnabled = attrByPath [ "modules" "services" "docker" "enable" ] false config;
+  containersEnabled = attrByPath [ "modules" "services" "containers" "enable" ] false config;
 
   aliasPathFor =
     dir:
-    if (dir == "claude" && !claudeEnabled) || (dir == "docker" && !dockerEnabled) then
+    if (dir == "claude" && !claudeEnabled) || (dir == "docker" && !containersEnabled) then
       null
     else
       configDir + "/${dir}/aliases.zsh";
@@ -178,7 +178,7 @@ in
         rcp = "rsync -azPJ --include=.git/ --filter=':- .gitignore' --filter=':- $XDG_CONFIG_HOME/git/ignore'";
         weather = "curl -s 'wttr.in/Ft+Worth?m&format=3'";
       }
-      // optionalAttrs dockerEnabled {
+      // optionalAttrs containersEnabled {
         dcup = "docker-compose up -d";
         dcdw = "docker-compose down";
         dcre = "docker-compose restart";

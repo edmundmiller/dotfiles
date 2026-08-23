@@ -236,7 +236,10 @@
 
       services = {
         obsidian-sync.enable = false;
-        docker.enable = true;
+        containers = {
+          enable = true;
+          provider = "orbstack";
+        };
         ssh.enable = true;
         mosh.enable = true;
         moshi.enable = true;

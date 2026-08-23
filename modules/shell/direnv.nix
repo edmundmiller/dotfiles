@@ -21,12 +21,6 @@ in
       enable = true;
       nix-direnv.enable = true;
       stdlib = ''
-        use_docker-machine(){
-          local env=''${1:-default}
-          echo Docker machine: $env
-          eval $(docker-machine env --shell bash $env)
-        }
-
         use_guix() {
           local cache_dir="$(direnv_layout_dir)/.guix-profile"
           if [[ -e "$cache_dir/etc/profile" ]]; then

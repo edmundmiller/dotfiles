@@ -4,14 +4,6 @@ source ~/.nix-profile/share/nix-direnv/direnvrc 2>/dev/null \
   || source /run/current-system/sw/share/nix-direnv/direnvrc 2>/dev/null \
   || true
 
-use_docker-machine(){
-  local env=${1:-default}
-  echo Docker machine: $env
-  local machine_cmd=$(docker-machine env --shell bash $env)
-
-  eval $(docker-machine env --shell bash $env)
-}
-
 use_guix() {
   local cache_dir="$(direnv_layout_dir)/.guix-profile"
   if [[ -e "$cache_dir/etc/profile" ]]; then

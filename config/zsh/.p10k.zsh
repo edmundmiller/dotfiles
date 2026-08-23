@@ -72,7 +72,6 @@
     package                   # package.json version
     terraform                 # terraform workspace
     aws                       # aws profile
-    docker_machine            # docker context
     status                    # exit code (only on error)
     prompt_char               # prompt symbol
   )
@@ -174,14 +173,9 @@
   typeset -g POWERLEVEL9K_TERRAFORM_FOREGROUND=$magenta
   typeset -g POWERLEVEL9K_TERRAFORM_CONTENT_EXPANSION='${P9K_TERRAFORM_WORKSPACE//\%/%%}'
   
-  # Docker Machine - show docker context
-  typeset -g POWERLEVEL9K_DOCKER_MACHINE_FOREGROUND=$blue
-  typeset -g POWERLEVEL9K_DOCKER_MACHINE_CONTENT_EXPANSION='${P9K_DOCKER_MACHINE_NAME//\%/%%}'
-  
   # Custom segment icons for better visual context
   typeset -g POWERLEVEL9K_AWS_VISUAL_IDENTIFIER_EXPANSION='☁️'
   typeset -g POWERLEVEL9K_TERRAFORM_VISUAL_IDENTIFIER_EXPANSION='🏗️'
-  typeset -g POWERLEVEL9K_DOCKER_MACHINE_VISUAL_IDENTIFIER_EXPANSION='🐳'
   typeset -g POWERLEVEL9K_NIX_SHELL_VISUAL_IDENTIFIER_EXPANSION='❄️'
   typeset -g POWERLEVEL9K_VIRTUALENV_VISUAL_IDENTIFIER_EXPANSION='🐍'
   typeset -g POWERLEVEL9K_NODE_VERSION_VISUAL_IDENTIFIER_EXPANSION='⬢'

@@ -48,4 +48,4 @@ Stale decrypted secrets can occur if the `.age` file was updated but the host ha
 
 - User: `emiller`
 - Remote deployment via `hey nuc`
-- Services: docker, jellyfin, home-assistant, etc.
+- Services: Podman-backed containers, jellyfin, home-assistant, etc.

@@ -23,7 +23,7 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 | Editors  | emacs, vim (default: nvim)                                         |
 | Dev      | node (fnm), python + conda, R                                      |
 | Shell    | 1password, claude, codex, opencode, pi, direnv, git, jj, tmux, zsh |
-| Services | docker, ssh                                                        |
+| Services | OrbStack-compatible containers, ssh                                |
 | Desktop  | macos defaults, ghostty                                            |
 
 ## Host-Specific Config

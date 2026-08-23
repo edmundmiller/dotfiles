@@ -29,19 +29,25 @@ let
       msg = "MacTraitor-Pro must declare the Homebrew orchard cask";
     }
     {
-      test = !(personal.modules.services.docker.enable or false);
-      msg = "MacTraitor-Pro must not install Docker tooling through Nix";
+      test = hasCask "orbstack" personal;
+      msg = "MacTraitor-Pro must declare OrbStack as the Docker-compatible provider";
     }
     {
       test =
-        !any (
-          path: hasInfix "config/docker/aliases.zsh" (toString path)
-        ) personal.modules.shell.zsh.rcFiles;
-      msg = "MacTraitor-Pro must not load Docker zsh aliases";
+        (personal.modules.services.containers.enable or false)
+        && (personal.modules.services.containers.provider or null) == "orbstack"
+        && (personal.env.DOCKER_CONTEXT or null) == "orbstack";
+      msg = "MacTraitor-Pro must use OrbStack for Docker-compatible tooling";
     }
     {
-      test = !(personal.environment.shellAliases ? dcup);
-      msg = "MacTraitor-Pro must not expose Docker Compose shell aliases";
+      test = any (
+        path: hasInfix "config/docker/aliases.zsh" (toString path)
+      ) personal.modules.shell.zsh.rcFiles;
+      msg = "MacTraitor-Pro must expose the OrbStack-compatible shell aliases";
+    }
+    {
+      test = personal.environment.shellAliases ? dcup;
+      msg = "MacTraitor-Pro must expose Compose shell aliases for OrbStack consumers";
     }
     {
       test = !(work.modules.services.appleContainer.enable or false);
@@ -52,14 +58,21 @@ let
       msg = "Seqeratop must not declare the Homebrew orchard cask";
     }
     {
-      test = work.modules.services.docker.enable or false;
-      msg = "Seqeratop must retain its Nix-managed Docker tooling";
+      test = hasCask "orbstack" work;
+      msg = "Seqeratop must declare OrbStack as the Docker-compatible provider";
+    }
+    {
+      test =
+        (work.modules.services.containers.enable or false)
+        && (work.modules.services.containers.provider or null) == "orbstack"
+        && (work.env.DOCKER_CONTEXT or null) == "orbstack";
+      msg = "Seqeratop must use OrbStack for Docker-compatible tooling";
     }
     {
       test =
         any (path: hasInfix "config/docker/aliases.zsh" (toString path)) work.modules.shell.zsh.rcFiles
         && work.environment.shellAliases ? dcup;
-      msg = "Seqeratop must retain its Docker shell aliases";
+      msg = "Seqeratop must expose OrbStack-compatible shell aliases";
     }
   ];
 

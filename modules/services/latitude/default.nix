@@ -168,8 +168,8 @@ in
     optionalAttrs (!isDarwin) {
       assertions = [
         {
-          assertion = config.modules.services.docker.enable;
-          message = "modules.services.latitude requires modules.services.docker.enable = true";
+          assertion = config.modules.services.containers.enable;
+          message = "modules.services.latitude requires modules.services.containers.enable = true";
         }
       ];
 
@@ -190,16 +190,17 @@ in
       };
 
       systemd.services.latitude-compose = {
-        description = "Latitude docker-compose stack";
+        description = "Latitude Podman-compatible Compose stack";
+        environment.DOCKER_HOST = "unix:///run/podman/podman.sock";
         wantedBy = [ "multi-user.target" ];
         after = [
-          "docker.service"
+          "podman.socket"
           "network-online.target"
           "latitude-setup.service"
         ];
         wants = [ "network-online.target" ];
         requires = [
-          "docker.service"
+          "podman.socket"
           "latitude-setup.service"
         ];
 

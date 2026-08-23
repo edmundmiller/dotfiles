@@ -170,8 +170,8 @@ let
       msg = "Hermes runtime smoke must be a NixOS oneshot service.";
     }
     {
-      test = hasInfix "docker.service" (concatStringsSep " " runtimeSmokeService.after);
-      msg = "Hermes runtime smoke must run after Docker is available.";
+      test = hasInfix "podman.socket" (concatStringsSep " " runtimeSmokeService.after);
+      msg = "Hermes runtime smoke must run after the Podman API socket is available.";
     }
     {
       test = !(builtins.hasAttr "hermes-runtime-smoke" cfg.systemd.timers);

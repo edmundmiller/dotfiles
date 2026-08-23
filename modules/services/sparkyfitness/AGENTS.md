@@ -8,7 +8,7 @@ update_when: Images, ports, mounts, secrets, ingress, or recovery steps change.
 
 # SparkyFitness operations
 
-The module runs the pinned upstream frontend, backend, and PostgreSQL images as one Docker Compose stack. Only `127.0.0.1:3004` is published. Tailscale Serve exposes `svc:sparkyfitness`; no firewall port or Funnel is used.
+The module runs the pinned upstream frontend, backend, and PostgreSQL images as one Compose stack through the NUC's Podman Docker-compatible API. Only `127.0.0.1:3004` is published. Tailscale Serve exposes `svc:sparkyfitness`; no firewall port or Funnel is used.
 
 State lives under `/var/lib/sparkyfitness`. Restic stops `sparkyfitness.service`, snapshots that directory, then restarts the stack.
 

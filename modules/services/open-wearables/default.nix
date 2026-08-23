@@ -264,8 +264,8 @@ in
     optionalAttrs (!isDarwin) {
       assertions = [
         {
-          assertion = config.modules.services.docker.enable;
-          message = "modules.services.open-wearables requires modules.services.docker.enable = true";
+          assertion = config.modules.services.containers.enable;
+          message = "modules.services.open-wearables requires modules.services.containers.enable = true";
         }
       ];
 
@@ -297,16 +297,17 @@ in
       };
 
       systemd.services.open-wearables = {
-        description = "Open Wearables docker-compose stack";
+        description = "Open Wearables Podman-compatible Compose stack";
+        environment.DOCKER_HOST = "unix:///run/podman/podman.sock";
         wantedBy = [ "multi-user.target" ];
         after = [
-          "docker.service"
+          "podman.socket"
           "network-online.target"
           "open-wearables-setup.service"
         ];
         wants = [ "network-online.target" ];
         requires = [
-          "docker.service"
+          "podman.socket"
           "open-wearables-setup.service"
         ];
 

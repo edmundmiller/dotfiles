@@ -91,7 +91,7 @@ Timer-driven profiles declare their executor in `$HERMES_HOME/cron/executor.json
 
 ### Other
 
-- **Docker** — Container runtime
+- **Podman** — Container runtime, with a Docker-compatible CLI/API shim for Compose consumers
 - **Homepage** — Dashboard
 - **Taskchampion** — Task sync server
 - **Obsidian Sync** — Note sync
@@ -196,7 +196,7 @@ du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
 - **Deploy builds remotely**: `hey nuc` evaluates and builds on the NUC. Large rebuilds (home-assistant, etc.) take time.
 - **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
 - **`tnote` path is canonicalized**: `~/.local/bin/tnote` points at `~/src/personal/tnote`. No legacy `tn-monorepo` fallback is kept; fix the canonical repo path directly if `tnote` is stale or missing.
-- **Scintillate vault path nuance**: declarative config points Hermes/Scintillate at `/home/hermes/repos/obsidian-vault`, but Docker may show the bind mount as `/home/emiller/obsidian-vault -> /home/emiller/obsidian-vault`. That is expected as long as `docker exec hermes-agent-scintillate realpath /home/hermes/repos/obsidian-vault` resolves to `/home/emiller/obsidian-vault` and `.git` exists there.
+- **Scintillate vault path nuance**: declarative config points Hermes/Scintillate at `/home/hermes/repos/obsidian-vault`, while the Podman-backed compatibility CLI may show the bind mount as `/home/emiller/obsidian-vault -> /home/emiller/obsidian-vault`. That is expected as long as `docker exec hermes-agent-scintillate realpath /home/hermes/repos/obsidian-vault` resolves to `/home/emiller/obsidian-vault` and `.git` exists there.
 - **New agenix secrets**: If a first deploy lands new secrets before a service has picked them up, verify the current gateway/service model before restarting anything. Hermes runs as system service `hermes-agent.service`; check `sudo systemctl status hermes-agent.service` and restart that if needed.
 - **QMD now comes from llm-agents.nix**: if packaging breaks again, check `numtide/llm-agents.nix/packages/qmd/` and the upstream QMD note at https://github.com/tobi/qmd/pull/285#issuecomment-4012495904 before reviving a local wrapper.
 - **nix-ld libraries**: Any new generic linux binary that fails with "cannot run dynamically linked executable" needs its missing libs added to `programs.nix-ld.libraries`. Use `ldd /path/to/binary` to find missing `.so` files.

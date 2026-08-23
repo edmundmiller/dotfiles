@@ -71,7 +71,7 @@ modules/
 │   ├── apps/       # raycast, discord, mail
 │   ├── term/       # ghostty, kitty, wezterm
 │   └── macos/      # macOS-specific (homebrew, defaults)
-├── services/       # hass, jellyfin, homepage, docker, tailscale, gatus, …
+├── services/       # hass, jellyfin, homepage, containers, tailscale, gatus, …
 ├── hardware/       # bluetooth, filesystem, audio
 ├── themes/         # alucard theme (stylix-based)
 ├── agenix/         # Secret declarations

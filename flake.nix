@@ -1374,6 +1374,11 @@
                 inherit pkgs;
               };
 
+              nuc-container-runtime = import ./hosts/nuc/_tests/container-runtime.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-mill-docs-git-pull = import ./hosts/nuc/_tests/mill-docs-git-pull.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;

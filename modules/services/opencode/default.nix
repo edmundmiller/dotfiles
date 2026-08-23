@@ -75,7 +75,7 @@ in
       };
 
       # Add restart delay to the generated systemd service
-      # Service name depends on backend: podman-opencode or docker-opencode
+      # Service name follows the host's OCI backend (Podman on Linux).
       # Note: OCI containers module already sets Restart = "always"
       systemd.services."${config.virtualisation.oci-containers.backend}-opencode" = {
         serviceConfig = {
