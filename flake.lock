@@ -3,11 +3,11 @@
     "acpx-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1785722519,
-        "narHash": "sha256-bVZgnps37UN8tWCMvMd+LEnQkyP54P3cIkEyLnx/NcE=",
+        "lastModified": 1787111829,
+        "narHash": "sha256-00MJjk0uQKs8Cz7NXf7YDWS3yCj9qWweNot55VESifw=",
         "owner": "openclaw",
         "repo": "acpx",
-        "rev": "035062a9210ba0ba351a6cba3bf126dc2d70fd89",
+        "rev": "2d735cf18220e539bf7961a996bff0aceefcf3b0",
         "type": "github"
       },
       "original": {
@@ -46,11 +46,11 @@
         "nixpkgs": "nixpkgs_9"
       },
       "locked": {
-        "lastModified": 1785909051,
-        "narHash": "sha256-wR7wgld8IVJ2C2CWJtgd56ZFyUK8SEWN/NyCRygwDAg=",
+        "lastModified": 1786379373,
+        "narHash": "sha256-zrvcpGFA8zG6yRLBqQH9bNkJap8xMvLNvkuT4+7w6X8=",
         "owner": "Kyure-A",
         "repo": "agent-skills-nix",
-        "rev": "d86bab6d839202d838ed1451a64a94d3f0718f5b",
+        "rev": "1594ba479be81a7cb6dd19faabefcb1ed5b3f964",
         "type": "github"
       },
       "original": {
@@ -123,11 +123,11 @@
     "anti-slop-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1786717438,
-        "narHash": "sha256-UM7vVAl+Y/8+q/tAxKMOwcgwOMUWp/S0m2UqrH8xvcA=",
+        "lastModified": 1787059265,
+        "narHash": "sha256-1MewhQPqF55RkgWOhEgv4a9Wl9zRNDLImbhpDFSnz30=",
         "owner": "dmmulroy",
         "repo": "anti-slop",
-        "rev": "446268e5d15baa968eaec669ff65358d36ae6259",
+        "rev": "6d538555cb151d4121ed51a27db81890eacf8ae9",
         "type": "github"
       },
       "original": {
@@ -263,11 +263,11 @@
     "browser-control-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1785423167,
-        "narHash": "sha256-f9NtLXx7vZLyw9R7+iJ16cgOllyL1Nngh3CKe9aQTes=",
+        "lastModified": 1787358066,
+        "narHash": "sha256-4riQ/jnPWSZzAAjIP7SizQ5IUhr5dyReAK6LwP4Pjok=",
         "owner": "anomalyco",
         "repo": "browser-control",
-        "rev": "0110939f584362df2cba1f4f167dc5867c7f6e27",
+        "rev": "f12441cb4de55967f2c5ce31ae05b5a3a2875dac",
         "type": "github"
       },
       "original": {
@@ -485,11 +485,11 @@
     "emilkowalski-skills": {
       "flake": false,
       "locked": {
-        "lastModified": 1785933188,
-        "narHash": "sha256-ABUbg0Ps28qMZ410msWmwDAhvIQi5qNAL1WkLbw5YA8=",
+        "lastModified": 1787304752,
+        "narHash": "sha256-VNTgOF9nKz+kkwVvuchepbi0q++2/PfT/gQpplpQcMc=",
         "owner": "emilkowalski",
         "repo": "skills",
-        "rev": "de33dbed000212b54400a33767d1e4d03654db2a",
+        "rev": "d23d7f88a2e21c9e4b1418c7abe420f5c1052ba7",
         "type": "github"
       },
       "original": {
@@ -859,11 +859,11 @@
     "gitbutler-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1786115554,
-        "narHash": "sha256-OD6FRrQLswoNLUed1oCnOjIBPbY0iyps0ihQXVd4DGY=",
+        "lastModified": 1787435507,
+        "narHash": "sha256-qvrAZmMqsZ5jxupNGRCMEgf/N4C64YwQmb6uEpwZaNA=",
         "owner": "gitbutlerapp",
         "repo": "gitbutler",
-        "rev": "b98b6dc84a6d8a33332eb41543f20d97cab676a9",
+        "rev": "fe0158d6dce3b188091a74df29844914b0b835c4",
         "type": "github"
       },
       "original": {
@@ -1099,11 +1099,11 @@
     "humanlayer-skills": {
       "flake": false,
       "locked": {
-        "lastModified": 1786308517,
-        "narHash": "sha256-13OR6Qw7JDJDmAyrpzL8RMCgQ6iIkDh2InjjQac7z68=",
+        "lastModified": 1786633530,
+        "narHash": "sha256-lJvu9CGAN/+dzmzck0CodRXn/p7GUkCbfyZxys4nIoU=",
         "owner": "humanlayer",
         "repo": "skills",
-        "rev": "d3138e5898ff1bd98aeaf11c79a8c5880e917a52",
+        "rev": "3c2629142c5d437428269b1b722b08c0b87f574d",
         "type": "github"
       },
       "original": {
@@ -1212,11 +1212,11 @@
     "marimo-skills-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1786032081,
-        "narHash": "sha256-iOXK7DKk658lVgb9dW3pGgvc6PpZZHRmDNYcgasG3gE=",
+        "lastModified": 1787162150,
+        "narHash": "sha256-GK4Qdc6tv4e0qjEfE7ISBPXZ4xfkMnDsUUy02KIOemg=",
         "owner": "marimo-team",
         "repo": "skills",
-        "rev": "e824e19437b22b11cbb69bf19724781adeb2c5c1",
+        "rev": "6454470960d3cd57151aaeffb1176dd55f598b18",
         "type": "github"
       },
       "original": {
@@ -1228,43 +1228,27 @@
     "markit-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1775928083,
-        "narHash": "sha256-7TDou6PJ04ZN0hmfOlXRUCLzIF5JNfUAGlyNVpcoUQg=",
+        "lastModified": 1787007046,
+        "narHash": "sha256-NhmsWubR2j02qH1SK+7e/56+kDpcE+vTzgnwy9BwrcM=",
         "owner": "Michaelliv",
         "repo": "markit",
-        "rev": "9f4a9c6698daf3af6f318e41927b4dcc64930765",
+        "rev": "4197c76a651607421c5dcd05c0f94555ad1d6a9c",
         "type": "github"
       },
       "original": {
         "owner": "Michaelliv",
         "repo": "markit",
-        "type": "github"
-      }
-    },
-    "mattpocock-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1786953262,
-        "narHash": "sha256-CJNC5fORkc+FGd+FlCXG6rZcVv2MCqCNHCVC0AW623Q=",
-        "owner": "mattpocock",
-        "repo": "skills",
-        "rev": "9c9f36ccd3995266cd675468af71639c8dde1ec5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mattpocock",
-        "repo": "skills",
         "type": "github"
       }
     },
     "mitsuhiko-agent-stuff": {
       "flake": false,
       "locked": {
-        "lastModified": 1785068617,
-        "narHash": "sha256-lIJU6meuAZUsK126TwCb4lK0+tzV2IICEBHUgblftrA=",
+        "lastModified": 1786377215,
+        "narHash": "sha256-PmIfimUsSw+UnnWwth+x1gF1MHtAInZBfpx2Whvfbhw=",
         "owner": "mitsuhiko",
         "repo": "agent-stuff",
-        "rev": "d265b8ef32f896d3ef3bc6a45bd7b8e0d02150e0",
+        "rev": "13bc8f87970bec8830aab0f1c0487d35aa7c0917",
         "type": "github"
       },
       "original": {
@@ -1789,11 +1773,11 @@
     "perplexity-api-platform-developers": {
       "flake": false,
       "locked": {
-        "lastModified": 1785421143,
-        "narHash": "sha256-ACXmmoJWZFHT1KxRdhIfVfij4M2D9avH1+59pe3bjl0=",
+        "lastModified": 1787001031,
+        "narHash": "sha256-eR40mk/ZamPH04FRyJMw/wksHLbDWYggJvJo78I2+jk=",
         "owner": "perplexityai",
         "repo": "api-platform-developers",
-        "rev": "e0302b0beb5f712a8e046d442b69c97f2c0db6c4",
+        "rev": "1f1594c4250bb5cc97e69db78af3757cf2c8bc32",
         "type": "github"
       },
       "original": {
@@ -1805,11 +1789,11 @@
     "pi-extension-skills": {
       "flake": false,
       "locked": {
-        "lastModified": 1786035852,
-        "narHash": "sha256-DQzUm7DmmoGWOPKBWWb0t/znirOCE1WFYnwxEjCkzrE=",
+        "lastModified": 1786703964,
+        "narHash": "sha256-afJVLqx+wWcMVnvI6JqJR/MKEAePQCmJp+X2QZzayYM=",
         "owner": "tmustier",
         "repo": "pi-extensions",
-        "rev": "cae08ef3ad2f53ff456675fd70843872210a96ce",
+        "rev": "09706a7448d1715796d4d849e75ae2abe9be1f86",
         "type": "github"
       },
       "original": {
@@ -1837,11 +1821,11 @@
     "prek-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1786199267,
-        "narHash": "sha256-Sa9B4R8MMBxR+iDjTNxmh2OpwDTAHph8VakllKSdGo4=",
+        "lastModified": 1787317536,
+        "narHash": "sha256-J8GNsA4A8nFJdPl2hjUfyCOolCi0K27/E7xvIQtU7p0=",
         "owner": "j178",
         "repo": "prek",
-        "rev": "88c3463f90be7124f87876cc0f9c852b512df35b",
+        "rev": "8c88c2dc114778bab43581028b1f7b472db87479",
         "type": "github"
       },
       "original": {
@@ -1995,11 +1979,11 @@
     "qmd-repo": {
       "flake": false,
       "locked": {
-        "lastModified": 1782276828,
-        "narHash": "sha256-LLkrANLLR+2QgOpSdrjbwvzgP7dpOzayy9nCVqFUzeI=",
+        "lastModified": 1787063191,
+        "narHash": "sha256-5Tct1qAq5OLWwArpAiwAqLMSE675nVIkOOCZlOdQqg4=",
         "owner": "tobi",
         "repo": "qmd",
-        "rev": "e428df76bc0274d9e93eb7ca3e95673315c42e90",
+        "rev": "dbfd0b4736aeaf761d1a16ca8e424f071df8feb9",
         "type": "github"
       },
       "original": {
@@ -2117,7 +2101,6 @@
         "marimo-pair-repo": "marimo-pair-repo",
         "marimo-skills-repo": "marimo-skills-repo",
         "markit-repo": "markit-repo",
-        "mattpocock-skills": "mattpocock-skills",
         "mitsuhiko-agent-stuff": "mitsuhiko-agent-stuff",
         "modem-skills": "modem-skills",
         "nixpkgs": [
