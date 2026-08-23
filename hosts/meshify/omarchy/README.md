@@ -3,7 +3,7 @@ purpose: Operate and recover meshify's rigorously reproducible Omarchy state.
 applies_to: Restoring, checking, snapshotting, or updating Omarchy on meshify.
 entrypoint: Run `./manage check`, then use the matching `manage` subcommand.
 verification: Run the temporary-home drill and a full live `./manage check`.
-update_when: State ownership, dependencies, plugins, secrets, or restore behavior changes.
+update_when: State ownership, dependencies, plugins, secrets, restore behavior, or known recovery hazards change.
 ---
 
 # Meshify Omarchy recovery
@@ -69,6 +69,49 @@ Generate the current plugin inventory instead of copying it into documentation:
 ```bash
 jq -r '.plugins[] | [.id, .url, .revision] | @tsv' plugins.lock.json
 ```
+
+## Known issue: plugin reloads while locked
+
+On Omarchy `4.0.0-1` with `quickshell-git 0.3.0.r20.g28771c7-1`, writing
+inside `~/.config/omarchy/plugins/` while the session is locked can abort the
+shell. The recursive plugin watcher starts a full plugin reload, which destroys
+the active `omarchy.lock` service. A later lock recovery reaches
+`WlSessionLock::updateSurfaces()` without an active lock and Quickshell aborts
+with:
+
+```text
+FATAL: Tried to show lockscreen surfaces without active lock
+```
+
+This happened on meshify on 2026-08-22 while Omapods setup generated many files
+under `daemon/build/`. Three coredumps had the same `SIGABRT` and symbolized
+stack. Memory exhaustion was ruled out, Quickshell restarted automatically, and
+there was no evidence of user-data loss.
+
+Until the tracked fix ships:
+
+- Keep meshify unlocked while running `./manage restore` or `./manage update`.
+  A changed Omapods revision can run its trusted setup adapter and write build
+  output inside the watched plugin checkout.
+- Do not build, edit, synchronize, or run Git operations in a local plugin while
+  the screen is locked.
+- For a manual Omapods build, keep generated files outside the plugin tree:
+
+  ```bash
+  src="$HOME/.config/omarchy/plugins/io.github.thisisgm.omapods/daemon"
+  build="${XDG_CACHE_HOME:-$HOME/.cache}/omarchy-build/omapods"
+  cmake -S "$src" -B "$build" -G Ninja -DBUILD_TESTING=OFF
+  cmake --build "$build"
+  cmake --install "$build" --prefix "$HOME/.local"
+  ```
+
+Do not patch `/usr/share/omarchy/`; it is package-owned and an update will
+replace local changes. Track the downstream fix in
+[basecamp/omarchy#7106](https://github.com/basecamp/omarchy/issues/7106) and the
+Quickshell assertion in
+[quickshell-mirror/quickshell#962](https://github.com/quickshell-mirror/quickshell/issues/962).
+After an Omarchy update claims the fix, verify the installed version and check
+for recurrence with `coredumpctl list quickshell` before removing this warning.
 
 ## 1Password recovery item
 
