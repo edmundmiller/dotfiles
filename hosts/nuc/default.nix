@@ -124,7 +124,6 @@ let
     inherit (hermesAgentUpstream) meta;
     passthru = hermesAgentUpstream.passthru or { };
   };
-  hermesTelegramPythonPath = "${pkgs.python313Packages.python-telegram-bot}/${pkgs.python313.sitePackages}";
   amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;
   amosburtonAgentSpec = import (inputs.agents-workspace + /agents/amosburton) { inherit lib; };
   bettyHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.betty-hermes;
@@ -315,10 +314,6 @@ let
           telegramRuntime = telegramBindingRuntime;
         }
   );
-  # Scintillate should always answer as the dedicated Scintillate Telegram bot,
-  # even while Hermes owns Telegram directly in the current deployment mode.
-  # The shared family/group bot can stay separate from Scintillate's DM bot.
-  hermesScintillateTelegramBotTokenFile = config.age.secrets.telegram-bot-token-scintillate.path;
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
@@ -370,10 +365,6 @@ let
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     (mkAgentSecret "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD" "hermes-scintillate-dashboard-password")
     (mkAgentSecret "HERMES_DASHBOARD_BASIC_AUTH_SECRET" "hermes-scintillate-dashboard-session-secret")
-    {
-      envVar = "TELEGRAM_BOT_TOKEN";
-      path = hermesScintillateTelegramBotTokenFile;
-    }
     {
       envVar = "LINEAR_API_KEY";
       path = linearTokenFile;
@@ -880,9 +871,9 @@ in
 {
   assertions = telegramBindings.assertions ++ [
     {
-      assertion = hermesTelegramBotTokenOwners == [ "scintillate" ];
+      assertion = hermesTelegramBotTokenOwners == [ ];
       message = ''
-        Scintillate must be the only NUC Hermes profile receiving TELEGRAM_BOT_TOKEN.
+        No NUC Hermes profile may receive TELEGRAM_BOT_TOKEN.
         Current owners: ${lib.concatStringsSep ", " hermesTelegramBotTokenOwners}
         Do not share one Telegram bot token across Hermes profiles; duplicate getUpdates polling breaks Telegram delivery.
       '';
@@ -1503,7 +1494,7 @@ in
               require_mention = true;
               allow_all_users = false;
               transport = "auto";
-              reply_in_thread = false;
+              reply_in_thread = true;
               working_reaction = "⚙️";
             };
           };
@@ -1511,7 +1502,6 @@ in
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
           HERMES_LOCAL_STT_COMMAND = "${pkgs.whisper-cpp}/bin/whisper-cli -m ${scintillateWhisperModel} -f {input_path} --language {language} --output-txt --output-file {output_dir}/transcript --no-timestamps --no-prints";
-          PYTHONPATH = hermesTelegramPythonPath;
         };
         hostPathMounts = {
           "${hermesSharedHome}" = hermesSharedHome;
@@ -1652,7 +1642,6 @@ in
       (pkgs.writeShellScript "hermes-scintillate-gateway-dotenv" ''
         set -eu
         env_file=/var/lib/hermes-scintillate/.hermes/.env
-        profile_secrets_file=/run/hermes-scintillate-env/secrets.env
         buzz_secrets_file=${lib.escapeShellArg config.age.secrets.buzz-hermes-scintillate-agent-env.path}
         tmp_file="$env_file.tmp.$$"
 
@@ -1667,7 +1656,6 @@ in
         fi
 
         grep -Ev '^(TELEGRAM_|BUZZ_)' "$env_file" > "$tmp_file"
-        grep '^TELEGRAM_' "$profile_secrets_file" >> "$tmp_file"
         grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
         install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
         rm -f "$tmp_file"

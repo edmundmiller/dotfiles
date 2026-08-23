@@ -289,18 +289,23 @@ let
         && scintillateBuzz.extra.require_mention
         && !scintillateBuzz.extra.allow_all_users
         && scintillateBuzz.extra.transport == "auto"
-        && !scintillateBuzz.extra.reply_in_thread
+        && scintillateBuzz.extra.reply_in_thread
         && scintillateBuzz.extra.working_reaction == "⚙️";
-      msg = "Scintillate's native Buzz adapter must preserve routing boundaries while enabling flat replies and a transient working reaction.";
+      msg = "Scintillate's native Buzz adapter must preserve routing boundaries while enabling threaded replies and a transient working reaction.";
     }
     {
       test =
         !(scintillateBuzzDisplay.interim_assistant_messages or true)
         && !(scintillateBuzzDisplay.streaming or true)
+        && !(scintillateProfile.settings.platforms ? telegram)
+        && !(scintillateProfile.settings.platform_toolsets ? telegram)
+        && !(scintillateProfile.environment ? PYTHONPATH)
         && builtins.length scintillateBuzzPackages == 1
         && builtins.elem cfg.age.secrets.buzz-hermes-scintillate-agent-env.path scintillateProfile.environmentFiles
-        && pkgs.lib.hasInfix "grep '^BUZZ_'" scintillatePreStartScripts;
-      msg = "Scintillate's native Buzz gateway must publish coherent final replies and load the packaged CLI plus its dedicated identity secret.";
+        && pkgs.lib.hasInfix "grep '^BUZZ_'" scintillatePreStartScripts
+        && pkgs.lib.hasInfix "grep -Ev '^(TELEGRAM_|BUZZ_)'" scintillatePreStartScripts
+        && !pkgs.lib.hasInfix "grep '^TELEGRAM_'" scintillatePreStartScripts;
+      msg = "Scintillate's native Buzz gateway must load only its Buzz surface and purge stale Telegram runtime state.";
     }
   ]
   ++ builtins.concatMap profileAssertions acpProfiles;
