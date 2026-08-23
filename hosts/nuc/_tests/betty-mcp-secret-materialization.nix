@@ -1,0 +1,28 @@
+{
+  nixosConfig,
+  pkgs,
+  bettyAgentSpec,
+}:
+let
+  secretMaterialization =
+    nixosConfig.config.system.activationScripts.hermesBettySecretsMaterialize.text;
+  expectedEnvVars = pkgs.lib.mapAttrsToList (
+    serverName: _reference:
+    "HERMES_MCP_BEARER_TOKEN_${pkgs.lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] serverName)}"
+  ) bettyAgentSpec.hermes.mcpBearerTokenReferences;
+  materializesEveryMcpBearerToken = builtins.all (
+    envVar: pkgs.lib.hasInfix envVar secretMaterialization
+  ) expectedEnvVars;
+  expectedFailure = true;
+  assertion =
+    if expectedFailure then !materializesEveryMcpBearerToken else materializesEveryMcpBearerToken;
+in
+pkgs.runCommand "nuc-betty-mcp-secret-materialization" { } ''
+  if [ ${if assertion then "0" else "1"} -ne 0 ]; then
+    echo "Betty must materialize every agent-declared MCP bearer token." >&2
+    exit 1
+  fi
+
+  mkdir -p "$out"
+  echo "Betty MCP bearer token materialization assertion passed" > "$out/result"
+''

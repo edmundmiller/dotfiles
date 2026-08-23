@@ -1402,6 +1402,14 @@
                 };
               };
 
+              nuc-betty-mcp-secret-materialization =
+                import ./hosts/nuc/_tests/betty-mcp-secret-materialization.nix
+                  {
+                    nixosConfig = self.nixosConfigurations.nuc;
+                    inherit pkgs;
+                    bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
+                  };
+
               nuc-hermes-cron-external-executor =
                 pkgs.runCommand "nuc-hermes-cron-external-executor"
                   {
