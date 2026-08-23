@@ -684,7 +684,7 @@ let
     text = builtins.readFile ../../bin/nix-private-github;
   };
   himalayaFastmailSetupScript = pkgs.writeShellScript "hermes-scintillate-himalaya-fastmail-setup" ''
-    set -eu
+    set -euo pipefail
 
     op_token_file=/etc/opnix-token
     fastmail_item_ref=op://modfd4uzewmj55sff7jl6ihlzi/bvzeosvsl3jw2pinm3pq4ykpym
@@ -699,8 +699,16 @@ let
     export HOME=/var/lib/hermes-scintillate/home
     export XDG_CONFIG_HOME=/var/lib/hermes-scintillate/home/.config
     export OP_SERVICE_ACCOUNT_TOKEN="$(cat "$op_token_file")"
-    email="$(${op} read "$fastmail_item_ref/username" | ${pkgs.coreutils}/bin/tr -d '\r\n')"
-    password="$(${op} read "$fastmail_item_ref/password")"
+    if ! email="$(${op} read "$fastmail_item_ref/username" | ${pkgs.coreutils}/bin/tr -d '\r\n')" \
+      || ! password="$(${op} read "$fastmail_item_ref/password")"; then
+      unset OP_SERVICE_ACCOUNT_TOKEN
+      if test -s "$config_file" && test -s "$password_dest"; then
+        echo "warning: unable to refresh Fastmail credentials; reusing materialized Himalaya config" >&2
+        exit 0
+      fi
+      echo "Fastmail credentials are unavailable and no materialized Himalaya config exists" >&2
+      exit 1
+    fi
 
     printf '%s' "$password" | install -o emiller -g users -m 0600 /dev/stdin "$password_dest"
     unset password OP_SERVICE_ACCOUNT_TOKEN
