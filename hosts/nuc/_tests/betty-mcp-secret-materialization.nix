@@ -21,7 +21,7 @@ let
     builtins.all (reference: builtins.elem reference opnixReferences) expectedReferences
     && !pkgs.lib.hasInfix "/bin/op read " secretMaterialization;
   expectedFailure = false;
-  opnixExpectedFailure = true;
+  opnixExpectedFailure = false;
   assertion =
     if expectedFailure then !materializesEveryMcpBearerToken else materializesEveryMcpBearerToken;
   opnixAssertion =

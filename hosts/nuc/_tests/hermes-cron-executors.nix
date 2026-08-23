@@ -56,7 +56,7 @@ let
 
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
-  bettyOpnixPathsExpectedFailure = true;
+  bettyOpnixPathsExpectedFailure = false;
   cronTickCadenceExpectedFailure = false;
   cronTickCadenceMatches = builtins.all (
     timer:
