@@ -306,13 +306,8 @@ export def post-rebuild [] {
     set -euo pipefail
     if systemctl list-unit-files hermes-agent.service >/dev/null 2>&1; then
       echo '=== hermes-agent: system-managed restart handled by activation ==='
-    elif grep -q 'openclaw-gateway' /proc/self/cgroup 2>/dev/null; then
-      echo '=== openclaw-gateway: skipping restart (deploy triggered by openclaw) ==='
-    elif systemctl --user list-unit-files openclaw-gateway.service >/dev/null 2>&1; then
-      echo '=== try-restart openclaw-gateway ==='
-      systemctl --user try-restart openclaw-gateway.service
     else
-      echo '=== no legacy openclaw-gateway user unit present ==='
+      echo '=== no Hermes system service present ==='
     fi
   "
 }

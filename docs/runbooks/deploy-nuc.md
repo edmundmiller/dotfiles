@@ -74,9 +74,6 @@ hey nuc-status
 ssh nuc "systemctl status home-assistant"
 ssh nuc "systemctl status hermes-scintillate-desktop-dashboard.service"
 
-# Legacy OpenClaw deployments only
-ssh nuc "systemctl --user status openclaw-gateway.service"
-
 # Check current generation
 ssh nuc "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system | tail -3"
 
@@ -321,10 +318,4 @@ The Scintillate Desktop dashboard is `hermes-scintillate-desktop-dashboard.servi
 
 ```bash
 ssh nuc "sudo systemctl restart hermes-scintillate-desktop-dashboard.service"
-```
-
-For older OpenClaw deployments only, the legacy user unit still uses `X-RestartIfChanged=false`, so you may need:
-
-```bash
-ssh nuc "systemctl --user try-restart openclaw-gateway.service"
 ```

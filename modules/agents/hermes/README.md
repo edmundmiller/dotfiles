@@ -28,7 +28,7 @@ those YAML files into `$HERMES_HOME/skins` during activation without removing
 any extra local skins you may have created by hand.
 
 The module also writes selected provider secrets to `$HERMES_HOME/.env` from
-1Password references so Hermes can use the same fallback providers as the
-OpenClaw workspace without committing plaintext API keys. OpenAI Codex itself
+1Password references so Hermes can use fallback providers without committing
+plaintext API keys. OpenAI Codex itself
 still authenticates via Hermes/Codex OAuth and can import existing
 `~/.codex/auth.json` credentials automatically.

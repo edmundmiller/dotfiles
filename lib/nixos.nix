@@ -37,8 +37,8 @@ in
         inputs.agents-workspace.nixosModules.hermes
       ]
       ++ [
-        # Add openclaw home-manager module for NixOS hosts
-        # (overlay applied at flake level via mkPkgs)
+        # Add the shared skills home-manager module for NixOS hosts.
+        # The overlay is applied at flake level via mkPkgs.
         {
           home-manager.useGlobalPkgs = true;
           home-manager.sharedModules = [

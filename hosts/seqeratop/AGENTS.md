@@ -28,7 +28,7 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 
 ## Host-Specific Config
 
-- **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend; activation removes stale bun/npm `qmd` shims so the Nix binary wins
+- **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search and NUC Hermes parity; activation removes stale bun/npm `qmd` shims so the Nix binary wins
 - **nix-homebrew**: ARM + Rosetta, auto-migrate, mutable taps
 - **Homebrew**: see `homebrew.nix` for cask/formula list
 - **primaryUser**: `edmundmiller` (overrides default)
@@ -40,7 +40,6 @@ Work development machine running nix-darwin. Seqera corporate laptop.
 | User                 | `emiller`      | `edmundmiller` |
 | Python/conda         | disabled       | enabled        |
 | Raycast              | yes            | no             |
-| OpenClaw             | yes            | no             |
 | duti file assoc      | yes (Zed)      | no             |
 | TouchID sudo         | yes            | no             |
 | Passwordless rebuild | yes            | no             |

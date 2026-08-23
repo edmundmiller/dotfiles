@@ -68,10 +68,10 @@ modules/
 ├── editors/        # emacs, vim, helix, VS Code, file associations
 ├── dev/            # node, python, rust, R, lua, nix, shell, nextflow
 ├── desktop/        # apps, browsers, terminals (ghostty), media, macos, gnome
-│   ├── apps/       # raycast, openclaw, discord, mail
+│   ├── apps/       # raycast, discord, mail
 │   ├── term/       # ghostty, kitty, wezterm
 │   └── macos/      # macOS-specific (homebrew, defaults)
-├── services/       # hass, jellyfin, homepage, docker, tailscale, openclaw, gatus, …
+├── services/       # hass, jellyfin, homepage, docker, tailscale, gatus, …
 ├── hardware/       # bluetooth, filesystem, audio
 ├── themes/         # alucard theme (stylix-based)
 ├── agenix/         # Secret declarations
@@ -96,21 +96,21 @@ Application dotfiles live in `config/` (40+ apps: ghostty, git, tmux, zsh, nvim,
 
 ### Darwin Hosts (aarch64-darwin)
 
-| Host              | Machine              | User           | Notable                                                |
-| ----------------- | -------------------- | -------------- | ------------------------------------------------------ |
-| **mactraitorpro** | Personal MacBook Pro | `emiller`      | Full desktop: emacs, ghostty, homebrew casks, openclaw |
-| **seqeratop**     | Work MacBook Pro     | `edmundmiller` | Similar to mactraitorpro + conda for bioinformatics    |
+| Host              | Machine              | User           | Notable                                              |
+| ----------------- | -------------------- | -------------- | ---------------------------------------------------- |
+| **mactraitorpro** | Personal MacBook Pro | `emiller`      | Full desktop: emacs, ghostty, homebrew casks, Hermes |
+| **seqeratop**     | Work MacBook Pro     | `edmundmiller` | Similar to mactraitorpro + conda for bioinformatics  |
 
 Darwin hosts are built with `nix-darwin` and configured inline in `flake.nix` (not via `lib/nixos.nix`).
 
 ### NixOS Hosts (x86_64-linux)
 
-| Host        | Machine                 | User      | Notable                                             |
-| ----------- | ----------------------- | --------- | --------------------------------------------------- |
-| **nuc**     | Intel NUC (home server) | `emiller` | Home Assistant, OpenClaw, Jellyfin, Homepage, Gatus |
-| **unas**    | NAS                     | `emiller` | ZFS, Syncthing, Time Machine backup, NFS exports    |
-| **gandi**   | Gandi VPS               | `emiller` | Minimal server: SSH, Syncthing, Tailscale           |
-| **meshify** | Desktop (inactive)      | —         | Legacy workstation config                           |
+| Host        | Machine                 | User      | Notable                                           |
+| ----------- | ----------------------- | --------- | ------------------------------------------------- |
+| **nuc**     | Intel NUC (home server) | `emiller` | Home Assistant, Hermes, Jellyfin, Homepage, Gatus |
+| **unas**    | NAS                     | `emiller` | ZFS, Syncthing, Time Machine backup, NFS exports  |
+| **gandi**   | Gandi VPS               | `emiller` | Minimal server: SSH, Syncthing, Tailscale         |
+| **meshify** | Desktop (inactive)      | —         | Legacy workstation config                         |
 
 NixOS hosts are built via `lib/nixos.nix` → `mkHost`, which adds opnix, the `agents-workspace` hermes module, and skills-catalog modules.
 
@@ -125,7 +125,7 @@ NixOS hosts are built via `lib/nixos.nix` → `mkHost`, which adds opnix, the `a
 
 Encrypted `.age` files in `hosts/nuc/secrets/`. Decrypted at activation time via host SSH keys. Used for:
 
-- Service tokens (OpenClaw gateway, HA, Linear, Gemini API keys)
+- Service tokens (Hermes profiles, HA, Linear, Gemini API keys)
 - User passwords
 - Environment files for services (homepage, lubelogger, speedtest-tracker)
 
@@ -139,7 +139,7 @@ Reads secrets from 1Password vaults at build/activation time via a service accou
 
 ### Relationship
 
-agenix handles static server secrets (encrypted in git). opnix handles dynamic secrets that rotate in 1Password. Some services use both (e.g., NUC's OpenClaw uses agenix for gateway tokens and opnix for 1Password vault access).
+agenix handles static server secrets (encrypted in git). opnix handles dynamic secrets that rotate in 1Password. Hermes profiles consume both stores through host-specific wiring.
 
 ## Deployment Topology
 
@@ -190,9 +190,9 @@ Bun workspace monorepo with Pi agent extensions:
 
 ### Skills Catalog (`skills/`)
 
-**Child flake** that pins remote agent skill repositories and exposes them as a home-manager module. Skills are symlinked to `~/.openclaw/workspace/skills/` on all hosts.
+**Child flake** that pins remote agent skill repositories and exposes them as a home-manager module. Shared defaults are synced to `~/.agents/skills/`; target-specific skills use each runtime's own skill directory.
 
-⚠️ After changing `skills/flake.nix` or `skills/flake.lock`, run `nix flake update skills-catalog` from the repo root to sync the parent lock file.
+After changing `skills/flake.nix` or `skills/flake.lock`, run `hey skills-sync` from the repo root to sync the parent lock and rebuild.
 
 ## External Service Dependencies
 
@@ -202,8 +202,8 @@ Bun workspace monorepo with Pi agent extensions:
 | **GitHub**           | Source repo, deploy-rs target, agent integrations | All hosts                     |
 | **Tailscale**        | Mesh VPN connecting all machines                  | nuc, unas, gandi              |
 | **healthchecks.io**  | Cron/service uptime monitoring                    | nuc (gatus, obsidian-sync, …) |
-| **Linear**           | Issue tracking (OpenClaw agent bridge)            | nuc                           |
-| **Telegram**         | Bot interface for OpenClaw agents                 | nuc                           |
+| **Linear**           | Issue tracking and agent integrations             | nuc                           |
+| **Telegram**         | Bot interface for Hermes agents                   | nuc                           |
 | **Obsidian Sync**    | Headless vault synchronization                    | nuc                           |
 | **Cachix / Numtide** | Nix binary caches                                 | All hosts                     |
 

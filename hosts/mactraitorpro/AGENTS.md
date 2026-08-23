@@ -22,7 +22,7 @@ Read `default.nix` for the current module set, and check `../AGENTS.md` for cros
 
 ## Host-Specific Config
 
-- **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search / parity with NUC OpenClaw memory backend; activation removes stale bun/npm `qmd` shims so the Nix binary wins
+- **QMD CLI**: `pkgs.llm-agents.qmd` installed system-wide for local search and NUC Hermes parity; activation removes stale bun/npm `qmd` shims so the Nix binary wins
 - **zele CLI**: installed system-wide as `pkgs.my.zele` (upstream source + local patch stack), not via Bun global install
 - **nix-homebrew**: ARM-only (Rosetta disabled), auto-migrate, mutable taps
 - **Homebrew**: no auto-update/upgrade/cleanup on activation — see `homebrew.nix` for cask/formula list
@@ -37,7 +37,6 @@ No agenix secrets on this host (credentials in 1Password). The laptop Hermes CLI
 
 ## Gotchas
 
-- **Python disabled**: openclaw bundles whisper which includes Python 3.13, conflicts with python module's `withPackages` env. Track in dotfiles-c11.
 - **Hey not found after rebuild**: open a new terminal to pick up `$DOTFILES_BIN`
 - **Tailscale.app owns the tunnel**: keep Nix `services.tailscale.enable` off and declare Homebrew `tailscale-app`. Do not add the Homebrew `tailscale` formula or CLI-only cask. A competing `com.tailscale.tailscaled` leaves the official VPN Connecting with no `100.x` address. If the Network Extension still says provider unavailable after a rebuild, reboot to finish uninstalling the leftover extension.
 

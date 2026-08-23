@@ -45,11 +45,8 @@ def nuc-post-deploy-check [local: bool] {
     if systemctl list-unit-files hermes-agent.service >/dev/null 2>&1; then
       echo "hermes-agent.service is system-managed"
       systemctl is-active hermes-agent.service || true
-    elif systemctl --user list-unit-files openclaw-gateway.service >/dev/null 2>&1; then
-      echo "legacy openclaw-gateway.service detected; try-restarting"
-      systemctl --user try-restart openclaw-gateway.service
     else
-      echo "no gateway restart hook needed"
+      echo "no Hermes system service present"
     fi
     systemctl --no-pager --plain list-units "hermes*.service" || true
     echo ""
@@ -326,7 +323,7 @@ def "main nuc-generations" [] {
 
 def "main agents-rollout" [dotfiles_msg: string = "chore: bump agents-workspace"] {
   let ctx = (context)
-  let workspace = ($env.HOME | path join ".openclaw" "workspace")
+  let workspace = ($env.HOME | path join "src" "personal" "agents-workspace")
   let dotfiles = $ctx.flake_dir
 
   print "=== 1/4 Push agents-workspace ==="

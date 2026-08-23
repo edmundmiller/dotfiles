@@ -15,8 +15,7 @@ graph TB
     stylix["stylix<br/>(theming)"]
     emacs_overlay["emacs-overlay"]
     ghostty_input["ghostty"]
-    openclaw_ws["agents-workspace"]
-    nix_openclaw["nix-openclaw"]
+    agents_workspace["agents-workspace"]
     skills_catalog_input["skills-catalog<br/>(child flake ./skills)"]
     llm_agents["llm-agents.nix"]
   end
@@ -40,7 +39,7 @@ graph TB
     mod_editors["editors/<br/>emacs · vim · helix<br/>code · file-assoc"]
     mod_dev["dev/<br/>node · python · rust<br/>R · lua · nix · shell"]
     mod_desktop["desktop/<br/>apps · browsers · term<br/>media · macos · gnome"]
-    mod_services["services/<br/>hass · jellyfin · homepage<br/>docker · tailscale<br/>deploy-rs · obsidian-sync<br/>openclaw · gatus"]
+    mod_services["services/<br/>hass · jellyfin · homepage<br/>docker · tailscale<br/>deploy-rs · obsidian-sync · gatus"]
     mod_hardware["hardware/<br/>bluetooth · fs · audio"]
     mod_themes["themes/<br/>alucard"]
   end
@@ -73,7 +72,7 @@ graph TB
       seqeratop["seqeratop<br/>Seqeratop<br/>(work Mac)"]
     end
     subgraph NixOS["NixOS (x86_64-linux)"]
-      nuc["nuc<br/>(home server:<br/>HA · OpenClaw<br/>Jellyfin · Homepage)"]
+      nuc["nuc<br/>(home server:<br/>HA · Hermes<br/>Jellyfin · Homepage)"]
       unas["unas<br/>(NAS: ZFS · Syncthing<br/>Time Machine)"]
       gandi["gandi<br/>(VPS: minimal)"]
     end
@@ -116,7 +115,7 @@ graph TB
   end
 
   skills_catalog_input --> Skills
-  skills_hm -->|"home.file<br/>~/.openclaw/workspace/skills/*"| nuc
+  skills_hm -->|"shared defaults<br/>~/.agents/skills/*"| nuc
   skills_hm --> mactraitorpro
   skills_hm --> seqeratop
 

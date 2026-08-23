@@ -94,8 +94,8 @@ echo "✓ Seeded tokens on NUC"
 if $DEPLOY; then
   echo "Deploying..."
   cd "$DOTFILES" && hey nuc
-  ssh nuc "systemctl --user restart openclaw-gateway.service" 2>/dev/null || true
-  echo "✓ Deployed and restarted gateway"
+  ssh nuc "sudo systemctl try-restart hermes-gateway-scintillate.service"
+  echo "✓ Deployed and restarted Scintillate's Hermes gateway"
 fi
 
 echo "Done. Refresh timer will auto-rotate every 12h."
