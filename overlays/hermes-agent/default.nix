@@ -16,6 +16,7 @@ let
     patches = (old.patches or [ ]) ++ [
       ./patches/0003-report-external-cron-executor.patch
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-singuloid-pilot.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
     ];
     postInstall = (old.postInstall or "") + ''
       chmod -R u+w $out/share/hermes
@@ -27,6 +28,8 @@ let
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_singuloid_pilot.py}
       HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_smart_model_routing.py}
+      HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_latest_source.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_external_executor.py}
@@ -34,6 +37,7 @@ let
     passthru = (old.passthru or { }) // {
       pilotHermesVersion = "0.20.5";
       pilotRelease = "v2026.8.19";
+      pilotSmartModelRouting = true;
     };
   });
 

@@ -288,8 +288,9 @@ let
         && scintillateProfile.package != cfg.services.hermes-agent.package
         && pkgs.lib.hasInfix "-buzz-pilot" (toString scintillateProfile.package)
         && scintillateProfile.package.pilotHermesVersion == "0.20.5"
+        && scintillateProfile.package.pilotSmartModelRouting
         && scintillateCron.serviceConfig.ExecStart == "${scintillateProfile.package}/bin/hermes cron tick";
-      msg = "Scintillate's gateway and cron executor must exclusively use the Hermes 0.20.5 Buzz pilot package without automatic mid-turn restarts.";
+      msg = "Scintillate's gateway and cron executor must exclusively use the Hermes 0.20.5 Buzz pilot package with bounded smart routing and no automatic mid-turn restarts.";
     }
     {
       test =
