@@ -315,11 +315,6 @@ let
         }
   );
   linearTokenFile = "/home/emiller/.local/state/hermes-linear/token";
-  mcpBearerEnvVarName =
-    serverName:
-    "HERMES_MCP_BEARER_TOKEN_${lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] serverName)}";
-  bettyOpnixSecretName =
-    envVar: "betty${lib.toLower (builtins.replaceStrings [ "_" ] [ "" ] envVar)}";
   mkAgentSecret = envVar: secretName: {
     inherit envVar;
     inherit (config.age.secrets.${secretName}) path;
@@ -383,32 +378,17 @@ let
   # Betty does not currently own a Telegram surface. Do not inject
   # Scintillate's bot token here: two Hermes gateways polling the same
   # Telegram bot produce getUpdates conflicts and make Scintillate flaky.
+  hermesBettySecrets = hermesProviderSecrets ++ [
+    (mkAgentSecret "HONCHO_API_KEY" "hermes-betty-honcho-api-key")
+    (mkAgentSecret "HERMES_MCP_BEARER_TOKEN_PANTRY_PERSONA" "hermes-betty-pantry-persona-api-key")
+  ];
   hermesBetty1PasswordReferences = {
     inherit (bettyAgentSpec.hermes.dotenvReferences)
       DISCORD_BOT_TOKEN
       HERMES_SPOTIFY_CLIENT_ID
       ;
-  }
-  // lib.mapAttrs' (
-    serverName: reference: lib.nameValuePair (mcpBearerEnvVarName serverName) reference
-  ) bettyAgentSpec.hermes.mcpBearerTokenReferences;
-  hermesBettyOpnixSecrets = lib.mapAttrsToList (envVar: _reference: {
-    inherit envVar;
-    path = config.services.onepassword-secrets.secretPaths.${bettyOpnixSecretName envVar};
-  }) hermesBetty1PasswordReferences;
-  hermesBettySecrets =
-    hermesProviderSecrets
-    ++ [
-      (mkAgentSecret "HONCHO_API_KEY" "hermes-betty-honcho-api-key")
-    ]
-    ++ hermesBettyOpnixSecrets;
-  hermesBettyOpnixDeclarations = lib.mapAttrs' (
-    envVar: reference:
-    lib.nameValuePair (bettyOpnixSecretName envVar) {
-      inherit reference;
-      services = [ "hermes-betty-secrets-materialize" ];
-    }
-  ) hermesBetty1PasswordReferences;
+    HERMES_MCP_BEARER_TOKEN_LINEAR = bettyAgentSpec.hermes.mcpBearerTokenReferences.linear;
+  };
   hermesAnneSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-anne-honcho-api-key")
     {
@@ -1236,6 +1216,21 @@ in
                   fi
                 '') hermesBettySecrets}
 
+                export OP_SERVICE_ACCOUNT_TOKEN="$(cat /etc/opnix-token)"
+                ${lib.concatStringsSep "\n" (
+                  lib.mapAttrsToList (envVar: reference: ''
+                    if secret_value="$(${op} read ${lib.escapeShellArg reference} 2>/dev/null)" && [ -n "$secret_value" ]; then
+                      printf '%s=%s\n' ${lib.escapeShellArg envVar} "$secret_value" >> "$ENV_TMP"
+                    elif [ -f "$ENV_FILE" ]; then
+                      existing_line="$(${pkgs.gnugrep}/bin/grep -m 1 '^${envVar}=' "$ENV_FILE" || true)"
+                      if [ -n "$existing_line" ]; then
+                        printf '%s\n' "$existing_line" >> "$ENV_TMP"
+                      fi
+                    fi
+                  '') hermesBetty1PasswordReferences
+                )}
+                unset existing_line secret_value OP_SERVICE_ACCOUNT_TOKEN
+
                 # Music Assistant WS token lives in HA config entry data (not agenix).
                 # Betty DJ verifier needs it to list queue items and match receipt URIs.
                 ${pkgs.python3}/bin/python3 - "$ENV_TMP" <<'PY'
@@ -1992,32 +1987,10 @@ in
     };
   };
 
-  systemd.services.hermes-betty-secrets-materialize = {
-    description = "Materialize Betty secrets after OpNix";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "opnix-secrets.service" ];
-    wants = [ "opnix-secrets.service" ];
-    path = [
-      pkgs.coreutils
-      pkgs.diffutils
-    ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = config.system.activationScripts.hermesBettySecretsMaterialize.text;
-  };
-
   systemd.services.hermes-betty-cron-tick = {
     description = "Run Betty cron jobs without an interactive gateway";
-    after = [
-      "network-online.target"
-      "hermes-betty-secrets-materialize.service"
-    ];
-    wants = [
-      "network-online.target"
-      "hermes-betty-secrets-materialize.service"
-    ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
     path = [
       bettyHermesLauncher
       bettyBookPlayer
@@ -2733,8 +2706,7 @@ in
       millDocsCodingAgentGithubToken = {
         reference = "op://Agents/Mill-docs GitHub Personal Access Token/token";
       };
-    }
-    // hermesBettyOpnixDeclarations;
+    };
   };
 
   systemd.services.nixos-upgrade = {

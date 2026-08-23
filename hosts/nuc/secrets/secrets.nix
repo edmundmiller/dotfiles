@@ -152,6 +152,10 @@ in
     edmundmiller
     nuc
   ];
+  "hermes-betty-pantry-persona-api-key.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "hermes-scintillate-honcho-api-key.age".publicKeys = [
     edmundmiller
     nuc

@@ -25,7 +25,7 @@ let
     && pkgs.lib.hasInfix pantrySecretPath secretMaterialization
     && !pkgs.lib.hasInfix pantryReference secretMaterialization;
   expectedFailure = false;
-  pantryAgenixExpectedFailure = true;
+  pantryAgenixExpectedFailure = false;
   assertion =
     if expectedFailure then !materializesEveryMcpBearerToken else materializesEveryMcpBearerToken;
   pantryAgenixAssertion = if pantryAgenixExpectedFailure then !pantryUsesAgenix else pantryUsesAgenix;
