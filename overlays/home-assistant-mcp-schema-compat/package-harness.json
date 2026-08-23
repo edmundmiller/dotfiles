@@ -1,0 +1,14 @@
+{
+  "source": "https://github.com/home-assistant/core.git",
+  "ref": "2026.7.2",
+  "patches": ["patches/0001-skip-invalid-mcp-tool-schemas.patch"],
+  "checks": [
+    [
+      "python3",
+      "-m",
+      "py_compile",
+      "homeassistant/components/mcp/coordinator.py",
+      "tests/components/mcp/test_init.py"
+    ]
+  ]
+}

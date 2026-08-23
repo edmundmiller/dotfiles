@@ -1,0 +1,71 @@
+diff --git a/homeassistant/components/mcp/coordinator.py b/homeassistant/components/mcp/coordinator.py
+index e9bffdc0..b975260e 100644
+--- a/homeassistant/components/mcp/coordinator.py
++++ b/homeassistant/components/mcp/coordinator.py
+@@ -186,9 +186,12 @@ class ModelContextProtocolCoordinator(DataUpdateCoordinator[list[llm.Tool]]):
+             try:
+                 parameters = convert_to_voluptuous(tool.inputSchema)
+             except Exception as err:
+-                raise UpdateFailed(
+-                    f"Error converting schema {err}: {tool.inputSchema}"
+-                ) from err
++                _LOGGER.warning(
++                    "Skipping MCP tool %s because its schema is invalid: %s",
++                    tool.name,
++                    err,
++                )
++                continue
+             tools.append(
+                 ModelContextProtocolTool(
+                     tool.name,
+diff --git a/tests/components/mcp/test_init.py b/tests/components/mcp/test_init.py
+index 0a1f67e1..0497d49b 100644
+--- a/tests/components/mcp/test_init.py
++++ b/tests/components/mcp/test_init.py
+@@ -331,20 +331,36 @@ async def test_call_tool_fails(
+         )
+ 
+ 
+-async def test_convert_tool_schema_fails(
+-    hass: HomeAssistant, config_entry: MockConfigEntry, mock_mcp_client: Mock
++async def test_invalid_tool_schema_is_skipped(
++    hass: HomeAssistant,
++    config_entry: MockConfigEntry,
++    mock_mcp_client: Mock,
++    caplog: pytest.LogCaptureFixture,
+ ) -> None:
+-    """Test a failure converting an MCP tool schema to a Home Assistant schema."""
++    """Test a tool with an invalid schema is skipped."""
+     mock_mcp_client.return_value.list_tools.return_value = ListToolsResult(
+-        tools=[SEARCH_MEMORY_TOOL]
++        tools=[
++            Tool(
++                name="invalid_tool",
++                inputSchema={
++                    "type": "object",
++                    "properties": {"value": {"description": "Any value"}},
++                },
++            ),
++            SEARCH_MEMORY_TOOL,
++        ]
+     )
+ 
+-    with patch(
+-        "homeassistant.components.mcp.coordinator.convert_to_voluptuous",
+-        side_effect=ValueError,
+-    ):
+-        await hass.config_entries.async_setup(config_entry.entry_id)
+-        assert config_entry.state is ConfigEntryState.SETUP_RETRY
++    await hass.config_entries.async_setup(config_entry.entry_id)
++    assert config_entry.state is ConfigEntryState.LOADED
++
++    api = next(api for api in llm.async_get_apis(hass) if api.name == TEST_API_NAME)
++    api_instance = await api.async_get_api_instance(create_llm_context())
++    assert [tool.name for tool in api_instance.tools] == ["search_memory"]
++    assert (
++        "Skipping MCP tool invalid_tool because its schema is invalid: "
++        "Invalid schema, missing type" in caplog.text
++    )
+ 
+ 
+ async def test_oauth_implementation_not_available(

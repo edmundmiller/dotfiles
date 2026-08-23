@@ -1339,6 +1339,10 @@ let
       msg = "Electricity Maps component must be available for config-flow setup";
     }
     {
+      test = builtins.elem "mcp" extraComponents;
+      msg = "Model Context Protocol client must be available for config-flow setup";
+    }
+    {
       test = builtins.elem "rest_command" extraComponents;
       msg = "REST command component must be available for BUSY Bar Canvas actions";
     }
