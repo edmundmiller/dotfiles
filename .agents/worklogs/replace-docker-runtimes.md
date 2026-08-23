@@ -1,6 +1,6 @@
 # Worklog: replace-docker-runtimes
 
-Status: blocked only on macOS admin cleanup; source and NUC deployment landed
+Status: blocked
 
 ## Objective
 
