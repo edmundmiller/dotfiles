@@ -112,6 +112,15 @@ skills:
   # still deployed to Codex/hermes/opencode/pi via skills/flake.nix.
   ignoredSkills:
     - gh-fix-ci
+    # Claude plugin-dev authoring skills compete with OMP's native plugin and
+    # command surfaces. Keep the explicit plugin commands, hide auto-routing.
+    - agent-development
+    - command-development
+    - hook-development
+    - mcp-integration
+    - plugin-settings
+    - plugin-structure
+    - skill-development
 checkpoint:
   enabled: true
 vault:
