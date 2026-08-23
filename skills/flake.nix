@@ -47,11 +47,6 @@
       flake = false;
     };
 
-    mattpocock-skills = {
-      url = "github:mattpocock/skills";
-      flake = false;
-    };
-
     diffity-repo = {
       url = "github:kamranahmedse/diffity";
       flake = false;
@@ -303,57 +298,6 @@
           "tmux"
           "enable"
         ];
-        mattpocockSkillsRoot = inputs.mattpocock-skills.outPath + "/skills";
-        mattpocockSkillCategories = builtins.readDir mattpocockSkillsRoot;
-        mattpocockSkillEntries =
-          lib.concatMap
-            (
-              category:
-              let
-                categoryPath = mattpocockSkillsRoot + "/${category}";
-                categoryEntries = builtins.readDir categoryPath;
-              in
-              map
-                (name: {
-                  inherit name;
-                  path = "${category}/${name}";
-                })
-                (
-                  lib.filter (
-                    name:
-                    categoryEntries.${name} == "directory" && builtins.pathExists (categoryPath + "/${name}/SKILL.md")
-                  ) (builtins.attrNames categoryEntries)
-                )
-            )
-            (
-              lib.filter (category: mattpocockSkillCategories.${category} == "directory") (
-                builtins.attrNames mattpocockSkillCategories
-              )
-            );
-        mattpocockSkillNames = map (skill: skill.name) mattpocockSkillEntries;
-        mattpocockExplicit =
-          if builtins.length mattpocockSkillNames != builtins.length (lib.unique mattpocockSkillNames) then
-            throw "mattpocock/skills contains duplicate skill names across categories"
-          else
-            builtins.listToAttrs (
-              map
-                (skill: {
-                  inherit (skill) name;
-                  value = {
-                    from = "mattpocock";
-                    inherit (skill) path;
-                  };
-                })
-                (
-                  lib.filter (
-                    skill:
-                    !(builtins.elem skill.name [
-                      "grill-me"
-                      "grilling"
-                    ])
-                  ) mattpocockSkillEntries
-                )
-            );
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -420,6 +364,14 @@
           in
           {
             programs.dotfiles-agent-skills.bundles = bundles;
+
+            programs.dotfiles-agent-skills.targetedExplicit = lib.optionalAttrs piEnabled {
+              extending-pi = {
+                from = "pi-extensions";
+                path = "extending-pi";
+                meta.targets = [ "pi" ];
+              };
+            };
 
             home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
               if [ -L "$HOME/.claude/skills" ]; then
@@ -526,13 +478,6 @@
                 humanlayer-show-me = {
                   path = inputs.humanlayer-skills.outPath;
                   subdir = "plugins/show-me/skills";
-                  filter.maxDepth = 2;
-                };
-
-                mattpocock = {
-                  path = inputs.mattpocock-skills.outPath;
-                  subdir = "skills";
-                  idPrefix = "mattpocock";
                   filter.maxDepth = 2;
                 };
 
@@ -654,207 +599,162 @@
 
               # Enable all checkout-owned skills, but avoid path-prefix conflicts in remote catalogs.
               skills.enableAll = [ "catalog" ];
-              skills.explicit =
-                lib.optionalAttrs piEnabled {
-                  extending-pi.from = "pi-extensions";
-                  extending-pi.path = "extending-pi";
-                }
-                // {
-                  gh-fix-ci.from = "openai";
-                  gh-fix-ci.path = "gh-fix-ci";
+              skills.explicit = {
+                gh-fix-ci.from = "openai";
+                gh-fix-ci.path = "gh-fix-ci";
 
-                  define-goal.from = "openai";
-                  define-goal.path = "define-goal";
+                define-goal.from = "openai";
+                define-goal.path = "define-goal";
 
-                  design-control-loop.from = "humanlayer";
-                  design-control-loop.path = "design-control-loop";
+                design-control-loop.from = "humanlayer";
+                design-control-loop.path = "design-control-loop";
 
-                  show-me.from = "humanlayer-show-me";
-                  show-me.path = "show-me";
+                show-me.from = "humanlayer-show-me";
+                show-me.path = "show-me";
 
-                  agent-tail.from = "agent-tail";
-                  agent-tail.path = "agent-tail";
+                agent-tail.from = "agent-tail";
+                agent-tail.path = "agent-tail";
 
-                  # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
-                }
-                // lib.optionalAttrs tmuxEnabled {
-                  tmux.from = "mitsuhiko";
-                  tmux.path = ".";
-                }
-                // lib.optionalAttrs hunkEnabled {
-                  hunk-review.from = "hunk";
-                  hunk-review.path = "hunk-review";
-                }
-                // lib.optionalAttrs gitbutlerEnabled {
-                  but.from = "gitbutler-but";
-                  but.path = ".";
+                # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
+              }
+              // lib.optionalAttrs tmuxEnabled {
+                tmux.from = "mitsuhiko";
+                tmux.path = ".";
+              }
+              // lib.optionalAttrs hunkEnabled {
+                hunk-review.from = "hunk";
+                hunk-review.path = "hunk-review";
+              }
+              // lib.optionalAttrs gitbutlerEnabled {
+                but.from = "gitbutler-but";
+                but.path = ".";
 
-                  but-agentlog.from = "gitbutler-agentlog";
-                  but-agentlog.path = ".";
-                }
-                // lib.optionalAttrs stackEnabled {
-                  stack.from = "stack";
-                  stack.path = ".";
-                }
-                // lib.optionalAttrs herdrEnabled {
-                  # Herdr ships a root-level SKILL.md for agents controlling a live herdr
-                  # session via its local socket. Only enable it on hosts where the herdr
-                  # module is actually turned on.
-                  herdr.from = "herdr";
-                  herdr.path = "herdr";
-                }
-                // lib.optionalAttrs diffityEnabled {
-                  diffity-diff.from = "diffity";
-                  diffity-diff.path = "diffity-diff";
+                but-agentlog.from = "gitbutler-agentlog";
+                but-agentlog.path = ".";
+              }
+              // lib.optionalAttrs stackEnabled {
+                stack.from = "stack";
+                stack.path = ".";
+              }
+              // lib.optionalAttrs herdrEnabled {
+                # Herdr ships a root-level SKILL.md for agents controlling a live herdr
+                # session via its local socket. Only enable it on hosts where the herdr
+                # module is actually turned on.
+                herdr.from = "herdr";
+                herdr.path = "herdr";
+              }
+              // lib.optionalAttrs diffityEnabled {
+                diffity-diff.from = "diffity";
+                diffity-diff.path = "diffity-diff";
 
-                  diffity-review.from = "diffity";
-                  diffity-review.path = "diffity-review";
+                diffity-review.from = "diffity";
+                diffity-review.path = "diffity-review";
 
-                  diffity-resolve.from = "diffity";
-                  diffity-resolve.path = "diffity-resolve";
-                }
-                // {
-                  defuddle = {
-                    from = "obsidian";
-                    path = "defuddle";
-                    transform =
-                      { original, ... }:
-                      ''
-                        ${original}
+                diffity-resolve.from = "diffity";
+                diffity-resolve.path = "diffity-resolve";
+              }
+              // {
+                defuddle = {
+                  from = "obsidian";
+                  path = "defuddle";
+                  transform =
+                    { original, ... }:
+                    ''
+                      ${original}
 
-                        ## Runtime routing
+                      ## Runtime routing
 
-                        Prefer a runtime's native page-reading or browsing tool when it already
-                        returns clean main content. Use Defuddle for shell-based URL extraction,
-                        saving a page as Markdown, or when native extraction includes too much page
-                        chrome. Run it ephemerally with `bunx defuddle`; do not install it globally
-                        during a task.
+                      Prefer a runtime's native page-reading or browsing tool when it already
+                      returns clean main content. Use Defuddle for shell-based URL extraction,
+                      saving a page as Markdown, or when native extraction includes too much page
+                      chrome. Run it ephemerally with `bunx defuddle`; do not install it globally
+                      during a task.
 
-                        Use a lower-level HTML-to-Markdown converter instead when full-document
-                        fidelity, streaming, or offline stdin conversion is required.
-                      '';
-                  };
-
-                  markit.from = "markit";
-                  markit.path = ".";
-
-                  prek.from = "prek";
-                  prek.path = "prek";
-
-                  zele.from = "zele";
-                  zele.path = "zele";
-
-                  browser-control.from = "browser-control";
-                  browser-control.path = "browser-control";
-
-                  pplx-cli.from = "perplexity";
-                  pplx-cli.path = "pplx-cli";
-
-                  no-ai-slop.from = "no-ai-slop";
-                  no-ai-slop.path = "no-ai-slop";
-
-                  install-anti-slop.from = "anti-slop";
-                  install-anti-slop.path = "install-anti-slop";
-
-                  effect.from = "kitlangton";
-                  effect.path = "effect";
-
-                  write-discoverable-code.from = "modem";
-                  write-discoverable-code.path = "write-discoverable-code";
-
-                  animation-vocabulary.from = "emilkowalski";
-                  animation-vocabulary.path = "animation-vocabulary";
-
-                  apple-design.from = "emilkowalski";
-                  apple-design.path = "apple-design";
-
-                  emil-design-eng.from = "emilkowalski";
-                  emil-design-eng.path = "emil-design-eng";
-
-                  review-animations.from = "emilkowalski";
-                  review-animations.path = "review-animations";
-
-                  improve.from = "shadcn-improve";
-                  improve.path = "improve";
-
-                  grill-me = {
-                    from = "mattpocock";
-                    path = "productivity/grill-me";
-                  };
-
-                  grilling = {
-                    from = "mattpocock";
-                    path = "productivity/grilling";
-                    transform =
-                      { original, ... }:
-                      ''
-                        ${original}
-
-                        ## Structured question dialogs
-
-                        This section overrides the Markdown question format above whenever the
-                        runtime provides a structured question tool. Do not print the frontier as
-                        Markdown Q/A and then call the tool; put the decisions directly in the tool.
-
-                        - In OMP, use `ask`. Put the whole frontier in one call. Give every question
-                          a stable `id`, concise `header`, direct `question`, and options with short
-                          tradeoff descriptions. Set `recommended` to the zero-based index of your
-                          recommended option. Use `multi: true` only when several options can be true.
-                        - In Codex, use `request_user_input`. Preserve the whole frontier as the
-                          current round, but split it into calls of at most three questions. Put the
-                          recommended option first and suffix its label with `(Recommended)`; Codex
-                          adds its own free-form Other option.
-                        - In Pi, use `ask_user`. Put the whole frontier in one call. Use `type:
-                          "single"` normally, `type: "multi"` when several answers can be true, and
-                          `type: "preview"` for longer comparisons. Mark the recommended option with
-                          `recommended: true`.
-
-                        Keep dependent questions out of the current frontier. If a Codex round needs
-                        multiple calls, collect every answer in that round before recomputing the
-                        frontier. Only fall back to the Markdown format when none of these structured
-                        tools is available.
-                      '';
-                  };
-
-                }
-                // mattpocockExplicit
-                // lib.optionalAttrs acpxEnabled {
-                  acpx.from = "acpx";
-                  acpx.path = "acpx";
-                }
-                // {
-                  marimo-pair.from = "marimo-pair";
-                  marimo-pair.path = "marimo-pair";
-
-                  # Curated marimo subset: keep the broad, reusable notebook authoring
-                  # and migration skills; omit niche publishing helpers and overlapping
-                  # no-user-input workflows.
-                  anywidget-generator.from = "marimo-skills";
-                  anywidget-generator.path = "anywidget";
-
-                  implement-paper.from = "marimo-skills";
-                  implement-paper.path = "implement-paper";
-
-                  jupyter-to-marimo.from = "marimo-skills";
-                  jupyter-to-marimo.path = "jupyter-to-marimo";
-
-                  marimo-notebook.from = "marimo-skills";
-                  marimo-notebook.path = "marimo-notebook";
-
-                  streamlit-to-marimo.from = "marimo-skills";
-                  streamlit-to-marimo.path = "streamlit-to-marimo";
-
-                  wasm-compatibility.from = "marimo-skills";
-                  wasm-compatibility.path = "wasm-compatibility";
-
-                  # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
-                  # shaping.from = "shaping";
-                  # shaping.path = "shaping";
-                  # breadboarding.from = "shaping";
-                  # breadboarding.path = "breadboarding";
-                  # breadboard-reflection.from = "shaping";
-                  # breadboard-reflection.path = "breadboard-reflection";
+                      Use a lower-level HTML-to-Markdown converter instead when full-document
+                      fidelity, streaming, or offline stdin conversion is required.
+                    '';
                 };
+
+                markit.from = "markit";
+                markit.path = ".";
+
+                prek.from = "prek";
+                prek.path = "prek";
+
+                zele.from = "zele";
+                zele.path = "zele";
+
+                browser-control.from = "browser-control";
+                browser-control.path = "browser-control";
+
+                pplx-cli.from = "perplexity";
+                pplx-cli.path = "pplx-cli";
+
+                no-ai-slop.from = "no-ai-slop";
+                no-ai-slop.path = "no-ai-slop";
+
+                install-anti-slop.from = "anti-slop";
+                install-anti-slop.path = "install-anti-slop";
+
+                effect.from = "kitlangton";
+                effect.path = "effect";
+
+                write-discoverable-code.from = "modem";
+                write-discoverable-code.path = "write-discoverable-code";
+
+                animation-vocabulary.from = "emilkowalski";
+                animation-vocabulary.path = "animation-vocabulary";
+
+                apple-design.from = "emilkowalski";
+                apple-design.path = "apple-design";
+
+                emil-design-eng.from = "emilkowalski";
+                emil-design-eng.path = "emil-design-eng";
+
+                review-animations.from = "emilkowalski";
+                review-animations.path = "review-animations";
+
+                improve.from = "shadcn-improve";
+                improve.path = "improve";
+
+              }
+              // lib.optionalAttrs acpxEnabled {
+                acpx.from = "acpx";
+                acpx.path = "acpx";
+              }
+              // {
+                marimo-pair.from = "marimo-pair";
+                marimo-pair.path = "marimo-pair";
+
+                # Curated marimo subset: keep the broad, reusable notebook authoring
+                # and migration skills; omit niche publishing helpers and overlapping
+                # no-user-input workflows.
+                anywidget-generator.from = "marimo-skills";
+                anywidget-generator.path = "anywidget";
+
+                implement-paper.from = "marimo-skills";
+                implement-paper.path = "implement-paper";
+
+                jupyter-to-marimo.from = "marimo-skills";
+                jupyter-to-marimo.path = "jupyter-to-marimo";
+
+                marimo-notebook.from = "marimo-skills";
+                marimo-notebook.path = "marimo-notebook";
+
+                streamlit-to-marimo.from = "marimo-skills";
+                streamlit-to-marimo.path = "streamlit-to-marimo";
+
+                wasm-compatibility.from = "marimo-skills";
+                wasm-compatibility.path = "wasm-compatibility";
+
+                # shaping-skills repo uses lowercase skill.md — incompatible with agent-skills-nix
+                # shaping.from = "shaping";
+                # shaping.path = "shaping";
+                # breadboarding.from = "shaping";
+                # breadboarding.path = "breadboarding";
+                # breadboard-reflection.from = "shaping";
+                # breadboard-reflection.path = "breadboard-reflection";
+              };
 
             };
 
