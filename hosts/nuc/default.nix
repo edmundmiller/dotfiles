@@ -365,6 +365,7 @@ let
     (mkAgentSecret "HONCHO_API_KEY" "hermes-scintillate-honcho-api-key")
     (mkAgentSecret "HERMES_DASHBOARD_BASIC_AUTH_PASSWORD" "hermes-scintillate-dashboard-password")
     (mkAgentSecret "HERMES_DASHBOARD_BASIC_AUTH_SECRET" "hermes-scintillate-dashboard-session-secret")
+    (mkAgentSecret "EMAIL_PASSWORD" "agentmail-api-key")
     {
       envVar = "LINEAR_API_KEY";
       path = linearTokenFile;
@@ -416,6 +417,7 @@ let
       ) hermesSecretSets
     );
   hermesTelegramBotTokenOwners = hermesSecretEnvOwners "TELEGRAM_BOT_TOKEN";
+  hermesEmailPasswordOwners = hermesSecretEnvOwners "EMAIL_PASSWORD";
   obsidianOpRefs = {
     emailRef = "op://Agents/Obsidian/Email";
     passwordRef = "op://Agents/Obsidian/password";
@@ -885,6 +887,10 @@ in
         Current owners: ${lib.concatStringsSep ", " hermesTelegramBotTokenOwners}
         Do not share one Telegram bot token across Hermes profiles; duplicate getUpdates polling breaks Telegram delivery.
       '';
+    }
+    {
+      assertion = hermesEmailPasswordOwners == [ "scintillate" ];
+      message = "Scintillate must retain its encrypted AgentMail credential after Telegram removal.";
     }
   ];
 
@@ -1667,6 +1673,21 @@ in
         grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
         install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
         rm -f "$tmp_file"
+
+        gateway_state=/var/lib/hermes-scintillate/.hermes/gateway_state.json
+        if [ -f "$gateway_state" ]; then
+          ${pkgs.python3}/bin/python3 - "$gateway_state" <<'PY'
+        import json
+        import pathlib
+        import sys
+
+        path = pathlib.Path(sys.argv[1])
+        state = json.loads(path.read_text(encoding="utf-8"))
+        platforms = state.get("platforms")
+        if isinstance(platforms, dict) and platforms.pop("telegram", None) is not None:
+            path.write_text(json.dumps(state, separators=(",", ":")), encoding="utf-8")
+        PY
+        fi
       '')
     ];
   };

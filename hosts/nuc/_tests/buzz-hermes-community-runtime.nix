@@ -305,7 +305,8 @@ let
         && pkgs.lib.hasInfix "grep '^BUZZ_'" scintillatePreStartScripts
         && pkgs.lib.hasInfix "grep -Ev '^(TELEGRAM_|BUZZ_)'" scintillatePreStartScripts
         && !pkgs.lib.hasInfix "grep '^TELEGRAM_'" scintillatePreStartScripts
-        && pkgs.lib.hasInfix "reusing materialized Himalaya config" scintillatePreStartScripts;
+        && pkgs.lib.hasInfix "reusing materialized Himalaya config" scintillatePreStartScripts
+        && pkgs.lib.hasInfix ''platforms.pop("telegram", None)'' scintillatePreStartScripts;
       msg = "Scintillate's native Buzz gateway must load only its Buzz surface and purge stale Telegram runtime state.";
     }
   ]
