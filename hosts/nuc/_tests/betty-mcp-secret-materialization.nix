@@ -13,7 +13,7 @@ let
   materializesEveryMcpBearerToken = builtins.all (
     envVar: pkgs.lib.hasInfix envVar secretMaterialization
   ) expectedEnvVars;
-  expectedFailure = true;
+  expectedFailure = false;
   assertion =
     if expectedFailure then !materializesEveryMcpBearerToken else materializesEveryMcpBearerToken;
 in

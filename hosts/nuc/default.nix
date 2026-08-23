@@ -386,8 +386,11 @@ let
       DISCORD_BOT_TOKEN
       HERMES_SPOTIFY_CLIENT_ID
       ;
-    HERMES_MCP_BEARER_TOKEN_LINEAR = bettyAgentSpec.hermes.mcpBearerTokenReferences.linear;
-  };
+  }
+  // lib.mapAttrs' (
+    serverName: reference:
+    lib.nameValuePair "HERMES_MCP_BEARER_TOKEN_${lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] serverName)}" reference
+  ) bettyAgentSpec.hermes.mcpBearerTokenReferences;
   hermesAnneSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-anne-honcho-api-key")
     {
