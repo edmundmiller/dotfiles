@@ -60,6 +60,9 @@ let
   scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
   scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
   scintillateCronHeartbeatExpectedFailure = false;
+  scintillateRetiredTelegramEnvExpectedFailure = true;
+  scintillateSecretsMaterializeScript =
+    cfg.system.activationScripts.hermesScintillateSecretsMaterialize.text;
   scintillateCronPostStartScripts = pkgs.lib.concatMapStringsSep "\n" (
     script: if builtins.pathExists script then builtins.readFile script else script
   ) (scintillateCron.serviceConfig.ExecStartPost or [ ]);
@@ -72,6 +75,10 @@ let
   scintillatePreStartScripts = pkgs.lib.concatMapStringsSep "\n" (
     script: if builtins.pathExists script then builtins.readFile script else script
   ) scintillateGateway.serviceConfig.ExecStartPre;
+  scintillateRetiredTelegramEnvPruned =
+    !pkgs.lib.hasInfix "TELEGRAM_ALLOWED_USERS" scintillateSecretsMaterializeScript
+    && !pkgs.lib.hasInfix "TELEGRAM_HOME_CHANNEL" scintillateSecretsMaterializeScript
+    && pkgs.lib.hasInfix "Refreshing Scintillate gateway container to apply channel environment" scintillatePreStartScripts;
 
   profileAssertions =
     profile:
@@ -308,6 +315,14 @@ let
         && pkgs.lib.hasInfix "reusing materialized Himalaya config" scintillatePreStartScripts
         && pkgs.lib.hasInfix ''platforms.pop("telegram", None)'' scintillatePreStartScripts;
       msg = "Scintillate's native Buzz gateway must load only its Buzz surface and purge stale Telegram runtime state.";
+    }
+    {
+      test =
+        if scintillateRetiredTelegramEnvExpectedFailure then
+          !scintillateRetiredTelegramEnvPruned
+        else
+          scintillateRetiredTelegramEnvPruned;
+      msg = "Scintillate must recreate its gateway without retired Telegram routing environment.";
     }
   ]
   ++ builtins.concatMap profileAssertions acpProfiles;
