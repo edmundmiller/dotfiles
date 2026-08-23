@@ -106,7 +106,7 @@
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable Hermes profiles.
     agents-workspace = {
-      url = "github:edmundmiller/agents-workspace/9bab5275e8f8792dbb4fc972fad09db12914caee";
+      url = "github:edmundmiller/agents-workspace/a7323a71b8a4cca821b79de37d442991fa34936b";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };

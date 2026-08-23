@@ -166,17 +166,18 @@ Recovery:
 
 ## Buzz community runtimes
 
-`hosts/nuc/default.nix` generates one `buzz-hermes-<profile>.service` for every
-configured NUC Hermes profile. Each service runs `buzz-acp -> hermes acp` with
-the profile's materialized home, provider environment, and declared repository
-mounts. Its dedicated identity and owner attestation live in
+`hosts/nuc/default.nix` generates one `buzz-hermes-<profile>.service` for each
+public profile in the canonical Buzz deployment binding. Each service runs
+`buzz-acp -> hermes acp` with the profile's materialized home, provider
+environment, and declared repository mounts. Its dedicated identity and owner
+attestation live in
 `hosts/nuc/secrets/buzz-hermes-<profile>-agent-env.age`.
 Subscriptions and home channels come from the canonical
 `agents-workspace/deployments/nuc/buzz-bindings.nix` deployment binding.
-Project profiles watch `mill-docs` or `finances`; Orchestrator watches
-`general`; Amos watches `general` plus `agent-reports`; Radar watches
-`general`; Scintillate watches `general` plus `personal-reports`; Betty watches
-`mill-docs`, `meal-planning`, and `fitness`.
+Anne and Betty watch their project forums, Finn watches `finances`, and Amos
+watches only `agent-reports`. Orchestrator remains an internal native Hermes
+gateway and has no public Buzz listener. Scintillate's native gateway watches
+`general` and `personal-reports` with mention-gated intake.
 
 Active cron executors use Hermes' native Buzz adapter for outbound delivery.
 Amos Burton uses `agent-reports`; Scintillate uses `personal-reports`. Betty
@@ -207,9 +208,11 @@ ssh nuc 'systemctl status buzz-mill-docs-codex.service --no-pager'
 ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
 ```
 
-Expected: every configured Hermes unit is active with zero restarts and connected to
-`wss://millers.communities.buzz.xyz`. Lazy mode starts the Hermes ACP child
-only after an accepted mention. The services expose no listener.
+Expected: the configured public Hermes units are active with zero restarts and
+connected to `wss://millers.communities.buzz.xyz`; `buzz-hermes-orchestrator`
+is not found while `hermes-gateway-orchestrator` remains active. Lazy mode
+starts a Hermes ACP child only after an accepted mention. The services expose
+no listener.
 `buzz-presence-scintillate.service` is active, bound to the native Scintillate
 gateway, and does not start an ACP child.
 `mill-docs-coding-agent.timer` is active with a future next trigger, and
@@ -225,9 +228,9 @@ receives the owner attestation and agent-authored profile event. Never reuse a
 private key across profiles. Encrypt `BUZZ_PRIVATE_KEY` and `BUZZ_AUTH_TAG`
 directly into the matching agenix file; never print either value.
 
-Amos, Betty, Radar, and Scintillate accept signed mentions from the owner and
-the exact Moni pubkey in the deployment binding. Anne, Finn, and Orchestrator
-remain owner-only. All inherit repository access from
+Amos, Betty, and Scintillate accept signed mentions from the owner and the exact
+Moni pubkey in the deployment binding. Anne and Finn remain owner-only.
+Orchestrator is not a public Buzz profile. All inherit repository access from
 `services.hermes-agent.profiles.<name>.hostPathMounts`; change that canonical
 profile boundary instead of adding service-specific paths. Host Docker and
 Podman sockets remain inaccessible.

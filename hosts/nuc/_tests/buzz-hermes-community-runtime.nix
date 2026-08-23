@@ -9,7 +9,8 @@
 let
   cfg = nixosConfig.config;
   profiles = builtins.attrNames cfg.modules.services.hermes.agents;
-  acpProfiles = builtins.filter (profile: profile != "scintillate") profiles;
+  buzzProfiles = builtins.attrNames buzzBindings.profiles;
+  acpProfiles = builtins.filter (profile: profile != "scintillate") buzzProfiles;
   services = map (profile: cfg.systemd.services."buzz-hermes-${profile}") acpProfiles;
   identityFiles =
     map (
@@ -21,7 +22,7 @@ let
     ++ [ cfg.age.secrets.buzz-hermes-scintillate-agent-env.path ];
   identitySourceFiles = map (
     profile: cfg.age.secrets."buzz-hermes-${profile}-agent-env".file
-  ) profiles;
+  ) buzzProfiles;
   expectedPathEnvironment = {
     amosburton.CODEX_HOME = "/home/emiller/.codex";
     anne = {
@@ -228,11 +229,28 @@ let
       msg = "Finn, not Amos Burton, must own the NUC finances checkout.";
     }
     {
-      test = builtins.length (pkgs.lib.unique identityFiles) == builtins.length profiles;
+      test =
+        buzzProfiles == [
+          "amosburton"
+          "anne"
+          "betty"
+          "finn"
+          "scintillate"
+        ];
+      msg = "Public Buzz runtime coverage must exclude the internal Orchestrator profile.";
+    }
+    {
+      test =
+        !(builtins.hasAttr "buzz-hermes-orchestrator" cfg.systemd.services)
+        && !(builtins.hasAttr "buzz-hermes-orchestrator-agent-env" cfg.age.secrets);
+      msg = "Orchestrator must remain internal with no public listener or decrypted Buzz identity.";
+    }
+    {
+      test = builtins.length (pkgs.lib.unique identityFiles) == builtins.length buzzProfiles;
       msg = "Every Buzz/Hermes runtime must use a distinct identity secret.";
     }
     {
-      test = builtins.length (pkgs.lib.unique identitySourceFiles) == builtins.length profiles;
+      test = builtins.length (pkgs.lib.unique identitySourceFiles) == builtins.length buzzProfiles;
       msg = "Every Buzz/Hermes runtime must have a distinct encrypted identity source.";
     }
     {
