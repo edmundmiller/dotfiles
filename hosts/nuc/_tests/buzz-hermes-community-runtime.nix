@@ -177,6 +177,7 @@ let
       {
         test =
           buzz.enabled
+          && buzz.typing_indicator
           && buzz.extra.relay_url == "https://millers.communities.buzz.xyz"
           && lib.hasSuffix "/bin/buzz" buzz.extra.cli_path;
         msg = "${profile}: native Buzz must be enabled against the Millers relay with a packaged CLI.";

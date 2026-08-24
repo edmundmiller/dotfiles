@@ -406,6 +406,7 @@ let
       gateway.platforms = {
         buzz = {
           enabled = true;
+          typing_indicator = true;
           extra = {
             relay_url = "https://millers.communities.buzz.xyz";
             cli_path = "${pkgs.my.buzz}/bin/buzz";
