@@ -392,10 +392,41 @@
         }
         // mapModulesRec ./modules import;
 
-        nixosConfigurations = builtins.removeAttrs (mapHosts ./hosts { }) [
-          "mactraitorpro"
-          "seqeratop"
-        ];
+        nixosConfigurations =
+          let
+            hosts = builtins.removeAttrs (mapHosts ./hosts { }) [
+              "mactraitorpro"
+              "seqeratop"
+            ];
+            mkNucBuzzRollout =
+              profiles:
+              hosts.nuc.extendModules {
+                modules = [
+                  {
+                    nuc.hermesBuzzNativeRolloutProfiles = lib.mkForce profiles;
+                  }
+                ];
+              };
+          in
+          hosts
+          // {
+            nuc-buzz-scintillate = mkNucBuzzRollout [ "scintillate" ];
+            nuc-buzz-scintillate-finn = mkNucBuzzRollout [
+              "scintillate"
+              "finn"
+            ];
+            nuc-buzz-scintillate-finn-amosburton = mkNucBuzzRollout [
+              "scintillate"
+              "finn"
+              "amosburton"
+            ];
+            nuc-buzz-scintillate-finn-amosburton-anne = mkNucBuzzRollout [
+              "scintillate"
+              "finn"
+              "amosburton"
+              "anne"
+            ];
+          };
 
         templates = {
           minimal = {
@@ -511,13 +542,6 @@
               };
             }
           );
-          nucStagedBuzzConfig = self.nixosConfigurations.nuc.extendModules {
-            modules = [
-              {
-                nuc.hermesBuzzNativeRolloutProfiles = lib.mkForce [ "scintillate" ];
-              }
-            ];
-          };
           preCommitShellHook = ''
             if git rev-parse --git-dir >/dev/null 2>&1; then
               repo_root=$(git rev-parse --show-toplevel)
@@ -1412,7 +1436,7 @@
               };
 
               nuc-buzz-hermes-staged-runtime = import ./hosts/nuc/_tests/buzz-hermes-staged-runtime.nix {
-                nixosConfig = nucStagedBuzzConfig;
+                nixosConfig = self.nixosConfigurations.nuc-buzz-scintillate;
                 inherit pkgs;
                 buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
                   inherit (pkgs) lib;

@@ -1,0 +1,225 @@
+--- a/crates/buzz-acp/src/acp.rs
++++ b/crates/buzz-acp/src/acp.rs
+@@ -132,6 +132,59 @@
+     })
+ }
+
++fn rejects_permission_requests(extra_env: &[(String, String)]) -> bool {
++    let explicit = extra_env
++        .iter()
++        .rev()
++        .find_map(|(key, value)| (key == "BUZZ_ACP_PERMISSION_MODE").then_some(value.as_str()));
++    let inherited = std::env::var("BUZZ_ACP_PERMISSION_MODE").ok();
++    matches!(
++        explicit.or(inherited.as_deref()),
++        Some("dont-ask" | "dontAsk" | "dont_ask")
++    )
++}
++
++fn permission_option_id<'a>(
++    options: &'a [serde_json::Value],
++    kind: &str,
++) -> Result<Option<&'a str>, AcpError> {
++    options
++        .iter()
++        .find(|option| option.get("kind").and_then(|value| value.as_str()) == Some(kind))
++        .map(|option| {
++            option
++                .get("optionId")
++                .and_then(|value| value.as_str())
++                .ok_or_else(|| AcpError::Protocol(format!("{kind} option missing optionId")))
++        })
++        .transpose()
++}
++
++fn select_permission_option<'a>(
++    options: &'a [serde_json::Value],
++    reject_requests: bool,
++) -> Result<(&'static str, &'a str), AcpError> {
++    if reject_requests {
++        return permission_option_id(options, "reject_once")?
++            .map(|option_id| ("reject_once", option_id))
++            .ok_or_else(|| {
++                AcpError::Protocol("dont-ask permission request missing reject_once option".into())
++            });
++    }
++
++    if let Some(option_id) = permission_option_id(options, "allow_once")? {
++        return Ok(("allow_once", option_id));
++    }
++
++    permission_option_id(options, "reject_once")?
++        .map(|option_id| ("reject_once", option_id))
++        .ok_or_else(|| {
++            AcpError::Protocol(
++                "no suitable permission option found (neither allow_once nor reject_once)".into(),
++            )
++        })
++}
++
+ /// ACP client that owns an agent subprocess and communicates over its stdio.
+ ///
+ /// One `AcpClient` per agent process. Multiple sessions can be created on the
+@@ -158,6 +211,8 @@
+     /// Guards against double-response if a timeout fires after the allow_once
+     /// response was written but before `pending_permission_id` was cleared.
+     permission_responded: bool,
++    /// Fail closed instead of auto-approving when the configured mode is dont-ask.
++    reject_permission_requests: bool,
+     /// The JSON-RPC id of the most recently sent `session/prompt` request.
+     /// Used by [`cancel_with_cleanup`] to drain the correct response.
+     /// Set in [`session_prompt_with_idle_timeout`]; consumed in [`cancel_with_cleanup`].
+@@ -455,6 +510,8 @@
+         has_generated_codex_config: bool,
+     ) -> Result<Self, AcpError> {
+         use std::process::Stdio;
++
++        let reject_permission_requests = rejects_permission_requests(extra_env);
+
+         let mut cmd = tokio::process::Command::new(command);
+         cmd.args(args)
+@@ -541,6 +598,7 @@
+             next_id: 0,
+             pending_permission_id: None,
+             permission_responded: false,
++            reject_permission_requests,
+             last_prompt_id: None,
+             current_hard_deadline: None,
+             observer: None,
+@@ -1853,12 +1911,10 @@
+         }
+     }
+
+-    /// Auto-approve a `session/request_permission` request from the agent.
+-    ///
+-    /// Finds the option with `kind == "allow_once"` and responds with its `optionId`.
+-    /// If no `allow_once` option exists, falls back to `reject_once`.
++    /// Resolve a `session/request_permission` request from the agent.
+     ///
+-    /// **Critical:** Never hardcode `optionId` — always find it dynamically by `kind`.
++    /// `dont-ask` selects `reject_once`; other modes retain the upstream
++    /// `allow_once` behavior with a reject fallback.
+     ///
+     /// The request `id` is stored as `serde_json::Value` to support both numeric
+     /// and string IDs per JSON-RPC 2.0.
+@@ -1884,40 +1940,19 @@
+             options.len()
+         );
+
+-        // Find allow_once by kind — NEVER hardcode optionId.
+-        let allow_once = options
+-            .iter()
+-            .find(|opt| opt.get("kind").and_then(|k| k.as_str()) == Some("allow_once"));
+-
+-        let response = if let Some(opt) = allow_once {
+-            let option_id = opt["optionId"]
+-                .as_str()
+-                .ok_or_else(|| AcpError::Protocol("allow_once option missing optionId".into()))?;
+-            tracing::info!(
++        let (kind, option_id) = select_permission_option(options, self.reject_permission_requests)?;
++        if self.reject_permission_requests {
++            tracing::warn!(
+                 target: "acp::permission",
+-                "auto-approving permission id={id} with allow_once optionId={option_id:?}"
++                "rejecting permission id={id} in dont-ask mode with optionId={option_id:?}"
+             );
+-            permission_response_selected(&id, option_id)
+         } else {
+-            // No allow_once — fall back to reject_once.
+-            tracing::warn!(
++            tracing::info!(
+                 target: "acp::permission",
+-                "no allow_once option found in permission request id={id}, falling back to reject_once"
++                "resolving permission id={id} with {kind} optionId={option_id:?}"
+             );
+-            let reject = options
+-                .iter()
+-                .find(|opt| opt.get("kind").and_then(|k| k.as_str()) == Some("reject_once"));
+-
+-            if let Some(opt) = reject {
+-                let option_id = opt["optionId"].as_str().unwrap_or("reject");
+-                permission_response_selected(&id, option_id)
+-            } else {
+-                return Err(AcpError::Protocol(
+-                    "no suitable permission option found (neither allow_once nor reject_once)"
+-                        .into(),
+-                ));
+-            }
+-        };
++        }
++        let response = permission_response_selected(&id, option_id);
+
+         // Write the response first, then mark as responded.
+         //
+@@ -2327,6 +2362,71 @@
+     }
+
+     #[test]
++    fn author_gate_tests_dont_ask_rejects_permission_request() {
++        let options: Vec<serde_json::Value> = serde_json::from_str(
++            r#"[
++                {"optionId": "allow", "name": "Allow once", "kind": "allow_once"},
++                {"optionId": "deny", "name": "Reject once", "kind": "reject_once"}
++            ]"#,
++        )
++        .unwrap();
++        let extra_env = vec![(
++            "BUZZ_ACP_PERMISSION_MODE".to_string(),
++            "dont-ask".to_string(),
++        )];
++
++        assert!(super::rejects_permission_requests(&extra_env));
++        assert_eq!(
++            super::select_permission_option(&options, true).unwrap(),
++            ("reject_once", "deny")
++        );
++    }
++
++    #[tokio::test]
++    async fn author_gate_tests_dont_ask_writes_reject_once_response() {
++        let script = r#"
++printf '%s\n' '{"jsonrpc":"2.0","id":"permission-1","method":"session/request_permission","params":{"options":[{"optionId":"allow","kind":"allow_once"},{"optionId":"deny","kind":"reject_once"}]}}'
++IFS= read -r response
++printf '{"jsonrpc":"2.0","id":77,"result":%s}\n' "$response"
++"#;
++        let extra_env = vec![(
++            "BUZZ_ACP_PERMISSION_MODE".to_string(),
++            "dont-ask".to_string(),
++        )];
++        let mut client = AcpClient::spawn(
++            "bash",
++            &["-c".to_string(), script.to_string()],
++            &extra_env,
++            false,
++        )
++        .await
++        .expect("spawn permission probe");
++
++        let response = client
++            .read_until_response(77)
++            .await
++            .expect("read permission probe response");
++        assert_eq!(
++            response["result"]["outcome"]["optionId"].as_str(),
++            Some("deny")
++        );
++        client.shutdown().await;
++    }
++
++    #[test]
++    fn author_gate_tests_default_permission_request_still_allows_once() {
++        let options: Vec<serde_json::Value> = serde_json::from_str(
++            r#"[{"optionId": "allow", "name": "Allow once", "kind": "allow_once"}]"#,
++        )
++        .unwrap();
++
++        assert_eq!(
++            super::select_permission_option(&options, false).unwrap(),
++            ("allow_once", "allow")
++        );
++    }
++
++    #[test]
+     fn request_has_id_field() {
+         let id: u64 = 42;
+         let msg = serde_json::json!({

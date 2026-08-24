@@ -17,7 +17,10 @@ rustPlatform.buildRustPackage rec {
   };
 
   cargoHash = "sha256-0a0SJqDjSTWXU6k3yZ6iisDaUdnHqzjZU33ItzGs8AY=";
-  patches = [ ./patches/exact-respond-to-allowlist.patch ];
+  patches = [
+    ./patches/exact-respond-to-allowlist.patch
+    ./patches/reject-dont-ask-permissions.patch
+  ];
 
   cargoBuildFlags = [
     "--package=buzz-acp"

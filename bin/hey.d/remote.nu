@@ -128,12 +128,28 @@ def validate-nuc-worktree-mode [mode: string] {
   }
 }
 
+def nuc-worktree-configuration [configuration: string] {
+  let allowed = [
+    "nuc"
+    "nuc-buzz-scintillate"
+    "nuc-buzz-scintillate-finn"
+    "nuc-buzz-scintillate-finn-amosburton"
+    "nuc-buzz-scintillate-finn-amosburton-anne"
+  ]
+  if not ($configuration in $allowed) {
+    print -e $"error: NUC worktree configuration must be one of: ($allowed | str join ', ')"
+    error make {msg: "invalid NUC worktree configuration"}
+  }
+  $configuration
+}
+
 def nuc-worktree-rsync [source: string, destination: string] {
   ^rsync -az --delete --delete-excluded --exclude .git --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $source $destination
 }
 
-def "main nuc-worktree" [mode: string = "dry-activate"] {
+def "main nuc-worktree" [mode: string = "dry-activate", configuration: string = "nuc"] {
   validate-nuc-worktree-mode $mode
+  let deploy_configuration = (nuc-worktree-configuration $configuration)
   let ctx = (context)
   let remote_dir = $"/tmp/dotfiles-worktree-($env.USER? | default 'user')"
 
@@ -143,24 +159,24 @@ def "main nuc-worktree" [mode: string = "dry-activate"] {
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nix build .#nixosConfigurations.nuc.config.system.build.vm --show-trace --accept-flake-config --max-jobs 1"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nix build .#nixosConfigurations.($deploy_configuration).config.system.build.vm --show-trace --accept-flake-config --max-jobs 1"
     return
   }
 
-  print $"=== Running nixos-rebuild ($mode) from synced worktree on NUC ==="
+  print $"=== Running nixos-rebuild ($mode) for ($deploy_configuration) from synced worktree on NUC ==="
   if $mode == "build" {
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild build --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild build --flake .#($deploy_configuration) --show-trace --accept-flake-config --max-jobs 1"
   } else {
     let source_args = ((nuc-deploy-source-args) | str join " ")
-    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github ($source_args) nixos-rebuild ($mode) --flake .#nuc --show-trace --accept-flake-config --max-jobs 1"
+    ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github ($source_args) nixos-rebuild ($mode) --flake .#($deploy_configuration) --show-trace --accept-flake-config --max-jobs 1"
     if ($mode == "switch") or ($mode == "test") {
       nuc-post-deploy-check false
     }
   }
 }
 
-def "main nuc-wt" [mode: string = "dry-activate"] {
-  main nuc-worktree $mode
+def "main nuc-wt" [mode: string = "dry-activate", configuration: string = "nuc"] {
+  main nuc-worktree $mode $configuration
 }
 
 def "main unas" [] {

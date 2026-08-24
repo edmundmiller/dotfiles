@@ -203,17 +203,16 @@ Buzz identity remains available for repository credentials and queue execution.
 
 ### Staged native cutover
 
-`nuc.hermesBuzzNativeRolloutProfiles` is the cutover option. Its committed
-default is all five profiles. For a staged deployment, temporarily override it
-to only `scintillate`; unselected profiles receive exactly one ACP fallback
-service using the shared v0.20.5 package. Expand in this order:
+The flake exports four deployable canary configurations plus the final `nuc`
+configuration. Unselected profiles receive exactly one ACP fallback service
+using the shared v0.20.5 package. Expand in this order:
 
 ```text
-scintillate
-scintillate finn
-scintillate finn amosburton
-scintillate finn amosburton anne
-scintillate finn amosburton anne betty
+nuc-buzz-scintillate
+nuc-buzz-scintillate-finn
+nuc-buzz-scintillate-finn-amosburton
+nuc-buzz-scintillate-finn-amosburton-anne
+nuc
 ```
 
 At every stage, build before activation and prove that the selected profile has
@@ -222,16 +221,19 @@ every unselected profile has one ACP unit and its native gateway is disabled.
 Never activate a generation with both response lanes for one identity.
 
 The fallback is deliberately permission-denying
-(`BUZZ_ACP_PERMISSION_MODE=dont-ask`): buzz-acp cannot provide Hermes' native
-smart approvals and otherwise auto-selects a one-turn approval. It may still
-show ACP Activity rows. Keep each fallback stage short and run interaction and
-approval acceptance only against identities already migrated to native Buzz.
+(`BUZZ_ACP_PERMISSION_MODE=dont-ask`). The packaged Buzz bridge is patched and
+wire-tested to select `reject_once`, never `allow_once`, for this mode. ACP still
+cannot provide Hermes' native smart-approval controls and may show Activity
+rows. Keep each fallback stage short and run interaction and approval acceptance
+only against identities already migrated to native Buzz.
 
 ```bash
-hey nuc-wt build
+stage=nuc-buzz-scintillate
+hey nuc-wt build "$stage"
 ssh nuc "cd /tmp/dotfiles-worktree-emiller && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
-hey nuc-wt dry-activate
-hey nuc-wt switch
+ssh nuc "cd /tmp/dotfiles-worktree-emiller && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-buzz-hermes-staged-runtime"
+hey nuc-wt dry-activate "$stage"
+hey nuc-wt switch "$stage"
 
 ssh nuc "systemctl show hermes-gateway-<profile>.service -p ActiveState -p MainPID -p NRestarts"
 ssh nuc "systemctl show buzz-presence-<profile>.service -p ActiveState -p MainPID -p NRestarts -p BindsTo"
@@ -251,9 +253,9 @@ ssh nuc "systemctl show buzz-hermes-finn.service buzz-hermes-amosburton.service 
 ssh nuc "systemctl show hermes-gateway-scintillate hermes-scintillate-cron-tick -p FragmentPath -p ExecStart"
 ```
 
-If a canary fails, restore the previous selector and run `hey nuc-wt switch`.
-If the source state is unavailable, use `hey nuc-rollback`. Do not advance the
-next identity until service state, routing, and a natural Buzz turn pass.
+If a canary fails, deploy the prior named configuration. Use `hey nuc-rollback`
+only if the source state is unavailable. Do not advance the next identity until
+service state, routing, and a natural Buzz turn pass.
 
 ### Final verification
 
@@ -262,6 +264,7 @@ Verify service ownership after the final deployment:
 ```bash
 ssh nuc "systemctl show hermes-gateway-scintillate.service hermes-gateway-finn.service hermes-gateway-amosburton.service hermes-gateway-anne.service hermes-gateway-betty.service -p Id -p ActiveState -p MainPID -p NRestarts"
 ssh nuc "systemctl show buzz-presence-scintillate.service buzz-presence-finn.service buzz-presence-amosburton.service buzz-presence-anne.service buzz-presence-betty.service -p Id -p ActiveState -p MainPID -p NRestarts -p BindsTo"
+ssh nuc "systemctl list-unit-files --no-legend 'buzz-hermes-*.service'"
 ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
 ssh nuc 'systemctl show hermes-gateway-orchestrator.service -p ActiveState -p MainPID -p NRestarts'
 ssh nuc 'systemctl show mill-docs-coding-agent.timer mill-docs-coding-agent.service -p ActiveState -p NextElapseUSecRealtime'

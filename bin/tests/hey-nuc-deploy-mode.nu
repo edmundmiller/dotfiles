@@ -7,6 +7,11 @@ source ../hey.d/remote.nu
 assert equal (nuc-deploy-mode "nuc") "local"
 assert equal (nuc-deploy-mode "mactraitorpro") "worktree-remote"
 assert equal (nuc-deploy-mode "seqeratop") "worktree-remote"
+assert equal (nuc-worktree-configuration "nuc") "nuc"
+assert equal (nuc-worktree-configuration "nuc-buzz-scintillate") "nuc-buzz-scintillate"
+assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn") "nuc-buzz-scintillate-finn"
+assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton") "nuc-buzz-scintillate-finn-amosburton"
+assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton-anne") "nuc-buzz-scintillate-finn-amosburton-anne"
 
 let temp_dir = (^mktemp -d | str trim)
 let source_dir = ($temp_dir | path join "linked-worktree")
