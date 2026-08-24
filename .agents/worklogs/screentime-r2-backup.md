@@ -38,6 +38,9 @@ Archive every local macOS `/app/usage` record into an append-only SQLite databas
 - Closeout validation on 2026-08-24 passed the packaged CLI check, Darwin assertions, `git diff --check`, `hey agent-audit-tests`, and the full Darwin `hey check` gate.
 - The `code-review` skill requires a committed fixed-point diff and could not review this `local-only`, uncommitted run. Fallback `sem diff` review found and resolved timestamp JSON mislabeling, a missing-UUID race, and pre-existing archive permission drift.
 - Done review found that the CLI accepted the dedicated bucket under any R2 account hostname. A red/green regression now proves it accepts only account `57398029d3d0add95bdad89deaa41864`.
+- Done publication replayed both task revisions onto current `main`; source revisions were patch-equivalent to published tip `4fb7207e246da8321e1284cfd8a9ee72909d8720`. Local `main`, `origin/main`, and authoritative remote readback were equal, while a before/after fingerprint proved unrelated canonical-checkout dirt unchanged.
+- The exact published tip passed both Screen Time Nix checks and `hey check`. Its clean `hey re` activation failed outside this task because `python3.12-h5py-3.15.1` aborted in its own pytest hook, which blocked the updated Hermes dependency chain and Darwin system build.
+- Current runtime readback after that failed activation found no installed `screentime-backup` binary or LaunchAgent. All three Keychain services remain absent. Wrangler reverified account `57398029d3d0add95bdad89deaa41864`; `screentime-backups` remains empty with zero objects and zero bytes.
 
 ## Feedback
 
@@ -46,6 +49,7 @@ None.
 ## Remaining work
 
 - Obtain explicit credential-creation confirmation.
+- Restore deployment after the unrelated `h5py 3.15.1` Darwin build failure is fixed upstream or separately scoped.
 - Create the bucket-scoped token, 1Password/Keychain entries, and encrypted restic repository; verify a real launchd run and representative restore.
 
 ## Commits
