@@ -1,3 +1,5 @@
+import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -95,6 +97,38 @@ class NucHermesRuntimeTest(unittest.TestCase):
             "github:NousResearch/hermes-agent/5b5932886ce6477a0f4a3d25ca465392288d5126",
             flake,
         )
+
+    def test_generic_hermes_runtime_policy_clears_stale_app_server_selection(self):
+        policy = ROOT / "lib/hermes.nix"
+        expression = f'''
+let
+  render = (import {policy} {{ lib = (builtins.getFlake "nixpkgs").lib; }}).renderHermesSettings;
+in
+  render {{
+    timezone = "America/Chicago";
+    settings = {{
+      model = {{
+        openai_runtime = "codex_app_server";
+        temperature = 0.2;
+      }};
+      kanban.dispatch_in_gateway = false;
+      custom = {{ preserve = true; }};
+    }};
+  }}
+'''
+        result = subprocess.run(
+            ["nix", "eval", "--impure", "--json", "--expr", expression],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        rendered = json.loads(result.stdout)
+
+        self.assertEqual(rendered["model"]["openai_runtime"], "auto")
+        self.assertEqual(rendered["model"]["temperature"], 0.2)
+        self.assertFalse(rendered["kanban"]["dispatch_in_gateway"])
+        self.assertTrue(rendered["custom"]["preserve"])
+        self.assertEqual(rendered["timezone"], "America/Chicago")
 
 
 if __name__ == "__main__":

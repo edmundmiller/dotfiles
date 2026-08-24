@@ -25,16 +25,10 @@ let
     in
     if resolved.success then resolved.value else "op";
   opReadTimeoutSeconds = 15;
-
-  renderedSettings = lib.recursiveUpdate (
-    optionalAttrs ((config.time.timeZone or "") != "") {
-      timezone = config.time.timeZone;
-    }
-    // {
-      model.openai_runtime = "codex_app_server";
-      kanban.dispatch_in_gateway = true;
-    }
-  ) cfg.settings;
+  renderedSettings = renderHermesSettings {
+    timezone = config.time.timeZone or "";
+    inherit (cfg) settings;
+  };
 
   renderedConfig = yamlFormat.generate "hermes-settings.yaml" renderedSettings;
   soulFile = "${configDir}/hermes/SOUL.md";
