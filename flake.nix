@@ -1389,6 +1389,26 @@
                 inherit pkgs;
               };
 
+              screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
+              screentime-backup-cli-tests =
+                pkgs.runCommand "screentime-backup-cli-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.coreutils
+                      pkgs.gnugrep
+                      pkgs.sqlite
+                    ];
+                  }
+                  ''
+                    ${pkgs.bash}/bin/bash ${./packages/screentime-backup/screentime-backup.test.sh} \
+                      ${self.packages.${system}.screentime-backup}/bin/screentime-backup
+                    touch "$out"
+                  '';
+
               darwin-tailscale-app-owner-assertions = import ./modules/services/tailscale/_tests/eval-darwin.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;

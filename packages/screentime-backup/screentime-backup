@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+usage: screentime-backup archive --source PATH --archive PATH
+       screentime-backup run --source PATH --archive PATH --repository R2_URL
+EOF
+  exit 64
+}
+
+command_name="${1:-}"
+if [[ "$command_name" != "archive" && "$command_name" != "run" ]]; then
+  usage
+fi
+shift
+
+source_db=""
+archive_db=""
+repository=""
+while (($# > 0)); do
+  case "$1" in
+    --source)
+      (($# >= 2)) || usage
+      source_db="$2"
+      shift 2
+      ;;
+    --archive)
+      (($# >= 2)) || usage
+      archive_db="$2"
+      shift 2
+      ;;
+    --repository)
+      (($# >= 2)) || usage
+      repository="$2"
+      shift 2
+      ;;
+    *) usage ;;
+  esac
+done
+
+[[ -n "$source_db" && -n "$archive_db" ]] || usage
+if [[ "$command_name" == "run" ]]; then
+  case "$repository" in
+    s3:https://57398029d3d0add95bdad89deaa41864.r2.cloudflarestorage.com/screentime-backups) ;;
+    *)
+      printf 'repository must target the dedicated private screentime-backups R2 bucket\n' >&2
+      exit 64
+      ;;
+  esac
+fi
+[[ -r "$source_db" ]] || {
+  printf 'Screen Time source database is not readable: %s\n' "$source_db" >&2
+  exit 66
+}
+
+missing_uuid_count="$(sqlite3 -readonly "$source_db" \
+  "SELECT COUNT(*) FROM ZOBJECT WHERE ZSTREAMNAME = '/app/usage' AND (ZUUID IS NULL OR ZUUID = '');")"
+if [[ "$missing_uuid_count" != "0" ]]; then
+  printf '%s /app/usage row(s) have no UUID; refusing a partial archive\n' "$missing_uuid_count" >&2
+  exit 65
+fi
+
+umask 077
+archive_dir="$(dirname "$archive_db")"
+mkdir -p "$archive_dir"
+chmod 0700 "$archive_dir"
+if [[ -e "$archive_db" ]]; then
+  chmod 0600 "$archive_db"
+fi
+source_uri="file:$source_db?mode=ro"
+archived_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+archive_output="$(sqlite3 "$archive_db" \
+  -cmd '.parameter init' \
+  -cmd ".parameter set @source_uri \"$source_uri\"" \
+  -cmd ".parameter set @archived_at \"$archived_at\"" <<'SQL'
+CREATE TABLE IF NOT EXISTS app_usage (
+  uuid TEXT PRIMARY KEY NOT NULL,
+  source_pk INTEGER NOT NULL,
+  start_date REAL NOT NULL,
+  end_date REAL NOT NULL,
+  bundle_id TEXT,
+  seconds_from_gmt INTEGER,
+  creation_date REAL,
+  local_creation_date REAL,
+  value_integer INTEGER,
+  value_double REAL,
+  metadata BLOB,
+  archived_at TEXT NOT NULL
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS archive_runs (
+  run_id INTEGER PRIMARY KEY,
+  archived_at TEXT NOT NULL,
+  source_rows INTEGER NOT NULL,
+  inserted_rows INTEGER NOT NULL,
+  total_rows INTEGER NOT NULL
+);
+
+ATTACH DATABASE @source_uri AS source;
+BEGIN IMMEDIATE;
+CREATE TEMP TABLE run_result (inserted_rows INTEGER NOT NULL);
+INSERT OR IGNORE INTO app_usage (
+  uuid,
+  source_pk,
+  start_date,
+  end_date,
+  bundle_id,
+  seconds_from_gmt,
+  creation_date,
+  local_creation_date,
+  value_integer,
+  value_double,
+  metadata,
+  archived_at
+)
+SELECT
+  ZUUID,
+  Z_PK,
+  ZSTARTDATE,
+  ZENDDATE,
+  ZVALUESTRING,
+  ZSECONDSFROMGMT,
+  ZCREATIONDATE,
+  ZLOCALCREATIONDATE,
+  ZVALUEINTEGER,
+  ZVALUEDOUBLE,
+  ZMETADATA,
+  @archived_at
+FROM source.ZOBJECT
+WHERE ZSTREAMNAME = '/app/usage';
+INSERT INTO run_result VALUES (changes());
+INSERT INTO archive_runs (archived_at, source_rows, inserted_rows, total_rows)
+SELECT
+  @archived_at,
+  (SELECT COUNT(*) FROM source.ZOBJECT WHERE ZSTREAMNAME = '/app/usage'),
+  inserted_rows,
+  (SELECT COUNT(*) FROM app_usage)
+FROM run_result;
+COMMIT;
+
+SELECT printf(
+  '{"inserted":%d,"total":%d,"archivedAt":"%s"}',
+  inserted_rows,
+  (SELECT COUNT(*) FROM app_usage),
+  replace(@archived_at, '"', '\"')
+)
+FROM run_result;
+SQL
+)"
+chmod 0600 "$archive_db"
+integrity_result="$(sqlite3 -readonly "$archive_db" 'PRAGMA quick_check;')"
+if [[ "$integrity_result" != "ok" ]]; then
+  printf 'Screen Time archive integrity check failed: %s\n' "$integrity_result" >&2
+  exit 74
+fi
+
+if [[ "$command_name" == "archive" ]]; then
+  printf '%s\n' "$archive_output"
+  exit 0
+fi
+
+security_command="${SCREENTIME_BACKUP_SECURITY:-/usr/bin/security}"
+restic_command="${SCREENTIME_BACKUP_RESTIC:-restic}"
+keychain_account="${SCREENTIME_BACKUP_KEYCHAIN_ACCOUNT:-${USER:?USER is required}}"
+
+read_keychain_secret() {
+  local service="$1"
+  local value
+  value="$($security_command find-generic-password -a "$keychain_account" -s "$service" -w)"
+  [[ -n "$value" ]] || {
+    printf 'Keychain service is empty: %s\n' "$service" >&2
+    exit 78
+  }
+  printf '%s' "$value"
+}
+
+export RESTIC_REPOSITORY="$repository"
+AWS_ACCESS_KEY_ID="$(read_keychain_secret com.emiller.screentime-backup.r2-access-key-id)"
+AWS_SECRET_ACCESS_KEY="$(read_keychain_secret com.emiller.screentime-backup.r2-secret-access-key)"
+RESTIC_PASSWORD="$(read_keychain_secret com.emiller.screentime-backup.restic-password)"
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD
+
+"$restic_command" backup --tag screentime "$archive_db" >/dev/null
+snapshots_json="$($restic_command snapshots --json --latest 1 --path "$archive_db")"
+snapshot_id="$(printf '%s' "$snapshots_json" | jq -er 'if length == 1 then .[0].id else empty end')"
+
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD RESTIC_REPOSITORY
+jq -cn --argjson archive "$archive_output" --arg snapshotId "$snapshot_id" \
+  '{archive: $archive, snapshotId: $snapshotId}'

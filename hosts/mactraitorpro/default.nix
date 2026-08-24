@@ -364,6 +364,37 @@ in
       };
     };
 
+    launchd.user.agents.screentime-backup =
+      let
+        executable = "${pkgs.my.screentime-backup}/bin/screentime-backup";
+      in
+      {
+        serviceConfig = {
+          Program = executable;
+          ProgramArguments = [
+            executable
+            "run"
+            "--source"
+            "${config.user.home}/Library/Application Support/Knowledge/knowledgeC.db"
+            "--archive"
+            "${config.user.home}/.local/state/screentime/history.sqlite"
+            "--repository"
+            "s3:https://57398029d3d0add95bdad89deaa41864.r2.cloudflarestorage.com/screentime-backups"
+          ];
+          StartCalendarInterval = {
+            Weekday = 0;
+            Hour = 23;
+            Minute = 55;
+          };
+          StandardOutPath = "${config.user.home}/Library/Logs/screentime-backup.log";
+          StandardErrorPath = "${config.user.home}/Library/Logs/screentime-backup.err.log";
+          EnvironmentVariables = {
+            HOME = config.user.home;
+            USER = config.user.name;
+          };
+        };
+      };
+
     # Manage native macOS Login Items declaratively. Keep Raycast Beta here and
     # do not also start it with a launchd.user.agent, or macOS will run two instances.
     environment.loginItems = {
@@ -411,6 +442,7 @@ in
       my.hex
       my.meat
       my.openwiki
+      my.screentime-backup
       my.writer
       my.zele
       my.work-calendar-busy
