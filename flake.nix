@@ -108,7 +108,7 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/43524c1bd0a9ffcec851fbb179d000afc72ce4fe";
+      url = "github:edmundmiller/agents-workspace/c52c7dd6b9a698c12db1fd9203ecd93c59813cc8";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
