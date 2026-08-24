@@ -1,6 +1,6 @@
 # Worklog: workspace-2qf.5
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -202,6 +202,45 @@ landing proof.
   readback shows Finn stopped/offline on both workspaces, no Finn ACP child
   remains, and Mill Docs remains running with start-on-launch enabled on both
   workspaces. Fizz, Pollen, Honey, identity data, and auth data were untouched.
+- Finn now has one isolated OpenAI Codex OAuth credential named `finn`, sourced
+  by `device_code`; its access and refresh fingerprints differ from
+  Scintillate's. Restarting only `hermes-gateway-finn.service` restored the
+  native Finn identity with `NRestarts=0`.
+- Finn's first authenticated native Buzz root `71feb3b1...` produced exactly one
+  same-thread final `5d1a56a2...`, `FINN-FINAL-ONLY-OK 824B`, with no duplicate
+  or non-kind-9 row through 236 seconds. The transient `⚙️` reaction was added
+  and deleted, leaving no reaction. That turn also exposed an unrelated
+  one-time Codex context-threshold explanation as an unthreaded message.
+- Regression commit `54b2475` and fix commit
+  `badfac91f41cee38eb63a2352caee6243dd8264b` suppress only that gateway notice
+  while preserving Hermes's threshold and autoraise behavior. The focused
+  rendered-YAML, canonical-module, and Scintillate controls passed on both
+  aarch64-darwin and x86_64-linux. Agents-workspace `origin/main` read back
+  exactly at `badfac91f41cee38eb63a2352caee6243dd8264b`.
+- Dotfiles pin commit `136b344f2817b3b0de06ae56aa400131acd13d71`
+  landed exactly on `origin/main` and deployed generation
+  `/nix/store/as5wv48xgglwdjzdknfn9v3gml7hlvfw-nixos-system-nuc-26.11.20260714.18b9261`.
+  All six containers now run Hermes v0.20.5 from the same
+  `g2ynii70...` runtime and `riml1cmk...` package; their configs read back
+  `compression.codex_gpt55_autoraise_notice: false` and smart approvals. All
+  gateway and presence services are active with `NRestarts=0`, every presence
+  companion remains `respond_to=nobody`, and no legacy `buzz-hermes-*` unit is
+  installed.
+- Post-deploy Finn root `19eaa7e4...` showed `⚙️`, removed it, and delivered
+  exactly one same-thread final `bad393a3...`, `FINN-FINAL-ONLY-OK 824B`, after
+  17 seconds. The 126-second authoritative readback had no other Finn event,
+  no interim/tool/activity row, no unthreaded startup notice, no duplicate,
+  and no residual reaction. Fresh Buzz Desktop persisted state still reports
+  `start_on_app_launch=false`, `runtime_pid=null`, exit zero, and no Finn PID
+  file.
+- Beads feature `workspace-2qf.5` is closed in agents-workspace commit
+  `37024ad6e4c1d6e98eca4be0985168875d2cff18`, which exactly matches
+  `origin/main`; dotfiles runtime pin `136b344f2` exactly matches the deployed
+  config, with this closeout worklog as the only later dotfiles change. The
+  final dotfiles quality manifest passed Darwin evaluation, hooks, 56 workflow
+  tests, agent rules, skill validation, test-confidence audit, and inventory
+  drift. Annotated tag `agent-work/workspace-2qf.5` is published at the final
+  dotfiles closeout commit.
 
 ## Reviews
 
@@ -219,6 +258,9 @@ landing proof.
   test-first fixes. The final release gate is GO for the published and deployed
   NUC release with no P0, P1, or P2 runtime blocker. Its only closeout finding
   was that this worklog still named superseded revisions, corrected above.
+- The final Codex-notice fix and its dotfiles pin both received read-only GO
+  reviews with no P0, P1, or P2 finding. The pin review independently matched
+  its NAR hash and confirmed that neither publication changed Discord behavior.
 
 ## Feedback
 
@@ -227,20 +269,16 @@ landing proof.
 
 ## Remaining work
 
-- Restore Finn's independent OpenAI Codex device authentication, then run its
-  exactly-once native Buzz acceptance. Discord acceptance is explicitly
-  deferred at the user's request so this closeout remains Buzz-only. The
-  prepared device-code flow was cancelled before account selection because
-  explicit authorization was not returned; Finn's auth store remains empty.
-- Complete both receipts, close the Beads issues, and push the annotated
-  `agent-work/workspace-2qf.5` tag.
+- None. Discord live acceptance is intentionally deferred and outside this
+  Buzz-only closeout; all five visible bots satisfy the acceptance contract
+  through native Buzz.
 
 ## Commits
 
 - Agents workspace: `8bd13f818ae8cf557c9092f2a5b264d8aa2a387b`,
   `464867a4f6c5db36fe73b624a879ef4f6ed79937`, `1f5f827`, `b68a057`,
   `668db3b`, `abd79de`, `2e306ab`, `48d379d`, `0141bc5`, `27e46ea`,
-  `cf15339`.
+  `cf15339`, `54b2475`, `badfac91`, `37024ad`.
 - Dotfiles: `9ac6a819e`, `40cea0200`, `6047e7046`, `887445f76`,
   `38580a2b5`, `b163fcc4e`, `5e9e386ac`, `52358de57`, `c7dfb024e`,
-  `d74a2b849`, `f251eeba4`.
+  `d74a2b849`, `f251eeba4`, `136b344f2`.
