@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -344,6 +345,12 @@
           echo "warning: restart Spotlight to apply the src exclusion" >&2
       fi
     '';
+
+    ## CPU
+    # 11 cores; pairs with nix.settings.cores = 2
+    # (modules/darwin-base.nix). nix-darwin's max-jobs = auto would
+    # resolve to 11 here, and auto x all-cores lets 121 threads run.
+    nix.settings.max-jobs = lib.mkDefault 6;
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {

@@ -15,6 +15,12 @@ with lib;
     # Nix optimization (use the newer API)
     nix.optimise.automatic = true;
 
+    # Bound build parallelism; see modules/darwin-base.nix for the full
+    # reasoning. Nix multiplies max-jobs by cores, and the stock cores = 0
+    # means "every core", so leaving it unset lets ncpu^2 threads run. Each
+    # host pins max-jobs = ncpu / 2 to pair with this.
+    nix.settings.cores = mkDefault 2;
+
     ## Some reasonable, global defaults
     # This is here to appease 'nix flake check' for generic hosts with no
     # hardware-configuration.nix or fileSystem config.

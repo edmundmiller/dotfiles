@@ -31,6 +31,18 @@ with lib;
         ];
         # Increase download buffer size for large derivations (e.g., texlive)
         download-buffer-size = 134217728; # 128MB (default is 64MB)
+
+        # Bound build parallelism. Nix multiplies these: max-jobs concurrent
+        # derivations, each allowed `cores` threads. The stock pairing here is
+        # max-jobs = auto (= ncpu) with cores = 0 (= ncpu), which permits
+        # ncpu^2 threads -- on an 11-core host that is 121, and a patched Rust
+        # build (hunk/herdr carry local patches, so no cache can serve them)
+        # drove load to 258 and exhausted 34GB of swap.
+        #
+        # Each host pins max-jobs = ncpu / 2 so the product still saturates the
+        # machine while halving the number of simultaneous memory-holding
+        # builds -- memory, not CPU, is what falls over first.
+        cores = mkDefault 2;
       };
       optimise.automatic = true;
       gc = {

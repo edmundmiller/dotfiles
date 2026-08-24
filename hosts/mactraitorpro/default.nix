@@ -1,6 +1,7 @@
 {
   config,
   inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -287,6 +288,12 @@ in
         fallbackImageColor = "1e1e2e"; # catppuccin mocha base00
       };
     };
+
+    ## CPU
+    # 12 cores; pairs with nix.settings.cores = 2
+    # (modules/darwin-base.nix). nix-darwin's max-jobs = auto would
+    # resolve to 12 here, and auto x all-cores lets 144 threads run.
+    nix.settings.max-jobs = lib.mkDefault 6;
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {

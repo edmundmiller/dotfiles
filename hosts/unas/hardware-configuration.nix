@@ -19,7 +19,8 @@
   boot.kernelParams = [ "elevator=none" ];
 
   ## CPU
-  nix.settings.max-jobs = lib.mkDefault 12;
+  # 12 cores; pairs with nix.settings.cores = 2 (modules/nixos-base.nix).
+  nix.settings.max-jobs = lib.mkDefault 6;
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = true;
 

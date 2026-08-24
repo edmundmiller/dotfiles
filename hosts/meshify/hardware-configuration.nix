@@ -22,7 +22,8 @@
   boot.loader.grub.useOSProber = true;
 
   ## CPU
-  nix.settings.max-jobs = lib.mkDefault 16;
+  # 16 cores; pairs with nix.settings.cores = 2 (modules/nixos-base.nix).
+  nix.settings.max-jobs = lib.mkDefault 8;
   powerManagement.cpuFreqGovernor = "performance";
   hardware.cpu.amd.updateMicrocode = true;
 
