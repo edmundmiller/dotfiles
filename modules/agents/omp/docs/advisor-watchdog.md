@@ -27,11 +27,11 @@ Every active roster entry is a separate advisor runtime. Two entries therefore c
 Seqeratop intentionally uses one normal advisor stream:
 
 - role: `advisor`
-- primary: `openai-codex/gpt-5.6-sol:high`
-- fallback: `openai-codex/gpt-5.6-luna:high`, then `cursor/cursor-grok-4.6-high`
-- roster name: `Sol`
+- primary: `vibeproxy/claude-opus-5:high`
+- fallback: `openai-codex/gpt-5.6-sol:high`, then `openai-codex/gpt-5.6-luna:high`, then `cursor/cursor-grok-4.6-high`
+- roster name: `Opus`
 
-The roster omits `model`, so it resolves through `modelRoles.advisor`. This lets `retry.fallbackChains.advisor` own the fallback without changing other roles that happen to use Sol.
+The roster omits `model`, so it resolves through `modelRoles.advisor`. This lets `retry.fallbackChains.advisor` own the fallback without changing other roles that happen to use the same id.
 
 ## Retry behavior
 
@@ -44,7 +44,7 @@ Current OMP source applies provider-failure fallback chains to advisor runtimes 
 
 Prefer the `advisor` role chain for an advisor-only fallback. An exact `openai-codex/gpt-5.6-sol:high` chain would also affect any primary role using that selector.
 
-VibeProxy custom providers have no model auto-discovery. Every fallback id must also appear in `config/omp/models.yml`; keep the served Opus 4.8 entry while Opus 5 availability is pending.
+VibeProxy custom providers have no model auto-discovery. Every role and fallback id must also appear in `config/omp/models.yml`. `test_seqeratop_vibeproxy_ids_are_declared_in_models_yml` enforces this, including the level suffix: VibeProxy reports `minimal`/`low`/`medium`/`high`/`xhigh`, so there is no `:max` on this provider.
 
 ## WATCHDOG files
 
@@ -58,7 +58,7 @@ OMP loads the user-level files plus every project file found from the working di
 - A more-specific file replaces only an advisor with the same slugified name.
 - Multiple Markdown guidance files concatenate, with narrower project guidance later in the prompt.
 
-A project that needs different review priorities should add `.omp/WATCHDOG.md`. To replace the global `Sol` advisor rather than add another stream, use the same `name: Sol` roster entry in its project `WATCHDOG.yml`.
+A project that needs different review priorities should add `.omp/WATCHDOG.md`. To replace the global `Opus` advisor rather than add another stream, use the same `name: Opus` roster entry in its project `WATCHDOG.yml`.
 
 ## Operating checks
 
