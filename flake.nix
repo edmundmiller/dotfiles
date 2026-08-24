@@ -106,20 +106,17 @@
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable Hermes profiles.
     agents-workspace = {
-      url = "github:edmundmiller/agents-workspace/f8ebd6046fb04d60427b2335ce6d921122ccc532";
+      # The NUC's nix-private-github wrapper authenticates private GitHub
+      # archive fetches without requiring a host-level SSH deployment key.
+      url = "github:edmundmiller/agents-workspace/6cd817e004fe67839b788d2b97d15a9806406988";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
 
     hermes-agent = {
-      url = "github:NousResearch/hermes-agent/5b5932886ce6477a0f4a3d25ca465392288d5126";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # Scintillate-only native Buzz UX pilot. Keep the fleet package pinned
-    # independently until the pilot's live DM contract is accepted.
-    hermes-agent-buzz-pilot-source = {
-      url = "github:NousResearch/hermes-agent/v2026.8.19";
+      # Shared source for every Hermes gateway, cron/oneshot executor, and
+      # ACP companion. v2026.8.19 is Hermes v0.20.5.
+      url = "github:NousResearch/hermes-agent/fcbd1076a93841fa88855acce810e342a5b78101";
       flake = false;
     };
 
@@ -514,6 +511,13 @@
               };
             }
           );
+          nucStagedBuzzConfig = self.nixosConfigurations.nuc.extendModules {
+            modules = [
+              {
+                nuc.hermesBuzzNativeRolloutProfiles = lib.mkForce [ "scintillate" ];
+              }
+            ];
+          };
           preCommitShellHook = ''
             if git rev-parse --git-dir >/dev/null 2>&1; then
               repo_root=$(git rev-parse --show-toplevel)
@@ -1402,6 +1406,17 @@
                 buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
                   inherit (pkgs) lib;
                 };
+                discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
+              };
+
+              nuc-buzz-hermes-staged-runtime = import ./hosts/nuc/_tests/buzz-hermes-staged-runtime.nix {
+                nixosConfig = nucStagedBuzzConfig;
+                inherit pkgs;
+                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
               };
 
               nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
@@ -1439,8 +1454,8 @@
                     touch "$out"
                   '';
 
-              nuc-hermes-buzz-pilot = pkgs.runCommand "nuc-hermes-buzz-pilot" { } ''
-                package=${self.nixosConfigurations.nuc.config.services.hermes-agent.profiles.scintillate.package}
+              nuc-hermes-v0205-package = pkgs.runCommand "nuc-hermes-v0205-package" { } ''
+                package=${self.nixosConfigurations.nuc.config.services.hermes-agent.package}
                 "$package/bin/hermes" --version \
                   | grep -F 'Hermes Agent v0.20.5 (2026.8.19)'
                 grep -q _should_reply_in_thread \
@@ -1451,17 +1466,10 @@
               nuc-hermes-cron-failure-summary =
                 pkgs.runCommand "nuc-hermes-cron-failure-summary"
                   {
-                    nativeBuildInputs = [
-                      pkgs.patch
-                      pkgs.python3
-                    ];
+                    nativeBuildInputs = [ pkgs.python3 ];
                   }
                   ''
-                    mkdir hermes-source
-                    cp -R ${inputs.hermes-agent}/cron hermes-source/cron
-                    chmod -R u+w hermes-source
-                    patch -d hermes-source -p1 < ${./overlays/hermes-agent/patches/0004-classify-cron-script-failures.patch}
-                    HERMES_SOURCE="$PWD/hermes-source" \
+                    HERMES_SOURCE=${inputs.hermes-agent} \
                       python3 ${./tests/test_hermes_cron_failure_summary.py}
                     touch "$out"
                   '';

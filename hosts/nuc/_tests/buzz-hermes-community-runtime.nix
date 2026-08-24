@@ -1,350 +1,350 @@
-# Pure Nix eval: each configured NUC Hermes profile must have an isolated
-# Buzz community runtime that preserves its canonical host access boundary.
+# Pure Nix eval: the NUC Hermes fleet must use one shared runtime package and
+# expose each public Buzz identity through exactly one final-only native lane.
 {
   nixosConfig,
   pkgs,
   bettyAgentSpec,
   buzzBindings,
+  discordBindings,
 }:
 let
   cfg = nixosConfig.config;
-  profiles = builtins.attrNames cfg.modules.services.hermes.agents;
-  buzzProfiles = builtins.attrNames buzzBindings.profiles;
-  acpProfiles = builtins.filter (profile: profile != "scintillate") buzzProfiles;
-  services = map (profile: cfg.systemd.services."buzz-hermes-${profile}") acpProfiles;
-  identityFiles =
-    map (
-      service:
-      builtins.elemAt service.serviceConfig.EnvironmentFile (
-        builtins.length service.serviceConfig.EnvironmentFile - 1
-      )
-    ) services
-    ++ [ cfg.age.secrets.buzz-hermes-scintillate-agent-env.path ];
-  identitySourceFiles = map (
-    profile: cfg.age.secrets."buzz-hermes-${profile}-agent-env".file
-  ) buzzProfiles;
-  expectedPathEnvironment = {
-    amosburton.CODEX_HOME = "/home/emiller/.codex";
-    anne = {
-      CODEX_HOME = "/home/emiller/.codex";
-      WIKI_PATH = "/home/emiller/mill-docs/02_Areas/Relationship";
-    };
-    betty = {
-      CODEX_HOME = "/var/lib/hermes-betty/.codex";
-      WIKI_PATH = "/home/emiller/mill-docs/02_Areas/Home";
-    };
-    finn.CODEX_HOME = "/home/emiller/.codex";
-    orchestrator = {
-      CODEX_HOME = "/home/emiller/.codex";
-      TN_VAULT_PATH = "/home/emiller/obsidian-vault";
-      WIKI_PATH = "/home/emiller/obsidian-vault";
-    };
-    scintillate = {
-      CODEX_HOME = "/var/lib/hermes-scintillate/.codex";
-      TN_VAULT_PATH = "/home/emiller/obsidian-vault";
-      WIKI_PATH = "/home/emiller/obsidian-vault/03_Areas/Personal";
-    };
-  };
-  channelId = channel: buzzBindings.channels.${channel}.id;
-  expectedHomes = pkgs.lib.mapAttrs (_profile: profile: channelId profile.home) buzzBindings.profiles;
-  expectedSubscriptions = pkgs.lib.mapAttrs (
-    _profile: profile:
-    pkgs.lib.genAttrs profile.channels (channel: profile.channelSubscriptions.${channel} or "mentions")
-  ) buzzBindings.profiles;
-  moniEnabledProfiles = [
+  inherit (pkgs) lib;
+  profiles = builtins.attrNames cfg.services.hermes-agent.profiles;
+  publicProfiles = builtins.attrNames buzzBindings.profiles;
+  discordProfiles = builtins.attrNames (discordBindings.agents or { });
+  expectedProfiles = [
     "amosburton"
+    "anne"
     "betty"
+    "finn"
+    "orchestrator"
     "scintillate"
   ];
-  scintillateProfile = cfg.services.hermes-agent.profiles.scintillate;
-  scintillateGateway = cfg.systemd.services.hermes-gateway-scintillate;
-  scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
-  scintillatePresence = cfg.systemd.services.buzz-presence-scintillate;
-  scintillateCronHeartbeatExpectedFailure = false;
-  scintillateRetiredTelegramEnvExpectedFailure = false;
-  scintillateSecretsMaterializeScript =
-    cfg.system.activationScripts.hermesScintillateSecretsMaterialize.text;
-  scintillateCronPostStartScripts = pkgs.lib.concatMapStringsSep "\n" (
-    script: if builtins.pathExists script then builtins.readFile script else script
-  ) (scintillateCron.serviceConfig.ExecStartPost or [ ]);
-  scintillateCronHeartbeatConfigured = pkgs.lib.hasInfix "executor.json" scintillateCronPostStartScripts;
-  scintillateBuzz = scintillateProfile.settings.gateway.platforms.buzz or { };
-  scintillateBuzzDisplay = scintillateProfile.settings.display.platforms.buzz or { };
-  scintillateBuzzPackages = builtins.filter (
-    package: pkgs.lib.getName package == "buzz"
-  ) scintillateProfile.extraPackages;
-  scintillatePreStartScripts = pkgs.lib.concatMapStringsSep "\n" (
-    script: if builtins.pathExists script then builtins.readFile script else script
-  ) scintillateGateway.serviceConfig.ExecStartPre;
-  scintillateRetiredTelegramEnvPruned =
-    !pkgs.lib.hasInfix "TELEGRAM_ALLOWED_USERS" scintillateSecretsMaterializeScript
-    && !pkgs.lib.hasInfix "TELEGRAM_HOME_CHANNEL" scintillateSecretsMaterializeScript
-    && pkgs.lib.hasInfix "Refreshing Scintillate gateway container to apply channel environment" scintillatePreStartScripts;
+  expectedPublicProfiles = [
+    "amosburton"
+    "anne"
+    "betty"
+    "finn"
+    "scintillate"
+  ];
+  fleetPackage = cfg.services.hermes-agent.package;
+  channelId = channel: buzzBindings.channels.${channel}.id;
+  gatewayName = profile: "hermes-gateway-${profile}";
+  acpName = profile: "buzz-hermes-${profile}";
+  presenceName = profile: "buzz-presence-${profile}";
+  gatewayOf = profile: cfg.systemd.services.${gatewayName profile};
+  hasAcp = profile: builtins.hasAttr (acpName profile) cfg.systemd.services;
+  hasPresence = profile: builtins.hasAttr (presenceName profile) cfg.systemd.services;
+  gatewayEnabled = profile: (gatewayOf profile).enable or false;
+  nativeProfiles = builtins.filter gatewayEnabled publicProfiles;
+  acpProfiles = builtins.filter hasAcp publicProfiles;
+  identityFiles = map (
+    profile: cfg.age.secrets."buzz-hermes-${profile}-agent-env".path
+  ) publicProfiles;
+  identitySourceFiles = map (
+    profile: cfg.age.secrets."buzz-hermes-${profile}-agent-env".file
+  ) publicProfiles;
 
-  profileAssertions =
+  listValue = value: if builtins.isList value then value else [ value ];
+  scriptRefs = values: lib.concatMapStringsSep "\n" toString values;
+  containsPackage =
+    package: packages: lib.any (candidate: toString candidate == toString package) packages;
+
+  finalOnlyAssertions =
     profile:
     let
-      stateDir = "/var/lib/hermes-${profile}";
-      profileConfig = cfg.services.hermes-agent.profiles.${profile};
-      service = cfg.systemd.services."buzz-hermes-${profile}";
-      subscriptionConfig = builtins.readFile service.environment.BUZZ_ACP_CONFIG;
-      expectedRules = pkgs.lib.concatMapStringsSep "\n" (
-        channel:
+      settings = cfg.services.hermes-agent.profiles.${profile}.settings;
+      inherit (settings) display;
+      surfaceAssertions =
+        surface:
         let
-          mode = expectedSubscriptions.${profile}.${channel};
-          kinds =
-            if buzzBindings.channels.${channel}.type == "forum" then
-              "9, 46010, 40007, 45001, 45003"
-            else
-              "9, 46010, 40007";
+          surfaceDisplay = display.platforms.${surface};
         in
-        ''
-          [[rules]]
-          name = "${profile}-${channel}"
-          channels = ["${channelId channel}"]
-          kinds = [${kinds}]
-          require_mention = ${if mode == "mentions" then "true" else "false"}
-        ''
-      ) buzzProfile.channels;
-      buzzProfile = buzzBindings.profiles.${profile};
-      expectedBindPaths = [ stateDir ] ++ builtins.attrNames profileConfig.hostPathMounts;
-      containerOnlyEnvironmentValues = builtins.filter (
-        value:
-        builtins.isString value
-        && (
-          value == "/data"
-          || pkgs.lib.hasPrefix "/data/" value
-          || value == "/home/hermes"
-          || pkgs.lib.hasPrefix "/home/hermes/" value
-          || value == "/repos"
-          || pkgs.lib.hasPrefix "/repos/" value
-        )
-      ) (builtins.attrValues service.environment);
+        [
+          {
+            test = surfaceDisplay.tool_progress == "off";
+            msg = "${profile}: ${surface} must hide tool progress.";
+          }
+          {
+            test = !surfaceDisplay.interim_assistant_messages && !surfaceDisplay.streaming;
+            msg = "${profile}: ${surface} must emit only the durable final response.";
+          }
+          {
+            test =
+              !surfaceDisplay.show_reasoning
+              && !surfaceDisplay.long_running_notifications
+              && !surfaceDisplay.busy_ack_detail
+              && !surfaceDisplay.busy_steer_ack_enabled;
+            msg = "${profile}: ${surface} must hide reasoning, activity, and acknowledgement chatter.";
+          }
+        ];
     in
     [
       {
-        test = service.environment.HERMES_PROFILE == profile;
-        msg = "${profile}: Buzz runtime must select its canonical Hermes profile.";
-      }
-      {
-        test = service.environment.HERMES_HOME == "${stateDir}/.hermes";
-        msg = "${profile}: Buzz runtime must reuse the profile-owned Hermes home.";
-      }
-      {
-        test = service.environment.BUZZ_RELAY_URL == "wss://millers.communities.buzz.xyz";
-        msg = "${profile}: Buzz runtime must target the Millers community.";
+        test =
+          display.tool_progress == "off"
+          && !display.tool_progress_command
+          && !display.interim_assistant_messages
+          && !display.streaming
+          && !display.show_reasoning
+          && !display.long_running_notifications
+          && !display.busy_ack_detail
+          && !display.busy_steer_ack_enabled
+          && display.busy_input_mode == "steer";
+        msg = "${profile}: global display policy must be final-only with silent steering.";
       }
       {
         test =
-          service.environment.BUZZ_ACP_AGENT_COMMAND == "${cfg.services.hermes-agent.package}/bin/hermes"
-          && service.environment.BUZZ_ACP_AGENT_ARGS == "acp";
-        msg = "${profile}: buzz-acp must launch the packaged Hermes ACP server.";
+          !settings.streaming.enabled
+          && settings.streaming.transport == "off"
+          && !settings.gateway.streaming.enabled
+          && settings.gateway.streaming.transport == "off";
+        msg = "${profile}: CLI and gateway streaming transports must remain disabled.";
+      }
+    ]
+    ++ surfaceAssertions "buzz"
+    ++ surfaceAssertions "discord"
+    ++ lib.optional (builtins.elem profile discordProfiles) {
+      test = settings.gateway.platforms.discord.typing_indicator;
+      msg = "${profile}: Discord must retain transient typing while final-only display filtering is active.";
+    };
+
+  fleetPolicyAssertions =
+    profile:
+    let
+      profileConfig = cfg.services.hermes-agent.profiles.${profile};
+      inherit (profileConfig) settings;
+      guardrails = settings.tool_loop_guardrails;
+    in
+    [
+      {
+        test = toString profileConfig.package == toString fleetPackage;
+        msg = "${profile}: profile package must equal the shared Hermes fleet package.";
+      }
+      {
+        test = settings.approvals.mode == "smart" && settings.approvals.cron_mode == "deny";
+        msg = "${profile}: approvals must be smart interactively and denied in cron mode.";
       }
       {
         test =
-          service.environment.BUZZ_ACP_RESPOND_TO
-          == (if builtins.elem profile moniEnabledProfiles then "allowlist" else "owner-only")
-          &&
-            service.environment.BUZZ_ACP_ALLOWED_RESPOND_TO
-            == (if builtins.elem profile moniEnabledProfiles then "owner-only,allowlist" else "owner-only")
-          && (
-            if builtins.elem profile moniEnabledProfiles then
-              service.environment.BUZZ_ACP_RESPOND_TO_ALLOWLIST == buzzBindings.moniPubkey
-            else
-              !(service.environment ? BUZZ_ACP_RESPOND_TO_ALLOWLIST)
-          )
-          && service.environment.BUZZ_ACP_SUBSCRIBE == "config"
-          && !(service.environment ? BUZZ_ACP_CHANNELS)
-          && subscriptionConfig == expectedRules
-          && service.environment.BUZZ_HOME_CHANNEL == expectedHomes.${profile}
-          && service.environment.BUZZ_ACP_HEARTBEAT_INTERVAL == "0"
-          && service.environment.BUZZ_ACP_LAZY_POOL == "true";
-        msg = "${profile}: Buzz runtime must enforce its subscription mode, channels, home, and author policy.";
-      }
-      {
-        test = service.serviceConfig.WorkingDirectory == "${stateDir}/workspace";
-        msg = "${profile}: ACP sessions must start in the profile workspace.";
-      }
-      {
-        test = service.serviceConfig.BindPaths == pkgs.lib.unique expectedBindPaths;
-        msg = "${profile}: Buzz runtime must inherit exactly the declared profile host mounts.";
+          settings.agent.tool_use_enforcement == "auto"
+          && settings.agent.stall_guards
+          && settings.agent.bot_mode_protocol;
+        msg = "${profile}: native tool enforcement, stall guards, and Bot Mode protocol must be enabled.";
       }
       {
         test =
-          service.serviceConfig.ProtectHome == "tmpfs"
-          && service.serviceConfig.ProtectSystem == "strict"
-          && service.serviceConfig.NoNewPrivileges
-          &&
-            service.serviceConfig.InaccessiblePaths == [
-              "-/run/docker.sock"
-              "-/run/podman/podman.sock"
-            ]
-          && service.serviceConfig.SystemCallArchitectures == "native";
-        msg = "${profile}: Buzz runtime must retain the hardened filesystem boundary.";
+          guardrails.warnings_enabled
+          && guardrails.hard_stop_enabled
+          && !(guardrails ? warn_after)
+          && !(guardrails ? hard_stop_after)
+          && !(guardrails ? loop_caps);
+        msg = "${profile}: loop warnings and hard stop must use Hermes runtime thresholds, not stale profile caps.";
       }
       {
-        test =
-          service.serviceConfig.EnvironmentFile
-          == profileConfig.environmentFiles ++ [ cfg.age.secrets."buzz-hermes-${profile}-agent-env".path ];
-        msg = "${profile}: runtime must load profile credentials plus one dedicated Buzz identity.";
-      }
-      {
-        test =
-          containerOnlyEnvironmentValues == [ ]
-          && pkgs.lib.all (name: service.environment.${name} == expectedPathEnvironment.${profile}.${name}) (
-            builtins.attrNames expectedPathEnvironment.${profile}
-          );
-        msg = "${profile}: host runtime must translate every container-only environment path.";
+        test = profileConfig.configFile == null;
+        msg = "${profile}: replacement config files must not bypass the canonical fleet policy.";
       }
     ];
 
+  nativeAssertions =
+    profile:
+    let
+      binding = buzzBindings.profiles.${profile};
+      profileConfig = cfg.services.hermes-agent.profiles.${profile};
+      gateway = gatewayOf profile;
+      presence = cfg.systemd.services.${presenceName profile};
+      buzz = profileConfig.settings.gateway.platforms.buzz;
+      expectedAllowedUsers = [
+        buzzBindings.identities.edmund.pubkey
+      ]
+      ++ lib.optional (binding.respondTo == "allowlist") buzzBindings.moniPubkey;
+      expectedSubscriptions = builtins.listToAttrs (
+        map (channel: {
+          name = channelId channel;
+          value = binding.channelSubscriptions.${channel} or "mentions";
+        }) binding.channels
+      );
+      cleanupScripts = scriptRefs (listValue (gateway.serviceConfig.ExecStartPre or [ ]));
+      identityFile = cfg.age.secrets."buzz-hermes-${profile}-agent-env".path;
+    in
+    [
+      {
+        test = gateway.enable && !hasAcp profile && hasPresence profile;
+        msg = "${profile}: exactly the native gateway and presence companion must own its Buzz identity.";
+      }
+      {
+        test =
+          buzz.enabled
+          && buzz.extra.relay_url == "https://millers.communities.buzz.xyz"
+          && lib.hasSuffix "/bin/buzz" buzz.extra.cli_path;
+        msg = "${profile}: native Buzz must be enabled against the Millers relay with a packaged CLI.";
+      }
+      {
+        test =
+          buzz.extra.channels == map channelId binding.channels
+          && buzz.extra.home_channel == channelId binding.home
+          && buzz.extra.allowed_users == expectedAllowedUsers
+          && buzz.extra.require_mention
+          && !buzz.extra.allow_all_users
+          && buzz.extra.transport == "auto"
+          && buzz.extra.reply_in_thread
+          && buzz.extra.working_reaction == "⚙️"
+          && buzz.extra.channel_subscriptions == expectedSubscriptions;
+        msg = "${profile}: native Buzz routing, authors, same-thread replies, and transient gear signal must match the deployment binding.";
+      }
+      {
+        test =
+          builtins.elem identityFile profileConfig.environmentFiles
+          && gateway.serviceConfig.EnvironmentFile == profileConfig.environmentFiles;
+        msg = "${profile}: native gateway must load its dedicated encrypted Buzz identity through the profile boundary.";
+      }
+      {
+        test =
+          presence.enable
+          && builtins.elem "${gatewayName profile}.service" presence.after
+          && presence.requires == [ "${gatewayName profile}.service" ]
+          && presence.bindsTo == [ "${gatewayName profile}.service" ]
+          && presence.partOf == [ "${gatewayName profile}.service" ]
+          && presence.environment.BUZZ_ACP_RESPOND_TO == "nobody"
+          && presence.environment.BUZZ_ACP_AGENT_COMMAND == "${pkgs.coreutils}/bin/false"
+          &&
+            presence.environment.BUZZ_ACP_CHANNELS == lib.concatStringsSep "," (map channelId binding.channels)
+          && presence.environment.BUZZ_ACP_NO_BASE_PROMPT == "true"
+          && presence.environment.BUZZ_ACP_NO_MEMORY == "true"
+          && presence.environment.BUZZ_ACP_NO_TYPING == "true"
+          && presence.serviceConfig.EnvironmentFile == [ identityFile ];
+        msg = "${profile}: presence companion must be lifecycle-bound, silent, and unable to launch an agent.";
+      }
+      {
+        test = lib.hasInfix "hermes-${profile}-native-state-cleanup" cleanupScripts;
+        msg = "${profile}: native gateway must purge stale Telegram runtime state before startup.";
+      }
+    ];
+
+  scintillateCron = cfg.systemd.services.hermes-scintillate-cron-tick;
+  scintillateCronPostStart = scriptRefs (scintillateCron.serviceConfig.ExecStartPost or [ ]);
+  scintillateGateway = gatewayOf "scintillate";
+  scintillatePreStart = scriptRefs (listValue (scintillateGateway.serviceConfig.ExecStartPre or [ ]));
+  orchestratorSettings = cfg.services.hermes-agent.profiles.orchestrator.settings;
+
   assertions = [
+    {
+      test = profiles == expectedProfiles && publicProfiles == expectedPublicProfiles;
+      msg = "Fleet coverage must remain six profiles with exactly five public Buzz identities.";
+    }
+    {
+      test =
+        discordProfiles == [
+          "anne"
+          "betty"
+        ];
+      msg = "Anne and Betty must remain the only Discord-bound public Hermes identities.";
+    }
+    {
+      test = nativeProfiles == expectedPublicProfiles && acpProfiles == [ ];
+      msg = "Checked-in final state must migrate all five public identities to native Buzz and remove every ACP response lane.";
+    }
+    {
+      test =
+        lib.all (profile: (gatewayEnabled profile) != (hasAcp profile)) publicProfiles
+        && lib.all (profile: hasPresence profile == gatewayEnabled profile) publicProfiles;
+      msg = "Every public identity must have exactly one response transport and presence only with native Buzz.";
+    }
+    {
+      test =
+        fleetPackage.hermesVersion == "0.20.5"
+        && fleetPackage.hermesRelease == "v2026.8.19"
+        && fleetPackage.smartModelRouting
+        && !(fleetPackage ? pilotHermesVersion)
+        && !lib.hasInfix "buzz-pilot" (toString fleetPackage);
+      msg = "Fleet must converge on the shared patched Hermes v0.20.5 package, not a pilot split.";
+    }
+    {
+      test = cfg.services.hermes-agent.configFile == null;
+      msg = "Top-level replacement config file must not bypass the canonical fleet policy.";
+    }
+    {
+      test = builtins.length (lib.unique identityFiles) == builtins.length publicProfiles;
+      msg = "Every public profile must use a distinct decrypted Buzz identity file.";
+    }
+    {
+      test = builtins.length (lib.unique identitySourceFiles) == builtins.length publicProfiles;
+      msg = "Every public profile must use a distinct encrypted Buzz identity source.";
+    }
+    {
+      test =
+        !(builtins.hasAttr (acpName "orchestrator") cfg.systemd.services)
+        && !(builtins.hasAttr (presenceName "orchestrator") cfg.systemd.services)
+        && !(builtins.hasAttr "buzz-hermes-orchestrator-agent-env" cfg.age.secrets)
+        && !(((orchestratorSettings.gateway or { }).platforms or { }) ? buzz);
+      msg = "Orchestrator must remain internal with no Buzz transport, presence, or identity secret.";
+    }
+    {
+      test =
+        !((orchestratorSettings.display or { }) ? interim_assistant_messages)
+        && !((orchestratorSettings.display or { }) ? streaming)
+        && !((orchestratorSettings.display or { }) ? long_running_notifications)
+        && !(orchestratorSettings ? streaming)
+        && !((orchestratorSettings.gateway or { }) ? streaming);
+      msg = "Visible-bot final-only display policy must not be forced onto hidden Orchestrator.";
+    }
+    {
+      test =
+        cfg.systemd.services.hermes-amosburton-cron-tick.serviceConfig.ExecStart
+        == "${fleetPackage}/bin/hermes cron tick"
+        && scintillateCron.serviceConfig.ExecStart == "${fleetPackage}/bin/hermes cron tick"
+        && containsPackage fleetPackage cfg.systemd.services.hermes-betty-cron-tick.path
+        && containsPackage fleetPackage cfg.systemd.services.hermes-betty-good-morning-dj.path
+        && containsPackage fleetPackage cfg.systemd.services.hermes-scintillate-desktop-dashboard.path;
+      msg = "Gateways, cron executors, one-shot automation, and dashboard must share one Hermes package lane.";
+    }
+    {
+      test =
+        scintillateGateway.enable
+        && !scintillateGateway.restartIfChanged
+        && lib.hasInfix "hermes-scintillate-native-state-cleanup" scintillatePreStart
+        && lib.hasInfix "hermes-scintillate-container-refresh" scintillatePreStart
+        && lib.hasInfix "hermes-scintillate-himalaya-fastmail-setup" scintillatePreStart
+        && lib.hasInfix "hermes-scintillate-gateway-dotenv" scintillatePreStart;
+      msg = "Scintillate must preserve its bounded restart and retired Telegram cleanup behavior on the shared package.";
+    }
+    {
+      test = lib.hasInfix "hermes-scintillate-cron-executor-heartbeat" scintillateCronPostStart;
+      msg = "Scintillate cron executor must continue publishing its gateway-readable heartbeat.";
+    }
+    {
+      test =
+        builtins.hasAttr "canonical-hermes-profiles-materialize" cfg.system.activationScripts
+        && builtins.hasAttr "hermesSharedProfilesAggregate" cfg.system.activationScripts;
+      msg = "Canonical metadata merge and shared profile aggregation activation phases must remain installed.";
+    }
     {
       test =
         bettyAgentSpec.materialization.skillPruneNames == [
           "lifetime-class-booking"
           "plan-moni-workouts"
         ];
-      msg = "Betty materialization must prune retired fitness and Life Time skills from mutable runtime state.";
+      msg = "Betty materialization must keep retired fitness and Life Time skills pruned.";
     }
     {
       test =
-        profiles == [
-          "amosburton"
-          "anne"
-          "betty"
-          "finn"
-          "orchestrator"
-          "scintillate"
-        ];
-      msg = "Buzz community runtime coverage must match the configured NUC Hermes profiles.";
-    }
-    {
-      test =
-        builtins.hasAttr "finn" cfg.services.hermes-agent.profiles
-        &&
-          cfg.services.hermes-agent.profiles.finn.hostPathMounts."/home/emiller/src/personal/finances"
-          == "/repos/finances"
+        cfg.services.hermes-agent.profiles.finn.hostPathMounts."/home/emiller/src/personal/finances"
+        == "/repos/finances"
         && !(builtins.hasAttr "/home/emiller/src/personal/finances" cfg.services.hermes-agent.profiles.amosburton.hostPathMounts);
       msg = "Finn, not Amos Burton, must own the NUC finances checkout.";
     }
     {
       test =
-        buzzProfiles == [
-          "amosburton"
-          "anne"
-          "betty"
-          "finn"
-          "scintillate"
-        ];
-      msg = "Public Buzz runtime coverage must exclude the internal Orchestrator profile.";
-    }
-    {
-      test =
-        !(builtins.hasAttr "buzz-hermes-orchestrator" cfg.systemd.services)
-        && !(builtins.hasAttr "buzz-hermes-orchestrator-agent-env" cfg.age.secrets);
-      msg = "Orchestrator must remain internal with no public listener or decrypted Buzz identity.";
-    }
-    {
-      test = builtins.length (pkgs.lib.unique identityFiles) == builtins.length buzzProfiles;
-      msg = "Every Buzz/Hermes runtime must use a distinct identity secret.";
-    }
-    {
-      test = builtins.length (pkgs.lib.unique identitySourceFiles) == builtins.length buzzProfiles;
-      msg = "Every Buzz/Hermes runtime must have a distinct encrypted identity source.";
-    }
-    {
-      test = !(builtins.hasAttr "buzz-hermes-scintillate" cfg.systemd.services);
-      msg = "Scintillate's legacy buzz-acp unit must be absent during the native gateway pilot.";
-    }
-    {
-      test =
-        scintillatePresence.enable
-        && builtins.elem "hermes-gateway-scintillate.service" scintillatePresence.after
-        && scintillatePresence.bindsTo == [ "hermes-gateway-scintillate.service" ]
-        && scintillatePresence.partOf == [ "hermes-gateway-scintillate.service" ]
-        && scintillatePresence.requires == [ "hermes-gateway-scintillate.service" ]
-        && scintillatePresence.environment.BUZZ_ACP_RESPOND_TO == "nobody"
-        && scintillatePresence.environment.BUZZ_ACP_AGENT_COMMAND == "${pkgs.coreutils}/bin/false"
-        && scintillatePresence.environment.BUZZ_ACP_CHANNELS == expectedHomes.scintillate
-        && scintillatePresence.environment.BUZZ_ACP_LAZY_POOL == "true"
-        && scintillatePresence.environment.BUZZ_ACP_NO_BASE_PROMPT == "true"
-        && scintillatePresence.environment.BUZZ_ACP_NO_MEMORY == "true"
-        && scintillatePresence.environment.BUZZ_ACP_NO_TYPING == "true"
-        &&
-          scintillatePresence.serviceConfig.EnvironmentFile == [
-            cfg.age.secrets.buzz-hermes-scintillate-agent-env.path
-          ]
-        &&
-          scintillatePresence.serviceConfig.ExecStart
-          == "${builtins.head scintillateBuzzPackages}/bin/buzz-acp";
-      msg = "Scintillate's native Buzz gateway must have a lifecycle-bound, non-routing presence publisher.";
-    }
-    {
-      test =
-        scintillateGateway.enable
-        && !scintillateGateway.restartIfChanged
-        && scintillateProfile.stateDir == "/var/lib/hermes-scintillate"
-        && scintillateProfile.package != cfg.services.hermes-agent.package
-        && pkgs.lib.hasInfix "-buzz-pilot" (toString scintillateProfile.package)
-        && scintillateProfile.package.pilotHermesVersion == "0.20.5"
-        && scintillateProfile.package.pilotSmartModelRouting
-        && scintillateCron.serviceConfig.ExecStart == "${scintillateProfile.package}/bin/hermes cron tick";
-      msg = "Scintillate's gateway and cron executor must exclusively use the Hermes 0.20.5 Buzz pilot package with bounded smart routing and no automatic mid-turn restarts.";
-    }
-    {
-      test =
-        if scintillateCronHeartbeatExpectedFailure then
-          !scintillateCronHeartbeatConfigured
-        else
-          scintillateCronHeartbeatConfigured;
-      msg = "Scintillate's host cron executor must publish a heartbeat that the gateway container can read.";
-    }
-    {
-      test =
-        scintillateBuzz.enabled
-        && scintillateBuzz.extra.relay_url == "https://millers.communities.buzz.xyz"
-        && scintillateBuzz.extra.cli_path == "${builtins.head scintillateBuzzPackages}/bin/buzz"
-        && scintillateBuzz.extra.channels == map channelId buzzBindings.profiles.scintillate.channels
-        && scintillateBuzz.extra.home_channel == expectedHomes.scintillate
-        &&
-          scintillateBuzz.extra.allowed_users == [
-            buzzBindings.identities.edmund.pubkey
-            buzzBindings.identities.moni.pubkey
-          ]
-        && scintillateBuzz.extra.require_mention
-        && !scintillateBuzz.extra.allow_all_users
-        && scintillateBuzz.extra.transport == "auto"
-        && scintillateBuzz.extra.reply_in_thread
-        && scintillateBuzz.extra.working_reaction == "⚙️";
-      msg = "Scintillate's native Buzz adapter must preserve routing boundaries while enabling threaded replies and a transient working reaction.";
-    }
-    {
-      test =
-        !(scintillateBuzzDisplay.interim_assistant_messages or true)
-        && !(scintillateBuzzDisplay.streaming or true)
-        && !(scintillateProfile.settings.platforms ? telegram)
-        && !(scintillateProfile.settings.platform_toolsets ? telegram)
-        && !(scintillateProfile.environment ? PYTHONPATH)
-        && builtins.length scintillateBuzzPackages == 1
-        && builtins.elem cfg.age.secrets.buzz-hermes-scintillate-agent-env.path scintillateProfile.environmentFiles
-        && pkgs.lib.hasInfix "grep '^BUZZ_'" scintillatePreStartScripts
-        && pkgs.lib.hasInfix "grep -Ev '^(TELEGRAM_|BUZZ_)'" scintillatePreStartScripts
-        && !pkgs.lib.hasInfix "grep '^TELEGRAM_'" scintillatePreStartScripts
-        && pkgs.lib.hasInfix "reusing materialized Himalaya config" scintillatePreStartScripts
-        && pkgs.lib.hasInfix ''platforms.pop("telegram", None)'' scintillatePreStartScripts;
-      msg = "Scintillate's native Buzz gateway must load only its Buzz surface and purge stale Telegram runtime state.";
-    }
-    {
-      test =
-        if scintillateRetiredTelegramEnvExpectedFailure then
-          !scintillateRetiredTelegramEnvPruned
-        else
-          scintillateRetiredTelegramEnvPruned;
-      msg = "Scintillate must recreate its gateway without retired Telegram routing environment.";
+        buzzBindings.profiles.betty.channelSubscriptions.meal-planning == "all"
+        && (buzzBindings.profiles.betty.channelSubscriptions.mill-docs or "mentions") == "mentions";
+      msg = "Betty must remain ambient in meal-planning and mention-gated in mill-docs.";
     }
   ]
-  ++ builtins.concatMap profileAssertions acpProfiles;
+  ++ builtins.concatMap fleetPolicyAssertions profiles
+  ++ builtins.concatMap finalOnlyAssertions publicProfiles
+  ++ builtins.concatMap nativeAssertions nativeProfiles;
 
   failures = builtins.filter (assertion: !assertion.test) assertions;
 in

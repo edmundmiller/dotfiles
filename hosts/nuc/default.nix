@@ -8,34 +8,9 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  hermesAgentUpstream = inputs.hermes-agent.packages.${hostSystem}.messaging;
-  hermesAgentBuzzPilot = pkgs.llm-agents."hermes-agent-buzz-pilot";
-  hermesPhotonSidecar = pkgs.buildNpmPackage {
-    pname = "hermes-photon-sidecar";
-    version = hermesAgentUpstream.version or "0.17.0";
-    src = "${hermesAgentUpstream}/share/hermes-agent/plugins/platforms/photon/sidecar";
-    npmDepsHash = "sha256-CEUTK8IAN3ZPdpNwH8a4XyyoYGt6xb8SsHUOnxGHzHQ=";
-    dontNpmBuild = true;
-    installPhase = ''
-      mkdir -p $out
-      cp -R . $out/
-    '';
-  };
-  honchoAi = pkgs.python313Packages.buildPythonPackage rec {
-    pname = "honcho-ai";
-    version = "2.1.2";
-    format = "wheel";
-    src = pkgs.fetchurl {
-      url = "https://files.pythonhosted.org/packages/py3/h/honcho-ai/honcho_ai-${version}-py3-none-any.whl";
-      hash = "sha256-oiIg8Bpj9qPB1GJarvChQld7g5gcQty2EXdjGGP7qk8=";
-    };
-    dependencies = with pkgs.python313Packages; [
-      httpx
-      pydantic
-    ];
-    doCheck = false;
-  };
-  rtkHermes = pkgs.llm-agents."hermes-agent".rtkHermes;
+  # The overlay exposes one patched Hermes v0.20.5 derivation. Every gateway,
+  # cron/oneshot executor, and ACP companion must consume this exact path.
+  hermesAgentBase = pkgs.llm-agents."hermes-agent";
   scintillateCronExecutorHeartbeat = pkgs.writeShellScript "hermes-scintillate-cron-executor-heartbeat" ''
     set -eu
 
@@ -52,85 +27,11 @@ let
     ${pkgs.coreutils}/bin/mv "$tmp" "$marker"
     trap - EXIT
   '';
-  hermesCronPython =
-    pkgs.runCommand "hermes-cron-executor-health"
-      {
-        nativeBuildInputs = [ pkgs.patch ];
-      }
-      ''
-        site_packages="$out/${pkgs.python312.sitePackages}"
-        mkdir -p "$site_packages"
-        cp -RL --no-preserve=mode,ownership,timestamps \
-          ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/hermes_cli \
-          "$site_packages/hermes_cli"
-        cp -RL --no-preserve=mode,ownership,timestamps \
-          ${hermesAgentUpstream.hermesVenv}/${pkgs.python312.sitePackages}/cron \
-          "$site_packages/cron"
-        chmod -R u+w "$site_packages/hermes_cli" "$site_packages/cron"
-        patch -d "$site_packages" -p1 < ${../../overlays/hermes-agent/patches/0003-report-external-cron-executor.patch}
-        patch -d "$site_packages" -p1 < ${../../overlays/hermes-agent/patches/0004-classify-cron-script-failures.patch}
-      '';
-  hermesAgentBase = pkgs.symlinkJoin {
-    name = "${hermesAgentUpstream.name}-honcho";
-    paths = [ hermesAgentUpstream ];
-    nativeBuildInputs = [
-      pkgs.makeWrapper
-      pkgs.python3
-    ];
-    postBuild = ''
-      plugins_root="$out/share/hermes-agent/plugins"
-      rm "$plugins_root"
-      cp -RL --no-preserve=mode,ownership,timestamps \
-        ${hermesAgentUpstream}/share/hermes-agent/plugins \
-        "$plugins_root"
-      chmod -R u+w "$plugins_root"
-
-      photon_plugin="$plugins_root/platforms/photon"
-      photon_sidecar="$photon_plugin/sidecar"
-      rm -rf "$photon_plugin"
-      mkdir -p "$(dirname "$photon_plugin")"
-      cp -R ${hermesAgentUpstream}/share/hermes-agent/plugins/platforms/photon "$photon_plugin"
-      chmod -R u+w "$photon_plugin"
-      rm -rf "$photon_sidecar"
-      cp -R ${hermesPhotonSidecar} "$photon_sidecar"
-      test -f "$plugins_root/platforms/buzz/plugin.yaml"
-      python - <<PY
-      from pathlib import Path
-
-      path = Path("$photon_plugin") / "cli.py"
-      text = path.read_text()
-      needle = "    # spectrum-ts is pinned exactly in package.json/package-lock.json because\\n"
-      replacement = (
-          "    if (_SIDECAR_DIR / \"node_modules\").exists():\\n"
-          "        print(\"  sidecar deps already installed\")\\n"
-          "        return 0\\n"
-          + needle
-      )
-      if needle not in text:
-          raise SystemExit("Photon sidecar install marker not found")
-      path.write_text(text.replace(needle, replacement, 1))
-      PY
-
-      for exe in hermes hermes-agent hermes-acp; do
-        rm -f "$out/bin/$exe"
-        cp ${hermesAgentUpstream}/bin/$exe "$out/bin/$exe"
-        chmod u+w "$out/bin/$exe"
-        wrapProgram "$out/bin/$exe" \
-          --prefix PYTHONPATH : "${hermesCronPython}/${pkgs.python312.sitePackages}:${honchoAi}/${pkgs.python313.sitePackages}:${rtkHermes}/${pkgs.python313.sitePackages}"
-        substituteInPlace "$out/bin/.$exe-wrapped" \
-          --replace-fail "${hermesAgentUpstream}/share/hermes-agent/plugins" "$out/share/hermes-agent/plugins"
-      done
-    '';
-    inherit (hermesAgentUpstream) meta;
-    passthru = hermesAgentUpstream.passthru or { };
-  };
-  amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;
   amosburtonAgentSpec = import (inputs.agents-workspace + /agents/amosburton) { inherit lib; };
-  bettyHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.betty-hermes;
   bettyHermesCronExecutor = pkgs.writeShellScript "hermes-betty-cron-executor" ''
     set -eu
     export OP_SERVICE_ACCOUNT_TOKEN="$(${pkgs.coreutils}/bin/cat /etc/opnix-token)"
-    exec ${bettyHermesLauncher}/bin/betty-hermes cron tick
+    exec ${hermesAgentBase}/bin/hermes cron tick
   '';
   bettyDjPython = pkgs.python3.withPackages (ps: [ ps.websockets ]);
   bettyGoodMorningDjHelperText = builtins.readFile bettyAgentSpec.automations.goodMorningDj.helper;
@@ -146,7 +47,7 @@ let
     ${bettyDjPython}/bin/python ${bettyGoodMorningDjHelper} prepare
 
     set +e
-    ${bettyHermesLauncher}/bin/betty-hermes --oneshot ${lib.escapeShellArg bettyGoodMorningDjPrompt} >"$receipt_path" 2>/dev/null
+    ${hermesAgentBase}/bin/hermes --oneshot ${lib.escapeShellArg bettyGoodMorningDjPrompt} >"$receipt_path" 2>/dev/null
     hermes_status=$?
     set -e
 
@@ -183,6 +84,18 @@ let
   buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
     inherit lib;
   };
+  buzzProfiles = builtins.attrNames buzzBindings.profiles;
+  buzzBindingNativeProfiles = lib.filter (
+    profile: (buzzBindings.profiles.${profile}.transport or null) == "native"
+  ) buzzProfiles;
+  # Staged rollout selector. The option default is the authoritative final
+  # state; a rollout may temporarily reduce it so unselected profiles retain
+  # exactly one locked-down ACP response lane.
+  buzzNativeRolloutProfiles = config.nuc.hermesBuzzNativeRolloutProfiles;
+  buzzNativeProfiles = lib.filter (
+    profile: builtins.elem profile buzzNativeRolloutProfiles
+  ) buzzBindingNativeProfiles;
+  buzzAcpProfiles = lib.filter (profile: !(builtins.elem profile buzzNativeProfiles)) buzzProfiles;
   anneDiscordBindings = (discordBindings.agents or { }).anne or { };
   bettyDiscordBindings = (discordBindings.agents or { }).betty or { };
   hermesScintillateApiServerPort = 8642;
@@ -206,7 +119,6 @@ let
       {
         terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
       };
-  hermesAgentSpecs = import (inputs.agents-workspace + /agents/registry.nix) { inherit lib; };
   hermesSharedProfileNames = [
     "amosburton"
     "anne"
@@ -215,16 +127,6 @@ let
     "orchestrator"
     "scintillate"
   ];
-  hermesProfileMetadataFiles = lib.genAttrs hermesSharedProfileNames (
-    profile:
-    (pkgs.formats.yaml { }).generate "hermes-profile-${profile}.yaml" {
-      name = profile;
-      visible = true;
-      aggregated_into = "/var/lib/hermes/.hermes/profiles/${profile}";
-      description = hermesAgentSpecs.${profile}.purpose;
-      description_auto = false;
-    }
-  );
   hermesGatewayUnits = map (name: "hermes-gateway-${name}.service") hermesSharedProfileNames;
   hermesRuntimeSmoke = inputs.agents-workspace.packages.${hostSystem}.hermes-runtime-smoke;
   scintillateWhisperModel = pkgs.fetchurl {
@@ -276,7 +178,7 @@ let
     ps.requests
     ps.websockets
   ]);
-  hermesPythonSitePackages = "${hermesAgentBase}/${pkgs.python313.sitePackages}";
+  hermesPythonSitePackages = "${hermesAgentBase}/${pkgs.python3.sitePackages}";
   tailnet = "cinnamon-rooster.ts.net";
   millDocsGitPullHealthcheckPingUrl = "https://hc-ping.com/1a661f7e-cf0c-4a67-9343-64635347c50d";
   # Telegram routing topology for this host:
@@ -490,6 +392,45 @@ let
   buzzMillDocsOwnerPubkey = buzzBindings.identities.edmund.pubkey;
   buzzChannelId = channel: buzzBindings.channels.${channel}.id;
   buzzChannelIds = channels: lib.concatStringsSep "," (map buzzChannelId channels);
+  mkBuzzNativeSettings =
+    profile:
+    let
+      binding = buzzBindings.profiles.${profile};
+      modeFor = channel: binding.channelSubscriptions.${channel} or "mentions";
+      allowedUsers = [
+        buzzBindings.identities.edmund.pubkey
+      ]
+      ++ lib.optional (binding.respondTo == "allowlist") buzzBindings.moniPubkey;
+    in
+    {
+      gateway.platforms = {
+        buzz = {
+          enabled = true;
+          extra = {
+            relay_url = "https://millers.communities.buzz.xyz";
+            cli_path = "${pkgs.my.buzz}/bin/buzz";
+            channels = map buzzChannelId binding.channels;
+            home_channel = buzzChannelId binding.home;
+            allowed_users = allowedUsers;
+            require_mention = true;
+            allow_all_users = false;
+            transport = "auto";
+            reply_in_thread = true;
+            working_reaction = "⚙️";
+            channel_subscriptions = builtins.listToAttrs (
+              map (channel: {
+                name = buzzChannelId channel;
+                value = modeFor channel;
+              }) binding.channels
+            );
+          };
+        };
+      }
+      // lib.optionalAttrs (builtins.hasAttr profile (discordBindings.agents or { })) {
+        # Discord's typing loop is the only transient signal on that surface.
+        discord.typing_indicator = true;
+      };
+    };
   factoryProductPassStateDir = "/var/lib/factory-product-pass-edmund";
   factoryProductPassSettings = pkgs.writeText "factory-product-pass-settings.json" (
     builtins.toJSON {
@@ -531,7 +472,7 @@ let
       BUZZ_HOME_CHANNEL = buzzChannelId binding.home;
       BUZZ_CLI_PATH = "${pkgs.my.buzz}/bin/buzz";
     };
-  mkBuzzHermesService =
+  mkBuzzAcpService =
     profile:
     let
       stateDir = "/var/lib/hermes-${profile}";
@@ -616,6 +557,10 @@ let
           BUZZ_ACP_AGENT_ARGS = "acp";
           BUZZ_ACP_AGENTS = "1";
           BUZZ_ACP_LAZY_POOL = "true";
+          # buzz-acp auto-selects allow_once for permission requests. During
+          # the short staged fallback, force the agent into a non-prompting
+          # deny mode so it cannot bypass the fleet's native smart approvals.
+          BUZZ_ACP_PERMISSION_MODE = "dont-ask";
           BUZZ_ACP_SUBSCRIBE = "config";
           BUZZ_ACP_CONFIG = buzzSubscriptionConfig;
           BUZZ_HOME_CHANNEL = buzzChannelId buzzProfile.home;
@@ -632,9 +577,7 @@ let
         User = "emiller";
         Group = "users";
         WorkingDirectory = workspaceDir;
-        EnvironmentFile = profileConfig.environmentFiles ++ [
-          config.age.secrets."buzz-hermes-${profile}-agent-env".path
-        ];
+        EnvironmentFile = profileConfig.environmentFiles;
         ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
         Restart = "always";
         RestartSec = "10s";
@@ -667,6 +610,92 @@ let
         SystemCallArchitectures = "native";
       };
     };
+  mkBuzzPresenceService =
+    profile:
+    let
+      binding = buzzBindings.profiles.${profile};
+      gatewayUnit = "hermes-gateway-${profile}.service";
+    in
+    {
+      description = "Buzz presence publisher for ${profile}";
+      wantedBy = [ "multi-user.target" ];
+      after = [
+        gatewayUnit
+        "network-online.target"
+      ];
+      wants = [ "network-online.target" ];
+      requires = [ gatewayUnit ];
+      bindsTo = [ gatewayUnit ];
+      partOf = [ gatewayUnit ];
+      environment = {
+        HOME = "/var/empty";
+        NO_BROWSER = "1";
+        BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
+        BUZZ_ACP_AGENT_OWNER = buzzMillDocsOwnerPubkey;
+        BUZZ_ACP_AGENT_COMMAND = "${pkgs.coreutils}/bin/false";
+        BUZZ_ACP_AGENTS = "1";
+        BUZZ_ACP_CHANNELS = buzzChannelIds binding.channels;
+        BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
+        BUZZ_ACP_LAZY_POOL = "true";
+        BUZZ_ACP_NO_BASE_PROMPT = "true";
+        BUZZ_ACP_NO_MEMORY = "true";
+        BUZZ_ACP_NO_TYPING = "true";
+        BUZZ_ACP_RESPOND_TO = "nobody";
+        BUZZ_ACP_TURN_LIVENESS_SECS = "0";
+      };
+      serviceConfig = {
+        Type = "simple";
+        User = "emiller";
+        Group = "users";
+        EnvironmentFile = [ config.age.secrets."buzz-hermes-${profile}-agent-env".path ];
+        ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
+        Restart = "always";
+        RestartSec = "10s";
+        UMask = "0077";
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        CapabilityBoundingSet = "";
+        LockPersonality = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+      };
+    };
+  mkNativeGatewayStateCleanup =
+    profile:
+    pkgs.writeShellScript "hermes-${profile}-native-state-cleanup" ''
+      set -eu
+      gateway_state=/var/lib/hermes-${profile}/.hermes/gateway_state.json
+      if [ ! -f "$gateway_state" ]; then
+        exit 0
+      fi
+
+      ${pkgs.python3}/bin/python3 - "$gateway_state" <<'PY'
+      import json
+      import pathlib
+      import sys
+
+      path = pathlib.Path(sys.argv[1])
+      state = json.loads(path.read_text(encoding="utf-8"))
+      platforms = state.get("platforms")
+      if isinstance(platforms, dict) and platforms.pop("telegram", None) is not None:
+          path.write_text(json.dumps(state, separators=(",", ":")) + "\n", encoding="utf-8")
+      PY
+    '';
   legacyMillDocsPath = "/home/emiller/sync/mill-docs";
   millDocsDeviceName = "nuc-mill-docs";
   obsidianExcludedFolders = ".git,.beads,.claude,.github,.scripts,.opencode,.pi,.qmd,.tn,.config,.agents,.goose,.hooks,.pytest_cache,node_modules,TaskNotes,OLD_VAULT,.mdbase,.amp,scripts,.trash,.obsidian/plugins-disabled-20260505-160148,.obsidian/plugins-disabled-20260505-162506,.obsidian/plugins-disabled-all-20260505-164607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082607,.obsidian/quarantine-resynced-corrupt-title-files-20260506-082626,06_Attachments/YouTube,src";
@@ -893,6 +922,27 @@ in
       assertion = hermesEmailPasswordOwners == [ "scintillate" ];
       message = "Scintillate must retain its encrypted AgentMail credential after Telegram removal.";
     }
+    {
+      assertion =
+        let
+          sorted = values: lib.sort builtins.lessThan values;
+          selectorUnique = lib.unique buzzNativeRolloutProfiles;
+          expectedPublic = sorted buzzProfiles;
+          selectedNative = sorted buzzNativeProfiles;
+          selectedAcp = sorted buzzAcpProfiles;
+        in
+        builtins.length selectorUnique == builtins.length buzzNativeRolloutProfiles
+        && lib.all (profile: builtins.elem profile buzzProfiles) buzzNativeRolloutProfiles
+        && !(builtins.elem "orchestrator" buzzNativeRolloutProfiles)
+        && sorted buzzBindingNativeProfiles == expectedPublic
+        && builtins.length (lib.intersectLists selectedNative selectedAcp) == 0
+        && sorted (selectedNative ++ selectedAcp) == expectedPublic;
+      message = ''
+        Buzz rollout selector must be a unique subset of native public bindings.
+        Native and staged ACP lanes must be disjoint and cover every public
+        binding exactly once; Orchestrator cannot be selected.
+      '';
+    }
   ];
 
   nixpkgs.overlays = [
@@ -984,9 +1034,6 @@ in
             ln -s "$profile_home" "$aggregate_link"
             chown -h emiller:users "$aggregate_link"
           fi
-          install -o emiller -g users -m 0640 \
-            ${lib.escapeShellArg hermesProfileMetadataFiles.${profile}} \
-            "$profile_home/profile.yaml"
         '') hermesSharedProfileNames}
 
         if ls "$SHARED_HOME"/kanban.db* >/dev/null 2>&1; then
@@ -1420,12 +1467,65 @@ in
     my.tnote # packaged TaskNotes CLI; no boot-time mutable checkout/bun install
   ];
   imports = [
+    {
+      options.nuc.hermesBuzzNativeRolloutProfiles = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+          "amosburton"
+          "anne"
+          "betty"
+          "finn"
+          "scintillate"
+        ];
+        description = ''
+          Public Hermes profiles migrated to native Buzz. Temporarily reduce
+          this list only for the ordered rollout; unselected profiles receive
+          one permission-denying ACP fallback and never a duplicate native
+          gateway.
+        '';
+      };
+    }
     ../_server.nix
     ../_home.nix
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
     ./ups.nix
+    {
+      systemd.services = lib.mkMerge [
+        # Keep the native gateway's provider and Buzz credentials explicit at
+        # the unit boundary.  The profile option alone is not sufficient for
+        # the upstream service definition to load EnvironmentFile entries.
+        (builtins.listToAttrs (
+          map (profile: {
+            name = "hermes-gateway-${profile}";
+            value = {
+              enable = builtins.elem profile buzzNativeProfiles;
+              serviceConfig = {
+                EnvironmentFile = config.services.hermes-agent.profiles.${profile}.environmentFiles;
+                ExecStartPre = lib.mkBefore [ (mkNativeGatewayStateCleanup profile) ];
+              };
+            };
+          }) buzzProfiles
+        ))
+        (builtins.listToAttrs (
+          map (profile: {
+            name = "buzz-presence-${profile}";
+            value = mkBuzzPresenceService profile;
+          }) buzzNativeProfiles
+        ))
+        # Staged fallback only. With the checked-in rollout selector this
+        # attrset is empty; a temporary rollout-option override creates exactly
+        # one locked-down ACP unit for each not-yet-migrated identity and no
+        # native gateway duplicate.
+        (builtins.listToAttrs (
+          map (profile: {
+            name = "buzz-hermes-${profile}";
+            value = mkBuzzAcpService profile;
+          }) buzzAcpProfiles
+        ))
+      ];
+    }
   ];
 
   services.hermes-agent = {
@@ -1449,7 +1549,10 @@ in
           "/home/emiller/mill-docs" = "/repos/mill-docs";
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
         };
-        environmentFiles = [ "/run/hermes-anne-env/secrets.env" ];
+        environmentFiles = [
+          "/run/hermes-anne-env/secrets.env"
+          config.age.secrets.buzz-hermes-anne-agent-env.path
+        ];
       };
       betty = {
         # Betty is Codex-backed, but must own her mutable OAuth state. Do not
@@ -1467,7 +1570,10 @@ in
           "/home/emiller/obsidian-vault" = "/repos/obsidian-vault";
           "${tnoteBaseRepo}" = "/repos/tnote";
         };
-        environmentFiles = [ "/run/hermes-betty-env/secrets.env" ];
+        environmentFiles = [
+          "/run/hermes-betty-env/secrets.env"
+          config.age.secrets.buzz-hermes-betty-agent-env.path
+        ];
       };
       finn = {
         authFile = "/home/emiller/.codex/auth.json";
@@ -1480,12 +1586,12 @@ in
           "/home/emiller/.codex" = "/home/emiller/.codex";
           "/home/emiller/src/personal/finances" = "/repos/finances";
         };
+        environmentFiles = [ config.age.secrets.buzz-hermes-finn-agent-env.path ];
       };
       scintillate = {
         # Codex OAuth refresh tokens are single-use. Do not seed Hermes from
         # ~/.codex/auth.json or share Codex CLI credentials; Scintillate owns
         # its Codex login in /var/lib/hermes-scintillate/.hermes/auth.json.
-        package = hermesAgentBuzzPilot;
         extraPackages = with pkgs; [
           bun
           nix
@@ -1498,28 +1604,6 @@ in
           whisper-cpp
           rtk
         ];
-        settings = {
-          stt.provider = "local_command";
-          terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
-          gateway.platforms.buzz = {
-            enabled = true;
-            extra = {
-              relay_url = "https://millers.communities.buzz.xyz";
-              cli_path = "${pkgs.my.buzz}/bin/buzz";
-              channels = map buzzChannelId buzzBindings.profiles.scintillate.channels;
-              home_channel = buzzChannelId buzzBindings.profiles.scintillate.home;
-              allowed_users = [
-                buzzBindings.identities.edmund.pubkey
-                buzzBindings.identities.moni.pubkey
-              ];
-              require_mention = true;
-              allow_all_users = false;
-              transport = "auto";
-              reply_in_thread = true;
-              working_reaction = "⚙️";
-            };
-          };
-        };
         environment = {
           HERMES_KANBAN_HOME = hermesSharedHome;
           HERMES_LOCAL_STT_COMMAND = "${pkgs.whisper-cpp}/bin/whisper-cli -m ${scintillateWhisperModel} -f {input_path} --language {language} --output-txt --output-file {output_dir}/transcript --no-timestamps --no-prints";
@@ -1535,7 +1619,6 @@ in
       };
       amosburton = {
         authFile = "/home/emiller/.codex/auth.json";
-        settings.terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
           HERMES_KANBAN_HOME = hermesSharedHome;
@@ -1548,7 +1631,10 @@ in
           "/home/emiller/src/personal/agents-workspace" = "/repos/agents-workspace";
           "/home/emiller/src/personal/tailnet" = "/repos/tailnet";
         };
-        environmentFiles = [ "/run/hermes-amosburton-env/secrets.env" ];
+        environmentFiles = [
+          "/run/hermes-amosburton-env/secrets.env"
+          config.age.secrets.buzz-hermes-amosburton-agent-env.path
+        ];
       };
       orchestrator = {
         stateDir = "/var/lib/hermes-orchestrator";
@@ -1610,8 +1696,6 @@ in
       "${pkgs.coreutils}/bin/test -f /var/lib/hermes-anne/.codex/auth.json"
     ];
   };
-  systemd.services.hermes-gateway-anne.enable = false;
-
   systemd.services.hermes-gateway-betty.serviceConfig.ExecStartPre = lib.mkBefore [
     (pkgs.writeShellScript "hermes-betty-repo-compat-links" ''
       set -eu
@@ -1622,10 +1706,7 @@ in
       chown -h emiller:users /var/lib/hermes-betty/home/repos/mill-docs /var/lib/hermes-betty/home/repos/obsidian-vault /var/lib/hermes-betty/home/repos/tnote
     '')
   ];
-  systemd.services.hermes-gateway-betty.enable = false;
-
   systemd.services.hermes-gateway-finn = {
-    enable = false;
     serviceConfig.ExecStartPre = lib.mkBefore [
       (pkgs.writeShellScript "hermes-finn-repo-compat-links" ''
         set -eu
@@ -1647,10 +1728,7 @@ in
       chown -h emiller:users /var/lib/hermes-amosburton/home/repos/*
     '')
   ];
-  systemd.services.hermes-gateway-amosburton.enable = false;
-
   systemd.services.hermes-gateway-scintillate = {
-    enable = true;
     # Scintillate is an interactive messaging gateway.  A routine NixOS
     # auto-upgrade/switch should not SIGTERM it mid-turn and send
     # "Gateway shutting down -- Your current task will be interrupted".
@@ -1670,102 +1748,29 @@ in
       (lib.mkAfter [
         himalayaFastmailSetupScript
         (pkgs.writeShellScript "hermes-scintillate-gateway-dotenv" ''
-            set -eu
-            env_file=/var/lib/hermes-scintillate/.hermes/.env
-            buzz_secrets_file=${lib.escapeShellArg config.age.secrets.buzz-hermes-scintillate-agent-env.path}
-            tmp_file="$env_file.tmp.$$"
+          set -eu
+          env_file=/var/lib/hermes-scintillate/.hermes/.env
+          buzz_secrets_file=${lib.escapeShellArg config.age.secrets.buzz-hermes-scintillate-agent-env.path}
+          tmp_file="$env_file.tmp.$$"
 
-            install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
-            touch "$env_file"
-            chown emiller:users "$env_file"
-            chmod 0600 "$env_file"
+          install -d -o emiller -g users -m 0750 "$(dirname "$env_file")"
+          touch "$env_file"
+          chown emiller:users "$env_file"
+          chmod 0600 "$env_file"
 
-            if ! grep -q '^BUZZ_PRIVATE_KEY=' "$buzz_secrets_file"; then
-              echo "Scintillate Buzz identity secret is missing BUZZ_PRIVATE_KEY" >&2
-              exit 1
-            fi
+          if ! grep -q '^BUZZ_PRIVATE_KEY=' "$buzz_secrets_file"; then
+            echo "Scintillate Buzz identity secret is missing BUZZ_PRIVATE_KEY" >&2
+            exit 1
+          fi
 
-            grep -Ev '^(TELEGRAM_|BUZZ_)' "$env_file" > "$tmp_file"
-            grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
-            install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
-            rm -f "$tmp_file"
+          grep -Ev '^(TELEGRAM_|BUZZ_)' "$env_file" > "$tmp_file"
+          grep '^BUZZ_' "$buzz_secrets_file" >> "$tmp_file"
+          install -o emiller -g users -m 0600 "$tmp_file" "$env_file"
+          rm -f "$tmp_file"
 
-            gateway_state=/var/lib/hermes-scintillate/.hermes/gateway_state.json
-            if [ -f "$gateway_state" ]; then
-              ${pkgs.python3}/bin/python3 - "$gateway_state" <<'PY'
-          import json
-          import pathlib
-          import sys
-
-          path = pathlib.Path(sys.argv[1])
-          state = json.loads(path.read_text(encoding="utf-8"))
-          platforms = state.get("platforms")
-          if isinstance(platforms, dict) and platforms.pop("telegram", None) is not None:
-              path.write_text(json.dumps(state, separators=(",", ":")), encoding="utf-8")
-          PY
-            fi
         '')
       ])
     ];
-  };
-
-  systemd.services.buzz-presence-scintillate = {
-    description = "Buzz presence publisher for Scintillate";
-    wantedBy = [ "multi-user.target" ];
-    after = [
-      "hermes-gateway-scintillate.service"
-      "network-online.target"
-    ];
-    wants = [ "network-online.target" ];
-    requires = [ "hermes-gateway-scintillate.service" ];
-    bindsTo = [ "hermes-gateway-scintillate.service" ];
-    partOf = [ "hermes-gateway-scintillate.service" ];
-    environment = {
-      HOME = "/var/empty";
-      NO_BROWSER = "1";
-      BUZZ_RELAY_URL = "wss://millers.communities.buzz.xyz";
-      BUZZ_ACP_AGENT_COMMAND = "${pkgs.coreutils}/bin/false";
-      BUZZ_ACP_AGENTS = "1";
-      BUZZ_ACP_CHANNELS = buzzChannelId buzzBindings.profiles.scintillate.home;
-      BUZZ_ACP_HEARTBEAT_INTERVAL = "0";
-      BUZZ_ACP_LAZY_POOL = "true";
-      BUZZ_ACP_NO_BASE_PROMPT = "true";
-      BUZZ_ACP_NO_MEMORY = "true";
-      BUZZ_ACP_NO_TYPING = "true";
-      BUZZ_ACP_RESPOND_TO = "nobody";
-      BUZZ_ACP_TURN_LIVENESS_SECS = "0";
-    };
-    serviceConfig = {
-      Type = "simple";
-      User = "emiller";
-      Group = "users";
-      EnvironmentFile = [ config.age.secrets.buzz-hermes-scintillate-agent-env.path ];
-      ExecStart = "${pkgs.my.buzz}/bin/buzz-acp";
-      Restart = "always";
-      RestartSec = "10s";
-      UMask = "0077";
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      PrivateDevices = true;
-      CapabilityBoundingSet = "";
-      LockPersonality = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      RestrictAddressFamilies = [
-        "AF_UNIX"
-        "AF_INET"
-        "AF_INET6"
-      ];
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
-    };
   };
 
   # Music Assistant player protocols allocate dynamic ports and require an
@@ -1933,7 +1938,6 @@ in
       "network-online.target"
     ];
     path = [
-      amosburtonHermesLauncher
       hermesAgentBase
       pkgs.bashInteractive
       pkgs.coreutils
@@ -1963,7 +1967,7 @@ in
         "MESSAGING_CWD=/var/lib/hermes-amosburton/workspace"
         "CODEX_HOME=/home/emiller/.codex"
       ];
-      ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";
+      ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
@@ -1995,7 +1999,6 @@ in
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     path = [
-      bettyHermesLauncher
       bettyBookPlayer
       hermesAgentBase
       inputs.agents-workspace.packages.${hostSystem}.gws
@@ -2047,7 +2050,6 @@ in
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     path = [
-      bettyHermesLauncher
       hermesAgentBase
       pkgs.bashInteractive
       pkgs.coreutils
@@ -2123,7 +2125,7 @@ in
       "opnix-secrets.service"
     ];
     path = [
-      hermesAgentBuzzPilot
+      hermesAgentBase
       pkgs.bashInteractive
       pkgs.coreutils
       pkgs.findutils
@@ -2156,7 +2158,7 @@ in
         "/run/hermes-scintillate-env/secrets.env"
         config.age.secrets.buzz-hermes-scintillate-agent-env.path
       ];
-      ExecStart = "${hermesAgentBuzzPilot}/bin/hermes cron tick";
+      ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
       ExecStartPost = [ scintillateCronExecutorHeartbeat ];
       NoNewPrivileges = true;
       PrivateTmp = true;
@@ -2270,6 +2272,10 @@ in
         homeAssistantUrl = "http://127.0.0.1:8123";
         agents = {
           scintillate = {
+            settings = (mkBuzzNativeSettings "scintillate") // {
+              stt.provider = "local_command";
+              terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
+            };
             providers = {
               obsidianVault.hostPath = "/home/emiller/obsidian-vault";
               tnote = {
@@ -2281,11 +2287,14 @@ in
           };
 
           betty = {
+            settings = mkBuzzNativeSettings "betty";
             workspaceLinks."repos/mill-docs" = "/home/emiller/mill-docs";
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
           };
-          anne = { };
+          anne = {
+            settings = mkBuzzNativeSettings "anne";
+          };
           orchestrator = {
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
@@ -2298,8 +2307,14 @@ in
             };
           };
 
-          finn.workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
+          finn = {
+            settings = mkBuzzNativeSettings "finn";
+            workspaceLinks."repos/finances" = "/home/emiller/src/personal/finances";
+          };
           amosburton = {
+            settings = (mkBuzzNativeSettings "amosburton") // {
+              terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
+            };
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";
             workspaceLinks."repos/dotfiles" = "/home/emiller/.config/dotfiles";
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
@@ -2486,10 +2501,6 @@ in
     mode = "0400";
   };
 
-  systemd.services.buzz-hermes-amosburton = mkBuzzHermesService "amosburton";
-  systemd.services.buzz-hermes-anne = mkBuzzHermesService "anne";
-  systemd.services.buzz-hermes-betty = mkBuzzHermesService "betty";
-  systemd.services.buzz-hermes-finn = mkBuzzHermesService "finn";
   systemd.services.obsidian-sync-mill-docs = {
     description = "Obsidian Headless Sync (mill-docs)";
     after = [

@@ -21,7 +21,10 @@ def _load_failure_summarizer(source: Path):
         if isinstance(node, ast.FunctionDef)
         and node.name == "_summarize_cron_failure_for_delivery"
     )
-    namespace = {"re": re}
+    namespace = {
+        "re": re,
+        "_fallback_chain_phrase": lambda: "Fallback chain was exhausted or unavailable.",
+    }
     exec(compile(ast.Module(body=[function], type_ignores=[]), scheduler_path, "exec"), namespace)
     return namespace["_summarize_cron_failure_for_delivery"]
 

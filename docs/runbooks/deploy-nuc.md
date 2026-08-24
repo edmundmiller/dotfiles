@@ -166,62 +166,121 @@ Recovery:
 
 ## Buzz community runtimes
 
-`hosts/nuc/default.nix` generates one `buzz-hermes-<profile>.service` for each
-public profile in the canonical Buzz deployment binding. Each service runs
-`buzz-acp -> hermes acp` with the profile's materialized home, provider
-environment, and declared repository mounts. Its dedicated identity and owner
-attestation live in
-`hosts/nuc/secrets/buzz-hermes-<profile>-agent-env.age`.
-Subscriptions and home channels come from the canonical
-`agents-workspace/deployments/nuc/buzz-bindings.nix` deployment binding.
-Anne and Betty watch their project forums, Finn watches `finances`, and Amos
-watches only `agent-reports`. Orchestrator remains an internal native Hermes
-gateway and has no public Buzz listener. Scintillate's native gateway watches
-`general` and `personal-reports` with mention-gated intake.
+The checked-in final state runs Scintillate, Finn, Amos Burton, Anne, and Betty
+through `hermes-gateway-<profile>.service` with Hermes' native Buzz adapter.
+Each also has a lifecycle-bound `buzz-presence-<profile>.service`. The presence
+companion responds to nobody, has typing disabled, and launches `/bin/false`
+instead of an agent. No `buzz-hermes-<profile>.service` ACP response lane may
+remain active. Orchestrator stays internal with no Buzz identity, listener, or
+presence companion.
 
-Active cron executors use Hermes' native Buzz adapter for outbound delivery.
-Amos Burton uses `agent-reports`; Scintillate uses `personal-reports`. Betty
-keeps `mill-docs` as home while her meal-plan and Lift jobs resolve logical
-routes to `meal-planning` and `fitness`. Radar cron delivers only to Edmund by
-email and does not load Buzz delivery credentials. Buzz executors load the
-same dedicated identity as their profile's inbound runtime. `buzz-acp` remains
-mention-scoped inbound transport.
+Every Hermes profile, gateway, cron executor, one-shot automation, and dashboard
+uses the same patched Hermes v0.20.5 (`v2026.8.19`) package. Canonical profile
+settings enforce `approvals.mode=smart`, `approvals.cron_mode=deny`, automatic
+tool-use enforcement, stall guards, Bot Mode protocol, and Hermes-owned loop
+warning/hard-stop thresholds. The trusted one-shot lane remains an intentional
+YOLO boundary; cron cannot request interactive approval.
 
-Scintillate's native gateway does not publish Buzz presence itself, so
-`buzz-presence-scintillate.service` keeps the same dedicated identity online.
-The companion is bound to `hermes-gateway-scintillate.service`, responds to
-nobody, and cannot launch an agent; Hermes remains the only message handler.
+The five public bots show a transient Buzz gear reaction while working and one
+durable same-thread final response. Tool cards, reasoning, interim text,
+streaming deltas, long-running notices, busy acknowledgements, and steering
+acknowledgements remain hidden. Approval, clarification, and terminal failure
+controls are allowed because they are required to complete or safely stop a
+turn. Steering itself remains silent.
+
+Subscriptions and home channels come from
+`agents-workspace/deployments/nuc/buzz-bindings.nix`. Betty is ambient in
+`meal-planning` and mention-gated in `mill-docs`; every other declared channel
+is mention-gated. Amos Burton and Scintillate cron delivery retains
+`agent-reports` and `personal-reports`; Betty's routed jobs retain
+`meal-planning` and `fitness`. Each profile reuses its existing dedicated
+encrypted Buzz identity without sharing private keys.
 
 MillDocs Buzz replies are owned by the dedicated Cloudflare `mill-docs-buzz`
 Worker. The NUC keeps only `mill-docs-coding-agent.timer`, which processes typed
 Linear feedback and posts authenticated status callbacks. Its rotated encrypted
 Buzz identity remains available for repository credentials and queue execution.
 
-Verify after a deploy or recovery:
+### Staged native cutover
+
+`nuc.hermesBuzzNativeRolloutProfiles` is the cutover option. Its committed
+default is all five profiles. For a staged deployment, temporarily override it
+to only `scintillate`; unselected profiles receive exactly one ACP fallback
+service using the shared v0.20.5 package. Expand in this order:
+
+```text
+scintillate
+scintillate finn
+scintillate finn amosburton
+scintillate finn amosburton anne
+scintillate finn amosburton anne betty
+```
+
+At every stage, build before activation and prove that the selected profile has
+one native gateway plus presence while its ACP unit is absent. Also prove that
+every unselected profile has one ACP unit and its native gateway is disabled.
+Never activate a generation with both response lanes for one identity.
+
+The fallback is deliberately permission-denying
+(`BUZZ_ACP_PERMISSION_MODE=dont-ask`): buzz-acp cannot provide Hermes' native
+smart approvals and otherwise auto-selects a one-turn approval. It may still
+show ACP Activity rows. Keep each fallback stage short and run interaction and
+approval acceptance only against identities already migrated to native Buzz.
 
 ```bash
+hey nuc-wt build
+ssh nuc "cd /tmp/dotfiles-worktree-emiller && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
+hey nuc-wt dry-activate
+hey nuc-wt switch
+
+ssh nuc "systemctl show hermes-gateway-<profile>.service -p ActiveState -p MainPID -p NRestarts"
+ssh nuc "systemctl show buzz-presence-<profile>.service -p ActiveState -p MainPID -p NRestarts -p BindsTo"
+ssh nuc "systemctl show buzz-hermes-<profile>.service -p LoadState -p ActiveState"
+ssh nuc 'set -eu; for p in scintillate finn amosburton anne betty; do native=0; acp=0; presence=0; systemctl is-active --quiet "hermes-gateway-$p.service" && native=1 || :; systemctl is-active --quiet "buzz-hermes-$p.service" && acp=1 || :; systemctl is-active --quiet "buzz-presence-$p.service" && presence=1 || :; if [ $((native + acp)) -ne 1 ] || [ "$presence" -ne "$native" ]; then echo "$p: native=$native acp=$acp presence=$presence" >&2; exit 1; fi; done'
+```
+
+The first stage is package convergence as well as the Scintillate canary.
+Because Scintillate deliberately has `restartIfChanged=false`, explicitly
+restart it after the switch, then verify the gateway, cron executor, dashboard,
+and remaining ACP fallbacks report Hermes v0.20.5 before expanding the selector.
+
+```bash
+ssh nuc 'sudo systemctl restart hermes-gateway-scintillate.service'
+ssh nuc 'sudo podman exec hermes-agent-scintillate hermes --version'
+ssh nuc "systemctl show buzz-hermes-finn.service buzz-hermes-amosburton.service buzz-hermes-anne.service buzz-hermes-betty.service -p Environment | grep -E 'BUZZ_ACP_(AGENT_COMMAND|PERMISSION_MODE)='"
+ssh nuc "systemctl show hermes-gateway-scintillate hermes-scintillate-cron-tick -p FragmentPath -p ExecStart"
+```
+
+If a canary fails, restore the previous selector and run `hey nuc-wt switch`.
+If the source state is unavailable, use `hey nuc-rollback`. Do not advance the
+next identity until service state, routing, and a natural Buzz turn pass.
+
+### Final verification
+
+Verify service ownership after the final deployment:
+
+```bash
+ssh nuc "systemctl show hermes-gateway-scintillate.service hermes-gateway-finn.service hermes-gateway-amosburton.service hermes-gateway-anne.service hermes-gateway-betty.service -p Id -p ActiveState -p MainPID -p NRestarts"
+ssh nuc "systemctl show buzz-presence-scintillate.service buzz-presence-finn.service buzz-presence-amosburton.service buzz-presence-anne.service buzz-presence-betty.service -p Id -p ActiveState -p MainPID -p NRestarts -p BindsTo"
 ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
-ssh nuc "systemctl show 'buzz-hermes-*.service' -p Id -p ActiveState -p MainPID -p NRestarts"
-ssh nuc 'systemctl show buzz-presence-scintillate.service -p ActiveState -p MainPID -p NRestarts -p BindsTo'
+ssh nuc 'systemctl show hermes-gateway-orchestrator.service -p ActiveState -p MainPID -p NRestarts'
 ssh nuc 'systemctl show mill-docs-coding-agent.timer mill-docs-coding-agent.service -p ActiveState -p NextElapseUSecRealtime'
 ssh nuc 'systemctl status buzz-mill-docs-codex.service --no-pager'
-ssh nuc "journalctl -u 'buzz-hermes-*.service' -n 50 --no-pager"
+ssh nuc "journalctl -u 'hermes-gateway-*.service' -u 'buzz-presence-*.service' -n 100 --no-pager"
 ```
 
-Expected: the configured public Hermes units are active with zero restarts and
-connected to `wss://millers.communities.buzz.xyz`; `buzz-hermes-orchestrator`
-is not found while `hermes-gateway-orchestrator` remains active. Lazy mode
-starts a Hermes ACP child only after an accepted mention. The services expose
-no listener.
-`buzz-presence-scintillate.service` is active, bound to the native Scintillate
-gateway, and does not start an ACP child.
-`mill-docs-coding-agent.timer` is active with a future next trigger, and
-`buzz-mill-docs-codex.service` is not found.
+Expected: all five native gateways and all five presence companions are active
+with zero unexpected restarts; no `buzz-hermes-*` ACP unit exists; Orchestrator
+is active and internal. `mill-docs-coding-agent.timer` has a future trigger and
+`buzz-mill-docs-codex.service` is absent.
 
-```bash
-ssh nuc "sudo systemctl restart 'buzz-hermes-*.service'"
-ssh nuc 'sudo systemctl start mill-docs-coding-agent.service'
-```
+In Buzz, test one allowed owner mention per profile. For each, confirm the gear
+appears only while working, disappears, and exactly one final response lands in
+the originating thread with no Activity/tool/reasoning rows. Also test an
+unmentioned post in Betty's `meal-planning` (accepted), an unmentioned post in
+Betty's `mill-docs` (ignored), and one unauthorized-author post (ignored). A
+tool requiring confirmation must show the native smart approval control rather
+than auto-approve.
 
 Create each Hermes identity through the owner-reviewed Buzz flow so the relay
 receives the owner attestation and agent-authored profile event. Never reuse a
@@ -229,8 +288,8 @@ private key across profiles. Encrypt `BUZZ_PRIVATE_KEY` and `BUZZ_AUTH_TAG`
 directly into the matching agenix file; never print either value.
 
 Amos, Betty, and Scintillate accept signed mentions from the owner and the exact
-Moni pubkey in the deployment binding. Anne and Finn remain owner-only.
-Orchestrator is not a public Buzz profile. All inherit repository access from
+Moni pubkey in the deployment binding. Anne and Finn remain owner-only. All
+inherit repository access from
 `services.hermes-agent.profiles.<name>.hostPathMounts`; change that canonical
 profile boundary instead of adding service-specific paths. Host Docker and
 Podman sockets remain inaccessible.
