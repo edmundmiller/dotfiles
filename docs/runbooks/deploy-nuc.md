@@ -264,8 +264,8 @@ Verify service ownership after the final deployment:
 ```bash
 ssh nuc "systemctl show hermes-gateway-scintillate.service hermes-gateway-finn.service hermes-gateway-amosburton.service hermes-gateway-anne.service hermes-gateway-betty.service -p Id -p ActiveState -p MainPID -p NRestarts"
 ssh nuc "systemctl show buzz-presence-scintillate.service buzz-presence-finn.service buzz-presence-amosburton.service buzz-presence-anne.service buzz-presence-betty.service -p Id -p ActiveState -p MainPID -p NRestarts -p BindsTo"
-ssh nuc "systemctl list-unit-files --no-legend 'buzz-hermes-*.service'"
-ssh nuc "systemctl list-units --all --no-legend 'buzz-hermes-*.service'"
+ssh nuc 'test -z "$(systemctl list-unit-files --no-legend "buzz-hermes-*.service")"'
+ssh nuc 'test -z "$(systemctl list-units --all --no-legend "buzz-hermes-*.service")"'
 ssh nuc 'systemctl show hermes-gateway-orchestrator.service -p ActiveState -p MainPID -p NRestarts'
 ssh nuc 'systemctl show mill-docs-coding-agent.timer mill-docs-coding-agent.service -p ActiveState -p NextElapseUSecRealtime'
 ssh nuc 'systemctl status buzz-mill-docs-codex.service --no-pager'
