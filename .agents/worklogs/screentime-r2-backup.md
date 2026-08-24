@@ -21,7 +21,7 @@ Archive every local macOS `/app/usage` record into an append-only SQLite databas
 - Live checkout was dirty with unrelated changes, so work moved to this isolated worktree at `origin/main` revision `aeee57f6c62502e2fcc05a8e97bc39dc4c6a31e8`.
 - Current `/app/usage` rows have non-empty unique `ZUUID` values.
 - Live Wrangler readback identified the expected personal Cloudflare account and showed no existing `screentime-backups` bucket.
-- Agent run receipt: `/Users/emiller/.local/state/dotfiles-agent-runs/cdff133eb1b1/20260823T033205Z-d287c9a27be8.json` with `local-only` authority.
+- Agent run receipt: `/Users/emiller/.local/state/dotfiles-agent-runs/cdff133eb1b1/20260823T033205Z-d287c9a27be8.json`; the run began `local-only`, and the coordinator later authorized full repository closeout without authorizing credential creation.
 - CLI fixture test passed through the packaged Nix derivation, including UUID idempotency, append-only first-seen rows, missing-UUID failure, Keychain/restic isolation, JSON snapshot readback, and secret-free output.
 - Darwin evaluation passed for the packaged CLI, exact source/archive/R2 arguments, Sunday 23:55 schedule, log paths, and no `RunAtLoad`.
 - Real archive run inserted 5,751 rows; source and archive both had 5,751 distinct UUIDs and identical min/max timestamps. `PRAGMA quick_check` returned `ok`; the directory/file modes were `0700/0600`; an immediate second run inserted zero rows.
@@ -50,4 +50,4 @@ None.
 
 ## Commits
 
-Pending closeout commit.
+- `1e4876604` — `feat: back up macOS Screen Time to R2`
