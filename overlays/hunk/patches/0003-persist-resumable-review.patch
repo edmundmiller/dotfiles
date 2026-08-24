@@ -1,16 +1,16 @@
-diff --git i/src/core/cli.test.ts w/src/core/cli.test.ts
-index 45bdbb4..fda3a46 100644
---- i/src/core/cli.test.ts
-+++ w/src/core/cli.test.ts
-@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSyn
- import { tmpdir } from "node:os";
- import { join, resolve } from "node:path";
- import { parseCli } from "./cli";
+diff --git a/src/core/cli.test.ts b/src/core/cli.test.ts
+index 5cf2f56f..1c330adc 100644
+--- a/src/core/cli.test.ts
++++ b/src/core/cli.test.ts
+@@ -9,6 +9,7 @@ import {
+   parseCli,
+   WATCH_OPTION,
+ } from "./cli";
 +import { persistResumableReview } from "./resumableReview";
  import { resolveCliVersion } from "./version";
  
  const tempDirs: string[] = [];
-@@ -13,6 +14,21 @@ function createTempDir(prefix: string) {
+@@ -19,6 +20,21 @@ function createTempDir(prefix: string) {
    return dir;
  }
  
@@ -32,7 +32,7 @@ index 45bdbb4..fda3a46 100644
  /** Run `fn` with Bun.stdin.stream replaced by a one-shot reader of `text`. */
  async function withStdin<T>(text: string, fn: () => Promise<T>): Promise<T> {
    const originalStdin = Bun.stdin.stream;
-@@ -64,6 +80,48 @@ describe("parseCli", () => {
+@@ -73,6 +89,48 @@ describe("parseCli", () => {
      expect(parsed.text).not.toContain("Config:");
      expect(parsed.text).not.toContain("Examples:");
    });
@@ -81,19 +81,19 @@ index 45bdbb4..fda3a46 100644
  
    test("prints the same top-level help for --help", async () => {
      const bare = await parseCli(["bun", "hunk"]);
-diff --git i/src/core/cli.ts w/src/core/cli.ts
-index 043ed26..4c5780a 100644
---- i/src/core/cli.ts
-+++ w/src/core/cli.ts
-@@ -12,6 +12,7 @@ import type {
-   SessionCommentApplyItemInput,
- } from "./types";
- import { resolveBundledHunkReviewSkillPath } from "./paths";
+diff --git a/src/core/cli.ts b/src/core/cli.ts
+index 4e6ee730..c08d2da4 100644
+--- a/src/core/cli.ts
++++ b/src/core/cli.ts
+@@ -43,6 +43,7 @@ import {
+   RELOAD_SEPARATOR_MESSAGE,
+ } from "../session/agent/errors";
+ import { DEFAULT_TAB_WIDTH, parseTabWidth } from "./tabWidth";
 +import { loadResumableReview } from "./resumableReview";
- import { detectVcs } from "./vcs";
  import { resolveCliVersion } from "./version";
  
-@@ -124,6 +125,26 @@ function renderSkillHelp() {
+ /** Structured option metadata shared by Commander registration and generated CLI docs. */
+@@ -431,6 +432,26 @@ function renderSkillHelp() {
    ].join("\n");
  }
  
@@ -120,7 +120,7 @@ index 043ed26..4c5780a 100644
  /** Build the top-level help text shown by bare `hunk` and `hunk --help`. */
  function renderCliHelp() {
    return [
-@@ -138,6 +159,7 @@ function renderCliHelp() {
+@@ -445,6 +466,7 @@ function renderCliHelp() {
      "  hunk show [target] [-- <pathspec...>]   review the last commit or a given target",
      "  hunk stash show [ref]                   review a stash entry (git only)",
      "  hunk patch [file]                       review a patch file or stdin",
@@ -128,7 +128,7 @@ index 043ed26..4c5780a 100644
      "  hunk pager                              general Git pager wrapper with diff detection",
      "  hunk difftool <left> <right> [path]     review Git difftool file pairs",
      "  hunk session <subcommand>               inspect or control a live Hunk session",
-@@ -1350,6 +1372,8 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
+@@ -1787,6 +1809,8 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
    }
  
    switch (commandName) {
@@ -137,11 +137,11 @@ index 043ed26..4c5780a 100644
      case "diff":
        return parseDiffCommand(rest, argv);
      case "show":
-diff --git i/src/core/resumableReview.test.ts w/src/core/resumableReview.test.ts
+diff --git a/src/core/resumableReview.test.ts b/src/core/resumableReview.test.ts
 new file mode 100644
-index 0000000..7cbc3b3
+index 00000000..7cbc3b39
 --- /dev/null
-+++ w/src/core/resumableReview.test.ts
++++ b/src/core/resumableReview.test.ts
 @@ -0,0 +1,106 @@
 +import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 +import { tmpdir } from "node:os";
@@ -249,16 +249,16 @@ index 0000000..7cbc3b3
 +    }
 +  });
 +});
-diff --git i/src/core/resumableReview.ts w/src/core/resumableReview.ts
+diff --git a/src/core/resumableReview.ts b/src/core/resumableReview.ts
 new file mode 100644
-index 0000000..e61a1ed
+index 00000000..a957a0e2
 --- /dev/null
-+++ w/src/core/resumableReview.ts
++++ b/src/core/resumableReview.ts
 @@ -0,0 +1,176 @@
 +import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 +import { dirname, join } from "node:path";
 +import type { CliInput, CommonOptions } from "./types";
-+import { canReloadInput } from "./watch";
++import { canReloadInput } from "./inputReload";
 +
 +const MARKER_VERSION = 1;
 +
@@ -431,39 +431,39 @@ index 0000000..e61a1ed
 +    return null;
 +  }
 +}
-diff --git i/src/main.tsx w/src/main.tsx
-index 7d1fcce..1eaf9cf 100644
---- i/src/main.tsx
-+++ w/src/main.tsx
-@@ -10,6 +10,7 @@ import {
-   type JobControlSuspendSupport,
- } from "./core/jobControl";
+diff --git a/src/main.tsx b/src/main.tsx
+index 069d08d4..c2ae2adc 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -3,6 +3,7 @@
+ import { formatCliError } from "./core/errors";
  import { pagePlainText } from "./core/pager";
+ import { prepareStartupPlan } from "./app/startup";
 +import { persistResumableReview } from "./core/resumableReview";
  import { sanitizeTerminalText } from "./lib/terminalText";
- import { shutdownSession } from "./core/shutdown";
- import { renderStaticDiffPager } from "./ui/staticDiffPager";
-@@ -75,6 +76,7 @@ async function main() {
+ import { serveSessionBrokerDaemon } from "./session/broker/brokerServer";
+ import { runSessionCommand } from "./session/agent/commands";
+@@ -99,6 +100,7 @@ async function main() {
+   if (startupPlan.kind !== "app") {
+     throw new Error("Unreachable startup plan.");
    }
++  persistResumableReview(startupPlan.bootstrap.input);
  
-   const { bootstrap, controllingTerminal } = startupPlan;
-+  persistResumableReview(bootstrap.input);
-   const hostClient = new SessionBrokerClient<
-     HunkSessionInfo,
-     HunkSessionState,
-diff --git i/src/ui/AppHost.interactions.test.tsx w/src/ui/AppHost.interactions.test.tsx
-index f0ae25d..f7cc6f1 100644
---- i/src/ui/AppHost.interactions.test.tsx
-+++ w/src/ui/AppHost.interactions.test.tsx
-@@ -12,6 +12,7 @@ import type {
-   HunkSessionSnapshot,
- } from "../hunk-session/types";
+   // OpenTUI stays behind the interactive plan so headless commands never materialize its embedded
+   // native library. The highlighting client starts the compiled worker only when an opted-in,
+diff --git a/src/ui/AppHost.interactions.test.tsx b/src/ui/AppHost.interactions.test.tsx
+index 2a16f225..94048551 100644
+--- a/src/ui/AppHost.interactions.test.tsx
++++ b/src/ui/AppHost.interactions.test.tsx
+@@ -13,6 +13,7 @@ import type {
+ } from "../session/types";
+ import { LEGACY_CUSTOM_SYNTAX_NOTICE } from "../core/startupNotice";
  import type { AppBootstrap, LayoutMode } from "../core/types";
 +import { loadResumableReview } from "../core/resumableReview";
  import { createTestVcsAppBootstrap } from "../../test/helpers/app-bootstrap";
  import { capturedTestColorToHex } from "../../test/helpers/test-color-helpers";
  import { createTestDiffFile as buildTestDiffFile, lines } from "../../test/helpers/diff-helpers";
-@@ -1542,6 +1543,8 @@ describe("App interactions", () => {
+@@ -1602,6 +1603,8 @@ describe("App interactions", () => {
    test("session reload preserves live comments while refreshing the file diff", async () => {
      const dir = mkdtempSync(join(process.cwd(), ".hunk-session-reload-"));
      const left = join(dir, "before.ts");
@@ -472,7 +472,7 @@ index f0ae25d..f7cc6f1 100644
      const right = join(dir, "after.ts");
      const reviewNote = "Keep this daemon review note";
  
-@@ -1556,7 +1559,7 @@ describe("App interactions", () => {
+@@ -1616,7 +1619,7 @@ describe("App interactions", () => {
          mode: "split",
        },
      });
@@ -481,7 +481,7 @@ index f0ae25d..f7cc6f1 100644
  
      const setup = await testRender(<AppHost bootstrap={bootstrap} hostClient={hostClient} />, {
        width: 220,
-@@ -1614,6 +1617,14 @@ describe("App interactions", () => {
+@@ -1674,6 +1677,14 @@ describe("App interactions", () => {
  
        expect(frame).toContain("export const added = true;");
        expect(frame).toContain(reviewNote);
@@ -496,7 +496,7 @@ index f0ae25d..f7cc6f1 100644
      } finally {
        await act(async () => {
          setup.renderer.destroy();
-@@ -1819,7 +1830,7 @@ describe("App interactions", () => {
+@@ -1846,7 +1857,7 @@ describe("App interactions", () => {
        });
        await waitForFrame(setup, (frame) => frame.includes("Toggle files/filter focus"), 12);
  
@@ -505,23 +505,45 @@ index f0ae25d..f7cc6f1 100644
          await act(async () => {
            await setup.mockInput.pressArrow("right");
          });
-diff --git i/src/ui/AppHost.tsx w/src/ui/AppHost.tsx
-index c415a0b..b4dca81 100644
---- i/src/ui/AppHost.tsx
-+++ w/src/ui/AppHost.tsx
-@@ -1,6 +1,7 @@
- import { useCallback, useState } from "react";
+diff --git a/src/ui/AppHost.reload.test.tsx b/src/ui/AppHost.reload.test.tsx
+index 0fe72461..fb6f94d4 100644
+--- a/src/ui/AppHost.reload.test.tsx
++++ b/src/ui/AppHost.reload.test.tsx
+@@ -418,7 +418,7 @@ describe("reload agent attention marks", () => {
+
+     const bootstrap = await loadAppBootstrap(
+       { kind: "vcs", staged: false, options: { mode: "stack", excludeUntracked: true } },
+-      { cwd: dir },
++      { cwd: dir, vcsCatalog: getBundledVcsCatalog() },
+     );
+
+     const setup = await testRender(<AppHost bootstrap={bootstrap} />, {
+@@ -483,7 +483,7 @@ describe("reload agent attention marks", () => {
+
+     const bootstrap = await loadAppBootstrap(
+       { kind: "vcs", staged: false, options: { mode: "stack", excludeUntracked: true } },
+-      { cwd: dir },
++      { cwd: dir, vcsCatalog: getBundledVcsCatalog() },
+     );
+
+     const setup = await testRender(<AppHost bootstrap={bootstrap} />, {
+diff --git a/src/ui/AppHost.tsx b/src/ui/AppHost.tsx
+index b616a053..73d98154 100644
+--- a/src/ui/AppHost.tsx
++++ b/src/ui/AppHost.tsx
+@@ -4,6 +4,7 @@ import { ReviewProducer } from "../app/review/producer";
+ import { loadConfiguredSessionBootstrap } from "../app/sessionBootstrap";
+ import { getBundledVcsCatalog } from "../app/vcsCatalog";
  import { resolveConfiguredCliInput } from "../core/config";
- import { loadAppBootstrap } from "../core/loaders";
 +import { persistResumableReview } from "../core/resumableReview";
  import { resolveRuntimeCliInput } from "../core/terminal";
+ import type { StartupNotice } from "../core/startupNotice";
  import type { AppBootstrap, CliInput } from "../core/types";
- import type { UpdateNotice } from "../core/updateNotice";
-@@ -55,6 +56,7 @@ export function AppHost({
-         cwd,
-         customTheme: configured.customTheme,
-       });
-+      persistResumableReview(nextBootstrap.input, cwd);
-       const nextSnapshot = createInitialSessionSnapshot(nextBootstrap);
- 
-       let sessionId = "local-session";
+@@ -334,6 +335,7 @@ export function AppHost({
+                 createUnknownVcsNotice(sessionVcs.unknownVcsId, String(reloadInput.options.vcs)),
+               ]
+             : configured.startupNotices;
++        persistResumableReview(nextBootstrap.input, hostClient?.getRegistration().cwd ?? cwd);
+         const preparedPublication = producer.preparePublication({
+           files: nextBootstrap.changeset.files,
+           sourceLabel: nextBootstrap.changeset.sourceLabel,

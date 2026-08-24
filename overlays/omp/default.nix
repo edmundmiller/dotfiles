@@ -3,8 +3,14 @@ final: prev: {
     omp = prev.llm-agents.omp.overrideAttrs (
       old:
       let
+        version = "18.0.3";
         src = final.applyPatches {
-          inherit (old) src;
+          src = final.fetchFromGitHub {
+            owner = "can1357";
+            repo = "oh-my-pi";
+            tag = "v${version}";
+            hash = "sha256-0ybJ+7WFtXWpVkd4p7ko3T222WX903U9brFY1oKdRHM=";
+          };
           patches = [
             ./patches/0001-add-herdr-hunk-internal-urls.patch
             ./patches/0002-add-nextflow-ast-grep-language.patch
@@ -12,11 +18,14 @@ final: prev: {
         };
       in
       {
-        inherit src;
+        inherit version src;
         cargoDeps = final.rustPlatform.fetchCargoVendor {
-          name = "omp-${old.version}-cargo-vendor";
+          name = "omp-${version}-cargo-vendor";
           inherit src;
-          hash = "sha256-2S9ZiJ9QTMp2Hxysi1NX2BLycZ306XMpEI1OovUR1PQ=";
+          hash = "sha256-k3VnG2Vx44krJkCtcFnXICmX6wn3mEQBetKgIBOU9GU=";
+        };
+        bunDeps = final.bun2nix.fetchBunDeps {
+          bunNix = ./bun.nix;
         };
         postInstall =
           (old.postInstall or "")

@@ -1,8 +1,8 @@
-diff --git a/Cargo.lock b/Cargo.lock
-index 296196d638..ef75d58073 100644
---- a/Cargo.lock
-+++ b/Cargo.lock
-@@ -4884,6 +4884,7 @@ version = "17.3.5"
+diff --git i/Cargo.lock w/Cargo.lock
+index f04f86f46..f0d9c4a97 100644
+--- i/Cargo.lock
++++ w/Cargo.lock
+@@ -4895,6 +4895,7 @@ version = "18.0.3"
  dependencies = [
   "anyhow",
   "ast-grep-core",
@@ -10,7 +10,7 @@ index 296196d638..ef75d58073 100644
   "globset",
   "ignore",
   "phf 0.13.1",
-@@ -4919,6 +4920,7 @@ dependencies = [
+@@ -4930,6 +4931,7 @@ dependencies = [
   "tree-sitter-lua",
   "tree-sitter-make",
   "tree-sitter-md",
@@ -18,7 +18,7 @@ index 296196d638..ef75d58073 100644
   "tree-sitter-nix",
   "tree-sitter-objc",
   "tree-sitter-ocaml",
-@@ -7101,6 +7103,15 @@ dependencies = [
+@@ -7116,6 +7118,15 @@ dependencies = [
   "tree-sitter-language",
  ]
  
@@ -34,11 +34,11 @@ index 296196d638..ef75d58073 100644
  [[package]]
  name = "tree-sitter-nix"
  version = "0.3.0"
-diff --git a/Cargo.toml b/Cargo.toml
-index 7da5d4b32c..bc6bf701bd 100644
---- a/Cargo.toml
-+++ b/Cargo.toml
-@@ -378,6 +378,7 @@ tree-sitter-kotlin = { version = "0.4", package = "tree-sitter-kotlin-sg" }
+diff --git i/Cargo.toml w/Cargo.toml
+index e04550f1a..f9066f58e 100644
+--- i/Cargo.toml
++++ w/Cargo.toml
+@@ -395,6 +395,7 @@ tree-sitter-kotlin = { version = "0.4", package = "tree-sitter-kotlin-sg" }
  tree-sitter-lua = "0.5"
  tree-sitter-make = "1.1"
  tree-sitter-md = "0.5"
@@ -46,10 +46,10 @@ index 7da5d4b32c..bc6bf701bd 100644
  tree-sitter-nix = "0.3"
  tree-sitter-objc = "3.0"
  tree-sitter-ocaml = "0.24.2"
-diff --git a/crates/pi-ast/Cargo.toml b/crates/pi-ast/Cargo.toml
-index 34c7c363e7..51c01499a7 100644
---- a/crates/pi-ast/Cargo.toml
-+++ b/crates/pi-ast/Cargo.toml
+diff --git i/crates/pi-ast/Cargo.toml w/crates/pi-ast/Cargo.toml
+index 922dc321a..18ebc46ae 100644
+--- i/crates/pi-ast/Cargo.toml
++++ w/crates/pi-ast/Cargo.toml
 @@ -47,6 +47,7 @@ tree-sitter-kotlin.workspace = true
  tree-sitter-lua.workspace = true
  tree-sitter-make.workspace = true
@@ -58,36 +58,17 @@ index 34c7c363e7..51c01499a7 100644
  tree-sitter-nix.workspace = true
  tree-sitter-objc.workspace = true
  tree-sitter-ocaml.workspace = true
-@@ -73,3 +74,6 @@ tree-sitter-vue.workspace = true
- tree-sitter-xml.workspace = true
+@@ -74,3 +75,6 @@ tree-sitter-xml.workspace = true
  tree-sitter-yaml.workspace = true
  tree-sitter-zig.workspace = true
+ xxhash-rust.workspace = true
 +
 +[build-dependencies]
 +cc = "1"
-diff --git a/crates/pi-ast/build.rs b/crates/pi-ast/build.rs
-new file mode 100644
-index 0000000000..75322a9f28
---- /dev/null
-+++ b/crates/pi-ast/build.rs
-@@ -0,0 +1,13 @@
-+fn main() {
-+	let scanner = "src/language/nextflow_scanner.c";
-+	let out_dir = std::env::var("OUT_DIR").unwrap();
-+	cc::Build::new()
-+		.cargo_metadata(false)
-+		.std("c11")
-+		.include("src/language")
-+		.file(scanner)
-+		.compile("tree-sitter-nextflow-scanner");
-+	println!("cargo:rustc-link-search=native={out_dir}");
-+	println!("cargo:rustc-link-lib=static:+whole-archive=tree-sitter-nextflow-scanner");
-+	println!("cargo:rerun-if-changed={scanner}");
-+}
-diff --git a/crates/pi-ast/src/language/mod.rs b/crates/pi-ast/src/language/mod.rs
-index 5201fd2315..1b4edee46a 100644
---- a/crates/pi-ast/src/language/mod.rs
-+++ b/crates/pi-ast/src/language/mod.rs
+diff --git i/crates/pi-ast/src/language/mod.rs w/crates/pi-ast/src/language/mod.rs
+index 5201fd231..1b4edee46 100644
+--- i/crates/pi-ast/src/language/mod.rs
++++ w/crates/pi-ast/src/language/mod.rs
 @@ -120,6 +120,7 @@ impl_lang_expando!(Hcl, language_hcl, 'µ');
  impl_lang_expando!(Ini, language_ini, 'µ');
  impl_lang_expando!(Just, language_just, 'µ');
@@ -156,11 +137,132 @@ index 5201fd2315..1b4edee46a 100644
  "nix"            => SupportLang::Nix,
  "objc"           => SupportLang::ObjC,
  "obj-c"          => SupportLang::ObjC,
-diff --git a/crates/pi-ast/src/language/nextflow_scanner.c b/crates/pi-ast/src/language/nextflow_scanner.c
+diff --git i/crates/pi-ast/src/language/parsers.rs w/crates/pi-ast/src/language/parsers.rs
+index faaaa1efa..048977170 100644
+--- i/crates/pi-ast/src/language/parsers.rs
++++ w/crates/pi-ast/src/language/parsers.rs
+@@ -92,6 +92,9 @@ pub fn language_make() -> TSLanguage {
+ pub fn language_markdown() -> TSLanguage {
+ 	tree_sitter_md::LANGUAGE.into()
+ }
++pub fn language_nextflow() -> TSLanguage {
++	tree_sitter_nextflow::LANGUAGE.into()
++}
+ pub fn language_nix() -> TSLanguage {
+ 	tree_sitter_nix::LANGUAGE.into()
+ }
+diff --git i/crates/pi-ast/src/summary.rs w/crates/pi-ast/src/summary.rs
+index d93a701b8..32b7b7a79 100644
+--- i/crates/pi-ast/src/summary.rs
++++ w/crates/pi-ast/src/summary.rs
+@@ -731,7 +731,8 @@ fn is_elidable_kind(language: SupportLang, kind: &str) -> bool {
+ 		// content IS the lines inside hunks, and the leaf-token-only Regex
+ 		// grammar. Eliding any of these deletes the only content worth
+ 		// reading.
+-		SupportLang::Yaml
++		SupportLang::Nextflow
++		| SupportLang::Yaml
+ 		| SupportLang::Toml
+ 		| SupportLang::Ini
+ 		| SupportLang::Diff
+@@ -798,6 +799,7 @@ fn is_groupable_kind(language: SupportLang, kind: &str) -> bool {
+ 		| SupportLang::Cmake
+ 		| SupportLang::Make
+ 		| SupportLang::Just
++		| SupportLang::Nextflow
+ 		| SupportLang::Yaml
+ 		| SupportLang::Toml
+ 		| SupportLang::Ini
+diff --git i/crates/pi-natives/src/ast.rs w/crates/pi-natives/src/ast.rs
+index 0ede452f8..e2fc44dac 100644
+--- i/crates/pi-natives/src/ast.rs
++++ w/crates/pi-natives/src/ast.rs
+@@ -1360,6 +1360,48 @@ mod tests {
+ 		);
+ 	}
+ 
++	#[test]
++	fn nextflow_process_pattern_matches_inferred_nf_file() {
++		let language = SupportLang::from_path(Path::new("main.nf"))
++			.expect(".nf files should infer Nextflow");
++		assert_eq!(language, SupportLang::Nextflow);
++		assert_eq!(
++			SupportLang::from_path(Path::new("nextflow.config")),
++			Some(SupportLang::Nextflow),
++		);
++		assert_ne!(
++			SupportLang::from_path(Path::new("foo.config")),
++			Some(SupportLang::Nextflow),
++		);
++
++		let pattern = compile_pattern(
++			"process $NAME { $$$BODY }",
++			None,
++			&MatchStrictness::Smart,
++			language,
++		)
++		.expect("Nextflow process pattern should compile");
++		let source = r#"process GREET {
++	input:
++	path samplesheet
++
++	output:
++	path 'hello.txt'
++
++	script:
++	"""
++	echo hello > hello.txt
++	"""
++}
++"#;
++		let ast = language.ast_grep(source);
++		assert!(
++			!ast.root().dfs().any(|node| node.is_error()),
++			"fixture should parse without error nodes",
++		);
++		assert_eq!(ast.root().find_all(pattern).count(), 1);
++	}
++
+ 	#[test]
+ 	fn resolves_supported_language_aliases() {
+ 		assert_eq!(resolve_supported_lang("ts").ok(), Some(SupportLang::TypeScript));
+diff --git i/docs/tools/ast-grep.md w/docs/tools/ast-grep.md
+index 5dc5d1bbb..61a85980f 100644
+--- i/docs/tools/ast-grep.md
++++ w/docs/tools/ast-grep.md
+@@ -30,7 +30,7 @@ Pattern grammar and language support exposed to the model:
+ - Metavariable names must be uppercase and must stand for whole AST nodes, not partial tokens or string fragments.
+ - Reusing the same metavariable requires identical code at each occurrence.
+ - Patterns must parse as one valid AST node for the inferred target language.
+-- Supported canonical languages come from `SupportLang::all_langs()` in `crates/pi-ast/src/language/mod.rs`: `astro`, `bash`, `c`, `cmake`, `cpp`, `csharp`, `dart`, `clojure`, `css`, `diff`, `dockerfile`, `emacs-lisp`, `elixir`, `erlang`, `fortran`, `go`, `graphql`, `haskell`, `hcl`, `html`, `ini`, `java`, `javascript`, `json`, `just`, `julia`, `kotlin`, `lua`, `make`, `markdown`, `nix`, `objc`, `ocaml`, `odin`, `php`, `powershell`, `protobuf`, `python`, `r`, `regex`, `ruby`, `rust`, `scala`, `solidity`, `sql`, `starlark`, `svelte`, `swift`, `toml`, `tlaplus`, `tsx`, `typescript`, `verilog`, `vue`, `xml`, `yaml`, `zig`.
++- Supported canonical languages come from `SupportLang::all_langs()` in `crates/pi-ast/src/language/mod.rs`: `astro`, `bash`, `c`, `cmake`, `cpp`, `csharp`, `dart`, `clojure`, `css`, `diff`, `dockerfile`, `emacs-lisp`, `elixir`, `erlang`, `fortran`, `go`, `graphql`, `haskell`, `hcl`, `html`, `ini`, `java`, `javascript`, `json`, `just`, `julia`, `kotlin`, `lua`, `make`, `markdown`, `nextflow`, `nix`, `objc`, `ocaml`, `odin`, `php`, `powershell`, `protobuf`, `python`, `r`, `regex`, `ruby`, `rust`, `scala`, `solidity`, `sql`, `starlark`, `svelte`, `swift`, `toml`, `tlaplus`, `tsx`, `typescript`, `verilog`, `vue`, `xml`, `yaml`, `zig`.
+ 
+ `ast_grep` is disabled by default (`astGrep.enabled = false`) and is a discoverable tool when enabled.
+ 
+diff --git c/crates/pi-ast/build.rs i/crates/pi-ast/build.rs
 new file mode 100644
-index 0000000000..7d6bbdb5c0
+index 000000000..75322a9f2
 --- /dev/null
-+++ b/crates/pi-ast/src/language/nextflow_scanner.c
++++ i/crates/pi-ast/build.rs
+@@ -0,0 +1,13 @@
++fn main() {
++	let scanner = "src/language/nextflow_scanner.c";
++	let out_dir = std::env::var("OUT_DIR").unwrap();
++	cc::Build::new()
++		.cargo_metadata(false)
++		.std("c11")
++		.include("src/language")
++		.file(scanner)
++		.compile("tree-sitter-nextflow-scanner");
++	println!("cargo:rustc-link-search=native={out_dir}");
++	println!("cargo:rustc-link-lib=static:+whole-archive=tree-sitter-nextflow-scanner");
++	println!("cargo:rerun-if-changed={scanner}");
++}
+diff --git c/crates/pi-ast/src/language/nextflow_scanner.c i/crates/pi-ast/src/language/nextflow_scanner.c
+new file mode 100644
+index 000000000..7d6bbdb5c
+--- /dev/null
++++ i/crates/pi-ast/src/language/nextflow_scanner.c
 @@ -0,0 +1,146 @@
 +#include "tree_sitter/parser.h"
 +
@@ -308,25 +410,11 @@ index 0000000000..7d6bbdb5c0
 +  lexer->result_symbol = TERMINATOR;
 +  return true;
 +}
-diff --git a/crates/pi-ast/src/language/parsers.rs b/crates/pi-ast/src/language/parsers.rs
-index faaaa1efab..048977170d 100644
---- a/crates/pi-ast/src/language/parsers.rs
-+++ b/crates/pi-ast/src/language/parsers.rs
-@@ -92,6 +92,9 @@ pub fn language_make() -> TSLanguage {
- pub fn language_markdown() -> TSLanguage {
- 	tree_sitter_md::LANGUAGE.into()
- }
-+pub fn language_nextflow() -> TSLanguage {
-+	tree_sitter_nextflow::LANGUAGE.into()
-+}
- pub fn language_nix() -> TSLanguage {
- 	tree_sitter_nix::LANGUAGE.into()
- }
-diff --git a/crates/pi-ast/src/language/tree_sitter/parser.h b/crates/pi-ast/src/language/tree_sitter/parser.h
+diff --git c/crates/pi-ast/src/language/tree_sitter/parser.h i/crates/pi-ast/src/language/tree_sitter/parser.h
 new file mode 100644
-index 0000000000..858107deb9
+index 000000000..858107deb
 --- /dev/null
-+++ b/crates/pi-ast/src/language/tree_sitter/parser.h
++++ i/crates/pi-ast/src/language/tree_sitter/parser.h
 @@ -0,0 +1,286 @@
 +#ifndef TREE_SITTER_PARSER_H_
 +#define TREE_SITTER_PARSER_H_
@@ -614,91 +702,3 @@ index 0000000000..858107deb9
 +#endif
 +
 +#endif  // TREE_SITTER_PARSER_H_
-diff --git a/crates/pi-ast/src/summary.rs b/crates/pi-ast/src/summary.rs
-index 14b63a1b20..f875eb4281 100644
---- a/crates/pi-ast/src/summary.rs
-+++ b/crates/pi-ast/src/summary.rs
-@@ -736,7 +736,8 @@ fn is_elidable_kind(language: SupportLang, kind: &str) -> bool {
- 		// content IS the lines inside hunks, and the leaf-token-only Regex
- 		// grammar. Eliding any of these deletes the only content worth
- 		// reading.
--		SupportLang::Yaml
-+		SupportLang::Nextflow
-+		| SupportLang::Yaml
- 		| SupportLang::Toml
- 		| SupportLang::Ini
- 		| SupportLang::Diff
-@@ -803,6 +804,7 @@ fn is_groupable_kind(language: SupportLang, kind: &str) -> bool {
- 		| SupportLang::Cmake
- 		| SupportLang::Make
- 		| SupportLang::Just
-+		| SupportLang::Nextflow
- 		| SupportLang::Yaml
- 		| SupportLang::Toml
- 		| SupportLang::Ini
-diff --git a/crates/pi-natives/src/ast.rs b/crates/pi-natives/src/ast.rs
-index 0ede452f86..e2fc44dac2 100644
---- a/crates/pi-natives/src/ast.rs
-+++ b/crates/pi-natives/src/ast.rs
-@@ -1360,6 +1360,48 @@ mod tests {
- 		);
- 	}
- 
-+	#[test]
-+	fn nextflow_process_pattern_matches_inferred_nf_file() {
-+		let language = SupportLang::from_path(Path::new("main.nf"))
-+			.expect(".nf files should infer Nextflow");
-+		assert_eq!(language, SupportLang::Nextflow);
-+		assert_eq!(
-+			SupportLang::from_path(Path::new("nextflow.config")),
-+			Some(SupportLang::Nextflow),
-+		);
-+		assert_ne!(
-+			SupportLang::from_path(Path::new("foo.config")),
-+			Some(SupportLang::Nextflow),
-+		);
-+
-+		let pattern = compile_pattern(
-+			"process $NAME { $$$BODY }",
-+			None,
-+			&MatchStrictness::Smart,
-+			language,
-+		)
-+		.expect("Nextflow process pattern should compile");
-+		let source = r#"process GREET {
-+	input:
-+	path samplesheet
-+
-+	output:
-+	path 'hello.txt'
-+
-+	script:
-+	"""
-+	echo hello > hello.txt
-+	"""
-+}
-+"#;
-+		let ast = language.ast_grep(source);
-+		assert!(
-+			!ast.root().dfs().any(|node| node.is_error()),
-+			"fixture should parse without error nodes",
-+		);
-+		assert_eq!(ast.root().find_all(pattern).count(), 1);
-+	}
-+
- 	#[test]
- 	fn resolves_supported_language_aliases() {
- 		assert_eq!(resolve_supported_lang("ts").ok(), Some(SupportLang::TypeScript));
-diff --git a/docs/tools/ast-grep.md b/docs/tools/ast-grep.md
-index 5dc5d1bbb0..61a85980f6 100644
---- a/docs/tools/ast-grep.md
-+++ b/docs/tools/ast-grep.md
-@@ -30,7 +30,7 @@ Pattern grammar and language support exposed to the model:
- - Metavariable names must be uppercase and must stand for whole AST nodes, not partial tokens or string fragments.
- - Reusing the same metavariable requires identical code at each occurrence.
- - Patterns must parse as one valid AST node for the inferred target language.
--- Supported canonical languages come from `SupportLang::all_langs()` in `crates/pi-ast/src/language/mod.rs`: `astro`, `bash`, `c`, `cmake`, `cpp`, `csharp`, `dart`, `clojure`, `css`, `diff`, `dockerfile`, `emacs-lisp`, `elixir`, `erlang`, `fortran`, `go`, `graphql`, `haskell`, `hcl`, `html`, `ini`, `java`, `javascript`, `json`, `just`, `julia`, `kotlin`, `lua`, `make`, `markdown`, `nix`, `objc`, `ocaml`, `odin`, `php`, `powershell`, `protobuf`, `python`, `r`, `regex`, `ruby`, `rust`, `scala`, `solidity`, `sql`, `starlark`, `svelte`, `swift`, `toml`, `tlaplus`, `tsx`, `typescript`, `verilog`, `vue`, `xml`, `yaml`, `zig`.
-+- Supported canonical languages come from `SupportLang::all_langs()` in `crates/pi-ast/src/language/mod.rs`: `astro`, `bash`, `c`, `cmake`, `cpp`, `csharp`, `dart`, `clojure`, `css`, `diff`, `dockerfile`, `emacs-lisp`, `elixir`, `erlang`, `fortran`, `go`, `graphql`, `haskell`, `hcl`, `html`, `ini`, `java`, `javascript`, `json`, `just`, `julia`, `kotlin`, `lua`, `make`, `markdown`, `nextflow`, `nix`, `objc`, `ocaml`, `odin`, `php`, `powershell`, `protobuf`, `python`, `r`, `regex`, `ruby`, `rust`, `scala`, `solidity`, `sql`, `starlark`, `svelte`, `swift`, `toml`, `tlaplus`, `tsx`, `typescript`, `verilog`, `vue`, `xml`, `yaml`, `zig`.
- 
- `ast_grep` is disabled by default (`astGrep.enabled = false`) and is a discoverable tool when enabled.
- 

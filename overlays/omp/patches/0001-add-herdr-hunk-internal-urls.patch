@@ -1,7 +1,7 @@
-diff --git a/docs/tools/read.md b/docs/tools/read.md
-index d7b73555c5..4a7bebc854 100644
---- a/docs/tools/read.md
-+++ b/docs/tools/read.md
+diff --git c/docs/tools/read.md i/docs/tools/read.md
+index abda4db33..f91298077 100644
+--- c/docs/tools/read.md
++++ i/docs/tools/read.md
 @@ -10,7 +10,7 @@
    - `packages/coding-agent/src/utils/zip.ts` — unified ZIP/tar wrapper: detect `archive.ext:inner/path`, index archives, list/read entries.
    - `packages/coding-agent/src/tools/sqlite-reader.ts` — detect SQLite targets, parse selectors, render tables.
@@ -31,11 +31,11 @@ index d7b73555c5..4a7bebc854 100644
  ### Web URLs
  - `parseReadUrlTarget()` accepts `http://`, `https://`, or `www.` targets.
  - Plain URL reads call `executeReadUrl()` in `packages/coding-agent/src/tools/fetch.ts`.
-diff --git a/packages/coding-agent/src/config/settings-schema.ts b/packages/coding-agent/src/config/settings-schema.ts
-index 49426538d3..933ffc9040 100644
---- a/packages/coding-agent/src/config/settings-schema.ts
-+++ b/packages/coding-agent/src/config/settings-schema.ts
-@@ -5555,6 +5555,10 @@ export const SETTINGS_SCHEMA = {
+diff --git c/packages/coding-agent/src/config/settings-schema.ts i/packages/coding-agent/src/config/settings-schema.ts
+index 00c9116e4..e53a8bcd7 100644
+--- c/packages/coding-agent/src/config/settings-schema.ts
++++ i/packages/coding-agent/src/config/settings-schema.ts
+@@ -5951,6 +5951,10 @@ export const SETTINGS_SCHEMA = {
  		default: "unset" as const,
  	},
  
@@ -46,6 +46,562 @@ index 49426538d3..933ffc9040 100644
  	"gc.blobs": { type: "boolean", default: true },
  
  	"gc.archive": { type: "boolean", default: true },
+diff --git c/packages/coding-agent/src/internal-urls/index.ts i/packages/coding-agent/src/internal-urls/index.ts
+index 6b52fb219..e9fd8f768 100644
+--- c/packages/coding-agent/src/internal-urls/index.ts
++++ i/packages/coding-agent/src/internal-urls/index.ts
+@@ -10,6 +10,7 @@
+ 
+ export * from "./agent-protocol";
+ export * from "./artifact-protocol";
++export * from "./herdr-hunk-protocol";
+ export * from "./history-protocol";
+ export * from "./issue-pr-protocol";
+ export * from "./json-query";
+diff --git c/packages/coding-agent/src/internal-urls/router.ts i/packages/coding-agent/src/internal-urls/router.ts
+index 09061c5a2..2117e093f 100644
+--- c/packages/coding-agent/src/internal-urls/router.ts
++++ i/packages/coding-agent/src/internal-urls/router.ts
+@@ -1,12 +1,14 @@
+ /**
+- * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
++ * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
+  *
+  * One process-global router with one handler per scheme. Access via
+  * `InternalUrlRouter.instance()`. Handlers are stateless; per-session and
+  * shared state lives in `./state.ts`.
+  */
++import { isSettingsInitialized, settings } from "../config/settings";
+ import { AgentProtocolHandler } from "./agent-protocol";
+ import { ArtifactProtocolHandler } from "./artifact-protocol";
++import { HerdrProtocolHandler, HunkProtocolHandler } from "./herdr-hunk-protocol";
+ import { HistoryProtocolHandler } from "./history-protocol";
+ import { IssueProtocolHandler, PrProtocolHandler } from "./issue-pr-protocol";
+ import { LocalProtocolHandler } from "./local-protocol";
+@@ -51,6 +53,8 @@ export class InternalUrlRouter {
+ 		this.register(new HistoryProtocolHandler());
+ 		this.register(new SshProtocolHandler());
+ 		this.register(new XdProtocolHandler());
++		this.register(new HerdrProtocolHandler());
++		this.register(new HunkProtocolHandler());
+ 	}
+ 
+ 	/** Process-global router instance. */
+@@ -64,6 +68,12 @@ export class InternalUrlRouter {
+ 		InternalUrlRouter.#instance = undefined;
+ 	}
+ 
++	static #enabled(scheme: string): boolean {
++		if (scheme === "herdr") return isSettingsInitialized() && settings.get("internalUrls.herdr") === true;
++		if (scheme === "hunk") return isSettingsInitialized() && settings.get("internalUrls.hunk") === true;
++		return true;
++	}
++
+ 	register(handler: ProtocolHandler): void {
+ 		this.#handlers.set(handler.scheme.toLowerCase(), handler);
+ 	}
+@@ -73,13 +83,16 @@ export class InternalUrlRouter {
+ 	}
+ 
+ 	getHandler(scheme: string): ProtocolHandler | undefined {
+-		return this.#handlers.get(scheme.toLowerCase());
++		const normalized = scheme.toLowerCase();
++		if (!InternalUrlRouter.#enabled(normalized)) return undefined;
++		return this.#handlers.get(normalized);
+ 	}
+ 
+ 	canHandle(input: string): boolean {
+ 		const match = input.match(/^([a-z][a-z0-9+.-]*):\/\//i);
+ 		if (!match) return false;
+-		return this.#handlers.has(match[1].toLowerCase());
++		const scheme = match[1].toLowerCase();
++		return InternalUrlRouter.#enabled(scheme) && this.#handlers.has(scheme);
+ 	}
+ 
+ 	/**
+@@ -100,7 +113,7 @@ export class InternalUrlRouter {
+ 	completionSchemes(): string[] {
+ 		const schemes: string[] = [];
+ 		for (const [scheme, handler] of this.#handlers) {
+-			if (handler.complete) schemes.push(scheme);
++			if (InternalUrlRouter.#enabled(scheme) && handler.complete) schemes.push(scheme);
+ 		}
+ 		return schemes;
+ 	}
+@@ -110,7 +123,9 @@ export class InternalUrlRouter {
+ 	 * Returns `null` when the scheme is unknown or does not support completion.
+ 	 */
+ 	async complete(scheme: string, query: string, context?: ResolveContext): Promise<UrlCompletion[] | null> {
+-		const handler = this.#handlers.get(scheme.toLowerCase());
++		const normalized = scheme.toLowerCase();
++		if (!InternalUrlRouter.#enabled(normalized)) return null;
++		const handler = this.#handlers.get(normalized);
+ 		if (!handler?.complete) return null;
+ 		return handler.complete(query, context);
+ 	}
+@@ -125,8 +140,9 @@ export class InternalUrlRouter {
+ 		const handler =
+ 			this.#handlers.get(scheme) ??
+ 			(allowMcpResource && this.#isMcpResourceScheme(scheme) ? this.#handlers.get("mcp") : undefined);
+-		if (!handler) {
++		if (!handler || !InternalUrlRouter.#enabled(this.#handlers.has(scheme) ? scheme : "mcp")) {
+ 			const available = Array.from(this.#handlers.keys())
++				.filter(candidate => InternalUrlRouter.#enabled(candidate))
+ 				.map(candidate => `${candidate}://`)
+ 				.join(", ");
+ 			throw new Error(`Unknown protocol: ${scheme}://\nSupported: ${available || "none"}`);
+diff --git c/packages/coding-agent/src/internal-urls/types.ts i/packages/coding-agent/src/internal-urls/types.ts
+index d03e52784..811ddcd15 100644
+--- c/packages/coding-agent/src/internal-urls/types.ts
++++ i/packages/coding-agent/src/internal-urls/types.ts
+@@ -1,7 +1,7 @@
+ /**
+  * Types for the internal URL routing system.
+  *
+- * Internal URLs (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
++ * Internal URLs (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
+  * providing access to agent outputs and server resources without exposing filesystem paths.
+  */
+ 
+@@ -24,6 +24,11 @@ export interface InternalResource {
+ 	size?: number;
+ 	/** Underlying filesystem path (for debugging, not exposed to agent) */
+ 	sourcePath?: string;
++	/**
++	 * URL to display for matches found under `sourcePath`. Search/find use this
++	 * to avoid leaking materialized cache paths for immutable virtual resources.
++	 */
++	sourceDisplayUrl?: string;
+ 	/** Additional notes about resolution */
+ 	notes?: string[];
+ 	/**
+diff --git c/packages/coding-agent/src/prompts/system/system-prompt.md i/packages/coding-agent/src/prompts/system/system-prompt.md
+index 993dbb944..a06df2e70 100644
+--- c/packages/coding-agent/src/prompts/system/system-prompt.md
++++ i/packages/coding-agent/src/prompts/system/system-prompt.md
+@@ -67,6 +67,13 @@ Most FS/bash tools auto-resolve these to FS paths.
+ - `vault://<vault>/<path>`: Obsidian read/edit; `vault://`: vault list; `vault://_/…`: active vault. File `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
+ {{/if}}
+ - `mcp://<uri>`: MCP resource
++- `ssh://host/<path>`: configured SSH host files/directories.
++{{#if hasHerdrInternalUrls}}
++- `herdr://status|snapshot|workspaces|tabs|panes|pane/<id>`: local Herdr resources via the CLI/socket wrappers.
++{{/if}}
++{{#if hasHunkInternalUrls}}
++- `hunk://review|context|comments`: active Hunk review session data for a repo.
++{{/if}}
+ - `issue://<N>` / `issue://<owner>/<repo>/<N>`: GitHub issue; bare: recent; `?state=open|closed|all&limit=&author=&label=`.
+ - `pr://<N>` / `pr://<owner>/<repo>/<N>`: same cache; bare: recent; `?comments=0` `?state=open|closed|merged|all&limit=&author=&label=`.
+ - `omp://`: harness docs; AVOID unless user asks about harness.
+diff --git c/packages/coding-agent/src/prompts/tools/read.md i/packages/coding-agent/src/prompts/tools/read.md
+index 6bd0301fa..f045594f8 100644
+--- c/packages/coding-agent/src/prompts/tools/read.md
++++ i/packages/coding-agent/src/prompts/tools/read.md
+@@ -19,6 +19,12 @@ Read files, directories, archives, SQLite, images, documents, internal resources
+ - Documents → extracted text. Notebooks → editable cells. Images → {{#if INSPECT_IMAGE_ENABLED}}metadata; call `inspect_image`{{else}}decoded inline{{/if}}. `:raw` bypasses converters.
+ - URLs → reader-mode clean text/markdown; `:raw` → untouched HTML. Bare `host:port` needs trailing slash.
+ - Internal URIs — all schemes take selectors. `artifact://<id>` recovers spilled output; page with `:N-M`/`:raw:N-M`.
++{{#if HERDR_INTERNAL_URLS_ENABLED}}
++- `herdr://` reads local Herdr state (`status`, `snapshot`, `workspaces`, `tabs?workspace=...`, `panes?workspace=...`, `pane/<id>?source=recent&lines=80`).
++{{/if}}
++{{#if HUNK_INTERNAL_URLS_ENABLED}}
++- `hunk://` reads Hunk review data (`review`, `context`, `comments`) for `?repo=...` or the session cwd.
++{{/if}}
+ - `ssh://host/<path>` reads remote file/dir (UTF-8, ≤1 MiB); bare `ssh://` lists hosts; writable with `write` and searchable with `grep`.
+   Literal `:`, `?`, `#` → percent-encode (`%3A`/`%3F`/`%23`). Requires a verified POSIX shell on the remote host. For Windows or other unsupported hosts, use `bash` with a remote SSH command or mount with `sshfs`.
+ 
+diff --git c/packages/coding-agent/src/system-prompt.ts i/packages/coding-agent/src/system-prompt.ts
+index 5a7ec9c9a..19ea1e7ef 100644
+--- c/packages/coding-agent/src/system-prompt.ts
++++ i/packages/coding-agent/src/system-prompt.ts
+@@ -20,7 +20,7 @@ import {
+ import { contextFileCapability } from "./capability/context-file";
+ import { systemPromptCapability } from "./capability/system-prompt";
+ import { findConfigFile } from "./config";
+-import type { Personality, SkillsSettings } from "./config/settings";
++import { isSettingsInitialized, type Personality, type SkillsSettings, settings } from "./config/settings";
+ import { type ContextFile, loadCapability, type SystemPrompt as SystemPromptFile } from "./discovery";
+ import { expandAtImports } from "./discovery/at-imports";
+ import { loadSkills, type Skill } from "./extensibility/skills";
+@@ -70,6 +70,10 @@ async function loadPersonalityOverride(): Promise<string | null> {
+ 	}
+ 	return null;
+ }
++function internalUrlPromptEnabled(path: "internalUrls.herdr" | "internalUrls.hunk"): boolean {
++	return isSettingsInitialized() && settings.get(path) === true;
++}
++
+ 
+ interface AlwaysApplyRule {
+ 	name: string;
+@@ -991,6 +995,8 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
+ 		hasMemoryRoot: memoryRootEnabled,
+ 		securityEnabled,
+ 		hasObsidian: hasObsidian(),
++		hasHerdrInternalUrls: internalUrlPromptEnabled("internalUrls.herdr"),
++		hasHunkInternalUrls: internalUrlPromptEnabled("internalUrls.hunk"),
+ 		includeWorkspaceTree,
+ 		renderMermaid,
+ 		xdevTools,
+diff --git c/packages/coding-agent/src/tools/glob.ts i/packages/coding-agent/src/tools/glob.ts
+index e88ef9100..83294e1ed 100644
+--- c/packages/coding-agent/src/tools/glob.ts
++++ i/packages/coding-agent/src/tools/glob.ts
+@@ -20,8 +20,9 @@ import { applyListLimit } from "./list-limit";
+ import { formatFullOutputReference, type OutputMeta } from "./output-meta";
+ import {
+ 	expandDelimitedPathEntries,
++	formatInternalSourceDisplayPath,
+ 	formatPathRelativeToCwd,
+-	hasGlobPathChars,
++	hasInternalUrlGlobPathChars,
+ 	isSshUrl,
+ 	normalizePathLikeInput,
+ 	parseFindPattern,
+@@ -205,6 +206,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 			}
+ 			const internalRouter = InternalUrlRouter.instance();
+ 			const normalizedPatterns: string[] = [];
++			const sourceDisplayUrls = new Map<string, string>();
+ 			for (const rawPattern of aliasResolvedPatterns) {
+ 				if (!internalRouter.canHandle(rawPattern)) {
+ 					normalizedPatterns.push(rawPattern);
+@@ -215,7 +217,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 						`find cannot operate on a remote ssh:// path: ${rawPattern}. ssh:// has no local file to glob; use \`read ${rawPattern}\` to list or inspect the remote path.`,
+ 					);
+ 				}
+-				if (hasGlobPathChars(rawPattern)) {
++				if (hasInternalUrlGlobPathChars(rawPattern)) {
+ 					if (!/^memory:\/\//i.test(rawPattern)) {
+ 						throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPattern}`);
+ 					}
+@@ -247,6 +249,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 				if (!resource.sourcePath) {
+ 					throw new ToolError(`Cannot find internal URL without a backing file: ${rawPattern}`);
+ 				}
++				if (resource.sourceDisplayUrl) {
++					sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
++				}
+ 				normalizedPatterns.push(resource.sourcePath);
+ 			}
+ 			if (normalizedPatterns.some(pattern => pattern.length === 0)) {
+@@ -286,7 +291,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 							};
+ 						})(),
+ 					];
+-			const scopePath = multiPattern?.scopePath ?? formatScopePath(targets[0].searchPath);
++			let scopePath = multiPattern?.scopePath ?? formatScopePath(targets[0].searchPath);
++			const displayScopePath = formatInternalSourceDisplayPath(targets[0].searchPath, sourceDisplayUrls);
++			if (displayScopePath) scopePath = displayScopePath;
+ 
+ 			for (const target of targets) {
+ 				if (target.searchPath === "/") {
+@@ -307,6 +314,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 			const formatMatchPath = (matchPath: string, base: string, fileType?: natives.FileType): string => {
+ 				const hadTrailingSlash = matchPath.endsWith("/") || matchPath.endsWith("\\");
+ 				const absolutePath = path.isAbsolute(matchPath) ? matchPath : path.resolve(base, matchPath);
++				const internalDisplay = formatInternalSourceDisplayPath(absolutePath, sourceDisplayUrls);
++				if (internalDisplay) return internalDisplay;
+ 				return formatPathRelativeToCwd(absolutePath, this.session.cwd, {
+ 					trailingSlash: fileType === natives.FileType.Dir || hadTrailingSlash,
+ 				});
+@@ -423,9 +432,10 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
+ 						throw err;
+ 					}
+ 					if (!target.hasGlob && stat.isFile()) {
++						const displayPath = formatInternalSourceDisplayPath(target.searchPath, sourceDisplayUrls);
+ 						return {
+ 							target,
+-							result: [{ path: formatScopePath(target.searchPath), mtime: stat.mtimeMs }],
++							result: [{ path: displayPath ?? formatScopePath(target.searchPath), mtime: stat.mtimeMs }],
+ 						};
+ 					}
+ 					if (!stat.isDirectory()) {
+diff --git c/packages/coding-agent/src/tools/grep.ts i/packages/coding-agent/src/tools/grep.ts
+index 43b7e7cfa..200cd85d0 100644
+--- c/packages/coding-agent/src/tools/grep.ts
++++ i/packages/coding-agent/src/tools/grep.ts
+@@ -49,7 +49,9 @@ import { formatMatchLine } from "./match-line-format";
+ import type { OutputMeta } from "./output-meta";
+ import {
+ 	expandDelimitedPathEntries,
++	formatInternalSourceDisplayPath,
+ 	hasGlobPathChars,
++	hasInternalUrlGlobPathChars,
+ 	isLineInRanges,
+ 	type LineRange,
+ 	parseLineRanges,
+@@ -327,6 +329,7 @@ interface InternalSearchInputResolution {
+ 	virtualPathSet: Set<string>;
+ 	virtualInputIndexes: Set<number>;
+ 	immutableSourcePaths: Set<string>;
++	sourceDisplayUrls: Map<string, string>;
+ 	virtualScopePath?: string;
+ }
+ 
+@@ -781,6 +784,7 @@ async function resolveInternalSearchInputs(opts: {
+ 	const virtualPathSet = new Set<string>();
+ 	const virtualInputIndexes = new Set<number>();
+ 	const immutableSourcePaths = new Set<string>();
++	const sourceDisplayUrls = new Map<string, string>();
+ 	let virtualScopePath: string | undefined;
+ 	const context: ResolveContext = {
+ 		cwd: opts.cwd,
+@@ -801,11 +805,7 @@ async function resolveInternalSearchInputs(opts: {
+ 		if (!rawPath || opts.archiveDisplayMap.has(rawPath) || !internalRouter.canHandle(rawPath)) {
+ 			continue;
+ 		}
+-		// `ssh://[::1]/path` carries `[`/`]` in the IPv6 authority — glob metacharacters
+-		// — so check only the path portion for ssh:// (the SSH handler reads a single
+-		// remote file; there is no glob expansion). A glob in the remote path still trips.
+-		const globTarget = /^ssh:\/\//i.test(rawPath) ? rawPath.replace(/^ssh:\/\/[^/]*/i, "") : rawPath;
+-		if (hasGlobPathChars(globTarget)) {
++		if (hasInternalUrlGlobPathChars(rawPath)) {
+ 			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
+ 		}
+ 		let resource = await internalRouter.resolve(rawPath, context);
+@@ -822,6 +822,9 @@ async function resolveInternalSearchInputs(opts: {
+ 			if (resource.immutable) {
+ 				immutableSourcePaths.add(path.resolve(resource.sourcePath));
+ 			}
++			if (resource.sourceDisplayUrl) {
++				sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
++			}
+ 			continue;
+ 		}
+ 
+@@ -854,6 +857,7 @@ async function resolveInternalSearchInputs(opts: {
+ 		virtualPathSet,
+ 		virtualInputIndexes,
+ 		immutableSourcePaths,
++		sourceDisplayUrls,
+ 		virtualScopePath,
+ 	};
+ }
+@@ -1030,6 +1034,7 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 				let exactFilePaths: string[] | undefined;
+ 				let missingPaths: string[];
+ 				const immutableSourcePaths = new Set(internalResolution.immutableSourcePaths);
++				const sourceDisplayUrls = new Map(internalResolution.sourceDisplayUrls);
+ 				if (searchablePaths.length > 0) {
+ 					const scope = await resolveToolSearchScope({
+ 						rawPaths: searchablePaths,
+@@ -1054,6 +1059,9 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 					for (const immutablePath of scope.immutableSourcePaths) {
+ 						immutableSourcePaths.add(immutablePath);
+ 					}
++					for (const [sourcePath, displayUrl] of scope.sourceDisplayUrls) {
++						sourceDisplayUrls.set(sourcePath, displayUrl);
++					}
+ 					// Build the per-file line-range filter after URL materialization has run:
+ 					// archive entries are keyed by scratch path, URL entries by read-cache
+ 					// content path, and ordinary files by their resolved filesystem path.
+@@ -1087,10 +1095,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 					}
+ 					// When the only input was an archive selector, surface that selector instead
+ 					// of the temp scratch path the resolver substituted in.
++					const internalScopePath = formatInternalSourceDisplayPath(searchPath, sourceDisplayUrls);
+ 					const physicalScopePath =
+-						searchablePaths.length === 1 && archiveDisplayMap.get(searchPath)
++						internalScopePath ??
++						(searchablePaths.length === 1 && archiveDisplayMap.get(searchPath)
+ 							? (archiveDisplayMap.get(searchPath) as string)
+-							: scope.scopePath;
++							: scope.scopePath);
+ 					scopePath = internalResolution.virtualScopePath
+ 						? `${physicalScopePath}, ${internalResolution.virtualScopePath}`
+ 						: physicalScopePath;
+@@ -1301,9 +1311,20 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 						if (display) match.path = display;
+ 					}
+ 				}
++				const internalDisplaySet = new Set<string>();
++				if (sourceDisplayUrls.size > 0) {
++					for (const match of result.matches) {
++						const abs = matchAbsolutePath(match.path, searchPath);
++						const display = formatInternalSourceDisplayPath(abs, sourceDisplayUrls);
++						if (display) {
++							match.path = display;
++							internalDisplaySet.add(display);
++						}
++					}
++				}
+ 
+ 				const formatPath = (filePath: string): string =>
+-					archiveDisplaySet.has(filePath) || virtualPathSet.has(filePath)
++					archiveDisplaySet.has(filePath) || virtualPathSet.has(filePath) || internalDisplaySet.has(filePath)
+ 						? filePath
+ 						: formatResultPath(filePath, isDirectory, searchPath, this.session.cwd);
+ 
+@@ -1462,7 +1483,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
+ 				const hashContexts = new Map<string, { tag: string }>();
+ 				if (baseDisplayMode.hashLines) {
+ 					for (const relativePath of fileList) {
+-						if (archiveDisplaySet.has(relativePath) || virtualPathSet.has(relativePath)) continue;
++						if (
++							archiveDisplaySet.has(relativePath) ||
++							virtualPathSet.has(relativePath) ||
++							internalDisplaySet.has(relativePath)
++						)
++							continue;
+ 						const absoluteFilePath = path.resolve(this.session.cwd, relativePath);
+ 						if (isImmutableSourcePath(absoluteFilePath, immutableSourcePaths)) continue;
+ 						// Mint a whole-file content tag so any anchor validates while the
+diff --git c/packages/coding-agent/src/tools/path-utils.ts i/packages/coding-agent/src/tools/path-utils.ts
+index 6208eb65c..b5361e292 100644
+--- c/packages/coding-agent/src/tools/path-utils.ts
++++ i/packages/coding-agent/src/tools/path-utils.ts
+@@ -35,6 +35,8 @@ const INTERNAL_URL_SELECTOR_PART_RE = new RegExp(
+ const INTERNAL_SCHEMES_WITH_SELECTORS: Record<string, true> = {
+ 	agent: true,
+ 	artifact: true,
++	herdr: true,
++	hunk: true,
+ 	issue: true,
+ 	history: true,
+ 	local: true,
+@@ -59,6 +61,8 @@ const NARROW_NO_BREAK_SPACE = "\u202F";
+ const TOP_LEVEL_INTERNAL_URL_PREFIXES = [
+ 	"agent://",
+ 	"artifact://",
++	"herdr://",
++	"hunk://",
+ 	"skill://",
+ 	"rule://",
+ 	"security://",
+@@ -117,6 +121,8 @@ function normalizeAtPrefix(filePath: string): string {
+ 		// Internal URL shorthands
+ 		withoutAt.startsWith("agent://") ||
+ 		withoutAt.startsWith("artifact://") ||
++		withoutAt.startsWith("herdr://") ||
++		withoutAt.startsWith("hunk://") ||
+ 		withoutAt.startsWith("skill://") ||
+ 		withoutAt.startsWith("rule://") ||
+ 		withoutAt.startsWith("security://") ||
+@@ -790,6 +796,56 @@ export function hasGlobPathChars(filePath: string): boolean {
+ 	return GLOB_PATH_CHARS.some(char => filePath.includes(char));
+ }
+ 
++export function hasInternalUrlGlobPathChars(filePath: string): boolean {
++	const schemeMatch = filePath.match(INTERNAL_URL_SCHEME_RE);
++	if (!schemeMatch) return hasGlobPathChars(filePath);
++	const schemeEnd = schemeMatch[0].length;
++	const rest = filePath.slice(schemeEnd);
++	const firstDelimiter = rest.search(/[/?#]/);
++	if (firstDelimiter === -1 || rest[firstDelimiter] !== "/") return false;
++	const pathAndSuffix = rest.slice(firstDelimiter);
++	const queryOrHash = pathAndSuffix.search(/[?#]/);
++	const pathname = queryOrHash === -1 ? pathAndSuffix : pathAndSuffix.slice(0, queryOrHash);
++	return hasGlobPathChars(pathname);
++}
++
++function appendDisplayUrlPath(baseUrl: string, relativePath: string): string {
++	const hashIndex = baseUrl.indexOf("#");
++	const hash = hashIndex === -1 ? "" : baseUrl.slice(hashIndex);
++	const withoutHash = hashIndex === -1 ? baseUrl : baseUrl.slice(0, hashIndex);
++	const queryIndex = withoutHash.indexOf("?");
++	const query = queryIndex === -1 ? "" : withoutHash.slice(queryIndex);
++	const head = queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
++	const encoded = relativePath
++		.split(/[\\/]+/)
++		.filter(Boolean)
++		.map(encodeURIComponent)
++		.join("/");
++	return `${head.replace(/\/+$/, "")}/${encoded}${query}${hash}`;
++}
++
++export function formatInternalSourceDisplayPath(
++	filePath: string,
++	sourceDisplayUrls: ReadonlyMap<string, string>,
++): string | undefined {
++	const absolutePath = path.resolve(filePath);
++	let bestRoot = "";
++	let bestUrl: string | undefined;
++	for (const [rootPath, displayUrl] of sourceDisplayUrls) {
++		const absoluteRoot = path.resolve(rootPath);
++		if (
++			absolutePath === absoluteRoot ||
++			(absoluteRoot.length > bestRoot.length && absolutePath.startsWith(`${absoluteRoot}${path.sep}`))
++		) {
++			bestRoot = absoluteRoot;
++			bestUrl = displayUrl;
++		}
++	}
++	if (!bestUrl) return undefined;
++	if (absolutePath === bestRoot) return bestUrl;
++	return appendDisplayUrlPath(bestUrl, path.relative(bestRoot, absolutePath));
++}
++
+ type PathEntrySplitter = (item: string) => { basePath: string };
+ 
+ const TOP_LEVEL_WHITESPACE_RE = /\s/;
+@@ -1444,6 +1500,7 @@ export interface ToolScopeResolution {
+ 	exactFilePaths?: string[];
+ 	missingPaths: string[];
+ 	immutableSourcePaths: Set<string>;
++	sourceDisplayUrls: Map<string, string>;
+ }
+ 
+ /**
+@@ -1471,6 +1528,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 	const internalRouter = InternalUrlRouter.instance();
+ 	const resolvedPathInputs: string[] = [];
+ 	const immutableSourcePaths = new Set<string>();
++	const sourceDisplayUrls = new Map<string, string>();
+ 	for (const rawPath of rawPaths) {
+ 		let externalUrl = strictExternalUrlRe.test(rawPath);
+ 		if (!externalUrl && isReadableUrlPath(rawPath) && !hasGlobPathChars(rawPath)) {
+@@ -1511,7 +1569,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 				`Cannot ${internalUrlAction} a remote ssh:// path (no local file): ${rawPath}. Use \`read ${rawPath}\` to view it, or use \`grep\` on a specific remote file.`,
+ 			);
+ 		}
+-		if (hasGlobPathChars(rawPath)) {
++		if (hasInternalUrlGlobPathChars(rawPath)) {
+ 			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
+ 		}
+ 		const resource = await internalRouter.resolve(rawPath, {
+@@ -1531,6 +1589,9 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 		if (opts.trackImmutableSources && resource.immutable) {
+ 			immutableSourcePaths.add(path.resolve(resource.sourcePath));
+ 		}
++		if (resource.sourceDisplayUrl) {
++			sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
++		}
+ 		resolvedPathInputs.push(resource.sourcePath);
+ 	}
+ 
+@@ -1584,15 +1645,17 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
+ 		const hint = opts.multipathStatHint && rawPaths.length > 1 ? opts.multipathStatHint : "";
+ 		throw new ToolError(`Path not found: ${scopePath}${hint}`);
+ 	}
++	const displayScopePath = formatInternalSourceDisplayPath(searchPath, sourceDisplayUrls) ?? scopePath;
+ 
+ 	return {
+ 		searchPath,
+-		scopePath,
++		scopePath: displayScopePath,
+ 		globFilter,
+ 		isDirectory,
+ 		multiTargets,
+ 		exactFilePaths,
+ 		missingPaths,
+ 		immutableSourcePaths,
++		sourceDisplayUrls,
+ 	};
+ }
+diff --git c/packages/coding-agent/src/tools/read.ts i/packages/coding-agent/src/tools/read.ts
+index c6763bd03..0643d519d 100644
+--- c/packages/coding-agent/src/tools/read.ts
++++ i/packages/coding-agent/src/tools/read.ts
+@@ -657,6 +657,8 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
+ 			IS_HL_MODE: displayMode.hashLines,
+ 			IS_LINE_NUMBER_MODE: !displayMode.hashLines && displayMode.lineNumbers,
+ 			INSPECT_IMAGE_ENABLED: this.#inspectImageActive,
++			HERDR_INTERNAL_URLS_ENABLED: this.session.settings.get("internalUrls.herdr"),
++			HUNK_INTERNAL_URLS_ENABLED: this.session.settings.get("internalUrls.hunk"),
+ 		});
+ 	}
+ 
 diff --git a/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts b/packages/coding-agent/src/internal-urls/__tests__/herdr-hunk-protocol.test.ts
 new file mode 100644
 index 0000000000..b15d541ab9
@@ -530,557 +1086,3 @@ index 0000000000..834ccf7795
 +		}
 +	}
 +}
-diff --git a/packages/coding-agent/src/internal-urls/index.ts b/packages/coding-agent/src/internal-urls/index.ts
-index 6b52fb2198..e9fd8f7688 100644
---- a/packages/coding-agent/src/internal-urls/index.ts
-+++ b/packages/coding-agent/src/internal-urls/index.ts
-@@ -10,6 +10,7 @@
- 
- export * from "./agent-protocol";
- export * from "./artifact-protocol";
-+export * from "./herdr-hunk-protocol";
- export * from "./history-protocol";
- export * from "./issue-pr-protocol";
- export * from "./json-query";
-diff --git a/packages/coding-agent/src/internal-urls/router.ts b/packages/coding-agent/src/internal-urls/router.ts
-index 09061c5a21..2117e093f9 100644
---- a/packages/coding-agent/src/internal-urls/router.ts
-+++ b/packages/coding-agent/src/internal-urls/router.ts
-@@ -1,12 +1,14 @@
- /**
-- * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
-+ * Internal URL router for internal protocols (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`).
-  *
-  * One process-global router with one handler per scheme. Access via
-  * `InternalUrlRouter.instance()`. Handlers are stateless; per-session and
-  * shared state lives in `./state.ts`.
-  */
-+import { isSettingsInitialized, settings } from "../config/settings";
- import { AgentProtocolHandler } from "./agent-protocol";
- import { ArtifactProtocolHandler } from "./artifact-protocol";
-+import { HerdrProtocolHandler, HunkProtocolHandler } from "./herdr-hunk-protocol";
- import { HistoryProtocolHandler } from "./history-protocol";
- import { IssueProtocolHandler, PrProtocolHandler } from "./issue-pr-protocol";
- import { LocalProtocolHandler } from "./local-protocol";
-@@ -51,6 +53,8 @@ export class InternalUrlRouter {
- 		this.register(new HistoryProtocolHandler());
- 		this.register(new SshProtocolHandler());
- 		this.register(new XdProtocolHandler());
-+		this.register(new HerdrProtocolHandler());
-+		this.register(new HunkProtocolHandler());
- 	}
- 
- 	/** Process-global router instance. */
-@@ -64,6 +68,12 @@ export class InternalUrlRouter {
- 		InternalUrlRouter.#instance = undefined;
- 	}
- 
-+	static #enabled(scheme: string): boolean {
-+		if (scheme === "herdr") return isSettingsInitialized() && settings.get("internalUrls.herdr") === true;
-+		if (scheme === "hunk") return isSettingsInitialized() && settings.get("internalUrls.hunk") === true;
-+		return true;
-+	}
-+
- 	register(handler: ProtocolHandler): void {
- 		this.#handlers.set(handler.scheme.toLowerCase(), handler);
- 	}
-@@ -73,13 +83,16 @@ export class InternalUrlRouter {
- 	}
- 
- 	getHandler(scheme: string): ProtocolHandler | undefined {
--		return this.#handlers.get(scheme.toLowerCase());
-+		const normalized = scheme.toLowerCase();
-+		if (!InternalUrlRouter.#enabled(normalized)) return undefined;
-+		return this.#handlers.get(normalized);
- 	}
- 
- 	canHandle(input: string): boolean {
- 		const match = input.match(/^([a-z][a-z0-9+.-]*):\/\//i);
- 		if (!match) return false;
--		return this.#handlers.has(match[1].toLowerCase());
-+		const scheme = match[1].toLowerCase();
-+		return InternalUrlRouter.#enabled(scheme) && this.#handlers.has(scheme);
- 	}
- 
- 	/**
-@@ -100,7 +113,7 @@ export class InternalUrlRouter {
- 	completionSchemes(): string[] {
- 		const schemes: string[] = [];
- 		for (const [scheme, handler] of this.#handlers) {
--			if (handler.complete) schemes.push(scheme);
-+			if (InternalUrlRouter.#enabled(scheme) && handler.complete) schemes.push(scheme);
- 		}
- 		return schemes;
- 	}
-@@ -110,7 +123,9 @@ export class InternalUrlRouter {
- 	 * Returns `null` when the scheme is unknown or does not support completion.
- 	 */
- 	async complete(scheme: string, query: string, context?: ResolveContext): Promise<UrlCompletion[] | null> {
--		const handler = this.#handlers.get(scheme.toLowerCase());
-+		const normalized = scheme.toLowerCase();
-+		if (!InternalUrlRouter.#enabled(normalized)) return null;
-+		const handler = this.#handlers.get(normalized);
- 		if (!handler?.complete) return null;
- 		return handler.complete(query, context);
- 	}
-@@ -125,8 +140,9 @@ export class InternalUrlRouter {
- 		const handler =
- 			this.#handlers.get(scheme) ??
- 			(allowMcpResource && this.#isMcpResourceScheme(scheme) ? this.#handlers.get("mcp") : undefined);
--		if (!handler) {
-+		if (!handler || !InternalUrlRouter.#enabled(this.#handlers.has(scheme) ? scheme : "mcp")) {
- 			const available = Array.from(this.#handlers.keys())
-+				.filter(candidate => InternalUrlRouter.#enabled(candidate))
- 				.map(candidate => `${candidate}://`)
- 				.join(", ");
- 			throw new Error(`Unknown protocol: ${scheme}://\nSupported: ${available || "none"}`);
-diff --git a/packages/coding-agent/src/internal-urls/types.ts b/packages/coding-agent/src/internal-urls/types.ts
-index d03e527847..811ddcd159 100644
---- a/packages/coding-agent/src/internal-urls/types.ts
-+++ b/packages/coding-agent/src/internal-urls/types.ts
-@@ -1,7 +1,7 @@
- /**
-  * Types for the internal URL routing system.
-  *
-- * Internal URLs (`agent://`, `artifact://`, `history://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
-+ * Internal URLs (`agent://`, `artifact://`, `history://`, `herdr://`, `hunk://`, `issue://`, `local://`, `mcp://`, `memory://`, `omp://`, `pr://`, `rule://`, `security://`, `skill://`, `ssh://`, `vault://`, and `xd://`) are resolved by tools like read,
-  * providing access to agent outputs and server resources without exposing filesystem paths.
-  */
- 
-@@ -24,6 +24,11 @@ export interface InternalResource {
- 	size?: number;
- 	/** Underlying filesystem path (for debugging, not exposed to agent) */
- 	sourcePath?: string;
-+	/**
-+	 * URL to display for matches found under `sourcePath`. Search/find use this
-+	 * to avoid leaking materialized cache paths for immutable virtual resources.
-+	 */
-+	sourceDisplayUrl?: string;
- 	/** Additional notes about resolution */
- 	notes?: string[];
- 	/**
-diff --git a/packages/coding-agent/src/prompts/system/system-prompt.md b/packages/coding-agent/src/prompts/system/system-prompt.md
-index ad26d0f2b8..187571c5ad 100644
---- a/packages/coding-agent/src/prompts/system/system-prompt.md
-+++ b/packages/coding-agent/src/prompts/system/system-prompt.md
-@@ -66,6 +66,13 @@ Most FS/bash tools auto-resolve these to FS paths.
- - `vault://<vault>/<path>`: Obsidian read/edit; `vault://`: vault list; `vault://_/…`: active vault. File `?op=outline|backlinks|links|tags|properties|tasks|base|…`; vault `?op=search&q=…|daily|tasks|orphans|unresolved|bases|…`.
- {{/if}}
- - `mcp://<uri>`: MCP resource
-+- `ssh://host/<path>`: configured SSH host files/directories.
-+{{#if hasHerdrInternalUrls}}
-+- `herdr://status|snapshot|workspaces|tabs|panes|pane/<id>`: local Herdr resources via the CLI/socket wrappers.
-+{{/if}}
-+{{#if hasHunkInternalUrls}}
-+- `hunk://review|context|comments`: active Hunk review session data for a repo.
-+{{/if}}
- - `issue://<N>` / `issue://<owner>/<repo>/<N>`: GitHub issue; bare: recent; `?state=open|closed|all&limit=&author=&label=`.
- - `pr://<N>` / `pr://<owner>/<repo>/<N>`: same cache; bare: recent; `?comments=0` `?state=open|closed|merged|all&limit=&author=&label=`.
- - `omp://`: harness docs; AVOID unless user asks about harness.
-diff --git a/packages/coding-agent/src/prompts/tools/read.md b/packages/coding-agent/src/prompts/tools/read.md
-index 47610ccdb6..3cdf6d9b40 100644
---- a/packages/coding-agent/src/prompts/tools/read.md
-+++ b/packages/coding-agent/src/prompts/tools/read.md
-@@ -19,6 +19,12 @@ Read files, directories, archives, SQLite, images, documents, internal resources
- - Documents → extracted text. Notebooks → editable cells. Images → {{#if INSPECT_IMAGE_ENABLED}}metadata; call `inspect_image`{{else}}decoded inline{{/if}}. `:raw` bypasses converters.
- - URLs → reader-mode clean text/markdown; `:raw` → untouched HTML. Bare `host:port` needs trailing slash.
- - Internal URIs — all schemes take selectors. `artifact://<id>` recovers spilled output; page with `:N-M`/`:raw:N-M`.
-+{{#if HERDR_INTERNAL_URLS_ENABLED}}
-+- `herdr://` reads local Herdr state (`status`, `snapshot`, `workspaces`, `tabs?workspace=...`, `panes?workspace=...`, `pane/<id>?source=recent&lines=80`).
-+{{/if}}
-+{{#if HUNK_INTERNAL_URLS_ENABLED}}
-+- `hunk://` reads Hunk review data (`review`, `context`, `comments`) for `?repo=...` or the session cwd.
-+{{/if}}
- - `ssh://host/<path>` reads remote file/dir (UTF-8, ≤1 MiB); bare `ssh://` lists hosts; also `write`/`search`-able.
-   Literal `:`, `?`, `#` → percent-encode (`%3A`/`%3F`/`%23`). Requires POSIX shell (else `ssh` tool).
- 
-diff --git a/packages/coding-agent/src/system-prompt.ts b/packages/coding-agent/src/system-prompt.ts
-index bea09d0511..e205e225f7 100644
---- a/packages/coding-agent/src/system-prompt.ts
-+++ b/packages/coding-agent/src/system-prompt.ts
-@@ -11,7 +11,7 @@ import { $env, getGpuCachePath, getProjectDir, hasFsCode, isEnoent, logger, prom
- import { contextFileCapability } from "./capability/context-file";
- import { systemPromptCapability } from "./capability/system-prompt";
- import { findConfigFile } from "./config";
--import type { Personality, SkillsSettings } from "./config/settings";
-+import { isSettingsInitialized, type Personality, type SkillsSettings, settings } from "./config/settings";
- import { type ContextFile, loadCapability, type SystemPrompt as SystemPromptFile } from "./discovery";
- import { expandAtImports } from "./discovery/at-imports";
- import { loadSkills, type Skill } from "./extensibility/skills";
-@@ -37,6 +37,10 @@ const PERSONALITY_SPECS: Record<Exclude<Personality, "none">, string> = {
- 	pragmatic: pragmaticPersonality,
- };
- 
-+function internalUrlPromptEnabled(path: "internalUrls.herdr" | "internalUrls.hunk"): boolean {
-+	return isSettingsInitialized() && settings.get(path) === true;
-+}
-+
- interface AlwaysApplyRule {
- 	name: string;
- 	content: string;
-@@ -884,6 +888,8 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
- 		hasMemoryRoot: memoryRootEnabled,
- 		securityEnabled,
- 		hasObsidian: hasObsidian(),
-+		hasHerdrInternalUrls: internalUrlPromptEnabled("internalUrls.herdr"),
-+		hasHunkInternalUrls: internalUrlPromptEnabled("internalUrls.hunk"),
- 		includeWorkspaceTree,
- 		renderMermaid,
- 		xdevTools,
-diff --git a/packages/coding-agent/src/tools/glob.ts b/packages/coding-agent/src/tools/glob.ts
-index 7a8f797ad9..7ff7cbeb20 100644
---- a/packages/coding-agent/src/tools/glob.ts
-+++ b/packages/coding-agent/src/tools/glob.ts
-@@ -20,8 +20,9 @@ import { applyListLimit } from "./list-limit";
- import { formatFullOutputReference, type OutputMeta } from "./output-meta";
- import {
- 	expandDelimitedPathEntries,
-+	formatInternalSourceDisplayPath,
- 	formatPathRelativeToCwd,
--	hasGlobPathChars,
-+	hasInternalUrlGlobPathChars,
- 	isSshUrl,
- 	normalizePathLikeInput,
- 	parseFindPattern,
-@@ -173,6 +174,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 			}
- 			const internalRouter = InternalUrlRouter.instance();
- 			const normalizedPatterns: string[] = [];
-+			const sourceDisplayUrls = new Map<string, string>();
- 			for (const rawPattern of aliasResolvedPatterns) {
- 				if (!internalRouter.canHandle(rawPattern)) {
- 					normalizedPatterns.push(rawPattern);
-@@ -183,7 +185,7 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 						`find cannot operate on a remote ssh:// path: ${rawPattern}. ssh:// has no local file to glob; use \`read ${rawPattern}\` to list or inspect the remote path.`,
- 					);
- 				}
--				if (hasGlobPathChars(rawPattern)) {
-+				if (hasInternalUrlGlobPathChars(rawPattern)) {
- 					if (!/^memory:\/\//i.test(rawPattern)) {
- 						throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPattern}`);
- 					}
-@@ -215,6 +217,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 				if (!resource.sourcePath) {
- 					throw new ToolError(`Cannot find internal URL without a backing file: ${rawPattern}`);
- 				}
-+				if (resource.sourceDisplayUrl) {
-+					sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
-+				}
- 				normalizedPatterns.push(resource.sourcePath);
- 			}
- 			if (normalizedPatterns.some(pattern => pattern.length === 0)) {
-@@ -254,7 +259,9 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 							};
- 						})(),
- 					];
--			const scopePath = multiPattern?.scopePath ?? formatScopePath(targets[0].searchPath);
-+			let scopePath = multiPattern?.scopePath ?? formatScopePath(targets[0].searchPath);
-+			const displayScopePath = formatInternalSourceDisplayPath(targets[0].searchPath, sourceDisplayUrls);
-+			if (displayScopePath) scopePath = displayScopePath;
- 
- 			for (const target of targets) {
- 				if (target.searchPath === "/") {
-@@ -275,6 +282,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 			const formatMatchPath = (matchPath: string, base: string, fileType?: natives.FileType): string => {
- 				const hadTrailingSlash = matchPath.endsWith("/") || matchPath.endsWith("\\");
- 				const absolutePath = path.isAbsolute(matchPath) ? matchPath : path.resolve(base, matchPath);
-+				const internalDisplay = formatInternalSourceDisplayPath(absolutePath, sourceDisplayUrls);
-+				if (internalDisplay) return internalDisplay;
- 				return formatPathRelativeToCwd(absolutePath, this.session.cwd, {
- 					trailingSlash: fileType === natives.FileType.Dir || hadTrailingSlash,
- 				});
-@@ -424,7 +433,8 @@ export class GlobTool implements AgentTool<typeof findSchema, GlobToolDetails> {
- 					throw err;
- 				}
- 				if (!target.hasGlob && stat.isFile()) {
--					return [{ path: formatScopePath(target.searchPath), mtime: stat.mtimeMs }];
-+					const displayPath = formatInternalSourceDisplayPath(target.searchPath, sourceDisplayUrls);
-+					return [{ path: displayPath ?? formatScopePath(target.searchPath), mtime: stat.mtimeMs }];
- 				}
- 				if (!stat.isDirectory()) {
- 					if (isSingle) throw new ToolError(`Path is not a directory: ${target.searchPath}`);
-diff --git a/packages/coding-agent/src/tools/grep.ts b/packages/coding-agent/src/tools/grep.ts
-index d8076a8bce..7b7e32955b 100644
---- a/packages/coding-agent/src/tools/grep.ts
-+++ b/packages/coding-agent/src/tools/grep.ts
-@@ -44,7 +44,9 @@ import { formatMatchLine } from "./match-line-format";
- import type { OutputMeta } from "./output-meta";
- import {
- 	expandDelimitedPathEntries,
-+	formatInternalSourceDisplayPath,
- 	hasGlobPathChars,
-+	hasInternalUrlGlobPathChars,
- 	isLineInRanges,
- 	type LineRange,
- 	parseLineRanges,
-@@ -322,6 +324,7 @@ interface InternalSearchInputResolution {
- 	virtualPathSet: Set<string>;
- 	virtualInputIndexes: Set<number>;
- 	immutableSourcePaths: Set<string>;
-+	sourceDisplayUrls: Map<string, string>;
- 	virtualScopePath?: string;
- }
- 
-@@ -776,6 +779,7 @@ async function resolveInternalSearchInputs(opts: {
- 	const virtualPathSet = new Set<string>();
- 	const virtualInputIndexes = new Set<number>();
- 	const immutableSourcePaths = new Set<string>();
-+	const sourceDisplayUrls = new Map<string, string>();
- 	let virtualScopePath: string | undefined;
- 	const context: ResolveContext = {
- 		cwd: opts.cwd,
-@@ -796,11 +800,7 @@ async function resolveInternalSearchInputs(opts: {
- 		if (!rawPath || opts.archiveDisplayMap.has(rawPath) || !internalRouter.canHandle(rawPath)) {
- 			continue;
- 		}
--		// `ssh://[::1]/path` carries `[`/`]` in the IPv6 authority — glob metacharacters
--		// — so check only the path portion for ssh:// (the SSH handler reads a single
--		// remote file; there is no glob expansion). A glob in the remote path still trips.
--		const globTarget = /^ssh:\/\//i.test(rawPath) ? rawPath.replace(/^ssh:\/\/[^/]*/i, "") : rawPath;
--		if (hasGlobPathChars(globTarget)) {
-+		if (hasInternalUrlGlobPathChars(rawPath)) {
- 			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
- 		}
- 		let resource = await internalRouter.resolve(rawPath, context);
-@@ -817,6 +817,9 @@ async function resolveInternalSearchInputs(opts: {
- 			if (resource.immutable) {
- 				immutableSourcePaths.add(path.resolve(resource.sourcePath));
- 			}
-+			if (resource.sourceDisplayUrl) {
-+				sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
-+			}
- 			continue;
- 		}
- 
-@@ -849,6 +852,7 @@ async function resolveInternalSearchInputs(opts: {
- 		virtualPathSet,
- 		virtualInputIndexes,
- 		immutableSourcePaths,
-+		sourceDisplayUrls,
- 		virtualScopePath,
- 	};
- }
-@@ -1025,6 +1029,7 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
- 				let exactFilePaths: string[] | undefined;
- 				let missingPaths: string[];
- 				const immutableSourcePaths = new Set(internalResolution.immutableSourcePaths);
-+				const sourceDisplayUrls = new Map(internalResolution.sourceDisplayUrls);
- 				if (searchablePaths.length > 0) {
- 					const scope = await resolveToolSearchScope({
- 						rawPaths: searchablePaths,
-@@ -1049,6 +1054,9 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
- 					for (const immutablePath of scope.immutableSourcePaths) {
- 						immutableSourcePaths.add(immutablePath);
- 					}
-+					for (const [sourcePath, displayUrl] of scope.sourceDisplayUrls) {
-+						sourceDisplayUrls.set(sourcePath, displayUrl);
-+					}
- 					// Build the per-file line-range filter after URL materialization has run:
- 					// archive entries are keyed by scratch path, URL entries by read-cache
- 					// content path, and ordinary files by their resolved filesystem path.
-@@ -1082,10 +1090,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
- 					}
- 					// When the only input was an archive selector, surface that selector instead
- 					// of the temp scratch path the resolver substituted in.
-+					const internalScopePath = formatInternalSourceDisplayPath(searchPath, sourceDisplayUrls);
- 					const physicalScopePath =
--						searchablePaths.length === 1 && archiveDisplayMap.get(searchPath)
-+						internalScopePath ??
-+						(searchablePaths.length === 1 && archiveDisplayMap.get(searchPath)
- 							? (archiveDisplayMap.get(searchPath) as string)
--							: scope.scopePath;
-+							: scope.scopePath);
- 					scopePath = internalResolution.virtualScopePath
- 						? `${physicalScopePath}, ${internalResolution.virtualScopePath}`
- 						: physicalScopePath;
-@@ -1296,9 +1306,20 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
- 						if (display) match.path = display;
- 					}
- 				}
-+				const internalDisplaySet = new Set<string>();
-+				if (sourceDisplayUrls.size > 0) {
-+					for (const match of result.matches) {
-+						const abs = matchAbsolutePath(match.path, searchPath);
-+						const display = formatInternalSourceDisplayPath(abs, sourceDisplayUrls);
-+						if (display) {
-+							match.path = display;
-+							internalDisplaySet.add(display);
-+						}
-+					}
-+				}
- 
- 				const formatPath = (filePath: string): string =>
--					archiveDisplaySet.has(filePath) || virtualPathSet.has(filePath)
-+					archiveDisplaySet.has(filePath) || virtualPathSet.has(filePath) || internalDisplaySet.has(filePath)
- 						? filePath
- 						: formatResultPath(filePath, isDirectory, searchPath, this.session.cwd);
- 
-@@ -1457,7 +1478,12 @@ export class GrepTool implements AgentTool<typeof searchSchema, GrepToolDetails>
- 				const hashContexts = new Map<string, { tag: string }>();
- 				if (baseDisplayMode.hashLines) {
- 					for (const relativePath of fileList) {
--						if (archiveDisplaySet.has(relativePath) || virtualPathSet.has(relativePath)) continue;
-+						if (
-+							archiveDisplaySet.has(relativePath) ||
-+							virtualPathSet.has(relativePath) ||
-+							internalDisplaySet.has(relativePath)
-+						)
-+							continue;
- 						const absoluteFilePath = path.resolve(this.session.cwd, relativePath);
- 						if (isImmutableSourcePath(absoluteFilePath, immutableSourcePaths)) continue;
- 						// Mint a whole-file content tag so any anchor validates while the
-diff --git a/packages/coding-agent/src/tools/path-utils.ts b/packages/coding-agent/src/tools/path-utils.ts
-index 696f5799a5..659c1b3682 100644
---- a/packages/coding-agent/src/tools/path-utils.ts
-+++ b/packages/coding-agent/src/tools/path-utils.ts
-@@ -35,6 +35,8 @@ const INTERNAL_URL_SELECTOR_PART_RE = new RegExp(
- const INTERNAL_SCHEMES_WITH_SELECTORS: Record<string, true> = {
- 	agent: true,
- 	artifact: true,
-+	herdr: true,
-+	hunk: true,
- 	issue: true,
- 	history: true,
- 	local: true,
-@@ -59,6 +61,8 @@ const NARROW_NO_BREAK_SPACE = "\u202F";
- const TOP_LEVEL_INTERNAL_URL_PREFIXES = [
- 	"agent://",
- 	"artifact://",
-+	"herdr://",
-+	"hunk://",
- 	"skill://",
- 	"rule://",
- 	"security://",
-@@ -117,6 +121,8 @@ function normalizeAtPrefix(filePath: string): string {
- 		// Internal URL shorthands
- 		withoutAt.startsWith("agent://") ||
- 		withoutAt.startsWith("artifact://") ||
-+		withoutAt.startsWith("herdr://") ||
-+		withoutAt.startsWith("hunk://") ||
- 		withoutAt.startsWith("skill://") ||
- 		withoutAt.startsWith("rule://") ||
- 		withoutAt.startsWith("security://") ||
-@@ -698,6 +704,56 @@ export function hasGlobPathChars(filePath: string): boolean {
- 	return GLOB_PATH_CHARS.some(char => filePath.includes(char));
- }
- 
-+export function hasInternalUrlGlobPathChars(filePath: string): boolean {
-+	const schemeMatch = filePath.match(INTERNAL_URL_SCHEME_RE);
-+	if (!schemeMatch) return hasGlobPathChars(filePath);
-+	const schemeEnd = schemeMatch[0].length;
-+	const rest = filePath.slice(schemeEnd);
-+	const firstDelimiter = rest.search(/[/?#]/);
-+	if (firstDelimiter === -1 || rest[firstDelimiter] !== "/") return false;
-+	const pathAndSuffix = rest.slice(firstDelimiter);
-+	const queryOrHash = pathAndSuffix.search(/[?#]/);
-+	const pathname = queryOrHash === -1 ? pathAndSuffix : pathAndSuffix.slice(0, queryOrHash);
-+	return hasGlobPathChars(pathname);
-+}
-+
-+function appendDisplayUrlPath(baseUrl: string, relativePath: string): string {
-+	const hashIndex = baseUrl.indexOf("#");
-+	const hash = hashIndex === -1 ? "" : baseUrl.slice(hashIndex);
-+	const withoutHash = hashIndex === -1 ? baseUrl : baseUrl.slice(0, hashIndex);
-+	const queryIndex = withoutHash.indexOf("?");
-+	const query = queryIndex === -1 ? "" : withoutHash.slice(queryIndex);
-+	const head = queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
-+	const encoded = relativePath
-+		.split(/[\\/]+/)
-+		.filter(Boolean)
-+		.map(encodeURIComponent)
-+		.join("/");
-+	return `${head.replace(/\/+$/, "")}/${encoded}${query}${hash}`;
-+}
-+
-+export function formatInternalSourceDisplayPath(
-+	filePath: string,
-+	sourceDisplayUrls: ReadonlyMap<string, string>,
-+): string | undefined {
-+	const absolutePath = path.resolve(filePath);
-+	let bestRoot = "";
-+	let bestUrl: string | undefined;
-+	for (const [rootPath, displayUrl] of sourceDisplayUrls) {
-+		const absoluteRoot = path.resolve(rootPath);
-+		if (
-+			absolutePath === absoluteRoot ||
-+			(absoluteRoot.length > bestRoot.length && absolutePath.startsWith(`${absoluteRoot}${path.sep}`))
-+		) {
-+			bestRoot = absoluteRoot;
-+			bestUrl = displayUrl;
-+		}
-+	}
-+	if (!bestUrl) return undefined;
-+	if (absolutePath === bestRoot) return bestUrl;
-+	return appendDisplayUrlPath(bestUrl, path.relative(bestRoot, absolutePath));
-+}
-+
- type PathEntrySplitter = (item: string) => { basePath: string };
- 
- const TOP_LEVEL_WHITESPACE_RE = /\s/;
-@@ -1335,6 +1391,7 @@ export interface ToolScopeResolution {
- 	exactFilePaths?: string[];
- 	missingPaths: string[];
- 	immutableSourcePaths: Set<string>;
-+	sourceDisplayUrls: Map<string, string>;
- }
- 
- /**
-@@ -1362,6 +1419,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
- 	const internalRouter = InternalUrlRouter.instance();
- 	const resolvedPathInputs: string[] = [];
- 	const immutableSourcePaths = new Set<string>();
-+	const sourceDisplayUrls = new Map<string, string>();
- 	for (const rawPath of rawPaths) {
- 		let externalUrl = strictExternalUrlRe.test(rawPath);
- 		if (!externalUrl && isReadableUrlPath(rawPath) && !hasGlobPathChars(rawPath)) {
-@@ -1402,7 +1460,7 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
- 				`Cannot ${internalUrlAction} a remote ssh:// path (no local file): ${rawPath}. Use \`read ${rawPath}\` to view it, or the \`search\` tool to grep remote files.`,
- 			);
- 		}
--		if (hasGlobPathChars(rawPath)) {
-+		if (hasInternalUrlGlobPathChars(rawPath)) {
- 			throw new ToolError(`Glob patterns are not supported for internal URLs: ${rawPath}`);
- 		}
- 		const resource = await internalRouter.resolve(rawPath, {
-@@ -1422,6 +1480,9 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
- 		if (opts.trackImmutableSources && resource.immutable) {
- 			immutableSourcePaths.add(path.resolve(resource.sourcePath));
- 		}
-+		if (resource.sourceDisplayUrl) {
-+			sourceDisplayUrls.set(path.resolve(resource.sourcePath), resource.sourceDisplayUrl);
-+		}
- 		resolvedPathInputs.push(resource.sourcePath);
- 	}
- 
-@@ -1475,15 +1536,17 @@ export async function resolveToolSearchScope(opts: ToolScopeOptions): Promise<To
- 		const hint = opts.multipathStatHint && rawPaths.length > 1 ? opts.multipathStatHint : "";
- 		throw new ToolError(`Path not found: ${scopePath}${hint}`);
- 	}
-+	const displayScopePath = formatInternalSourceDisplayPath(searchPath, sourceDisplayUrls) ?? scopePath;
- 
- 	return {
- 		searchPath,
--		scopePath,
-+		scopePath: displayScopePath,
- 		globFilter,
- 		isDirectory,
- 		multiTargets,
- 		exactFilePaths,
- 		missingPaths,
- 		immutableSourcePaths,
-+		sourceDisplayUrls,
- 	};
- }
-diff --git a/packages/coding-agent/src/tools/read.ts b/packages/coding-agent/src/tools/read.ts
-index dba46c9b91..b64438d8b2 100644
---- a/packages/coding-agent/src/tools/read.ts
-+++ b/packages/coding-agent/src/tools/read.ts
-@@ -440,6 +440,8 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
- 			IS_HL_MODE: displayMode.hashLines,
- 			IS_LINE_NUMBER_MODE: !displayMode.hashLines && displayMode.lineNumbers,
- 			INSPECT_IMAGE_ENABLED: this.#inspectImageActive,
-+			HERDR_INTERNAL_URLS_ENABLED: this.session.settings.get("internalUrls.herdr"),
-+			HUNK_INTERNAL_URLS_ENABLED: this.session.settings.get("internalUrls.hunk"),
- 		});
- 	}
- 
