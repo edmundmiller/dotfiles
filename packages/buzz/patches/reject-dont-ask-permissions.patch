@@ -12,7 +12,7 @@
 +    let inherited = std::env::var("BUZZ_ACP_PERMISSION_MODE").ok();
 +    matches!(
 +        explicit.or(inherited.as_deref()),
-+        Some("dont-ask" | "dontAsk" | "dont_ask")
++        Some("dont-ask" | "dontAsk")
 +    )
 +}
 +
@@ -151,7 +151,7 @@
 
          // Write the response first, then mark as responded.
          //
-@@ -2327,6 +2362,71 @@
+@@ -2327,6 +2362,102 @@
      }
 
      #[test]
@@ -167,11 +167,42 @@
 +            "BUZZ_ACP_PERMISSION_MODE".to_string(),
 +            "dont-ask".to_string(),
 +        )];
++        let dont_ask_alias_env = vec![(
++            "BUZZ_ACP_PERMISSION_MODE".to_string(),
++            "dontAsk".to_string(),
++        )];
 +
 +        assert!(super::rejects_permission_requests(&extra_env));
++        assert!(super::rejects_permission_requests(&dont_ask_alias_env));
 +        assert_eq!(
 +            super::select_permission_option(&options, true).unwrap(),
 +            ("reject_once", "deny")
++        );
++    }
++
++    #[test]
++    fn author_gate_tests_inherited_dont_ask_rejects_permission_request() {
++        const CHILD_MARKER: &str = "BUZZ_ACP_PERMISSION_TEST_CHILD";
++        if std::env::var_os(CHILD_MARKER).is_some() {
++            assert!(super::rejects_permission_requests(&[]));
++            return;
++        }
++
++        let output = std::process::Command::new(std::env::current_exe().unwrap())
++            .args([
++                "--exact",
++                "acp::tests::author_gate_tests_inherited_dont_ask_rejects_permission_request",
++                "--nocapture",
++            ])
++            .env("BUZZ_ACP_PERMISSION_MODE", "dont-ask")
++            .env(CHILD_MARKER, "1")
++            .output()
++            .expect("run isolated inherited-environment permission test");
++
++        assert!(
++            output.status.success(),
++            "child test failed: {}",
++            String::from_utf8_lossy(&output.stderr)
 +        );
 +    }
 +
