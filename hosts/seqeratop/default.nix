@@ -137,69 +137,111 @@
         };
         omp = {
           enable = true;
-          # Work laptop providers: openai-codex (Seqera Enterprise), cursor,
-          # vibeproxy (Claude subscription, Ctrl+P), google-antigravity.
-          # Roles match MacTraitor-Pro's Sol/Luna split. Cursor Grok replaces
-          # xai-oauth / opencode-go / openrouter as the cross-provider net.
+          # Work laptop providers: vibeproxy (Claude subscription), openai-codex
+          # (Seqera Enterprise), cursor, google-antigravity.
+          #
+          # Three tiers, in this order: vibeproxy Claude primaries -> openai-codex
+          # GPT-5.6 -> cursor Grok 4.6 as the last-resort net. The Claude
+          # subscription is flat-rate, so burn it first; Codex is the metered
+          # second tier; Cursor only runs when both are down.
+          #
+          # Opus 5 at varying thinking levels drives the interactive roles.
+          # default and smol are deliberately the same Opus id so the first-edit
+          # prewalk handoff is a same-model level change rather than a
+          # cross-provider hop that resets the transcript and the prompt cache
+          # (modules/agents/omp/docs/model-roles.md).
+          #
+          # Three roles step off Opus on purpose: delegated `task` work runs on
+          # Sonnet 5 at xhigh, `commit` on Haiku, and `tiny` skips the Claude
+          # tier entirely for Codex Luna -- it is titles, memory, and difficulty
+          # classification, so the sub buys nothing there. Haiku carries no
+          # `:level` suffix because config/omp/models.yml declares
+          # `reasoning: true` for opus-5/sonnet-5/fable-5 but not for it.
+          #
+          # VibeProxy has no model auto-discovery: every id used here must also
+          # appear in config/omp/models.yml. It exposes Claude only -- do not
+          # invent xai-oauth or openai ids under the vibeproxy/ prefix.
+          # `omp models vibeproxy` reports minimal/low/medium/high/xhigh, so
+          # there is no `:max` level on this provider.
+          #
           # Cursor catalog from `omp models cursor` on this host: grok-4.6
           # medium/high/xhigh/low-fast and gemini-3.5-flash. Grok reports
           # thinking `-`, so those ids carry no `:level` suffix. Composer
           # and Kimi K3 remain in the Cursor catalog but are not automatic
-          # fallbacks or Pi cycle entries. Vision goes to Gemini via
-          # google-antigravity (run `/login google-antigravity` in omp once).
-          # Vision fallbacks need images=yes, which rules out every
-          # cursor-grok id; the Cursor hop is cursor/gemini-3.5-flash.
-          # Overlay modelRoles.smol so the shared xai-oauth smol id does not
-          # leak into the built config.yml. VibeProxy exposes Claude only;
-          # do not invent xai-oauth ids.
-          smolModel = "openai-codex/gpt-5.6-sol:low";
+          # fallbacks or Pi cycle entries.
+          #
+          # Vision stays on Gemini via google-antigravity -- a deliberate
+          # specialist pick, not part of the three-tier ordering. Its fallbacks
+          # need images=yes, which rules out every cursor-grok id, so the Cursor
+          # hop is cursor/gemini-3.5-flash.
+          #
+          # Pi has no vibeproxy wiring, so pi.enabledModels and PI_MODEL_SWITCH_*
+          # stay openai-codex -> cursor. Pi and omp intentionally disagree on
+          # which provider is primary.
+          #
+          # smolModel and modelRoles.smol are both pinned to the same id on
+          # purpose. PI_SMOL_MODEL wins at runtime, but the shared
+          # config/omp/config.yml sets modelRoles.smol to an xai-oauth id and
+          # that provider does not exist on this host -- without the overlay a
+          # dead selector leaks into the rendered config.yml.
+          smolModel = "vibeproxy/claude-opus-5:low";
           modelRoles = {
             vision = "google-antigravity/gemini-3.5-flash";
-            default = "openai-codex/gpt-5.6-sol:medium";
-            smol = "openai-codex/gpt-5.6-sol:low";
-            designer = "openai-codex/gpt-5.6-sol:high";
-            advisor = "openai-codex/gpt-5.6-sol:high";
-            slow = "openai-codex/gpt-5.6-sol:xhigh";
-            plan = "openai-codex/gpt-5.6-sol:high";
-            task = "openai-codex/gpt-5.6-luna:xhigh";
-            commit = "openai-codex/gpt-5.6-luna:low";
+            default = "vibeproxy/claude-opus-5:medium";
+            smol = "vibeproxy/claude-opus-5:low";
+            designer = "vibeproxy/claude-opus-5:high";
+            advisor = "vibeproxy/claude-opus-5:high";
+            slow = "vibeproxy/claude-opus-5:xhigh";
+            plan = "vibeproxy/claude-opus-5:high";
+            task = "vibeproxy/claude-sonnet-5:xhigh";
+            commit = "vibeproxy/claude-haiku-4-5-20251001";
             tiny = "openai-codex/gpt-5.6-luna:low";
           };
           modelProviderOrder = [
+            "vibeproxy"
             "openai-codex"
             "cursor"
-            "vibeproxy"
             "google-antigravity"
           ];
           retry.modelFallback = true;
           retry.fallbackChains = {
             default = [
+              "openai-codex/gpt-5.6-sol:medium"
               "openai-codex/gpt-5.6-luna:medium"
               "cursor/cursor-grok-4.6-medium"
             ];
             plan = [
+              "openai-codex/gpt-5.6-sol:high"
               "openai-codex/gpt-5.6-luna:high"
               "cursor/cursor-grok-4.6-high"
             ];
             advisor = [
+              "openai-codex/gpt-5.6-sol:high"
+              "openai-codex/gpt-5.6-luna:high"
+              "cursor/cursor-grok-4.6-high"
+            ];
+            designer = [
+              "openai-codex/gpt-5.6-sol:high"
               "openai-codex/gpt-5.6-luna:high"
               "cursor/cursor-grok-4.6-high"
             ];
             task = [
-              "openai-codex/gpt-5.6-sol:xhigh"
+              "openai-codex/gpt-5.6-luna:xhigh"
               "cursor/cursor-grok-4.6-xhigh"
             ];
-            commit = [
-              "openai-codex/gpt-5.6-sol:low"
-              "cursor/cursor-grok-4.6-low-fast"
-            ];
             slow = [
+              "openai-codex/gpt-5.6-sol:xhigh"
               "openai-codex/gpt-5.6-terra:high"
               "openai-codex/gpt-5.6-luna:high"
               "cursor/cursor-grok-4.6-xhigh"
             ];
             smol = [
-              "openai-codex/gpt-5.6-luna"
+              "openai-codex/gpt-5.6-sol:low"
+              "openai-codex/gpt-5.6-luna:low"
+              "cursor/cursor-grok-4.6-low-fast"
+            ];
+            commit = [
+              "openai-codex/gpt-5.6-luna:low"
               "cursor/cursor-grok-4.6-low-fast"
             ];
             tiny = [
@@ -207,13 +249,9 @@
               "cursor/cursor-grok-4.6-low-fast"
             ];
             vision = [
+              "vibeproxy/claude-opus-5:medium"
               "openai-codex/gpt-5.6-sol:medium"
-              "openai-codex/gpt-5.6-luna:medium"
               "cursor/gemini-3.5-flash"
-            ];
-            designer = [
-              "openai-codex/gpt-5.6-luna:high"
-              "cursor/cursor-grok-4.6-high"
             ];
           };
           # Match the rest of this host's Seqera branding (stylix seqera-dark,
@@ -341,11 +379,13 @@
         home.file.".ssh/seqera.pub".text =
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty Seqera Key\n";
 
-        # Keep one cross-family reviewer active on every turn. Advisor runtimes
-        # use retry.fallbackChains, so Cursor Grok runs only when Sol fails.
+        # Keep one cross-family reviewer active on every turn. The roster entry
+        # omits `model`, so it resolves through modelRoles.advisor (Opus 5) and
+        # retry.fallbackChains.advisor owns the hops: Codex Sol/Luna, then
+        # Cursor Grok only when both are down.
         home.file.".omp/agent/WATCHDOG.yml".text = ''
           advisors:
-            - name: Sol
+            - name: Opus
         '';
 
         # Seqeratop-only: `hey re` needs a TTY for sudo, so it must run in the

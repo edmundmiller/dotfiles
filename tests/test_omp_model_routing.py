@@ -160,43 +160,62 @@ class OmpModelRoutingTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         omp = json.loads(result.stdout)
-        self.assertEqual(omp["smolModel"], "openai-codex/gpt-5.6-sol:low")
-        self.assertEqual(omp["modelRoles"]["smol"], "openai-codex/gpt-5.6-sol:low")
+
+        # Tier 1: every primary role is the same VibeProxy Opus 5 id, varying
+        # only thinking level. Same-model prewalk (see model-roles.md).
+        self.assertEqual(omp["smolModel"], "vibeproxy/claude-opus-5:low")
+        self.assertEqual(omp["modelRoles"]["smol"], "vibeproxy/claude-opus-5:low")
+        self.assertEqual(omp["modelRoles"]["default"], "vibeproxy/claude-opus-5:medium")
+        self.assertEqual(omp["modelRoles"]["plan"], "vibeproxy/claude-opus-5:high")
+        self.assertEqual(omp["modelRoles"]["advisor"], "vibeproxy/claude-opus-5:high")
+        self.assertEqual(omp["modelRoles"]["designer"], "vibeproxy/claude-opus-5:high")
+        self.assertEqual(omp["modelRoles"]["slow"], "vibeproxy/claude-opus-5:xhigh")
+
+        # Three roles step off Opus deliberately. Haiku carries no :level
+        # because models.yml does not declare reasoning for it.
+        self.assertEqual(omp["modelRoles"]["task"], "vibeproxy/claude-sonnet-5:xhigh")
         self.assertEqual(
-            omp["modelRoles"]["default"],
-            "openai-codex/gpt-5.6-sol:medium",
+            omp["modelRoles"]["commit"],
+            "vibeproxy/claude-haiku-4-5-20251001",
         )
+        self.assertEqual(omp["modelRoles"]["tiny"], "openai-codex/gpt-5.6-luna:low")
+
+        # Vision is a deliberate specialist pick, outside the three-tier order.
+        self.assertEqual(
+            omp["modelRoles"]["vision"],
+            "google-antigravity/gemini-3.5-flash",
+        )
+
+        # Tier 2 then tier 3: openai-codex hops, Cursor Grok as the last resort.
         self.assertEqual(
             omp["retry"]["fallbackChains"]["default"],
             [
+                "openai-codex/gpt-5.6-sol:medium",
                 "openai-codex/gpt-5.6-luna:medium",
                 "cursor/cursor-grok-4.6-medium",
             ],
         )
+        for role in ("plan", "advisor", "designer"):
+            with self.subTest(role=role):
+                self.assertEqual(
+                    omp["retry"]["fallbackChains"][role],
+                    [
+                        "openai-codex/gpt-5.6-sol:high",
+                        "openai-codex/gpt-5.6-luna:high",
+                        "cursor/cursor-grok-4.6-high",
+                    ],
+                )
         self.assertEqual(
-            omp["modelRoles"]["commit"],
-            "openai-codex/gpt-5.6-luna:low",
-        )
-        self.assertEqual(
-            omp["modelRoles"]["tiny"],
-            "openai-codex/gpt-5.6-luna:low",
-        )
-        self.assertEqual(omp["modelRoles"]["task"], "openai-codex/gpt-5.6-luna:xhigh")
-        self.assertEqual(omp["modelRoles"]["slow"], "openai-codex/gpt-5.6-sol:xhigh")
-        self.assertEqual(
-            omp["modelRoles"]["advisor"],
-            "openai-codex/gpt-5.6-sol:high",
-        )
-        self.assertEqual(
-            omp["retry"]["fallbackChains"]["advisor"],
+            omp["retry"]["fallbackChains"]["task"],
             [
-                "openai-codex/gpt-5.6-luna:high",
-                "cursor/cursor-grok-4.6-high",
+                "openai-codex/gpt-5.6-luna:xhigh",
+                "cursor/cursor-grok-4.6-xhigh",
             ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["slow"],
             [
+                "openai-codex/gpt-5.6-sol:xhigh",
                 "openai-codex/gpt-5.6-terra:high",
                 "openai-codex/gpt-5.6-luna:high",
                 "cursor/cursor-grok-4.6-xhigh",
@@ -205,47 +224,19 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(
             omp["retry"]["fallbackChains"]["smol"],
             [
-                "openai-codex/gpt-5.6-luna",
+                "openai-codex/gpt-5.6-sol:low",
+                "openai-codex/gpt-5.6-luna:low",
                 "cursor/cursor-grok-4.6-low-fast",
-            ],
-        )
-        self.assertEqual(omp["modelRoles"]["plan"], "openai-codex/gpt-5.6-sol:high")
-        self.assertEqual(
-            omp["modelRoles"]["designer"],
-            "openai-codex/gpt-5.6-sol:high",
-        )
-        self.assertEqual(
-            omp["modelRoles"]["vision"],
-            "google-antigravity/gemini-3.5-flash",
-        )
-        self.assertEqual(
-            omp["retry"]["fallbackChains"]["plan"],
-            [
-                "openai-codex/gpt-5.6-luna:high",
-                "cursor/cursor-grok-4.6-high",
-            ],
-        )
-        self.assertEqual(
-            omp["retry"]["fallbackChains"]["designer"],
-            [
-                "openai-codex/gpt-5.6-luna:high",
-                "cursor/cursor-grok-4.6-high",
-            ],
-        )
-        self.assertEqual(
-            omp["retry"]["fallbackChains"]["task"],
-            [
-                "openai-codex/gpt-5.6-sol:xhigh",
-                "cursor/cursor-grok-4.6-xhigh",
             ],
         )
         self.assertEqual(
             omp["retry"]["fallbackChains"]["commit"],
             [
-                "openai-codex/gpt-5.6-sol:low",
+                "openai-codex/gpt-5.6-luna:low",
                 "cursor/cursor-grok-4.6-low-fast",
             ],
         )
+        # tiny's primary is already Luna, so it falls to Sol instead.
         self.assertEqual(
             omp["retry"]["fallbackChains"]["tiny"],
             [
@@ -253,22 +244,26 @@ class OmpModelRoutingTests(unittest.TestCase):
                 "cursor/cursor-grok-4.6-low-fast",
             ],
         )
+
+        # Vision fallbacks need images=yes, which rules out every cursor-grok id.
         self.assertEqual(
             omp["retry"]["fallbackChains"]["vision"],
             [
+                "vibeproxy/claude-opus-5:medium",
                 "openai-codex/gpt-5.6-sol:medium",
-                "openai-codex/gpt-5.6-luna:medium",
                 "cursor/gemini-3.5-flash",
             ],
         )
+
         self.assertEqual(
             omp["dailyIntrospection"]["model"],
             "openai-codex/gpt-5.6-sol:high",
         )
         self.assertEqual(
-            omp["modelProviderOrder"][:2],
-            ["openai-codex", "cursor"],
+            omp["modelProviderOrder"][:3],
+            ["vibeproxy", "openai-codex", "cursor"],
         )
+
         seqeratop_cursor_ids = {
             "cursor/cursor-grok-4.6-medium",
             "cursor/cursor-grok-4.6-high",
@@ -277,11 +272,6 @@ class OmpModelRoutingTests(unittest.TestCase):
             "cursor/gemini-3.5-flash",
         }
         for role, chain in omp["retry"]["fallbackChains"].items():
-            with self.subTest(no_vibeproxy=role):
-                self.assertTrue(
-                    all(not entry.startswith("vibeproxy/") for entry in chain),
-                    chain,
-                )
             with self.subTest(no_composer_or_kimi=role):
                 self.assertTrue(
                     all(
@@ -290,10 +280,64 @@ class OmpModelRoutingTests(unittest.TestCase):
                     ),
                     chain,
                 )
+            # Cursor is the last-resort net: it terminates every chain and
+            # never appears before an openai-codex hop.
+            with self.subTest(cursor_is_terminal=role):
+                self.assertTrue(chain[-1].startswith("cursor/"), chain)
+                self.assertTrue(
+                    all(not entry.startswith("cursor/") for entry in chain[:-1]),
+                    chain,
+                )
             for entry in chain:
                 if entry.startswith("cursor/"):
                     with self.subTest(cursor_id=entry, role=role):
                         self.assertIn(entry, seqeratop_cursor_ids)
+
+    def test_seqeratop_vibeproxy_ids_are_declared_in_models_yml(self) -> None:
+        """VibeProxy has no model auto-discovery, so every id must be declared.
+
+        See modules/agents/omp/docs/advisor-watchdog.md.
+        """
+        result = subprocess.run(
+            [
+                nix_path(),
+                "eval",
+                "--json",
+                ".#darwinConfigurations.Seqeratop.config.modules.agents.omp",
+                "--no-write-lock-file",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        omp = json.loads(result.stdout)
+
+        selectors = list(omp["modelRoles"].values())
+        selectors.append(omp["smolModel"])
+        for chain in omp["retry"]["fallbackChains"].values():
+            selectors.extend(chain)
+
+        models_yml = (ROOT / "config" / "omp" / "models.yml").read_text()
+        declared = {
+            line.split("- id:", 1)[1].strip()
+            for line in models_yml.splitlines()
+            if line.strip().startswith("- id:")
+        }
+        self.assertIn("claude-opus-5", declared)
+
+        # VibeProxy reports minimal/low/medium/high/xhigh -- there is no :max.
+        supported_levels = {"minimal", "low", "medium", "high", "xhigh"}
+        for selector in selectors:
+            if not selector.startswith("vibeproxy/"):
+                continue
+            with self.subTest(selector=selector):
+                model = selector.split("/", 1)[1]
+                if ":" in model:
+                    model, level = model.split(":", 1)
+                    self.assertIn(level, supported_levels)
+                self.assertIn(model, declared)
 
     def test_seqeratop_pi_prefers_openai_then_cursor(self) -> None:
         models_result = subprocess.run(
@@ -379,7 +423,7 @@ class OmpModelRoutingTests(unittest.TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "advisors:\n  - name: Sol\n")
+        self.assertEqual(result.stdout, "advisors:\n  - name: Opus\n")
 
 
 if __name__ == "__main__":
