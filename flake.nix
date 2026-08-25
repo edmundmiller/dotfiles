@@ -111,6 +111,13 @@
       inputs.llm-agents.follows = "llm-agents";
     };
 
+    # Keep deployed profile specs fixed while adopting only the published Buzz
+    # typing patch series in the scoped Scintillate generation.
+    agents-workspace-buzz-typing = {
+      url = "github:edmundmiller/agents-workspace/e38a2e7c71762af75b7dbe1a49f444590906c689";
+      flake = false;
+    };
+
     hermes-agent = {
       url = "github:NousResearch/hermes-agent/5b5932886ce6477a0f4a3d25ca465392288d5126";
       inputs.nixpkgs.follows = "nixpkgs";

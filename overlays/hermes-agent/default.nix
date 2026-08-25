@@ -15,11 +15,11 @@ let
     src = inputs.hermes-agent-buzz-pilot-source;
     patches = (old.patches or [ ]) ++ [
       ./patches/0003-report-external-cron-executor.patch
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-01-thread-routing.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-02-channel-activation.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-03-working-reaction.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-04-reconnect-handoff.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-05-native-typing.patch)
+      (inputs.agents-workspace-buzz-typing + /patches/hermes-agent/0001-buzz-01-thread-routing.patch)
+      (inputs.agents-workspace-buzz-typing + /patches/hermes-agent/0001-buzz-02-channel-activation.patch)
+      (inputs.agents-workspace-buzz-typing + /patches/hermes-agent/0001-buzz-03-working-reaction.patch)
+      (inputs.agents-workspace-buzz-typing + /patches/hermes-agent/0001-buzz-04-reconnect-handoff.patch)
+      (inputs.agents-workspace-buzz-typing + /patches/hermes-agent/0001-buzz-05-native-typing.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
     ];
     postInstall = (old.postInstall or "") + ''

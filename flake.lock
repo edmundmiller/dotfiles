@@ -104,6 +104,23 @@
         "type": "github"
       }
     },
+    "agents-workspace-buzz-typing": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787685667,
+        "narHash": "sha256-e/3wPU2xzr2OLl9sLcqJBnT5Ee8QsqWeM9P8xA6fHZA=",
+        "owner": "edmundmiller",
+        "repo": "agents-workspace",
+        "rev": "e38a2e7c71762af75b7dbe1a49f444590906c689",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edmundmiller",
+        "repo": "agents-workspace",
+        "rev": "e38a2e7c71762af75b7dbe1a49f444590906c689",
+        "type": "github"
+      }
+    },
     "anti-slop": {
       "flake": false,
       "locked": {
@@ -1997,6 +2014,7 @@
       "inputs": {
         "agenix": "agenix",
         "agents-workspace": "agents-workspace",
+        "agents-workspace-buzz-typing": "agents-workspace-buzz-typing",
         "anti-slop": "anti-slop",
         "brew-src": "brew-src",
         "bun2nix": "bun2nix",
