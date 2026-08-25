@@ -1462,6 +1462,11 @@
                 inherit pkgs;
               };
 
+              audio-priority-bar-regressions = import ./hosts/mactraitorpro/_tests/audio-priority-bar.nix {
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
               screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
