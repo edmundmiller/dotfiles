@@ -1,6 +1,6 @@
 # Worklog: replace-docker-runtimes
 
-Status: blocked
+Status: complete
 
 ## Objective
 
@@ -41,13 +41,10 @@ workloads without a workload-by-workload Podman readback.
 - Live NUC `sudo podman run --rm alpine echo podman-runtime-ok` passes;
   Podman Docker API shim returns server `5.8.4` and lists rootful Podman
   services.
-- Live MacTraitor-Pro has OrbStack active with context `orbstack`, but Docker
-  Desktop had restarted; a targeted quit followed by SIGTERM of only its main
-  process stopped it. The exact `/Applications/Docker.app` bundle and its
-  Homebrew caskroom receipt were moved to `~/.Trash` (recoverable). Docker
-  Desktop data under `~/Library/Containers/com.docker.docker` and `~/.docker`
-  remain untouched. Root-owned Docker helper cleanup still awaits macOS admin
-  authorization; OrbStack remains healthy.
+- Live MacTraitor-Pro has OrbStack active with context `orbstack`, server
+  `29.4.0`. The exact `/Applications/Docker.app` bundle and Homebrew caskroom
+  receipt were moved to `~/.Trash` (recoverable). Docker Desktop data under
+  `~/Library/Containers/com.docker.docker` and `~/.docker` remain untouched.
 - Fresh NUC preflight identified host `nuc`, account `emiller`, Docker Engine
   29.6.1, and active Hermes/Latitude/SparkyFitness/Open Wearables units with
   durable bind mounts. The first reversible test activation exposed that
@@ -68,10 +65,16 @@ workloads without a workload-by-workload Podman readback.
   disabled and was not used as a false success signal.
 - After app removal, a surviving user-owned Docker sandbox process was found
   and terminated by exact PID; fresh readback shows no Docker.app process or
-  user launch agent. The sole residual is root-owned
-  `/Library/PrivilegedHelperTools/com.docker.vmnetd` (with its matching launch
-  daemon), which cannot be stopped or moved without native administrator
-  authorization. OrbStack still reports context `orbstack`, server `29.4.0`.
+  user launch agent. Native administrator authorization then booted out the
+  Docker socket and vmnetd services and moved their exact launchd plists,
+  helper binaries, socket, and Docker-only symlinks to the recoverable
+  `~/.Trash/docker-desktop-system-artifacts-4.60.0` directory. OrbStack's
+  `docker` and `docker-compose` links were preserved.
+- Final Mac readback shows no Docker Desktop process, app, launchd item,
+  privileged helper, or vmnetd socket; OrbStack remains on context `orbstack`
+  with server `29.4.0`. The cleanup command's final ownership adjustment was
+  rejected by macOS Trash protections, but all exact targets were moved and
+  no data, images, volumes, contexts, credentials, or OrbStack state changed.
 - `hey nuc-wt test` returned 4 because unrelated pre-existing Mill Docs timer
   jobs failed (canonical checkout merge conflict and TypeScript syntax error);
   none of the affected container units failed in the final activation.
@@ -89,11 +92,12 @@ before any stop/remove action.
 
 ## Remaining work
 
-- Complete macOS admin-authorized removal of the exact Docker Desktop helper
-  launchd items and Docker-only root symlinks; do not touch OrbStack or Docker
-  data. The app and caskroom are already recoverably in `~/.Trash`.
+None.
 
 ## Commits
 
 - `e96e228ad` — `feat(containers): use OrbStack and Podman runtimes`; pushed
   directly to `origin/main` and verified local/remote/advertised SHA equality.
+- `05ec60fe3` — `docs(worklog): record container runtime cutover`.
+- `a0699ca38` — `docs(worklog): mark macOS helper cleanup blocked`; the final
+  live cleanup superseded that intermediate status.
