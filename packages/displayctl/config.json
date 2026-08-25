@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "aliases": {
+    "busy-bar": {
+      "kind": "busy",
+      "description": "BUSY Bar local HTTP display",
+      "capabilities": ["draw", "message", "capture", "clear"],
+      "targets": {
+        "usb": {
+          "base_url": "http://10.0.4.20",
+          "transport": "usb"
+        },
+        "lan": {
+          "base_url": "http://192.168.1.207",
+          "transport": "wifi",
+          "token_env": "BUSY_BAR_API_TOKEN",
+          "token_required": false
+        }
+      }
+    },
+    "trmnl-og": {
+      "kind": "trmnl",
+      "description": "TRMNL OG 1-bit display",
+      "model": "og_png",
+      "capabilities": ["devices", "message", "current"],
+      "api_base_url": "https://trmnl.com/api",
+      "api_token_env": "TRMNL_API_KEY",
+      "device_token_env": "TRMNL_OG_DEVICE_API_KEY",
+      "webhook_env": "TRMNL_AGENT_MESSAGE_WEBHOOK_URL"
+    },
+    "trmnl-x": {
+      "kind": "trmnl",
+      "description": "TRMNL X 4-bit grayscale display",
+      "model": "v2",
+      "capabilities": ["devices", "message", "current"],
+      "api_base_url": "https://trmnl.com/api",
+      "api_token_env": "TRMNL_API_KEY",
+      "device_token_env": "TRMNL_X_DEVICE_API_KEY",
+      "webhook_env": "TRMNL_AGENT_MESSAGE_WEBHOOK_URL"
+    }
+  }
+}

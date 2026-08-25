@@ -104,6 +104,18 @@ let
   hermesScintillateTailscaleServiceName = "hermes";
   hermesSharedStateDir = "/var/lib/hermes";
   hermesSharedHome = "${hermesSharedStateDir}/.hermes";
+  hermesDisplayctlEnvironment = toString (
+    pkgs.writeText "hermes-displayctl.env" ''
+      DISPLAYCTL_CONFIG=${pkgs.my.displayctl}/share/displayctl/config.json
+    ''
+  );
+  withHermesDisplayctl =
+    profile:
+    profile
+    // {
+      extraPackages = [ pkgs.my.displayctl ] ++ (profile.extraPackages or [ ]);
+      environmentFiles = [ hermesDisplayctlEnvironment ] ++ (profile.environmentFiles or [ ]);
+    };
   scintillateTerminalInit = pkgs.writeText "scintillate-terminal-init.sh" ''
     export HOME=/var/lib/hermes-scintillate
     export HERMES_HOME=/var/lib/hermes-scintillate/.hermes
@@ -1538,7 +1550,7 @@ in
     # module otherwise defaults to Docker and enables Docker Engine implicitly.
     container.backend = "podman";
     profiles = {
-      anne = {
+      anne = withHermesDisplayctl {
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
@@ -1555,7 +1567,7 @@ in
           config.age.secrets.buzz-hermes-anne-agent-env.path
         ];
       };
-      betty = {
+      betty = withHermesDisplayctl {
         # Betty is Codex-backed, but must own her mutable OAuth state. Do not
         # seed or mount /home/emiller/.codex/auth.json; bootstrap Betty's
         # profile-owned login under /var/lib/hermes-betty instead.
@@ -1576,7 +1588,7 @@ in
           config.age.secrets.buzz-hermes-betty-agent-env.path
         ];
       };
-      finn = {
+      finn = withHermesDisplayctl {
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
@@ -1589,7 +1601,7 @@ in
         };
         environmentFiles = [ config.age.secrets.buzz-hermes-finn-agent-env.path ];
       };
-      scintillate = {
+      scintillate = withHermesDisplayctl {
         # Codex OAuth refresh tokens are single-use. Do not seed Hermes from
         # ~/.codex/auth.json or share Codex CLI credentials; Scintillate owns
         # its Codex login in /var/lib/hermes-scintillate/.hermes/auth.json.
@@ -1618,7 +1630,7 @@ in
           config.age.secrets.buzz-hermes-scintillate-agent-env.path
         ];
       };
-      amosburton = {
+      amosburton = withHermesDisplayctl {
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
@@ -1637,7 +1649,7 @@ in
           config.age.secrets.buzz-hermes-amosburton-agent-env.path
         ];
       };
-      orchestrator = {
+      orchestrator = withHermesDisplayctl {
         stateDir = "/var/lib/hermes-orchestrator";
         workingDirectory = "/var/lib/hermes-orchestrator/workspace";
         authFile = "/home/emiller/.codex/auth.json";
@@ -1945,6 +1957,7 @@ in
       pkgs.findutils
       pkgs.git
       pkgs.my.buzz
+      pkgs.my.displayctl
       pkgs.python3
     ];
     environment = mkBuzzCronEnvironment "amosburton";
@@ -1954,6 +1967,7 @@ in
       Group = "users";
       WorkingDirectory = "/var/lib/hermes-amosburton/workspace";
       EnvironmentFile = [
+        hermesDisplayctlEnvironment
         "/run/hermes-amosburton-env/secrets.env"
         config.age.secrets.buzz-hermes-amosburton-agent-env.path
       ];
@@ -2010,6 +2024,7 @@ in
       pkgs.git
       pkgs.himalaya
       pkgs.my.buzz
+      pkgs.my.displayctl
       pkgs.python3
       pkgs.uv
     ];
@@ -2021,6 +2036,7 @@ in
       SupplementaryGroups = [ "onepassword-secrets" ];
       WorkingDirectory = "/var/lib/hermes-betty";
       EnvironmentFile = [
+        hermesDisplayctlEnvironment
         "/run/hermes-betty-env/secrets.env"
         config.age.secrets.buzz-hermes-betty-agent-env.path
       ];
@@ -2156,6 +2172,7 @@ in
       Group = "users";
       WorkingDirectory = "/home/emiller/obsidian-vault";
       EnvironmentFile = [
+        hermesDisplayctlEnvironment
         "/run/hermes-scintillate-env/secrets.env"
         config.age.secrets.buzz-hermes-scintillate-agent-env.path
       ];
@@ -2245,6 +2262,7 @@ in
       };
       tmux.enable = true;
       zsh.enable = true;
+      displayctl.enable = true;
       herdr.enable = true;
     };
     agents = {

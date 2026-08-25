@@ -1,0 +1,902 @@
+#!/usr/bin/env python3
+"""Agent-friendly local BUSY Bar and TRMNL display client.
+
+The checked-in config contains addresses, capabilities, and names of secret
+sources only. Credential values are read from the environment for one request,
+never printed, and never persisted by this client.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import binascii
+import json
+import os
+from pathlib import Path
+import re
+import struct
+import sys
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode, urlsplit
+from urllib.request import Request, urlopen
+import zlib
+
+
+BUSY_ALIAS = "busy-bar"
+TRMNL_ALIASES = ("trmnl-og", "trmnl-x")
+BUSY_ELEMENTS = {"text", "rectangle", "countdown", "image", "animation"}
+BUSY_APPLICATION_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
+MAX_AGENT_PRIORITY = 50
+
+
+class DisplayCtlError(Exception):
+    """An expected user or remote-service error."""
+
+
+def _fail(message: str) -> None:
+    raise DisplayCtlError(message)
+
+
+def _redact(value: Any, key: str | None = None) -> Any:
+    """Redact credential-shaped environment values from untrusted responses."""
+
+    secret_values = {
+        item
+        for name, item in os.environ.items()
+        if any(word in name.upper() for word in ("TOKEN", "API_KEY", "WEBHOOK", "PASSWORD", "SECRET"))
+        and len(item) >= 4
+    }
+    normalized_key = key.lower() if key else ""
+    if normalized_key.endswith("_env"):
+        sensitive_key = False
+    else:
+        sensitive_key = any(
+            word in normalized_key
+            for word in ("token", "password", "authorization", "secret", "api_key", "webhook")
+        )
+    if sensitive_key:
+        return "<redacted>"
+    if isinstance(value, str):
+        for secret in sorted(secret_values, key=len, reverse=True):
+            value = value.replace(secret, "<redacted>")
+        return value
+    if isinstance(value, dict):
+        return {child_key: _redact(child, child_key) for child_key, child in value.items()}
+    if isinstance(value, list):
+        return [_redact(child) for child in value]
+    return value
+
+
+def _emit(value: Any) -> None:
+    print(json.dumps(_redact(value), indent=2, sort_keys=True, ensure_ascii=True))
+
+
+def _safe_url(url: str) -> str:
+    """Return an endpoint identity without any path/query credential."""
+
+    parsed = urlsplit(url)
+    if parsed.scheme and parsed.hostname:
+        hostname = parsed.hostname
+        if ":" in hostname:
+            hostname = f"[{hostname}]"
+        try:
+            port = parsed.port
+        except ValueError:
+            port = None
+        suffix = f":{port}" if port is not None else ""
+        return f"{parsed.scheme}://{hostname}{suffix}"
+    return "<configured endpoint>"
+
+
+def _safe_response_text(body: bytes) -> str:
+    """Keep useful remote error context while bounding and redacting it."""
+
+    if not body:
+        return ""
+    try:
+        parsed: Any = json.loads(body.decode("utf-8"))
+        text = json.dumps(_redact(parsed), ensure_ascii=True, separators=(",", ":"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        text = _redact(body.decode("utf-8", errors="replace"))
+    text = re.sub(r"((?:https?://|/)[^\s\"']*?)\?[^\s\"']*", r"\1?<redacted>", text)
+    return " ".join(text.split())[:512]
+
+
+def _read_json(path: str) -> Any:
+    try:
+        if path == "-":
+            return json.load(sys.stdin)
+        with open(path, encoding="utf-8") as stream:
+            return json.load(stream)
+    except FileNotFoundError:
+        _fail(f"JSON file not found: {path}; pass a valid --config or --manifest path")
+    except json.JSONDecodeError as exc:
+        _fail(f"invalid JSON in {path}: line {exc.lineno}, column {exc.colno}")
+    except OSError as exc:
+        _fail(f"cannot read {path}: {exc.strerror or exc}")
+    return None
+
+
+def _default_config_path() -> str:
+    """Find declarative config without assuming an agent's HOME is stable."""
+
+    configured = os.environ.get("DISPLAYCTL_CONFIG")
+    if configured:
+        return configured
+    user_config = Path.home() / ".config" / "displayctl" / "config.json"
+    installed_config = Path(__file__).resolve().parent.parent / "share" / "displayctl" / "config.json"
+    source_config = Path(__file__).resolve().with_name("config.json")
+    for candidate in (user_config, installed_config, source_config):
+        if candidate.is_file():
+            return str(candidate)
+    return str(user_config)
+
+
+def _load_config(path: str) -> dict[str, Any]:
+    config = _read_json(path)
+    if not isinstance(config, dict) or config.get("version") != 1:
+        _fail(f"unsupported displayctl config at {path}; expected version 1")
+    aliases = config.get("aliases")
+    if not isinstance(aliases, dict) or not aliases:
+        _fail(f"displayctl config at {path} has no aliases")
+    return config
+
+
+def _alias(config: dict[str, Any], name: str) -> dict[str, Any]:
+    aliases = config.get("aliases", {})
+    value = aliases.get(name)
+    if not isinstance(value, dict):
+        _fail(f"unknown display alias {name!r}; run displayctl inventory --json")
+    return value
+
+
+def _target(config: dict[str, Any], target: str) -> dict[str, Any]:
+    spec = _alias(config, BUSY_ALIAS)
+    targets = spec.get("targets")
+    if not isinstance(targets, dict) or not isinstance(targets.get(target), dict):
+        _fail(f"BUSY target {target!r} is not configured; run displayctl inventory --json")
+    return targets[target]
+
+
+def _public_inventory(config: dict[str, Any]) -> dict[str, Any]:
+    """Copy only public config metadata; never expose stored secret references."""
+
+    def copy(value: Any, key: str | None = None) -> Any:
+        if key in {"secret_ref", "token", "password", "authorization", "webhook_url"}:
+            return None
+        if isinstance(value, dict):
+            return {
+                child_key: child_value
+                for child_key, child in value.items()
+                if (child_value := copy(child, child_key)) is not None
+            }
+        if isinstance(value, list):
+            return [child for item in value if (child := copy(item)) is not None]
+        return value
+
+    public = copy(config)
+    if not isinstance(public, dict):
+        _fail("displayctl config cannot be represented as public metadata")
+    return public
+
+
+def _join_url(base_url: str, path: str) -> str:
+    return base_url.rstrip("/") + "/" + path.lstrip("/")
+
+
+def _request(
+    url: str,
+    *,
+    method: str = "GET",
+    body: bytes | None = None,
+    headers: dict[str, str] | None = None,
+    timeout: float = 15.0,
+) -> tuple[int, bytes]:
+    request = Request(url, data=body, method=method, headers=headers or {})
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            return response.status, response.read()
+    except HTTPError as exc:
+        try:
+            detail = _safe_response_text(exc.read())
+        except OSError:
+            detail = ""
+        suffix = f": {detail}" if detail else ""
+        raise DisplayCtlError(f"HTTP {exc.code} from {_safe_url(url)}{suffix}") from None
+    except URLError as exc:
+        reason = str(getattr(exc, "reason", "network error"))
+        raise DisplayCtlError(f"request to {_safe_url(url)} failed: {reason}") from None
+    except OSError as exc:
+        raise DisplayCtlError(f"request to {_safe_url(url)} failed: {exc}") from None
+
+
+def _decode_json_body(body: bytes) -> Any:
+    if not body:
+        return None
+    try:
+        return json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return {"bytes": len(body)}
+
+
+def _request_json(
+    url: str,
+    *,
+    method: str = "GET",
+    value: Any | None = None,
+    headers: dict[str, str] | None = None,
+) -> tuple[int, Any]:
+    request_headers = {"Accept": "application/json"}
+    request_headers.update(headers or {})
+    body = None
+    if value is not None:
+        body = json.dumps(value, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        request_headers["Content-Type"] = "application/json"
+    status, raw = _request(url, method=method, body=body, headers=request_headers)
+    return status, _decode_json_body(raw)
+
+
+def _require_apply(args: argparse.Namespace) -> bool:
+    if getattr(args, "apply", False) and getattr(args, "dry_run", False):
+        _fail("--apply and --dry-run are mutually exclusive")
+    return bool(getattr(args, "apply", False))
+
+
+def _busy_headers(spec: dict[str, Any]) -> dict[str, str]:
+    token_env = spec.get("token_env")
+    if not isinstance(token_env, str) or not token_env:
+        return {}
+    token = os.environ.get(token_env)
+    if token:
+        return {"X-API-Token": token}
+    if spec.get("token_required", True):
+        secret_ref = spec.get("secret_ref")
+        hint = f"; configured source: {secret_ref}" if isinstance(secret_ref, str) else ""
+        _fail(f"missing {token_env} for BUSY LAN access{hint}")
+    return {}
+
+
+def _validate_text(value: Any, field: str) -> None:
+    if not isinstance(value, str) or not value:
+        _fail(f"{field} must be a non-empty string")
+    if any(ord(char) < 32 or ord(char) > 126 for char in value):
+        _fail(f"{field} must contain printable ASCII only")
+
+
+def _validate_application_name(value: Any, field: str = "application_name") -> None:
+    _validate_text(value, field)
+    if len(value) > 64 or not BUSY_APPLICATION_NAME.fullmatch(value):
+        _fail(f"{field} must match ^[A-Za-z0-9._-]+$")
+
+
+def _validate_manifest(manifest: Any) -> dict[str, Any]:
+    if not isinstance(manifest, dict):
+        _fail("BUSY manifest must be a JSON object")
+    application_name = manifest.get("application_name")
+    _validate_application_name(application_name)
+    priority = manifest.get("priority", 50)
+    if isinstance(priority, bool) or not isinstance(priority, int) or not 1 <= priority <= MAX_AGENT_PRIORITY:
+        _fail(f"priority must be an integer from 1 through {MAX_AGENT_PRIORITY}")
+    elements = manifest.get("elements")
+    if not isinstance(elements, list) or not elements:
+        _fail("elements must be a non-empty JSON array")
+    for index, element in enumerate(elements):
+        if not isinstance(element, dict):
+            _fail(f"elements[{index}] must be an object")
+        _validate_application_name(element.get("id"), f"elements[{index}].id")
+        element_type = element.get("type")
+        if element_type not in BUSY_ELEMENTS:
+            _fail(f"elements[{index}].type must be one of {sorted(BUSY_ELEMENTS)}")
+        if element_type == "text":
+            _validate_text(element.get("text"), f"elements[{index}].text")
+            _validate_text(element.get("font"), f"elements[{index}].font")
+        timeout = element.get("timeout")
+        if isinstance(timeout, bool) or not isinstance(timeout, int) or timeout <= 0:
+            _fail(f"elements[{index}].timeout must be a positive integer")
+        if element_type == "countdown":
+            timestamp = element.get("timestamp")
+            if not isinstance(timestamp, str) or not re.fullmatch(r"[0-9]+", timestamp):
+                _fail(f"elements[{index}].timestamp must be a digits-only string")
+            if element.get("direction") not in {"time_left", "time_since"}:
+                _fail(f"elements[{index}].direction must be time_left or time_since")
+            if element.get("show_hours") not in {"when_non_zero", "always"}:
+                _fail(f"elements[{index}].show_hours must be when_non_zero or always")
+        if element_type == "rectangle":
+            for dimension in ("width", "height"):
+                value = element.get(dimension)
+                if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                    _fail(f"elements[{index}].{dimension} must be a positive integer")
+        if element_type in {"image", "animation"}:
+            sources = [
+                element[name]
+                for name in ("path", "stock_path")
+                if name in element
+            ]
+            if len(sources) != 1 or not isinstance(sources[0], str) or not sources[0]:
+                _fail(f"elements[{index}] must specify exactly one non-empty path or stock_path")
+        for coordinate in ("x", "y"):
+            if coordinate in element and (
+                isinstance(element[coordinate], bool) or not isinstance(element[coordinate], int)
+            ):
+                _fail(f"elements[{index}].{coordinate} must be an integer")
+    return manifest
+
+
+def _manifest(path: str) -> dict[str, Any]:
+    return _validate_manifest(_read_json(path))
+
+
+def _busy_result(
+    *,
+    operation: str,
+    alias: str,
+    target: str,
+    applied: bool,
+    request: Any | None = None,
+    response: Any | None = None,
+    endpoint: str | None = None,
+) -> None:
+    result: dict[str, Any] = {
+        "operation": operation,
+        "alias": alias,
+        "target": target,
+        "applied": applied,
+    }
+    if request is not None:
+        result["request"] = request
+    if response is not None:
+        result["response"] = response
+    if endpoint is not None:
+        result["endpoint"] = endpoint
+    _emit(result)
+
+
+def _busy_draw(args: argparse.Namespace, config: dict[str, Any], alias: str) -> None:
+    manifest = _manifest(args.manifest)
+    applied = _require_apply(args)
+    spec = _target(config, args.target)
+    base_url = spec.get("base_url")
+    if not isinstance(base_url, str) or not base_url:
+        _fail(f"BUSY target {args.target} has no base_url")
+    endpoint = _join_url(base_url, "/api/display/draw")
+    if not applied:
+        _busy_result(
+            operation="busy.draw",
+            alias=alias,
+            target=args.target,
+            applied=False,
+            request=manifest,
+            endpoint=_safe_url(endpoint),
+        )
+        return
+    status, response = _request_json(
+        endpoint,
+        method="POST",
+        value=manifest,
+        headers=_busy_headers(spec),
+    )
+    _busy_result(
+        operation="busy.draw",
+        alias=alias,
+        target=args.target,
+        applied=True,
+        request=manifest,
+        response={"status": status, "body": response},
+        endpoint=_safe_url(endpoint),
+    )
+
+
+def _busy_message(args: argparse.Namespace, config: dict[str, Any], alias: str) -> None:
+    _validate_text(args.text, "--text")
+    manifest: dict[str, Any] = {
+        "application_name": args.application,
+        "priority": args.priority,
+        "elements": [
+            {
+                "id": "message",
+                "type": "text",
+                "x": args.x,
+                "y": args.y,
+                "text": args.text,
+                "font": args.font,
+                "timeout": args.timeout,
+            }
+        ],
+    }
+    if args.color:
+        manifest["elements"][0]["color"] = args.color
+    manifest = _validate_manifest(manifest)
+    applied = _require_apply(args)
+    spec = _target(config, args.target)
+    base_url = spec.get("base_url")
+    if not isinstance(base_url, str) or not base_url:
+        _fail(f"BUSY target {args.target} has no base_url")
+    endpoint = _join_url(base_url, "/api/display/draw")
+    if not applied:
+        _busy_result(
+            operation="busy.message",
+            alias=alias,
+            target=args.target,
+            applied=False,
+            request=manifest,
+            endpoint=_safe_url(endpoint),
+        )
+        return
+    status, response = _request_json(
+        endpoint,
+        method="POST",
+        value=manifest,
+        headers=_busy_headers(spec),
+    )
+    _busy_result(
+        operation="busy.message",
+        alias=alias,
+        target=args.target,
+        applied=True,
+        request=manifest,
+        response={"status": status, "body": response},
+        endpoint=_safe_url(endpoint),
+    )
+
+
+def _busy_validate(args: argparse.Namespace) -> None:
+    manifest = _manifest(args.manifest)
+    _emit({"valid": True, "manifest": manifest})
+
+
+def _busy_clear(args: argparse.Namespace, config: dict[str, Any], alias: str) -> None:
+    _validate_application_name(args.application, "--application")
+    applied = _require_apply(args)
+    spec = _target(config, args.target)
+    base_url = spec.get("base_url")
+    if not isinstance(base_url, str) or not base_url:
+        _fail(f"BUSY target {args.target} has no base_url")
+    endpoint = _join_url(base_url, "/api/display/draw") + "?" + urlencode(
+        {"application_name": args.application}
+    )
+    if not applied:
+        _busy_result(
+            operation="busy.clear",
+            alias=alias,
+            target=args.target,
+            applied=False,
+            request={"application_name": args.application},
+            endpoint=_safe_url(endpoint),
+        )
+        return
+    status, response = _request_json(
+        endpoint,
+        method="DELETE",
+        headers=_busy_headers(spec),
+    )
+    _busy_result(
+        operation="busy.clear",
+        alias=alias,
+        target=args.target,
+        applied=True,
+        request={"application_name": args.application},
+        response={"status": status, "body": response},
+        endpoint=_safe_url(endpoint),
+    )
+
+
+def _decode_screen_payload(raw: bytes, width: int, height: int) -> bytes:
+    """Decode BUSY's base64 frame and return RGB bytes for PNG encoding."""
+
+    candidate = raw.strip()
+    if candidate.startswith(b"{"):
+        try:
+            value = json.loads(candidate.decode("utf-8"))
+            candidate = base64.b64decode(
+                b"".join(str(value["data"]).encode("ascii").split()), validate=True
+            )
+        except (KeyError, TypeError, ValueError, UnicodeDecodeError, binascii.Error):
+            _fail("BUSY screen response JSON did not contain valid base64 data")
+    elif not candidate.startswith(b"\x89PNG"):
+        try:
+            candidate = base64.b64decode(b"".join(candidate.split()), validate=True)
+        except binascii.Error:
+            pass
+    if candidate.startswith(b"\x89PNG"):
+        _fail("BUSY screen endpoint returned PNG; raw frame expected")
+    pixels = width * height
+    if len(candidate) == pixels * 3:
+        # BUSY's front frame is BGR888 on the wire; PNG pixels are RGB888.
+        return b"".join(
+            candidate[offset + 2 : offset + 3]
+            + candidate[offset + 1 : offset + 2]
+            + candidate[offset : offset + 1]
+            for offset in range(0, len(candidate), 3)
+        )
+    if len(candidate) == pixels * 2:
+        output = bytearray()
+        for offset in range(0, len(candidate), 2):
+            value = int.from_bytes(candidate[offset : offset + 2], "big")
+            output.extend(
+                (
+                    ((value >> 11) & 0x1F) * 255 // 31,
+                    ((value >> 5) & 0x3F) * 255 // 63,
+                    (value & 0x1F) * 255 // 31,
+                )
+            )
+        return bytes(output)
+    if len(candidate) == pixels:
+        return b"".join(bytes((value, value, value)) for value in candidate)
+    if len(candidate) == (pixels + 1) // 2:
+        output = bytearray()
+        for value in candidate:
+            # BUSY's back L4 frame stores the first pixel in the low nibble.
+            output.extend((value & 0x0F,) * 3)
+            if len(output) // 3 < pixels:
+                output.extend((value >> 4,) * 3)
+        return bytes(min(value * 17, 255) for value in output[: pixels * 3])
+    _fail(f"BUSY screen response has {len(candidate)} bytes; expected a known frame format")
+    return b""
+
+
+def _png_chunk(kind: bytes, data: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(data))
+        + kind
+        + data
+        + struct.pack(">I", binascii.crc32(kind + data) & 0xFFFFFFFF)
+    )
+
+
+def _rgb_png(width: int, height: int, rgb: bytes) -> bytes:
+    if len(rgb) != width * height * 3:
+        _fail("internal PNG encoder received the wrong RGB frame size")
+    rows = b"".join(
+        b"\x00" + rgb[row * width * 3 : (row + 1) * width * 3]
+        for row in range(height)
+    )
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + _png_chunk(b"IHDR", header) + _png_chunk(
+        b"IDAT", zlib.compress(rows)
+    ) + _png_chunk(b"IEND", b"")
+
+
+def _busy_capture(args: argparse.Namespace, config: dict[str, Any], alias: str) -> None:
+    spec = _target(config, args.target)
+    base_url = spec.get("base_url")
+    if not isinstance(base_url, str) or not base_url:
+        _fail(f"BUSY target {args.target} has no base_url")
+    if args.display not in (0, 1):
+        _fail("--display must be 0 (front) or 1 (back)")
+    width, height = ((72, 16), (160, 80))[args.display]
+    endpoint = _join_url(base_url, "/api/screen") + "?" + urlencode({"display": args.display})
+    _status, raw = _request(endpoint, headers=_busy_headers(spec))
+    png = _rgb_png(width, height, _decode_screen_payload(raw, width, height))
+    output = Path(args.output).expanduser()
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(png)
+    except OSError as exc:
+        _fail(f"cannot write capture {output}: {exc.strerror or exc}")
+    _emit(
+        {
+            "operation": "busy.capture",
+            "alias": alias,
+            "target": args.target,
+            "display": args.display,
+            "output": str(output),
+            "width": width,
+            "height": height,
+        }
+    )
+
+
+def _trmnl_spec(config: dict[str, Any], alias: str) -> dict[str, Any]:
+    spec = _alias(config, alias)
+    if spec.get("kind") != "trmnl":
+        _fail(f"display alias {alias!r} is not a TRMNL alias")
+    return spec
+
+
+def _trmnl_api(config: dict[str, Any], alias: str, path: str) -> None:
+    spec = _trmnl_spec(config, alias)
+    base_url = spec.get("api_base_url")
+    is_current = path == "/display/current"
+    token_env = spec.get("device_token_env" if is_current else "api_token_env")
+    if not isinstance(base_url, str) or not isinstance(token_env, str):
+        _fail(f"TRMNL alias {alias} lacks API configuration")
+    token = os.environ.get(token_env)
+    if not token:
+        kind = "device Access-Token" if is_current else "account API key"
+        _fail(f"missing {token_env}; configure the TRMNL {kind} in the environment")
+    request_headers = {"Access-Token": token} if is_current else {"Authorization": f"Bearer {token}"}
+    status, body = _request_json(
+        _join_url(base_url, path),
+        headers=request_headers,
+    )
+    _emit(
+        {
+            "operation": f"trmnl.{path.strip('/').replace('/', '_')}",
+            "alias": alias,
+            "model": spec.get("model"),
+            "status": status,
+            "response": body,
+        }
+    )
+
+
+def _trmnl_payload(args: argparse.Namespace) -> dict[str, Any]:
+    """Build only the public fields accepted by the agent-message template."""
+
+    _validate_text(args.text, "--text")
+    payload: dict[str, Any] = {"message": args.text}
+    for argument, field in (
+        ("headline", "headline"),
+        ("source", "source"),
+        ("status", "status"),
+        ("timestamp", "timestamp"),
+    ):
+        value = getattr(args, argument, None)
+        if value is not None:
+            _validate_text(value, f"--{argument}")
+            payload[field] = value
+    progress = getattr(args, "progress", None)
+    if progress is not None:
+        if not 0 <= progress <= 100:
+            _fail("--progress must be an integer from 0 through 100")
+        payload["progress"] = progress
+    return payload
+
+
+def _trmnl_message(args: argparse.Namespace, config: dict[str, Any], alias: str) -> None:
+    spec = _trmnl_spec(config, alias)
+    webhook_env = spec.get("webhook_env")
+    if not isinstance(webhook_env, str) or not webhook_env:
+        _fail(f"TRMNL alias {alias} has no webhook_env")
+    payload = _trmnl_payload(args)
+    applied = _require_apply(args)
+    endpoint = f"env:{webhook_env}"
+    if not applied:
+        _emit(
+            {
+                "operation": "trmnl.message",
+                "alias": alias,
+                "model": spec.get("model"),
+                "applied": False,
+                "endpoint": endpoint,
+                "payload": payload,
+            }
+        )
+        return
+    webhook = os.environ.get(webhook_env)
+    if not webhook:
+        _fail(f"missing {webhook_env}; configure the plugin webhook URL in the environment")
+    status, response = _request_json(
+        webhook,
+        method="POST",
+        value={"merge_variables": payload},
+    )
+    _emit(
+        {
+            "operation": "trmnl.message",
+            "alias": alias,
+            "model": spec.get("model"),
+            "applied": True,
+            "endpoint": endpoint,
+            "payload": payload,
+            "status": status,
+            "response": response,
+        }
+    )
+
+
+def _doctor(config: dict[str, Any]) -> int:
+    checks: list[dict[str, Any]] = []
+    busy = _alias(config, BUSY_ALIAS)
+    targets = busy.get("targets", {})
+    if isinstance(targets, dict):
+        for name, value in targets.items():
+            if not isinstance(value, dict):
+                continue
+            token_env = value.get("token_env")
+            if (
+                isinstance(token_env, str)
+                and token_env
+                and value.get("token_required", True)
+                and not os.environ.get(token_env)
+            ):
+                checks.append(
+                    {
+                        "alias": BUSY_ALIAS,
+                        "target": name,
+                        "ok": False,
+                        "reason": "missing_auth",
+                        "secret_env": token_env,
+                    }
+                )
+                continue
+            base_url = value.get("base_url")
+            if not isinstance(base_url, str) or not base_url:
+                checks.append({"alias": BUSY_ALIAS, "target": name, "ok": False, "reason": "missing_base_url"})
+                continue
+            try:
+                status, _body = _request_json(
+                    _join_url(base_url, "/api/status"),
+                    headers=_busy_headers(value),
+                )
+                checks.append(
+                    {
+                        "alias": BUSY_ALIAS,
+                        "target": name,
+                        "ok": 200 <= status < 300,
+                        "status": status,
+                    }
+                )
+            except DisplayCtlError as exc:
+                checks.append({"alias": BUSY_ALIAS, "target": name, "ok": False, "reason": str(exc)})
+    for alias in TRMNL_ALIASES:
+        value = config.get("aliases", {}).get(alias)
+        if not isinstance(value, dict):
+            continue
+        api_env = value.get("api_token_env")
+        device_env = value.get("device_token_env")
+        webhook_env = value.get("webhook_env")
+        checks.append(
+            {
+                "alias": alias,
+                "model": value.get("model"),
+                "ok": bool(isinstance(api_env, str) and os.environ.get(api_env)),
+                "api_token_env": api_env,
+                "api_token_present": bool(isinstance(api_env, str) and os.environ.get(api_env)),
+                "device_token_env": device_env,
+                "device_token_present": bool(isinstance(device_env, str) and os.environ.get(device_env)),
+                "webhook_env": webhook_env,
+                "webhook_present": bool(isinstance(webhook_env, str) and os.environ.get(webhook_env)),
+            }
+        )
+    result = {"ok": all(check.get("ok", False) for check in checks), "checks": checks}
+    _emit(result)
+    return 0 if result["ok"] else 1
+
+
+def _add_json_flag(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--json", action="store_true", help="emit structured JSON (the default)")
+
+
+def _add_apply_flags(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--apply", action="store_true", help="perform the remote write")
+    parser.add_argument("--dry-run", action="store_true", help="show the request without writing (default)")
+
+
+def _add_busy_parser(subparsers: Any, name: str) -> None:
+    parser = subparsers.add_parser(name, help="work with the BUSY Bar")
+    parser.set_defaults(handler="busy", busy_alias=name if name == BUSY_ALIAS else BUSY_ALIAS)
+    commands = parser.add_subparsers(dest="busy_command", required=True)
+
+    validate = commands.add_parser("validate", help="validate a BUSY draw manifest")
+    validate.add_argument("--manifest", required=True)
+    _add_json_flag(validate)
+
+    draw = commands.add_parser("draw", help="draw a manifest on BUSY")
+    draw.add_argument("--manifest", required=True)
+    draw.add_argument("--target", choices=("usb", "lan"), default="usb")
+    _add_apply_flags(draw)
+    _add_json_flag(draw)
+
+    message = commands.add_parser("message", help="draw a text message on BUSY")
+    message.add_argument("--text", required=True)
+    message.add_argument("--application", default="agent_message")
+    message.add_argument("--priority", type=int, default=40)
+    message.add_argument("--timeout", type=int, default=75)
+    message.add_argument("--x", type=int, default=2)
+    message.add_argument("--y", type=int, default=2)
+    message.add_argument("--font", default="normal")
+    message.add_argument("--color")
+    message.add_argument("--target", choices=("usb", "lan"), default="usb")
+    _add_apply_flags(message)
+    _add_json_flag(message)
+
+    capture = commands.add_parser("capture", help="capture a BUSY screen as PNG")
+    capture.add_argument("--output", required=True)
+    capture.add_argument("--display", type=int, default=0)
+    capture.add_argument("--target", choices=("usb", "lan"), default="usb")
+    _add_json_flag(capture)
+
+    clear = commands.add_parser("clear", help="clear one BUSY application namespace")
+    clear.add_argument("--application", required=True)
+    clear.add_argument("--target", choices=("usb", "lan"), default="usb")
+    _add_apply_flags(clear)
+    _add_json_flag(clear)
+
+
+def _add_trmnl_parser(subparsers: Any, name: str) -> None:
+    parser = subparsers.add_parser(name, help="work with a TRMNL display")
+    parser.set_defaults(handler="trmnl", trmnl_alias=None if name == "trmnl" else name)
+    if name == "trmnl":
+        parser.add_argument("--alias", dest="trmnl_alias", choices=TRMNL_ALIASES, default="trmnl-og")
+    commands = parser.add_subparsers(dest="trmnl_command", required=True)
+
+    devices = commands.add_parser("devices", help="read TRMNL account devices")
+    _add_json_flag(devices)
+
+    current = commands.add_parser("current", help="read the current TRMNL display")
+    _add_json_flag(current)
+
+    message = commands.add_parser("message", help="post a message to a TRMNL plugin webhook")
+    message.add_argument("--text", required=True)
+    message.add_argument("--headline")
+    message.add_argument("--source")
+    message.add_argument("--status")
+    message.add_argument("--timestamp")
+    message.add_argument("--progress", type=int)
+    _add_apply_flags(message)
+    _add_json_flag(message)
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Declarative, agent-friendly BUSY Bar and TRMNL client")
+    parser.add_argument("--config", default=_default_config_path())
+    parser.add_argument("--json", action="store_true", help="emit structured JSON (the default)")
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    inventory = commands.add_parser("inventory", help="show configured aliases and capabilities")
+    _add_json_flag(inventory)
+    inventory.set_defaults(handler="inventory")
+
+    doctor = commands.add_parser("doctor", help="check configured device access")
+    _add_json_flag(doctor)
+    doctor.set_defaults(handler="doctor")
+
+    _add_busy_parser(commands, "busy")
+    _add_busy_parser(commands, "busy-bar")
+    _add_trmnl_parser(commands, "trmnl")
+    _add_trmnl_parser(commands, "trmnl-og")
+    _add_trmnl_parser(commands, "trmnl-x")
+    return parser
+
+
+def _dispatch(args: argparse.Namespace, config: dict[str, Any]) -> int:
+    if args.handler == "inventory":
+        _emit(_public_inventory(config))
+        return 0
+    if args.handler == "doctor":
+        return _doctor(config)
+    if args.handler == "busy":
+        alias = args.busy_alias
+        if args.busy_command == "validate":
+            _busy_validate(args)
+        elif args.busy_command == "draw":
+            _busy_draw(args, config, alias)
+        elif args.busy_command == "message":
+            _busy_message(args, config, alias)
+        elif args.busy_command == "capture":
+            _busy_capture(args, config, alias)
+        elif args.busy_command == "clear":
+            _busy_clear(args, config, alias)
+        else:
+            _fail(f"unsupported BUSY command {args.busy_command}")
+        return 0
+    if args.handler == "trmnl":
+        alias = args.trmnl_alias or "trmnl-og"
+        if args.trmnl_command == "devices":
+            _trmnl_api(config, alias, "/devices")
+        elif args.trmnl_command == "current":
+            _trmnl_api(config, alias, "/display/current")
+        elif args.trmnl_command == "message":
+            _trmnl_message(args, config, alias)
+        else:
+            _fail(f"unsupported TRMNL command {args.trmnl_command}")
+        return 0
+    _fail("no command selected")
+    return 2
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    try:
+        config = _load_config(args.config)
+        return _dispatch(args, config)
+    except DisplayCtlError as exc:
+        print(f"displayctl: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

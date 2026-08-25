@@ -131,6 +131,7 @@ in
         tmux.experimental.sessionDots.enable = false;
         tmux.experimental.agentStatus.enable = false;
         dmux.enable = false;
+        displayctl.enable = true;
         zsh = {
           enable = true;
           envInit = ''
