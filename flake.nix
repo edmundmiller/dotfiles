@@ -508,6 +508,24 @@
           unstable = mkPkgs nixpkgs-unstable [ ] system;
           displayRuby = pkgs.ruby_4_0;
           displayBundler = pkgs.bundler.override { ruby = displayRuby; };
+          displayTrmnlGems = pkgs.bundlerEnv {
+            name = "trmnl-agent-message-gems";
+            ruby = displayRuby;
+            gemdir = ./config/trmnl/agent-message;
+          };
+          displayFrameworkCss = pkgs.fetchurl {
+            url = "https://trmnl.com/css/3.2.0/plugins.css";
+            hash = "sha256-vTfuZ59ATzS2kI0QH9zSS/Dpc3INE6pxTy1ptJn9qes=";
+          };
+          displayFrameworkJs = pkgs.fetchurl {
+            url = "https://trmnl.com/js/3.2.0/plugins.js";
+            hash = "sha256-DjK7m3EqCniFzinTPsweTCmmIz5BHzKvUCNRdYkTRy0=";
+          };
+          displayFrameworkAssets = pkgs.runCommand "trmnl-framework-3.2.0-assets" { } ''
+            mkdir -p "$out/css/3.2.0" "$out/js/3.2.0"
+            ln -s ${displayFrameworkCss} "$out/css/3.2.0/plugins.css"
+            ln -s ${displayFrameworkJs} "$out/js/3.2.0/plugins.js"
+          '';
           displayFirefox =
             if pkgs.stdenv.isDarwin then
               pkgs.writeShellScriptBin "firefox" ''
@@ -1104,6 +1122,8 @@
               packages = with pkgs; [
                 displayBundler
                 displayRuby
+                displayTrmnlGems
+                geckodriver
                 imagemagick
                 displayFirefox
               ];
@@ -1189,6 +1209,35 @@
                   ''
                     cd ${./.}
                     PYTHONDONTWRITEBYTECODE=1 python3 tests/test_package_policy.py
+                    touch $out
+                  '';
+
+              displayctl-tests =
+                pkgs.runCommand "displayctl-tests"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                  }
+                  ''
+                    cd ${./packages/displayctl}
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_displayctl.py
+                    touch $out
+                  '';
+
+              trmnl-agent-message-structure =
+                pkgs.runCommand "trmnl-agent-message-structure"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.coreutils
+                      pkgs.ripgrep
+                    ];
+                  }
+                  ''
+                    cp -R ${./config/trmnl/agent-message} source
+                    chmod -R u+w source
+                    cd source
+                    ${pkgs.bash}/bin/bash ./test_project.sh
+                    ${pkgs.bash}/bin/bash ./test_push_guard.sh
                     touch $out
                   '';
 
@@ -1452,6 +1501,10 @@
                 inherit pkgs;
               };
 
+              nuc-hermes-displayctl-wiring = import ./hosts/nuc/_tests/displayctl-wiring.nix {
+                inherit pkgs;
+              };
+
               nuc-container-runtime = import ./hosts/nuc/_tests/container-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
@@ -1572,6 +1625,51 @@
               };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
+              trmnl-agent-message-render =
+                pkgs.runCommand "trmnl-agent-message-render"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.geckodriver
+                      pkgs.imagemagick
+                      pkgs.python3
+                      displayFirefox
+                      displayTrmnlGems
+                    ];
+                  }
+                  ''
+                    export HOME="$TMPDIR/home"
+                    export MOZ_HEADLESS=1
+                    export SE_AVOID_STATS=true
+                    mkdir -p "$HOME"
+                    cp -R ${./config/trmnl/agent-message} source
+                    chmod -R u+w source
+                    cd source
+
+                    python3 -m http.server 18932 \
+                      --bind 127.0.0.1 \
+                      --directory ${displayFrameworkAssets} \
+                      >"$TMPDIR/framework-server.log" 2>&1 &
+                    server_pid=$!
+                    trap 'kill "$server_pid"' EXIT
+                    server_ready=0
+                    for _ in $(seq 1 50); do
+                      if python3 -c 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:18932/css/3.2.0/plugins.css", timeout=1).close()' 2>/dev/null; then
+                        server_ready=1
+                        break
+                      fi
+                      sleep 0.1
+                    done
+                    if [ "$server_ready" -ne 1 ]; then
+                      cat "$TMPDIR/framework-server.log" >&2
+                      exit 1
+                    fi
+                    printf '\nframework_asset_host: "http://127.0.0.1:18932"\n' >> .trmnlp.yml
+
+                    ${pkgs.bash}/bin/bash ./test_render.sh
+                    touch $out
+                  '';
+
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;

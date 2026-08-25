@@ -49,9 +49,12 @@ BUSY-specific invariants:
   `agent_*`; preserve the existing household namespaces.
 - Keep agent priority at or below 50. Do not use an agent overlay to outrank
   the device's built-in or household display sessions.
-- Give transient messages a bounded API-supported element lifetime/TTL. If a
-  manifest cannot express a bounded lifetime, stop and report that instead of
-  leaving an agent message indefinitely active.
+- Give transient messages a bounded element lifetime/TTL of at most 3,600
+  seconds. The live BUSY API 25.0.0 OpenAPI schema accepts an integer timeout
+  with `minimum: 0` but publishes no upper bound; 3,600 seconds is this
+  client's one-hour agent policy, not an invented server limit. If a manifest
+  cannot express a bounded lifetime, stop and report that instead of leaving
+  an agent message indefinitely active.
 - Clear only a named application namespace with
   `displayctl busy-bar clear --application NAME`; never issue an unscoped
   clear. Capture the frame after an applied draw or clear when visual proof is

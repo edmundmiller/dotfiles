@@ -29,6 +29,11 @@ TRMNL_ALIASES = ("trmnl-og", "trmnl-x")
 BUSY_ELEMENTS = {"text", "rectangle", "countdown", "image", "animation"}
 BUSY_APPLICATION_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
 MAX_AGENT_PRIORITY = 50
+# The live BUSY API 25.0.0 schema accepts a non-negative integer timeout but
+# does not publish an upper bound. Keep agent-owned overlays finite and
+# bounded to one hour; this is a client policy, not a claim about the API's
+# numeric range.
+MAX_BUSY_TIMEOUT_SECONDS = 3_600
 
 
 class DisplayCtlError(Exception):
@@ -293,8 +298,15 @@ def _validate_manifest(manifest: Any) -> dict[str, Any]:
             _validate_text(element.get("text"), f"elements[{index}].text")
             _validate_text(element.get("font"), f"elements[{index}].font")
         timeout = element.get("timeout")
-        if isinstance(timeout, bool) or not isinstance(timeout, int) or timeout <= 0:
-            _fail(f"elements[{index}].timeout must be a positive integer")
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, int)
+            or not 1 <= timeout <= MAX_BUSY_TIMEOUT_SECONDS
+        ):
+            _fail(
+                f"elements[{index}].timeout must be an integer from 1 through "
+                f"{MAX_BUSY_TIMEOUT_SECONDS} seconds"
+            )
         if element_type == "countdown":
             timestamp = element.get("timestamp")
             if not isinstance(timestamp, str) or not re.fullmatch(r"[0-9]+", timestamp):
@@ -735,22 +747,24 @@ def _doctor(config: dict[str, Any]) -> int:
         value = config.get("aliases", {}).get(alias)
         if not isinstance(value, dict):
             continue
-        api_env = value.get("api_token_env")
-        device_env = value.get("device_token_env")
-        webhook_env = value.get("webhook_env")
-        checks.append(
-            {
+        for capability, env_key in (
+            ("devices", "api_token_env"),
+            ("current", "device_token_env"),
+            ("message", "webhook_env"),
+        ):
+            credential_env = value.get(env_key)
+            present = bool(isinstance(credential_env, str) and os.environ.get(credential_env))
+            check: dict[str, Any] = {
                 "alias": alias,
                 "model": value.get("model"),
-                "ok": bool(isinstance(api_env, str) and os.environ.get(api_env)),
-                "api_token_env": api_env,
-                "api_token_present": bool(isinstance(api_env, str) and os.environ.get(api_env)),
-                "device_token_env": device_env,
-                "device_token_present": bool(isinstance(device_env, str) and os.environ.get(device_env)),
-                "webhook_env": webhook_env,
-                "webhook_present": bool(isinstance(webhook_env, str) and os.environ.get(webhook_env)),
+                "capability": capability,
+                "ok": present,
+                "credential_env": credential_env,
+                "credential_present": present,
             }
-        )
+            if not present:
+                check["reason"] = "missing_credential"
+            checks.append(check)
     result = {"ok": all(check.get("ok", False) for check in checks), "checks": checks}
     _emit(result)
     return 0 if result["ok"] else 1

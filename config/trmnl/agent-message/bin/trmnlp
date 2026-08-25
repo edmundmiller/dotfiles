@@ -3,7 +3,43 @@ set -euo pipefail
 
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ "${1:-}" == "push" ]] && grep -q '^id: __UNASSIGNED__$' "$project_dir/src/settings.yml"; then
+is_push_command() {
+  local arg
+
+  while (($# > 0)); do
+    arg="$1"
+    case "$arg" in
+      --dir|-d)
+        # Thor's --dir/-d option consumes the next argument.
+        shift
+        (($# > 0)) && shift
+        ;;
+      --dir=*)
+        shift
+        ;;
+      --quiet|-q|--quiet=*|--no-quiet|--skip-quiet)
+        shift
+        ;;
+      --)
+        shift
+        [[ "${1:-}" == "push" ]]
+        return
+        ;;
+      -*)
+        # Unknown options are left to TRMNLP's own parser.
+        return 1
+        ;;
+      *)
+        [[ "$arg" == "push" ]]
+        return
+        ;;
+    esac
+  done
+
+  return 1
+}
+
+if is_push_command "$@" && grep -q '^id: __UNASSIGNED__$' "$project_dir/src/settings.yml"; then
   printf '%s\n' 'refusing trmnlp push: replace id: __UNASSIGNED__ only after verifying the target private plugin' >&2
   exit 2
 fi

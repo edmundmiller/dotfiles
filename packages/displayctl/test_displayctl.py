@@ -267,6 +267,44 @@ class DisplayctlContractTest(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("timeout", result.stderr)
 
+    def test_busy_element_timeout_has_bounded_agent_policy(self) -> None:
+        valid = self.write_manifest(
+            {
+                "application_name": "agent_message",
+                "priority": 40,
+                "elements": [
+                    {
+                        "id": "message",
+                        "type": "text",
+                        "text": "hello",
+                        "font": "normal",
+                        "timeout": 3_600,
+                    }
+                ],
+            }
+        )
+        result = self.run_cli("busy", "validate", "--manifest", str(valid))
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+        too_large = self.write_manifest(
+            {
+                "application_name": "agent_message",
+                "priority": 40,
+                "elements": [
+                    {
+                        "id": "message",
+                        "type": "text",
+                        "text": "hello",
+                        "font": "normal",
+                        "timeout": 3_601,
+                    }
+                ],
+            }
+        )
+        result = self.run_cli("busy", "validate", "--manifest", str(too_large))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("timeout", result.stderr)
+
     def test_busy_element_id_is_required_and_uses_safe_pattern(self) -> None:
         for element_id in (None, "message id"):
             with self.subTest(element_id=element_id):
@@ -480,6 +518,12 @@ class DisplayctlContractTest(unittest.TestCase):
         self.assertIn("timeout", result.stderr)
         self.assertFalse(MockDisplayHandler.requests)
 
+    def test_busy_message_rejects_timeout_above_agent_policy(self) -> None:
+        result = self.run_cli("busy", "message", "--text", "hello", "--timeout", "3601")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("timeout", result.stderr)
+        self.assertFalse(MockDisplayHandler.requests)
+
     def test_clear_is_scoped_to_application_name(self) -> None:
         result = self.run_cli("busy", "clear", "--application", "agent_message", "--apply")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -624,6 +668,21 @@ class DisplayctlContractTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(MockDisplayHandler.last_headers["Access-Token"], "device-secret")
         self.assertNotIn("device-secret", result.stdout)
+
+    def test_doctor_reports_trmnl_capabilities_independently(self) -> None:
+        result = self.run_cli("doctor", env={"TRMNL_API_KEY": "user-account-secret"})
+        self.assertNotEqual(result.returncode, 0)
+        checks = json.loads(result.stdout)["checks"]
+        trmnl_checks = [check for check in checks if check["alias"] == "trmnl-og"]
+        self.assertEqual(
+            {check["capability"] for check in trmnl_checks},
+            {"devices", "current", "message"},
+        )
+        by_capability = {check["capability"]: check for check in trmnl_checks}
+        self.assertTrue(by_capability["devices"]["ok"])
+        self.assertFalse(by_capability["current"]["ok"])
+        self.assertFalse(by_capability["message"]["ok"])
+        self.assertTrue(all(check.get("capability") for check in trmnl_checks))
 
 
 if __name__ == "__main__":

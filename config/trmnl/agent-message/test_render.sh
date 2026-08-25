@@ -70,10 +70,10 @@ assert_model_renders() {
 }
 
 cd "$project_dir"
-./bin/trmnlp build --png --width 800 --height 480 --color-depth 1 --quiet
+"$BASH" ./bin/trmnlp build --png --width 800 --height 480 --color-depth 1 --quiet
 assert_model_renders og 800 480
 
-./bin/trmnlp build --png --width 1040 --height 780 --color-depth 4 --quiet
+"$BASH" ./bin/trmnlp build --png --width 1040 --height 780 --color-depth 4 --quiet
 assert_model_renders trmnl-x 1040 780
 
 printf '%s\n' 'TRMNLP OG/X render checks passed'

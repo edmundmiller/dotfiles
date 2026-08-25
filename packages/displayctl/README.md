@@ -24,8 +24,11 @@ displayctl trmnl-x current
 ```
 
 `doctor` checks reachability and reports only whether configured credential
-environment variables are present. `capture` reads a BUSY frame and writes a
-local PNG; it does not change the device.
+environment variables are present. BUSY checks cover the device targets;
+TRMNL checks are one row per capability (`devices`, `current`, and `message`),
+so an account key alone does not imply current-screen or webhook readiness.
+`capture` reads a BUSY frame and writes a local PNG; it does not change the
+device.
 
 When `--config` is omitted, the CLI resolves configuration in this order:
 `DISPLAYCTL_CONFIG`, an existing `~/.config/displayctl/config.json`, the
@@ -73,15 +76,19 @@ LAN target is selected with `--target lan`.
 Agent-owned BUSY applications must use an `application_name` matching
 `^[A-Za-z0-9._-]+$`, and their priority is capped at 50 so built-in/shared
 sessions remain authoritative. Every draw element must include a positive
-integer `timeout`; the CLI does not expose an unbounded display-until mode.
+integer `timeout` no greater than 3,600 seconds (one hour). The live BUSY API
+25.0.0 OpenAPI schema documents `timeout` as an integer with `minimum: 0` and
+no upper bound; this client policy keeps agent-owned overlays finite while
+remaining within the API's documented range. The CLI does not expose an
+unbounded display-until mode.
 Every element also needs an `id` matching the same safe pattern. Text elements
 need a non-empty `font` (the generated `busy message` uses `normal`), countdowns
 need a digits-only string `timestamp`, `direction` of `time_left` or
 `time_since`, and `show_hours` of `when_non_zero` or `always`. Rectangles need
 positive integer `width` and `height`; images and animations need exactly one
 non-empty `path` or `stock_path`. `busy message` adds `id: message` and
-`timeout: 75` by default and accepts `--timeout` for a different positive
-duration.
+`timeout: 75` by default and accepts `--timeout` for a different duration up
+to 3,600 seconds.
 
 ## Credentials
 

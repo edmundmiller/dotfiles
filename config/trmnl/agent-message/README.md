@@ -32,11 +32,17 @@ nix develop .#display-devices
 cd config/trmnl/agent-message
 bundle install
 ./test_project.sh
+./test_push_guard.sh
 ./test_render.sh
 ./bin/trmnlp lint
 ./bin/trmnlp build
 ./bin/trmnlp serve
 ```
+
+The committed `gemset.nix` and pinned framework assets make the registered
+Linux PNG render check hermetic. Regenerate `gemset.nix` with
+`nix run nixpkgs#bundix --` whenever `Gemfile.lock` changes. Darwin authoring
+uses the same packaged gems but runs the render check directly from the shell.
 
 `test_render.sh` builds all four views at both the OG (800×480, 1-bit) and X
 (1040×780, 4-bit) viewport sizes. It checks each view's body for at least 500
