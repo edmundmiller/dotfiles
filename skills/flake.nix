@@ -47,6 +47,11 @@
       flake = false;
     };
 
+    mattpocock-skills = {
+      url = "github:mattpocock/skills/5b15a47f2d7150f545fbcacbfe381787fc0230dc";
+      flake = false;
+    };
+
     diffity-repo = {
       url = "github:kamranahmedse/diffity";
       flake = false;
@@ -298,6 +303,21 @@
           "tmux"
           "enable"
         ];
+        mattpocockCodexSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-codex-skills.json);
+        mattpocockCodexSkills = lib.mapAttrs (_: path: {
+          from = "mattpocock";
+          inherit path;
+          meta.targets = [ "codex" ];
+          transform =
+            { original, ... }:
+            builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
+              lib.concatStringsSep "\n" (
+                lib.filter (
+                  line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
+                ) (lib.splitString "\n" original)
+              )
+            );
+        }) mattpocockCodexSkillPaths;
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -365,13 +385,15 @@
           {
             programs.dotfiles-agent-skills.bundles = bundles;
 
-            programs.dotfiles-agent-skills.targetedExplicit = lib.optionalAttrs piEnabled {
-              extending-pi = {
-                from = "pi-extensions";
-                path = "extending-pi";
-                meta.targets = [ "pi" ];
-              };
-            };
+            programs.dotfiles-agent-skills.targetedExplicit =
+              lib.optionalAttrs piEnabled {
+                extending-pi = {
+                  from = "pi-extensions";
+                  path = "extending-pi";
+                  meta.targets = [ "pi" ];
+                };
+              }
+              // mattpocockCodexSkills;
 
             home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
               if [ -L "$HOME/.claude/skills" ]; then
@@ -478,6 +500,12 @@
                 humanlayer-show-me = {
                   path = inputs.humanlayer-skills.outPath;
                   subdir = "plugins/show-me/skills";
+                  filter.maxDepth = 2;
+                };
+
+                mattpocock = {
+                  path = inputs.mattpocock-skills.outPath;
+                  subdir = "skills";
                   filter.maxDepth = 2;
                 };
 

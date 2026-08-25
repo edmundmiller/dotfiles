@@ -1,0 +1,62 @@
+import json
+from pathlib import Path
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[1]
+FLAKE = ROOT / "skills/flake.nix"
+MANIFEST = ROOT / "skills/mattpocock-codex-skills.json"
+
+EXPECTED_SKILLS = {
+    "ask-matt": "engineering/ask-matt",
+    "code-review": "engineering/code-review",
+    "codebase-design": "engineering/codebase-design",
+    "diagnosing-bugs": "engineering/diagnosing-bugs",
+    "domain-modeling": "engineering/domain-modeling",
+    "grill-me": "productivity/grill-me",
+    "grill-with-docs": "engineering/grill-with-docs",
+    "grilling": "productivity/grilling",
+    "handoff": "productivity/handoff",
+    "implement": "engineering/implement",
+    "improve-codebase-architecture": "engineering/improve-codebase-architecture",
+    "prototype": "engineering/prototype",
+    "research": "engineering/research",
+    "resolving-merge-conflicts": "engineering/resolving-merge-conflicts",
+    "setup-matt-pocock-skills": "engineering/setup-matt-pocock-skills",
+    "tdd": "engineering/tdd",
+    "teach": "productivity/teach",
+    "to-questionnaire": "productivity/to-questionnaire",
+    "to-spec": "engineering/to-spec",
+    "to-tickets": "engineering/to-tickets",
+    "triage": "engineering/triage",
+    "wait-what": "productivity/wait-what",
+    "wayfinder": "engineering/wayfinder",
+    "wizard": "engineering/wizard",
+    "writing-for-agents": "productivity/writing-for-agents",
+}
+
+
+class MattPocockCodexSkillsTest(unittest.TestCase):
+    def test_curated_manifest_matches_agents_workspace_selection(self) -> None:
+        self.assertEqual(EXPECTED_SKILLS, json.loads(MANIFEST.read_text()))
+
+    def test_flake_routes_manifest_only_to_codex(self) -> None:
+        flake = FLAKE.read_text()
+
+        for declaration in (
+            "mattpocock-skills = {",
+            'url = "github:mattpocock/skills/5b15a47f2d7150f545fbcacbfe381787fc0230dc";',
+            "mattpocockCodexSkillPaths = builtins.fromJSON",
+            'from = "mattpocock";',
+            'meta.targets = [ "codex" ];',
+            'lib.hasPrefix "disable-model-invocation:" line',
+            'lib.hasPrefix "argument-hint:" line',
+            '"](link)"',
+            '"](https://tracker.example/ticket)"',
+        ):
+            with self.subTest(declaration=declaration):
+                self.assertIn(declaration, flake)
+
+
+if __name__ == "__main__":
+    unittest.main()
