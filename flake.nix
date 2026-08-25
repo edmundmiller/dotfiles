@@ -106,7 +106,9 @@
     # Canonical authoring/runtime repo for agent specs, renderers, and
     # reusable Hermes profiles.
     agents-workspace = {
-      url = "github:edmundmiller/agents-workspace/f8ebd6046fb04d60427b2335ce6d921122ccc532";
+      # The NUC's nix-private-github wrapper authenticates private GitHub
+      # archive fetches without requiring a host-level SSH deployment key.
+      url = "github:edmundmiller/agents-workspace/e38a2e7c71762af75b7dbe1a49f444590906c689";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
