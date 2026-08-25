@@ -3,6 +3,7 @@
 *.db-journal
 *.db-shm
 *.db-wal
+*.db-wal-cert*
 *.db-fsqlite-ns-*
 
 # Lock files
