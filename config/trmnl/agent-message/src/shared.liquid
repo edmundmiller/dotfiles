@@ -1,0 +1,6 @@
+{% assign headline_text = headline | default: "Agent message" | truncate: 54 %}
+{% assign message_text = message | default: "No message supplied." | truncate: 220 %}
+{% assign source_text = source | default: "Agent" | truncate: 28 %}
+{% assign status_text = status | default: "Ready" | truncate: 18 %}
+{% assign timestamp_text = timestamp | default: "" | truncate: 28 %}
+{% assign progress_value = progress | plus: 0 | at_least: 0 | at_most: 100 %}

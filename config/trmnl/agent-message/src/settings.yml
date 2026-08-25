@@ -1,0 +1,15 @@
+---
+# This project is intentionally not linked to a TRMNL account yet.
+# Replace id only after verifying the account and target private plugin.
+id: __UNASSIGNED__
+strategy: webhook
+name: Agent Message
+description: Agent-authored display message
+framework_version: 3.2.0
+no_screen_padding: "no"
+dark_mode: "no"
+static_data: ""
+polling_verb: get
+polling_url: ""
+polling_headers: ""
+refresh_interval: 15

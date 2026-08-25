@@ -1,0 +1,17 @@
+---
+watch:
+  - .trmnlp.yml
+  - src
+  - fixtures
+
+custom_fields: {}
+
+# Safe, generic preview data. Agents can replace these values in a fixture or
+# POST the same keys to the private-plugin webhook after the plugin is linked.
+variables:
+  headline: "Agent message"
+  message: "A concise status update rendered for the shared display."
+  source: "Agent"
+  status: "Ready"
+  timestamp: "2026-08-24 09:30"
+  progress: 62

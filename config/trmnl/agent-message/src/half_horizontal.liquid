@@ -1,0 +1,22 @@
+<div class="layout layout--col layout--center-y layout--stretch-x gap--medium portrait:gap--small">
+  <span class="label label--small">{{ status_text }}</span>
+  <span class="title title--large" data-clamp="1">{{ headline_text }}</span>
+  <span class="description" data-clamp="2">{{ message_text }}</span>
+
+  {% if progress != blank %}
+    <div class="progress-bar progress-bar--small">
+      <div class="content">
+        <span class="label label--small">Progress</span>
+        <span class="value value--xxsmall">{{ progress_value }}%</span>
+      </div>
+      <div class="track">
+        <div class="fill" style="width: {{ progress_value }}%"></div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<div class="title_bar">
+  <span class="title">{{ source_text }}</span>
+  {% if timestamp_text != blank %}<span class="instance">{{ timestamp_text }}</span>{% endif %}
+</div>

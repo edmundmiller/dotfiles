@@ -506,6 +506,15 @@
         }:
         let
           unstable = mkPkgs nixpkgs-unstable [ ] system;
+          displayRuby = pkgs.ruby_4_0;
+          displayBundler = pkgs.bundler.override { ruby = displayRuby; };
+          displayFirefox =
+            if pkgs.stdenv.isDarwin then
+              pkgs.writeShellScriptBin "firefox" ''
+                exec ${unstable.firefox-bin}/Applications/Firefox.app/Contents/MacOS/firefox "$@"
+              ''
+            else
+              pkgs.firefox;
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
           antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
             builtins.toJSON {
@@ -1085,6 +1094,21 @@
               ];
               shellHook = ''
                 echo "dotfiles agent shell (headless)"
+              '';
+            };
+
+            # Reproducible authoring/runtime dependencies for BUSY Bar and
+            # TRMNL OG/X previews. Ruby gems remain pinned by the TRMNLP
+            # project's Gemfile.lock.
+            display-devices = pkgs.mkShellNoCC {
+              packages = with pkgs; [
+                displayBundler
+                displayRuby
+                imagemagick
+                displayFirefox
+              ];
+              shellHook = ''
+                echo "display device shell (TRMNLP + image rendering)"
               '';
             };
 

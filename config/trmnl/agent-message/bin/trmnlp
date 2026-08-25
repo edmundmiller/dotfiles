@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "${1:-}" == "push" ]] && grep -q '^id: __UNASSIGNED__$' "$project_dir/src/settings.yml"; then
+  printf '%s\n' 'refusing trmnlp push: replace id: __UNASSIGNED__ only after verifying the target private plugin' >&2
+  exit 2
+fi
+
+cd "$project_dir"
+if [[ -f Gemfile ]] && command -v bundle >/dev/null 2>&1; then
+  exec bundle exec trmnlp "$@"
+fi
+
+if command -v trmnlp >/dev/null 2>&1; then
+  exec trmnlp "$@"
+fi
+
+printf '%s\n' 'trmnlp is not installed; run bundle install in this project' >&2
+exit 1
