@@ -65,49 +65,40 @@ in
               "timeout": 75
             },
             {
+              "id": "checkpoint_track",
+              "type": "rectangle",
+              "x": 1,
+              "y": 10,
+              "width": 70,
+              "height": 6,
+              "fill": "solid",
+              "fill_colors": ["#000000FF"],
+              "border_width": 1,
+              "border_color": "#404040FF",
+              "timeout": 75
+            },
+            {
               "id": "checkpoint_1",
               "type": "rectangle",
-              "x": 4,
+              "x": 2,
               "y": 11,
               "width": 12,
-              "height": 5,
+              "height": 4,
               "fill": "solid",
               "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 1 else '#FFB000FF' if filled_count | int + 1 == 1 else '#202020FF' }}"],
               "border_width": 0,
               "timeout": 75
             },
             {
-              "id": "checkpoint_label_30",
-              "type": "text",
-              "text": "30",
-              "font": "tiny",
-              "x": 10,
-              "y": 11,
-              "align": "top_mid",
-              "color": "{{ '#000000FF' if filled_count | int + 1 >= 1 else '#A0A0A0FF' }}",
-              "timeout": 75
-            },
-            {
               "id": "checkpoint_2",
               "type": "rectangle",
-              "x": 17,
+              "x": 16,
               "y": 11,
               "width": 12,
-              "height": 5,
+              "height": 4,
               "fill": "solid",
               "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 2 else '#FFB000FF' if filled_count | int + 1 == 2 else '#202020FF' }}"],
               "border_width": 0,
-              "timeout": 75
-            },
-            {
-              "id": "checkpoint_label_24",
-              "type": "text",
-              "text": "24",
-              "font": "tiny",
-              "x": 23,
-              "y": 11,
-              "align": "top_mid",
-              "color": "{{ '#000000FF' if filled_count | int + 1 >= 2 else '#A0A0A0FF' }}",
               "timeout": 75
             },
             {
@@ -116,67 +107,34 @@ in
               "x": 30,
               "y": 11,
               "width": 12,
-              "height": 5,
+              "height": 4,
               "fill": "solid",
               "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 3 else '#FFB000FF' if filled_count | int + 1 == 3 else '#202020FF' }}"],
               "border_width": 0,
               "timeout": 75
             },
             {
-              "id": "checkpoint_label_18",
-              "type": "text",
-              "text": "18",
-              "font": "tiny",
-              "x": 36,
-              "y": 11,
-              "align": "top_mid",
-              "color": "{{ '#000000FF' if filled_count | int + 1 >= 3 else '#A0A0A0FF' }}",
-              "timeout": 75
-            },
-            {
               "id": "checkpoint_4",
               "type": "rectangle",
-              "x": 43,
+              "x": 44,
               "y": 11,
               "width": 12,
-              "height": 5,
+              "height": 4,
               "fill": "solid",
               "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 4 else '#FFB000FF' if filled_count | int + 1 == 4 else '#202020FF' }}"],
               "border_width": 0,
               "timeout": 75
             },
             {
-              "id": "checkpoint_label_12",
-              "type": "text",
-              "text": "12",
-              "font": "tiny",
-              "x": 49,
-              "y": 11,
-              "align": "top_mid",
-              "color": "{{ '#000000FF' if filled_count | int + 1 >= 4 else '#A0A0A0FF' }}",
-              "timeout": 75
-            },
-            {
               "id": "checkpoint_5",
               "type": "rectangle",
-              "x": 56,
+              "x": 58,
               "y": 11,
               "width": 12,
-              "height": 5,
+              "height": 4,
               "fill": "solid",
               "fill_colors": ["{{ '#00D4FFFF' if filled_count | int >= 5 else '#FFB000FF' if filled_count | int + 1 == 5 else '#202020FF' }}"],
               "border_width": 0,
-              "timeout": 75
-            },
-            {
-              "id": "checkpoint_label_6",
-              "type": "text",
-              "text": "6",
-              "font": "tiny",
-              "x": 62,
-              "y": 11,
-              "align": "top_mid",
-              "color": "{{ '#000000FF' if filled_count | int + 1 >= 5 else '#A0A0A0FF' }}",
               "timeout": 75
             }
           ]
@@ -544,7 +502,7 @@ in
     {
       alias = "BUSY Bar Bedtime Progress";
       id = "busy_bar_bedtime_progress";
-      description = "Show a countdown and six-minute checkpoints before the alarm-relative in-bed target";
+      description = "Show a countdown and framed six-minute checkpoints before the alarm-relative in-bed target";
       mode = "restart";
       trigger = busyBarEveningTickTriggers ++ [
         {

@@ -729,8 +729,18 @@ let
       test =
         hasInfix "home_assistant_bedtime" busyBarBedtimeDrawPayload
         && hasInfix ''"priority": 50'' busyBarBedtimeDrawPayload
+        && hasInfix ''"id": "countdown"'' busyBarBedtimeDrawPayload
+        && hasInfix ''"x": 36'' busyBarBedtimeDrawPayload
+        && hasInfix ''"y": 0'' busyBarBedtimeDrawPayload
         && hasInfix ''"show_hours": "when_non_zero"'' busyBarBedtimeDrawPayload
         && hasInfix ''"timeout": 75'' busyBarBedtimeDrawPayload
+        && hasInfix ''"id": "checkpoint_track"'' busyBarBedtimeDrawPayload
+        && hasInfix ''"x": 1'' busyBarBedtimeDrawPayload
+        && hasInfix ''"y": 10'' busyBarBedtimeDrawPayload
+        && hasInfix ''"width": 70'' busyBarBedtimeDrawPayload
+        && hasInfix ''"height": 6'' busyBarBedtimeDrawPayload
+        && hasInfix ''"border_width": 1'' busyBarBedtimeDrawPayload
+        && hasInfix ''"border_color": "#404040FF"'' busyBarBedtimeDrawPayload
         &&
           builtins.all
             (checkpoint: hasInfix ''"id": "checkpoint_${toString checkpoint}"'' busyBarBedtimeDrawPayload)
@@ -741,26 +751,30 @@ let
               4
               5
             ]
-        && hasInfix "#00D4FFFF" busyBarBedtimeDrawPayload
-        && hasInfix "#FFB000FF" busyBarBedtimeDrawPayload
-        && hasInfix "#202020FF" busyBarBedtimeDrawPayload
         &&
           builtins.all
             (
-              label:
-              hasInfix ''"id": "checkpoint_label_${label}"'' busyBarBedtimeDrawPayload
-              && hasInfix ''"text": "${label}"'' busyBarBedtimeDrawPayload
+              position:
+              hasInfix ''"x": ${toString position}'' busyBarBedtimeDrawPayload
+              && hasInfix ''"y": 11'' busyBarBedtimeDrawPayload
+              && hasInfix ''"width": 12'' busyBarBedtimeDrawPayload
+              && hasInfix ''"height": 4'' busyBarBedtimeDrawPayload
             )
             [
-              "30"
-              "24"
-              "18"
-              "12"
-              "6"
+              2
+              16
+              30
+              44
+              58
             ]
+        && hasInfix "#00D4FFFF" busyBarBedtimeDrawPayload
+        && hasInfix "#FFB000FF" busyBarBedtimeDrawPayload
+        && hasInfix "#202020FF" busyBarBedtimeDrawPayload
+        && !(hasInfix "checkpoint_label_" busyBarBedtimeDrawPayload)
+        && !(hasInfix ''"type": "text"'' busyBarBedtimeDrawPayload)
         && !(hasInfix "gradient_h" busyBarBedtimeDrawPayload)
         && !(hasInfix "gradient_v" busyBarBedtimeDrawPayload);
-      msg = "BUSY Bar draw payload must preserve the countdown and five solid checkpoint contract";
+      msg = "BUSY Bar draw payload must use the framed countdown and five solid checkpoint contract";
     }
     {
       test =
