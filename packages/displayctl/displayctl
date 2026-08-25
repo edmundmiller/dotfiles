@@ -49,7 +49,7 @@ def _redact(value: Any, key: str | None = None) -> Any:
         and len(item) >= 4
     }
     normalized_key = key.lower() if key else ""
-    if normalized_key.endswith("_env"):
+    if normalized_key.endswith(("_env", "_present", "_required")):
         sensitive_key = False
     else:
         sensitive_key = any(

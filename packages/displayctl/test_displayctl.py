@@ -102,6 +102,7 @@ class DisplayctlContractTest(unittest.TestCase):
                                 "lan": {
                                     "base_url": self.base_url,
                                     "token_env": "BUSY_BAR_API_TOKEN",
+                                    "token_required": False,
                                 },
                             },
                         },
@@ -159,6 +160,7 @@ class DisplayctlContractTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         output = json.loads(result.stdout)
         self.assertEqual(output["aliases"]["trmnl-og"]["model"], "og_png")
+        self.assertIs(output["aliases"]["busy-bar"]["targets"]["lan"]["token_required"], False)
         self.assertNotIn("secret_ref", result.stdout)
         self.assertNotIn("op://Private/TRMNL/webhook", result.stdout)
 
