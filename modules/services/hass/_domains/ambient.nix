@@ -171,23 +171,23 @@ in
         ];
       }
 
-      # --- Contact sensor (uncomment when balcony sensor is added to HA) ---
-      # {
-      #   alias = "Balcony door opened";
-      #   id = "balcony_opens_couch_lamp";
-      #   description = "Turn on couch lamp when balcony door opens";
-      #   trigger = {
-      #     platform = "state";
-      #     entity_id = "binary_sensor.living_room_balcony_contact";
-      #     to = "on";
-      #   };
-      #   action = [
-      #     {
-      #       action = "light.turn_on";
-      #       target.entity_id = "light.nanoleaf_multicolor_floor_lamp";
-      #     }
-      #   ];
-      # }
+      # --- Balcony door ---
+      {
+        alias = "Balcony door opened";
+        id = "balcony_opens_couch_lamp";
+        description = "Turn on couch lamp when balcony door opens";
+        trigger = {
+          platform = "state";
+          entity_id = "binary_sensor.living_room_balcony_door";
+          to = "on";
+        };
+        action = [
+          {
+            action = "light.turn_on";
+            target.entity_id = "light.nanoleaf_multicolor_floor_lamp";
+          }
+        ];
+      }
 
       # --- Occupancy ---
       {

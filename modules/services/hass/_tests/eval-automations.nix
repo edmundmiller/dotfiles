@@ -344,6 +344,7 @@ let
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
+  balconyOpensCouchLamp = findAutomation "balcony_opens_couch_lamp";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
   legacyRoombaStart = findAutomation "roomba_start_last_person_leaves";
   robotCleaningScheduler = findAutomation "robot_cleaning_scheduler";
@@ -908,6 +909,20 @@ let
     {
       test = entranceOccupancyNightLight != null;
       msg = "automation 'entrance_occupancy_night_light' missing";
+    }
+    {
+      test = balconyOpensCouchLamp != null;
+      msg = "automation 'balcony_opens_couch_lamp' missing";
+    }
+    {
+      test = hasStateTrigger balconyOpensCouchLamp "binary_sensor.living_room_balcony_door" "on";
+      msg = "balcony_opens_couch_lamp must trigger when the balcony door opens";
+    }
+    {
+      test = hasActionTarget (toList (
+        balconyOpensCouchLamp.action or [ ]
+      )) "light.turn_on" "light.nanoleaf_multicolor_floor_lamp";
+      msg = "balcony_opens_couch_lamp must turn on the couch lamp";
     }
     {
       test = arrivalFlashWallLamp != null;
