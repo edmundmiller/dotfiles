@@ -18,7 +18,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
         service = source[service_start:service_end]
 
         self.assertIn(
-            'ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";',
+            'ExecStart = "${hermesAgentBase}/bin/hermes cron tick";',
             service,
         )
         self.assertIn("amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY", source)
@@ -57,20 +57,15 @@ class NucHermesRuntimeTest(unittest.TestCase):
             'shell_init_files = [ "${scintillateTerminalInit}" ];', profile
         )
 
-    def test_shared_profile_metadata_uses_canonical_purposes(self):
+    def test_shared_profile_aggregation_preserves_runtime_owned_metadata(self):
         source = (ROOT / "hosts/nuc/default.nix").read_text()
         start = source.index("hermesSharedProfilesAggregate = {")
         end = source.index("hermesAmosburtonSecretsMaterialize = {", start)
         activation = source[start:end]
 
-        self.assertIn(
-            "hermesAgentSpecs = import (inputs.agents-workspace + /agents/registry.nix)",
-            source,
-        )
-        self.assertIn("description = hermesAgentSpecs.${profile}.purpose;", source)
-        self.assertIn("description_auto = false;", source)
-        self.assertIn("install -o emiller -g users -m 0640", activation)
         self.assertIn('rm -f "$SHARED_HOME/profiles/"*', activation)
+        self.assertIn('ln -s "$profile_home" "$aggregate_link"', activation)
+        self.assertNotIn('"$profile_home/profile.yaml"', activation)
         self.assertNotIn(
             'if [ -d "$profile_home" ] && [ ! -f "$profile_home/profile.yaml" ]',
             activation,
@@ -94,7 +89,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
     def test_hermes_revision_includes_profile_descriptions(self):
         flake = (ROOT / "flake.nix").read_text()
         self.assertIn(
-            "github:NousResearch/hermes-agent/5b5932886ce6477a0f4a3d25ca465392288d5126",
+            "github:NousResearch/hermes-agent/fcbd1076a93841fa88855acce810e342a5b78101",
             flake,
         )
 

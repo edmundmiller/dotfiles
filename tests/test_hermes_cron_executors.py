@@ -26,11 +26,11 @@ class HermesCronExecutorTests(unittest.TestCase):
             ),
         )
 
-    def test_amos_has_one_isolated_canonical_cron_executor(self) -> None:
+    def test_amos_uses_the_patched_canonical_cron_executor(self) -> None:
         config = NUC_CONFIG.read_text(encoding="utf-8")
 
         self.assertIn(
-            "amosburtonHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.amosburton-hermes;",
+            'hermesAgentBase = pkgs.llm-agents."hermes-agent";',
             config,
         )
         self.assertIn('envVar = "LINEAR_API_KEY";', config)
@@ -42,11 +42,11 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertNotIn("unset HERMES_MCP_BEARER_TOKEN_LINEAR", config)
         self.assertIn("systemd.services.hermes-amosburton-cron-tick", config)
         self.assertIn(
-            'ExecStart = "${amosburtonHermesLauncher}/bin/amosburton-hermes cron tick";',
+            'ExecStart = "${hermesAgentBase}/bin/hermes cron tick";',
             config,
         )
+        self.assertNotIn("amosburtonHermesLauncher =", config)
         self.assertIn("systemd.timers.hermes-amosburton-cron-tick", config)
-        self.assertIn("systemd.services.hermes-gateway-amosburton.enable = false;", config)
 
 
 if __name__ == "__main__":
