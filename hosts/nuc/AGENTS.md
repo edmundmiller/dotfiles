@@ -192,6 +192,7 @@ du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
 
 ## Gotchas
 
+- **Mill Docs pull conflicts**: `mill-docs-git-pull.service` exits successfully before fetch when `/home/emiller/mill-docs` has unmerged index entries. Inspect and resolve that checkout manually; never reset, clean, abort, or drop its stash to make the timer green. After the index is clean, start the service once and verify the pull result from its journal.
 - **No local NUC eval from macOS**: Do not run `nix flake check`, `nix eval .#nixosConfigurations.nuc...`, or `nix build .#nixosConfigurations.nuc...` from Darwin. It hits the known `agent-skills` `x86_64-linux` vs `aarch64-darwin` mismatch. Use `hey nuc-wt build`, `hey nuc dry-activate`, or run `nixos-rebuild` on the NUC.
 - **Deploy builds remotely**: `hey nuc` evaluates and builds on the NUC. Large rebuilds (home-assistant, etc.) take time.
 - **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
