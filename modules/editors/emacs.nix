@@ -92,6 +92,8 @@ in
           # Org, markdown, everything inbetween
           pandoc
           gnuplot
+          my.vale
+          my.vale-ls
           # Roam
           anystyle-cli
           graphviz
@@ -109,13 +111,26 @@ in
           })
         ]
         ++ [
-          # FIXME unstable.vale
           yaml-language-server
         ];
 
       env.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
+      env.VALE_STYLES_PATH = "$XDG_DATA_HOME/vale/styles";
 
       modules.shell.zsh.rcFiles = [ "${configDir}/emacs/aliases.zsh" ];
+
+      home.configFile = optionalAttrs (!isDarwin) {
+        "vale/.vale.ini".source = "${configDir}/vale/.vale.ini";
+      };
+
+      home.file = optionalAttrs isDarwin {
+        "Library/Application Support/vale/.vale.ini".source = "${configDir}/vale/.vale.ini";
+      };
+
+      home.dataFile = {
+        "vale/styles/config/vocabularies/Base/accept.txt".source = "${configDir}/vale/styles/config/vocabularies/Base/accept.txt";
+        "vale/styles/config/vocabularies/Base/reject.txt".source = "${configDir}/vale/styles/config/vocabularies/Base/reject.txt";
+      };
 
       fonts.packages = [
         pkgs.emacs-all-the-icons-fonts
