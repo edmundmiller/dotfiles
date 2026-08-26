@@ -1,4 +1,4 @@
-# Pure Nix/build regression: capture the broken AudioPriorityBar deployment.
+# Pure Nix/build regression: keep the input sorter continuous and input-only.
 {
   darwinConfig,
   pkgs,
@@ -9,36 +9,117 @@ let
 
   mac = darwinConfig.config;
   activation = mac.home-manager.users.${mac.user.name}.home.activation.audioPriorityBarDefaults.data;
-  launchAgent = mac.launchd.user.agents."audio-priority-bar" or null;
+  launchAgent = mac.launchd.user.agents."audio-priority-bar";
+  service = launchAgent.serviceConfig;
+  program = service.Program;
 
-  expectedFailures = [
+  assertions = [
     {
-      reproduced = hasInfix "/usr/bin/defaults write app.audioprioritybar" activation;
-      msg = "the activation writes a defaults domain the app does not read";
+      test = hasInfix "/usr/bin/defaults write com.example.AudioPriorityBar" activation;
+      msg = "the activation must write the installed app's defaults domain";
     }
     {
-      reproduced = launchAgent == null;
-      msg = "the enabled app has no continuously running launch agent";
+      test = !hasInfix "/usr/bin/defaults write app.audioprioritybar" activation;
+      msg = "the activation must not write the obsolete defaults domain";
     }
     {
-      reproduced = !(mac.modules.desktop.apps.audioPriorityBar ? manageOutputs);
-      msg = "the module cannot disable automatic output-device changes";
+      test = hasInfix "customMode -bool true" activation;
+      msg = "the GUI app must remain in manual mode so it cannot auto-switch outputs";
+    }
+    {
+      test = service.RunAtLoad && service.KeepAlive;
+      msg = "the input sorter must launch at login and restart after an exit";
+    }
+    {
+      test = hasInfix "/bin/audio-input-priority-sorter" program;
+      msg = "the launch agent must execute the repo-owned input sorter";
+    }
+    {
+      test = builtins.elem "--watch" service.ProgramArguments;
+      msg = "the launch agent must run the sorter continuously";
+    }
+    {
+      test = builtins.all builtins.isString service.ProgramArguments;
+      msg = "every launch agent argument must be plist-serializable as a string";
     }
   ];
 
-  unexpectedPasses = filter (failure: !failure.reproduced) expectedFailures;
+  failures = filter (assertion: !assertion.test) assertions;
+
+  fakeSwitchAudioSource = pkgs.writeShellScript "fake-switch-audio-source" ''
+    set -euo pipefail
+    state="''${SWITCH_AUDIO_TEST_STATE:?}"
+    log="''${SWITCH_AUDIO_TEST_LOG:?}"
+    printf '%s\n' "$*" >> "$log"
+
+    if [[ "$*" == "-a -t input -f json" ]]; then
+      printf '%s\n' \
+        '{"name":"Fallback","type":"input","uid":"fallback"}' \
+        '{"name":"Preferred","type":"input","uid":"preferred"}'
+      exit 0
+    fi
+    if [[ "$*" == "-c -t input -f json" ]]; then
+      uid="$(<"$state")"
+      if [[ "$uid" == "preferred" ]]; then
+        printf '%s\n' '{"name":"Preferred","type":"input","uid":"preferred"}'
+      else
+        printf '%s\n' '{"name":"Fallback","type":"input","uid":"fallback"}'
+      fi
+      exit 0
+    fi
+    if [[ "$1" == "-t" && "$2" == "input" && "$3" == "-u" ]]; then
+      printf '%s\n' "$4" > "$state"
+      exit 0
+    fi
+
+    echo "unexpected SwitchAudioSource arguments" >&2
+    exit 64
+  '';
+
+  testPriorities = pkgs.writeText "audio-input-priority-test-list" ''
+    preferred
+    fallback
+  '';
 in
 pkgs.runCommand "audio-priority-bar-regressions"
   {
     passthru = {
-      inherit expectedFailures unexpectedPasses;
+      inherit assertions failures;
     };
   }
   ''
-    if [ ${toString (length unexpectedPasses)} -ne 0 ]; then
-      echo "${toString (length unexpectedPasses)} AudioPriorityBar expected failures unexpectedly passed" >&2
+    if [ ${toString (length failures)} -ne 0 ]; then
+      echo "${toString (length failures)} AudioPriorityBar assertions failed" >&2
       exit 1
     fi
+
+    if ! grep -F -- '-t input' '${program}' >/dev/null; then
+      echo "the sorter must explicitly target CoreAudio input devices" >&2
+      exit 1
+    fi
+    if grep -F -- '-t output' '${program}' >/dev/null; then
+      echo "the sorter must never target CoreAudio output devices" >&2
+      exit 1
+    fi
+
+    state="$TMPDIR/default-input"
+    log="$TMPDIR/switch-audio-calls"
+    printf '%s\n' fallback > "$state"
+    : > "$log"
+    SWITCH_AUDIO_SOURCE_BIN='${fakeSwitchAudioSource}' \
+      SWITCH_AUDIO_TEST_STATE="$state" \
+      SWITCH_AUDIO_TEST_LOG="$log" \
+      '${program}' --once --priorities-file '${testPriorities}'
+
+    if [ "$(<"$state")" != preferred ]; then
+      echo "the sorter did not choose the highest-priority available input" >&2
+      exit 1
+    fi
+    if grep -F -- '-t output' "$log" >/dev/null; then
+      echo "the sorter attempted to inspect or modify an output device" >&2
+      exit 1
+    fi
+
     mkdir -p "$out"
-    echo "All AudioPriorityBar regressions reproduced as strict expected failures." > "$out/result"
+    echo "All AudioPriorityBar input sorter regressions passed." > "$out/result"
   ''
