@@ -5,13 +5,14 @@
 }:
 let
   inherit (builtins) filter length;
-  inherit (pkgs.lib.strings) hasInfix;
+  inherit (pkgs.lib.strings) concatStringsSep hasInfix;
 
   mac = darwinConfig.config;
   activation = mac.home-manager.users.${mac.user.name}.home.activation.audioPriorityBarDefaults.data;
   launchAgent = mac.launchd.user.agents."audio-priority-bar";
   service = launchAgent.serviceConfig;
   program = service.Program;
+  inputPriorities = concatStringsSep "\n" mac.modules.desktop.apps.audioPriorityBar.inputPriorities;
 
   assertions = [
     {
@@ -41,6 +42,14 @@ let
     {
       test = builtins.all builtins.isString service.ProgramArguments;
       msg = "every launch agent argument must be plist-serializable as a string";
+    }
+    {
+      test = hasInfix ''
+        AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:623EC745:3
+        AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:A7626075:3
+        BuiltInMicrophoneDevice
+      '' inputPriorities;
+      msg = "Moni's webcam must be the final webcam priority before the built-in microphone";
     }
   ];
 

@@ -164,6 +164,8 @@ in
         "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:110000:1"
         "AppleUSBAudioEngine:Unknown Manufacturer:MX Brio:2522LVP1VGL8:5"
         "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:623EC745:3"
+        # Moni's webcam
+        "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:A7626075:3"
         "BuiltInMicrophoneDevice"
         "34-0E-22-1E-BE-44:input"
         "0518F0DA-FD70-47AE-951E-692100000003"
