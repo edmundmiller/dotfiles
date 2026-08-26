@@ -1501,6 +1501,7 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
         };
         hostPathMounts = lib.mkForce {
@@ -1522,6 +1523,7 @@ in
         extraPackages = [ bettyBookPlayer ];
         environment = {
           CODEX_HOME = lib.mkForce "/data/.codex";
+          HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
         };
         hostPathMounts = lib.mkForce {
@@ -1539,6 +1541,7 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
         };
         hostPathMounts = lib.mkForce {
@@ -1565,6 +1568,7 @@ in
           rtk
         ];
         environment = {
+          HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
           HERMES_LOCAL_STT_COMMAND = "${pkgs.whisper-cpp}/bin/whisper-cli -m ${scintillateWhisperModel} -f {input_path} --language {language} --output-txt --output-file {output_dir}/transcript --no-timestamps --no-prints";
         };
@@ -1581,6 +1585,7 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
         };
         hostPathMounts = lib.mkForce {
@@ -1602,6 +1607,7 @@ in
         authFile = "/home/emiller/.codex/auth.json";
         environment = {
           CODEX_HOME = lib.mkForce "/home/emiller/.codex";
+          HERMES_KANBAN_DISPATCH_IN_GATEWAY = "true";
           HERMES_KANBAN_HOME = hermesSharedHome;
         };
         hostPathMounts = lib.mkForce {

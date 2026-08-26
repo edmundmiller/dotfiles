@@ -229,6 +229,10 @@ let
   scintillateCronPostStart = scriptRefs (scintillateCron.serviceConfig.ExecStartPost or [ ]);
   scintillateGateway = gatewayOf "scintillate";
   scintillatePreStart = scriptRefs (listValue (scintillateGateway.serviceConfig.ExecStartPre or [ ]));
+  orchestratorGateway = gatewayOf "orchestrator";
+  orchestratorPreStart = scriptRefs (
+    listValue (orchestratorGateway.serviceConfig.ExecStartPre or [ ])
+  );
   orchestratorSettings = cfg.services.hermes-agent.profiles.orchestrator.settings;
 
   assertions = [
@@ -278,6 +282,19 @@ let
         && !(builtins.hasAttr "buzz-hermes-orchestrator-agent-env" cfg.age.secrets)
         && !(((orchestratorSettings.gateway or { }).platforms or { }) ? buzz);
       msg = "Orchestrator must remain internal with no Buzz transport, presence, or identity secret.";
+    }
+    {
+      test =
+        lib.all (
+          profile:
+          cfg.services.hermes-agent.profiles.${profile}.environment.HERMES_KANBAN_DISPATCH_IN_GATEWAY
+          == "false"
+        ) publicProfiles
+        &&
+          cfg.services.hermes-agent.profiles.orchestrator.environment.HERMES_KANBAN_DISPATCH_IN_GATEWAY
+          == "true"
+        && lib.hasInfix "hermes-orchestrator-profile-list-mirror" orchestratorPreStart;
+      msg = "Only Orchestrator may dispatch the shared Kanban board, with the canonical profile roster available before startup.";
     }
     {
       test =
