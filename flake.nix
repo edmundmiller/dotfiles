@@ -1610,6 +1610,11 @@
                 inherit pkgs;
               };
 
+              nuc-tailscale-ssh = import ./hosts/nuc/_tests/tailscale-ssh.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-wake-meshify = import ./hosts/nuc/_tests/wake-meshify.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
