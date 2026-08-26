@@ -5,7 +5,7 @@ let
   pointerGuardExpectedFailure = false;
   collisionGuardExpectedFailure = false;
   unmergedGuardExpectedFailure = false;
-  serviceGuardExpectedFailure = true;
+  serviceGuardExpectedFailure = false;
   fakeCurl = pkgs.writeShellScript "mill-docs-git-pull-test-curl" ''
     printf '%s\n' "$*" >> "''${CURL_CALL_LOG:?}"
   '';

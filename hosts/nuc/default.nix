@@ -824,7 +824,7 @@ let
 
     if [ -n "$unmerged" ]; then
       echo "git index has unresolved conflicts in $repo; skipping automated pull to preserve local state" >&2
-      ${pkgs.git}/bin/git -C "$repo" diff --name-only --diff-filter=U >&2 || true
+      ${pkgs.git}/bin/git --no-pager -C "$repo" diff --name-only --diff-filter=U >&2 || true
       exit 75
     fi
   '';
@@ -892,8 +892,9 @@ let
       ${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 --data-binary "@$log_file" "$url" >/dev/null || true
     }
 
+    healthcheck_failed=false
     ${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 '${millDocsGitPullHealthcheckPingUrl}/start' >/dev/null || true
-    trap 'status=$?; if [ "$status" -eq 0 ]; then ping_healthcheck "${millDocsGitPullHealthcheckPingUrl}"; else ping_healthcheck "${millDocsGitPullHealthcheckPingUrl}/fail"; fi; rm -f "$log_file"; exit "$status"' EXIT
+    trap 'status=$?; if [ "$status" -eq 0 ] && [ "$healthcheck_failed" = false ]; then ping_healthcheck "${millDocsGitPullHealthcheckPingUrl}"; else ping_healthcheck "${millDocsGitPullHealthcheckPingUrl}/fail"; fi; rm -f "$log_file"; exit "$status"' EXIT
 
     cd '${millDocsVaultPath}'
 
@@ -907,15 +908,20 @@ let
       exit 1
     fi
 
-    if ${millDocsGitUnmergedGuardScript} '${millDocsVaultPath}'; then
-      :
-    else
-      guard_status=$?
+    stop_for_unmerged_index() {
+      guard_status=0
+      ${millDocsGitUnmergedGuardScript} '${millDocsVaultPath}' || guard_status=$?
+      if [ "$guard_status" -eq 0 ]; then
+        return
+      fi
       if [ "$guard_status" -eq 75 ]; then
+        healthcheck_failed=true
         exit 0
       fi
       exit "$guard_status"
-    fi
+    }
+
+    stop_for_unmerged_index
 
     if ! upstream="$(${pkgs.git}/bin/git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"; then
       echo "current branch has no upstream; skipping git pull"
@@ -929,6 +935,7 @@ let
 
     ${pkgs.git}/bin/git fetch --quiet
     ${millDocsGitUntrackedCollisionGuardScript} '${millDocsVaultPath}' "$upstream"
+    stop_for_unmerged_index
     ${pkgs.git}/bin/git pull --rebase --autostash
   '';
 
