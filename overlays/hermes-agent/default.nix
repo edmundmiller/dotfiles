@@ -31,6 +31,9 @@ let
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-06-agent-managed-profile.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-07-websocket-rediscovery.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-08-durable-cursors.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-09-verified-delivery.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-10-handler-cursor-acknowledgments.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-11-agent-profile-about.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
     ];
     postInstall = (old.postInstall or "") + ''

@@ -3,6 +3,7 @@
 {
   nixosConfig,
   pkgs,
+  agentRegistry,
   bettyAgentSpec,
   buzzBindings,
   discordBindings,
@@ -154,6 +155,7 @@ let
     let
       binding = buzzBindings.profiles.${profile};
       profileConfig = cfg.services.hermes-agent.profiles.${profile};
+      identity = agentRegistry.${profile}.identity;
       gateway = gatewayOf profile;
       presence = cfg.systemd.services.${presenceName profile};
       buzz = profileConfig.settings.gateway.platforms.buzz;
@@ -195,6 +197,13 @@ let
           && buzz.extra.working_reaction == "⚙️"
           && buzz.extra.channel_subscriptions == expectedSubscriptions;
         msg = "${profile}: native Buzz routing, authors, same-thread replies, and transient gear signal must match the deployment binding.";
+      }
+      {
+        test =
+          buzz.extra.profile_name == identity.displayName
+          && buzz.extra.profile_avatar_url == identity.avatarUrl
+          && buzz.extra.profile_about == identity.bio;
+        msg = "${profile}: native Buzz must render the canonical name, avatar, and bio.";
       }
       {
         test =

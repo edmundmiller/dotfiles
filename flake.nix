@@ -108,7 +108,7 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/b35d946da7c92a42d239d32336e8181c361be5a7";
+      url = "github:edmundmiller/agents-workspace/f3ceb9e36b2443f75fe57c35e251a8b095cbd5c0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -1528,6 +1528,7 @@
               nuc-buzz-hermes-community-runtime = import ./hosts/nuc/_tests/buzz-hermes-community-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
+                agentRegistry = import (inputs.agents-workspace + /agents/registry.nix) { inherit (pkgs) lib; };
                 bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
                 buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
                   inherit (pkgs) lib;
