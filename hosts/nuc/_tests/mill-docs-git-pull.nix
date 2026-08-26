@@ -19,11 +19,18 @@ let
           ${pkgs.git}/bin/git update-index --force-remove conflict.md
           printf '100644 %s 1\tconflict.md\n100644 %s 2\tconflict.md\n' "$base_blob" "$ours_blob" \
             | ${pkgs.git}/bin/git update-index --index-info
+          if [ -n "''${GIT_INJECT_STATE_FILE:-}" ]; then
+            {
+              ${pkgs.git}/bin/git ls-files --stage -z | ${pkgs.coreutils}/bin/sha256sum
+              ${pkgs.git}/bin/git status --porcelain=v2 -z | ${pkgs.coreutils}/bin/sha256sum
+              ${pkgs.coreutils}/bin/sha256sum conflict.md | ${pkgs.coreutils}/bin/cut -d' ' -f1
+            } > "$GIT_INJECT_STATE_FILE"
+          fi
         fi
         ;;
       pull)
         printf 'pull\n' >> "''${GIT_CALL_LOG:?}"
-        exit 99
+        exit "''${GIT_PULL_STATUS:-99}"
         ;;
       *)
         exec ${pkgs.git}/bin/git "$@"
@@ -213,22 +220,50 @@ pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
     conflicted_service_works=true
   fi
 
+  clean_repo="$TMPDIR/service-clean"
+  ${pkgs.git}/bin/git clone --quiet "$service_remote" "$clean_repo"
+  clean_script="$TMPDIR/service-clean-script"
+  render_service_script "$clean_repo" "$clean_script"
+  clean_git_calls="$TMPDIR/service-clean-git-calls"
+  clean_curl_calls="$TMPDIR/service-clean-curl-calls"
+  : > "$clean_git_calls"
+  : > "$clean_curl_calls"
+  clean_status=0
+  CURL_CALL_LOG="$clean_curl_calls" GIT_CALL_LOG="$clean_git_calls" GIT_PULL_STATUS=0 \
+    "$clean_script" || clean_status=$?
+  clean_service_works=false
+  if [ "$clean_status" -eq 0 ] \
+    && [ "$(${pkgs.gnugrep}/bin/grep -c '^fetch$' "$clean_git_calls")" -eq 1 ] \
+    && [ "$(${pkgs.gnugrep}/bin/grep -c '^pull$' "$clean_git_calls")" -eq 1 ] \
+    && [ "$(${pkgs.coreutils}/bin/wc -l < "$clean_curl_calls")" -eq 2 ] \
+    && ! ${pkgs.gnugrep}/bin/grep -qF '/fail' "$clean_curl_calls"; then
+    clean_service_works=true
+  fi
+
   raced_repo="$TMPDIR/service-raced"
   ${pkgs.git}/bin/git clone --quiet "$service_remote" "$raced_repo"
   raced_script="$TMPDIR/service-raced-script"
   render_service_script "$raced_repo" "$raced_script"
   raced_git_calls="$TMPDIR/service-raced-git-calls"
   raced_curl_calls="$TMPDIR/service-raced-curl-calls"
+  raced_injected_state="$TMPDIR/service-raced-injected-state"
   : > "$raced_git_calls"
   : > "$raced_curl_calls"
   raced_status=0
   CURL_CALL_LOG="$raced_curl_calls" GIT_CALL_LOG="$raced_git_calls" GIT_INJECT_CONFLICT=true \
+    GIT_INJECT_STATE_FILE="$raced_injected_state" \
     "$raced_script" || raced_status=$?
+  {
+    ${pkgs.git}/bin/git -C "$raced_repo" ls-files --stage -z | ${pkgs.coreutils}/bin/sha256sum
+    ${pkgs.git}/bin/git -C "$raced_repo" status --porcelain=v2 -z | ${pkgs.coreutils}/bin/sha256sum
+    ${pkgs.coreutils}/bin/sha256sum "$raced_repo/conflict.md" | ${pkgs.coreutils}/bin/cut -d' ' -f1
+  } > "$TMPDIR/service-raced-final-state"
   raced_service_works=false
   if [ "$raced_status" -eq 0 ] \
     && [ "$(${pkgs.gnugrep}/bin/grep -c '^fetch$' "$raced_git_calls")" -eq 1 ] \
     && ! ${pkgs.gnugrep}/bin/grep -q '^pull$' "$raced_git_calls" \
-    && ${pkgs.gnugrep}/bin/grep -qF '/fail' "$raced_curl_calls"; then
+    && ${pkgs.gnugrep}/bin/grep -qF '/fail' "$raced_curl_calls" \
+    && ${pkgs.diffutils}/bin/cmp -s "$raced_injected_state" "$TMPDIR/service-raced-final-state"; then
     raced_service_works=true
   fi
 
@@ -252,7 +287,10 @@ pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
   fi
 
   service_guard_works=false
-  if "$conflicted_service_works" && "$raced_service_works" && "$broken_service_works"; then
+  if "$conflicted_service_works" \
+    && "$clean_service_works" \
+    && "$raced_service_works" \
+    && "$broken_service_works"; then
     service_guard_works=true
   fi
 
@@ -262,6 +300,7 @@ pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
       exit 1
     fi
   elif ! "$service_guard_works"; then
+    echo "conflicted=$conflicted_service_works clean=$clean_service_works raced=$raced_service_works broken=$broken_service_works" >&2
     echo "mill-docs-git-pull must report conflicts unhealthy, stop before pull, and propagate guard errors." >&2
     exit 1
   fi
