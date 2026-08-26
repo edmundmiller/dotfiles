@@ -1,0 +1,24 @@
+{
+  "SPThunderboltDataType": [
+    {
+      "_name": "thunderboltusb4_bus_0",
+      "receptacle_1_tag": {
+        "receptacle_status_key": "receptacle_connected",
+        "receptacle_id_key": "1",
+        "current_speed_key": "40 Gb/s"
+      },
+      "_items": [
+        {
+          "device_name_key": "TS5",
+          "vendor_name_key": "CalDigit, Inc.",
+          "mode_key": "usb_four",
+          "switch_version_key": "64.1",
+          "receptacle_upstream_ambiguous_tag": {
+            "receptacle_status_key": "receptacle_connected",
+            "current_speed_key": "40 Gb/s"
+          }
+        }
+      ]
+    }
+  ]
+}

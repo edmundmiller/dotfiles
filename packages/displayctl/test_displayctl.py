@@ -16,6 +16,7 @@ import zlib
 
 
 SCRIPT = Path(__file__).with_name("displayctl")
+FIXTURES = Path(__file__).with_name("fixtures") / "macos"
 
 
 class MockDisplayHandler(BaseHTTPRequestHandler):
@@ -154,6 +155,44 @@ class DisplayctlContractTest(unittest.TestCase):
         path = self.root / "manifest.json"
         path.write_text(json.dumps(payload))
         return path
+
+    def fixture_command(self, name: str, fixture: Path) -> Path:
+        path = self.root / name
+        path.write_text(
+            f"#!{sys.executable}\n"
+            "from pathlib import Path\n"
+            f"print(Path({str(fixture)!r}).read_text(), end='')\n"
+        )
+        path.chmod(0o755)
+        return path
+
+    @unittest.expectedFailure
+    def test_macos_status_reports_observed_ts5_link_training_failure(self) -> None:
+        ioreg = self.fixture_command("ioreg", FIXTURES / "ts5-port-1-link-failure.ioreg")
+        system_profiler = self.fixture_command("system_profiler", FIXTURES / "ts5-port-1.json")
+
+        result = self.run_cli(
+            "macos",
+            "status",
+            env={
+                "DISPLAYCTL_IOREG_BIN": str(ioreg),
+                "DISPLAYCTL_SYSTEM_PROFILER_BIN": str(system_profiler),
+            },
+        )
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        output = json.loads(result.stdout)
+        self.assertFalse(output["ok"])
+        self.assertEqual(output["dock"]["model"], "TS5")
+        self.assertEqual(output["dock"]["host_port"], 1)
+        self.assertEqual(output["dock"]["expected_host_port"], 2)
+        self.assertEqual(
+            {issue["code"] for issue in output["issues"]},
+            {"display_link_training_failed", "ts5_host_port_mismatch"},
+        )
+        by_transport = {path["transport"]: path for path in output["display_paths"]}
+        self.assertEqual(by_transport["Port-USB-C@1/CIO/DisplayPort@0"]["state"], "linked")
+        self.assertEqual(by_transport["Port-USB-C@1/CIO/DisplayPort@1"]["state"], "link_training_failed")
 
     def test_inventory_exposes_public_alias_metadata_without_secret_values(self) -> None:
         result = self.run_cli("inventory", "--json")

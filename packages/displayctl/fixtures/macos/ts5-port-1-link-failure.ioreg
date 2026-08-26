@@ -1,0 +1,25 @@
++-o DisplayPort@0  <class IOPortTransportStateDisplayPort, id 0x1000033de, registered, matched, active, busy 0, retain 15>
+  {
+    "DriverStatusDescription" = "Ready"
+    "HPD_StateDescription" = "High"
+    "TransportTypeDescription" = "DisplayPort"
+    "SinkCount" = 1
+    "ProductName" = "XG32UCWMG"
+    "LinkRateDescription" = "8.1 Gbps (HBR3)"
+    "TransportDescription" = "Port-USB-C@1/CIO/DisplayPort@0"
+    "Active" = Yes
+    "LaneCount" = 2
+    "MaxLaneCount" = 4
+  }
++-o DisplayPort@1  <class IOPortTransportStateDisplayPort, id 0x1000033ff, registered, matched, active, busy 0, retain 15>
+  {
+    "DriverStatusDescription" = "Ready"
+    "HPD_StateDescription" = "High"
+    "TransportTypeDescription" = "DisplayPort"
+    "SinkCount" = 0
+    "LinkRateDescription" = "No Link"
+    "TransportDescription" = "Port-USB-C@1/CIO/DisplayPort@1"
+    "Active" = No
+    "LaneCount" = 0
+    "MaxLaneCount" = 4
+  }
