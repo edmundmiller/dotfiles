@@ -35,6 +35,7 @@ let
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-10-handler-cursor-acknowledgments.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-11-agent-profile-about.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0003-kanban-platform-toolsets.patch)
     ];
     postInstall = (old.postInstall or "") + ''
       chmod -R u+w $out/share/hermes
