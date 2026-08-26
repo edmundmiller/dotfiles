@@ -37,6 +37,12 @@
       "format": "json"
     },
     {
+      "source": "local/bin/rocket-league-autostart",
+      "target": ".local/bin/rocket-league-autostart",
+      "mode": "0755",
+      "sourceMode": "0755"
+    },
+    {
       "source": "local/bin/rocket-league-lmstudio-guard",
       "target": ".local/bin/rocket-league-lmstudio-guard",
       "mode": "0755",

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -u
+
+readonly RETRY_SECONDS="${ROCKET_LEAGUE_RETRY_SECONDS:-15}"
+readonly MAX_ATTEMPTS="${ROCKET_LEAGUE_MAX_ATTEMPTS:-40}"
+readonly GAME_URI="steam://rungameid/252950"
+
+if [[ ! $MAX_ATTEMPTS =~ ^[1-9][0-9]*$ ]] \
+  || [[ ! $RETRY_SECONDS =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  printf 'rocket-league-autostart: invalid retry configuration\n' >&2
+  exit 2
+fi
+
+rocket_league_is_running() {
+  pgrep -f '[R]ocketLeague.exe' >/dev/null
+}
+
+for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
+  rocket_league_is_running && exit 0
+
+  printf 'rocket-league-autostart: launch attempt %d/%d\n' \
+    "$attempt" "$MAX_ATTEMPTS"
+  uwsm-app -- steam "$GAME_URI" >/dev/null 2>&1 || true
+  sleep "$RETRY_SECONDS"
+done
+
+rocket_league_is_running && exit 0
+printf 'rocket-league-autostart: game did not start after %d attempts\n' \
+  "$MAX_ATTEMPTS" >&2
+notify-send -u critical 'Rocket League did not start' \
+  'Steam did not accept the automatic launch request.' 2>/dev/null || true
+exit 1

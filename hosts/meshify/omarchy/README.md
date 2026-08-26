@@ -64,6 +64,17 @@ Plugin repositories, build output, logs, backups, lock files, and session state
 are generated and intentionally excluded from Git. AirPods hardware pairing is
 a documented human recovery gate rather than exported secret material.
 
+## Rocket League autostart
+
+`local/bin/rocket-league-autostart` starts Rocket League at login. Steam can
+consume the first launch URI while applying startup updates, so the launcher
+retries every 15 seconds for up to 10 minutes and stops once the game runs.
+The retry behavior is covered by:
+
+```bash
+python3 tests/test_meshify_rocket_league_autostart.py
+```
+
 Generate the current plugin inventory instead of copying it into documentation:
 
 ```bash
