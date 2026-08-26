@@ -1,6 +1,6 @@
 # Worklog: nuc-mill-docs-git-pull-repair
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -25,6 +25,7 @@ Keep `mill-docs-git-pull.service` healthy without mutating an already-unmerged c
 - Live oneshot at `2026-08-26 14:25:10 CDT`: `Result=success`, `ExecMainStatus=0`, `NRestarts=0`; journal reported the same nine conflicts and skipped before fetch.
 - Healthchecks readback: `NUC mill-docs git pull`, `status=down`, `last_ping=2026-08-26T19:25:11+00:00`, proving the successful systemd skip was reported externally as a conflict failure.
 - Post-run preservation: HEAD `4e9f7782`, remote-tracking ref `e1ab177d`, ORIG_HEAD `c18794ce`, stash `8592173b`, nine conflicts, stage hash `98593e97`, cached patch hash `37c21cf6`, status hash `20001a03`, and worktree patch hash `31f226c1` all matched the immediately pre-run values.
+- Landing: the eight-revision task series was replayed onto concurrent `origin/main@ad8c51da3` in an isolated clone; all source revisions verified patch-equivalent and authoritative `origin/main` read back as `bcea095040c4cbbbac3d0ca9bcf4e088339b7f7f`.
 
 ## Reviews
 
@@ -40,7 +41,7 @@ Keep `mill-docs-git-pull.service` healthy without mutating an already-unmerged c
 
 ## Remaining work
 
-- Land the rebased series, prove remote equality, flush Beads, push the annotated work tag, and clean the isolated worktree.
+- None.
 
 ## Commits
 
