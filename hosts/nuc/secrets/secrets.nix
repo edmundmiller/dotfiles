@@ -64,10 +64,6 @@ in
     edmundmiller
     nuc
   ];
-  "discord-bot-token-anne.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   "anne-linear-mcp-token.age".publicKeys = [
     edmundmiller
     nuc

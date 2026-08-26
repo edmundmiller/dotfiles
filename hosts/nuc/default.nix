@@ -78,9 +78,6 @@ let
     '';
   };
 
-  discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
-    inherit lib;
-  };
   buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
     inherit lib;
   };
@@ -96,8 +93,6 @@ let
     profile: builtins.elem profile buzzNativeRolloutProfiles
   ) buzzBindingNativeProfiles;
   buzzAcpProfiles = lib.filter (profile: !(builtins.elem profile buzzNativeProfiles)) buzzProfiles;
-  anneDiscordBindings = (discordBindings.agents or { }).anne or { };
-  bettyDiscordBindings = (discordBindings.agents or { }).betty or { };
   hermesScintillateApiServerPort = 8642;
   hermesScintillateWebuiPort = 8787;
   hermesScintillateDesktopDashboardPort = 9121;
@@ -298,17 +293,12 @@ let
   ];
   hermesBetty1PasswordReferences = {
     inherit (bettyAgentSpec.hermes.dotenvReferences)
-      DISCORD_BOT_TOKEN
       HERMES_SPOTIFY_CLIENT_ID
       ;
     HERMES_MCP_BEARER_TOKEN_LINEAR = bettyAgentSpec.hermes.mcpBearerTokenReferences.linear;
   };
   hermesAnneSecrets = hermesProviderSecrets ++ [
     (mkAgentSecret "HONCHO_API_KEY" "hermes-anne-honcho-api-key")
-    {
-      envVar = "DISCORD_BOT_TOKEN";
-      inherit (config.age.secrets.discord-bot-token-anne) path;
-    }
     {
       envVar = "FIRECRAWL_API_KEY";
       inherit (config.age.secrets.anne-firecrawl-api) path;
@@ -438,10 +428,6 @@ let
             );
           };
         };
-      }
-      // lib.optionalAttrs (builtins.hasAttr profile (discordBindings.agents or { })) {
-        # Discord's typing loop is the only transient signal on that surface.
-        discord.typing_indicator = true;
       };
     };
   factoryProductPassStateDir = "/var/lib/factory-product-pass-edmund";
@@ -1125,7 +1111,6 @@ in
         ENV_DIR="/run/hermes-anne-env"
         ENV_FILE="$ENV_DIR/secrets.env"
         HERMES_ENV_HOME="$ANNE_STATE_DIR/.hermes"
-        HERMES_VOICE_MODE_FILE="$HERMES_ENV_HOME/gateway_voice_mode.json"
 
         install -d -o emiller -g users -m 0750 \
           "$ANNE_STATE_DIR" \
@@ -1175,45 +1160,7 @@ in
           fi
           unset linear_token OP_SERVICE_ACCOUNT_TOKEN
         fi
-
-        ${lib.optionalString (anneDiscordBindings ? requireMention) ''
-          printf 'DISCORD_REQUIRE_MENTION=%s\n' ${
-            lib.escapeShellArg (if anneDiscordBindings.requireMention then "true" else "false")
-          } >> "$ENV_FILE"
-        ''}
-        ${lib.optionalString ((anneDiscordBindings.freeResponseChannelIds or [ ]) != [ ]) ''
-          printf 'DISCORD_FREE_RESPONSE_CHANNELS=%s\n' ${lib.escapeShellArg (lib.concatStringsSep "," (map toString anneDiscordBindings.freeResponseChannelIds))} >> "$ENV_FILE"
-        ''}
-        ${lib.optionalString ((anneDiscordBindings.homeChannelId or null) != null) ''
-          printf 'DISCORD_HOME_CHANNEL=%s\n' ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} >> "$ENV_FILE"
-        ''}
-        ${lib.optionalString ((anneDiscordBindings.homeChannelName or null) != null) ''
-          printf 'DISCORD_HOME_CHANNEL_NAME=%s\n' ${lib.escapeShellArg anneDiscordBindings.homeChannelName} >> "$ENV_FILE"
-        ''}
-        ${lib.optionalString (anneDiscordBindings.allowAllUsers or false) ''
-          printf 'DISCORD_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
-          printf 'GATEWAY_ALLOW_ALL_USERS=true\n' >> "$ENV_FILE"
-        ''}
-
-        ${pkgs.python3}/bin/python - "$HERMES_VOICE_MODE_FILE" ${lib.escapeShellArg (toString anneDiscordBindings.homeChannelId)} <<'PY'
-        import json
-        import pathlib
-        import sys
-
-        path = pathlib.Path(sys.argv[1])
-        chat_id = sys.argv[2].strip()
-        data = {}
-        if path.exists():
-            try:
-                data = json.loads(path.read_text(encoding="utf-8")) or {}
-            except Exception:
-                data = {}
-        if chat_id:
-            data[chat_id] = "all"
-        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        PY
-        chown emiller:users "$HERMES_VOICE_MODE_FILE"
-        chmod 600 "$HERMES_VOICE_MODE_FILE"
+        rm -f "$HERMES_ENV_HOME/gateway_voice_mode.json"
       '';
     };
 
@@ -2047,7 +1994,6 @@ in
         "HERMES_PROFILE=betty"
         "MESSAGING_CWD=/repos/mill-docs"
         "CODEX_HOME=/var/lib/hermes-betty/.codex"
-        "DISCORD_HOME_CHANNEL=${toString bettyDiscordBindings.homeChannelId}"
       ];
       ExecStart = "${pkgs.util-linux}/bin/flock /var/lib/hermes-betty/.profile.lock ${bettyHermesCronExecutor}";
       NoNewPrivileges = true;

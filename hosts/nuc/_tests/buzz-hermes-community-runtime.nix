@@ -104,11 +104,12 @@ let
       }
     ]
     ++ surfaceAssertions "buzz"
-    ++ surfaceAssertions "discord"
-    ++ lib.optional (builtins.elem profile discordProfiles) {
-      test = settings.gateway.platforms.discord.typing_indicator;
-      msg = "${profile}: Discord must retain transient typing while final-only display filtering is active.";
-    };
+    ++ [
+      {
+        test = !(display.platforms ? discord) && !(settings.gateway.platforms ? discord);
+        msg = "${profile}: Discord must be absent from the rendered Hermes profile.";
+      }
+    ];
 
   fleetPolicyAssertions =
     profile:
@@ -236,12 +237,8 @@ let
       msg = "Fleet coverage must remain six profiles with exactly five public Buzz identities.";
     }
     {
-      test =
-        discordProfiles == [
-          "anne"
-          "betty"
-        ];
-      msg = "Anne and Betty must remain the only Discord-bound public Hermes identities.";
+      test = discordProfiles == [ ];
+      msg = "The NUC must not expose any public Hermes identity through Discord.";
     }
     {
       test = nativeProfiles == expectedPublicProfiles && acpProfiles == [ ];

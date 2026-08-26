@@ -245,13 +245,6 @@ skills:
 # Timezone (set by Nix module if configured)
 timezone: null
 
-# Discord settings
-discord:
-  require_mention: true
-  free_response_channels: ""
-  auto_thread: true
-  reactions: true
-
 # WhatsApp (empty)
 whatsapp: {}
 

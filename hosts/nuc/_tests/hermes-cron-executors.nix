@@ -162,10 +162,8 @@ let
       msg = "Betty cron executor must be able to update Betty's cron state.";
     }
     {
-      test = hasInfix "DISCORD_HOME_CHANNEL=1494160879803957379" (
-        concatStringsSep " " bettyService.serviceConfig.Environment
-      );
-      msg = "Betty cron executor must resolve bare Discord delivery through Betty's deployment binding.";
+      test = !(hasInfix "DISCORD_" (concatStringsSep " " bettyService.serviceConfig.Environment));
+      msg = "Betty's cron executor must not retain Discord routing state.";
     }
     {
       test = hasInfix "/etc/opnix-token" bettySecretMaterialization;
@@ -173,15 +171,13 @@ let
     }
     {
       test =
-        builtins.all (envVar: hasInfix envVar bettySecretMaterialization) [
-          "DISCORD_BOT_TOKEN"
-          "HERMES_MCP_BEARER_TOKEN_LINEAR"
-        ]
+        hasInfix "HERMES_MCP_BEARER_TOKEN_LINEAR" bettySecretMaterialization
         && builtins.all (envVar: !(hasInfix envVar bettySecretMaterialization)) [
+          "DISCORD_BOT_TOKEN"
           "LIFETIME_USERNAME"
           "LIFETIME_PASSWORD"
         ];
-      msg = "Betty's generated environment must contain active credentials and exclude retired Life Time secrets.";
+      msg = "Betty's generated environment must retain active credentials and exclude retired Discord and Life Time secrets.";
     }
     {
       test = builtins.elem "onepassword-secrets" bettyService.serviceConfig.SupplementaryGroups;
