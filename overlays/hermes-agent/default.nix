@@ -28,6 +28,7 @@ let
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-03-working-reaction.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-04-reconnect-handoff.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-05-native-typing.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-06-agent-managed-profile.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
     ];
     postInstall = (old.postInstall or "") + ''
