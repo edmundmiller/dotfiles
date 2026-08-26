@@ -813,6 +813,22 @@ let
     exec ${ob} sync --path '${millDocsVaultPath}' --continuous
   '';
 
+  millDocsGitUnmergedGuardScript = pkgs.writeShellScript "mill-docs-git-unmerged-guard" ''
+    set -euo pipefail
+
+    repo="$1"
+    if ! unmerged="$(${pkgs.git}/bin/git -C "$repo" ls-files --unmerged)"; then
+      echo "could not inspect the git index in $repo" >&2
+      exit 2
+    fi
+
+    if [ -n "$unmerged" ]; then
+      echo "git index has unresolved conflicts in $repo; skipping automated pull to preserve local state" >&2
+      ${pkgs.git}/bin/git -C "$repo" diff --name-only --diff-filter=U >&2 || true
+      exit 75
+    fi
+  '';
+
   millDocsGitUntrackedCollisionGuardScript = pkgs.writeShellScript "mill-docs-git-untracked-collision-guard" ''
     set -euo pipefail
 
@@ -889,6 +905,16 @@ let
     if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ] || [ -f .git/MERGE_HEAD ]; then
       echo "git operation already in progress in ${millDocsVaultPath}; manual intervention required" >&2
       exit 1
+    fi
+
+    if ${millDocsGitUnmergedGuardScript} '${millDocsVaultPath}'; then
+      :
+    else
+      guard_status=$?
+      if [ "$guard_status" -eq 75 ]; then
+        exit 0
+      fi
+      exit "$guard_status"
     fi
 
     if ! upstream="$(${pkgs.git}/bin/git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"; then

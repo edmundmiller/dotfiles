@@ -3,7 +3,7 @@ let
   pullScript = nixosConfig.config.systemd.services.mill-docs-git-pull.serviceConfig.ExecStart;
   pointerGuardExpectedFailure = false;
   collisionGuardExpectedFailure = false;
-  unmergedGuardExpectedFailure = true;
+  unmergedGuardExpectedFailure = false;
 in
 pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
   guard_line="$(${pkgs.gnugrep}/bin/grep -nF 'lfs fsck --pointers HEAD' ${pullScript} | ${pkgs.coreutils}/bin/head -1 | ${pkgs.coreutils}/bin/cut -d: -f1 || true)"
@@ -111,8 +111,10 @@ pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
     status_before="$(${pkgs.git}/bin/git -C "$repo" status --porcelain=v1)"
     file_before="$(${pkgs.coreutils}/bin/sha256sum "$repo/conflict.md")"
 
+    conflict_status=0
+    "$unmerged_guard" "$repo" || conflict_status=$?
     conflict_is_rejected=false
-    if ! "$unmerged_guard" "$repo"; then
+    if [ "$conflict_status" -eq 75 ]; then
       conflict_is_rejected=true
     fi
 
