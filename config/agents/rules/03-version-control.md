@@ -12,6 +12,7 @@ waiver_path: .agents/waivers/AGENT-03.md
 
 - **Diff policy:** prefer `sem diff` over `git diff` (entity-level changes, better for agent review). Use native `git diff` only when sem lacks needed flags/output.
 - **Selective staging:** use `git hunks list` / `git hunks add <hunk-id>` — non-interactive, deterministic hunk IDs.
+- **PR bodies:** when opening or editing a pull request, use the `show-me` skill — include the smallest visual (call-tree/component/file-layout diff or Mermaid diagram) that shows the shape of the change.
 - **Dotfiles exception**: sibling layout (`../dotfiles.branch`) via `.envrc` override
 - **Commit scope:** before committing, compare staged paths with the current request. “Commit/push” authorizes only those paths; if they are already landed and only unrelated paths remain, report that state instead of touching them.
 - **Hook validation:** do not run `prek` manually during routine validation. Let commit or push invoke its hooks; run `prek` directly only when configuring/debugging hooks or when explicitly requested.

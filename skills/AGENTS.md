@@ -18,7 +18,7 @@ Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skill
 2. **Skill selection** — which skills to enable
 3. **Targets** — where skills are installed (`~/.agents/skills`, `~/.codex/skills`, `~/.pi/agent/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`)
 
-Default skills go only to `agents`. Pi, Codex, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Claude skill deployment is intentionally disabled because OMP also scans `~/.claude/skills`, which would load duplicate skills. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-opencode`, `dot-hermes`).
+Default skills go only to `agents`. OMP, Pi, Codex, Amp, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Claude skill deployment is intentionally disabled because OMP also scans `~/.claude/skills`, which would load duplicate skills. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-opencode`, `dot-hermes`).
 
 ## Upgrade safety
 
@@ -28,6 +28,8 @@ ignored. A symlink or newer entry leaves the upstream overwrite guard intact,
 so activation stops instead of replacing locally modified content.
 
 **Hermes note:** Hermes builtin skills do not include these dotfiles skills by default. In this repo, Hermes picks them up through `skills.external_dirs` pointing at `~/.hermes/skills`. If that external dir wiring is missing, Hermes falls back to builtin-only skills.
+
+**Amp note:** Amp discovers `~/.agents/skills` natively and surfaces those skills under `/skill` in the TUI. `amp skill list` enumerates them after login. Add shared skills here instead of with `amp skill add` so Nix manages one copy for every agent.
 
 ## Adding a Global Skill
 

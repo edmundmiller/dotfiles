@@ -503,6 +503,24 @@
                   filter.maxDepth = 2;
                 };
 
+                humanlayer-iterated-loop = {
+                  path = inputs.humanlayer-skills.outPath;
+                  subdir = "plugins/build-iterated-agentic-loop/skills";
+                  filter.maxDepth = 3;
+                };
+
+                humanlayer-improve-claude-md = {
+                  path = inputs.humanlayer-skills.outPath;
+                  subdir = "plugins/improve-claude-md/skills";
+                  filter.maxDepth = 2;
+                };
+
+                humanlayer-narrow-react-prop-types = {
+                  path = inputs.humanlayer-skills.outPath;
+                  subdir = "plugins/narrow-react-prop-types/skills";
+                  filter.maxDepth = 3;
+                };
+
                 mattpocock = {
                   path = inputs.mattpocock-skills.outPath;
                   subdir = "skills";
@@ -639,6 +657,22 @@
 
                 show-me.from = "humanlayer-show-me";
                 show-me.path = "show-me";
+                # PR bodies must use show-me on every agent, so extend past the
+                # shared dir to OpenCode and Hermes, which read only their own.
+                show-me.meta.targets = [
+                  "agents"
+                  "opencode"
+                  "hermes"
+                ];
+
+                build-iterated-agentic-loop.from = "humanlayer-iterated-loop";
+                build-iterated-agentic-loop.path = "build-iterated-agentic-loop";
+
+                improve-claude-md.from = "humanlayer-improve-claude-md";
+                improve-claude-md.path = "improve-claude-md";
+
+                narrow-react-prop-types.from = "humanlayer-narrow-react-prop-types";
+                narrow-react-prop-types.path = "narrow-react-prop-types";
 
                 agent-tail.from = "agent-tail";
                 agent-tail.path = "agent-tail";
