@@ -77,6 +77,12 @@ ssh nuc "systemctl status hermes-scintillate-desktop-dashboard.service"
 # Check current generation
 ssh nuc "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system | tail -3"
 
+# Prove the deployed dotfiles and agents-workspace revisions. The
+# configurationRevision value must equal:
+# dotfiles=<deployed dotfiles HEAD>;agents-workspace=<locked input revision>
+ssh nuc "/run/current-system/sw/bin/nixos-version --json"
+ssh nuc "readlink -f /run/current-system"
+
 # View recent logs for a service
 hey nuc-logs home-assistant.service 30
 ```

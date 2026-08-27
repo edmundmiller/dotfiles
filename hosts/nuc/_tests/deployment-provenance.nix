@@ -1,11 +1,11 @@
 { pkgs }:
 let
-  resolverPath = ../../../lib/nuc-deployment-provenance.nix;
+  resolverPath = ../_lib/deployment-provenance.nix;
   resolverExists = builtins.pathExists resolverPath;
 
   # Flip this only after the regression has been observed and the resolver is
   # implemented. Nix checks do not provide a strict xfail primitive.
-  expectedFailure = true;
+  expectedFailure = false;
 
   assertions = [
     {
@@ -23,7 +23,6 @@ let
         };
         markerPath = ./fixtures/deployment-revision;
       };
-      decoded = builtins.fromJSON provenance.json;
     in
     [
       {
@@ -36,12 +35,9 @@ let
       }
       {
         test =
-          decoded == {
-            schemaVersion = 1;
-            dotfilesRevision = "1111111111111111111111111111111111111111";
-            agentsWorkspaceRevision = "2222222222222222222222222222222222222222";
-          };
-        msg = "The deployed provenance fact must be exact, complete, and machine-readable.";
+          provenance.configurationRevision
+          == "dotfiles=1111111111111111111111111111111111111111;agents-workspace=2222222222222222222222222222222222222222";
+        msg = "The deployed configuration revision must contain both exact labeled revisions.";
       }
     ]
   );

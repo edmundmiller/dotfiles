@@ -7,6 +7,9 @@ todotxtfmt/todotxtfmt
 # Per-worktree direnv overrides
 .envrc.local
 
+# Injected only into the NUC's rsynced worktree so Nix can stamp the source HEAD.
+.nuc-deploy-source-revision
+
 # Home-manager managed files (prevent symlink issues)
 config/jj/config.toml
 
