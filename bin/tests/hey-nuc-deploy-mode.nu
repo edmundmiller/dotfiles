@@ -125,6 +125,7 @@ nuc-worktree-sync $source_dir $dirty_destination_dir $fixture_revision $detected
 assert (($dirty_destination_dir | path join "untracked.txt") | path exists) "dirty build snapshots must include the tested worktree content"
 assert not (($dirty_destination_dir | path join ".git") | path exists) "dirty snapshots must still exclude Git metadata"
 assert (($dirty_destination_dir | path join ".nuc-deploy-active") | path exists) "dirty rsync must preserve the destination-only active lease"
+assert equal (open --raw ($dirty_destination_dir | path join ".nuc-deploy-active")) "active" "dirty rsync must not overwrite the destination-owned lease"
 
 mkdir ($failed_prepare_source | path join "bin")
 mkdir $failed_prepare_destination
