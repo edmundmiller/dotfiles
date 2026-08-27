@@ -1,6 +1,6 @@
 # Worklog: buzz-hermes-production-deploy
 
-Status: active
+Status: source-verified
 
 ## Objective
 
@@ -46,6 +46,15 @@ only remaining blocker.
   the final thread, cron, and dashboard tests during package install checks.
 - The agents-workspace flake URL and lock both resolve to published main
   `92186274d960773758203d6268e1a635b3a4f401`.
+- The exact Linux package and NUC system build succeeded from a clean,
+  revision-stamped remote snapshot.
+- Nine x86_64 checks passed together: canonical patch composition, bounded
+  final behavior, single cron ownership, dashboard liveness, package layout,
+  dashboard and six-gateway package wiring, cron host wiring, Buzz community
+  runtime, and deployment provenance.
+- Target evaluation reports
+  `dotfiles=e1d0d462cdbf4e2690101be0f60a327a6fcabd94;agents-workspace=92186274d960773758203d6268e1a635b3a4f401`
+  for the last source-identical verification snapshot.
 
 ## Reviews
 
@@ -60,15 +69,21 @@ only remaining blocker.
 - Direct `nix flake lock` could not fetch the private agents-workspace archive;
   the authenticated local GitHub credential supplied `access-tokens` without
   exposing its value. The repo wrapper is NUC-only despite older local wording.
+- Linux evaluation caught and now covers nested source-path context, invalid
+  canonical-stack reapplication in the final package, store-context regexes in
+  package assertions, generated unit indirection, and the installed Python
+  site-packages layout.
 
 ## Remaining work
 
-- Rebase the clean branch over the concurrent kitchen Matter commit.
-- Run the x86_64 package/host assertions and full remote NUC build.
-- Dry-activate, publish, deploy, and read back exact revisions and runtimes.
+- Publish the verified branch and advance to the exact merged `main` revision.
+- Rebuild that merged revision, dry-activate, deploy, and read back exact
+  revisions and runtimes.
 - Run live acceptance and capture the user-visible demo.
 
 ## Commits
 
 - `b17d4e13c..4bfcca18f`: inherited red/green external cron ownership and
   deployment-readback hardening range.
+- `e24f3eebe..e1d0d462c`: production overlay integration plus target-discovered
+  red/green packaging and assertion fixes.
