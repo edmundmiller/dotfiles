@@ -94,9 +94,12 @@ assert equal (open --raw ($clean_destination_dir | path join ".nuc-deploy-source
 let detected_dirty_source = (nuc-deploy-source $source_dir)
 assert $detected_dirty_source.dirty
 require-clean-nuc-activation $detected_dirty_source "build"
+mkdir $dirty_destination_dir
+"active" | save ($dirty_destination_dir | path join ".nuc-deploy-active")
 nuc-worktree-sync $source_dir $dirty_destination_dir $fixture_revision $detected_dirty_source.dirty
 assert (($dirty_destination_dir | path join "untracked.txt") | path exists) "dirty build snapshots must include the tested worktree content"
 assert not (($dirty_destination_dir | path join ".git") | path exists) "dirty snapshots must still exclude Git metadata"
+assert (($dirty_destination_dir | path join ".nuc-deploy-active") | path exists) "dirty rsync must preserve the destination-only active lease"
 
 mkdir $prune_root
 let snapshot_uuids = [
