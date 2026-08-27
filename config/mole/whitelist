@@ -1,5 +1,5 @@
-# Mole whitelist for safe clean runs.
-# Keep defaults + antidote so `mo clean` won't break zsh plugins.
+# Mole uses this file instead of its built-in clean whitelist.
+# Keep its default protections mirrored, then add durable local state.
 
 ~/Library/Caches/ms-playwright*
 ~/.cache/huggingface*
@@ -13,6 +13,7 @@
 ~/Library/Caches/pypoetry/virtualenvs*
 ~/Library/Caches/JetBrains*
 ~/Library/Caches/com.jetbrains.toolbox*
+~/Library/Caches/tealdeer/tldr-pages
 ~/Library/Application Support/JetBrains*
 ~/Library/Caches/com.apple.finder
 ~/Library/Mobile Documents*
@@ -22,11 +23,21 @@
 ~/Library/Caches/CloudKit*
 FINDER_METADATA
 
-# Added: antidote plugin repositories.
+# Preserve shell plugin repositories.
 ~/Library/Caches/antidote*
 ~/.local/share/antidote*
 
-# Preserve Codex session traces and diagnostic logs.
+# Preserve the active OrbStack runtime and Docker-compatible CLI state.
+~/Library/Group Containers/HUAQ24HBR6.dev.orbstack
+~/OrbStack
+~/.orbstack
+~/.docker/config.json
+~/.docker/daemon.json
+~/.docker/contexts
+~/.docker/buildx
+
+# Preserve Codex session traces, diagnostic logs, and downloaded runtimes.
 ~/.codex/sessions/*
 ~/.codex/archived_sessions/*
 ~/Library/Logs/com.openai.codex/*
+~/.cache/codex-runtimes
