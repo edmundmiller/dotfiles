@@ -20,6 +20,18 @@ let
     in
     pkgs.lib.hasInfix hermesPackagePath preStart
   ) gatewayProfiles;
+  runtimeOwner = "${cfg.services.hermes-agent.user}:${cfg.services.hermes-agent.group}";
+  allContainerIdentityMetadataReadable = builtins.all (
+    profile:
+    let
+      gatewayService = cfg.systemd.services."hermes-gateway-${profile}";
+      stateDir = cfg.services.hermes-agent.profiles.${profile}.stateDir;
+      preStart = builtins.unsafeDiscardStringContext (gatewayService.preStart or "");
+    in
+    pkgs.lib.hasInfix "chown ${runtimeOwner} ${stateDir}/.container-identity" preStart
+    && pkgs.lib.hasInfix "chmod 0640 ${stateDir}/.container-identity" preStart
+    && pkgs.lib.hasInfix "chmod 0600 ${stateDir}/.container-env-identity" preStart
+  ) gatewayProfiles;
   packageIdentityMatches =
     (hermesPackage.passthru.hermesVersion or null) == "0.20.5"
     && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.19";
@@ -41,6 +53,10 @@ let
     {
       test = allGatewaysUseSharedPackage;
       msg = "All six NUC Hermes gateway profiles must consume the shared Hermes package path.";
+    }
+    {
+      test = allContainerIdentityMetadataReadable;
+      msg = "All six container profiles must expose non-secret identity metadata to the dashboard owner while keeping env identity private.";
     }
   ];
   failures = builtins.filter (assertion: !assertion.test) assertions;
