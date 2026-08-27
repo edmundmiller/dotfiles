@@ -1493,6 +1493,23 @@
                 inherit pkgs;
               };
 
+              dji-mic-mini-receiver-mute-regressions =
+                pkgs.runCommand "dji-mic-mini-receiver-mute-regressions"
+                  {
+                    __noChroot = true;
+                    preferLocalBuild = true;
+                    allowSubstitutes = false;
+                    nativeBuildInputs = [ pkgs.jq ];
+                  }
+                  ''
+                    export CLANG_MODULE_CACHE_PATH="$TMPDIR/clang-module-cache"
+                    export SWIFT_MODULECACHE_PATH="$TMPDIR/swift-module-cache"
+                    ${pkgs.bash}/bin/bash \
+                      ${./packages/dji-mic-mini-receiver-mute/_tests/test-feedback.sh} \
+                      ${./packages/dji-mic-mini-receiver-mute}
+                    touch "$out"
+                  '';
+
               screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;

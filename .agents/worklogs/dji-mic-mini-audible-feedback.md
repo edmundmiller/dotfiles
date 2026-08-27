@@ -35,7 +35,8 @@ and stop after local commits unless a narrow activation path is proven.
 ## Reviews
 
 Provenance and activation reconnaissance found no existing dotfiles or Nix
-owner. A focused test-design review is in progress.
+owner. Focused test-design review selected a compiled fixture backend at the
+public `toggle` CLI seam so tests never touch live CoreAudio.
 
 ## Feedback
 
@@ -43,10 +44,9 @@ None.
 
 ## Remaining work
 
-- Adopt exact baseline source and rule with host-scoped ownership.
-- Add expected-failure public-CLI feedback tests, then implement the fix.
+- Commit the expected-failure public-CLI feedback tests, then implement the fix.
 - Run focused checks, review, local commits, and narrow activation assessment.
 
 ## Commits
 
-None.
+- `4cd8e8137` `chore(dji-mic): adopt receiver mute automation`
