@@ -56,13 +56,20 @@ let
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
   cronTickCadenceExpectedFailure = false;
-  cronOwnershipExpectedFailure = true;
+  cronOwnershipExpectedFailure = false;
   cronTickCadenceMatches = builtins.all (
     timer:
     timer.timerConfig.OnUnitActiveSec == "60s"
     && (timer.timerConfig.AccuracySec or null) == "1s"
     && timer.timerConfig.RandomizedDelaySec == "0s"
   ) cronTickTimers;
+  cronTimerUnitsMatch =
+    cfg.systemd.timers.hermes-amosburton-cron-tick.timerConfig.Unit
+    == "hermes-amosburton-cron-tick.service"
+    && bettyTimer.timerConfig.Unit == "hermes-betty-cron-tick.service"
+    &&
+      cfg.systemd.timers.hermes-scintillate-cron-tick.timerConfig.Unit
+      == "hermes-scintillate-cron-tick.service";
   timerOwnedProfiles = [
     "amosburton"
     "betty"
@@ -135,11 +142,20 @@ let
     in
     (cronSettings.gateway_ticker or null) != false
   ) nonTimerProfiles;
+  timerProfilesDisableCron = builtins.all (
+    profile:
+    let
+      cronSettings = cfg.services.hermes-agent.profiles.${profile}.settings.cron or { };
+    in
+    (cronSettings.gateway_ticker or null) == false
+  ) timerOwnedProfiles;
   cronOwnershipMatches =
     cronTickCadenceMatches
+    && cronTimerUnitsMatch
     && cronExecStartMatches
     && markerContractMatches
     && markerScriptMatches
+    && timerProfilesDisableCron
     && nonTimerProfilesDoNotDisableCron
     && bettyGateway.enable
     && ((bettyProfile.settings.cron or { }).gateway_ticker or null) == false;

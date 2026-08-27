@@ -7,7 +7,6 @@ NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_nuc_cron_executor_check_is_linux_only(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
 

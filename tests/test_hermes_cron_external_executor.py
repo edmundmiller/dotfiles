@@ -199,7 +199,6 @@ class ExternalExecutorHealthTest(unittest.TestCase):
         self.assertIn("Gateway is running", output)
         self.assertNotIn("External cron executor", output)
 
-    @unittest.expectedFailure
     def test_external_config_prefers_fresh_marker_over_running_gateway(self):
         output = self._capture_external_status_with_gateway(
             {
@@ -212,7 +211,6 @@ class ExternalExecutorHealthTest(unittest.TestCase):
         self.assertIn("External cron executor is running", output)
         self.assertNotIn("Gateway is running", output)
 
-    @unittest.expectedFailure
     def test_external_config_rejects_stale_marker_even_with_running_gateway(self):
         output = self._capture_external_status_with_gateway(
             {
@@ -227,7 +225,6 @@ class ExternalExecutorHealthTest(unittest.TestCase):
         self.assertIn("External cron executor is not running", output)
         self.assertNotIn("Gateway is running", output)
 
-    @unittest.expectedFailure
     def test_external_config_rejects_missing_marker_even_with_running_gateway(self):
         output = self._capture_external_status_with_gateway(None)
         self.assertIn("External cron executor is not running", output)
