@@ -52,6 +52,43 @@ overwrites stale diagnostics safely. After explicit review, bypass only the
 stale-source check with `NUC_DEPLOY_ALLOW_STALE=1 hey nuc-wt switch`; the shared
 lock still applies.
 
+## Cron trigger ownership
+
+Systemd is the sole recurring cron executor for Amos Burton, Betty, and
+Scintillate. Their `hermes-<profile>-cron-tick.timer` units retain the checked-in
+cadence: `OnUnitActiveSec=60s`, `AccuracySec=1s`, and
+`RandomizedDelaySec=0s`. The services still invoke `hermes cron tick` (Betty's
+existing `flock` wrapper remains in place); the timer cadence and direct CLI
+path are unchanged.
+
+Those three host-owned Hermes profiles set `cron.gateway_ticker=false`. Their
+gateway services remain enabled for interactive Buzz conversations, but the
+gateway does not start an in-process cron ticker. This setting is limited to
+the timer-owned profiles; it does not alter Anne or Finn, the Desktop cron
+ticker, or a direct `hermes cron tick` invocation.
+
+Each timer service's `ExecStartPost` atomically publishes
+`$HERMES_HOME/cron/executor.json` with `kind=systemd`, its exact timer unit,
+`heartbeat_at`, and `max_age_seconds=180`. `hermes cron status` and
+`hermes cron list` treat that marker as authoritative when the profile has
+`cron.gateway_ticker=false`: a fresh marker means the host executor is healthy;
+a stale, invalid, or missing marker is unhealthy even when the gateway process
+is running.
+
+After a deployment, read back all three markers and timer definitions from the
+NUC. The JSON should name the matching timer and contain a recent
+`heartbeat_at` plus `max_age_seconds` of `180`:
+
+```bash
+for profile in amosburton betty scintillate; do
+  ssh nuc "sudo cat /var/lib/hermes-$profile/.hermes/cron/executor.json"
+done
+
+for profile in amosburton betty scintillate; do
+  ssh nuc "systemctl cat hermes-$profile-cron-tick.service hermes-$profile-cron-tick.timer"
+done
+```
+
 ## Deploy
 
 ```bash

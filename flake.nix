@@ -1567,15 +1567,6 @@
                 };
               };
 
-              nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-                bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
-                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
-                  inherit (pkgs) lib;
-                };
-              };
-
               nuc-betty-mcp-secret-materialization =
                 import ./hosts/nuc/_tests/betty-mcp-secret-materialization.nix
                   {
@@ -1657,6 +1648,15 @@
               };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
+              nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+                bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
+                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
+              };
+
               nuc-deployment-provenance-integration = import ./hosts/nuc/_tests/deployment-provenance.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 expectedAgentsWorkspaceRevision = inputs.agents-workspace.rev;
