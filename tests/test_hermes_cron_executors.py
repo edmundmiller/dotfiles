@@ -246,7 +246,6 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_dashboard_package_assertion_avoids_store_context_regex(self):
         source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
 

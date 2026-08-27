@@ -19,7 +19,7 @@ let
     && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.19";
   dashboardUsesSharedPackage =
     builtins.elem hermesPackage (service.path or [ ])
-    && pkgs.lib.hasInfix "${hermesPackage}/bin/hermes dashboard" service.serviceConfig.ExecStart;
+    && pkgs.lib.hasPrefix "${hermesPackage}/bin/hermes dashboard" service.serviceConfig.ExecStart;
   assertions = [
     {
       test = service.enable;
