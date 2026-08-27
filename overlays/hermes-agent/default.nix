@@ -23,6 +23,7 @@ let
     src = inputs.hermes-agent;
     patches = (old.patches or [ ]) ++ [
       ./patches/0003-report-external-cron-executor.patch
+      (inputs.agents-workspace + /patches/hermes-agent/0006-gateway-cron-executor-ownership.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-01-thread-routing.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-02-channel-activation.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-03-working-reaction.patch)
@@ -80,6 +81,8 @@ let
         python3 ${../../tests/test_hermes_cron_external_executor.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_failure_summary.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_cron_single_owner.py}
       test -f $out/share/hermes/plugins/platforms/photon/sidecar/node_modules/.package-lock.json
       grep -Fq 'sidecar deps already installed' $out/share/hermes/plugins/platforms/photon/cli.py
     '';
