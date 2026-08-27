@@ -1,3 +1,4 @@
+import inspect
 import os
 import re
 import subprocess
@@ -373,6 +374,12 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertIn("nuc-wt build", commands)
         self.assertNotIn("dry-activate", commands)
         self.assertNotIn("switch", commands)
+
+    @unittest.expectedFailure
+    def test_runbook_revision_failure_is_reached_from_a_gitless_store_check(self):
+        helper_source = inspect.getsource(_run_with_fake_commands)
+        self.assertIn('(fake_bin / "git").write_text', helper_source)
+        self.assertIn('"rev-parse HEAD"', helper_source)
 
     def test_runbook_status_asserts_healthy_external_ownership(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
