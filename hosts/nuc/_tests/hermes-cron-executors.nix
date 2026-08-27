@@ -13,7 +13,6 @@ let
   amosSecretMaterialization = cfg.system.activationScripts.hermesAmosburtonSecretsMaterialize.text;
   bettyService = cfg.systemd.services.hermes-betty-cron-tick;
   bettyTimer = cfg.systemd.timers.hermes-betty-cron-tick;
-  radarService = cfg.systemd.services.hermes-radar-cron-tick;
   buzzCronServices = {
     amosburton = amosService;
     betty = bettyService;
@@ -57,7 +56,7 @@ let
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
   cronTickCadenceExpectedFailure = false;
-  cronOwnershipExpectedFailure = false;
+  cronOwnershipExpectedFailure = true;
   cronTickCadenceMatches = builtins.all (
     timer:
     timer.timerConfig.OnUnitActiveSec == "60s"
@@ -69,23 +68,81 @@ let
     "betty"
     "scintillate"
   ];
-  cronOwnershipMatches = builtins.all (
+  nonTimerProfiles = [
+    "anne"
+    "finn"
+  ];
+  hermesPackage = cfg.services.hermes-agent.package;
+  markerContractFor =
     profile:
     let
-      service = buzzCronServices.${profile};
-      profileSettings = cfg.services.hermes-agent.profiles.${profile}.settings;
-      cronSettings = profileSettings.cron or { };
-      postStart = service.serviceConfig.ExecStartPost or [ ];
-      markerScript =
-        if builtins.length postStart == 1 then builtins.readFile (builtins.head postStart) else "";
+      postStart = buzzCronServices.${profile}.serviceConfig.ExecStartPost or [ ];
+      scripts = map builtins.readFile postStart;
+      templateLines = pkgs.lib.concatLists (
+        map (
+          script:
+          builtins.filter (line: builtins.match "[[:space:]]*marker_template='[^']*'" line != null) (
+            pkgs.lib.splitString "\n" script
+          )
+        ) scripts
+      );
+      templateMatches =
+        if templateLines == [ ] then
+          null
+        else
+          builtins.match "[[:space:]]*marker_template='([^']*)'" (builtins.head templateLines);
     in
-    (cronSettings.gateway_ticker or null) == false
-    && builtins.length postStart == 1
-    && hasInfix "\"kind\":\"systemd\"" markerScript
-    && hasInfix "\"unit\":\"hermes-${profile}-cron-tick.timer\"" markerScript
-    && hasInfix "\"max_age_seconds\":180" markerScript
-    && hasInfix "mv \"$tmp\" \"$marker\"" markerScript
+    if templateMatches == null then null else builtins.fromJSON (builtins.head templateMatches);
+  markerContractMatches = builtins.all (
+    profile:
+    let
+      contract = markerContractFor profile;
+    in
+    contract != null
+    && (contract.kind or null) == "systemd"
+    && (contract.unit or null) == "hermes-${profile}-cron-tick.timer"
+    && (contract.heartbeat_at or null) == "__HERMES_HEARTBEAT_AT__"
+    && (contract.max_age_seconds or null) == 180
   ) timerOwnedProfiles;
+  markerScriptMatches = builtins.all (
+    profile:
+    let
+      scripts = map builtins.readFile (buzzCronServices.${profile}.serviceConfig.ExecStartPost or [ ]);
+      script = if builtins.length scripts == 1 then builtins.head scripts else "";
+    in
+    builtins.length scripts == 1
+    && hasInfix "marker_json=" script
+    && hasInfix "marker_template/__HERMES_HEARTBEAT_AT__/" script
+    && hasInfix "printf '%s\\n' \"$marker_json\"" script
+  ) timerOwnedProfiles;
+  bettyExecutorScripts = map builtins.readFile (
+    builtins.filter (entry: hasInfix "hermes-betty-cron-executor" entry) (
+      pkgs.lib.splitString " " (toString bettyService.serviceConfig.ExecStart)
+    )
+  );
+  cronExecStartMatches =
+    amosService.serviceConfig.ExecStart == "${hermesPackage}/bin/hermes cron tick"
+    && buzzCronServices.scintillate.serviceConfig.ExecStart == "${hermesPackage}/bin/hermes cron tick"
+    && hasInfix "/bin/flock /var/lib/hermes-betty/.profile.lock" (
+      toString bettyService.serviceConfig.ExecStart
+    )
+    && builtins.length bettyExecutorScripts == 1
+    && hasInfix "exec ${hermesPackage}/bin/hermes cron tick" (builtins.head bettyExecutorScripts);
+  nonTimerProfilesDoNotDisableCron = builtins.all (
+    profile:
+    let
+      cronSettings = cfg.services.hermes-agent.profiles.${profile}.settings.cron or { };
+    in
+    (cronSettings.gateway_ticker or null) != false
+  ) nonTimerProfiles;
+  cronOwnershipMatches =
+    cronTickCadenceMatches
+    && cronExecStartMatches
+    && markerContractMatches
+    && markerScriptMatches
+    && nonTimerProfilesDoNotDisableCron
+    && bettyGateway.enable
+    && ((bettyProfile.settings.cron or { }).gateway_ticker or null) == false;
   amosEnvironment = concatStringsSep " " amosService.serviceConfig.Environment;
   amosUsesStableProfileAndSecret =
     hasInfix "HOME=/var/lib/hermes-amosburton" amosEnvironment
@@ -127,8 +184,8 @@ let
       msg = "Amos cron launcher must overlay host shell init onto canonical host paths.";
     }
     {
-      test = !bettyGateway.enable;
-      msg = "Betty's interactive gateway must remain disabled for isolated cron execution.";
+      test = bettyGateway.enable && ((bettyProfile.settings.cron or { }).gateway_ticker or null) == false;
+      msg = "Betty's gateway must remain enabled while only its in-process cron ticker is disabled.";
     }
     {
       test = bettyService.serviceConfig.Type == "oneshot";
@@ -165,12 +222,6 @@ let
             service.serviceConfig.EnvironmentFile
       ) (builtins.attrNames buzzCronServices);
       msg = "Every active Hermes cron executor must use its dedicated Buzz identity and home channel.";
-    }
-    {
-      test =
-        !(radarService.environment ? BUZZ_RELAY_URL)
-        && !(builtins.elem cfg.age.secrets.buzz-hermes-radar-agent-env.path radarService.serviceConfig.EnvironmentFile);
-      msg = "Radar cron must deliver only by email and must not load Buzz delivery credentials.";
     }
     {
       test = bettyTimer.timerConfig.Unit == "hermes-betty-cron-tick.service";

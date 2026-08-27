@@ -7,6 +7,20 @@ NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_nuc_cron_executor_check_is_linux_only(self):
+        flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
+
+        check_position = flake.index("nuc-hermes-cron-executors = import")
+        linux_checks_position = flake.index(
+            'lib.optionalAttrs (system == "x86_64-linux") {'
+        )
+        self.assertGreater(
+            check_position,
+            linux_checks_position,
+            "NUC config checks must be defined only in the Linux checks set",
+        )
+
     def test_amos_materializes_its_linear_credential_from_opnix(self) -> None:
         config = NUC_CONFIG.read_text(encoding="utf-8")
         amos_secrets = config.split("  hermesAmosburtonSecrets =", 1)[1].split(
