@@ -44,6 +44,15 @@ user-managed OAuth store: after rebuilding that host, run
 `codex mcp get homeassistant`, then use a fresh Codex session for a read-only
 `GetLiveContext` call before trusting the integration.
 
+When a broad Darwin activation is unsafe, the checked-in reconciler can update
+only Codex's writable MCP configuration on MacTraitorPro. Preview it first; the
+command reports only whether a change is needed and never prints config content:
+
+```bash
+python3 config/codex/reconcile_mcp.py --dry-run "$HOME/.codex/config.toml" 0 1
+python3 config/codex/reconcile_mcp.py "$HOME/.codex/config.toml" 0 1
+```
+
 ## Project Permissions
 
 Put repository-specific policies in the repository's trusted `.codex/config.toml`.
