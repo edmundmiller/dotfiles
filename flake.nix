@@ -1499,6 +1499,10 @@
                 inherit pkgs;
               };
 
+              nuc-deployment-provenance = import ./hosts/nuc/_tests/deployment-provenance.nix {
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
