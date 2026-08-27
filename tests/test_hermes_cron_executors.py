@@ -13,6 +13,7 @@ NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 RUNBOOK = ROOT / "docs" / "runbooks" / "deploy-nuc.md"
 HERMES_OVERLAY = ROOT / "overlays" / "hermes-agent" / "default.nix"
 HERMES_DASHBOARD_TEST = ROOT / "hosts" / "nuc" / "_tests" / "hermes-dashboard-enabled.nix"
+HERMES_CRON_NIX_TEST = ROOT / "hosts" / "nuc" / "_tests" / "hermes-cron-executors.nix"
 
 
 _OPENERS = {"(": ")", "[": "]", "{": "}"}
@@ -246,6 +247,16 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_cron_package_assertion_discards_store_context_before_infix(self):
+        source = HERMES_CRON_NIX_TEST.read_text(encoding="utf-8")
+
+        self.assertIn(
+            'builtins.unsafeDiscardStringContext "exec ${hermesPackage}/bin/hermes cron tick"',
+            source,
+        )
+        self.assertIn("hasInfix expectedCronTickExec bettyExecutorScript", source)
+
     def test_dashboard_package_assertion_avoids_store_context_regex(self):
         source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
 
