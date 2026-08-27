@@ -245,6 +245,17 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_post_install_cron_composition_uses_the_pristine_base_source(self):
+        overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
+
+        self.assertRegex(
+            overlay,
+            r'HERMES_SOURCE="\$PWD"\s+\\\s*'
+            r'HERMES_BASE_SOURCE=\$\{inputs\.hermes-agent\}\s+\\\s*'
+            r'python3 .*test_hermes_cron_single_owner\.py',
+        )
+
     def test_overlay_keeps_nested_patch_paths_in_flake_source_context(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
 
