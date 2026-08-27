@@ -119,8 +119,12 @@ let
     in
     builtins.length scripts == 1
     && hasInfix "hermes_home=\"/var/lib/hermes-${profile}/.hermes\"" script
+    && hasInfix "hermes_profile_home=\"/var/lib/hermes-${profile}\"" script
     && hasInfix "marker_dir=\"$hermes_home/cron\"" script
     && hasInfix "marker=\"$marker_dir/executor.json\"" script
+    && hasInfix "if [ -L \"$hermes_profile_home\" ]" script
+    && hasInfix "if [ -L \"$hermes_home\" ]" script
+    && hasInfix "if [ -L \"$marker_dir\" ]" script
     && hasInfix "if [ -d \"$marker\" ]" script
     && hasInfix "mktemp \"$marker_dir/.executor.json.XXXXXX\"" script
     && hasInfix "marker_json=" script
