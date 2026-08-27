@@ -245,6 +245,16 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_overlay_keeps_nested_patch_paths_in_flake_source_context(self):
+        overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
+
+        self.assertNotRegex(overlay, r"agentsWorkspacePatchRoot\s*\+\s*/")
+        self.assertIn(
+            'agentsWorkspacePatchRoot + "/buzz-stack-order.txt"',
+            overlay,
+        )
+
     def test_production_overlay_consumes_the_published_canonical_stack(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
 
