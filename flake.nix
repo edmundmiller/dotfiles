@@ -1510,6 +1510,29 @@
                     touch "$out"
                   '';
 
+              dji-mic-mini-platform-boundaries =
+                let
+                  boundariesHold =
+                    !(builtins.hasAttr "dji-mic-mini-receiver-mute" self.packages.${linuxSystem})
+                    && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem});
+                  expectedFailure = builtins.pathExists ./packages/dji-mic-mini-receiver-mute/_tests/platform-boundaries.xfail;
+                in
+                pkgs.runCommand "dji-mic-mini-platform-boundaries" { } ''
+                  if ${if boundariesHold then "true" else "false"}; then
+                    if ${if expectedFailure then "true" else "false"}; then
+                      echo "unexpected pass: DJI Mic Mini package boundaries are now correct" >&2
+                      exit 1
+                    fi
+                  else
+                    if ! ${if expectedFailure then "true" else "false"}; then
+                      echo "DJI Mic Mini package or regression check leaked into x86_64-linux" >&2
+                      exit 1
+                    fi
+                    echo "expected failure: DJI Mic Mini Darwin boundaries are not enforced"
+                  fi
+                  touch "$out"
+                '';
+
               screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
