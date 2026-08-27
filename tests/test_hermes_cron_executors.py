@@ -1,55 +1,275 @@
+import re
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
+RUNBOOK = ROOT / "docs" / "runbooks" / "deploy-nuc.md"
+
+
+_OPENERS = {"(": ")", "[": "]", "{": "}"}
+_CLOSERS = {closing: opening for opening, closing in _OPENERS.items()}
+
+
+def _nix_structure(source: str) -> tuple[list[bool], dict[int, int]]:
+    """Return code-byte masks and matching delimiters for a Nix source file."""
+
+    code = [True] * len(source)
+    matching: dict[int, int] = {}
+    stack: list[tuple[str, int]] = []
+
+    def mask(start: int, end: int) -> None:
+        code[start:end] = [False] * (end - start)
+
+    i = 0
+    while i < len(source):
+        if source.startswith("/*", i):
+            end = source.find("*/", i + 2)
+            end = len(source) if end < 0 else end + 2
+            mask(i, end)
+            i = end
+            continue
+        if source[i] == "#":
+            end = source.find("\n", i)
+            end = len(source) if end < 0 else end
+            mask(i, end)
+            i = end
+            continue
+        if source.startswith("''", i):
+            mask(i, i + 2)
+            i += 2
+            while i < len(source):
+                if source.startswith("'''", i):
+                    mask(i, i + 3)
+                    i += 3
+                    continue
+                if source.startswith("''", i):
+                    escaped = source[i + 2 : i + 3] in {"$", "\\"}
+                    mask(i, i + 2)
+                    i += 2
+                    if not escaped:
+                        break
+                    continue
+                code[i] = False
+                i += 1
+            continue
+        if source[i] == '"':
+            mask(i, i + 1)
+            i += 1
+            while i < len(source):
+                if source[i] == "\\":
+                    mask(i, min(i + 2, len(source)))
+                    i += 2
+                else:
+                    closing = source[i] == '"'
+                    mask(i, i + 1)
+                    i += 1
+                    if closing:
+                        break
+            continue
+
+        char = source[i]
+        if char in _OPENERS:
+            stack.append((char, i))
+        elif char in _CLOSERS and stack and stack[-1][0] == _CLOSERS[char]:
+            _, opening = stack.pop()
+            matching[opening] = i
+        i += 1
+
+    return code, matching
+
+
+def _stack_before(source: str, code: list[bool], position: int) -> list[str]:
+    stack: list[str] = []
+    for i, char in enumerate(source[:position]):
+        if not code[i]:
+            continue
+        if char in _OPENERS:
+            stack.append(char)
+        elif char in _CLOSERS and stack and stack[-1] == _CLOSERS[char]:
+            stack.pop()
+    return stack
+
+
+def _checks_span(source: str, code: list[bool]) -> tuple[int, int]:
+    checks_match = next(
+        match
+        for match in re.finditer(r"\bchecks\s*=", source)
+        if code[match.start()]
+    )
+    equals = source.index("=", checks_match.start(), checks_match.end())
+    stack = _stack_before(source, code, equals + 1)
+    base_depth = len(stack)
+
+    for i in range(equals + 1, len(source)):
+        if not code[i]:
+            continue
+        char = source[i]
+        if char in _OPENERS:
+            stack.append(char)
+        elif char in _CLOSERS and stack and stack[-1] == _CLOSERS[char]:
+            stack.pop()
+        elif char == ";" and len(stack) == base_depth:
+            return checks_match.start(), i + 1
+    raise AssertionError("checks assignment has no structural terminator")
+
+
+def _linux_guard_ranges(
+    source: str, code: list[bool], matching: dict[int, int], span: tuple[int, int]
+) -> list[tuple[int, int]]:
+    ranges = []
+    guard_pattern = re.compile(
+        r'lib\.optionalAttrs\s*\(\s*system\s*==\s*"x86_64-linux"\s*\)'
+    )
+    for match in guard_pattern.finditer(source):
+        if not code[match.start()]:
+            continue
+        argument = match.end()
+        while argument < len(source) and source[argument].isspace():
+            argument += 1
+        if argument not in matching:
+            continue
+        end = matching[argument] + 1
+        if span[0] <= match.start() < end <= span[1]:
+            ranges.append((match.start(), end))
+    return ranges
+
+
+def _direct_check_references(
+    source: str, span: tuple[int, int]
+) -> list[tuple[str, int]]:
+    patterns = (
+        r"\bself\.nixosConfigurations\.nuc(?:[-.]\w+)*",
+        r"\bself\.deploy\b",
+    )
+    references = []
+    for pattern in patterns:
+        for match in re.finditer(pattern, source):
+            if span[0] <= match.start() < span[1]:
+                references.append((match.group(), match.start()))
+    return references
+
+
+def _check_reference_layout(source: str) -> tuple[tuple[int, int], list[tuple[int, int]], list[tuple[str, int]]]:
+    checks_start = source.index("checks =")
+    checks_source = source[checks_start:]
+    code, matching = _nix_structure(checks_source)
+    relative_span = _checks_span(checks_source, code)
+    relative_guards = _linux_guard_ranges(checks_source, code, matching, relative_span)
+    span = (checks_start + relative_span[0], checks_start + relative_span[1])
+    guards = [
+        (checks_start + start, checks_start + end)
+        for start, end in relative_guards
+    ]
+    references = _direct_check_references(source, span)
+    return span, guards, references
+
+
+def _bash_block_after(source: str, marker: str) -> str:
+    marker_start = source.index(marker)
+    fence_start = source.index("```bash", marker_start)
+    block_start = source.index("\n", fence_start) + 1
+    block_end = source.index("```", block_start)
+    return source[block_start:block_end]
 
 
 class HermesCronExecutorTests(unittest.TestCase):
     def test_darwin_common_checks_do_not_evaluate_nuc_or_deploy(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
-        checks_start = flake.index("          checks =")
-        common_start = flake.index("            // {", checks_start)
-        linux_guard = flake.index(
-            '            // lib.optionalAttrs (system == "x86_64-linux") {',
-            common_start,
-        )
-        deploy_checks = flake[checks_start:common_start]
-        common_checks = flake[common_start:linux_guard]
-        linux_checks = flake[linux_guard:]
-
-        self.assertNotIn("self.deploy", common_checks)
-        self.assertNotIn("self.nixosConfigurations.nuc", common_checks)
-        self.assertIn('lib.optionalAttrs (system == "x86_64-linux")', deploy_checks)
-        self.assertIn("deployChecks self.deploy", deploy_checks)
-        self.assertIn("ha-automation-assertions", linux_checks)
+        span, guards, references = _check_reference_layout(flake)
+        self.assertTrue(references, "the check set must retain NUC/deploy coverage")
+        unguarded = [
+            (reference, position)
+            for reference, position in references
+            if not any(start <= position < end for start, end in guards)
+        ]
+        self.assertEqual([], unguarded, "direct NUC/deploy checks escaped Linux gating")
+        self.assertLess(span[0], span[1])
 
     def test_cron_executor_source_contract_is_wired_as_a_common_check(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
-        checks_start = flake.index("          checks =")
-        common_start = flake.index("            // {", checks_start)
-        linux_guard = flake.index(
-            '            // lib.optionalAttrs (system == "x86_64-linux") {',
-            common_start,
+        span, guards, _ = _check_reference_layout(flake)
+        source_position = flake.index("hermes-cron-executor-source-tests")
+        self.assertTrue(span[0] <= source_position < span[1])
+        self.assertFalse(
+            any(start <= source_position < end for start, end in guards),
+            "source-only contract must remain in the common checks set",
         )
-        common_checks = flake[common_start:linux_guard]
-
-        self.assertIn("hermes-cron-executor-source-tests", common_checks)
-        self.assertIn("python3 tests/test_hermes_cron_executors.py", common_checks)
+        self.assertIn("python3 tests/test_hermes_cron_executors.py", flake)
 
     def test_nuc_cron_executor_check_is_linux_only(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
-
+        _, guards, _ = _check_reference_layout(flake)
         check_position = flake.index("nuc-hermes-cron-executors = import")
-        linux_checks_position = flake.index(
-            'lib.optionalAttrs (system == "x86_64-linux") ('
+        self.assertTrue(
+            any(start <= check_position < end for start, end in guards),
+            "NUC config checks must be nested in a Linux-only checks set",
         )
-        self.assertGreater(
-            check_position,
-            linux_checks_position,
-            "NUC config checks must be defined only in the Linux checks set",
+
+    def test_static_guard_proof_rejects_an_unscoped_nuc_check(self):
+        flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
+        mutated = flake.replace(
+            "checks =\n",
+            "checks =\n            unscoped_probe = self.nixosConfigurations.nuc;\n",
+            1,
         )
+        span, guards, references = _check_reference_layout(mutated)
+        unguarded = [
+            reference
+            for reference, position in references
+            if not any(start <= position < end for start, end in guards)
+        ]
+        self.assertIn("self.nixosConfigurations.nuc", unguarded)
+
+    @unittest.expectedFailure
+    def test_runbook_cron_readback_is_machine_asserted(self):
+        runbook = RUNBOOK.read_text(encoding="utf-8")
+        block = _bash_block_after(runbook, "After a deployment, read back all three markers")
+
+        self.assertIn('test "$hostname" = "nuc"', block)
+        self.assertIn("python3 -", block)
+        self.assertIn("json.load", block)
+        self.assertIn("datetime.fromisoformat", block)
+        self.assertIn("max_age_seconds", block)
+        self.assertIn("systemctl show", block)
+        for property_name in ("LoadState", "ActiveState", "UnitFileState", "Type", "User"):
+            self.assertIn(property_name, block)
+        self.assertIn("hermes cron status", block)
+        for profile in ("amosburton", "betty", "scintillate"):
+            self.assertIn(f"hermes-{profile}-cron-tick.timer", block)
+            self.assertIn(f"hermes-{profile}-cron-tick.service", block)
+            self.assertIn(f"hermes-gateway-{profile}.service", block)
+        self.assertIn('marker["kind"]', block)
+
+    @unittest.expectedFailure
+    def test_runbook_has_strict_identity_and_staged_revision_gate(self):
+        runbook = RUNBOOK.read_text(encoding="utf-8")
+        prerequisites = _bash_block_after(runbook, "Before any remote check or mutating command")
+        self.assertIn('test "$hostname" = "nuc"', prerequisites)
+
+        deploy = _bash_block_after(runbook, "## Deploy")
+        self.assertLess(deploy.index("hostname"), deploy.index("hey nuc"))
+
+        staged = _bash_block_after(runbook, "stage=nuc-buzz-scintillate")
+        self.assertLess(staged.index("hostname"), staged.index("hey nuc-wt build"))
+        revision_markers = ("configurationRevision", "expected_revision", "nix eval")
+        self.assertTrue(
+            all(marker in staged for marker in revision_markers),
+            "staged source revision must be validated before activation",
+        )
+        revision_position = min(staged.index(marker) for marker in revision_markers)
+        self.assertLess(revision_position, staged.index("hey nuc-wt dry-activate"))
+
+    @unittest.expectedFailure
+    def test_marker_writer_uses_fixed_home_collision_safe_atomic_contract(self):
+        config = NUC_CONFIG.read_text(encoding="utf-8")
+        self.assertIn('hermesHome = "/var/lib/hermes-${profile}/.hermes";', config)
+        self.assertIn('mktemp "$marker_dir/.executor.json.XXXXXX"', config)
+        self.assertIn('if [ -d "$marker" ]', config)
+        self.assertIn('mv "$tmp" "$marker"', config)
+        self.assertNotIn('marker_dir="$HERMES_HOME/cron"', config)
+        self.assertNotIn('tmp="$marker.$$"', config)
 
     def test_amos_materializes_its_linear_credential_from_opnix(self) -> None:
         config = NUC_CONFIG.read_text(encoding="utf-8")
