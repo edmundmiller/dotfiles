@@ -24,6 +24,7 @@ stdenvNoCC.mkDerivation {
     export CLANG_MODULE_CACHE_PATH="$TMPDIR/clang-module-cache"
     export SWIFT_MODULECACHE_PATH="$TMPDIR/swift-module-cache"
     /usr/bin/xcrun swiftc \
+      -parse-as-library \
       ${./receiver-mute.swift} \
       -o dji-mic-mini-receiver-mute
     runHook postBuild

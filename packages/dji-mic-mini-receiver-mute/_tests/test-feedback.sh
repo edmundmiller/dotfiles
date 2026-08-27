@@ -60,7 +60,8 @@ make_fixture() {
         defaultInput: "input-sentinel",
         defaultOutput: "output-sentinel",
         outputMuted: false,
-        outputVolume: 0.42
+        outputVolume: 0.42,
+        airPodsConnected: true
       }
     }' >"$destination"
 }
@@ -94,11 +95,11 @@ run_fixture() {
 
 run_fixture mute 0 1 false success verified
 jq -e '.afterMuted == true and .sounds == ["Basso.aiff"]' "$test_tmp/mute-output.json" >/dev/null
-jq -e '.events == ["lock", "resolve", "read:false", "write:true", "readback:true", "unlock", "sound:Basso.aiff"]' "$test_tmp/mute-output.json" >/dev/null
+jq -e '.events == ["lock", "resolve", "read:false", "write:true", "readback:true:300", "unlock", "sound:Basso.aiff"]' "$test_tmp/mute-output.json" >/dev/null
 
 run_fixture unmute 0 1 true success verified
 jq -e '.afterMuted == false and .sounds == ["Tink.aiff"]' "$test_tmp/unmute-output.json" >/dev/null
-jq -e '.events == ["lock", "resolve", "read:true", "write:false", "readback:false", "unlock", "sound:Tink.aiff"]' "$test_tmp/unmute-output.json" >/dev/null
+jq -e '.events == ["lock", "resolve", "read:true", "write:false", "readback:false:300", "unlock", "sound:Tink.aiff"]' "$test_tmp/unmute-output.json" >/dev/null
 
 run_fixture missing 1 0 false success verified
 run_fixture ambiguous 1 2 false success verified
@@ -117,6 +118,10 @@ if grep -F 'kAudioObjectPropertyScopeOutput' "$source_root/receiver-mute.swift" 
 fi
 if grep -E 'kAudioHardwarePropertyDefault(Input|Output)Device' "$source_root/receiver-mute.swift" >/dev/null; then
   echo "production helper references a default audio device" >&2
+  exit 1
+fi
+if grep -E 'AirPods|IOBluetooth|CoreBluetooth' "$source_root/receiver-mute.swift" >/dev/null; then
+  echo "production helper references AirPods or Bluetooth state" >&2
   exit 1
 fi
 

@@ -1,10 +1,11 @@
 import Foundation
 
 struct FixtureSentinels: Codable, Equatable {
-    let defaultInput: String
-    let defaultOutput: String
-    let outputMuted: Bool
-    let outputVolume: Double
+    var defaultInput: String
+    var defaultOutput: String
+    var outputMuted: Bool
+    var outputVolume: Double
+    var airPodsConnected: Bool
 }
 
 struct FixtureInput: Decodable {
@@ -50,15 +51,25 @@ final class FixtureEvents {
     var values: [String] = []
 }
 
+final class FixtureAudioState {
+    var inputMuted: Bool
+    var sentinels: FixtureSentinels
+
+    init(inputMuted: Bool, sentinels: FixtureSentinels) {
+        self.inputMuted = inputMuted
+        self.sentinels = sentinels
+    }
+}
+
 final class FixtureAudio: ReceiverAudio {
     private let input: FixtureInput
     private let events: FixtureEvents
-    private(set) var muted: Bool
+    private let state: FixtureAudioState
 
-    init(input: FixtureInput, events: FixtureEvents) {
+    init(input: FixtureInput, events: FixtureEvents, state: FixtureAudioState) {
         self.input = input
         self.events = events
-        muted = input.beforeMuted
+        self.state = state
     }
 
     func receiver() throws -> ReceiverDeviceID {
@@ -74,8 +85,8 @@ final class FixtureAudio: ReceiverAudio {
     }
 
     func readMute(_ device: ReceiverDeviceID) throws -> Bool {
-        events.values.append("read:\(muted)")
-        return muted
+        events.values.append("read:\(state.inputMuted)")
+        return state.inputMuted
     }
 
     func writeMute(_ requested: Bool, to device: ReceiverDeviceID) throws {
@@ -87,7 +98,7 @@ final class FixtureAudio: ReceiverAudio {
             events.values.append("write-noop:\(requested)")
         default:
             events.values.append("write:\(requested)")
-            muted = requested
+            state.inputMuted = requested
         }
     }
 
@@ -98,15 +109,15 @@ final class FixtureAudio: ReceiverAudio {
     ) throws -> Bool {
         switch input.readbackMode {
         case "timeout":
-            events.values.append("readback-timeout")
+            events.values.append("readback-timeout:\(timeoutMilliseconds)")
             throw FixtureFailure.readbackTimedOut
         case "mismatch":
             let mismatch = !expected
-            events.values.append("readback:\(mismatch)")
+            events.values.append("readback:\(mismatch):\(timeoutMilliseconds)")
             return mismatch
         default:
-            events.values.append("readback:\(muted)")
-            return muted
+            events.values.append("readback:\(state.inputMuted):\(timeoutMilliseconds)")
+            return state.inputMuted
         }
     }
 }
@@ -119,8 +130,8 @@ final class FixtureFeedback: MuteFeedback {
         self.events = events
     }
 
-    func play(muted: Bool) throws {
-        let sound = muted ? "Basso.aiff" : "Tink.aiff"
+    func play(path: String) throws {
+        let sound = URL(fileURLWithPath: path).lastPathComponent
         events.values.append("sound:\(sound)")
         sounds.append(sound)
     }
@@ -158,7 +169,8 @@ struct ReceiverMuteFixtureMain {
             from: Data(contentsOf: URL(fileURLWithPath: inputPath))
         )
         let events = FixtureEvents()
-        let audio = FixtureAudio(input: input, events: events)
+        let state = FixtureAudioState(inputMuted: input.beforeMuted, sentinels: input.sentinels)
+        let audio = FixtureAudio(input: input, events: events, state: state)
         let feedback = FixtureFeedback(events: events)
         let lock = FixtureLock(events: events)
         var stdout: [String] = []
@@ -175,13 +187,13 @@ struct ReceiverMuteFixtureMain {
 
         let output = FixtureOutput(
             exitCode: exitCode,
-            afterMuted: audio.muted,
+            afterMuted: state.inputMuted,
             sounds: feedback.sounds,
             events: events.values,
             stdout: stdout,
             stderr: stderr,
             originalSentinels: input.sentinels,
-            sentinels: input.sentinels
+            sentinels: state.sentinels
         )
         let encoded = try JSONEncoder().encode(output)
         try encoded.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
