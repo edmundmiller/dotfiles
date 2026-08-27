@@ -1,19 +1,10 @@
 import Foundation
 
-struct FixtureSentinels: Codable, Equatable {
-    var defaultInput: String
-    var defaultOutput: String
-    var outputMuted: Bool
-    var outputVolume: Double
-    var airPodsConnected: Bool
-}
-
 struct FixtureInput: Decodable {
     let receiverMatches: Int
     let beforeMuted: Bool
     let writeMode: String
     let readbackMode: String
-    let sentinels: FixtureSentinels
 }
 
 struct FixtureOutput: Encodable {
@@ -23,8 +14,6 @@ struct FixtureOutput: Encodable {
     let events: [String]
     let stdout: [String]
     let stderr: [String]
-    let originalSentinels: FixtureSentinels
-    let sentinels: FixtureSentinels
 }
 
 enum FixtureFailure: LocalizedError {
@@ -53,11 +42,9 @@ final class FixtureEvents {
 
 final class FixtureAudioState {
     var inputMuted: Bool
-    var sentinels: FixtureSentinels
 
-    init(inputMuted: Bool, sentinels: FixtureSentinels) {
+    init(inputMuted: Bool) {
         self.inputMuted = inputMuted
-        self.sentinels = sentinels
     }
 }
 
@@ -169,7 +156,7 @@ struct ReceiverMuteFixtureMain {
             from: Data(contentsOf: URL(fileURLWithPath: inputPath))
         )
         let events = FixtureEvents()
-        let state = FixtureAudioState(inputMuted: input.beforeMuted, sentinels: input.sentinels)
+        let state = FixtureAudioState(inputMuted: input.beforeMuted)
         let audio = FixtureAudio(input: input, events: events, state: state)
         let feedback = FixtureFeedback(events: events)
         let lock = FixtureLock(events: events)
@@ -191,9 +178,7 @@ struct ReceiverMuteFixtureMain {
             sounds: feedback.sounds,
             events: events.values,
             stdout: stdout,
-            stderr: stderr,
-            originalSentinels: input.sentinels,
-            sentinels: state.sentinels
+            stderr: stderr
         )
         let encoded = try JSONEncoder().encode(output)
         try encoded.write(to: URL(fileURLWithPath: outputPath), options: .atomic)

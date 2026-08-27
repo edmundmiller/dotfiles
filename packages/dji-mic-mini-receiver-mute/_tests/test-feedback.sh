@@ -55,14 +55,7 @@ make_fixture() {
       receiverMatches: $receiverMatches,
       beforeMuted: $beforeMuted,
       writeMode: $writeMode,
-      readbackMode: $readbackMode,
-      sentinels: {
-        defaultInput: "input-sentinel",
-        defaultOutput: "output-sentinel",
-        outputMuted: false,
-        outputVolume: 0.42,
-        airPodsConnected: true
-      }
+      readbackMode: $readbackMode
     }' >"$destination"
 }
 
@@ -86,7 +79,6 @@ run_fixture() {
     exit 1
   fi
   jq -e --argjson exitCode "$expected_exit" '.exitCode == $exitCode' "$output" >/dev/null
-  jq -e '.sentinels == .originalSentinels' "$output" >/dev/null
   if jq -e '.events[] | select(test("output|default"; "i"))' "$output" >/dev/null; then
     echo "$name: helper crossed the output/default-device boundary" >&2
     exit 1

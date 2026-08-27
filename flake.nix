@@ -344,6 +344,7 @@
           in
           builtins.removeAttrs (mapModules ./packages (p: callPackageWithInputs p { })) [
             "audio-priority-bar"
+            "dji-mic-mini-receiver-mute"
             "ergodox-firmware"
             "lgtm"
             "quill"
@@ -1493,46 +1494,6 @@
                 inherit pkgs;
               };
 
-              dji-mic-mini-receiver-mute-regressions =
-                pkgs.runCommand "dji-mic-mini-receiver-mute-regressions"
-                  {
-                    __noChroot = true;
-                    preferLocalBuild = true;
-                    allowSubstitutes = false;
-                    nativeBuildInputs = [ pkgs.jq ];
-                  }
-                  ''
-                    export CLANG_MODULE_CACHE_PATH="$TMPDIR/clang-module-cache"
-                    export SWIFT_MODULECACHE_PATH="$TMPDIR/swift-module-cache"
-                    ${pkgs.bash}/bin/bash \
-                      ${./packages/dji-mic-mini-receiver-mute/_tests/test-feedback.sh} \
-                      ${./packages/dji-mic-mini-receiver-mute}
-                    touch "$out"
-                  '';
-
-              dji-mic-mini-platform-boundaries =
-                let
-                  boundariesHold =
-                    !(builtins.hasAttr "dji-mic-mini-receiver-mute" self.packages.${linuxSystem})
-                    && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem});
-                  expectedFailure = builtins.pathExists ./packages/dji-mic-mini-receiver-mute/_tests/platform-boundaries.xfail;
-                in
-                pkgs.runCommand "dji-mic-mini-platform-boundaries" { } ''
-                  if ${if boundariesHold then "true" else "false"}; then
-                    if ${if expectedFailure then "true" else "false"}; then
-                      echo "unexpected pass: DJI Mic Mini package boundaries are now correct" >&2
-                      exit 1
-                    fi
-                  else
-                    if ! ${if expectedFailure then "true" else "false"}; then
-                      echo "DJI Mic Mini package or regression check leaked into x86_64-linux" >&2
-                      exit 1
-                    fi
-                    echo "expected failure: DJI Mic Mini Darwin boundaries are not enforced"
-                  fi
-                  touch "$out"
-                '';
-
               screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
@@ -1585,6 +1546,47 @@
                 herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
+            }
+            // lib.optionalAttrs (system == darwinSystem) {
+              dji-mic-mini-receiver-mute-regressions =
+                pkgs.runCommand "dji-mic-mini-receiver-mute-regressions"
+                  {
+                    __noChroot = true;
+                    preferLocalBuild = true;
+                    allowSubstitutes = false;
+                    nativeBuildInputs = [ pkgs.jq ];
+                  }
+                  ''
+                    export CLANG_MODULE_CACHE_PATH="$TMPDIR/clang-module-cache"
+                    export SWIFT_MODULECACHE_PATH="$TMPDIR/swift-module-cache"
+                    ${pkgs.bash}/bin/bash \
+                      ${./packages/dji-mic-mini-receiver-mute/_tests/test-feedback.sh} \
+                      ${./packages/dji-mic-mini-receiver-mute}
+                    touch "$out"
+                  '';
+
+              dji-mic-mini-platform-boundaries =
+                let
+                  boundariesHold =
+                    !(builtins.hasAttr "dji-mic-mini-receiver-mute" self.packages.${linuxSystem})
+                    && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem});
+                  expectedFailure = builtins.pathExists ./packages/dji-mic-mini-receiver-mute/_tests/platform-boundaries.xfail;
+                in
+                pkgs.runCommand "dji-mic-mini-platform-boundaries" { } ''
+                  if ${if boundariesHold then "true" else "false"}; then
+                    if ${if expectedFailure then "true" else "false"}; then
+                      echo "unexpected pass: DJI Mic Mini package boundaries are now correct" >&2
+                      exit 1
+                    fi
+                  else
+                    if ! ${if expectedFailure then "true" else "false"}; then
+                      echo "DJI Mic Mini package or regression check leaked into x86_64-linux" >&2
+                      exit 1
+                    fi
+                    echo "expected failure: DJI Mic Mini Darwin boundaries are not enforced"
+                  fi
+                  touch "$out"
+                '';
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
               # HA config validation is now done at build time on the NUC via
@@ -1730,7 +1732,6 @@
                   inherit (pkgs) lib;
                 };
               };
-
               nuc-deployment-provenance-integration = import ./hosts/nuc/_tests/deployment-provenance.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 expectedAgentsWorkspaceRevision = inputs.agents-workspace.rev;
