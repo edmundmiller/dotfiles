@@ -29,6 +29,9 @@ in
 {
   options.modules.agents.codex = {
     enable = mkBoolOpt false;
+    homeAssistantMcp.enable = mkBoolOpt false // {
+      description = "Ensure Home Assistant MCP is registered in Codex's writable configuration.";
+    };
     seqeraMcp.enable = mkBoolOpt false // {
       description = "Ensure Seqera MCP is registered in Codex's writable configuration.";
     };
@@ -96,15 +99,17 @@ in
                     ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
 
                     # Remove stale managed MCP blocks from the writable config.
-                    ${pkgs.python3}/bin/python3 - "$target" ${
-                      if cfg.seqeraMcp.enable then "1" else "0"
+                    ${pkgs.python3}/bin/python3 - "$target" ${if cfg.seqeraMcp.enable then "1" else "0"} ${
+                      if cfg.homeAssistantMcp.enable then "1" else "0"
                     } <<'PY'
           import pathlib
           import re
           import sys
+          import tomllib
 
           path = pathlib.Path(sys.argv[1])
           seqera_mcp_enabled = sys.argv[2] == "1"
+          home_assistant_mcp_enabled = sys.argv[3] == "1"
           content = path.read_text(encoding="utf-8") if path.exists() else ""
           original_content = content
           content = re.sub(
@@ -121,12 +126,12 @@ in
               "",
               content,
           )
-          stale_mcp_servers = ["code" + "graph", "node_repl", "seqera"]
+          stale_mcp_servers = ["code" + "graph", "homeassistant", "node_repl", "seqera"]
           next_content = content
           for server_name in stale_mcp_servers:
               pattern = re.compile(r'(?ms)^\[mcp_servers\.' + re.escape(server_name) + r'(?:\.[^\]]+)?\]\n.*?(?=^\[(?!mcp_servers\.' + re.escape(server_name) + r'(?:\.|\]))|\Z)')
               next_content = pattern.sub("", next_content)
-          if seqera_mcp_enabled:
+          if seqera_mcp_enabled or home_assistant_mcp_enabled:
               features_pattern = re.compile(r'(?ms)^\[features\]\n.*?(?=^\[|\Z)')
               features_match = features_pattern.search(next_content)
               if features_match is None:
@@ -142,8 +147,26 @@ in
                       + features
                       + next_content[features_match.end():]
                   )
+          if seqera_mcp_enabled:
               next_content = next_content.rstrip() + (
                   "\n\n[mcp_servers.seqera]\nurl = \"https://mcp.seqera.io/mcp\"\n"
+              )
+          if home_assistant_mcp_enabled:
+              parsed = tomllib.loads(next_content)
+              callback_port = parsed.get("mcp_oauth_callback_port")
+              if callback_port is None:
+                  callback_port = 12345
+                  next_content = (
+                      f"mcp_oauth_callback_port = {callback_port}\n\n"
+                      + next_content.lstrip()
+                  )
+              elif type(callback_port) is not int or not 1 <= callback_port <= 65535:
+                  raise ValueError("mcp_oauth_callback_port must be an integer from 1 to 65535")
+              next_content = next_content.rstrip() + (
+                  "\n\n[mcp_servers.homeassistant]\n"
+                  "url = \"https://homeassistant.cinnamon-rooster.ts.net/api/mcp\"\n"
+                  "auth = \"oauth\"\n"
+                  f"oauth = {{ client_id = \"http://127.0.0.1:{callback_port}\" }}\n"
               )
           next_content = next_content.rstrip() + "\n"
           if next_content != original_content:

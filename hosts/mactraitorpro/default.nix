@@ -164,7 +164,10 @@ in
         };
         agentsview.enable = true;
         claude.enable = true;
-        codex.enable = true;
+        codex = {
+          enable = true;
+          homeAssistantMcp.enable = true;
+        };
         hermes-local = {
           enable = true;
           profiles = [

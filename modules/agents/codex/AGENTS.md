@@ -22,7 +22,7 @@ Remote control deliberately uses a second, installer-managed Codex binary for it
 
 - `auth.json` — OAuth credentials (user-managed)
 - `sessions/`, `history.jsonl` — runtime data
-- `config.toml` after bootstrap — user-managed and writable, except enabled host integrations such as `seqeraMcp`, which reconcile their MCP block and prerequisite feature
+- `config.toml` after bootstrap — user-managed and writable, except enabled host integrations such as `homeAssistantMcp` and `seqeraMcp`, which reconcile their MCP block and prerequisite feature
 - `packages/standalone/` — mutable daemon runtime installed and updated by the official Codex installer
 
 ## Seqera MCP
@@ -31,6 +31,18 @@ Set `modules.agents.codex.seqeraMcp.enable = true` only on hosts that need it.
 Activation registers `https://mcp.seqera.io/mcp` and enables `rmcp_client`.
 OAuth remains user-managed: after rebuilding that host, run `codex mcp login seqera`.
 On Seqeratop, verify the registration with `codex mcp get seqera`.
+
+## Home Assistant MCP
+
+Set `modules.agents.codex.homeAssistantMcp.enable = true` only on hosts that
+need access to the existing Home Assistant MCP integration. Activation registers
+`https://homeassistant.cinnamon-rooster.ts.net/api/mcp` and enables `rmcp_client`.
+When no global callback port exists, activation uses port `12345` and matches
+the Home Assistant OAuth client ID to it. Authentication remains in Codex's
+user-managed OAuth store: after rebuilding that host, run
+`codex mcp login homeassistant`. Verify registration with
+`codex mcp get homeassistant`, then use a fresh Codex session for a read-only
+`GetLiveContext` call before trusting the integration.
 
 ## Project Permissions
 
