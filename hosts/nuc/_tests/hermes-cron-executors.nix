@@ -57,12 +57,35 @@ let
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
   cronTickCadenceExpectedFailure = false;
+  cronOwnershipExpectedFailure = true;
   cronTickCadenceMatches = builtins.all (
     timer:
     timer.timerConfig.OnUnitActiveSec == "60s"
     && (timer.timerConfig.AccuracySec or null) == "1s"
     && timer.timerConfig.RandomizedDelaySec == "0s"
   ) cronTickTimers;
+  timerOwnedProfiles = [
+    "amosburton"
+    "betty"
+    "scintillate"
+  ];
+  cronOwnershipMatches = builtins.all (
+    profile:
+    let
+      service = buzzCronServices.${profile};
+      profileSettings = cfg.services.hermes-agent.profiles.${profile}.settings;
+      cronSettings = profileSettings.cron or { };
+      postStart = service.serviceConfig.ExecStartPost or [ ];
+      markerScript =
+        if builtins.length postStart == 1 then builtins.readFile (builtins.head postStart) else "";
+    in
+    (cronSettings.gateway_ticker or null) == false
+    && builtins.length postStart == 1
+    && hasInfix "\"kind\":\"systemd\"" markerScript
+    && hasInfix "\"unit\":\"hermes-${profile}-cron-tick.timer\"" markerScript
+    && hasInfix "\"max_age_seconds\":180" markerScript
+    && hasInfix "mv \"$tmp\" \"$marker\"" markerScript
+  ) timerOwnedProfiles;
   amosEnvironment = concatStringsSep " " amosService.serviceConfig.Environment;
   amosUsesStableProfileAndSecret =
     hasInfix "HOME=/var/lib/hermes-amosburton" amosEnvironment
@@ -122,6 +145,10 @@ let
     {
       test = if cronTickCadenceExpectedFailure then !cronTickCadenceMatches else cronTickCadenceMatches;
       msg = "Hermes cron timers must tick every 60 seconds without scheduling jitter.";
+    }
+    {
+      test = if cronOwnershipExpectedFailure then !cronOwnershipMatches else cronOwnershipMatches;
+      msg = "All timer-owned Hermes profiles must disable the gateway cron ticker and publish an exact systemd executor heartbeat.";
     }
     {
       test = pkgs.lib.all (
