@@ -1567,10 +1567,15 @@
 
               dji-mic-mini-platform-boundaries =
                 let
+                  heyCheckSource = builtins.readFile ./bin/hey.d/flake.nu;
+                  heyCheckSelectsDjiChecks =
+                    lib.hasInfix "dji-mic-mini-receiver-mute-regressions" heyCheckSource
+                    && lib.hasInfix "dji-mic-mini-platform-boundaries" heyCheckSource;
                   boundariesHold =
                     !(builtins.hasAttr "dji-mic-mini-receiver-mute" self.packages.${linuxSystem})
-                    && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem});
-                  expectedFailure = builtins.pathExists ./packages/dji-mic-mini-receiver-mute/_tests/platform-boundaries.xfail;
+                    && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem})
+                    && heyCheckSelectsDjiChecks;
+                  expectedFailure = builtins.pathExists ./packages/dji-mic-mini-receiver-mute/_tests/hey-check-selection.xfail;
                 in
                 pkgs.runCommand "dji-mic-mini-platform-boundaries" { } ''
                   if ${if boundariesHold then "true" else "false"}; then
