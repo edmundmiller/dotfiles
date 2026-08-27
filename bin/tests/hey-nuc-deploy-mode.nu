@@ -49,6 +49,7 @@ let failed_prepare_source = ($temp_dir | path join "failed-prepare-source")
 let failed_prepare_destination = ($temp_dir | path join $"dotfiles-worktree-tester-($source_revision)-dirty-20000000-0000-0000-0000-000000000000")
 let prune_root = ($temp_dir | path join "prune-root")
 let lifecycle_destination = ($temp_dir | path join "lifecycle")
+let release_failure_destination = ($temp_dir | path join "release-failure")
 let repo_root = ($env.DOTFILES_TEST_ROOT? | default (pwd))
 let revision_writer = ($repo_root | path join "bin" "write-nuc-deploy-revision")
 let snapshot_pruner = ($repo_root | path join "bin" "prune-nuc-deploy-snapshots")
@@ -60,12 +61,31 @@ let lifecycle_failure = (nuc-worktree-lifecycle-command $lifecycle_destination "
 let lifecycle_result = (^bash -c $lifecycle_failure | complete)
 assert equal $lifecycle_result.exit_code 7
 assert not (($lifecycle_destination | path join ".nuc-deploy-active") | path exists) "remote lifecycle cleanup must release its active lease while preserving command status"
+mkdir ($release_failure_destination | path join "bin")
+"exit 23" | save ($release_failure_destination | path join "bin" "prune-nuc-deploy-snapshots")
+"active" | save ($release_failure_destination | path join ".nuc-deploy-active")
+let release_failure = (try {
+  nuc-worktree-release $release_failure_destination tester "" $temp_dir
+  false
+} catch {
+  true
+})
+assert $release_failure "snapshot release must surface pruning failure"
+assert not (($release_failure_destination | path join ".nuc-deploy-active") | path exists) "snapshot release must still remove the active lease when pruning fails"
+"active" | save ($release_failure_destination | path join ".nuc-deploy-active")
+let lifecycle_cleanup_failure = (^bash -c (nuc-worktree-lifecycle-command $release_failure_destination tester "true") | complete)
+assert equal $lifecycle_cleanup_failure.exit_code 1 "successful deployment command must surface cleanup failure"
+"active" | save ($release_failure_destination | path join ".nuc-deploy-active")
+let lifecycle_command_failure = (^bash -c (nuc-worktree-lifecycle-command $release_failure_destination tester "exit 7") | complete)
+assert equal $lifecycle_command_failure.exit_code 7 "failed deployment command must preserve its original status when cleanup also fails"
 "test" | save ($source_dir | path join "flake.nix")
 "ignored.txt" | save ($source_dir | path join ".gitignore")
 "ignored" | save ($source_dir | path join "ignored.txt")
+"archived lease" | save ($source_dir | path join ".nuc-deploy-active")
 ^cp $revision_writer ($source_dir | path join "bin" "write-nuc-deploy-revision")
 ^git -C $source_dir init --quiet --initial-branch main
 ^git -C $source_dir add flake.nix .gitignore bin/write-nuc-deploy-revision
+^git -C $source_dir add --force .nuc-deploy-active
 ^git -C $source_dir -c user.name=Test -c user.email=test@example.invalid commit --quiet -m fixture
 let fixture_revision = (^git -C $source_dir rev-parse HEAD | str trim)
 ^git -C $source_dir update-ref refs/remotes/origin/main $fixture_revision
@@ -76,9 +96,12 @@ let detected_clean_source = (nuc-deploy-source $source_dir)
 assert equal $detected_clean_source.head $fixture_revision
 assert equal $detected_clean_source.base $fixture_revision
 assert not $detected_clean_source.dirty
+mkdir $clean_destination_dir
+"active" | save ($clean_destination_dir | path join ".nuc-deploy-active")
 nuc-worktree-sync $source_dir $clean_destination_dir $fixture_revision $detected_clean_source.dirty
 
 assert (($clean_destination_dir | path join "bin" "write-nuc-deploy-revision") | path exists) "clean snapshots must include the tracked revision writer"
+assert equal (open --raw ($clean_destination_dir | path join ".nuc-deploy-active")) "active" "clean archive extraction must preserve the runtime lease"
 let marker_command = (nuc-worktree-revision-command $clean_destination_dir $fixture_revision)
 let marker_result = (^bash -c $marker_command | complete)
 assert equal $marker_result.exit_code 0
