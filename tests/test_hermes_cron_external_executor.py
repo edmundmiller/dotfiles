@@ -12,7 +12,7 @@ import sys
 import tempfile
 import types
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -59,9 +59,13 @@ def _load_cron_module(source: Path):
     scheduler._is_fd_exhaustion_text = lambda _text: False
     gateway = types.ModuleType("hermes_cli.gateway")
     gateway.find_gateway_pids = lambda: []
+    config = types.ModuleType("hermes_cli.config")
+    config.load_config = lambda: {}
+    hermes_cli.config = config
 
     stubs = {
         "hermes_cli": hermes_cli,
+        "hermes_cli.config": config,
         "hermes_cli.colors": colors,
         "hermes_cli.gateway": gateway,
         "cron": cron_package,
@@ -113,6 +117,30 @@ class ExternalExecutorHealthTest(unittest.TestCase):
             contextlib.redirect_stdout(output),
         ):
             function()
+        return output.getvalue()
+
+    def _capture_external_status_with_gateway(self, marker_payload) -> str:
+        marker = self.home / "cron" / "executor.json"
+        if marker_payload is None:
+            marker.unlink()
+        else:
+            marker.write_text(json.dumps(marker_payload) + "\n", encoding="utf-8")
+
+        output = io.StringIO()
+        gateway = sys.modules["hermes_cli.gateway"]
+        config = sys.modules["hermes_cli.config"]
+        with (
+            patch.dict(os.environ, {"HERMES_HOME": str(self.home)}, clear=False),
+            patch.object(
+                config,
+                "load_config",
+                return_value={"cron": {"gateway_ticker": False}},
+            ),
+            patch.object(gateway, "find_gateway_pids", return_value=[1234]),
+            patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0)),
+            contextlib.redirect_stdout(output),
+        ):
+            self.cron.cron_status()
         return output.getvalue()
 
     def test_status_reports_active_systemd_timer(self):
@@ -170,6 +198,40 @@ class ExternalExecutorHealthTest(unittest.TestCase):
             output = self._capture(self.cron.cron_status, returncode=3)
         self.assertIn("Gateway is running", output)
         self.assertNotIn("External cron executor", output)
+
+    @unittest.expectedFailure
+    def test_external_config_prefers_fresh_marker_over_running_gateway(self):
+        output = self._capture_external_status_with_gateway(
+            {
+                "kind": "systemd",
+                "unit": "hermes-example-cron-tick.timer",
+                "heartbeat_at": datetime.now(timezone.utc).isoformat(),
+                "max_age_seconds": 180,
+            }
+        )
+        self.assertIn("External cron executor is running", output)
+        self.assertNotIn("Gateway is running", output)
+
+    @unittest.expectedFailure
+    def test_external_config_rejects_stale_marker_even_with_running_gateway(self):
+        output = self._capture_external_status_with_gateway(
+            {
+                "kind": "systemd",
+                "unit": "hermes-example-cron-tick.timer",
+                "heartbeat_at": (
+                    datetime.now(timezone.utc) - timedelta(seconds=181)
+                ).isoformat(),
+                "max_age_seconds": 180,
+            }
+        )
+        self.assertIn("External cron executor is not running", output)
+        self.assertNotIn("Gateway is running", output)
+
+    @unittest.expectedFailure
+    def test_external_config_rejects_missing_marker_even_with_running_gateway(self):
+        output = self._capture_external_status_with_gateway(None)
+        self.assertIn("External cron executor is not running", output)
+        self.assertNotIn("Gateway is running", output)
 
 
 if __name__ == "__main__":
