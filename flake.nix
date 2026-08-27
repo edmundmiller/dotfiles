@@ -108,7 +108,7 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/7c427f1ce47449b51a31a18f08019c4aea199d9e";
+      url = "github:edmundmiller/agents-workspace/92186274d960773758203d6268e1a635b3a4f401";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -1182,7 +1182,7 @@
           # Add checks for deployment, plugins, and shell tests
           checks =
             # deploy-rs checks - validates deployment configurations (merge attrset)
-            (deploy-rs.lib.${system}.deployChecks self.deploy)
+            (lib.optionalAttrs (system == "x86_64-linux") (deploy-rs.lib.${system}.deployChecks self.deploy))
             // {
               package-harness-tests =
                 pkgs.runCommand "package-harness-tests"
@@ -1444,34 +1444,43 @@
                         touch "$out"
                   '';
 
-              # HA config validation is now done at build time on the NUC via
-              # validate-config.nix (uses HA's own check_config). The JSON schema
-              # in schemas/adaptive-lighting.json is kept as agent reference only.
+              hermes-cron-executor-source-tests =
+                pkgs.runCommand "hermes-cron-executor-source-tests"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_hermes_cron_executors.py
+                    touch "$out"
+                  '';
 
-              # Pure Nix eval: assert structural properties of HA automation config.
-              # Catches regressions like removed time guards without a VM.
-              ha-automation-assertions = import ./modules/services/hass/_tests/eval-automations.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
+              # Source-only checks consume the published agents-workspace
+              # manifest and remain safe to evaluate on Darwin. NUC config
+              # assertions below stay Linux-only because they evaluate nuc.
+              hermes-buzz-patch-stack = import (inputs.agents-workspace + /checks/hermes-buzz-patch-stack.nix) {
                 inherit pkgs;
+                hermesSource = inputs.hermes-agent;
               };
 
-              # Pure Nix eval: assert hass-apply-devices stays deploy-safe.
-              ha-apply-devices-assertions = import ./modules/services/hass/_tests/eval-apply-devices.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
+              hermes-buzz-final-stack-behavior =
+                import (inputs.agents-workspace + /checks/hermes-buzz-final-stack-behavior.nix)
+                  {
+                    inherit pkgs;
+                    hermesSource = inputs.hermes-agent;
+                  };
+
+              hermes-cron-single-owner = import (inputs.agents-workspace + /checks/hermes-cron-single-owner.nix) {
                 inherit pkgs;
+                hermesSource = inputs.hermes-agent;
               };
 
-              # Pure Nix eval: keep the Homebox pilot private and recoverable.
-              homebox-assertions = import ./modules/services/homebox/_tests/eval-homebox.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
-
-              obsidian-sync-safety-assertions = import ./modules/services/obsidian-sync/_tests/eval-safety.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
-                inherit pkgs;
-              };
+              hermes-dashboard-profile-liveness =
+                import (inputs.agents-workspace + /checks/hermes-dashboard-profile-liveness.nix)
+                  {
+                    inherit pkgs;
+                    hermesSource = inputs.hermes-agent;
+                  };
 
               apple-container-pilot-assertions = import ./hosts/mactraitorpro/_tests/apple-container-pilot.nix {
                 macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
@@ -1509,6 +1518,64 @@
                 inherit pkgs;
               };
 
+              nuc-deployment-provenance = import ./hosts/nuc/_tests/deployment-provenance.nix {
+                inherit pkgs;
+              };
+
+              nuc-hermes-displayctl-wiring = import ./hosts/nuc/_tests/displayctl-wiring.nix {
+                inherit pkgs;
+              };
+
+              nuc-hermes-cron-failure-summary =
+                pkgs.runCommand "nuc-hermes-cron-failure-summary"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                  }
+                  ''
+                    HERMES_SOURCE=${inputs.hermes-agent} \
+                      python3 ${./tests/test_hermes_cron_failure_summary.py}
+                    touch "$out"
+                  '';
+
+              # Validate the tracked Herdr config template with Herdr's own
+              # `config check`, which rejects unknown keys. Cheap and runs
+              # everywhere; the VM test below covers the activated config.
+              herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
+                inherit pkgs;
+                herdrPackage = self.packages.${system}.herdr;
+                configFile = ./config/herdr/config.toml;
+              };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              # HA config validation is now done at build time on the NUC via
+              # validate-config.nix (uses HA's own check_config). The JSON schema
+              # in schemas/adaptive-lighting.json is kept as agent reference only.
+
+              # Pure Nix eval: assert structural properties of HA automation config.
+              # Catches regressions like removed time guards without a VM.
+              ha-automation-assertions = import ./modules/services/hass/_tests/eval-automations.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
+              # Pure Nix eval: assert hass-apply-devices stays deploy-safe.
+              ha-apply-devices-assertions = import ./modules/services/hass/_tests/eval-apply-devices.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
+              # Pure Nix eval: keep the Homebox pilot private and recoverable.
+              homebox-assertions = import ./modules/services/homebox/_tests/eval-homebox.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
+              obsidian-sync-safety-assertions = import ./modules/services/obsidian-sync/_tests/eval-safety.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
               # Pure Nix eval: keep the Desktop dashboard enabled across
               # automatic NUC upgrades from the default branch.
               nuc-hermes-dashboard-enabled = import ./hosts/nuc/_tests/hermes-dashboard-enabled.nix {
@@ -1516,18 +1583,10 @@
                 inherit pkgs;
               };
 
-              nuc-deployment-provenance = import ./hosts/nuc/_tests/deployment-provenance.nix {
-                inherit pkgs;
-              };
-
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
-
-              nuc-hermes-displayctl-wiring = import ./hosts/nuc/_tests/displayctl-wiring.nix {
                 inherit pkgs;
               };
 
@@ -1567,15 +1626,6 @@
                 };
               };
 
-              nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-                bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
-                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
-                  inherit (pkgs) lib;
-                };
-              };
-
               nuc-betty-mcp-secret-materialization =
                 import ./hosts/nuc/_tests/betty-mcp-secret-materialization.nix
                   {
@@ -1584,43 +1634,28 @@
                     bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
                   };
 
-              nuc-hermes-cron-external-executor =
-                pkgs.runCommand "nuc-hermes-cron-external-executor"
-                  {
-                    nativeBuildInputs = [
-                      pkgs.patch
-                      pkgs.python3
-                    ];
-                  }
-                  ''
-                    mkdir hermes-source
-                    cp -R ${inputs.hermes-agent}/hermes_cli hermes-source/hermes_cli
-                    chmod -R u+w hermes-source
-                    patch -d hermes-source -p1 < ${./overlays/hermes-agent/patches/0003-report-external-cron-executor.patch}
-                    HERMES_SOURCE="$PWD/hermes-source" \
-                      python3 ${./tests/test_hermes_cron_external_executor.py}
-                    touch "$out"
-                  '';
-
               nuc-hermes-v0205-package = pkgs.runCommand "nuc-hermes-v0205-package" { } ''
                 package=${self.nixosConfigurations.nuc.config.services.hermes-agent.package}
                 "$package/bin/hermes" --version \
                   | grep -F 'Hermes Agent v0.20.5 (2026.8.19)'
+                hermes_python_root=""
+                for candidate in "$package"/lib/python*/site-packages; do
+                  [ -d "$candidate/hermes_cli" ] || continue
+                  test -z "$hermes_python_root"
+                  hermes_python_root="$candidate"
+                done
+                test -n "$hermes_python_root"
                 grep -q _should_reply_in_thread \
                   "$package/share/hermes/plugins/platforms/buzz/adapter.py"
+                grep -Fq 'gateway_ticker' \
+                  "$hermes_python_root/hermes_cli/config_defaults.py"
+                test -f "$package/share/hermes/plugins/platforms/buzz/buzz_thread_roots.py"
+                grep -Fq 'resolve_gateway_liveness' \
+                  "$hermes_python_root/hermes_cli/profiles.py"
+                grep -Fq 'def _dashboard_profile_dir' \
+                  "$hermes_python_root/hermes_cli/web_server.py"
                 touch "$out"
               '';
-
-              nuc-hermes-cron-failure-summary =
-                pkgs.runCommand "nuc-hermes-cron-failure-summary"
-                  {
-                    nativeBuildInputs = [ pkgs.python3 ];
-                  }
-                  ''
-                    HERMES_SOURCE=${inputs.hermes-agent} \
-                      python3 ${./tests/test_hermes_cron_failure_summary.py}
-                    touch "$out"
-                  '';
 
               nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
@@ -1647,16 +1682,15 @@
                 inherit pkgs;
               };
 
-              # Validate the tracked Herdr config template with Herdr's own
-              # `config check`, which rejects unknown keys. Cheap and runs
-              # everywhere; the VM test below covers the activated config.
-              herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
+              nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
-                herdrPackage = self.packages.${system}.herdr;
-                configFile = ./config/herdr/config.toml;
+                bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
+                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
+                  inherit (pkgs) lib;
+                };
               };
-            }
-            // lib.optionalAttrs (system == "x86_64-linux") {
+
               nuc-deployment-provenance-integration = import ./hosts/nuc/_tests/deployment-provenance.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 expectedAgentsWorkspaceRevision = inputs.agents-workspace.rev;
