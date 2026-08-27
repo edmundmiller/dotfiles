@@ -207,6 +207,22 @@ def "main check" [
     }
 
     print ""
+    print "==> Running DJI Mic Mini checks..."
+    let dji_mic_check = (^nix build
+      $".#checks.($ctx.nix_system).dji-mic-mini-receiver-mute-regressions"
+      $".#checks.($ctx.nix_system).dji-mic-mini-platform-boundaries"
+      --no-link | complete)
+    if $dji_mic_check.exit_code == 0 {
+      print "✓ DJI Mic Mini checks OK"
+    } else {
+      print "✗ DJI Mic Mini checks FAILED"
+      if (($dji_mic_check.stderr | str trim) | is-not-empty) {
+        print -e $dji_mic_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
     print "==> Running ast-grep tests..."
     let ast_grep_check = (^nix build $".#checks.($ctx.nix_system).ast-grep-tests" --no-link | complete)
     if $ast_grep_check.exit_code == 0 {
