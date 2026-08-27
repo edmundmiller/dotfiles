@@ -1,3 +1,4 @@
+import inspect
 import os
 import re
 import subprocess
@@ -206,10 +207,20 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
         )
         (fake_bin / "nix").write_text(
             "#!/bin/sh\n"
+            'printf \'nix %s\\n\' "$*" >> "$RUNBOOK_LOG"\n'
             'printf \'%s\\n\' \'{"locks":{"nodes":{"agents-workspace":{"locked":{"rev":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}}}\'\n',
             encoding="utf-8",
         )
-        for command in ("ssh", "hey", "nix"):
+        (fake_bin / "git").write_text(
+            "#!/bin/sh\n"
+            'printf \'git %s\\n\' "$*" >> "$RUNBOOK_LOG"\n'
+            'case "$*" in\n'
+            "  \"rev-parse HEAD\") printf '%s\\n' 1111111111111111111111111111111111111111 ;;\n"
+            "  *) exit 1 ;;\n"
+            "esac\n",
+            encoding="utf-8",
+        )
+        for command in ("ssh", "hey", "nix", "git"):
             (fake_bin / command).chmod(0o700)
         environment = os.environ.copy()
         environment.update(
@@ -369,13 +380,12 @@ class HermesCronExecutorTests(unittest.TestCase):
         )
         self.assertNotEqual(0, returncode)
         self.assertIn("nuc-wt build", commands)
+        self.assertIn("git rev-parse HEAD", commands)
+        self.assertIn("nix flake metadata --json", commands)
         self.assertNotIn("dry-activate", commands)
         self.assertNotIn("switch", commands)
 
-    @unittest.expectedFailure
     def test_runbook_revision_failure_is_reached_from_a_gitless_store_check(self):
-        import inspect
-
         helper_source = inspect.getsource(_run_with_fake_commands)
         self.assertIn('(fake_bin / "git").write_text', helper_source)
         self.assertIn("rev-parse HEAD", helper_source)
