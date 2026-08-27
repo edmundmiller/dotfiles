@@ -161,7 +161,7 @@ def nuc-worktree-configuration [configuration: string] {
 }
 
 def nuc-worktree-rsync [source: string, destination: string] {
-  ^rsync -az --delete --delete-excluded --exclude .git --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $source $destination
+  ^rsync -az --delete --delete-excluded --filter "protect /.nuc-deploy-active" --exclude .git --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $source $destination
 }
 
 def nuc-worktree-archive [source: string, revision: string] {
