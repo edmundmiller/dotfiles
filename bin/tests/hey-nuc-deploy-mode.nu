@@ -36,16 +36,28 @@ for mode in ["dry-activate" "test" "switch"] {
 }
 require-clean-nuc-activation $dirty_source "build"
 require-clean-nuc-activation $dirty_source "vm"
+let lifecycle_script = (nuc-worktree-lifecycle-script "/tmp/dotfiles-worktree-test" "tester" "true")
+assert ($lifecycle_script | str contains "trap cleanup EXIT")
+assert ($lifecycle_script | str contains "/tmp/dotfiles-worktree-test/.nuc-deploy-active")
+assert ($lifecycle_script | str contains "prune-nuc-deploy-snapshots' /tmp 'tester' 5")
 
 let temp_dir = (^mktemp -d | str trim)
 let source_dir = ($temp_dir | path join "source")
 let clean_destination_dir = ($temp_dir | path join "clean-synced")
 let dirty_destination_dir = ($temp_dir | path join "dirty-synced")
 let prune_root = ($temp_dir | path join "prune-root")
+let lifecycle_destination = ($temp_dir | path join "lifecycle")
 let repo_root = ($env.DOTFILES_TEST_ROOT? | default (pwd))
 let revision_writer = ($repo_root | path join "bin" "write-nuc-deploy-revision")
 let snapshot_pruner = ($repo_root | path join "bin" "prune-nuc-deploy-snapshots")
 mkdir ($source_dir | path join "bin")
+mkdir ($lifecycle_destination | path join "bin")
+^cp $snapshot_pruner ($lifecycle_destination | path join "bin" "prune-nuc-deploy-snapshots")
+"active" | save ($lifecycle_destination | path join ".nuc-deploy-active")
+let lifecycle_failure = (nuc-worktree-lifecycle-command $lifecycle_destination "tester" "exit 7")
+let lifecycle_result = (^bash -c $lifecycle_failure | complete)
+assert equal $lifecycle_result.exit_code 7
+assert not (($lifecycle_destination | path join ".nuc-deploy-active") | path exists) "remote lifecycle cleanup must release its active lease while preserving command status"
 "test" | save ($source_dir | path join "flake.nix")
 "ignored.txt" | save ($source_dir | path join ".gitignore")
 "ignored" | save ($source_dir | path join "ignored.txt")
@@ -102,12 +114,21 @@ for item in ($snapshot_uuids | enumerate) {
 }
 let legacy_snapshot = ($prune_root | path join "dotfiles-worktree-tester-trmnl-enrollment")
 mkdir $legacy_snapshot
+let active_snapshot = ($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-clean-10000000-0000-0000-0000-000000000000")
+mkdir $active_snapshot
+"active" | save ($active_snapshot | path join ".nuc-deploy-active")
 let prune_result = (^bash $snapshot_pruner $prune_root tester 2 | complete)
 assert equal $prune_result.exit_code 0
-assert equal ((glob ($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-*") | length)) 2
+assert equal ((glob ($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-*") | length)) 3
 assert (($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-clean-00000000-0000-0000-0000-000000000006") | path exists) "snapshot pruning must retain the newest directory"
 assert (($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-clean-00000000-0000-0000-0000-000000000005") | path exists) "snapshot pruning must retain the configured count"
 assert ($legacy_snapshot | path exists) "snapshot pruning must not remove legacy or unrelated task directories"
+assert ($active_snapshot | path exists) "snapshot pruning must not remove an active deployment"
+rm ($active_snapshot | path join ".nuc-deploy-active")
+let post_run_prune_result = (^bash $snapshot_pruner $prune_root tester 2 | complete)
+assert equal $post_run_prune_result.exit_code 0
+assert equal ((glob ($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-*") | length)) 2
+assert not (($active_snapshot | path join ".nuc-deploy-active") | path exists) "completed deployments must release their active lease"
 rm -rf $temp_dir
 
 print "hey nuc deploy mode tests passed"
