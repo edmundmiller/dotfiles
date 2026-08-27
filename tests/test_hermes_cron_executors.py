@@ -247,11 +247,10 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_dashboard_shared_package_assertion_follows_generated_units(self):
         source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
 
-        self.assertIn("service.preStart", source)
+        self.assertIn("gatewayService.preStart", source)
         self.assertIn("expectedDashboardExec", source)
         self.assertIn('grep -Fq -- "$expectedDashboardExec" "$dashboard_start"', source)
         self.assertNotIn("builtins.elem hermesPackage (service.path", source)
@@ -268,7 +267,7 @@ class HermesCronExecutorTests(unittest.TestCase):
     def test_dashboard_package_assertion_avoids_store_context_regex(self):
         source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
 
-        self.assertIn("pkgs.lib.hasPrefix", source)
+        self.assertIn("expectedDashboardExec", source)
         self.assertNotIn(
             'pkgs.lib.hasInfix "${hermesPackage}/bin/hermes dashboard"',
             source,

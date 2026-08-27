@@ -11,15 +11,20 @@ let
     "orchestrator"
     "scintillate"
   ];
+  hermesPackagePath = builtins.unsafeDiscardStringContext (toString hermesPackage);
   allGatewaysUseSharedPackage = builtins.all (
-    profile: builtins.elem hermesPackage (cfg.systemd.services."hermes-gateway-${profile}".path or [ ])
+    profile:
+    let
+      gatewayService = cfg.systemd.services."hermes-gateway-${profile}";
+      preStart = builtins.unsafeDiscardStringContext (gatewayService.preStart or "");
+    in
+    pkgs.lib.hasInfix hermesPackagePath preStart
   ) gatewayProfiles;
   packageIdentityMatches =
     (hermesPackage.passthru.hermesVersion or null) == "0.20.5"
     && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.19";
-  dashboardUsesSharedPackage =
-    builtins.elem hermesPackage (service.path or [ ])
-    && pkgs.lib.hasPrefix "${hermesPackage}/bin/hermes dashboard" service.serviceConfig.ExecStart;
+  dashboardStart = toString service.serviceConfig.ExecStart;
+  expectedDashboardExec = "${hermesPackage}/bin/hermes dashboard";
   assertions = [
     {
       test = service.enable;
@@ -37,21 +42,27 @@ let
       test = allGatewaysUseSharedPackage;
       msg = "All six NUC Hermes gateway profiles must consume the shared Hermes package path.";
     }
-    {
-      test = dashboardUsesSharedPackage;
-      msg = "The Scintillate Desktop dashboard must consume the shared Hermes package path.";
-    }
   ];
   failures = builtins.filter (assertion: !assertion.test) assertions;
 in
-pkgs.runCommand "nuc-hermes-dashboard-enabled" { } ''
-  if [ ${toString (builtins.length failures)} -ne 0 ]; then
-    cat >&2 <<'EOF'
-  NUC Hermes Desktop dashboard assertions failed:
-  ${builtins.concatStringsSep "\n" (map (failure: "- ${failure.msg}") failures)}
-  EOF
-    exit 1
-  fi
+pkgs.runCommand "nuc-hermes-dashboard-enabled"
+  {
+    inherit dashboardStart expectedDashboardExec;
+  }
+  ''
+    if [ ${toString (builtins.length failures)} -ne 0 ]; then
+      cat >&2 <<'EOF'
+    NUC Hermes Desktop dashboard assertions failed:
+    ${builtins.concatStringsSep "\n" (map (failure: "- ${failure.msg}") failures)}
+    EOF
+      exit 1
+    fi
 
-  touch "$out"
-''
+    dashboard_start="''${dashboardStart%% *}"
+    if [ ! -x "$dashboard_start" ] || ! grep -Fq -- "$expectedDashboardExec" "$dashboard_start"; then
+      echo "Scintillate's Desktop dashboard must execute the shared Hermes package." >&2
+      exit 1
+    fi
+
+    touch "$out"
+  ''
