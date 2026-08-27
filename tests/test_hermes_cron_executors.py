@@ -247,6 +247,13 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_package_check_reads_python_modules_from_site_packages(self):
+        flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
+
+        self.assertIn('"$package"/lib/python*/site-packages', flake)
+        self.assertNotIn('"$package/share/hermes/hermes_cli/', flake)
+
     def test_dashboard_shared_package_assertion_follows_generated_units(self):
         source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
 
