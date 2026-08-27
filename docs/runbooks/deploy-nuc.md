@@ -35,10 +35,16 @@ opnix credential and supplies Nix `access-tokens` without logging the token.
 Darwin `hey re` obtains the same narrow credential from the local `gh` keyring.
 
 Before any remote check or mutating command, verify the target identity and
-stop if the output is not the intended NUC (`hostname=nuc`):
+abort unless the remote hostname is exactly `nuc`:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc '
+  set -eu
+  hostname="$(hostname)"
+  uname="$(uname -a)"
+  printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"
+  test "$hostname" = "nuc"
+'
 ```
 
 Mutating NUC rebuilds (`dry-activate`, `test`, `switch`, and `boot`) share the
@@ -60,7 +66,13 @@ If a deploy is rejected, update the worktree from `origin/main`, rebuild, then
 retry. Inspect contention without deleting lock files:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc '
+  set -eu
+  hostname="$(hostname)"
+  uname="$(uname -a)"
+  printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"
+  test "$hostname" = "nuc"
+'
 ssh nuc "sudo cat /run/lock/nixos-deploy.lock.owner"
 ```
 
@@ -85,33 +97,134 @@ gateway does not start an in-process cron ticker. This setting is limited to
 the timer-owned profiles; it does not alter Anne or Finn, the Desktop cron
 ticker, or a direct `hermes cron tick` invocation.
 
-Each timer service's `ExecStartPost` atomically publishes
-`$HERMES_HOME/cron/executor.json` with `kind=systemd`, its exact timer unit,
-`heartbeat_at`, and `max_age_seconds=180`. `hermes cron status` and
+Each timer service's `ExecStartPost` atomically publishes its fixed profile
+path (`/var/lib/hermes-<profile>/.hermes/cron/executor.json`, also exported as
+`HERMES_HOME`) with `kind=systemd`, its exact timer unit, `heartbeat_at`, and
+`max_age_seconds=180`. `hermes cron status` and
 `hermes cron list` treat that marker as authoritative when the profile has
 `cron.gateway_ticker=false`: a fresh marker means the host executor is healthy;
 a stale, invalid, or missing marker is unhealthy even when the gateway process
 is running.
 
-After a deployment, read back all three markers and timer definitions from the
-NUC. The JSON should name the matching timer and contain a recent
-`heartbeat_at` plus `max_age_seconds` of `180`:
+After a deployment, read back all three markers and machine-check the timer,
+service, gateway, and `hermes cron status` ownership state. The JSON must name
+the matching timer, contain a recent `heartbeat_at`, and set
+`max_age_seconds` to `180`. Run the identity check before any of these SSH
+commands; it aborts if the alias resolves to anything other than `nuc`:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
-for profile in amosburton betty scintillate; do
+ssh nuc '
+  set -eu
+  hostname="$(hostname)"
+  uname="$(uname -a)"
+  printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"
+  test "$hostname" = "nuc"
+'
+readback_dir="$(mktemp -d)"
+trap 'rm -rf "$readback_dir"' EXIT
+profiles=(amosburton betty scintillate)
+timer_units=(
+  hermes-amosburton-cron-tick.timer
+  hermes-betty-cron-tick.timer
+  hermes-scintillate-cron-tick.timer
+)
+service_units=(
+  hermes-amosburton-cron-tick.service
+  hermes-betty-cron-tick.service
+  hermes-scintillate-cron-tick.service
+)
+gateway_units=(
+  hermes-gateway-amosburton.service
+  hermes-gateway-betty.service
+  hermes-gateway-scintillate.service
+)
+for index in "${!profiles[@]}"; do
+  profile="${profiles[$index]}"
   hermes_home="/var/lib/hermes-${profile}/.hermes"
-  ssh nuc "sudo cat \"$hermes_home/cron/executor.json\""
+  timer="${timer_units[$index]}"
+  service="${service_units[$index]}"
+  gateway="${gateway_units[$index]}"
+  ssh nuc "sudo cat \"$hermes_home/cron/executor.json\"" >"$readback_dir/$profile.marker"
+  ssh nuc "systemctl show \"$timer\" -p Id -p LoadState -p ActiveState -p UnitFileState -p OnUnitActiveUSec -p AccuracyUSec -p RandomizedDelayUSec" >"$readback_dir/$profile.timer"
+  ssh nuc "systemctl show \"$service\" -p Id -p LoadState -p ActiveState -p Type -p User" >"$readback_dir/$profile.service"
+  ssh nuc "systemctl show \"$gateway\" -p Id -p LoadState -p ActiveState -p UnitFileState -p MainPID" >"$readback_dir/$profile.gateway"
+  ssh nuc "sudo -u emiller env HOME=\"/var/lib/hermes-${profile}\" HERMES_HOME=\"$hermes_home\" hermes cron status" >"$readback_dir/$profile.status"
 done
 
-for profile in amosburton betty scintillate; do
-  ssh nuc "systemctl cat \"hermes-${profile}-cron-tick.service\" \"hermes-${profile}-cron-tick.timer\""
-done
+python3 - "$readback_dir" <<'PY'
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+import re
+import sys
+
+readback_dir = Path(sys.argv[1])
+profiles = ("amosburton", "betty", "scintillate")
+
+
+def properties(path):
+    values = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, value = line.split("=", 1)
+        values[key] = value
+    return values
+
+
+def seconds(value):
+    if value in {"0", "0us"}:
+        return 0.0
+    units = {"us": 1e-6, "ms": 1e-3, "s": 1.0, "min": 60.0, "h": 3600.0}
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)(us|ms|s|min|h)", value)
+    if not match:
+        raise AssertionError(f"unparseable systemd duration: {value!r}")
+    return float(match.group(1)) * units[match.group(2)]
+
+
+now = datetime.now(timezone.utc)
+for profile in profiles:
+    timer_name = f"hermes-{profile}-cron-tick.timer"
+    service_name = f"hermes-{profile}-cron-tick.service"
+    gateway_name = f"hermes-gateway-{profile}.service"
+    marker = json.loads((readback_dir / f"{profile}.marker").read_text(encoding="utf-8"))
+    assert marker["kind"] == "systemd", marker
+    assert marker["unit"] == timer_name, marker
+    assert marker["max_age_seconds"] == 180, marker
+    heartbeat = datetime.fromisoformat(marker["heartbeat_at"])
+    assert heartbeat.tzinfo is not None, marker
+    age = (now - heartbeat).total_seconds()
+    assert -5 <= age <= marker["max_age_seconds"], (profile, age, marker)
+
+    timer = properties(readback_dir / f"{profile}.timer")
+    assert timer["Id"] == timer_name, timer
+    assert timer["LoadState"] == "loaded", timer
+    assert timer["ActiveState"] == "active", timer
+    assert timer["UnitFileState"] == "enabled", timer
+    assert seconds(timer["OnUnitActiveUSec"]) == 60, timer
+    assert seconds(timer["AccuracyUSec"]) == 1, timer
+    assert seconds(timer["RandomizedDelayUSec"]) == 0, timer
+
+    service = properties(readback_dir / f"{profile}.service")
+    assert service["Id"] == service_name, service
+    assert service["LoadState"] == "loaded", service
+    assert service["Type"] == "oneshot", service
+    assert service["User"] == "emiller", service
+
+    gateway = properties(readback_dir / f"{profile}.gateway")
+    assert gateway["Id"] == gateway_name, gateway
+    assert gateway["LoadState"] == "loaded", gateway
+    assert gateway["ActiveState"] == "active", gateway
+    assert gateway["UnitFileState"] == "enabled", gateway
+    assert int(gateway["MainPID"]) > 0, gateway
+
+    status = (readback_dir / f"{profile}.status").read_text(encoding="utf-8")
+    assert status.strip(), f"hermes cron status returned no output for {profile}"
+PY
 ```
 
 ## Deploy
 
 ```bash
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 # Standard deployment
 hey nuc
 
@@ -122,6 +235,7 @@ hey nuc dry-activate
 ## Dry Run (Preview Changes)
 
 ```bash
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 hey nuc dry-activate
 # Equivalent compatibility aliases:
 hey deploy-dry nuc
@@ -133,7 +247,7 @@ hey deploy-check
 After deploying, verify the NUC is healthy:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 # Quick system status
 hey nuc-status
 
@@ -169,7 +283,7 @@ The standalone installer is a one-time bootstrap for each NUC home directory; `h
 not install it. On a new home, connect to the NUC and bootstrap remote control:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc
 curl -fsSL https://chatgpt.com/codex/install.sh | sh
 codex remote-control start
@@ -308,12 +422,22 @@ only against identities already migrated to native Buzz.
 
 ```bash
 stage=nuc-buzz-scintillate
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 hey nuc-wt build "$stage"
 # Copy the exact NUC_WORKTREE_REMOTE_DIR printed by the build.
 remote_dir='PASTE_NUC_WORKTREE_REMOTE_DIR_VALUE_HERE'
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
 ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-buzz-hermes-staged-runtime"
+
+# Validate that the staged snapshot evaluates to the exact source revisions
+# about to be activated. Do this before dry-activate or switch; a mismatch
+# means the build must be discarded and the source synchronized again.
+expected_dotfiles="$(git rev-parse HEAD)"
+expected_agents="$(nix flake metadata --json | jq -r '.locks.nodes["agents-workspace"].locked.rev')"
+expected_revision="dotfiles=$expected_dotfiles;agents-workspace=$expected_agents"
+staged_revision="$(ssh nuc "cd '$remote_dir' && sudo nix-private-github nix eval --raw .#nixosConfigurations.${stage}.config.system.configurationRevision")"
+test "$staged_revision" = "$expected_revision"
+
 hey nuc-wt dry-activate "$stage"
 hey nuc-wt switch "$stage"
 
@@ -329,7 +453,7 @@ restart it after the switch, then verify the gateway, cron executor, dashboard,
 and remaining ACP fallbacks report Hermes v0.20.5 before expanding the selector.
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc 'sudo systemctl restart hermes-gateway-scintillate.service'
 ssh nuc 'sudo podman exec hermes-agent-scintillate hermes --version'
 ssh nuc "systemctl show buzz-hermes-finn.service buzz-hermes-amosburton.service buzz-hermes-anne.service buzz-hermes-betty.service -p Environment | grep -E 'BUZZ_ACP_(AGENT_COMMAND|PERMISSION_MODE)='"
@@ -345,7 +469,7 @@ service state, routing, and a natural Buzz turn pass.
 Verify service ownership after the final deployment:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "systemctl show hermes-gateway-scintillate.service hermes-gateway-finn.service hermes-gateway-amosburton.service hermes-gateway-anne.service hermes-gateway-betty.service -p Id -p ActiveState -p MainPID -p NRestarts"
 ssh nuc "systemctl show buzz-presence-scintillate.service buzz-presence-finn.service buzz-presence-amosburton.service buzz-presence-anne.service buzz-presence-betty.service -p Id -p ActiveState -p MainPID -p NRestarts -p BindsTo"
 ssh nuc 'test -z "$(systemctl list-unit-files --no-legend "buzz-hermes-*.service")"'
@@ -392,12 +516,12 @@ profile:
 ```bash
 
 # First-time device authentication on the NUC; complete Factory's displayed flow.
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh -t nuc 'cd /var/empty && factory-product-pass-droid'
 
 
 # Proves only authenticated ACP startup; the agent has no tools and uses /var/empty.
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc factory-product-pass-canary
 ```
 
@@ -412,7 +536,7 @@ If the deployment causes issues:
 # Roll back to previous generation
 hey nuc-rollback
 # Or via SSH
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo nix-private-github nixos-rebuild --rollback switch"
 ```
 
@@ -427,7 +551,7 @@ ssh nuc "sudo nix-private-github nixos-rebuild --rollback switch"
 
 ```bash
 # Check the service journal
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo journalctl -u <service-name> --since '5 minutes ago'"
 # Roll back while investigating
 hey nuc-rollback
@@ -444,7 +568,7 @@ generated stashes.
 After repair, verify the checkout and resume the timer:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc 'cd ~/mill-docs && git lfs fsck --pointers HEAD'
 ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
 ```
@@ -452,7 +576,7 @@ ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
 ### Private flake authentication fails
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo test -s /var/lib/opnix/secrets/githubNixToken"
 ssh nuc "sudo systemctl restart opnix-secrets.service"
 ```
@@ -461,7 +585,7 @@ The source reference is `op://Agents/GH PA dotfiles flake/credential`. Never
 print the materialized value. Verify access through the wrapper:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-workspace/main"
 ```
 
@@ -470,6 +594,6 @@ ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-w
 The Scintillate Desktop dashboard is `hermes-scintillate-desktop-dashboard.service`. It binds to all interfaces with username/password authentication; the NUC firewall exposes port 9121 only to the trusted LAN and tailnet. After rotating either dashboard secret, deploy it, then restart the dashboard to load the new value:
 
 ```bash
-ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo systemctl restart hermes-scintillate-desktop-dashboard.service"
 ```

@@ -118,9 +118,11 @@ let
       script = if builtins.length scripts == 1 then builtins.head scripts else "";
     in
     builtins.length scripts == 1
-    && hasInfix "marker_dir=\"$HERMES_HOME/cron\"" script
+    && hasInfix "hermes_home=\"/var/lib/hermes-${profile}/.hermes\"" script
+    && hasInfix "marker_dir=\"$hermes_home/cron\"" script
     && hasInfix "marker=\"$marker_dir/executor.json\"" script
-    && hasInfix "tmp=\"$marker.$$\"" script
+    && hasInfix "if [ -d \"$marker\" ]" script
+    && hasInfix "mktemp \"$marker_dir/.executor.json.XXXXXX\"" script
     && hasInfix "marker_json=" script
     && hasInfix "marker_template/__HERMES_HEARTBEAT_AT__/" script
     && hasInfix "printf '%s\\n' \"$marker_json\"" script
@@ -156,12 +158,30 @@ let
   timerProfilesGatewayEnabled = builtins.all (
     profile: cfg.systemd.services."hermes-gateway-${profile}".enable
   ) timerOwnedProfiles;
+  timerOwnedServiceContracts = builtins.all (
+    profile:
+    let
+      service = buzzCronServices.${profile};
+      timer = cfg.systemd.timers."hermes-${profile}-cron-tick";
+      serviceEnvironment = concatStringsSep " " (
+        (service.serviceConfig.Environment or [ ])
+        ++ pkgs.lib.mapAttrsToList (name: value: "${name}=${toString value}") (service.environment or { })
+      );
+    in
+    timer.enable
+    && timer.wantedBy == [ "timers.target" ]
+    && service.serviceConfig.Type == "oneshot"
+    && service.serviceConfig.User == "emiller"
+    && hasInfix "HOME=/var/lib/hermes-${profile}" serviceEnvironment
+    && hasInfix "HERMES_HOME=/var/lib/hermes-${profile}/.hermes" serviceEnvironment
+  ) timerOwnedProfiles;
   cronOwnershipMatches =
     cronTickCadenceMatches
     && cronTimerUnitsMatch
     && cronExecStartMatches
     && markerContractMatches
     && markerScriptMatches
+    && timerOwnedServiceContracts
     && timerProfilesDisableCron
     && timerProfilesGatewayEnabled
     && nonTimerProfilesDoNotDisableCron
@@ -432,17 +452,36 @@ let
 
   failures = builtins.filter (assertion: !assertion.test) assertions;
 in
-pkgs.runCommand "nuc-hermes-cron-executors" { } ''
-  if [ ${toString (builtins.length failures)} -ne 0 ]; then
-    cat >&2 <<'EOF'
-  NUC Hermes cron executor assertions failed:
-  ${pkgs.lib.concatStringsSep "\n" (map (failure: "- ${failure.msg}") failures)}
-  EOF
-    exit 1
-  fi
+pkgs.runCommand "nuc-hermes-cron-executors"
+  {
+    nativeBuildInputs = [ pkgs.python3 ];
+  }
+  ''
+    if [ ${toString (builtins.length failures)} -ne 0 ]; then
+      cat >&2 <<'EOF'
+    NUC Hermes cron executor assertions failed:
+    ${pkgs.lib.concatStringsSep "\n" (map (failure: "- ${failure.msg}") failures)}
+    EOF
+      exit 1
+    fi
 
-  ${pkgs.python3}/bin/python ${bettyAgentSpec.automations.bookPlayer.helper} selfcheck
+    ${pkgs.python3}/bin/python ${bettyAgentSpec.automations.bookPlayer.helper} selfcheck
 
-  mkdir -p "$out"
-  echo "NUC Hermes cron executor assertions passed" > "$out/result"
-''
+    ${pkgs.lib.concatStringsSep "\n" (
+      map (
+        profile:
+        let
+          markerScript = builtins.head (buzzCronServices.${profile}.serviceConfig.ExecStartPost or [ ]);
+        in
+        ''
+          ${pkgs.python3}/bin/python ${../../../tests/test_hermes_cron_marker_writer.py} \
+            --profile ${profile} \
+            --script ${markerScript} \
+            --rendered-home /var/lib/hermes-${profile}/.hermes
+        ''
+      ) timerOwnedProfiles
+    )}
+
+    mkdir -p "$out"
+    echo "NUC Hermes cron executor assertions passed" > "$out/result"
+  ''

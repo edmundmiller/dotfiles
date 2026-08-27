@@ -14,6 +14,7 @@ let
   mkCronExecutorHeartbeat =
     profile:
     let
+      hermesHome = "/var/lib/hermes-${profile}/.hermes";
       markerTemplate = builtins.toJSON {
         kind = "systemd";
         unit = "hermes-${profile}-cron-tick.timer";
@@ -24,14 +25,19 @@ let
     pkgs.writeShellScript "hermes-${profile}-cron-executor-heartbeat" ''
       set -eu
 
-      marker_dir="$HERMES_HOME/cron"
+      hermes_home="${hermesHome}"
+      marker_dir="$hermes_home/cron"
       marker="$marker_dir/executor.json"
-      tmp="$marker.$$"
       marker_template='${markerTemplate}'
       heartbeat_at="$(${pkgs.coreutils}/bin/date --iso-8601=seconds)"
       marker_json="''${marker_template/__HERMES_HEARTBEAT_AT__/$heartbeat_at}"
 
       ${pkgs.coreutils}/bin/mkdir -p "$marker_dir"
+      if [ -d "$marker" ]; then
+        echo "refusing to replace executor marker directory: $marker" >&2
+        exit 1
+      fi
+      tmp="$(${pkgs.coreutils}/bin/mktemp "$marker_dir/.executor.json.XXXXXX")"
       trap '${pkgs.coreutils}/bin/rm -f "$tmp"' EXIT
       ${pkgs.coreutils}/bin/printf '%s\n' "$marker_json" > "$tmp"
       ${pkgs.coreutils}/bin/chmod 0600 "$tmp"
