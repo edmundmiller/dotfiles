@@ -126,7 +126,7 @@ let
     && hasInfix "marker_json=" script
     && hasInfix "marker_template/__HERMES_HEARTBEAT_AT__/" script
     && hasInfix "printf '%s\\n' \"$marker_json\"" script
-    && hasInfix "mv \"$tmp\" \"$marker\"" script
+    && hasInfix "mv --no-target-directory \"$tmp\" \"$marker\"" script
   ) timerOwnedProfiles;
   bettyExecutorScripts = map builtins.readFile (
     builtins.filter (entry: hasInfix "hermes-betty-cron-executor" entry) (

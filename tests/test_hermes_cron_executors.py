@@ -193,21 +193,20 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
         log = root / "commands.log"
         (fake_bin / "ssh").write_text(
             "#!/bin/sh\n"
-            "if [ \"$SSH_MODE\" = fail ]; then exit 23; fi\n"
-            "case \"$*\" in\n"
+            'if [ "$SSH_MODE" = fail ]; then exit 23; fi\n'
+            'case "$*" in\n'
             "  *configurationRevision*) printf '%s\\n' wrong-revision ;;\n"
             "esac\n"
             "exit 0\n",
             encoding="utf-8",
         )
         (fake_bin / "hey").write_text(
-            "#!/bin/sh\n"
-            "printf '%s\\n' \"$*\" >> \"$RUNBOOK_LOG\"\n",
+            '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$RUNBOOK_LOG"\n',
             encoding="utf-8",
         )
         (fake_bin / "nix").write_text(
             "#!/bin/sh\n"
-            "printf '%s\\n' '{\"locks\":{\"nodes\":{\"agents-workspace\":{\"locked\":{\"rev\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}}}}'\n",
+            'printf \'%s\\n\' \'{"locks":{"nodes":{"agents-workspace":{"locked":{"rev":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}}}\'\n',
             encoding="utf-8",
         )
         for command in ("ssh", "hey", "nix"):
@@ -227,7 +226,9 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
             text=True,
             capture_output=True,
         )
-        return result.returncode, log.read_text(encoding="utf-8") if log.exists() else ""
+        return result.returncode, log.read_text(
+            encoding="utf-8"
+        ) if log.exists() else ""
 
 
 class HermesCronExecutorTests(unittest.TestCase):
@@ -330,16 +331,14 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertIn('hermesHome = "/var/lib/hermes-${profile}/.hermes";', config)
         self.assertIn('mktemp "$marker_dir/.executor.json.XXXXXX"', config)
         self.assertIn('if [ -d "$marker" ]', config)
-        self.assertIn('mv "$tmp" "$marker"', config)
+        self.assertIn('mv --no-target-directory "$tmp" "$marker"', config)
         self.assertNotIn('marker_dir="$HERMES_HOME/cron"', config)
         self.assertNotIn('tmp="$marker.$$"', config)
 
-    @unittest.expectedFailure
     def test_marker_writer_rejects_a_directory_appearing_during_publish(self):
         config = NUC_CONFIG.read_text(encoding="utf-8")
         self.assertIn('mv --no-target-directory "$tmp" "$marker"', config)
 
-    @unittest.expectedFailure
     def test_runbook_identity_failure_stops_following_mutations(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
         block = _bash_block_after(runbook, "## Deploy")
@@ -347,35 +346,37 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertNotEqual(0, returncode)
         self.assertNotIn("nuc", commands)
 
-    @unittest.expectedFailure
     def test_runbook_staged_revision_failure_stops_activation(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
         block = _bash_block_after(runbook, "stage=nuc-buzz-scintillate")
-        returncode, commands = _run_with_fake_commands(block, ssh_mode="revision-mismatch")
+        returncode, commands = _run_with_fake_commands(
+            block, ssh_mode="revision-mismatch"
+        )
         self.assertNotEqual(0, returncode)
         self.assertIn("nuc-wt build", commands)
         self.assertNotIn("dry-activate", commands)
         self.assertNotIn("switch", commands)
 
-    @unittest.expectedFailure
     def test_runbook_status_asserts_healthy_external_ownership(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
-        block = _bash_block_after(runbook, "After a deployment, read back all three markers")
+        block = _bash_block_after(
+            runbook, "After a deployment, read back all three markers"
+        )
         self.assertIn("status_text", block)
         self.assertIn(
-            'External cron executor is running: {timer_name}',
+            "External cron executor is running: {timer_name}",
             block,
         )
         self.assertIn(
-            'Jobs fire through the host-managed systemd timer',
+            "Jobs fire through the host-managed systemd timer",
             block,
         )
         self.assertIn(
-            'External cron executor is not running',
+            "External cron executor is not running",
             block,
         )
         self.assertIn(
-            'Gateway is not running',
+            "Gateway is not running",
             block,
         )
 
