@@ -1680,6 +1680,9 @@ in
       done
     '')
   ];
+  # Shared Hermes input churn must not interrupt Orchestrator mid-turn. Apply
+  # package and unit changes on its next explicit restart instead.
+  systemd.services.hermes-gateway-orchestrator.restartIfChanged = false;
   systemd.services.hermes-gateway-orchestrator.enable = true;
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
@@ -1783,6 +1786,9 @@ in
 
   systemd.services.hermes-scintillate-desktop-dashboard = {
     enable = true;
+    # Preserve the Mac remote dashboard across routine NixOS switches. Apply
+    # package and unit changes on its next explicit restart instead.
+    restartIfChanged = false;
     description = "Hermes Desktop-compatible dashboard for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [

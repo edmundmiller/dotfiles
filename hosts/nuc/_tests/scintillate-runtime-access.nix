@@ -61,8 +61,16 @@ let
       msg = "The Orchestrator gateway must be enabled for native TaskNotes-to-Kanban routing.";
     }
     {
+      test = !orchestratorGatewayService.restartIfChanged;
+      msg = "Routine NixOS switches must not interrupt the Orchestrator gateway mid-turn.";
+    }
+    {
       test = desktopDashboardService.enable;
       msg = "The Hermes Desktop dashboard must be enabled.";
+    }
+    {
+      test = !desktopDashboardService.restartIfChanged;
+      msg = "Routine NixOS switches must not interrupt the remote Mac dashboard.";
     }
     {
       test = desktopDashboardService.serviceConfig.ReadWritePaths == expectedDashboardAccessPaths;
