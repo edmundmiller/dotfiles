@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 RUNBOOK = ROOT / "docs" / "runbooks" / "deploy-nuc.md"
 HERMES_OVERLAY = ROOT / "overlays" / "hermes-agent" / "default.nix"
+HERMES_DASHBOARD_TEST = ROOT / "hosts" / "nuc" / "_tests" / "hermes-dashboard-enabled.nix"
 
 
 _OPENERS = {"(": ")", "[": "]", "{": "}"}
@@ -245,6 +246,16 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_dashboard_package_assertion_avoids_store_context_regex(self):
+        source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
+
+        self.assertIn("pkgs.lib.hasPrefix", source)
+        self.assertNotIn(
+            'pkgs.lib.hasInfix "${hermesPackage}/bin/hermes dashboard"',
+            source,
+        )
+
     def test_final_package_does_not_reapply_the_canonical_cron_stack(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
