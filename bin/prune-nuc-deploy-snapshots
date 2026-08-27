@@ -20,12 +20,22 @@ fi
 
 root="$(cd "$root" && pwd -P)"
 prefix="dotfiles-worktree-${deploy_user}-"
+now="$(date +%s)"
+active_max_age_seconds=86400
 mapfile -d '' -t snapshots < <(
   while IFS= read -r -d '' candidate; do
     name="${candidate##*/}"
     suffix="${name#"$prefix"}"
     if [[ "$name" == "$prefix"* ]] \
       && [[ "$suffix" =~ ^[0-9a-f]{40}-(clean|dirty)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+      active_marker="$candidate/.nuc-deploy-active"
+      if [[ -e "$active_marker" ]]; then
+        active_age=$((now - $(stat -c '%Y' "$active_marker")))
+        if ((active_age < active_max_age_seconds)); then
+          continue
+        fi
+        rm -f -- "$active_marker"
+      fi
       printf '%s %s\0' "$(stat -c '%Y' "$candidate")" "$candidate"
     fi
   done < <(find "$root" -mindepth 1 -maxdepth 1 -type d -name "${prefix}*" -print0) \
