@@ -94,9 +94,7 @@ def _stack_before(source: str, code: list[bool], position: int) -> list[str]:
 
 def _checks_span(source: str, code: list[bool]) -> tuple[int, int]:
     checks_match = next(
-        match
-        for match in re.finditer(r"\bchecks\s*=", source)
-        if code[match.start()]
+        match for match in re.finditer(r"\bchecks\s*=", source) if code[match.start()]
     )
     equals = source.index("=", checks_match.start(), checks_match.end())
     stack = _stack_before(source, code, equals + 1)
@@ -151,7 +149,9 @@ def _direct_check_references(
     return references
 
 
-def _check_reference_layout(source: str) -> tuple[tuple[int, int], list[tuple[int, int]], list[tuple[str, int]]]:
+def _check_reference_layout(
+    source: str,
+) -> tuple[tuple[int, int], list[tuple[int, int]], list[tuple[str, int]]]:
     checks_start = source.index("checks =")
     checks_source = source[checks_start:]
     code, matching = _nix_structure(checks_source)
@@ -159,8 +159,7 @@ def _check_reference_layout(source: str) -> tuple[tuple[int, int], list[tuple[in
     relative_guards = _linux_guard_ranges(checks_source, code, matching, relative_span)
     span = (checks_start + relative_span[0], checks_start + relative_span[1])
     guards = [
-        (checks_start + start, checks_start + end)
-        for start, end in relative_guards
+        (checks_start + start, checks_start + end) for start, end in relative_guards
     ]
     references = _direct_check_references(source, span)
     return span, guards, references
@@ -168,7 +167,16 @@ def _check_reference_layout(source: str) -> tuple[tuple[int, int], list[tuple[in
 
 def _bash_block_after(source: str, marker: str) -> str:
     marker_start = source.index(marker)
-    fence_start = source.index("```bash", marker_start)
+    previous_fence = source.rfind("```", 0, marker_start)
+    fence_end = source.find("```", marker_start)
+    if (
+        previous_fence >= 0
+        and source.startswith("```bash", previous_fence)
+        and previous_fence < marker_start < fence_end
+    ):
+        fence_start = previous_fence
+    else:
+        fence_start = source.index("```bash", marker_start)
     block_start = source.index("\n", fence_start) + 1
     block_end = source.index("```", block_start)
     return source[block_start:block_end]
@@ -222,10 +230,11 @@ class HermesCronExecutorTests(unittest.TestCase):
         ]
         self.assertIn("self.nixosConfigurations.nuc", unguarded)
 
-    @unittest.expectedFailure
     def test_runbook_cron_readback_is_machine_asserted(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
-        block = _bash_block_after(runbook, "After a deployment, read back all three markers")
+        block = _bash_block_after(
+            runbook, "After a deployment, read back all three markers"
+        )
 
         self.assertIn('test "$hostname" = "nuc"', block)
         self.assertIn("python3 -", block)
@@ -233,7 +242,13 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertIn("datetime.fromisoformat", block)
         self.assertIn("max_age_seconds", block)
         self.assertIn("systemctl show", block)
-        for property_name in ("LoadState", "ActiveState", "UnitFileState", "Type", "User"):
+        for property_name in (
+            "LoadState",
+            "ActiveState",
+            "UnitFileState",
+            "Type",
+            "User",
+        ):
             self.assertIn(property_name, block)
         self.assertIn("hermes cron status", block)
         for profile in ("amosburton", "betty", "scintillate"):
@@ -242,10 +257,11 @@ class HermesCronExecutorTests(unittest.TestCase):
             self.assertIn(f"hermes-gateway-{profile}.service", block)
         self.assertIn('marker["kind"]', block)
 
-    @unittest.expectedFailure
     def test_runbook_has_strict_identity_and_staged_revision_gate(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
-        prerequisites = _bash_block_after(runbook, "Before any remote check or mutating command")
+        prerequisites = _bash_block_after(
+            runbook, "Before any remote check or mutating command"
+        )
         self.assertIn('test "$hostname" = "nuc"', prerequisites)
 
         deploy = _bash_block_after(runbook, "## Deploy")
@@ -261,7 +277,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         revision_position = min(staged.index(marker) for marker in revision_markers)
         self.assertLess(revision_position, staged.index("hey nuc-wt dry-activate"))
 
-    @unittest.expectedFailure
     def test_marker_writer_uses_fixed_home_collision_safe_atomic_contract(self):
         config = NUC_CONFIG.read_text(encoding="utf-8")
         self.assertIn('hermesHome = "/var/lib/hermes-${profile}/.hermes";', config)
@@ -299,9 +314,7 @@ class HermesCronExecutorTests(unittest.TestCase):
         )
         self.assertIn('envVar = "LINEAR_API_KEY";', config)
         self.assertIn('envVar = "HERMES_MCP_BEARER_TOKEN_LINEAR";', config)
-        self.assertIn(
-            'path = "/var/lib/opnix/secrets/amosburtonLinearApiKey";', config
-        )
+        self.assertIn('path = "/var/lib/opnix/secrets/amosburtonLinearApiKey";', config)
         self.assertIn("hermesAmosburtonSecretsMaterialize", config)
         self.assertNotIn("unset HERMES_MCP_BEARER_TOKEN_LINEAR", config)
         self.assertIn("systemd.services.hermes-amosburton-cron-tick", config)
