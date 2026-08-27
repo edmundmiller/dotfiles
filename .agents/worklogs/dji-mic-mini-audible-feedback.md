@@ -25,7 +25,7 @@ mute transition is read back successfully.
 
 ## Evidence
 
-- The task is rebased onto `origin/main` revision `1a976bed7` with only the DJI
+- The task is rebased onto `origin/main` revision `42f03b84c` with only the DJI
   implementation, tests, host enablement, standard-gate wiring, and this
   worklog changed.
 - The public `toggle` fixture proves lock/resolve/read/write/readback/unlock/
@@ -86,13 +86,13 @@ clean.
 
 ## Commits
 
-- `349abd540` `chore(dji-mic): adopt receiver mute automation`
-- `a609752f1` `test(dji-mic): specify verified feedback`
-- `15c2e9d5b` `feat(dji-mic): add verified mute feedback`
-- `29480e7c2` `docs(worklog): record DJI activation blocker`
-- `c576c0541` `test(dji-mic): specify Darwin-only flake boundaries`
-- `12df004e4` `fix(dji-mic): enforce Darwin-only package boundaries`
-- `933a46ca0` `test(dji-mic): require standard-gate coverage`
-- `ec92a4878` `fix(dji-mic): run checks in standard gate`
-- `241e710fd` `test(dji-mic): remove obsolete xfail path`
-- `cfd937e8c` `test(dji-mic): simplify boundary assertion`
+- `8be86a8a7` `chore(dji-mic): adopt receiver mute automation`
+- `36d6085fd` `test(dji-mic): specify verified feedback`
+- `1168ae7dc` `feat(dji-mic): add verified mute feedback`
+- `ab75cbad2` `docs(worklog): record DJI activation blocker`
+- `5c177cdbe` `test(dji-mic): specify Darwin-only flake boundaries`
+- `fc9704f38` `fix(dji-mic): enforce Darwin-only package boundaries`
+- `ed5af5a97` `test(dji-mic): require standard-gate coverage`
+- `a6fefdbb2` `fix(dji-mic): run checks in standard gate`
+- `7bb27a3f7` `test(dji-mic): remove obsolete xfail path`
+- `d64624ee3` `test(dji-mic): simplify boundary assertion`
