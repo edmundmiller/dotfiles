@@ -15,6 +15,11 @@ Stamp each NUC generation with the exact dotfiles revision and locked agents-wor
 ## Evidence
 
 - Pre-change live readback: generation 1417 has `system.configurationRevision = null`; the deployed flake lock pins agents-workspace `6feff320a898aedf25bc0720968a5cbc5d347c30`.
+- Red: `nuc-deployment-provenance` failed with `NUC deployment provenance must have a pure resolver`.
+- Green: `nix develop --command nu bin/tests/hey-nuc-deploy-mode.nu` passed.
+- Green: `nix run .#hey -- check` passed every Darwin-compatible gate.
+- Green: `nix run .#hey -- nuc-wt build` built the full NUC configuration through the `.git`-less synced-worktree path.
+- Green: the focused Linux check passed and remote evaluation returned `dotfiles=eff3e325bdb5ea1934a31dfb4d2e482574c8705f;agents-workspace=6feff320a898aedf25bc0720968a5cbc5d347c30` before final reconciliation.
 
 ## Reviews
 
@@ -27,8 +32,9 @@ Stamp each NUC generation with the exact dotfiles revision and locked agents-wor
 
 ## Remaining work
 
-- Add the failing pure regression, implement the provenance seam, validate, land, deploy, and read back.
+- Reconcile and push, deploy from the exact pushed revision, read back the live generation and six Hermes gateways, finish the landing gates, and tag the run.
 
 ## Commits
 
-- None yet.
+- `eff3e325b` — `test(nuc): capture missing deployment provenance`
+- `7dc4d1682` — `fix(nuc): stamp Buzz Hermes deployment revisions`
