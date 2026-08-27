@@ -80,6 +80,10 @@ let
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_smart_model_routing.py}
       HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_kanban_platform_toolset.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_gateway_profile_identity.py}
+      HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_latest_source.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_failure_summary.py}

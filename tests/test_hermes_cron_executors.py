@@ -277,6 +277,8 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertNotIn("/0006-gateway-cron-executor-ownership.patch", overlay)
         for contract in (
             "test_hermes_buzz_singuloid_pilot.py",
+            "test_hermes_gateway_profile_identity.py",
+            "test_hermes_kanban_platform_toolset.py",
             "test_hermes_buzz_thread_isolation.py",
             "test_hermes_cron_external_executor.py",
             "test_hermes_dashboard_profile_liveness.py",
