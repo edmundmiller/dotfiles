@@ -11,22 +11,27 @@ let
   # The overlay exposes one patched Hermes v0.20.5 derivation. Every gateway,
   # cron/oneshot executor, and ACP companion must consume this exact path.
   hermesAgentBase = pkgs.llm-agents."hermes-agent";
-  scintillateCronExecutorHeartbeat = pkgs.writeShellScript "hermes-scintillate-cron-executor-heartbeat" ''
-    set -eu
+  mkCronExecutorHeartbeat =
+    profile:
+    pkgs.writeShellScript "hermes-${profile}-cron-executor-heartbeat" ''
+      set -eu
 
-    marker_dir="$HERMES_HOME/cron"
-    marker="$marker_dir/executor.json"
-    tmp="$marker.$$"
+      marker_dir="$HERMES_HOME/cron"
+      marker="$marker_dir/executor.json"
+      tmp="$marker.$$"
 
-    ${pkgs.coreutils}/bin/mkdir -p "$marker_dir"
-    trap '${pkgs.coreutils}/bin/rm -f "$tmp"' EXIT
-    ${pkgs.coreutils}/bin/printf '%s\n' \
-      '{"kind":"systemd","unit":"hermes-scintillate-cron-tick.timer","heartbeat_at":"'"$(${pkgs.coreutils}/bin/date --iso-8601=seconds)"'","max_age_seconds":180}' \
-      > "$tmp"
-    ${pkgs.coreutils}/bin/chmod 0600 "$tmp"
-    ${pkgs.coreutils}/bin/mv "$tmp" "$marker"
-    trap - EXIT
-  '';
+      ${pkgs.coreutils}/bin/mkdir -p "$marker_dir"
+      trap '${pkgs.coreutils}/bin/rm -f "$tmp"' EXIT
+      ${pkgs.coreutils}/bin/printf '%s\n' \
+        '{"kind":"systemd","unit":"hermes-${profile}-cron-tick.timer","heartbeat_at":"'"$(${pkgs.coreutils}/bin/date --iso-8601=seconds)"'","max_age_seconds":180}' \
+        > "$tmp"
+      ${pkgs.coreutils}/bin/chmod 0600 "$tmp"
+      ${pkgs.coreutils}/bin/mv "$tmp" "$marker"
+      trap - EXIT
+    '';
+  amosburtonCronExecutorHeartbeat = mkCronExecutorHeartbeat "amosburton";
+  bettyCronExecutorHeartbeat = mkCronExecutorHeartbeat "betty";
+  scintillateCronExecutorHeartbeat = mkCronExecutorHeartbeat "scintillate";
   amosburtonAgentSpec = import (inputs.agents-workspace + /agents/amosburton) { inherit lib; };
   bettyHermesCronExecutor = pkgs.writeShellScript "hermes-betty-cron-executor" ''
     set -eu
@@ -1975,6 +1980,7 @@ in
         "CODEX_HOME=/home/emiller/.codex"
       ];
       ExecStart = "${hermesAgentBase}/bin/hermes cron tick";
+      ExecStartPost = [ amosburtonCronExecutorHeartbeat ];
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
@@ -2041,6 +2047,7 @@ in
         "CODEX_HOME=/var/lib/hermes-betty/.codex"
       ];
       ExecStart = "${pkgs.util-linux}/bin/flock /var/lib/hermes-betty/.profile.lock ${bettyHermesCronExecutor}";
+      ExecStartPost = [ bettyCronExecutorHeartbeat ];
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = false;
@@ -2283,6 +2290,7 @@ in
         agents = {
           scintillate = {
             settings = (mkBuzzNativeSettings "scintillate") // {
+              cron.gateway_ticker = false;
               stt.provider = "local_command";
               terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
             };
@@ -2297,7 +2305,9 @@ in
           };
 
           betty = {
-            settings = mkBuzzNativeSettings "betty";
+            settings = (mkBuzzNativeSettings "betty") // {
+              cron.gateway_ticker = false;
+            };
             workspaceLinks."repos/mill-docs" = "/home/emiller/mill-docs";
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
@@ -2323,6 +2333,7 @@ in
           };
           amosburton = {
             settings = (mkBuzzNativeSettings "amosburton") // {
+              cron.gateway_ticker = false;
               terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
             };
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";

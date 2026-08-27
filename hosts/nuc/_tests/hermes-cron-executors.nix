@@ -57,7 +57,7 @@ let
   amosFixExpectedFailure = false;
   amosOverlaysHostConfigExpectedFailure = false;
   cronTickCadenceExpectedFailure = false;
-  cronOwnershipExpectedFailure = true;
+  cronOwnershipExpectedFailure = false;
   cronTickCadenceMatches = builtins.all (
     timer:
     timer.timerConfig.OnUnitActiveSec == "60s"
