@@ -245,7 +245,6 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_final_package_does_not_reapply_the_canonical_cron_stack(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
@@ -253,16 +252,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertNotIn("test_hermes_cron_single_owner.py", overlay)
         self.assertIn("hermes-cron-single-owner", flake)
         self.assertIn("test_hermes_cron_external_executor.py", overlay)
-
-    def test_post_install_cron_composition_uses_the_pristine_base_source(self):
-        overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
-
-        self.assertRegex(
-            overlay,
-            r'HERMES_SOURCE="\$PWD"\s+\\\s*'
-            r'HERMES_BASE_SOURCE=\$\{inputs\.hermes-agent\}\s+\\\s*'
-            r'python3 .*test_hermes_cron_single_owner\.py',
-        )
 
     def test_overlay_keeps_nested_patch_paths_in_flake_source_context(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
@@ -289,7 +278,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         for contract in (
             "test_hermes_buzz_singuloid_pilot.py",
             "test_hermes_buzz_thread_isolation.py",
-            "test_hermes_cron_single_owner.py",
             "test_hermes_cron_external_executor.py",
             "test_hermes_dashboard_profile_liveness.py",
         ):
