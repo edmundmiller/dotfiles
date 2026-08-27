@@ -84,6 +84,7 @@ let
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_failure_summary.py}
       HERMES_SOURCE="$PWD" \
+        HERMES_BASE_SOURCE=${inputs.hermes-agent} \
         python3 ${inputs.agents-workspace + /tests/test_hermes_cron_single_owner.py}
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_thread_isolation.py}
