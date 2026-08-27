@@ -118,9 +118,13 @@ let
       script = if builtins.length scripts == 1 then builtins.head scripts else "";
     in
     builtins.length scripts == 1
+    && hasInfix "marker_dir=\"$HERMES_HOME/cron\"" script
+    && hasInfix "marker=\"$marker_dir/executor.json\"" script
+    && hasInfix "tmp=\"$marker.$$\"" script
     && hasInfix "marker_json=" script
     && hasInfix "marker_template/__HERMES_HEARTBEAT_AT__/" script
     && hasInfix "printf '%s\\n' \"$marker_json\"" script
+    && hasInfix "mv \"$tmp\" \"$marker\"" script
   ) timerOwnedProfiles;
   bettyExecutorScripts = map builtins.readFile (
     builtins.filter (entry: hasInfix "hermes-betty-cron-executor" entry) (
@@ -149,6 +153,9 @@ let
     in
     (cronSettings.gateway_ticker or null) == false
   ) timerOwnedProfiles;
+  timerProfilesGatewayEnabled = builtins.all (
+    profile: cfg.systemd.services."hermes-gateway-${profile}".enable
+  ) timerOwnedProfiles;
   cronOwnershipMatches =
     cronTickCadenceMatches
     && cronTimerUnitsMatch
@@ -156,6 +163,7 @@ let
     && markerContractMatches
     && markerScriptMatches
     && timerProfilesDisableCron
+    && timerProfilesGatewayEnabled
     && nonTimerProfilesDoNotDisableCron
     && bettyGateway.enable
     && ((bettyProfile.settings.cron or { }).gateway_ticker or null) == false;
