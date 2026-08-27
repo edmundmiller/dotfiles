@@ -1638,15 +1638,22 @@
                 package=${self.nixosConfigurations.nuc.config.services.hermes-agent.package}
                 "$package/bin/hermes" --version \
                   | grep -F 'Hermes Agent v0.20.5 (2026.8.19)'
+                hermes_python_root=""
+                for candidate in "$package"/lib/python*/site-packages; do
+                  [ -d "$candidate/hermes_cli" ] || continue
+                  test -z "$hermes_python_root"
+                  hermes_python_root="$candidate"
+                done
+                test -n "$hermes_python_root"
                 grep -q _should_reply_in_thread \
                   "$package/share/hermes/plugins/platforms/buzz/adapter.py"
                 grep -Fq 'gateway_ticker' \
-                  "$package/share/hermes/hermes_cli/config_defaults.py"
+                  "$hermes_python_root/hermes_cli/config_defaults.py"
                 test -f "$package/share/hermes/plugins/platforms/buzz/buzz_thread_roots.py"
                 grep -Fq 'resolve_gateway_liveness' \
-                  "$package/share/hermes/hermes_cli/profiles.py"
+                  "$hermes_python_root/hermes_cli/profiles.py"
                 grep -Fq 'def _dashboard_profile_dir' \
-                  "$package/share/hermes/hermes_cli/web_server.py"
+                  "$hermes_python_root/hermes_cli/web_server.py"
                 touch "$out"
               '';
 

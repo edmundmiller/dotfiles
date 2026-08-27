@@ -247,7 +247,6 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_package_check_reads_python_modules_from_site_packages(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
 
