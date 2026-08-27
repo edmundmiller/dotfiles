@@ -268,6 +268,7 @@ in
       desktop = {
         apps.raycast.enable = true;
         apps.audioPriorityBar.enable = true;
+        apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
         apps.neovide.enable = true;
         term = {

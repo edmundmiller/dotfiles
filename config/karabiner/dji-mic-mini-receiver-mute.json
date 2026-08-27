@@ -1,0 +1,35 @@
+{
+  "title": "DJI Mic Mini receiver mute",
+  "rules": [
+    {
+      "description": "DJI Mic Mini receiver button toggles Wireless Mic Rx input mute",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "consumer_key_code": "volume_increment",
+            "modifiers": { "optional": ["any"] }
+          },
+          "to": [
+            {
+              "shell_command": "/Users/emiller/.local/bin/dji-mic-mini-receiver-mute toggle",
+              "repeat": false
+            }
+          ],
+          "conditions": [
+            {
+              "type": "device_if",
+              "identifiers": [
+                {
+                  "vendor_id": 11427,
+                  "product_id": 16401,
+                  "is_consumer": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
