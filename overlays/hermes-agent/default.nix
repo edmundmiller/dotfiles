@@ -22,7 +22,6 @@ let
     version = "2026.8.19";
     src = inputs.hermes-agent;
     patches = (old.patches or [ ]) ++ [
-      ./patches/0003-report-external-cron-executor.patch
       (inputs.agents-workspace + /patches/hermes-agent/0006-gateway-cron-executor-ownership.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-01-thread-routing.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-02-channel-activation.patch)
@@ -77,8 +76,6 @@ let
         python3 ${inputs.agents-workspace + /tests/test_hermes_smart_model_routing.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_latest_source.py}
-      HERMES_SOURCE="$PWD" \
-        python3 ${../../tests/test_hermes_cron_external_executor.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_failure_summary.py}
       HERMES_SOURCE="$PWD" \

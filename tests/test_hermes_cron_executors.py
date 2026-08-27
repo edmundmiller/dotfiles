@@ -7,31 +7,33 @@ NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_darwin_common_checks_do_not_evaluate_nuc_or_deploy(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
         checks_start = flake.index("          checks =")
+        common_start = flake.index("            // {", checks_start)
         linux_guard = flake.index(
             '            // lib.optionalAttrs (system == "x86_64-linux") {',
-            checks_start,
+            common_start,
         )
-        common_checks = flake[checks_start:linux_guard]
+        deploy_checks = flake[checks_start:common_start]
+        common_checks = flake[common_start:linux_guard]
         linux_checks = flake[linux_guard:]
 
         self.assertNotIn("self.deploy", common_checks)
         self.assertNotIn("self.nixosConfigurations.nuc", common_checks)
-        self.assertIn("deployChecks self.deploy", linux_checks)
+        self.assertIn('lib.optionalAttrs (system == "x86_64-linux")', deploy_checks)
+        self.assertIn("deployChecks self.deploy", deploy_checks)
         self.assertIn("ha-automation-assertions", linux_checks)
 
-    @unittest.expectedFailure
     def test_cron_executor_source_contract_is_wired_as_a_common_check(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
         checks_start = flake.index("          checks =")
+        common_start = flake.index("            // {", checks_start)
         linux_guard = flake.index(
             '            // lib.optionalAttrs (system == "x86_64-linux") {',
-            checks_start,
+            common_start,
         )
-        common_checks = flake[checks_start:linux_guard]
+        common_checks = flake[common_start:linux_guard]
 
         self.assertIn("hermes-cron-executor-source-tests", common_checks)
         self.assertIn("python3 tests/test_hermes_cron_executors.py", common_checks)
@@ -41,7 +43,7 @@ class HermesCronExecutorTests(unittest.TestCase):
 
         check_position = flake.index("nuc-hermes-cron-executors = import")
         linux_checks_position = flake.index(
-            'lib.optionalAttrs (system == "x86_64-linux") {'
+            'lib.optionalAttrs (system == "x86_64-linux") ('
         )
         self.assertGreater(
             check_position,

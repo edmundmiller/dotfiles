@@ -12,6 +12,16 @@ update_when: NUC authentication, build location, commands, or verification chang
 
 The NUC is a NixOS server managed from this dotfiles repo — there is no CI-driven deployment. `hey nuc` evaluates and builds on the NUC for consistent cross-platform behavior: when run off-NUC it syncs the current worktree to a task-isolated `nuc:/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot and runs `nixos-rebuild` there; when run on the NUC it runs a local `nixos-rebuild`. NUC rebuilds pass `--max-jobs 1` to keep builds stable on the small host.
 
+The canonical host source of truth is
+`/Users/emiller/.config/dotfiles/hosts/nuc/default.nix` (tracked as
+`hosts/nuc/default.nix`). Reusable Hermes runtime behavior is sourced from
+`/Users/emiller/src/personal/agents-workspace`; generated profiles, systemd
+units, and live Hermes homes are deployment artifacts, not configuration
+sources. The gateway ownership patch is maintained at
+`/Users/emiller/src/personal/agents-workspace/patches/hermes-agent/0006-gateway-cron-executor-ownership.patch`
+and is consumed by the dotfiles overlay after the matching flake input is
+landed.
+
 ## Prerequisites
 
 - SSH access to `nuc` (configured in `~/.ssh/config` via home-manager)
@@ -23,6 +33,13 @@ Private `github:` flake inputs use `nix-private-github`. It reads the root-only
 opnix credential and supplies Nix `access-tokens` without logging the token.
 `hey nuc`, local NUC `hey re`, and `nixos-upgrade.service` use this wrapper.
 Darwin `hey re` obtains the same narrow credential from the local `gh` keyring.
+
+Before any remote check or mutating command, verify the target identity and
+stop if the output is not the intended NUC (`hostname=nuc`):
+
+```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
+```
 
 Mutating NUC rebuilds (`dry-activate`, `test`, `switch`, and `boot`) share the
 NUC-side lock `/run/lock/nixos-deploy.lock`. Worktree deploys also send their
@@ -43,6 +60,7 @@ If a deploy is rejected, update the worktree from `origin/main`, rebuild, then
 retry. Inspect contention without deleting lock files:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "sudo cat /run/lock/nixos-deploy.lock.owner"
 ```
 
@@ -80,12 +98,14 @@ NUC. The JSON should name the matching timer and contain a recent
 `heartbeat_at` plus `max_age_seconds` of `180`:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 for profile in amosburton betty scintillate; do
-  ssh nuc "sudo cat /var/lib/hermes-$profile/.hermes/cron/executor.json"
+  hermes_home="/var/lib/hermes-${profile}/.hermes"
+  ssh nuc "sudo cat \"$hermes_home/cron/executor.json\""
 done
 
 for profile in amosburton betty scintillate; do
-  ssh nuc "systemctl cat hermes-$profile-cron-tick.service hermes-$profile-cron-tick.timer"
+  ssh nuc "systemctl cat \"hermes-${profile}-cron-tick.service\" \"hermes-${profile}-cron-tick.timer\""
 done
 ```
 
@@ -113,6 +133,7 @@ hey deploy-check
 After deploying, verify the NUC is healthy:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 # Quick system status
 hey nuc-status
 
@@ -148,6 +169,7 @@ The standalone installer is a one-time bootstrap for each NUC home directory; `h
 not install it. On a new home, connect to the NUC and bootstrap remote control:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc
 curl -fsSL https://chatgpt.com/codex/install.sh | sh
 codex remote-control start
@@ -244,8 +266,9 @@ acknowledgements remain hidden. Approval, clarification, and terminal failure
 controls are allowed because they are required to complete or safely stop a
 turn. Steering itself remains silent.
 
-Subscriptions and home channels come from
-`agents-workspace/deployments/nuc/buzz-bindings.nix`. Betty is ambient in
+Subscriptions and home channels come from the canonical
+`/Users/emiller/src/personal/agents-workspace/deployments/nuc/buzz-bindings.nix`.
+Betty is ambient in
 `meal-planning` and mention-gated in `mill-docs`; every other declared channel
 is mention-gated. Amos Burton and Scintillate cron delivery retains
 `agent-reports` and `personal-reports`; Betty's routed jobs retain
@@ -288,6 +311,7 @@ stage=nuc-buzz-scintillate
 hey nuc-wt build "$stage"
 # Copy the exact NUC_WORKTREE_REMOTE_DIR printed by the build.
 remote_dir='PASTE_NUC_WORKTREE_REMOTE_DIR_VALUE_HERE'
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
 ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-buzz-hermes-staged-runtime"
 hey nuc-wt dry-activate "$stage"
@@ -305,6 +329,7 @@ restart it after the switch, then verify the gateway, cron executor, dashboard,
 and remaining ACP fallbacks report Hermes v0.20.5 before expanding the selector.
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc 'sudo systemctl restart hermes-gateway-scintillate.service'
 ssh nuc 'sudo podman exec hermes-agent-scintillate hermes --version'
 ssh nuc "systemctl show buzz-hermes-finn.service buzz-hermes-amosburton.service buzz-hermes-anne.service buzz-hermes-betty.service -p Environment | grep -E 'BUZZ_ACP_(AGENT_COMMAND|PERMISSION_MODE)='"
@@ -320,6 +345,7 @@ service state, routing, and a natural Buzz turn pass.
 Verify service ownership after the final deployment:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "systemctl show hermes-gateway-scintillate.service hermes-gateway-finn.service hermes-gateway-amosburton.service hermes-gateway-anne.service hermes-gateway-betty.service -p Id -p ActiveState -p MainPID -p NRestarts"
 ssh nuc "systemctl show buzz-presence-scintillate.service buzz-presence-finn.service buzz-presence-amosburton.service buzz-presence-anne.service buzz-presence-betty.service -p Id -p ActiveState -p MainPID -p NRestarts -p BindsTo"
 ssh nuc 'test -z "$(systemctl list-unit-files --no-legend "buzz-hermes-*.service")"'
@@ -366,10 +392,12 @@ profile:
 ```bash
 
 # First-time device authentication on the NUC; complete Factory's displayed flow.
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh -t nuc 'cd /var/empty && factory-product-pass-droid'
 
 
 # Proves only authenticated ACP startup; the agent has no tools and uses /var/empty.
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc factory-product-pass-canary
 ```
 
@@ -384,6 +412,7 @@ If the deployment causes issues:
 # Roll back to previous generation
 hey nuc-rollback
 # Or via SSH
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "sudo nix-private-github nixos-rebuild --rollback switch"
 ```
 
@@ -398,6 +427,7 @@ ssh nuc "sudo nix-private-github nixos-rebuild --rollback switch"
 
 ```bash
 # Check the service journal
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "sudo journalctl -u <service-name> --since '5 minutes ago'"
 # Roll back while investigating
 hey nuc-rollback
@@ -414,6 +444,7 @@ generated stashes.
 After repair, verify the checkout and resume the timer:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc 'cd ~/mill-docs && git lfs fsck --pointers HEAD'
 ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
 ```
@@ -421,6 +452,7 @@ ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
 ### Private flake authentication fails
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "sudo test -s /var/lib/opnix/secrets/githubNixToken"
 ssh nuc "sudo systemctl restart opnix-secrets.service"
 ```
@@ -429,6 +461,7 @@ The source reference is `op://Agents/GH PA dotfiles flake/credential`. Never
 print the materialized value. Verify access through the wrapper:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-workspace/main"
 ```
 
@@ -437,5 +470,6 @@ ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-w
 The Scintillate Desktop dashboard is `hermes-scintillate-desktop-dashboard.service`. It binds to all interfaces with username/password authentication; the NUC firewall exposes port 9121 only to the trusted LAN and tailnet. After rotating either dashboard secret, deploy it, then restart the dashboard to load the new value:
 
 ```bash
+ssh nuc 'printf "hostname=%s\n" "$(hostname)"; printf "uname=%s\n" "$(uname -a)"'
 ssh nuc "sudo systemctl restart hermes-scintillate-desktop-dashboard.service"
 ```
