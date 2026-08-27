@@ -10,14 +10,14 @@ update_when: NUC authentication, build location, commands, or verification chang
 
 ## Overview
 
-The NUC is a NixOS server managed from this dotfiles repo — there is no CI-driven deployment. `hey nuc` evaluates and builds on the NUC for consistent cross-platform behavior: when run off-NUC it syncs the current worktree to `nuc:/tmp/dotfiles-worktree-$USER` and runs `nixos-rebuild` there; when run on the NUC it runs a local `nixos-rebuild`. NUC rebuilds pass `--max-jobs 1` to keep builds stable on the small host.
+The NUC is a NixOS server managed from this dotfiles repo — there is no CI-driven deployment. `hey nuc` evaluates and builds on the NUC for consistent cross-platform behavior: when run off-NUC it syncs the current worktree to a task-isolated `nuc:/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot and runs `nixos-rebuild` there; when run on the NUC it runs a local `nixos-rebuild`. NUC rebuilds pass `--max-jobs 1` to keep builds stable on the small host.
 
 ## Prerequisites
 
 - SSH access to `nuc` (configured in `~/.ssh/config` via home-manager)
 - Tailscale connected (the NUC is on the tailnet)
 - `/var/lib/opnix/secrets/githubNixToken` materialized by `opnix-secrets.service`
-- Clean working tree recommended (`git stash` uncommitted work)
+- A clean, committed working tree for `dry-activate`, `test`, or `switch`
 
 Private `github:` flake inputs use `nix-private-github`. It reads the root-only
 opnix credential and supplies Nix `access-tokens` without logging the token.
@@ -28,7 +28,14 @@ Mutating NUC rebuilds (`dry-activate`, `test`, `switch`, and `boot`) share the
 NUC-side lock `/run/lock/nixos-deploy.lock`. Worktree deploys also send their
 HEAD and merge-base; the wrapper compares them with live GitHub `origin/main`
 before activation. Old synced snapshots without metadata and stale worktrees
-are rejected. `build` and `vm` remain parallel and do not take the lock.
+are rejected. Every synced snapshot carries a fail-closed
+`system.configurationRevision` with the exact dotfiles and agents-workspace
+revisions. Dirty worktrees are refused for activation; `build` and `vm` remain
+available for testing, carry a `-dirty` provenance marker, and do not take the
+lock. Unique remote directories keep concurrent syncs from interleaving before
+the activation lock is acquired. Each run prunes older revision-scoped
+snapshots before syncing so at most five recent snapshots remain for follow-up
+checks; legacy task directories do not match the cleanup boundary.
 
 If a deploy is rejected, update the worktree from `origin/main`, rebuild, then
 retry. Inspect contention without deleting lock files:
@@ -80,7 +87,11 @@ ssh nuc "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system 
 # Prove the deployed dotfiles and agents-workspace revisions. The
 # configurationRevision value must equal:
 # dotfiles=<deployed dotfiles HEAD>;agents-workspace=<locked input revision>
-ssh nuc "/run/current-system/sw/bin/nixos-version --json"
+expected_dotfiles="$(git rev-parse HEAD)"
+expected_agents="$(nix flake metadata --json | jq -r '.locks.nodes["agents-workspace"].locked.rev')"
+expected_revision="dotfiles=$expected_dotfiles;agents-workspace=$expected_agents"
+ssh nuc "/run/current-system/sw/bin/nixos-version --json" \
+  | jq -e --arg expected "$expected_revision" '.configurationRevision == $expected'
 ssh nuc "readlink -f /run/current-system"
 
 # View recent logs for a service
@@ -236,8 +247,10 @@ only against identities already migrated to native Buzz.
 ```bash
 stage=nuc-buzz-scintillate
 hey nuc-wt build "$stage"
-ssh nuc "cd /tmp/dotfiles-worktree-emiller && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
-ssh nuc "cd /tmp/dotfiles-worktree-emiller && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-buzz-hermes-staged-runtime"
+# Copy the exact NUC_WORKTREE_REMOTE_DIR printed by the build.
+remote_dir='PASTE_NUC_WORKTREE_REMOTE_DIR_VALUE_HERE'
+ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
+ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-buzz-hermes-staged-runtime"
 hey nuc-wt dry-activate "$stage"
 hey nuc-wt switch "$stage"
 

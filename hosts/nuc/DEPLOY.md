@@ -72,20 +72,20 @@ hey nuc
 
 ### Testing From a Git Worktree
 
-When working in a secondary Git worktree (for example a Herdr worktree for the Goodnight ADR), use `hey nuc-worktree` instead of `hey nuc`. It rsyncs the current worktree to `/tmp/dotfiles-worktree-$USER` on the NUC and runs `nixos-rebuild` there, so uncommitted worktree changes are tested without pushing or changing the canonical NUC checkout.
+When working in a secondary Git worktree (for example a Herdr worktree for the Goodnight ADR), use `hey nuc-worktree` instead of `hey nuc`. It materializes a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints the path as `NUC_WORKTREE_REMOTE_DIR`; clean runs come from the committed Git archive, not mutable working-tree files. Uncommitted worktrees may use `build` or `vm`; `dry-activate`, `test`, and `switch` require a clean commit with exact deployment provenance. The helper retains only the five newest revision-scoped snapshots.
 
 ```bash
-# Safe default: build and show activation dry-run, but do not activate
+# Safe activation preview from a clean commit
 hey nuc-worktree          # alias: hey nuc-wt
 
 # Other modes
-hey nuc-wt build          # build only
+hey nuc-wt build          # build only; dirty worktrees are allowed
 hey nuc-wt test           # activate until next reboot, but do not set boot generation
 hey nuc-wt switch         # actually switch the NUC to this worktree config
 hey nuc-wt vm             # build the NUC VM derivation on the NUC
 ```
 
-Use `test` or `switch` only for changes you are comfortable activating on the real NUC. For isolated tests, start with `dry-activate`, `build`, or `vm`.
+Use `test` or `switch` only for clean commits you are comfortable activating on the real NUC. For uncommitted tests, use `build` or `vm`.
 
 ### Rollback
 
