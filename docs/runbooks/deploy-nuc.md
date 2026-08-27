@@ -38,6 +38,7 @@ Before any remote check or mutating command, verify the target identity and
 abort unless the remote hostname is exactly `nuc`:
 
 ```bash
+set -euo pipefail
 ssh nuc '
   set -eu
   hostname="$(hostname)"
@@ -66,6 +67,7 @@ If a deploy is rejected, update the worktree from `origin/main`, rebuild, then
 retry. Inspect contention without deleting lock files:
 
 ```bash
+set -euo pipefail
 ssh nuc '
   set -eu
   hostname="$(hostname)"
@@ -113,6 +115,7 @@ the matching timer, contain a recent `heartbeat_at`, and set
 commands; it aborts if the alias resolves to anything other than `nuc`:
 
 ```bash
+set -euo pipefail
 ssh nuc '
   set -eu
   hostname="$(hostname)"
@@ -216,14 +219,18 @@ for profile in profiles:
     assert gateway["UnitFileState"] == "enabled", gateway
     assert int(gateway["MainPID"]) > 0, gateway
 
-    status = (readback_dir / f"{profile}.status").read_text(encoding="utf-8")
-    assert status.strip(), f"hermes cron status returned no output for {profile}"
+    status_text = (readback_dir / f"{profile}.status").read_text(encoding="utf-8")
+    assert f"External cron executor is running: {timer_name}" in status_text, status_text
+    assert "Jobs fire through the host-managed systemd timer" in status_text, status_text
+    assert "External cron executor is not running" not in status_text, status_text
+    assert "Gateway is not running" not in status_text, status_text
 PY
 ```
 
 ## Deploy
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 # Standard deployment
 hey nuc
@@ -235,6 +242,7 @@ hey nuc dry-activate
 ## Dry Run (Preview Changes)
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 hey nuc dry-activate
 # Equivalent compatibility aliases:
@@ -247,6 +255,7 @@ hey deploy-check
 After deploying, verify the NUC is healthy:
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 # Quick system status
 hey nuc-status
@@ -283,6 +292,7 @@ The standalone installer is a one-time bootstrap for each NUC home directory; `h
 not install it. On a new home, connect to the NUC and bootstrap remote control:
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc
 curl -fsSL https://chatgpt.com/codex/install.sh | sh
@@ -299,6 +309,7 @@ Dotfiles do not install a systemd unit for this daemon. After a NUC reboot, run
 Verify both sides of the ownership boundary:
 
 ```bash
+set -euo pipefail
 command -v codex
 codex app-server daemon version
 ```
@@ -331,6 +342,7 @@ so the project default applies, or set to that project's named profile. A legacy
 Smoke-test the command boundary:
 
 ```bash
+set -euo pipefail
 codex sandbox -C "$HOME/mill-docs" -P mill-docs test -w "$HOME/mill-docs"
 codex sandbox -C "$HOME/mill-docs" -P mill-docs test -r "$HOME/obsidian-vault/AGENTS.md"
 codex sandbox -C "$HOME/obsidian-vault" -P obsidian-vault test -w "$HOME/obsidian-vault"
@@ -421,6 +433,7 @@ rows. Keep each fallback stage short and run interaction and approval acceptance
 only against identities already migrated to native Buzz.
 
 ```bash
+set -euo pipefail
 stage=nuc-buzz-scintillate
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 hey nuc-wt build "$stage"
@@ -453,6 +466,7 @@ restart it after the switch, then verify the gateway, cron executor, dashboard,
 and remaining ACP fallbacks report Hermes v0.20.5 before expanding the selector.
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc 'sudo systemctl restart hermes-gateway-scintillate.service'
 ssh nuc 'sudo podman exec hermes-agent-scintillate hermes --version'
@@ -469,6 +483,7 @@ service state, routing, and a natural Buzz turn pass.
 Verify service ownership after the final deployment:
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "systemctl show hermes-gateway-scintillate.service hermes-gateway-finn.service hermes-gateway-amosburton.service hermes-gateway-anne.service hermes-gateway-betty.service -p Id -p ActiveState -p MainPID -p NRestarts"
 ssh nuc "systemctl show buzz-presence-scintillate.service buzz-presence-finn.service buzz-presence-amosburton.service buzz-presence-anne.service buzz-presence-betty.service -p Id -p ActiveState -p MainPID -p NRestarts -p BindsTo"
@@ -514,6 +529,7 @@ Nix-managed commands select `claude-opus-5` and never reuse a local Factory
 profile:
 
 ```bash
+set -euo pipefail
 
 # First-time device authentication on the NUC; complete Factory's displayed flow.
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
@@ -533,6 +549,7 @@ Buzz identity or channel until this canary returns an authenticated response.
 If the deployment causes issues:
 
 ```bash
+set -euo pipefail
 # Roll back to previous generation
 hey nuc-rollback
 # Or via SSH
@@ -550,6 +567,7 @@ ssh nuc "sudo nix-private-github nixos-rebuild --rollback switch"
 ### Service failed to start after deploy
 
 ```bash
+set -euo pipefail
 # Check the service journal
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo journalctl -u <service-name> --since '5 minutes ago'"
@@ -568,6 +586,7 @@ generated stashes.
 After repair, verify the checkout and resume the timer:
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc 'cd ~/mill-docs && git lfs fsck --pointers HEAD'
 ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
@@ -576,6 +595,7 @@ ssh nuc 'sudo systemctl start mill-docs-git-pull.timer'
 ### Private flake authentication fails
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo test -s /var/lib/opnix/secrets/githubNixToken"
 ssh nuc "sudo systemctl restart opnix-secrets.service"
@@ -585,6 +605,7 @@ The source reference is `op://Agents/GH PA dotfiles flake/credential`. Never
 print the materialized value. Verify access through the wrapper:
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-workspace/main"
 ```
@@ -594,6 +615,7 @@ ssh nuc "sudo nix-private-github nix flake metadata github:edmundmiller/agents-w
 The Scintillate Desktop dashboard is `hermes-scintillate-desktop-dashboard.service`. It binds to all interfaces with username/password authentication; the NUC firewall exposes port 9121 only to the trusted LAN and tailnet. After rotating either dashboard secret, deploy it, then restart the dashboard to load the new value:
 
 ```bash
+set -euo pipefail
 ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
 ssh nuc "sudo systemctl restart hermes-scintillate-desktop-dashboard.service"
 ```

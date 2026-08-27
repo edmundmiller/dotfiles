@@ -41,7 +41,7 @@ let
       trap '${pkgs.coreutils}/bin/rm -f "$tmp"' EXIT
       ${pkgs.coreutils}/bin/printf '%s\n' "$marker_json" > "$tmp"
       ${pkgs.coreutils}/bin/chmod 0600 "$tmp"
-      ${pkgs.coreutils}/bin/mv "$tmp" "$marker"
+      ${pkgs.coreutils}/bin/mv --no-target-directory "$tmp" "$marker"
       trap - EXIT
     '';
   amosburtonCronExecutorHeartbeat = mkCronExecutorHeartbeat "amosburton";
