@@ -14,6 +14,7 @@ let
   mkCronExecutorHeartbeat =
     profile:
     let
+      hermesProfileHome = "/var/lib/hermes-${profile}";
       hermesHome = "/var/lib/hermes-${profile}/.hermes";
       markerTemplate = builtins.toJSON {
         kind = "systemd";
@@ -26,12 +27,25 @@ let
       set -eu
 
       hermes_home="${hermesHome}"
+      hermes_profile_home="${hermesProfileHome}"
       marker_dir="$hermes_home/cron"
       marker="$marker_dir/executor.json"
       marker_template='${markerTemplate}'
       heartbeat_at="$(${pkgs.coreutils}/bin/date --iso-8601=seconds)"
       marker_json="''${marker_template/__HERMES_HEARTBEAT_AT__/$heartbeat_at}"
 
+      if [ -L "$hermes_profile_home" ]; then
+        echo "refusing symlinked Hermes profile home: $hermes_profile_home" >&2
+        exit 1
+      fi
+      if [ -L "$hermes_home" ]; then
+        echo "refusing symlinked Hermes home: $hermes_home" >&2
+        exit 1
+      fi
+      if [ -L "$marker_dir" ]; then
+        echo "refusing symlinked cron directory: $marker_dir" >&2
+        exit 1
+      fi
       ${pkgs.coreutils}/bin/mkdir -p "$marker_dir"
       if [ -d "$marker" ]; then
         echo "refusing to replace executor marker directory: $marker" >&2
