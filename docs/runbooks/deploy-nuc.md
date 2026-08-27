@@ -35,7 +35,9 @@ available for testing, carry a `-dirty` provenance marker, and do not take the
 lock. Unique remote directories keep concurrent syncs from interleaving before
 the activation lock is acquired. Each run prunes older revision-scoped
 snapshots before syncing so at most five recent snapshots remain for follow-up
-checks; legacy task directories do not match the cleanup boundary.
+checks; legacy task directories do not match the cleanup boundary. An active
+run holds a snapshot lease that pruning skips, then releases the lease and
+re-prunes on remote-command exit. Abandoned leases age out after 24 hours.
 
 If a deploy is rejected, update the worktree from `origin/main`, rebuild, then
 retry. Inspect contention without deleting lock files:

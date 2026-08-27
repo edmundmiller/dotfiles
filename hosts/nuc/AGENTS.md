@@ -181,7 +181,7 @@ hey nuc-wt switch         # real deploy from this worktree
 hey nuc-wt vm             # build the NUC VM derivation on the NUC
 ```
 
-`hey nuc-wt` materializes the current local worktree in a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints that exact path as `NUC_WORKTREE_REMOTE_DIR`. Clean runs stream the committed Git archive; uncommitted worktrees may use `build` or `vm`, while `dry-activate`, `test`, and `switch` require a clean commit so the deployed generation has exact provenance. The isolated snapshot avoids concurrent sync/marker races, and bounded pruning retains the five newest revision-scoped snapshots without touching legacy task directories.
+`hey nuc-wt` materializes the current local worktree in a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints that exact path as `NUC_WORKTREE_REMOTE_DIR`. Clean runs stream the committed Git archive; uncommitted worktrees may use `build` or `vm`, while `dry-activate`, `test`, and `switch` require a clean commit so the deployed generation has exact provenance. The isolated snapshot avoids concurrent sync/marker races. Active leases prevent pruning a running build; exit cleanup re-prunes to the five newest revision-scoped snapshots, and abandoned leases age out after 24 hours without touching legacy task directories.
 
 The rsync intentionally excludes local-only/heavy directories like `.git/`, `.pi/`, `node_modules/`, `result`, and caches. If a worktree deploy seems slow or stuck, check for unexpected large local directories before changing deployment logic:
 
