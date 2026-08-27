@@ -72,7 +72,7 @@ hey nuc
 
 ### Testing From a Git Worktree
 
-When working in a secondary Git worktree (for example a Herdr worktree for the Goodnight ADR), use `hey nuc-worktree` instead of `hey nuc`. It materializes a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints the path as `NUC_WORKTREE_REMOTE_DIR`; clean runs come from the committed Git archive, not mutable working-tree files. Uncommitted worktrees may use `build` or `vm`; `dry-activate`, `test`, and `switch` require a clean commit with exact deployment provenance. The helper retains only the five newest revision-scoped snapshots.
+When working in a secondary Git worktree (for example a Herdr worktree for the Goodnight ADR), use `hey nuc-worktree` instead of `hey nuc`. It materializes a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints the path as `NUC_WORKTREE_REMOTE_DIR`; clean runs come from the committed Git archive, not mutable working-tree files. Uncommitted worktrees may use `build` or `vm`; `dry-activate`, `test`, and `switch` require a clean commit with exact deployment provenance. Active leases protect running snapshots, while exit cleanup retains only the five newest completed revision-scoped snapshots; abandoned leases age out after 24 hours.
 
 ```bash
 # Safe activation preview from a clean commit
