@@ -1,6 +1,6 @@
 # Worklog: dji-mic-mini-audible-feedback
 
-Status: active
+Status: blocked
 
 ## Objective
 
@@ -16,6 +16,9 @@ and stop after local commits unless a narrow activation path is proven.
   baseline because the installed helper is byte-identical to its compiled
   artifact and no Git or Nix source exists.
 - Do not run a broad Darwin switch while unrelated activation work is present.
+- Treat manual copying or symlinking into live paths as unproven activation;
+  repository ownership is through Home Manager and its supported entrypoint is
+  the full Darwin rebuild.
 
 ## Evidence
 
@@ -31,12 +34,33 @@ and stop after local commits unless a narrow activation path is proven.
 - A delegated read-only probe accidentally toggled the receiver and restored
   it to off. A later read-only package status observed mute on, so current live
   state is not acceptance evidence and must be re-read before any activation.
+- Commit `aa0f22417` records the strict expected-failure public-CLI regression
+  suite. Before implementation it passed as an expected compile failure; once
+  the helper seam compiled, the marker correctly failed with `unexpected pass`.
+- Commit `0e64b9c45` adds advisory serialization, exact receiver identity
+  validation, a 300 ms bounded readback, transition checks, and asynchronous
+  Basso/Tink feedback after the lock is released and only on verified toggles.
+- The fixture calls the literal `toggle` CLI command. It proves exactly one
+  distinct sound after mute and unmute, no sound for missing/ambiguous receiver,
+  setter failure, mismatch, no-op, or timeout, and unchanged mutable
+  default/output/AirPods sentinels.
+- Direct fixture test, ShellCheck, the focused package build, and the flake
+  regression check pass. The built helper's read-only `status` resolves the
+  exact receiver and currently reports mute on.
+- `hey check --worktree` passes Darwin evaluation, formatting/pre-commit,
+  zunit, package harness/policy, and ast-grep checks.
+- The managed Karabiner rule still equals the unique live rule object and its
+  provenance artifact. The live config and helper hashes remain unchanged.
+- No narrow repository activation command exists. `hey re` and `hey test`
+  both invoke a full `darwin-rebuild`; no activation was attempted.
 
 ## Reviews
 
 Provenance and activation reconnaissance found no existing dotfiles or Nix
 owner. Focused test-design review selected a compiled fixture backend at the
-public `toggle` CLI seam so tests never touch live CoreAudio.
+public `toggle` CLI seam so tests never touch live CoreAudio. Landing reviewers
+identified a tautological sentinel check, a discarded pre-read, and positional
+tuple fields; all were corrected and both reviewers confirmed resolution.
 
 ## Feedback
 
@@ -44,9 +68,15 @@ None.
 
 ## Remaining work
 
-- Commit the expected-failure public-CLI feedback tests, then implement the fix.
-- Run focused checks, review, local commits, and narrow activation assessment.
+- Activate through a safe full Darwin generation after unrelated changes are
+  cleared, or establish and separately authorize a supported narrow Home
+  Manager activation path.
+- Arm observation before two physical receiver-button taps, then verify mute and
+  unmute sounds plus exact-input, default/output, AirPods, enumeration, rule
+  scope, and one-sound-per-transition invariants.
 
 ## Commits
 
 - `4cd8e8137` `chore(dji-mic): adopt receiver mute automation`
+- `aa0f22417` `test(dji-mic): specify verified feedback`
+- `0e64b9c45` `feat(dji-mic): add verified mute feedback`
