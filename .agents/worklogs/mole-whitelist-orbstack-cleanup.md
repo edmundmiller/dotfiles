@@ -64,6 +64,12 @@ and focused repository checks exercise the changed file.
   activity marker inside the protected buildx directory. Both exact paths were
   permanently removed; `docker buildx ls` still reports the OrbStack builder
   running and no `desktop-linux` builder.
+- The final `$done` residue audit found three user-owned Docker Desktop metadata
+  files plus the inactive `gui/502/com.docker.helper` registration. The exact
+  files were removed and that user-domain job was booted out. All four targets
+  are absent; OrbStack remains `Running` on the `orbstack` context with server
+  29.4.0, 6 containers, and 32 images. OrbStack's separate system helper and
+  runtime paths were preserved.
 - `docker system df` reports 24.19 GB of reclaimable images and 2.427 GB of
   unlinked volumes in the active OrbStack daemon. These were deliberately left
   intact because they are not retired Docker Desktop data.
@@ -119,5 +125,6 @@ and focused repository checks exercise the changed file.
 
 ## Commits
 
-- The task change and this evidence log are shaped together during `$done`;
-  immutable revision identifiers are recorded by the terminal run receipt.
+- The whitelist and initial evidence log landed together; the final residue
+  audit is appended in a task-only evidence follow-up. Immutable revision
+  identifiers are recorded by the run receipt.
