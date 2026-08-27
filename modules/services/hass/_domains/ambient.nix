@@ -12,8 +12,8 @@ in
         name = "Mid-morning";
         icon = "mdi:weather-sunny";
         entities = {
-          "light.essentials_a19_a60" = "off";
-          "light.essentials_a19_a60_2" = "off";
+          "light.kitchen_trashcan" = "off";
+          "light.kitchen_dishwasher" = "off";
           "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "off"; # Window Nightstand
           "light.essentials_a19_a60_5" = "off"; # Wall Lamp
@@ -28,8 +28,8 @@ in
         name = "Sundown";
         icon = "mdi:weather-sunset";
         entities = {
-          "light.essentials_a19_a60" = "on";
-          "light.essentials_a19_a60_2" = "on";
+          "light.kitchen_trashcan" = "on";
+          "light.kitchen_dishwasher" = "on";
           "light.essentials_a19_a60_3" = {
             state = "on";
             brightness = 64; # 25%
@@ -52,8 +52,8 @@ in
         entities = {
           "input_boolean.goodnight" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
-          "light.essentials_a19_a60" = "on";
-          "light.essentials_a19_a60_2" = "on";
+          "light.kitchen_trashcan" = "on";
+          "light.kitchen_dishwasher" = "on";
           "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
           "light.essentials_a19_a60_4" = "on"; # Window Nightstand
           "light.essentials_a19_a60_5" = "on"; # Wall Lamp
@@ -76,8 +76,8 @@ in
           "light.smart_night_light_w" = "off";
           "switch.eve_energy_20ebu4101" = "off";
           # Indicators stay on
-          "light.essentials_a19_a60" = "on";
-          "light.essentials_a19_a60_2" = "on";
+          "light.kitchen_trashcan" = "on";
+          "light.kitchen_dishwasher" = "on";
         };
       }
     ];

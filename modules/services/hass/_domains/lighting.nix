@@ -24,8 +24,8 @@ in
       {
         name = "Living Space";
         lights = [
-          "light.essentials_a19_a60" # Trashcan (kitchen)
-          "light.essentials_a19_a60_2" # Dishwasher (kitchen)
+          "light.kitchen_trashcan" # Trashcan (kitchen)
+          "light.kitchen_dishwasher" # Dishwasher (kitchen)
           "light.essentials_a19_a60_3" # Bathroom Nightstand
           "light.essentials_a19_a60_4" # Window Nightstand
           "light.essentials_a19_a60_5" # Wall Lamp
