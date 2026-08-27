@@ -143,6 +143,32 @@ in
         ];
         warmupTimeoutMs = 120000;
       };
+      # WriteSimply and ClearTechnical are Vale packages selected by each
+      # project's .vale.ini, not separate LSP processes.
+      vale-ls = {
+        command = "${pkgs.my.vale-ls}/bin/vale-ls";
+        args = [
+          "--vale-binary"
+          "${pkgs.my.vale}/bin/vale"
+        ];
+        fileTypes = [
+          ".md"
+          ".markdown"
+          ".mdx"
+          ".org"
+          ".txt"
+        ];
+        rootMarkers = [
+          ".vale.ini"
+          ".git"
+        ];
+        initOptions = {
+          installVale = false;
+          syncOnStartup = false;
+          configPath = "";
+        };
+        isLinter = true;
+      };
     }
   );
 }

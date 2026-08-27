@@ -32,14 +32,17 @@ belong in Nix.
 uses the Nix-pinned Effect Language Service when the project `package.json`
 depends on `@effect/tsgo`; other projects use the standard TypeScript language
 server. It also points the Nextflow LSP at the Nix-built launcher, not a
-Claude-plugin-root placeholder. The `permission-policy-guard` extension is
-linked from `config/omp/` and explicitly listed in `config.yml`. OMP links the
-repo-local `packages/pi-packages/pi-herdr` and `pi-hunk` packages so review
-workflows can create Herdr PR workspaces and write Hunk comments. It also
-installs a pinned `pi-review-loop` on Darwin for the persistent `/diff-review`
-window, rewrites its Pi-specific TUI-mode guard to use OMP's `ctx.hasUI`, and
-builds the Glimpse macOS host skipped by OMP's plugin installer. Other OMP
-runtime state remains mutable and OMP-owned.
+Claude-plugin-root placeholder. The Vale server uses the Nix-pinned `vale-ls`
+and Vale binaries for Markdown and other prose files; each project's
+`.vale.ini` remains the source of truth for styles and package sync. The
+`permission-policy-guard` extension is linked from `config/omp/` and explicitly
+listed in `config.yml`. OMP links the repo-local
+`packages/pi-packages/pi-herdr` and `pi-hunk` packages so review workflows can
+create Herdr PR workspaces and write Hunk comments. It also installs a pinned
+`pi-review-loop` on Darwin for the persistent `/diff-review` window, rewrites
+its Pi-specific TUI-mode guard to use OMP's `ctx.hasUI`, and builds the Glimpse
+macOS host skipped by OMP's plugin installer. Other OMP runtime state remains
+mutable and OMP-owned.
 
 Plannotator and `pi-agent-browser-native` keep thin registrars eager while their
 full extension graphs load on first relevant use. Their original module ids are
@@ -94,7 +97,7 @@ effective values.
 `test-mcp-host-config.sh` builds the resolved MCP configuration for
 MacTraitor-Pro and Seqeratop. Legacy/renamed keys fail closed.
 `test-lsp-config.sh` builds each Darwin host's generated LSP config and verifies
-both Nix-managed server commands.
+the Nix-managed server commands.
 
 Enable with:
 

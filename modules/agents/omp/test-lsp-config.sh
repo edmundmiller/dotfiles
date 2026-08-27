@@ -22,7 +22,7 @@ from pathlib import Path
 config = json.loads(Path(os.environ["OMP_LSP_CONFIG"]).read_text())
 host = os.environ["OMP_LSP_HOST"]
 
-assert set(config) == {"nextflow", "typescript-language-server"}, host
+assert set(config) == {"nextflow", "typescript-language-server", "vale-ls"}, host
 
 typescript = config["typescript-language-server"]
 assert typescript["args"] == ["--stdio"], typescript
@@ -48,5 +48,20 @@ for package, expected_code, expected_output in (
 nextflow = config["nextflow"]
 assert nextflow["command"].endswith("/bin/nextflow-language-server"), nextflow
 assert os.access(nextflow["command"], os.X_OK), nextflow
+
+vale = config["vale-ls"]
+assert vale["command"].endswith("/bin/vale-ls"), vale
+assert os.access(vale["command"], os.X_OK), vale
+assert vale["args"][0] == "--vale-binary", vale
+assert vale["args"][1].endswith("/bin/vale"), vale
+assert os.access(vale["args"][1], os.X_OK), vale
+assert vale["fileTypes"] == [".md", ".markdown", ".mdx", ".org", ".txt"], vale
+assert vale["rootMarkers"] == [".vale.ini", ".git"], vale
+assert vale["initOptions"] == {
+    "installVale": False,
+    "syncOnStartup": False,
+    "configPath": "",
+}, vale
+assert vale["isLinter"] is True, vale
 PY
 done
