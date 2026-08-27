@@ -20,20 +20,6 @@ else
   compiled=false
 fi
 
-if [[ -f "$test_root/feedback.xfail" ]]; then
-  if [[ "$compiled" == true ]]; then
-    echo "unexpected pass: verified-feedback fixture now compiles" >&2
-    exit 1
-  fi
-  if ! grep -Eq "statements are not allowed at the top level|cannot find type 'ReceiverAudio'|cannot find type 'ReceiverDeviceID'|cannot find 'runReceiverMuteCLI'" "$compile_log"; then
-    echo "fixture compile failed for an unexpected reason" >&2
-    sed -n '1,120p' "$compile_log" >&2
-    exit 1
-  fi
-  echo "expected failure: adopted helper has no verified-feedback seam"
-  exit 0
-fi
-
 if [[ "$compiled" != true ]]; then
   sed -n '1,160p' "$compile_log" >&2
   exit 1
