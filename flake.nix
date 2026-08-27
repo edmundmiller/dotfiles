@@ -1575,20 +1575,11 @@
                     !(builtins.hasAttr "dji-mic-mini-receiver-mute" self.packages.${linuxSystem})
                     && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem})
                     && heyCheckSelectsDjiChecks;
-                  expectedFailure = builtins.pathExists ./packages/dji-mic-mini-receiver-mute/_tests/hey-check-selection.xfail;
                 in
                 pkgs.runCommand "dji-mic-mini-platform-boundaries" { } ''
-                  if ${if boundariesHold then "true" else "false"}; then
-                    if ${if expectedFailure then "true" else "false"}; then
-                      echo "unexpected pass: DJI Mic Mini package boundaries are now correct" >&2
-                      exit 1
-                    fi
-                  else
-                    if ! ${if expectedFailure then "true" else "false"}; then
-                      echo "DJI Mic Mini package or regression check leaked into x86_64-linux" >&2
-                      exit 1
-                    fi
-                    echo "expected failure: DJI Mic Mini Darwin boundaries are not enforced"
+                  if ! ${if boundariesHold then "true" else "false"}; then
+                    echo "DJI Mic Mini platform or standard-gate boundaries are not enforced" >&2
+                    exit 1
                   fi
                   touch "$out"
                 '';
