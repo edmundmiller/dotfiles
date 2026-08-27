@@ -27,6 +27,8 @@ Stamp each NUC generation with the exact dotfiles revision and locked agents-wor
 - Green: the remote retention readback reported five revision-scoped snapshots and preserved `/tmp/dotfiles-worktree-emiller-trmnl-enrollment`.
 - Green: the lifecycle-wrapped remote build returned `/nix/store/rybh9y4vk23w2ir8md7q9cc6k4jr3w6d-nixos-system-nuc-26.11.20260714.18b9261`; its active lease was absent afterward, retention returned to five snapshots, and the legacy task directory remained present.
 - Green after dirty-lease hardening: the direct Nu regression and Darwin Nix-store `hey-nuc-deploy-mode` check pass. During a production-helper dirty build, independent SSH readback proved `.nuc-deploy-active` and the dirty payload were present together, with marker `7c65b4741a8542fa20717bde3b15093299d9c622-dirty`. The build returned `/nix/store/0zarlfhw52rvx3sxixxx4brldgpdqgqm-nixos-system-nuc-26.11.20260714.18b9261`; afterward the lease was absent, retention returned to five snapshots, and the legacy task directory remained present.
+- Green after full lease-lifecycle hardening: regressions prove failed preparation releases its lease, removal/pruning failures are surfaced, a successful build fails on cleanup failure, an already-failed build preserves its original exit status, and both clean archive and dirty rsync preserve the destination-owned runtime lease even when the source tracks one.
+- Green live dirty overwrite probe: a deliberately stale ignored source lease from 2020 was not transferred. During the build, the remote lease was fresh and zero-byte, the dirty payload and exact `9a0ece5c2d3d57ec5f197f1b2bb50205d32194ac-dirty` marker were present, and the build returned `/nix/store/awz8j2gj8razm8drznn552ks3ldmngpz-nixos-system-nuc-26.11.20260714.18b9261`. Afterward the lease was absent and retention returned to five snapshots.
 
 ## Reviews
 
@@ -35,6 +37,7 @@ Stamp each NUC generation with the exact dotfiles revision and locked agents-wor
 - Independent review initially held the branch for fail-open evaluation, dirty-source mislabeling, shared-directory concurrency, shallow seam coverage, a Darwin integration-eval violation, working-tree TOCTOU, and unbounded `/tmp` retention. The hardening now fails closed, blocks dirty activation, archives the exact commit for clean runs, uses UUID snapshots, exercises the real marker helper and assume-unchanged case, gates NUC config integration to Linux, and bounds retention.
 - A follow-up review found the sequential retention policy could prune an active concurrent snapshot. Revision-scoped active leases now exclude running work from pruning, remote exit cleanup preserves the command status and re-prunes completed snapshots, and stale leases expire after 24 hours.
 - The next review found dirty rsync deleted its destination-only lease before the lifecycle wrapper started. The rsync filter now protects `.nuc-deploy-active`, and the regression plus live during-build readback prove the lease survives dirty sync and is removed only by lifecycle cleanup.
+- Further review found preparation failures could strand leases, cleanup failure was silent, and source-controlled lease files could overwrite the runtime marker through clean archive or dirty rsync. Preparation now owns release-on-error, cleanup reports both removal and pruning failures without masking an original command error, the runtime marker is ignored and excluded from both transfer paths, and focused plus live regressions cover each boundary.
 - `hey agent-audit-tests` passed test-confidence and `hey agent-finish` passed the worklog, repository checks, 56 agent-quality tests, 16 agent rules, 55 skills, instruction checks, and inventory checks.
 
 ## Feedback
@@ -56,3 +59,7 @@ Stamp each NUC generation with the exact dotfiles revision and locked agents-wor
 - `cc8e1d4ad` — `fix(nuc): protect active deploy snapshots`
 - `c924fac12` — `docs(nuc): record active snapshot leases`
 - `7c65b4741` — `fix(nuc): preserve dirty snapshot leases`
+- `73a0ddc57` — `docs(nuc): record dirty lease proof`
+- `944b865e6` — `fix(nuc): release failed deployment snapshots`
+- `20e90bad9` — `fix(nuc): harden snapshot lease cleanup`
+- `9a0ece5c2` — `fix(nuc): exclude dirty runtime leases`
