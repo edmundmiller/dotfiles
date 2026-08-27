@@ -339,6 +339,23 @@ class HermesCronExecutorTests(unittest.TestCase):
         config = NUC_CONFIG.read_text(encoding="utf-8")
         self.assertIn('mv --no-target-directory "$tmp" "$marker"', config)
 
+    @unittest.expectedFailure
+    def test_marker_writer_checks_process_returncodes_and_diagnostics(self):
+        source = (ROOT / "tests" / "test_hermes_cron_marker_writer.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("process.returncode", source)
+        self.assertIn('"stderr"', source)
+        self.assertIn("concurrent marker writers failed", source)
+        self.assertIn("refusing to replace executor marker directory", source)
+
+    @unittest.expectedFailure
+    def test_marker_writer_rejects_profile_and_cron_symlink_aliases(self):
+        config = NUC_CONFIG.read_text(encoding="utf-8")
+        self.assertIn('if [ -L "$hermes_profile_home" ]', config)
+        self.assertIn('if [ -L "$hermes_home" ]', config)
+        self.assertIn('if [ -L "$marker_dir" ]', config)
+
     def test_runbook_identity_failure_stops_following_mutations(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
         block = _bash_block_after(runbook, "## Deploy")
