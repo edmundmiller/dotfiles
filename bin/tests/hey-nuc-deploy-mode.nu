@@ -39,12 +39,14 @@ require-clean-nuc-activation $dirty_source "vm"
 let lifecycle_script = (nuc-worktree-lifecycle-script "/tmp/dotfiles-worktree-test" "tester" "true")
 assert ($lifecycle_script | str contains "trap cleanup EXIT")
 assert ($lifecycle_script | str contains "/tmp/dotfiles-worktree-test/.nuc-deploy-active")
-assert ($lifecycle_script | str contains "prune-nuc-deploy-snapshots' /tmp 'tester' 5")
+assert ($lifecycle_script | str contains "prune-nuc-deploy-snapshots' '/tmp' 'tester' 5")
 
 let temp_dir = (^mktemp -d | str trim)
 let source_dir = ($temp_dir | path join "source")
 let clean_destination_dir = ($temp_dir | path join "clean-synced")
 let dirty_destination_dir = ($temp_dir | path join "dirty-synced")
+let failed_prepare_source = ($temp_dir | path join "failed-prepare-source")
+let failed_prepare_destination = ($temp_dir | path join $"dotfiles-worktree-tester-($source_revision)-dirty-20000000-0000-0000-0000-000000000000")
 let prune_root = ($temp_dir | path join "prune-root")
 let lifecycle_destination = ($temp_dir | path join "lifecycle")
 let repo_root = ($env.DOTFILES_TEST_ROOT? | default (pwd))
@@ -100,6 +102,19 @@ nuc-worktree-sync $source_dir $dirty_destination_dir $fixture_revision $detected
 assert (($dirty_destination_dir | path join "untracked.txt") | path exists) "dirty build snapshots must include the tested worktree content"
 assert not (($dirty_destination_dir | path join ".git") | path exists) "dirty snapshots must still exclude Git metadata"
 assert (($dirty_destination_dir | path join ".nuc-deploy-active") | path exists) "dirty rsync must preserve the destination-only active lease"
+
+mkdir ($failed_prepare_source | path join "bin")
+mkdir $failed_prepare_destination
+^cp $snapshot_pruner ($failed_prepare_source | path join "bin" "prune-nuc-deploy-snapshots")
+"active" | save ($failed_prepare_destination | path join ".nuc-deploy-active")
+let prepare_failed = (try {
+  nuc-worktree-prepare $failed_prepare_source $failed_prepare_destination $fixture_revision true tester "" $temp_dir
+  false
+} catch {
+  true
+})
+assert $prepare_failed "missing revision writer must fail snapshot preparation"
+assert not (($failed_prepare_destination | path join ".nuc-deploy-active") | path exists) "failed snapshot preparation must release its active lease"
 
 mkdir $prune_root
 let snapshot_uuids = [

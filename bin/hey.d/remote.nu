@@ -188,13 +188,27 @@ def nuc-worktree-prune [script: string, user: string] {
   open --raw $script | ^ssh $NUC_HOST $"bash -s -- /tmp '($user)' 4"
 }
 
+def nuc-worktree-release-script [destination: string, user: string, root: string = "/tmp"] {
+  $"rm -f '($destination)/.nuc-deploy-active'
+bash '($destination)/bin/prune-nuc-deploy-snapshots' '($root)' '($user)' 5 || true"
+}
+
+def nuc-worktree-release [destination: string, user: string, host: string = "", root: string = "/tmp"] {
+  let command = (nuc-worktree-release-script $destination $user $root)
+  if ($host | is-empty) {
+    ^bash -c $command
+  } else {
+    ^ssh $host $command
+  }
+}
+
 def nuc-worktree-lifecycle-script [destination: string, user: string, command: string] {
+  let release = (nuc-worktree-release-script $destination $user)
   $"set -euo pipefail
 function cleanup {
   status=$?
   trap - EXIT
-  rm -f '($destination)/.nuc-deploy-active'
-  bash '($destination)/bin/prune-nuc-deploy-snapshots' /tmp '($user)' 5 || true
+  ($release)
   exit $status
 }
 trap cleanup EXIT
@@ -213,6 +227,25 @@ def nuc-worktree-revision-command [destination: string, revision: string] {
     error make {msg: "NUC deploy revision must be a 40-character lowercase Git revision, optionally suffixed with -dirty"}
   }
   $"bash '($destination)/bin/write-nuc-deploy-revision' '($destination)' '($revision)'"
+}
+
+def nuc-worktree-prepare [source: string, destination: string, revision: string, dirty: bool, user: string, host: string = "", root: string = "/tmp"] {
+  try {
+    nuc-worktree-sync $source $destination $revision $dirty $host
+    let command = (nuc-worktree-revision-command $destination $revision)
+    if ($host | is-empty) {
+      ^bash -c $command
+    } else {
+      ^ssh $host $command
+    }
+  } catch {|err|
+    try {
+      nuc-worktree-release $destination $user $host $root
+    } catch {|cleanup_err|
+      print -e $"warning: failed to release NUC snapshot after preparation error: ($cleanup_err.msg)"
+    }
+    error make $err
+  }
 }
 
 def nuc-worktree-remote-dir [user: string, source: record] {
@@ -241,8 +274,7 @@ def "main nuc-worktree" [mode: string = "dry-activate", configuration: string = 
   nuc-worktree-prune $prune_script $deploy_user
   ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
   ^ssh $NUC_HOST $"touch '($remote_dir)/.nuc-deploy-active'"
-  nuc-worktree-sync $ctx.flake_dir $remote_dir $source.head $source.dirty $NUC_HOST
-  ^ssh $NUC_HOST (nuc-worktree-revision-command $remote_dir $revision)
+  nuc-worktree-prepare $ctx.flake_dir $remote_dir $revision $source.dirty $deploy_user $NUC_HOST
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
