@@ -137,6 +137,8 @@ let
       pkgs.lib.splitString " " (toString bettyService.serviceConfig.ExecStart)
     )
   );
+  bettyExecutorScript = builtins.unsafeDiscardStringContext (builtins.head bettyExecutorScripts);
+  expectedCronTickExec = builtins.unsafeDiscardStringContext "exec ${hermesPackage}/bin/hermes cron tick";
   cronExecStartMatches =
     amosService.serviceConfig.ExecStart == "${hermesPackage}/bin/hermes cron tick"
     && buzzCronServices.scintillate.serviceConfig.ExecStart == "${hermesPackage}/bin/hermes cron tick"
@@ -144,7 +146,7 @@ let
       toString bettyService.serviceConfig.ExecStart
     )
     && builtins.length bettyExecutorScripts == 1
-    && hasInfix "exec ${hermesPackage}/bin/hermes cron tick" (builtins.head bettyExecutorScripts);
+    && hasInfix expectedCronTickExec bettyExecutorScript;
   nonTimerProfilesDoNotDisableCron = builtins.all (
     profile:
     let

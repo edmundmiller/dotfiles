@@ -247,7 +247,6 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
-    @unittest.expectedFailure
     def test_cron_package_assertion_discards_store_context_before_infix(self):
         source = HERMES_CRON_NIX_TEST.read_text(encoding="utf-8")
 
