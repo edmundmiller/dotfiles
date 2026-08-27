@@ -143,9 +143,7 @@ in
     if isDarwin then
       with inputs; mkIf (self ? rev) self.rev
     else
-      mkIf (
-        nucDeploymentProvenance.configurationRevision != null
-      ) nucDeploymentProvenance.configurationRevision;
+      nucDeploymentProvenance.configurationRevision;
 
   # Just the bear necessities...
   environment.systemPackages = with pkgs; [

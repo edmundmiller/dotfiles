@@ -15,19 +15,99 @@ assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton-a
 
 let source_revision = "1111111111111111111111111111111111111111"
 let revision_command = (nuc-worktree-revision-command "/tmp/dotfiles-worktree-test" $source_revision)
-assert equal $revision_command "printf '%s' '1111111111111111111111111111111111111111' > '/tmp/dotfiles-worktree-test/.nuc-deploy-source-revision'"
+assert equal $revision_command "bash '/tmp/dotfiles-worktree-test/bin/write-nuc-deploy-revision' '/tmp/dotfiles-worktree-test' '1111111111111111111111111111111111111111'"
+
+let clean_source = {head: $source_revision, base: $source_revision, owner: "test", dirty: false}
+let dirty_source = {head: $source_revision, base: $source_revision, owner: "test", dirty: true}
+let clean_remote_dir_one = (nuc-worktree-remote-dir "tester" $clean_source)
+let clean_remote_dir_two = (nuc-worktree-remote-dir "tester" $clean_source)
+let dirty_remote_dir = (nuc-worktree-remote-dir "tester" $dirty_source)
+assert ($clean_remote_dir_one | str starts-with $"/tmp/dotfiles-worktree-tester-($source_revision)-clean-")
+assert not ($clean_remote_dir_one == $clean_remote_dir_two) "concurrent clean deploys must use isolated remote directories"
+assert ($dirty_remote_dir | str starts-with $"/tmp/dotfiles-worktree-tester-($source_revision)-dirty-")
+for mode in ["dry-activate" "test" "switch"] {
+  let dirty_activation_blocked = (try {
+    require-clean-nuc-activation $dirty_source $mode
+    false
+  } catch {|err|
+    $err.msg | str contains "dirty worktree"
+  })
+  assert $dirty_activation_blocked
+}
+require-clean-nuc-activation $dirty_source "build"
+require-clean-nuc-activation $dirty_source "vm"
 
 let temp_dir = (^mktemp -d | str trim)
-let source_dir = ($temp_dir | path join "linked-worktree")
-let destination_dir = ($temp_dir | path join "synced")
-mkdir $source_dir
-"gitdir: /local-only/.git/worktrees/linked-worktree" | save ($source_dir | path join ".git")
+let source_dir = ($temp_dir | path join "source")
+let clean_destination_dir = ($temp_dir | path join "clean-synced")
+let dirty_destination_dir = ($temp_dir | path join "dirty-synced")
+let prune_root = ($temp_dir | path join "prune-root")
+let repo_root = ($env.DOTFILES_TEST_ROOT? | default (pwd))
+let revision_writer = ($repo_root | path join "bin" "write-nuc-deploy-revision")
+let snapshot_pruner = ($repo_root | path join "bin" "prune-nuc-deploy-snapshots")
+mkdir ($source_dir | path join "bin")
 "test" | save ($source_dir | path join "flake.nix")
+"ignored.txt" | save ($source_dir | path join ".gitignore")
+"ignored" | save ($source_dir | path join "ignored.txt")
+^cp $revision_writer ($source_dir | path join "bin" "write-nuc-deploy-revision")
+^git -C $source_dir init --quiet --initial-branch main
+^git -C $source_dir add flake.nix .gitignore bin/write-nuc-deploy-revision
+^git -C $source_dir -c user.name=Test -c user.email=test@example.invalid commit --quiet -m fixture
+let fixture_revision = (^git -C $source_dir rev-parse HEAD | str trim)
+^git -C $source_dir update-ref refs/remotes/origin/main $fixture_revision
+"mutated after status could have been checked" | save --force ($source_dir | path join "flake.nix")
+^git -C $source_dir update-index --assume-unchanged flake.nix
 
-nuc-worktree-rsync $"($source_dir)/" $"($destination_dir)/"
+let detected_clean_source = (nuc-deploy-source $source_dir)
+assert equal $detected_clean_source.head $fixture_revision
+assert equal $detected_clean_source.base $fixture_revision
+assert not $detected_clean_source.dirty
+nuc-worktree-sync $source_dir $clean_destination_dir $fixture_revision $detected_clean_source.dirty
 
-assert not (($destination_dir | path join ".git") | path exists) "linked-worktree .git pointer must not be synced"
-assert (($destination_dir | path join "flake.nix") | path exists) "worktree contents must still be synced"
+assert (($clean_destination_dir | path join "bin" "write-nuc-deploy-revision") | path exists) "clean snapshots must include the tracked revision writer"
+let marker_command = (nuc-worktree-revision-command $clean_destination_dir $fixture_revision)
+let marker_result = (^bash -c $marker_command | complete)
+assert equal $marker_result.exit_code 0
+
+assert not (($clean_destination_dir | path join ".git") | path exists) "worktree Git metadata must not be synced"
+assert (($clean_destination_dir | path join "flake.nix") | path exists) "tracked worktree contents must still be synced"
+assert not (($clean_destination_dir | path join "ignored.txt") | path exists) "clean snapshots must exclude ignored content"
+assert equal (open --raw ($clean_destination_dir | path join "flake.nix")) (^git -C $source_dir show HEAD:flake.nix) "clean snapshots must materialize committed blobs, not assume-unchanged worktree content"
+assert equal (open --raw ($clean_destination_dir | path join ".nuc-deploy-source-revision")) $fixture_revision
+let invalid_marker_result = (^bash $revision_writer $clean_destination_dir invalid | complete)
+assert equal $invalid_marker_result.exit_code 2
+assert equal (open --raw ($clean_destination_dir | path join ".nuc-deploy-source-revision")) $fixture_revision
+
+"uncommitted" | save ($source_dir | path join "untracked.txt")
+let detected_dirty_source = (nuc-deploy-source $source_dir)
+assert $detected_dirty_source.dirty
+require-clean-nuc-activation $detected_dirty_source "build"
+nuc-worktree-sync $source_dir $dirty_destination_dir $fixture_revision $detected_dirty_source.dirty
+assert (($dirty_destination_dir | path join "untracked.txt") | path exists) "dirty build snapshots must include the tested worktree content"
+assert not (($dirty_destination_dir | path join ".git") | path exists) "dirty snapshots must still exclude Git metadata"
+
+mkdir $prune_root
+let snapshot_uuids = [
+  "00000000-0000-0000-0000-000000000001"
+  "00000000-0000-0000-0000-000000000002"
+  "00000000-0000-0000-0000-000000000003"
+  "00000000-0000-0000-0000-000000000004"
+  "00000000-0000-0000-0000-000000000005"
+  "00000000-0000-0000-0000-000000000006"
+]
+for item in ($snapshot_uuids | enumerate) {
+  let snapshot = ($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-clean-($item.item)")
+  mkdir $snapshot
+  ^touch -d $"2020-01-01 00:00:0($item.index + 1) UTC" $snapshot
+}
+let legacy_snapshot = ($prune_root | path join "dotfiles-worktree-tester-trmnl-enrollment")
+mkdir $legacy_snapshot
+let prune_result = (^bash $snapshot_pruner $prune_root tester 2 | complete)
+assert equal $prune_result.exit_code 0
+assert equal ((glob ($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-*") | length)) 2
+assert (($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-clean-00000000-0000-0000-0000-000000000006") | path exists) "snapshot pruning must retain the newest directory"
+assert (($prune_root | path join $"dotfiles-worktree-tester-($source_revision)-clean-00000000-0000-0000-0000-000000000005") | path exists) "snapshot pruning must retain the configured count"
+assert ($legacy_snapshot | path exists) "snapshot pruning must not remove legacy or unrelated task directories"
 rm -rf $temp_dir
 
 print "hey nuc deploy mode tests passed"

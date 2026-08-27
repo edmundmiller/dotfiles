@@ -8,11 +8,11 @@ let
   validateRevision =
     name: revision:
     if revision == null then
-      null
-    else if builtins.isString revision && builtins.match "[0-9a-f]{40}" revision != null then
+      throw "${name} deployment revision is missing"
+    else if builtins.isString revision && builtins.match "[0-9a-f]{40}(-dirty)?" revision != null then
       revision
     else
-      throw "${name} deployment revision must be an exact 40-character lowercase Git revision";
+      throw "${name} deployment revision must be a 40-character lowercase Git revision, optionally suffixed with -dirty";
 
   markerRevision =
     if builtins.pathExists markerPath then
@@ -25,9 +25,5 @@ in
 {
   inherit dotfilesRevision agentsWorkspaceRevision;
 
-  configurationRevision =
-    if dotfilesRevision != null && agentsWorkspaceRevision != null then
-      "dotfiles=${dotfilesRevision};agents-workspace=${agentsWorkspaceRevision}"
-    else
-      null;
+  configurationRevision = "dotfiles=${dotfilesRevision};agents-workspace=${agentsWorkspaceRevision}";
 }
