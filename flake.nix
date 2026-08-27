@@ -1427,6 +1427,23 @@
                     touch $out
                   '';
 
+              hey-nuc-deploy-mode =
+                pkgs.runCommand "hey-nuc-deploy-mode-check"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.coreutils
+                      pkgs.git
+                      pkgs.nushell
+                      pkgs.rsync
+                    ];
+                  }
+                  ''
+                    HOSTNAME=nix-check DOTFILES_TEST_ROOT=${./.} \
+                        nu ${./.}/bin/tests/hey-nuc-deploy-mode.nu
+                        touch "$out"
+                  '';
+
               # HA config validation is now done at build time on the NUC via
               # validate-config.nix (uses HA's own check_config). The JSON schema
               # in schemas/adaptive-lighting.json is kept as agent reference only.
@@ -1640,6 +1657,12 @@
               };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
+              nuc-deployment-provenance-integration = import ./hosts/nuc/_tests/deployment-provenance.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                expectedAgentsWorkspaceRevision = inputs.agents-workspace.rev;
+                inherit pkgs;
+              };
+
               trmnl-agent-message-render =
                 pkgs.runCommand "trmnl-agent-message-render"
                   {

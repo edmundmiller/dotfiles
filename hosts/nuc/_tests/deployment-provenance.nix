@@ -1,19 +1,44 @@
-{ pkgs }:
+{
+  nixosConfig ? null,
+  expectedAgentsWorkspaceRevision ? null,
+  pkgs,
+}:
 let
   resolverPath = ../_lib/deployment-provenance.nix;
   resolverExists = builtins.pathExists resolverPath;
 
-  # Flip this only after the regression has been observed and the resolver is
-  # implemented. Nix checks do not provide a strict xfail primitive.
-  expectedFailure = false;
+  missingSourceResult =
+    builtins.tryEval
+      (import resolverPath {
+        inherit (pkgs) lib;
+        self = { };
+        agentsWorkspace.rev = "2222222222222222222222222222222222222222";
+        markerPath = ./fixtures + "/missing-deployment-revision";
+      }).configurationRevision;
+  missingAgentsWorkspaceResult =
+    builtins.tryEval
+      (import resolverPath {
+        inherit (pkgs) lib;
+        self.rev = "1111111111111111111111111111111111111111";
+        agentsWorkspace = { };
+        markerPath = ./fixtures/deployment-revision;
+      }).configurationRevision;
 
   assertions = [
     {
-      test = if expectedFailure then !resolverExists else resolverExists;
+      test = resolverExists;
       msg = "NUC deployment provenance must have a pure resolver.";
     }
+    {
+      test = !missingSourceResult.success;
+      msg = "NUC evaluation must fail closed when neither flake self.rev nor the synced-worktree marker is present.";
+    }
+    {
+      test = !missingAgentsWorkspaceResult.success;
+      msg = "NUC evaluation must fail closed when the locked agents-workspace revision is absent.";
+    }
   ]
-  ++ pkgs.lib.optionals (resolverExists && !expectedFailure) (
+  ++ pkgs.lib.optionals resolverExists (
     let
       provenance = import resolverPath {
         inherit (pkgs) lib;
@@ -38,6 +63,23 @@ let
           provenance.configurationRevision
           == "dotfiles=1111111111111111111111111111111111111111;agents-workspace=2222222222222222222222222222222222222222";
         msg = "The deployed configuration revision must contain both exact labeled revisions.";
+      }
+    ]
+  )
+  ++ pkgs.lib.optionals (nixosConfig != null) (
+    let
+      actualRevision = nixosConfig.config.system.configurationRevision;
+    in
+    [
+      {
+        test =
+          builtins.match "dotfiles=[0-9a-f]{40}(-dirty)?;agents-workspace=[0-9a-f]{40}" actualRevision
+          != null;
+        msg = "The evaluated NUC configuration must carry both labeled revisions.";
+      }
+      {
+        test = pkgs.lib.hasSuffix "agents-workspace=${expectedAgentsWorkspaceRevision}" actualRevision;
+        msg = "The evaluated NUC configuration must carry the exact locked agents-workspace revision.";
       }
     ]
   );

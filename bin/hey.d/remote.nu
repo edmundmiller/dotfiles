@@ -14,14 +14,30 @@ def nuc-deploy-mode [hostname: string] {
   if $hostname == $NUC_HOST { "local" } else { "worktree-remote" }
 }
 
-def nuc-deploy-source [] {
-  let head = ((^git rev-parse HEAD | complete).stdout | str trim)
-  let base = ((^git merge-base HEAD origin/main | complete).stdout | str trim)
+def nuc-deploy-source [repository: string = "."] {
+  let head = ((^git -C $repository rev-parse HEAD | complete).stdout | str trim)
+  let base = ((^git -C $repository merge-base HEAD origin/main | complete).stdout | str trim)
+  let worktree_status = (^git -C $repository status --porcelain=v1 --untracked-files=normal | complete)
   if ($head | is-empty) or ($base | is-empty) {
     error make {msg: "could not resolve NUC deploy source against origin/main"}
   }
-  let owner = $"($env.USER? | default 'user')@((^hostname -s | str trim))"
-  {head: $head, base: $base, owner: $owner}
+  if $worktree_status.exit_code != 0 {
+    error make {msg: "could not inspect NUC deploy source cleanliness"}
+  }
+  let short_hostname = if ($env.HOSTNAME? | default "" | is-empty) {
+    ^hostname -s | str trim
+  } else {
+    $env.HOSTNAME | str trim
+  }
+  let owner = $"($env.USER? | default 'user')@($short_hostname)"
+  let dirty = (($worktree_status.stdout | str trim | is-empty) == false)
+  {head: $head, base: $base, owner: $owner, dirty: $dirty}
+}
+
+def require-clean-nuc-activation [source: record, mode: string] {
+  if $source.dirty and ($mode in ["dry-activate" "test" "switch"]) {
+    error make {msg: $"refusing ($mode) from a dirty worktree; commit the exact source before activating the NUC"}
+  }
 }
 
 def nuc-deploy-source-args [source: record] {
@@ -69,7 +85,8 @@ def "main nuc-hermes-smoke" [] {
 def nuc-local-rebuild [] {
   let ctx = (context)
   cd $ctx.flake_dir
-  let source = (nuc-deploy-source)
+  let source = (nuc-deploy-source $ctx.flake_dir)
+  require-clean-nuc-activation $source "switch"
   let source_args = (nuc-deploy-source-args $source)
 
   print "=== NUC deploy mode: explicit local nixos-rebuild ==="
@@ -147,25 +164,65 @@ def nuc-worktree-rsync [source: string, destination: string] {
   ^rsync -az --delete --delete-excluded --exclude .git --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $source $destination
 }
 
-def nuc-worktree-revision-command [destination: string, revision: string] {
+def nuc-worktree-archive [source: string, revision: string] {
   let parsed = ($revision | parse -r '^(?<revision>[0-9a-f]{40})$')
   if ($parsed | is-empty) {
-    error make {msg: "NUC deploy revision must be an exact 40-character lowercase Git revision"}
+    error make {msg: "clean NUC snapshots require an exact 40-character lowercase Git revision"}
   }
-  $"printf '%s' '($revision)' > '($destination)/.nuc-deploy-source-revision'"
+  ^git -C $source archive --format=tar $revision
+}
+
+def nuc-worktree-sync [source: string, destination: string, revision: string, dirty: bool, host: string = ""] {
+  if $dirty {
+    let target = if ($host | is-empty) { $destination } else { $"($host):($destination)/" }
+    nuc-worktree-rsync $"($source)/" $target
+  } else if ($host | is-empty) {
+    mkdir $destination
+    nuc-worktree-archive $source $revision | ^tar -xf - -C $destination
+  } else {
+    nuc-worktree-archive $source $revision | ^ssh $host $"tar -xf - -C '($destination)'"
+  }
+}
+
+def nuc-worktree-prune [script: string, user: string] {
+  open --raw $script | ^ssh $NUC_HOST $"bash -s -- /tmp '($user)' 4"
+}
+
+def nuc-worktree-revision-command [destination: string, revision: string] {
+  let parsed = ($revision | parse -r '^(?<revision>[0-9a-f]{40}(-dirty)?)$')
+  if ($parsed | is-empty) {
+    error make {msg: "NUC deploy revision must be a 40-character lowercase Git revision, optionally suffixed with -dirty"}
+  }
+  $"bash '($destination)/bin/write-nuc-deploy-revision' '($destination)' '($revision)'"
+}
+
+def nuc-worktree-remote-dir [user: string, source: record] {
+  let parsed_user = ($user | parse -r '^(?<user>[A-Za-z0-9._-]+)$')
+  if ($parsed_user | is-empty) {
+    error make {msg: "NUC deploy user must contain only letters, digits, dot, underscore, or hyphen"}
+  }
+  let state = if $source.dirty { "dirty" } else { "clean" }
+  let suffix = $"($source.head)-($state)-((random uuid))"
+  $"/tmp/dotfiles-worktree-($user)-($suffix)"
 }
 
 def "main nuc-worktree" [mode: string = "dry-activate", configuration: string = "nuc"] {
   validate-nuc-worktree-mode $mode
   let deploy_configuration = (nuc-worktree-configuration $configuration)
   let ctx = (context)
-  let remote_dir = $"/tmp/dotfiles-worktree-($env.USER? | default 'user')"
-  let source = (nuc-deploy-source)
+  let source = (nuc-deploy-source $ctx.flake_dir)
+  require-clean-nuc-activation $source $mode
+  let deploy_user = ($env.USER? | default "user")
+  let remote_dir = (nuc-worktree-remote-dir $deploy_user $source)
+  let revision = if $source.dirty { $"($source.head)-dirty" } else { $source.head }
+  let prune_script = ($ctx.flake_dir | path join "bin" "prune-nuc-deploy-snapshots")
 
   print $"=== Syncing current worktree to NUC: ($ctx.flake_dir) -> ($NUC_HOST):($remote_dir) ==="
+  print $"NUC_WORKTREE_REMOTE_DIR=($remote_dir)"
+  nuc-worktree-prune $prune_script $deploy_user
   ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
-  nuc-worktree-rsync $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
-  ^ssh $NUC_HOST (nuc-worktree-revision-command $remote_dir $source.head)
+  nuc-worktree-sync $ctx.flake_dir $remote_dir $source.head $source.dirty $NUC_HOST
+  ^ssh $NUC_HOST (nuc-worktree-revision-command $remote_dir $revision)
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="

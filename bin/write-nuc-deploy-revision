@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+destination="${1:?usage: write-nuc-deploy-revision <destination> <revision>}"
+revision="${2:?usage: write-nuc-deploy-revision <destination> <revision>}"
+
+if [[ ! "$revision" =~ ^[0-9a-f]{40}(-dirty)?$ ]]; then
+  echo "NUC deploy revision must be a 40-character lowercase Git revision, optionally suffixed with -dirty" >&2
+  exit 2
+fi
+if [[ ! -d "$destination" ]]; then
+  echo "NUC deploy destination is not a directory: $destination" >&2
+  exit 2
+fi
+
+umask 022
+printf '%s' "$revision" >"${destination%/}/.nuc-deploy-source-revision"

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="${1:?usage: prune-nuc-deploy-snapshots <root> <user> [keep]}"
+deploy_user="${2:?usage: prune-nuc-deploy-snapshots <root> <user> [keep]}"
+keep="${3:-4}"
+
+if [[ "$root" != /* || "$root" == "/" || ! -d "$root" ]]; then
+  echo "snapshot root must be an existing absolute directory other than /: $root" >&2
+  exit 2
+fi
+if [[ ! "$deploy_user" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "snapshot user must contain only letters, digits, dot, underscore, or hyphen" >&2
+  exit 2
+fi
+if [[ ! "$keep" =~ ^[0-9]+$ ]]; then
+  echo "snapshot retention must be a non-negative integer" >&2
+  exit 2
+fi
+
+root="$(cd "$root" && pwd -P)"
+prefix="dotfiles-worktree-${deploy_user}-"
+mapfile -d '' -t snapshots < <(
+  while IFS= read -r -d '' candidate; do
+    name="${candidate##*/}"
+    suffix="${name#"$prefix"}"
+    if [[ "$name" == "$prefix"* ]] \
+      && [[ "$suffix" =~ ^[0-9a-f]{40}-(clean|dirty)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+      printf '%s %s\0' "$(stat -c '%Y' "$candidate")" "$candidate"
+    fi
+  done < <(find "$root" -mindepth 1 -maxdepth 1 -type d -name "${prefix}*" -print0) \
+    | sort -z -nr
+)
+
+for ((index = keep; index < ${#snapshots[@]}; index++)); do
+  snapshot="${snapshots[$index]#* }"
+  name="${snapshot##*/}"
+  suffix="${name#"$prefix"}"
+  if [[ "$snapshot" != "$root"/"$prefix"* ]] \
+    || [[ ! "$suffix" =~ ^[0-9a-f]{40}-(clean|dirty)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+    echo "refusing to prune unexpected snapshot path: $snapshot" >&2
+    exit 2
+  fi
+  rm -rf -- "$snapshot"
+done
