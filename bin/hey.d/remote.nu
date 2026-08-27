@@ -178,9 +178,9 @@ def nuc-worktree-sync [source: string, destination: string, revision: string, di
     nuc-worktree-rsync $"($source)/" $target
   } else if ($host | is-empty) {
     mkdir $destination
-    nuc-worktree-archive $source $revision | ^tar -xf - -C $destination
+    nuc-worktree-archive $source $revision | ^tar --exclude=.nuc-deploy-active -xf - -C $destination
   } else {
-    nuc-worktree-archive $source $revision | ^ssh $host $"tar -xf - -C '($destination)'"
+    nuc-worktree-archive $source $revision | ^ssh $host $"tar --exclude=.nuc-deploy-active -xf - -C '($destination)'"
   }
 }
 
@@ -189,8 +189,19 @@ def nuc-worktree-prune [script: string, user: string] {
 }
 
 def nuc-worktree-release-script [destination: string, user: string, root: string = "/tmp"] {
-  $"rm -f '($destination)/.nuc-deploy-active'
-bash '($destination)/bin/prune-nuc-deploy-snapshots' '($root)' '($user)' 5 || true"
+  $"function nuc_release {
+  local release_status=0
+  if ! rm -f '($destination)/.nuc-deploy-active'; then
+    printf 'warning: failed to remove active NUC snapshot lease: ($destination)\\n' >&2
+    release_status=1
+  fi
+  if ! bash '($destination)/bin/prune-nuc-deploy-snapshots' '($root)' '($user)' 5; then
+    printf 'warning: failed to prune completed NUC snapshots after: ($destination)\\n' >&2
+    release_status=1
+  fi
+  return \"$release_status\"
+}
+nuc_release"
 }
 
 def nuc-worktree-release [destination: string, user: string, host: string = "", root: string = "/tmp"] {
@@ -208,8 +219,13 @@ def nuc-worktree-lifecycle-script [destination: string, user: string, command: s
 function cleanup {
   status=$?
   trap - EXIT
+  set +e
   ($release)
-  exit $status
+  release_status=$?
+  if [ \"$status\" -ne 0 ]; then
+    exit \"$status\"
+  fi
+  exit \"$release_status\"
 }
 trap cleanup EXIT
 ($command)"

@@ -10,6 +10,9 @@ todotxtfmt/todotxtfmt
 # Injected only into the NUC's rsynced worktree so Nix can stamp the source HEAD.
 .nuc-deploy-source-revision
 
+# Runtime-only lease protecting an in-progress NUC deployment snapshot.
+.nuc-deploy-active
+
 # Home-manager managed files (prevent symlink issues)
 config/jj/config.toml
 
