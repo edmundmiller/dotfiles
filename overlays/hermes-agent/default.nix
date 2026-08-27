@@ -37,6 +37,7 @@ let
       (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0003-kanban-platform-toolsets.patch)
       (inputs.agents-workspace + /patches/hermes-agent/0004-kanban-fan-in-guidance.patch)
+      (inputs.agents-workspace + /patches/hermes-agent/0005-gateway-profile-identity.patch)
     ];
     postInstall = (old.postInstall or "") + ''
       chmod -R u+w $out/share/hermes
