@@ -4,16 +4,16 @@ final: prev:
 let
   agentsWorkspacePatchRoot = inputs.agents-workspace + /patches/hermes-agent;
   canonicalBuzzPatchOrder = builtins.filter (name: name != "") (
-    final.lib.splitString "\n" (builtins.readFile (agentsWorkspacePatchRoot + /buzz-stack-order.txt))
+    final.lib.splitString "\n" (builtins.readFile (agentsWorkspacePatchRoot + "/buzz-stack-order.txt"))
   );
   canonicalBuzzPatches = map (name: agentsWorkspacePatchRoot + "/${name}") canonicalBuzzPatchOrder;
   auxiliaryHermesPatches = [
-    (agentsWorkspacePatchRoot + /0002-bounded-smart-model-routing.patch)
-    (agentsWorkspacePatchRoot + /0003-kanban-platform-toolsets.patch)
-    (agentsWorkspacePatchRoot + /0004-kanban-fan-in-guidance.patch)
-    (agentsWorkspacePatchRoot + /0005-gateway-profile-identity.patch)
+    (agentsWorkspacePatchRoot + "/0002-bounded-smart-model-routing.patch")
+    (agentsWorkspacePatchRoot + "/0003-kanban-platform-toolsets.patch")
+    (agentsWorkspacePatchRoot + "/0004-kanban-fan-in-guidance.patch")
+    (agentsWorkspacePatchRoot + "/0005-gateway-profile-identity.patch")
   ];
-  dashboardLivenessPatch = agentsWorkspacePatchRoot + /0006-dashboard-profile-lock-liveness.patch;
+  dashboardLivenessPatch = agentsWorkspacePatchRoot + "/0006-dashboard-profile-lock-liveness.patch";
 
   # Hermes ships the Photon sidecar source but intentionally leaves its npm
   # dependencies to the deployment.  Keep the old NUC behavior in the shared
