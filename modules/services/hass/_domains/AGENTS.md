@@ -98,7 +98,9 @@ Verify with:
 
 ```bash
 hey nuc-wt build
-ssh nuc "cd /tmp/dotfiles-worktree-emiller && nix build '.#checks.x86_64-linux.ha-automation-assertions' --no-link"
+# Copy the exact NUC_WORKTREE_REMOTE_DIR printed by the build.
+remote_dir='PASTE_NUC_WORKTREE_REMOTE_DIR_VALUE_HERE'
+ssh nuc "cd '$remote_dir' && nix build '.#checks.x86_64-linux.ha-automation-assertions' --no-link"
 hey nuc dry-activate
 hey nuc
 hey nuc-status
