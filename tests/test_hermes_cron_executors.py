@@ -1,4 +1,5 @@
 import inspect
+import json
 import os
 import re
 import subprocess
@@ -10,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 RUNBOOK = ROOT / "docs" / "runbooks" / "deploy-nuc.md"
+HERMES_OVERLAY = ROOT / "overlays" / "hermes-agent" / "default.nix"
 
 
 _OPENERS = {"(": ")", "[": "]", "{": "}"}
@@ -243,6 +245,42 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
 
 
 class HermesCronExecutorTests(unittest.TestCase):
+    def test_production_overlay_consumes_the_published_canonical_stack(self):
+        overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
+
+        self.assertIn("buzz-stack-order.txt", overlay)
+        self.assertRegex(
+            overlay,
+            r"patches\s*=\s*\(old\.patches or \[\s*\]\)\s*\+\+\s*"
+            r"canonicalBuzzPatches\s*\+\+\s*auxiliaryHermesPatches\s*\+\+\s*"
+            r"\[\s*dashboardLivenessPatch\s*\]",
+        )
+        self.assertIn("dashboardLivenessPatch", overlay)
+        self.assertNotIn("/0001-buzz-01-thread-routing.patch", overlay)
+        self.assertNotIn("/0006-gateway-cron-executor-ownership.patch", overlay)
+        for contract in (
+            "test_hermes_buzz_singuloid_pilot.py",
+            "test_hermes_buzz_thread_isolation.py",
+            "test_hermes_cron_single_owner.py",
+            "test_hermes_cron_external_executor.py",
+            "test_hermes_dashboard_profile_liveness.py",
+        ):
+            self.assertIn(contract, overlay)
+
+    def test_agents_workspace_url_and_lock_revision_match(self):
+        flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
+        lock = json.loads((ROOT / "flake.lock").read_text(encoding="utf-8"))
+        match = re.search(
+            r'url = "github:edmundmiller/agents-workspace/([0-9a-f]{40})";',
+            flake,
+        )
+
+        self.assertIsNotNone(match)
+        self.assertEqual(
+            match.group(1),
+            lock["nodes"]["agents-workspace"]["locked"]["rev"],
+        )
+
     def test_darwin_common_checks_do_not_evaluate_nuc_or_deploy(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
         span, guards, references = _check_reference_layout(flake)

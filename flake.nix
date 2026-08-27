@@ -108,7 +108,7 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/7c427f1ce47449b51a31a18f08019c4aea199d9e";
+      url = "github:edmundmiller/agents-workspace/92186274d960773758203d6268e1a635b3a4f401";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -1455,6 +1455,33 @@
                     touch "$out"
                   '';
 
+              # Source-only checks consume the published agents-workspace
+              # manifest and remain safe to evaluate on Darwin. NUC config
+              # assertions below stay Linux-only because they evaluate nuc.
+              hermes-buzz-patch-stack = import (inputs.agents-workspace + /checks/hermes-buzz-patch-stack.nix) {
+                inherit pkgs;
+                hermesSource = inputs.hermes-agent;
+              };
+
+              hermes-buzz-final-stack-behavior =
+                import (inputs.agents-workspace + /checks/hermes-buzz-final-stack-behavior.nix)
+                  {
+                    inherit pkgs;
+                    hermesSource = inputs.hermes-agent;
+                  };
+
+              hermes-cron-single-owner = import (inputs.agents-workspace + /checks/hermes-cron-single-owner.nix) {
+                inherit pkgs;
+                hermesSource = inputs.hermes-agent;
+              };
+
+              hermes-dashboard-profile-liveness =
+                import (inputs.agents-workspace + /checks/hermes-dashboard-profile-liveness.nix)
+                  {
+                    inherit pkgs;
+                    hermesSource = inputs.hermes-agent;
+                  };
+
               apple-container-pilot-assertions = import ./hosts/mactraitorpro/_tests/apple-container-pilot.nix {
                 macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
                 seqeratopConfig = self.darwinConfigurations.Seqeratop;
@@ -1613,6 +1640,13 @@
                   | grep -F 'Hermes Agent v0.20.5 (2026.8.19)'
                 grep -q _should_reply_in_thread \
                   "$package/share/hermes/plugins/platforms/buzz/adapter.py"
+                grep -Fq 'gateway_ticker' \
+                  "$package/share/hermes/hermes_cli/config_defaults.py"
+                test -f "$package/share/hermes/plugins/platforms/buzz/buzz_thread_roots.py"
+                grep -Fq 'resolve_gateway_liveness' \
+                  "$package/share/hermes/hermes_cli/profiles.py"
+                grep -Fq 'def _dashboard_profile_dir' \
+                  "$package/share/hermes/hermes_cli/web_server.py"
                 touch "$out"
               '';
 

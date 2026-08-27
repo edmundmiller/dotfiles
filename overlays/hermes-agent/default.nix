@@ -2,6 +2,19 @@
 final: prev:
 
 let
+  agentsWorkspacePatchRoot = inputs.agents-workspace + /patches/hermes-agent;
+  canonicalBuzzPatchOrder = builtins.filter (name: name != "") (
+    final.lib.splitString "\n" (builtins.readFile (agentsWorkspacePatchRoot + /buzz-stack-order.txt))
+  );
+  canonicalBuzzPatches = map (name: agentsWorkspacePatchRoot + "/${name}") canonicalBuzzPatchOrder;
+  auxiliaryHermesPatches = [
+    (agentsWorkspacePatchRoot + /0002-bounded-smart-model-routing.patch)
+    (agentsWorkspacePatchRoot + /0003-kanban-platform-toolsets.patch)
+    (agentsWorkspacePatchRoot + /0004-kanban-fan-in-guidance.patch)
+    (agentsWorkspacePatchRoot + /0005-gateway-profile-identity.patch)
+  ];
+  dashboardLivenessPatch = agentsWorkspacePatchRoot + /0006-dashboard-profile-lock-liveness.patch;
+
   # Hermes ships the Photon sidecar source but intentionally leaves its npm
   # dependencies to the deployment.  Keep the old NUC behavior in the shared
   # package so Photon does not regress when every profile converges here.
@@ -21,24 +34,16 @@ let
     pname = "hermes-agent";
     version = "2026.8.19";
     src = inputs.hermes-agent;
-    patches = (old.patches or [ ]) ++ [
-      (inputs.agents-workspace + /patches/hermes-agent/0006-gateway-cron-executor-ownership.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-01-thread-routing.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-02-channel-activation.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-03-working-reaction.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-04-reconnect-handoff.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-05-native-typing.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-06-agent-managed-profile.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-07-websocket-rediscovery.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-08-durable-cursors.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-09-verified-delivery.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-10-handler-cursor-acknowledgments.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0001-buzz-11-agent-profile-about.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0002-bounded-smart-model-routing.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0003-kanban-platform-toolsets.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0004-kanban-fan-in-guidance.patch)
-      (inputs.agents-workspace + /patches/hermes-agent/0005-gateway-profile-identity.patch)
-    ];
+    # The canonical manifest is the production Buzz order. Auxiliary Hermes
+    # behavior patches follow it, and dashboard liveness remains an independent
+    # final patch so the two stacks cannot silently drift apart.
+    patches =
+      (old.patches or [ ])
+      ++ canonicalBuzzPatches
+      ++ auxiliaryHermesPatches
+      ++ [
+        dashboardLivenessPatch
+      ];
     postInstall = (old.postInstall or "") + ''
       chmod -R u+w $out/share/hermes
       rm -rf $out/share/hermes/skills $out/share/hermes/optional-skills $out/share/hermes/plugins
@@ -80,6 +85,12 @@ let
         python3 ${../../tests/test_hermes_cron_failure_summary.py}
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_cron_single_owner.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_thread_isolation.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_cron_external_executor.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_dashboard_profile_liveness.py}
       test -f $out/share/hermes/plugins/platforms/photon/sidecar/node_modules/.package-lock.json
       grep -Fq 'sidecar deps already installed' $out/share/hermes/plugins/platforms/photon/cli.py
     '';
