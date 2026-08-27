@@ -8,6 +8,14 @@
 }:
 with lib;
 with lib.my;
+let
+  nucDeploymentProvenance = import ./hosts/nuc/_lib/deployment-provenance.nix {
+    inherit lib;
+    inherit (inputs) self;
+    agentsWorkspace = inputs.agents-workspace;
+    markerPath = ./. + "/.nuc-deploy-source-revision";
+  };
+in
 {
   imports =
     # I use home-manager to deploy files to $HOME; little else
@@ -131,7 +139,13 @@ with lib.my;
         dotfiles.flake = inputs.self;
       };
     };
-  system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
+  system.configurationRevision =
+    if isDarwin then
+      with inputs; mkIf (self ? rev) self.rev
+    else
+      mkIf (
+        nucDeploymentProvenance.configurationRevision != null
+      ) nucDeploymentProvenance.configurationRevision;
 
   # Just the bear necessities...
   environment.systemPackages = with pkgs; [

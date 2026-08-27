@@ -13,6 +13,10 @@ assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn") "nuc-buzz-
 assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton") "nuc-buzz-scintillate-finn-amosburton"
 assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton-anne") "nuc-buzz-scintillate-finn-amosburton-anne"
 
+let source_revision = "1111111111111111111111111111111111111111"
+let revision_command = (nuc-worktree-revision-command "/tmp/dotfiles-worktree-test" $source_revision)
+assert equal $revision_command "printf '%s' '1111111111111111111111111111111111111111' > '/tmp/dotfiles-worktree-test/.nuc-deploy-source-revision'"
+
 let temp_dir = (^mktemp -d | str trim)
 let source_dir = ($temp_dir | path join "linked-worktree")
 let destination_dir = ($temp_dir | path join "synced")

@@ -24,8 +24,7 @@ def nuc-deploy-source [] {
   {head: $head, base: $base, owner: $owner}
 }
 
-def nuc-deploy-source-args [] {
-  let source = (nuc-deploy-source)
+def nuc-deploy-source-args [source: record] {
   let override = if (($env.NUC_DEPLOY_ALLOW_STALE? | default "0") == "1") {
     ["--nuc-deploy-allow-stale"]
   } else {
@@ -70,7 +69,8 @@ def "main nuc-hermes-smoke" [] {
 def nuc-local-rebuild [] {
   let ctx = (context)
   cd $ctx.flake_dir
-  let source_args = (nuc-deploy-source-args)
+  let source = (nuc-deploy-source)
+  let source_args = (nuc-deploy-source-args $source)
 
   print "=== NUC deploy mode: explicit local nixos-rebuild ==="
   with-sudo-path { ^sudo nix-private-github ...$source_args nixos-rebuild --flake $"($ctx.flake_dir)#nuc" --show-trace --accept-flake-config --max-jobs 1 switch }
@@ -147,15 +147,25 @@ def nuc-worktree-rsync [source: string, destination: string] {
   ^rsync -az --delete --delete-excluded --exclude .git --exclude result --exclude .direnv/ --exclude .pi/ --exclude node_modules/ --exclude .venv/ --exclude __pycache__/ --exclude .pytest_cache/ --exclude .ruff_cache/ --exclude .jscpd-report/ --exclude app.log --exclude error.log $source $destination
 }
 
+def nuc-worktree-revision-command [destination: string, revision: string] {
+  let parsed = ($revision | parse -r '^(?<revision>[0-9a-f]{40})$')
+  if ($parsed | is-empty) {
+    error make {msg: "NUC deploy revision must be an exact 40-character lowercase Git revision"}
+  }
+  $"printf '%s' '($revision)' > '($destination)/.nuc-deploy-source-revision'"
+}
+
 def "main nuc-worktree" [mode: string = "dry-activate", configuration: string = "nuc"] {
   validate-nuc-worktree-mode $mode
   let deploy_configuration = (nuc-worktree-configuration $configuration)
   let ctx = (context)
   let remote_dir = $"/tmp/dotfiles-worktree-($env.USER? | default 'user')"
+  let source = (nuc-deploy-source)
 
   print $"=== Syncing current worktree to NUC: ($ctx.flake_dir) -> ($NUC_HOST):($remote_dir) ==="
   ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
   nuc-worktree-rsync $"($ctx.flake_dir)/" $"($NUC_HOST):($remote_dir)/"
+  ^ssh $NUC_HOST (nuc-worktree-revision-command $remote_dir $source.head)
 
   if $mode == "vm" {
     print "=== Building NUC VM from synced worktree on NUC ==="
@@ -167,7 +177,7 @@ def "main nuc-worktree" [mode: string = "dry-activate", configuration: string = 
   if $mode == "build" {
     ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github nixos-rebuild build --flake .#($deploy_configuration) --show-trace --accept-flake-config --max-jobs 1"
   } else {
-    let source_args = ((nuc-deploy-source-args) | str join " ")
+    let source_args = ((nuc-deploy-source-args $source) | str join " ")
     ^ssh $NUC_HOST $"cd '($remote_dir)' && /run/wrappers/bin/sudo nix-private-github ($source_args) nixos-rebuild ($mode) --flake .#($deploy_configuration) --show-trace --accept-flake-config --max-jobs 1"
     if ($mode == "switch") or ($mode == "test") {
       nuc-post-deploy-check false

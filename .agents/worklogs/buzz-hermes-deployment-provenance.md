@@ -9,7 +9,7 @@ Stamp each NUC generation with the exact dotfiles revision and locked agents-wor
 ## Decisions
 
 - Work in an isolated clean worktree based on current `origin/main`; preserve the dirty canonical checkout byte-for-byte.
-- Keep `system.configurationRevision` as the dotfiles Git revision and expose the paired agents-workspace revision in one machine-readable provenance fact.
+- Use one exact labeled `system.configurationRevision`: `dotfiles=<revision>;agents-workspace=<revision>`.
 - Generate the worktree revision marker only in the remote synced snapshot because `.git` is intentionally excluded.
 
 ## Evidence
