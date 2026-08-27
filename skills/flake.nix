@@ -385,15 +385,21 @@
           {
             programs.dotfiles-agent-skills.bundles = bundles;
 
-            programs.dotfiles-agent-skills.targetedExplicit =
-              lib.optionalAttrs piEnabled {
-                extending-pi = {
-                  from = "pi-extensions";
-                  path = "extending-pi";
-                  meta.targets = [ "pi" ];
-                };
-              }
-              // mattpocockCodexSkills;
+            programs.dotfiles-agent-skills.targetedExplicit = {
+              walking-mode = {
+                from = "codex-local";
+                path = "walking-mode";
+                meta.targets = [ "codex" ];
+              };
+            }
+            // lib.optionalAttrs piEnabled {
+              extending-pi = {
+                from = "pi-extensions";
+                path = "extending-pi";
+                meta.targets = [ "pi" ];
+              };
+            }
+            // mattpocockCodexSkills;
 
             home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
               if [ -L "$HOME/.claude/skills" ]; then
@@ -425,6 +431,13 @@
               enable = true;
 
               sources = {
+                # Checkout-owned Codex-specific skills.
+                codex-local = {
+                  path = ./conditional/codex;
+                  subdir = ".";
+                  filter.maxDepth = 2;
+                };
+
                 # Checkout-owned global skills.
                 catalog = {
                   path = ./catalog;
