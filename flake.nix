@@ -1467,6 +1467,11 @@
                 inherit pkgs;
               };
 
+              display-link-guard-regressions = import ./hosts/mactraitorpro/_tests/display-link-guard.nix {
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
               screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;

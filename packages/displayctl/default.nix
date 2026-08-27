@@ -28,7 +28,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   meta = with lib; {
-    description = "Agent-friendly standard-library CLI for BUSY Bar and TRMNL displays";
+    description = "Agent-friendly CLI for macOS display links, BUSY Bar, and TRMNL displays";
     homepage = "https://github.com/edmundmiller/dotfiles";
     license = licenses.mit;
     mainProgram = "displayctl";

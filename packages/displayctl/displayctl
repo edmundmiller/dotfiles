@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent-friendly local BUSY Bar and TRMNL display client.
+"""Agent-friendly local display diagnostics and external display client.
 
 The checked-in config contains addresses, capabilities, and names of secret
 sources only. Credential values are read from the environment for one request,
@@ -15,7 +15,9 @@ import json
 import os
 from pathlib import Path
 import re
+import socket
 import struct
+import subprocess
 import sys
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -770,6 +772,265 @@ def _doctor(config: dict[str, Any]) -> int:
     return 0 if result["ok"] else 1
 
 
+def _local_command_output(executable: str, *args: str) -> str:
+    try:
+        result = subprocess.run(
+            [executable, *args],
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        _fail(f"cannot run {Path(executable).name}: {exc}")
+    if result.returncode != 0:
+        detail = " ".join(result.stderr.split())[:256]
+        suffix = f": {detail}" if detail else ""
+        _fail(f"{Path(executable).name} exited {result.returncode}{suffix}")
+    return result.stdout
+
+
+def _ioreg_value(raw: str) -> Any:
+    value = raw.strip()
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    if value == "Yes":
+        return True
+    if value == "No":
+        return False
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+
+def _macos_display_paths(output: str) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    wanted = {
+        "Active",
+        "HPD_StateDescription",
+        "LaneCount",
+        "LinkRateDescription",
+        "MaxLaneCount",
+        "ProductName",
+        "SinkCount",
+        "TransportDescription",
+    }
+    for line in output.splitlines():
+        if "<class IOPortTransportStateDisplayPort" in line:
+            if current is not None:
+                records.append(current)
+            current = {}
+            continue
+        if current is None:
+            continue
+        match = re.search(r'"([^"]+)"\s*=\s*(.+?)\s*$', line)
+        if match and match.group(1) in wanted:
+            current[match.group(1)] = _ioreg_value(match.group(2))
+    if current is not None:
+        records.append(current)
+
+    paths: list[dict[str, Any]] = []
+    for record in records:
+        transport = record.get("TransportDescription")
+        if not isinstance(transport, str):
+            continue
+        required_fields = (
+            "Active",
+            "HPD_StateDescription",
+            "LaneCount",
+            "LinkRateDescription",
+            "SinkCount",
+        )
+        missing_fields = [field for field in required_fields if field not in record]
+        sink_count = record.get("SinkCount")
+        lane_count = record.get("LaneCount")
+        link_rate = record.get("LinkRateDescription")
+        active = record.get("Active") is True
+        hpd = record.get("HPD_StateDescription")
+        if missing_fields:
+            state = "degraded"
+        elif active and isinstance(sink_count, int) and sink_count > 0 and lane_count and link_rate != "No Link":
+            state = "linked"
+        elif hpd == "High" and sink_count == 0 and link_rate == "No Link" and lane_count == 0:
+            state = "link_training_failed"
+        elif not active and sink_count == 0:
+            state = "disconnected"
+        else:
+            state = "degraded"
+        paths.append(
+            {
+                "transport": transport,
+                "product_name": record.get("ProductName"),
+                "hpd": hpd,
+                "sink_count": sink_count,
+                "link_rate": link_rate,
+                "active": active,
+                "lane_count": lane_count,
+                "max_lane_count": record.get("MaxLaneCount"),
+                "missing_fields": missing_fields,
+                "state": state,
+            }
+        )
+    return paths
+
+
+def _nested_dicts(value: Any) -> Any:
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _nested_dicts(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _nested_dicts(child)
+
+
+def _ts5_dock(profile: Any, expected_host_port: int | None) -> dict[str, Any] | None:
+    if not isinstance(profile, dict):
+        return None
+    buses = profile.get("SPThunderboltDataType")
+    if not isinstance(buses, list):
+        return None
+    for bus in buses:
+        if not isinstance(bus, dict):
+            continue
+        device = next((item for item in _nested_dicts(bus.get("_items", [])) if item.get("device_name_key") == "TS5"), None)
+        if device is None:
+            continue
+        receptacle = next(
+            (
+                value
+                for key, value in bus.items()
+                if key.startswith("receptacle_")
+                and isinstance(value, dict)
+                and value.get("receptacle_status_key") == "receptacle_connected"
+                and value.get("receptacle_id_key") is not None
+            ),
+            {},
+        )
+        host_port_raw = receptacle.get("receptacle_id_key")
+        try:
+            host_port = int(host_port_raw)
+        except (TypeError, ValueError):
+            host_port = None
+        return {
+            "model": "TS5",
+            "vendor": device.get("vendor_name_key"),
+            "mode": device.get("mode_key"),
+            "firmware": device.get("switch_version_key"),
+            "host_port": host_port,
+            "expected_host_port": expected_host_port,
+            "link_speed": receptacle.get("current_speed_key"),
+            "topology_ok": expected_host_port is None or host_port == expected_host_port,
+        }
+    return None
+
+
+def _macos_host_config(config: dict[str, Any], hostname: str) -> dict[str, Any]:
+    macos = config.get("macos")
+    if not isinstance(macos, dict):
+        return {}
+    hosts = macos.get("hosts")
+    if not isinstance(hosts, dict):
+        return {}
+    value = hosts.get(hostname)
+    return value if isinstance(value, dict) else {}
+
+
+def _macos_status(config: dict[str, Any]) -> int:
+    ioreg_bin = os.environ.get("DISPLAYCTL_IOREG_BIN", "/usr/sbin/ioreg")
+    system_profiler_bin = os.environ.get("DISPLAYCTL_SYSTEM_PROFILER_BIN", "/usr/sbin/system_profiler")
+    if sys.platform != "darwin" and not (
+        os.environ.get("DISPLAYCTL_IOREG_BIN") and os.environ.get("DISPLAYCTL_SYSTEM_PROFILER_BIN")
+    ):
+        _fail("the macos command requires Darwin or explicit diagnostic command overrides")
+
+    hostname = os.environ.get("DISPLAYCTL_HOSTNAME", socket.gethostname().split(".", 1)[0])
+    host_config = _macos_host_config(config, hostname)
+    expected_host_port = host_config.get("ts5_host_port")
+    if not isinstance(expected_host_port, int):
+        expected_host_port = None
+
+    ioreg_output = _local_command_output(
+        ioreg_bin,
+        "-r",
+        "-c",
+        "IOPortTransportStateDisplayPort",
+        "-l",
+        "-w0",
+    )
+    profile_output = _local_command_output(system_profiler_bin, "SPThunderboltDataType", "-json")
+    try:
+        profile = json.loads(profile_output)
+    except json.JSONDecodeError as exc:
+        _fail(f"system_profiler returned invalid JSON at line {exc.lineno}, column {exc.colno}")
+
+    display_paths = _macos_display_paths(ioreg_output)
+    dock = _ts5_dock(profile, expected_host_port)
+    usb_c_paths = [path for path in display_paths if path["transport"].startswith("Port-USB-C")]
+    issues: list[dict[str, Any]] = []
+    failed_transports = [path["transport"] for path in usb_c_paths if path["state"] == "link_training_failed"]
+    if failed_transports:
+        issues.append(
+            {
+                "code": "display_link_training_failed",
+                "transports": failed_transports,
+                "message": "hot-plug is high, but the display sink did not establish a DisplayPort link",
+            }
+        )
+    degraded_transports = [path["transport"] for path in usb_c_paths if path["state"] == "degraded"]
+    if degraded_transports:
+        issues.append(
+            {
+                "code": "display_link_degraded",
+                "transports": degraded_transports,
+                "message": "the DisplayPort transport state is incomplete or inconsistent",
+            }
+        )
+    if dock is not None and not usb_c_paths:
+        issues.append(
+            {
+                "code": "display_state_unavailable",
+                "message": "the TS5 is connected, but no DisplayPort transport state was observed",
+            }
+        )
+    if dock is not None and not dock["topology_ok"]:
+        issues.append(
+            {
+                "code": "ts5_host_port_mismatch",
+                "actual_host_port": dock["host_port"],
+                "expected_host_port": dock["expected_host_port"],
+                "message": "the TS5 host cable is not connected to this host's verified USB-C port",
+            }
+        )
+
+    observed = {
+        "display_paths": bool(display_paths),
+        "usb_c_display_paths": bool(usb_c_paths),
+        "dock": dock is not None,
+    }
+    if issues:
+        state = "unhealthy"
+    elif observed["dock"] or observed["usb_c_display_paths"]:
+        state = "healthy"
+    else:
+        state = "unobserved"
+    result = {
+        "ok": None if state == "unobserved" else state == "healthy",
+        "state": state,
+        "observed": observed,
+        "operation": "macos.status",
+        "host": hostname,
+        "dock": dock,
+        "display_paths": display_paths,
+        "issues": issues,
+        "recovery": host_config.get("recovery", []),
+    }
+    _emit(result)
+    return 1 if state == "unhealthy" else 0
+
+
 def _add_json_flag(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true", help="emit structured JSON (the default)")
 
@@ -844,8 +1105,17 @@ def _add_trmnl_parser(subparsers: Any, name: str) -> None:
     _add_json_flag(message)
 
 
+def _add_macos_parser(subparsers: Any) -> None:
+    parser = subparsers.add_parser("macos", help="inspect local macOS display-link state")
+    parser.set_defaults(handler="macos")
+    commands = parser.add_subparsers(dest="macos_command", required=True)
+
+    status = commands.add_parser("status", help="read USB-C and DisplayPort link state")
+    _add_json_flag(status)
+
+
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Declarative, agent-friendly BUSY Bar and TRMNL client")
+    parser = argparse.ArgumentParser(description="Declarative, agent-friendly display diagnostics and control")
     parser.add_argument("--config", default=_default_config_path())
     parser.add_argument("--json", action="store_true", help="emit structured JSON (the default)")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -863,6 +1133,7 @@ def _parser() -> argparse.ArgumentParser:
     _add_trmnl_parser(commands, "trmnl")
     _add_trmnl_parser(commands, "trmnl-og")
     _add_trmnl_parser(commands, "trmnl-x")
+    _add_macos_parser(commands)
     return parser
 
 
@@ -898,6 +1169,10 @@ def _dispatch(args: argparse.Namespace, config: dict[str, Any]) -> int:
         else:
             _fail(f"unsupported TRMNL command {args.trmnl_command}")
         return 0
+    if args.handler == "macos":
+        if args.macos_command == "status":
+            return _macos_status(config)
+        _fail(f"unsupported macOS command {args.macos_command}")
     _fail("no command selected")
     return 2
 

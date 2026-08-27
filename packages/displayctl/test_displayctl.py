@@ -116,6 +116,13 @@ class DisplayctlContractTest(unittest.TestCase):
                             "device_token_env": "TRMNL_OG_DEVICE_API_KEY",
                         },
                     },
+                    "macos": {
+                        "hosts": {
+                            "MacTraitor-Pro": {
+                                "ts5_host_port": 2,
+                            }
+                        }
+                    },
                 }
             )
         )
@@ -166,7 +173,6 @@ class DisplayctlContractTest(unittest.TestCase):
         path.chmod(0o755)
         return path
 
-    @unittest.expectedFailure
     def test_macos_status_reports_observed_ts5_link_training_failure(self) -> None:
         ioreg = self.fixture_command("ioreg", FIXTURES / "ts5-port-1-link-failure.ioreg")
         system_profiler = self.fixture_command("system_profiler", FIXTURES / "ts5-port-1.json")
@@ -177,12 +183,18 @@ class DisplayctlContractTest(unittest.TestCase):
             env={
                 "DISPLAYCTL_IOREG_BIN": str(ioreg),
                 "DISPLAYCTL_SYSTEM_PROFILER_BIN": str(system_profiler),
+                "DISPLAYCTL_HOSTNAME": "MacTraitor-Pro",
             },
         )
 
         self.assertEqual(result.returncode, 1, result.stderr)
         output = json.loads(result.stdout)
         self.assertFalse(output["ok"])
+        self.assertEqual(output["state"], "unhealthy")
+        self.assertEqual(
+            output["observed"],
+            {"display_paths": True, "dock": True, "usb_c_display_paths": True},
+        )
         self.assertEqual(output["dock"]["model"], "TS5")
         self.assertEqual(output["dock"]["host_port"], 1)
         self.assertEqual(output["dock"]["expected_host_port"], 2)
@@ -193,6 +205,84 @@ class DisplayctlContractTest(unittest.TestCase):
         by_transport = {path["transport"]: path for path in output["display_paths"]}
         self.assertEqual(by_transport["Port-USB-C@1/CIO/DisplayPort@0"]["state"], "linked")
         self.assertEqual(by_transport["Port-USB-C@1/CIO/DisplayPort@1"]["state"], "link_training_failed")
+
+    def test_macos_status_does_not_call_absent_evidence_healthy(self) -> None:
+        empty_ioreg = self.root / "empty.ioreg"
+        empty_ioreg.write_text("")
+        no_dock = self.root / "no-dock.json"
+        no_dock.write_text('{"SPThunderboltDataType": []}')
+        ioreg = self.fixture_command("ioreg", empty_ioreg)
+        system_profiler = self.fixture_command("system_profiler", no_dock)
+
+        result = self.run_cli(
+            "macos",
+            "status",
+            env={
+                "DISPLAYCTL_IOREG_BIN": str(ioreg),
+                "DISPLAYCTL_SYSTEM_PROFILER_BIN": str(system_profiler),
+                "DISPLAYCTL_HOSTNAME": "MacTraitor-Pro",
+            },
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        output = json.loads(result.stdout)
+        self.assertIsNone(output["ok"])
+        self.assertEqual(output["state"], "unobserved")
+        self.assertEqual(
+            output["observed"],
+            {"display_paths": False, "dock": False, "usb_c_display_paths": False},
+        )
+
+    def test_macos_status_surfaces_inconsistent_transport_state(self) -> None:
+        degraded_fixture = self.root / "degraded.ioreg"
+        degraded_fixture.write_text(
+            (FIXTURES / "ts5-port-1-link-failure.ioreg")
+            .read_text()
+            .replace('"SinkCount" = 0', '"SinkCount" = 1')
+        )
+        ioreg = self.fixture_command("ioreg", degraded_fixture)
+        system_profiler = self.fixture_command("system_profiler", FIXTURES / "ts5-port-1.json")
+
+        result = self.run_cli(
+            "macos",
+            "status",
+            env={
+                "DISPLAYCTL_IOREG_BIN": str(ioreg),
+                "DISPLAYCTL_SYSTEM_PROFILER_BIN": str(system_profiler),
+                "DISPLAYCTL_HOSTNAME": "MacTraitor-Pro",
+            },
+        )
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        issue_codes = {issue["code"] for issue in json.loads(result.stdout)["issues"]}
+        self.assertIn("display_link_degraded", issue_codes)
+
+    def test_macos_status_marks_partial_transport_evidence_degraded(self) -> None:
+        partial_fixture = self.root / "partial.ioreg"
+        partial_fixture.write_text(
+            '+-o DisplayPort@0 <class IOPortTransportStateDisplayPort>\n'
+            '  "TransportDescription" = "Port-USB-C@2/CIO/DisplayPort@0"\n'
+        )
+        no_dock = self.root / "no-dock.json"
+        no_dock.write_text('{"SPThunderboltDataType": []}')
+        ioreg = self.fixture_command("ioreg", partial_fixture)
+        system_profiler = self.fixture_command("system_profiler", no_dock)
+
+        result = self.run_cli(
+            "macos",
+            "status",
+            env={
+                "DISPLAYCTL_IOREG_BIN": str(ioreg),
+                "DISPLAYCTL_SYSTEM_PROFILER_BIN": str(system_profiler),
+                "DISPLAYCTL_HOSTNAME": "MacTraitor-Pro",
+            },
+        )
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        output = json.loads(result.stdout)
+        self.assertEqual(output["state"], "unhealthy")
+        self.assertEqual(output["display_paths"][0]["state"], "degraded")
+        self.assertIn("SinkCount", output["display_paths"][0]["missing_fields"])
 
     def test_inventory_exposes_public_alias_metadata_without_secret_values(self) -> None:
         result = self.run_cli("inventory", "--json")

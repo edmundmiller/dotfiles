@@ -72,6 +72,89 @@ let
       "$notification" >/dev/null 2>&1 || true
     exit "$rc"
   '';
+  displayLinkGuardStateDir = "${config.user.home}/Library/Application Support/display-link-guard";
+  displayLinkGuard = pkgs.writeShellScript "display-link-guard" ''
+    set -eu
+    displayctl_bin="''${DISPLAYCTL_BIN:-${pkgs.my.displayctl}/bin/displayctl}"
+    osascript_bin="''${OSASCRIPT_BIN:-/usr/bin/osascript}"
+    state_dir="''${DISPLAY_LINK_GUARD_STATE_DIR:-${displayLinkGuardStateDir}}"
+    state_file="$state_dir/state"
+    incident_file="$state_dir/incident.json"
+
+    ${pkgs.coreutils}/bin/mkdir -p "$state_dir"
+    if output="$("$displayctl_bin" macos status 2>&1)"; then
+      rc=0
+    else
+      rc=$?
+    fi
+
+    previous=""
+    if [ -f "$state_file" ]; then
+      previous="$(${pkgs.coreutils}/bin/head -n 1 "$state_file")"
+    fi
+
+    if [ "$rc" -eq 0 ]; then
+      status_state="$(printf '%s' "$output" | ${pkgs.jq}/bin/jq -r '.state // empty' 2>/dev/null || true)"
+      case "$status_state" in
+        healthy|unobserved)
+          if [ "$previous" != "$status_state" ]; then
+            printf '%s\n' "$status_state" > "$state_file"
+          fi
+          exit 0
+          ;;
+        *)
+          rc=2
+          ;;
+      esac
+    fi
+
+    if [ "$rc" -eq 1 ]; then
+      fingerprint="$(
+        printf '%s' "$output" \
+          | ${pkgs.jq}/bin/jq -c '[.issues[] | {code, actual_host_port, expected_host_port, transports}] | sort_by(.code)' \
+            2>/dev/null \
+          || true
+      )"
+      if [ -z "$fingerprint" ]; then
+        fingerprint="invalid-status-json"
+      fi
+    else
+      fingerprint="diagnostic-error:$rc"
+    fi
+
+    if [ "$previous" = "$fingerprint" ]; then
+      exit 0
+    fi
+
+    printf '%s\n' "$fingerprint" > "$state_file"
+    printf '%s\n' "$output" > "$incident_file"
+    printf '%s %s\n' "$(${pkgs.coreutils}/bin/date -u +%Y-%m-%dT%H:%M:%SZ)" "$fingerprint" \
+      >> "$state_dir/incidents.log"
+
+    if [ "$rc" -eq 1 ]; then
+      codes="$(printf '%s' "$output" | ${pkgs.jq}/bin/jq -r '[.issues[].code] | join(",")' 2>/dev/null || true)"
+      recovery="$(printf '%s' "$output" | ${pkgs.jq}/bin/jq -r '[.recovery[]?] | join(" ")' 2>/dev/null || true)"
+      if [ -z "$recovery" ]; then
+        recovery="Run displayctl macos status in a terminal and follow the reported recovery."
+      fi
+      if [[ ",$codes," == *,ts5_host_port_mismatch,* ]]; then
+        actual="$(printf '%s' "$output" | ${pkgs.jq}/bin/jq -r '.dock.host_port // "unknown"' 2>/dev/null || true)"
+        expected="$(printf '%s' "$output" | ${pkgs.jq}/bin/jq -r '.dock.expected_host_port // "unknown"' 2>/dev/null || true)"
+        notification="Observed TS5 on Mac USB-C port $actual; expected port $expected. $recovery"
+      else
+        notification="$recovery"
+      fi
+    else
+      notification="displayctl could not inspect the TS5 display link. Run displayctl macos status in a terminal."
+    fi
+
+    "$osascript_bin" \
+      -e 'on run argv' \
+      -e 'display notification (item 1 of argv) with title "Display link needs attention"' \
+      -e 'end run' \
+      "$notification" >/dev/null 2>&1 || true
+    exit 0
+  '';
 in
 {
 
@@ -334,6 +417,17 @@ in
         StartInterval = 30;
         StandardOutPath = "/tmp/obsidian-sync-guard.log";
         StandardErrorPath = "/tmp/obsidian-sync-guard.err";
+      };
+    };
+
+    launchd.user.agents.display-link-guard = {
+      command = "${displayLinkGuard}";
+      serviceConfig = {
+        RunAtLoad = true;
+        StartInterval = 300;
+        ProcessType = "Background";
+        StandardOutPath = "${config.user.home}/Library/Logs/display-link-guard.log";
+        StandardErrorPath = "${config.user.home}/Library/Logs/display-link-guard.error.log";
       };
     };
 

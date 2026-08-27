@@ -38,5 +38,17 @@
       "device_token_env": "TRMNL_X_DEVICE_API_KEY",
       "webhook_env": "TRMNL_AGENT_MESSAGE_WEBHOOK_URL"
     }
+  },
+  "macos": {
+    "hosts": {
+      "MacTraitor-Pro": {
+        "ts5_host_port": 2,
+        "recovery": [
+          "Connect the TS5 host cable to the bottom-left Mac USB-C port nearest the trackpad.",
+          "Connect displays only to rear, lightning-marked TS5 downstream ports.",
+          "If one display has HPD but no link, disconnect ASUS, wait for LG to appear, then reconnect ASUS."
+        ]
+      }
+    }
   }
 }

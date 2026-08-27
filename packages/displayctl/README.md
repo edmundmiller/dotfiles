@@ -1,9 +1,9 @@
 ---
-purpose: Give agents a bounded CLI for previewing, writing, and reading local display state.
-applies_to: BUSY Bar, TRMNL OG, and TRMNL X work from a managed dotfiles host.
-entrypoint: Run displayctl inventory --json, then use the matching alias and command.
-verification: Run the package contract tests and displayctl doctor --json on the target host.
-update_when: Device addresses, display models, API paths, or credential environment names change.
+purpose: Give agents a bounded CLI for inspecting local display links and managing external displays.
+applies_to: macOS USB-C links, BUSY Bar, TRMNL OG, and TRMNL X on a managed dotfiles host.
+entrypoint: Run displayctl inventory --json or displayctl macos status for the local link state.
+verification: Run the package contract tests and the relevant read-only status command on the target host.
+update_when: Display topology, device addresses, API paths, or credential environment names change.
 ---
 
 # displayctl
@@ -18,6 +18,7 @@ environment names. It contains no credential values.
 ```sh
 displayctl inventory --json
 displayctl doctor --json
+displayctl macos status
 displayctl busy-bar capture --target usb --display 0 --output /tmp/busy-front.png
 displayctl trmnl-og devices
 displayctl trmnl-x current
@@ -29,6 +30,19 @@ TRMNL checks are one row per capability (`devices`, `current`, and `message`),
 so an account key alone does not imply current-screen or webhook readiness.
 `capture` reads a BUSY frame and writes a local PNG; it does not change the
 device.
+
+### macOS USB-C and DisplayPort links
+
+`displayctl macos status` reads the I/O Registry and Thunderbolt system profile.
+It reports each DisplayPort transport, the TS5 host port, and any recognized
+link-training or topology issue. It makes no system or hardware changes.
+
+The JSON `state` is `healthy`, `unhealthy`, or `unobserved`; `unobserved` keeps
+absent hardware distinct from a verified healthy link. Exit status `0` covers
+`healthy` and `unobserved`, `1` means current evidence matches an issue, and `2`
+means the diagnostic itself could not run. On `MacTraitor-Pro`, the expected
+TS5 port and ordered manual recovery are versioned in `config.json`; the host
+runbook owns the physical interpretation.
 
 When `--config` is omitted, the CLI resolves configuration in this order:
 `DISPLAYCTL_CONFIG`, an existing `~/.config/displayctl/config.json`, the
