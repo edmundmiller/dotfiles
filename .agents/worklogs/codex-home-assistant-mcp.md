@@ -39,6 +39,9 @@ Connect Codex to the existing Home Assistant MCP endpoint through the Nix-manage
 - Red: the focused MCP test failed because the source still emitted OAuth fields and had no `codex-ha` 1Password launcher. Green: the test passes with a single `HASS_TOKEN` bearer reference, preserved unrelated callback state, and behavioral launcher delegation to `op run`.
 - Token revision checks pass: focused MCP behavior, seven Codex unit tests, Python compile/Ruff, ShellCheck, Nix parsing, and diff whitespace. Scoped `hey check --worktree` passed Darwin evaluation, formatting, hooks, tmux, package harness/policy, and ast-grep; it returned nonzero only for the unrelated pre-existing missing DJI Mic Mini check attribute.
 - Live bearer dry-run: the candidate exactly matches the current parsed config plus only the managed Home Assistant field replacement; the callback and every unrelated server are preserved. No matching rebuild process is running, and the live file remains regular rather than a symlink.
+- Local commit `e5645399e` contains the token-auth source revision; commit hooks passed and the worktree was clean afterward. No push or merge occurred.
+- Narrow live apply atomically replaced only `~/.codex/config.toml`, preserved its observed mode and ownership, retained the callback and all unrelated runtime entries, and produced an idempotent follow-up dry-run. `codex mcp get homeassistant` reports the enabled Streamable HTTP server with `bearer_token_env_var: HASS_TOKEN` and no OAuth fields.
+- The first real `codex-ha` launch timed out waiting for 1Password. No token was printed, no Home Assistant MCP request ran, and the required read-only context proof remains unverified.
 
 ## Reviews
 
@@ -53,8 +56,12 @@ None.
 ## Remaining work
 
 - Broad Darwin activation remains explicitly withheld.
-- Run scoped checks and review, commit the token-auth revision, apply it only to `~/.codex/config.toml`, then complete secret-backed discovery and a read-only `GetLiveContext` proof.
+- Unlock 1Password, then run a fresh `codex-ha` session with only `homeassistant__GetLiveContext` enabled and prove one read-only state result.
 
 ## Commits
 
-Scoped local commit authorized; push and merge are not authorized.
+- `b51a10dac` — register Home Assistant MCP through the Codex source.
+- `9ab467e2d` — harden narrow MCP reconciliation.
+- `e5645399e` — replace OAuth with 1Password-backed bearer authentication.
+
+Push and merge are not authorized.
