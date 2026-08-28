@@ -20,25 +20,31 @@ let
       inherit (host) config;
       settings = config.nix.settings;
       interval = config.nix.gc.interval;
+      minFree = settings."min-free" or 0;
+      maxFree = settings."max-free" or 0;
+      reserved = settings."gc-reserved-space" or 0;
     in
     [
       {
-        test = (settings."min-free" or null) == expected.minFree;
-        msg = "${name} must trigger Nix GC with 20 GiB still free";
+        test = builtins.isInt minFree && minFree >= expected.minFree;
+        msg = "${name} must trigger Nix GC with at least 20 GiB still free";
       }
       {
-        test = (settings."max-free" or null) == expected.maxFree;
-        msg = "${name} must recover to a 40 GiB Nix free-space target";
+        test = builtins.isInt maxFree && maxFree >= expected.maxFree;
+        msg = "${name} must recover to at least a 40 GiB Nix free-space target";
       }
       {
-        test = (settings."gc-reserved-space" or null) == expected.reserved;
-        msg = "${name} must reserve 2 GiB for a disk-pressure GC transaction";
+        test = builtins.isInt reserved && reserved >= expected.reserved;
+        msg = "${name} must reserve at least 2 GiB for a disk-pressure GC transaction";
       }
       {
         test =
-          0 < expected.reserved
-          && expected.reserved < expected.minFree
-          && expected.minFree < expected.maxFree;
+          builtins.isInt reserved
+          && builtins.isInt minFree
+          && builtins.isInt maxFree
+          && 0 < reserved
+          && reserved < minFree
+          && minFree < maxFree;
         msg = "${name} Nix disk thresholds must remain ordered";
       }
       {
@@ -47,10 +53,11 @@ let
       }
       {
         test =
-          interval == {
-            Hour = 2;
-            Minute = 0;
-          };
+          interval.Hour == 2
+          && interval.Minute == 0
+          && (interval.Day or null) == null
+          && (interval.Month or null) == null
+          && (interval.Weekday or null) == null;
         msg = "${name} must run Nix GC daily at 02:00";
       }
       {

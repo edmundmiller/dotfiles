@@ -43,12 +43,18 @@ with lib;
         # machine while halving the number of simultaneous memory-holding
         # builds -- memory, not CPU, is what falls over first.
         cores = mkDefault 2;
+
+        # Trigger collection before a build can exhaust the shared APFS
+        # container, and retain enough reserved space for SQLite to commit the
+        # garbage-collection transaction under pressure.
+        min-free = mkDefault (20 * 1024 * 1024 * 1024);
+        max-free = mkDefault (40 * 1024 * 1024 * 1024);
+        gc-reserved-space = mkDefault (2 * 1024 * 1024 * 1024);
       };
       optimise.automatic = true;
       gc = {
         automatic = true;
         interval = {
-          Weekday = 0;
           Hour = 2;
           Minute = 0;
         };
