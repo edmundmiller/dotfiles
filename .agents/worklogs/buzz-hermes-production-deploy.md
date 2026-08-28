@@ -55,6 +55,16 @@ only remaining blocker.
 - Target evaluation reports
   `dotfiles=e1d0d462cdbf4e2690101be0f60a327a6fcabd94;agents-workspace=92186274d960773758203d6268e1a635b3a4f401`
   for the last source-identical verification snapshot.
+- A later unattended upgrade activated generation 1427 from stale dotfiles
+  commit `baf5a44155b16ee6e0144a0ddbda2fc920596876`; live
+  `configurationRevision` regressed to that bare SHA instead of the required
+  two-source stamp. The journal records a GitHub API rate-limit failure, Nix's
+  cached-source fallback, and a failed switch result.
+- The NUC wrapper now resolves dotfiles `origin/main` over Git transport,
+  validates an exact lowercase commit SHA, and rewrites a mutating remote flake
+  to that immutable revision before `nixos-rebuild` starts. Its packaged check
+  passes 11 tests, including both flake argument forms and fail-closed invalid
+  revision handling.
 
 ## Reviews
 
@@ -73,11 +83,16 @@ only remaining blocker.
   canonical-stack reapplication in the final package, store-context regexes in
   package assertions, generated unit indirection, and the installed Python
   site-packages layout.
+- A mutable `github:...#nuc` input plus `--refresh` is not sufficient provenance
+  protection: Nix may reuse a stale cached source after an API failure. Pin the
+  live Git ref to the independently resolved current-main commit before any
+  mutating rebuild.
 
 ## Remaining work
 
-- Publish the verified branch and advance to the exact merged `main` revision.
-- Rebuild that merged revision, dry-activate, deploy, and read back exact
+- Publish the current-main pinning guard.
+- Rotate the exposed Kilo credential, update its encrypted NUC payload, then
+  rebuild the published revision, dry-activate, deploy, and read back exact
   revisions and runtimes.
 - Run live acceptance and capture the user-visible demo.
 

@@ -48,6 +48,7 @@ export NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}
 command_name="$(basename "$1")"
 deploy_mutation=0
 remote_flake=0
+dotfiles_remote_flake=0
 if [[ "$command_name" == "nixos-rebuild" ]]; then
   for arg in "${@:2}"; do
     case "$arg" in
@@ -59,6 +60,11 @@ if [[ "$command_name" == "nixos-rebuild" ]]; then
         ;;
       --rollback)
         remote_flake=1
+        ;;
+    esac
+    case "$arg" in
+      github:edmundmiller/dotfiles#*|--flake=github:edmundmiller/dotfiles#*)
+        dotfiles_remote_flake=1
         ;;
     esac
   done
@@ -123,7 +129,7 @@ if [[ -z "$deploy_source_head" || -z "$deploy_source_base" ]]; then
 fi
 
 remote_main="${NIXOS_DEPLOY_REMOTE_MAIN:-}"
-if [[ "$remote_flake" -eq 0 ]]; then
+if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 ]]; then
   if [[ -z "$remote_main" ]]; then
     read -r remote_main _ < <(
       git ls-remote https://github.com/edmundmiller/dotfiles.git refs/heads/main
@@ -133,6 +139,42 @@ if [[ "$remote_flake" -eq 0 ]]; then
     echo "nix-private-github: could not resolve current dotfiles origin/main" >&2
     exit 69
   fi
+fi
+
+if [[ "$dotfiles_remote_flake" -eq 1 ]]; then
+  if [[ ! "$remote_main" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "nix-private-github: current dotfiles origin/main is not a commit SHA" >&2
+    exit 65
+  fi
+
+  rewritten_command=()
+  for arg in "$@"; do
+    case "$arg" in
+      github:edmundmiller/dotfiles#*)
+        flake_output="${arg#github:edmundmiller/dotfiles#}"
+        if [[ -z "$flake_output" ]]; then
+          echo "nix-private-github: dotfiles flake output is missing" >&2
+          exit 64
+        fi
+        rewritten_command+=("github:edmundmiller/dotfiles/${remote_main}#${flake_output}")
+        ;;
+      --flake=github:edmundmiller/dotfiles#*)
+        flake_output="${arg#--flake=github:edmundmiller/dotfiles#}"
+        if [[ -z "$flake_output" ]]; then
+          echo "nix-private-github: dotfiles flake output is missing" >&2
+          exit 64
+        fi
+        rewritten_command+=("--flake=github:edmundmiller/dotfiles/${remote_main}#${flake_output}")
+        ;;
+      *)
+        rewritten_command+=("$arg")
+        ;;
+    esac
+  done
+  set -- "${rewritten_command[@]}"
+fi
+
+if [[ "$remote_flake" -eq 0 ]]; then
   if [[ "$deploy_source_base" != "$remote_main" && "$deploy_source_head" != "$remote_main" ]]; then
     if [[ "$deploy_allow_stale" != "1" ]]; then
       echo "nix-private-github: stale NUC deployment snapshot refused" >&2

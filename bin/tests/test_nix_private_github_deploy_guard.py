@@ -160,7 +160,6 @@ class NucDeployGuardTest(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    @unittest.expectedFailure
     def test_dotfiles_remote_flake_is_pinned_to_current_main(self) -> None:
         remote_main = "a" * 40
         result = self.run_wrapper(
@@ -179,6 +178,35 @@ class NucDeployGuardTest(unittest.TestCase):
             invocation,
         )
         self.assertNotIn("github:edmundmiller/dotfiles#nuc", invocation)
+
+    def test_dotfiles_remote_flake_equals_form_is_pinned(self) -> None:
+        remote_main = "b" * 40
+        result = self.run_wrapper(
+            str(self.command),
+            "switch",
+            "--flake=github:edmundmiller/dotfiles#nuc",
+            env={"NIXOS_DEPLOY_REMOTE_MAIN": remote_main},
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        invocation = self.marker.read_text(encoding="utf-8")
+        self.assertIn(
+            f"--flake=github:edmundmiller/dotfiles/{remote_main}#nuc",
+            invocation,
+        )
+
+    def test_dotfiles_remote_flake_rejects_non_commit_remote_main(self) -> None:
+        result = self.run_wrapper(
+            str(self.command),
+            "switch",
+            "--flake",
+            "github:edmundmiller/dotfiles#nuc",
+            env={"NIXOS_DEPLOY_REMOTE_MAIN": "main-sha"},
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("origin/main is not a commit SHA", result.stderr)
+        self.assertFalse(self.marker.exists())
 
     def test_rollback_takes_lock_without_worktree_metadata(self) -> None:
         result = self.run_wrapper(str(self.command), "--rollback", "switch")

@@ -33,6 +33,11 @@ Private `github:` flake inputs use `nix-private-github`. It reads the root-only
 opnix credential and supplies Nix `access-tokens` without logging the token.
 `hey nuc`, local NUC `hey re`, and `nixos-upgrade.service` use this wrapper.
 Darwin `hey re` obtains the same narrow credential from the local `gh` keyring.
+For a mutating remote dotfiles rebuild, the wrapper resolves `origin/main` over
+Git transport and replaces the mutable `github:edmundmiller/dotfiles#...`
+reference with that exact commit before Nix runs. A failed lookup or malformed
+revision aborts before activation, so an API-rate-limit failure cannot select a
+different cached dotfiles revision.
 
 Before any remote check or mutating command, verify the target identity and
 abort unless the remote hostname is exactly `nuc`:

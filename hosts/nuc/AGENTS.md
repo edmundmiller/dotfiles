@@ -154,10 +154,10 @@ Located in `hosts/nuc/secrets/`:
 
 Two mechanisms:
 
-| Method                | Trigger     | Source                                                            |
-| --------------------- | ----------- | ----------------------------------------------------------------- |
-| `hey nuc`             | Manual      | Synced worktree eval/build on NUC                                 |
-| `nixos-upgrade.timer` | Daily 04:40 | Authenticated `github:edmundmiller/dotfiles#nuc` with `--refresh` |
+| Method                | Trigger     | Source                                                     |
+| --------------------- | ----------- | ---------------------------------------------------------- |
+| `hey nuc`             | Manual      | Synced worktree eval/build on NUC                          |
+| `nixos-upgrade.timer` | Daily 04:40 | Authenticated exact current-main commit, pinned by wrapper |
 
 **Manual rebuild on NUC** (no local clone needed):
 
@@ -168,6 +168,9 @@ ssh nuc "sudo nix-private-github nixos-rebuild switch --refresh --flake github:e
 Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller/dotfiles#${hostname}"`.
 Private inputs use the root-only opnix secret at
 `/var/lib/opnix/secrets/githubNixToken`; never print its contents.
+Before a mutating rebuild, `nix-private-github` resolves dotfiles `origin/main`
+over Git transport and rewrites this mutable reference to the exact commit. It
+fails before activation if the revision cannot be resolved or validated.
 
 ### Worktree Testing
 
