@@ -91,8 +91,8 @@ let
   };
 
   windingDownLights = {
-    "light.essentials_a19_a60" = "off"; # Trashcan
-    "light.essentials_a19_a60_2" = "off"; # Dishwasher
+    "light.kitchen_trashcan" = "off"; # Trashcan
+    "light.kitchen_dishwasher" = "off"; # Dishwasher
     "light.essentials_a19_a60_3" = {
       state = "on";
       brightness = 90;
@@ -336,8 +336,8 @@ in
           "input_boolean.goodnight" = "on";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "cover.smartwings_window_covering" = "closed";
-          "light.essentials_a19_a60" = "off";
-          "light.essentials_a19_a60_2" = "off";
+          "light.kitchen_trashcan" = "off";
+          "light.kitchen_dishwasher" = "off";
           "light.essentials_a19_a60_3" = "off";
           "light.essentials_a19_a60_4" = "off";
           "light.essentials_a19_a60_5" = "off";
@@ -357,8 +357,8 @@ in
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
-          "light.essentials_a19_a60" = "off";
-          "light.essentials_a19_a60_2" = "off";
+          "light.kitchen_trashcan" = "off";
+          "light.kitchen_dishwasher" = "off";
           "light.essentials_a19_a60_3" = "off";
           "light.essentials_a19_a60_4" = "off";
           "light.essentials_a19_a60_5" = "off";
@@ -389,8 +389,8 @@ in
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "switch.desk_monitor" = "on";
           "switch.desk_pop" = "on";
-          "light.essentials_a19_a60" = "on";
-          "light.essentials_a19_a60_2" = "on";
+          "light.kitchen_trashcan" = "on";
+          "light.kitchen_dishwasher" = "on";
           "light.essentials_a19_a60_5" = "on";
           "light.nanoleaf_multicolor_floor_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";

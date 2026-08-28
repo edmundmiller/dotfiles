@@ -31,8 +31,8 @@ in
         {
           action = "light.turn_off";
           target.entity_id = [
-            "light.essentials_a19_a60" # Trashcan
-            "light.essentials_a19_a60_2" # Dishwasher
+            "light.kitchen_trashcan" # Trashcan
+            "light.kitchen_dishwasher" # Dishwasher
             "light.essentials_a19_a60_3" # Bathroom Nightstand
             "light.essentials_a19_a60_4" # Window Nightstand
             "light.nanoleaf_multicolor_floor_lamp" # Couch Lamp

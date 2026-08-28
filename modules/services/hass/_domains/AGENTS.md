@@ -108,8 +108,8 @@ hey nuc-status
 
 | Entity ID                              | Friendly Name       | Area        | Color Temp |
 | -------------------------------------- | ------------------- | ----------- | ---------- |
-| `light.essentials_a19_a60`             | Trashcan            | Kitchen     | ✅         |
-| `light.essentials_a19_a60_2`           | Dishwasher          | Kitchen     | ✅         |
+| `light.kitchen_trashcan`               | Trashcan            | Kitchen     | ✅         |
+| `light.kitchen_dishwasher`             | Dishwasher          | Kitchen     | ✅         |
 | `light.essentials_a19_a60_3`           | Bathroom Nightstand | Bedroom     | ✅         |
 | `light.essentials_a19_a60_4`           | Window Nightstand   | Bedroom     | ✅         |
 | `light.essentials_a19_a60_5`           | Wall Lamp           | Living Room | ✅         |

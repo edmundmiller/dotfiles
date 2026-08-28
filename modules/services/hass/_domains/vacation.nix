@@ -84,8 +84,8 @@ in
         entities = {
           "input_boolean.vacation_mode" = "on";
           "cover.smartwings_window_covering" = "closed";
-          "light.essentials_a19_a60" = "off";
-          "light.essentials_a19_a60_2" = "off";
+          "light.kitchen_trashcan" = "off";
+          "light.kitchen_dishwasher" = "off";
           "light.essentials_a19_a60_3" = "off";
           "light.essentials_a19_a60_4" = "off";
           "light.nanoleaf_multicolor_floor_lamp" = "off";

@@ -1136,6 +1136,13 @@ let
     }
     {
       test =
+        livingSpaceAdaptiveLighting != null
+        && builtins.elem "light.kitchen_trashcan" (livingSpaceAdaptiveLighting.lights or [ ])
+        && builtins.elem "light.kitchen_dishwasher" (livingSpaceAdaptiveLighting.lights or [ ]);
+      msg = "Living Space Adaptive Lighting must use the replacement kitchen Matter entities";
+    }
+    {
+      test =
         let
           cfg = sundownScene.entities."light.essentials_a19_a60_3" or null;
         in
