@@ -1,6 +1,6 @@
 ---
-purpose: Define TTSR's role in an OMP-first thin agent harness.
-applies_to: Shared agent rules, OMP rules, skills, hooks, and instruction routing.
+purpose: Define the shared thin agent harness and OMP's selective TTSR layer.
+applies_to: Agent core, OMP rules, skills, hooks, and instruction routing.
 entrypoint: Classify guidance with the placement test in this ADR before changing prompts.
 verification: Run OMP TTSR list/test/scan, prompt-size checks, and scenario evaluations.
 update_when: OMP rule semantics, harness scope, or migration evidence changes.
@@ -10,7 +10,7 @@ update_when: OMP rule semantics, harness scope, or migration evidence changes.
 
 ## Status
 
-Implemented in source for OMP; activation and other harnesses remain follow-up work
+Implemented in source for OMP, Codex, Claude, Pi, and OpenCode; activation pending
 
 ## Date
 
@@ -18,10 +18,10 @@ Implemented in source for OMP; activation and other harnesses remain follow-up w
 
 ## Context
 
-The shared agent configuration currently concatenates every numbered file under
-`config/agents/rules/` into the startup instructions for OMP, Codex, and Pi.
-OMP then loads additional files from `config/omp/rules/`. This mixes several
-different concerns in the always-on context:
+The former shared configuration concatenated every numbered file under
+`config/agents/rules/` into multiple runtime startup prompts. OMP also loaded
+additional files from `config/omp/rules/`. This mixed several different
+concerns in the always-on context:
 
 - durable safety and authority boundaries;
 - repository and subsystem routing;
@@ -50,7 +50,7 @@ matching tool result. Injections persist in session state and survive
 compaction. OMP exposes `ttsr list`, `ttsr test`, and `ttsr scan` so rules can be
 inspected and tested without relying on prompt intuition.
 
-The current installed runtime, `omp/17.2.11`, already registers the local
+The current installed runtime, `omp/18.0.3`, registers the local `ci-watch`,
 `commit-house-style`, `pr-house-style`, and `working-with-jj` rules as TTSR.
 Bundled Go, Rust, and TypeScript corrections use the same mechanism. The choice
 is therefore whether to make this existing mechanism the deliberate corrective
@@ -148,11 +148,12 @@ examples, tool inventories, or motivational prose.
 
 ### Harness boundary
 
-The taxonomy is harness-agnostic; the delivery mechanism is not. OMP gets the
+The taxonomy is harness-agnostic; the delivery mechanism is not. OMP got the
 first pilot because TTSR is present, observable, testable, and already in use.
-Codex and Pi keep their current instruction wiring until the OMP evaluation
-shows which rules can be removed safely and an equivalent native mechanism or
-small adapter is chosen for each harness.
+Codex, Claude, and Pi load the semantic core from their native global
+instruction file. OpenCode V2 loads it from its global `AGENTS.md`. Those
+runtimes use task-selected skills, scoped instruction files, hooks, and
+deterministic checks instead of emulating TTSR.
 
 Do not emulate TTSR in another harness by injecting a large dispatcher prompt.
 If a harness lacks dormant stream correction, use its native conditional rules,
@@ -195,21 +196,28 @@ skills, hooks, or deterministic tooling and accept a smaller shared core.
 - Keep the thin configuration only if safety and completion behavior do not
   regress materially.
 
-### Phase 4: Adapt Codex and Pi separately
+### Phase 4: Adapt the remaining runtimes separately
 
 - Reuse the classification and scenario corpus, not OMP-specific frontmatter.
 - Prefer each harness's native conditional loading and enforcement surfaces.
 - Keep shared content semantic and small; keep adapters mechanical.
+- Install the same core through each runtime's native global instruction path.
 
-## Implemented pilot
+## Implemented architecture
 
-The OMP pilot implements the source-controlled portions of Phases 0 through 3:
+The source-controlled migration implements the thin architecture across the
+supported coding runtimes:
 
-- `config/agents/core.md` is a 250-word-budgeted semantic core. Only OMP reads it;
-  Codex and Pi retain the legacy bundle.
+- `config/agents/core.md` is a 220-word-budgeted semantic core read by OMP,
+  Codex, Claude, Pi, and OpenCode.
 - `modules/agents/omp/default.nix` installs that core as OMP's global
   `AGENTS.md` and no longer installs the duplicate incremental-architecture
   rule.
+- Codex and Pi install the core as global `AGENTS.md`; Claude installs it as
+  global `CLAUDE.md`; OpenCode V2 installs it as its global `AGENTS.md`.
+- The former numbered bundle and its metadata checker are removed. Existing
+  skills, scoped docs, prompt templates, hooks, lints, and tests own the useful
+  procedures and enforceable constraints.
 - `config/omp/config.yml` explicitly enables discard-context, interrupting,
   once-per-session TTSR behavior and bundled rules.
 - Four local rules have 33 named positive and negative CLI scenarios. Shell
@@ -220,10 +228,9 @@ The OMP pilot implements the source-controlled portions of Phases 0 through 3:
   scenarios. The generated prompt budget is enforced by the wiring test.
 
 Host activation remains a separate authorized operation. Source-level tests and
-Nix evaluation prove the configuration before `hey re` changes the live runtime.
-The same-model current-versus-thin live comparison remains an activation
-acceptance check; it is not simulated by adding the thin core on top of the
-currently deployed legacy prompt.
+Nix evaluation prove the configuration before `hey re` changes live runtimes.
+Activation acceptance requires byte-for-byte readback from every managed global
+instruction surface and a fresh runtime smoke check.
 
 ## Consequences
 
@@ -248,7 +255,8 @@ Tradeoffs:
   inventory and source metadata must be checked when behavior is surprising.
 - Interrupted generations and hidden reminders add control flow that must stay
   visible through TTSR notifications and transcript evidence.
-- The OMP pilot temporarily leaves Codex and Pi with a larger legacy bundle.
+- Runtimes without TTSR rely on explicit skill selection, scoped instruction
+  discovery, and deterministic enforcement rather than dormant stream rules.
 
 ## Rejected alternatives
 
@@ -286,7 +294,7 @@ Before accepting the Phase 2 configuration:
 - Edit/write rules produce no unexplained broad matches under `omp ttsr scan`.
   Tool-command rules use explicit positive and negative fixtures because file
   scanning correctly reports them as having no relevant file scope.
-- The generated OMP startup instructions remain under the adopted word budget.
+- The shared startup core remains under the adopted word budget.
 - Scenario evaluations show no material regression in scope preservation,
   authority handling, observable verification, or completion honesty.
 

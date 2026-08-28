@@ -10,15 +10,7 @@ let
   cfg = config.modules.agents.codex;
   inherit (config.dotfiles) configDir;
 
-  # Dynamically concatenate all rule files from config/agents/rules/
-  rulesDir = "${configDir}/agents/rules";
-  ruleFiles = builtins.sort builtins.lessThan (
-    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (
-      builtins.attrNames (builtins.readDir rulesDir)
-    )
-  );
-  readRule = file: builtins.readFile "${rulesDir}/${file}";
-  concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+  agentCore = builtins.readFile "${configDir}/agents/core.md";
   codexVaultRestoreGuard = pkgs.writeTextFile {
     name = "codex-vault-restore-guard";
     destination = "/bin/codex-vault-restore-guard";
@@ -66,8 +58,8 @@ in
     ++ optionals cfg.homeAssistantMcp.enable [ codexHomeAssistantLauncher ];
 
     home.file = {
-      # AGENTS.md built from shared agent rules (same source as Claude/OpenCode)
-      ".codex/AGENTS.md".text = concatenatedRules;
+      # Keep startup context bounded; task procedures load through skills and routers.
+      ".codex/AGENTS.md".text = agentCore;
       ".codex/agents/luna_worker.toml".source = "${configDir}/codex/agents/luna_worker.toml";
       ".codex/agents/terra_worker.toml".source = "${configDir}/codex/agents/terra_worker.toml";
       ".codex/agents/sol_reviewer.toml".source = "${configDir}/codex/agents/sol_reviewer.toml";

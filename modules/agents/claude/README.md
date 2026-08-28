@@ -20,7 +20,7 @@ modules.agents.claude.enable = true;
 
 - `claude-code` package
 - `~/.claude/settings.json` from `config/claude/settings.json`
-- `~/.claude/CLAUDE.md` built from `config/agents/rules/*.md`
+- `~/.claude/CLAUDE.md` from the bounded `config/agents/core.md`
 - `~/.claude/agents/` from `config/agents/modes/`
 - Darwin-only `~/.wakatime.cfg`
 

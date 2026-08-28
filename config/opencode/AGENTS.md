@@ -1,4 +1,12 @@
-# OpenCode Configuration - Agent Reference
+---
+purpose: Route changes to OpenCode V2 configuration sources.
+applies_to: Files under config/opencode.
+entrypoint: Edit opencode.jsonc or a matching source, then inspect the V2 module.
+verification: Rebuild and inspect ~/.config/opencode2/opencode.
+update_when: OpenCode config schema, plugins, or managed paths change.
+---
+
+# OpenCode configuration
 
 ## Configuration Structure
 
@@ -6,52 +14,36 @@ This directory contains OpenCode configuration managed via nix-darwin.
 
 ### Nix-Managed (Read-Only Symlinks)
 
-- `opencode.jsonc` - Main configuration
-- `AGENTS.md` - This file (directory agent instructions)
-- `GLOBAL_INSTRUCTIONS.md` - Global agent instructions
-- `rules/` - Rule files (shell-strategy, etc.)
+- `opencode.jsonc` - Main V2 configuration
+- `config/agents/core.md` - Global runtime instructions, deployed by the module
 - `command/` - Slash commands
-- `skills/` - Agent skills
-- `agent/` - Custom agent definitions
+- `config/agents/modes/` - Custom agent definitions
 
-### Nix-Managed (Copied via Activation Script)
+Shared skills come from `~/.agents/skills/`. Target-specific OpenCode skills
+are deployed by `skills/flake.nix` through `~/.config/opencode/skills/`, the
+Herdr compatibility alias for the isolated V2 root.
 
-- `tool/` - Custom tools (copied so bun can resolve node_modules)
-- `package.json` - Dependencies for tools/plugins
-- `node_modules/` - Installed via bun install in activation script
-
-### User-Managed (NOT in Nix)
-
-- `plugin/` - Directory for user-managed plugins
+The current module does not deploy `tool/`, `package.json`, `node_modules/`, or
+local plugins.
 
 ## Plugin Management
 
-**User-managed plugins:**
-
-- Clone to `~/.config/opencode/plugin/`
-- For TypeScript plugins: run `bun run build`
-- Add to `opencode.jsonc` `plugins` array: `"./plugin/<plugin-name>"`
-
-**Required user-managed plugins:**
-
-- `opencode-jj` - https://github.com/edmundmiller/opencode-jj (TypeScript, needs build)
-- `boomerang-notify` - https://github.com/edmundmiller/boomerang-notify
-
-**Important:** Local plugins must be explicitly registered in `opencode.jsonc` `plugins` array.
+Local plugins require explicit V2-compatible source wiring and registration in
+`opencode.jsonc`; do not recreate the incompatible V1 plugin tree.
 
 ## Rebuild Workflow
 
-After `hey rebuild`:
+After `hey re`:
 
 - Symlinked files update automatically
-- `tool/` directory re-syncs
-- `bun install` runs for dependencies
-- User-managed plugins are UNTOUCHED
+- The V1 config directory is removed
+- Herdr recreates `~/.config/opencode` as a compatibility alias when enabled
+- Plugin cache and user-managed content remain untouched
 
 ## Modifying Configuration
 
 To modify nix-managed files:
 
-1. Edit in `~/.config/dotfiles/config/opencode/`
-2. Run `hey rebuild`
-3. Changes take effect immediately
+1. Edit the source in this repository.
+2. Run `hey re`.
+3. Inspect `~/.config/opencode2/opencode/` and run a fresh OpenCode smoke check.

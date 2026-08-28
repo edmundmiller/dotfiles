@@ -14,7 +14,8 @@ Remote control deliberately uses a second, installer-managed Codex binary for it
 ## Files
 
 - `config.toml` — bootstrapped from `config/codex/config.toml` if missing; kept as a writable local file so Codex can mutate settings
-- `AGENTS.md` — built from concatenated `config/agents/rules/*.md` (shared w/ Claude, OpenCode)
+- `AGENTS.md` — the bounded `config/agents/core.md`; procedures load through
+  skills and nested repository routers
 - `agents/*.toml` — Nix-managed custom agent profiles sourced from `config/codex/agents/`
 - `rules/` — sandbox allow-rules, bootstrapped into `~/.codex/rules/` during activation as local writable files
 

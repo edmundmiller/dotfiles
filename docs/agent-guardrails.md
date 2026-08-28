@@ -59,6 +59,9 @@ updating source code or canonical docs and letting OpenWiki regenerate.
 
 Load matching skills before acting. Use `fff` to find files when it is
 available, `sem diff` for review, and `git hunks` for selective staging.
+Do not run `prek` directly for routine validation; commit and push invoke the
+configured hooks. Run it directly only while configuring or debugging hooks, or
+when the user explicitly requests it.
 
 Every repository session ends with focused checks, commit, pull or rebase,
 push, and upstream verification when those actions are authorized. Qualifying

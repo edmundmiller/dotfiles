@@ -439,8 +439,7 @@ let
 
     def allowed(path: str) -> bool:
         return (
-            (path.startswith("config/agents/rules/") and path.endswith(".md"))
-            or (path.startswith("config/omp/prompts/") and path.endswith(".md"))
+            (path.startswith("config/omp/prompts/") and path.endswith(".md"))
             or path.startswith("skills/catalog/")
             or path.startswith(".agents/skills/")
         )

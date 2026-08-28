@@ -8,35 +8,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentResponseContractTests(unittest.TestCase):
-    def test_shared_rule_is_action_first_and_bounded(self) -> None:
-        rule = (ROOT / "config/agents/rules/01-tone-and-style.md").read_text()
-        normalized_rule = " ".join(rule.split())
-
-        for expected in (
-            "Be concise, direct, and candid",
-            "distinguish verified facts from uncertainty",
-            "Lead with the answer or next action.",
-            "Number multi-step instructions",
-            "State errors as cause, evidence, and fix.",
-            "without noisy progress",
-            "Make completed work visible.",
-            "Cap lists at five items",
-            "return it without a wrapper unless context is required for correctness or safety",
-            "re-anchor with the current outcome and next active step",
-        ):
-            self.assertIn(expected, normalized_rule)
-
-    def test_omp_core_keeps_the_same_compact_response_contract(self) -> None:
+    def test_thin_core_is_action_first_and_bounded(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 250)
+        self.assertLessEqual(len(core.split()), 220)
         for expected in (
-            "lead with the outcome or next action",
-            "preserve warnings, exact thresholds, and scope",
-            "give requested depth",
-            "return requested deliverables without a wrapper",
-            "re-anchor long work",
+            "Communicate concisely",
+            "lead with the outcome",
+            "separate evidence from uncertainty",
+            "state blockers with the smallest action that resolves them",
         ):
             self.assertIn(expected, normalized)
 
@@ -48,17 +29,25 @@ class AgentResponseContractTests(unittest.TestCase):
 
         self.assertIn("tests/test_agent_response_contract.py", check["command"])
 
-    def test_shared_behavior_rule_requires_evidence_and_real_validation(self) -> None:
-        rule = (ROOT / "config/agents/rules/15-agent-behavior.md").read_text()
+    def test_codex_bootstrap_instructions_stay_bounded(self) -> None:
+        config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
+        instructions = config["developer_instructions"]
+
+        self.assertLessEqual(len(instructions.split()), 150)
+        self.assertNotIn("READY_FOR_DONE", instructions)
+        self.assertNotIn("Durable goals are checkpoints", instructions)
+        self.assertIn("Keep Sol as the primary coordinator", instructions)
+
+    def test_thin_core_requires_scope_authority_and_live_evidence(self) -> None:
+        core = (ROOT / "config/agents/core.md").read_text()
 
         for expected in (
-            "materially ambiguous, risky, or requires approval",
-            "Use Visualize when a visual materially improves an explanation",
-            "Spawn subagents only for genuinely independent work",
-            "Ground research in authoritative, current sources",
-            "validate user-facing work in the real interface when applicable",
+            "Preserve unrelated work",
+            "Do not infer authority",
+            "Inspect the live source of truth before acting",
+            "Do not claim completion without fresh evidence",
         ):
-            self.assertIn(expected, rule)
+            self.assertIn(expected, core)
 
     def test_codex_defaults_keep_responses_and_reasoning_summaries_concise(self) -> None:
         config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
@@ -76,29 +65,24 @@ class AgentResponseContractTests(unittest.TestCase):
         )
         self.assertIn('"npm:pi-verbosity-control"', settings)
 
-    def test_code_standards_scope_compatibility_and_dependency_choices(self) -> None:
-        rule = (ROOT / "config/agents/rules/10-code-standards.md").read_text()
+    def test_typescript_any_policy_is_enforced_by_lint(self) -> None:
+        lint = (ROOT / "bin/lint-ts-architecture").read_text()
 
-        for expected in (
-            "Preserve backward compatibility only when required by documented consumers, public APIs, or migrations.",
-            "Prefer established, well-maintained libraries when they materially reduce complexity; avoid dependencies for trivial behavior.",
-        ):
-            self.assertIn(expected, rule)
+        self.assertIn("ban `as any` outside test files", lint)
+        self.assertIn("'as any' is forbidden outside tests", lint)
 
-    def test_shared_version_control_rule_routes_work_through_herdr_jj_omp(self) -> None:
-        rule = (ROOT / "config/agents/rules/03-version-control.md").read_text()
+    def test_version_control_procedure_lives_in_selective_workflows(self) -> None:
+        workflow = (ROOT / "AGENT_WORKFLOW.md").read_text()
+        workspace_skill = (
+            ROOT / ".agents/skills/using-jj-workspaces/SKILL.md"
+        ).read_text()
+        done_skill = (ROOT / "skills/catalog/done/SKILL.md").read_text()
 
-        for expected in (
-            "Herdr owns task-workspace creation",
-            "`prefix+a`",
-            "the new workspace opens with OMP focused",
-            "`jj root --ignore-working-copy`",
-            "never initialize jj inside a Codex Desktop Git worktree",
-            "use `done` for publication and cleanup",
-            "record the task with `hey agent-start` without `--workspace`",
-            "`jj diff --git -r @`",
-        ):
-            self.assertIn(expected, rule)
+        self.assertIn("If Herdr already created the current jj task workspace", workflow)
+        for expected in ("`prefix+a`", "jj root --ignore-working-copy", "hey agent-start"):
+            self.assertIn(expected, workspace_skill)
+        self.assertIn("jj diff --git -r @", workspace_skill)
+        self.assertIn("Run `jj root --ignore-working-copy`", done_skill)
 
     def test_omp_jj_rule_triggers_at_herdr_decision_points(self) -> None:
         rule = (ROOT / "config/omp/rules/working-with-jj.md").read_text()

@@ -1,8 +1,17 @@
-# OpenCode Module - Agent Guide
+---
+purpose: Route changes to the isolated OpenCode V2 module and managed config.
+applies_to: Files under modules/agents/opencode.
+entrypoint: Edit default.nix and config/opencode sources.
+verification: Rebuild, inspect the V2 XDG root, and run an OpenCode smoke check.
+update_when: OpenCode version, XDG root, instruction discovery, or paths change.
+---
+
+# OpenCode module
 
 ## Purpose
 
-Nix module for OpenCode CLI. Manages config, rules, agents, commands, and tools.
+Nix module for OpenCode V2. It isolates V2 from incompatible V1 plugins and
+manages config, global instructions, agents, and commands.
 
 ## Module Structure
 
@@ -12,25 +21,22 @@ modules/agents/opencode/
 └── AGENTS.md     # This file
 
 config/opencode/
-├── opencode.jsonc    # Main config (symlinked to ~/.config/opencode/)
-├── smart-title.jsonc # Smart title config
-├── dcp.jsonc         # DCP plugin config
-├── rules/            # Global rules (symlinked)
-├── agent/            # Custom agents (symlinked)
-├── command/          # Slash commands (symlinked)
-├── tool/             # TypeScript tools (copied, not symlinked)
-├── plugin/           # Local plugin development (NOT deployed)
-└── package.json      # Dependencies for tools
-
-Global OpenCode skills are generated into `~/.config/opencode/skills/`.
+├── opencode.jsonc # Main config
+├── agent/         # Historical source; shared modes come from config/agents/modes
+└── command/       # Slash commands
 ```
 
 ## Key Facts
 
-- **Config/rules/agents/commands:** Nix-managed (symlinked from store, read-only)
-- **Tools:** Copied (not symlinked) - TypeScript needs to resolve node_modules
-- **Plugins:** User-managed at `~/.config/opencode/plugin/`
-- **Plugin cache:** Lives at `~/.cache/opencode/` (NOT nix-managed)
+- **Config/core/agents/commands:** Nix-managed in
+  `~/.config/opencode2/opencode/` (symlinked from the store, read-only)
+- **Global instructions:** `config/agents/core.md` is installed as
+  `~/.config/opencode2/opencode/AGENTS.md`; V2 does not load the old rules glob.
+- **Shared skills:** Discovered from `~/.agents/skills/`; explicitly targeted
+  OpenCode skills use the compatibility alias `~/.config/opencode/skills/`.
+- **V1 cleanup:** Activation removes the incompatible V1 config directory before
+  Herdr recreates `~/.config/opencode` as an alias to the isolated V2 directory.
+- **Plugin cache:** Lives at `~/.cache/opencode/` (not Nix-managed)
 
 ## Troubleshooting
 
@@ -44,10 +50,10 @@ Global OpenCode skills are generated into `~/.config/opencode/skills/`.
 
 **Cause:** Corrupted plugin cache where peer dependencies aren't resolving correctly. Often happens after npm registry issues or interrupted installs.
 
-**Fix:** Clear the opencode plugin cache:
+**Fix:** Clear the OpenCode plugin cache through the guarded command:
 
 ```bash
-rm -rf ~/.cache/opencode/node_modules ~/.cache/opencode/bun.lock ~/.cache/opencode/package.json
+hey opencode-update
 ```
 
 Then restart opencode - it will reinstall all plugins fresh.
@@ -66,5 +72,4 @@ curl -sI "https://registry.npmjs.org/@opencode-ai/plugin/-/plugin-VERSION.tgz" |
 ## Related Files
 
 - `modules/agents/claude/` - Sibling module (similar pattern)
-- `config/opencode/plugin/*/` - Local plugin development directories
 - `hosts/*/default.nix` - Enable with `modules.agents.opencode.enable = true`

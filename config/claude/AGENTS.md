@@ -1,4 +1,12 @@
-# Claude Code Configuration
+---
+purpose: Route changes to Claude-specific writable settings and plugin sources.
+applies_to: Files under config/claude.
+entrypoint: Edit the source here, then inspect modules/agents/claude/default.nix.
+verification: Rebuild and inspect Claude's managed and writable runtime files.
+update_when: Claude-specific ownership or deployed paths change.
+---
+
+# Claude Code configuration
 
 ## Purpose
 
@@ -17,6 +25,7 @@ Unlike most `config/` files, `settings.json` is a template: `modules/agents/clau
 
 - Skills: `skills/catalog/`
 - Modes/agents: `config/agents/modes/`
-- Rules/instructions: `config/agents/rules/`
+- Global instructions: `config/agents/core.md`
 
-`modules/agents/claude/default.nix` wires those into `~/.claude/`.
+`modules/agents/claude/default.nix` wires those into `~/.claude/`. Claude loads
+the core through `~/.claude/CLAUDE.md`; project `CLAUDE.md` files remain scoped.

@@ -79,10 +79,10 @@ link_configs() {
   fi
 
   # AGENTS.md for repos the agent works in
-  if [ -f "$DOTFILES_DIR/config/agents/rules/01-tone-and-style.md" ]; then
+  if [ -f "$DOTFILES_DIR/config/agents/core.md" ]; then
     mkdir -p "$HOME/.pi/agent"
-    cat "$DOTFILES_DIR"/config/agents/rules/[0-9]*.md > "$HOME/.pi/agent/AGENTS.md" 2>/dev/null || true
-    info "generated AGENTS.md from rules"
+    cp "$DOTFILES_DIR/config/agents/core.md" "$HOME/.pi/agent/AGENTS.md"
+    info "installed AGENTS.md from the thin core"
   fi
 }
 

@@ -6,18 +6,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 CODEX_MODULE = ROOT / "modules" / "agents" / "codex" / "default.nix"
+CLAUDE_MODULE = ROOT / "modules" / "agents" / "claude" / "default.nix"
 PI_MODULE = ROOT / "modules" / "agents" / "pi" / "default.nix"
+PI_HOME_FILES = ROOT / "modules" / "agents" / "pi" / "lib" / "_home-files.nix"
+PI_SETTINGS_CHECK = ROOT / "modules" / "agents" / "pi" / "test-settings-json.sh"
+PI_SETTINGS_VALIDATOR = ROOT / "modules" / "agents" / "pi" / "validate-settings-json.py"
+OPENCODE_MODULE = ROOT / "modules" / "agents" / "opencode" / "default.nix"
+OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
+BOOTSTRAP = ROOT / "bin" / "bootstrap"
 OMP_CORE = ROOT / "config" / "agents" / "core.md"
+OMP_CONFIG = ROOT / "config" / "omp" / "config.yml"
+LEGACY_RULES = ROOT / "config" / "agents" / "rules"
 FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
+THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
-    def test_omp_uses_bounded_core_without_changing_codex_or_pi(self) -> None:
+    def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())
         omp_module = OMP_MODULE.read_text()
 
-        self.assertLessEqual(len(core.split()), 250)
+        self.assertLessEqual(len(core.split()), 220)
         for invariant in (
             "Preserve unrelated work and stay within the user's requested scope.",
             "Do not infer authority",
@@ -30,11 +40,53 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn('home.file.".omp/agent/AGENTS.md".text = agentCore;', omp_module)
         self.assertNotIn('home.file.".omp/agent/AGENTS.md".text = concatenatedRules;', omp_module)
         self.assertNotIn('home.file.".omp/agent/rules/incremental-architecture.md"', omp_module)
+        for rule_name in (
+            "working-with-jj.md",
+            "commit-house-style.md",
+            "pr-house-style.md",
+            "ci-watch.md",
+        ):
+            self.assertIn(f'home.file.".omp/agent/rules/{rule_name}"', omp_module)
 
-        for module in (CODEX_MODULE, PI_MODULE):
+        module_targets = {
+            CODEX_MODULE: '".codex/AGENTS.md".text = agentCore;',
+            CLAUDE_MODULE: '".claude/CLAUDE.md".text = agentCore;',
+        }
+        for module, target in module_targets.items():
             with self.subTest(module=module):
-                self.assertIn("rulesDir", module.read_text())
-                self.assertIn("concatenatedRules", module.read_text())
+                source = module.read_text()
+                self.assertIn(
+                    'agentCore = builtins.readFile "${configDir}/agents/core.md";',
+                    source,
+                )
+                self.assertIn(target, source)
+                self.assertNotIn("rulesDir", source)
+                self.assertNotIn("concatenatedRules", source)
+
+        pi_module = PI_MODULE.read_text()
+        pi_home_files = PI_HOME_FILES.read_text()
+        self.assertIn(
+            'agentCore = builtins.readFile "${configDir}/agents/core.md";',
+            pi_module,
+        )
+        self.assertIn("agentCore", pi_home_files)
+        self.assertIn('".pi/agent/AGENTS.md".text = agentCore;', pi_home_files)
+        self.assertNotIn("rulesDir", pi_module)
+        self.assertNotIn("concatenatedRules", pi_module + pi_home_files)
+
+        opencode_module = OPENCODE_MODULE.read_text()
+        self.assertIn(
+            '"opencode2/opencode/AGENTS.md".source = "${configDir}/agents/core.md";',
+            opencode_module,
+        )
+        self.assertNotIn('"opencode2/opencode/rules"', opencode_module)
+        self.assertNotIn('"instructions"', OPENCODE_CONFIG.read_text())
+
+        bootstrap = BOOTSTRAP.read_text()
+        self.assertIn('config/agents/core.md', bootstrap)
+        self.assertNotIn('config/agents/rules', bootstrap)
+        self.assertFalse(LEGACY_RULES.exists())
+        self.assertNotIn("For ADHD resources", core)
 
     def test_agents_md_use_guarded_hey_interfaces(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()
@@ -71,27 +123,66 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn('home.file.".omp/agent/commands/fix-agents-md.md"', module)
         self.assertIn('source = "${configDir}/omp/commands/fix-agents-md.md";', module)
 
-    def test_finish_manifest_runs_rule_and_skill_checks(self) -> None:
+    def test_opencode_module_owns_its_v2_compatibility_alias(self) -> None:
+        module = OPENCODE_MODULE.read_text()
+
+        self.assertIn("opencodeV2ConfigDir", module)
+        self.assertIn(
+            '${pkgs.coreutils}/bin/ln -sfn "${opencodeV2ConfigDir}" "${opencodeV1ConfigDir}"',
+            module,
+        )
+
+    def test_omp_config_uses_the_deployed_omp_18_registry(self) -> None:
+        config = OMP_CONFIG.read_text()
+        flake = (ROOT / "flake.nix").read_text()
+
+        self.assertIn("methodOrder: [remote, soft]", config)
+        self.assertIn("unexpectedStopDetection: smart", config)
+        self.assertNotIn("strategy: context-full", config)
+        self.assertIn("src=${self.packages.${system}.omp}", flake)
+
+    def test_pi_settings_hook_executes_a_real_python_file(self) -> None:
+        shell = PI_SETTINGS_CHECK.read_text()
+
+        self.assertNotIn("<<'PY'", shell)
+        self.assertIn("validate-settings-json.py", shell)
+        self.assertTrue(PI_SETTINGS_VALIDATOR.is_file())
+
+    def test_thread_introspection_cannot_recreate_global_startup_rules(self) -> None:
+        prompt = THREAD_INTROSPECTION.read_text()
+        module = OMP_MODULE.read_text()
+
+        self.assertNotIn("config/agents/rules", prompt)
+        self.assertIn(
+            "Never edit `config/agents/core.md` from session mining.",
+            prompt,
+        )
+        self.assertNotIn('path.startswith("config/agents/rules/")', module)
+
+    def test_finish_manifest_runs_core_and_skill_checks(self) -> None:
         manifest = json.loads((ROOT / ".agents" / "quality.json").read_text())
         check = next(item for item in manifest["checks"] if item["id"] == "agent-instructions")
-        self.assertIn("bin/check-agent-rules", check["command"])
+        self.assertNotIn("check-agent-rules", check["command"])
         self.assertIn("skill-quality/scripts/validate.py", check["command"])
 
         behavior = next(
             item for item in manifest["checks"] if item["id"] == "agent-quality-tests"
         )
+        self.assertNotIn("tests/test_agent_rules.py", behavior["command"])
+        self.assertIn("tests/test_agent_instruction_wiring.py", behavior["command"])
         self.assertIn("tests/test_omp_ttsr_rules.py", behavior["command"])
 
-    def test_pre_commit_hook_runs_rule_and_skill_checks(self) -> None:
+    def test_pre_commit_hooks_run_core_and_skill_checks(self) -> None:
         flake = (ROOT / "flake.nix").read_text()
         start = flake.index("agent-instructions = {")
         hook = flake[start : start + 1200]
-        self.assertIn("check-agent-rules", hook)
+        self.assertNotIn("check-agent-rules", hook)
         self.assertIn("skill-quality/scripts/validate.py", hook)
         self.assertIn('stages = [ "pre-commit" ]', hook)
 
         self.assertIn("omp-thin-harness = {", flake)
         self.assertIn("tests/test_omp_ttsr_rules.py", flake)
+        self.assertIn("tests/test_agent_instruction_wiring.py", flake)
         self.assertIn(r"config/agents/core\\.md", flake)
 
 

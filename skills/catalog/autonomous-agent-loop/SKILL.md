@@ -55,7 +55,8 @@ When behavior is “rough” or repeatedly needs kicks:
 - Search session/log history for repeated user follow-ups: `continue`, `try again`, `did that fix`, `how is it going`, `commit`, `rerun`, `still broken`.
 - Compare the first ask to the final answer: did the agent deliver artifacts and verification, or just recommendations?
 - Identify missing feedback loops: no build/test, no smoke check, no rendered UI inspection, no deploy verification, no issue update.
-- Patch the durable surface that future agents read: `AGENTS.md`, shared rules, skills, prompt templates, or repo docs.
+- Patch the smallest durable surface that future agents read: `AGENTS.md`, an
+  existing skill, a prompt template, a repo doc, or a deterministic check.
 
 ## Blocked stop format
 

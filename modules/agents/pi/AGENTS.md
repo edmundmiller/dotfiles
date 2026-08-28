@@ -1,4 +1,12 @@
-# Pi Module
+---
+purpose: Route changes to Pi package, runtime config, extensions, and prompts.
+applies_to: Files under modules/agents/pi.
+entrypoint: Edit default.nix or the matching source under config/pi.
+verification: Run the Pi settings test, rebuild, and inspect managed runtime files.
+update_when: Pi ownership, generated paths, or runtime behavior changes.
+---
+
+# Pi module
 
 This directory owns host wiring for Pi.
 
@@ -10,6 +18,8 @@ Honcho.
 
 Do not edit generated runtime files under `~/.pi/agent/`. They are Nix-managed
 symlinks or mutable Pi caches. Edit sources in this repo, then run `hey re`.
+The global `~/.pi/agent/AGENTS.md` is the bounded `config/agents/core.md`;
+procedures live in discovered skills and Pi prompt templates.
 
 Do not put Pi binary version bumps here. Those belong in `overlays/pi/`.
 

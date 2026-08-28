@@ -10,7 +10,7 @@
 # - Loads Pi-specific skills from ~/.pi/agent/skills/
 # - Project-local skills should live in .agents/skills/
 # - Auto-discovers subagent definitions from config/pi/agents/
-# - Generates AGENTS.md from config/agents/rules/
+# - Installs the shared thin core as AGENTS.md
 # - Strips // comments from settings.jsonc (pi only supports standard JSON)
 #
 # Note: The shift+enter keybinding conflicts with OpenCode's binding.
@@ -129,16 +129,7 @@ let
     inherit lib pkgs piSecretPreflightScript;
   };
 
-  # Dynamically concatenate all rule files from config/agents/rules/
-  # Same logic as Claude module for consistency
-  rulesDir = "${configDir}/agents/rules";
-  ruleFiles = builtins.sort builtins.lessThan (
-    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (
-      builtins.attrNames (builtins.readDir rulesDir)
-    )
-  );
-  readRule = file: builtins.readFile "${rulesDir}/${file}";
-  concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+  agentCore = builtins.readFile "${configDir}/agents/core.md";
 
   markdownFilesIn =
     dir:
@@ -349,7 +340,7 @@ in
     # - skills/catalog/ → ~/.agents/skills/
     # - project-local skills should live in .agents/skills/
     # - ~/.agents/skills/ auto-discovered by Pi natively
-    # - AGENTS.md built dynamically from config/agents/rules/*.md
+    # - AGENTS.md contains the bounded shared core
     # - settings.json stripped of comments (pi only supports standard JSON)
     home-manager.users.${config.user.name} =
       { lib, ... }:
@@ -358,7 +349,7 @@ in
           inherit
             builtins
             configDir
-            concatenatedRules
+            agentCore
             piPkgDeps
             piCommandPolicyBridge
             promptLinks

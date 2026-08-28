@@ -29,19 +29,17 @@ in
       { config, lib, ... }:
       let
         opencodeV1ConfigDir = "${config.home.homeDirectory}/.config/opencode";
+        opencodeV2ConfigDir = "${config.home.homeDirectory}/.config/opencode2/opencode";
       in
       {
         # V2 gets an isolated XDG root so incompatible V1 plugins are never loaded.
         xdg.configFile = {
           "opencode2/opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
+          "opencode2/opencode/AGENTS.md".source = "${configDir}/agents/core.md";
 
           # TODO(opencode-v2): Restore DCP after its plugin supports the V2 API.
           # TODO(opencode-v2): Restore smart-title after its plugin supports the V2 API.
 
-          "opencode2/opencode/rules" = {
-            source = "${configDir}/agents/rules";
-            recursive = true;
-          };
           "opencode2/opencode/agent" = {
             source = "${configDir}/agents/modes";
             recursive = true;
@@ -53,10 +51,12 @@ in
         };
 
         home.activation.opencode-v1-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          if [ -d "${opencodeV1ConfigDir}" ]; then
+          if [ -d "${opencodeV1ConfigDir}" ] && [ ! -L "${opencodeV1ConfigDir}" ]; then
             ${pkgs.coreutils}/bin/chmod -R u+w "${opencodeV1ConfigDir}"
           fi
           ${pkgs.coreutils}/bin/rm -rf "${opencodeV1ConfigDir}"
+          ${pkgs.coreutils}/bin/mkdir -p "${opencodeV2ConfigDir}"
+          ${pkgs.coreutils}/bin/ln -sfn "${opencodeV2ConfigDir}" "${opencodeV1ConfigDir}"
         '';
       };
   };

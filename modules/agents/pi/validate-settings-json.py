@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""Validate Pi settings JSONC against its JSON schema and theme contract."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+
+try:
+    import jsonschema
+except ModuleNotFoundError as exc:
+    raise SystemExit(
+        "FAIL: missing python module 'jsonschema'; run through the prek hook or "
+        "set PI_SETTINGS_JSON_PYTHON"
+    ) from exc
+
+
+def strip_jsonc(text: str) -> str:
+    out: list[str] = []
+    in_string = False
+    escaped = False
+    i = 0
+
+    while i < len(text):
+        char = text[i]
+        nxt = text[i + 1] if i + 1 < len(text) else ""
+
+        if in_string:
+            out.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if char == '"':
+            in_string = True
+            out.append(char)
+            i += 1
+            continue
+
+        if char == "/" and nxt == "/":
+            out.extend("  ")
+            i += 2
+            while i < len(text) and text[i] not in "\r\n":
+                out.append(" ")
+                i += 1
+            continue
+
+        if char == "/" and nxt == "*":
+            out.extend("  ")
+            i += 2
+            while i < len(text):
+                if text[i] == "*" and i + 1 < len(text) and text[i + 1] == "/":
+                    out.extend("  ")
+                    i += 2
+                    break
+                out.append("\n" if text[i] in "\r\n" else " ")
+                i += 1
+            continue
+
+        out.append(char)
+        i += 1
+
+    return "".join(out)
+
+
+def remove_trailing_commas(text: str) -> str:
+    out: list[str] = []
+    in_string = False
+    escaped = False
+    i = 0
+
+    while i < len(text):
+        char = text[i]
+
+        if in_string:
+            out.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            i += 1
+            continue
+
+        if char == '"':
+            in_string = True
+            out.append(char)
+            i += 1
+            continue
+
+        if char == ",":
+            j = i + 1
+            while j < len(text) and text[j].isspace():
+                j += 1
+            if j < len(text) and text[j] in "]}":
+                i += 1
+                continue
+
+        out.append(char)
+        i += 1
+
+    return "".join(out)
+
+
+def package_source(package: object) -> str:
+    if isinstance(package, str):
+        return package
+    if isinstance(package, dict):
+        source = package.get("source", "")
+        return source if isinstance(source, str) else ""
+    return ""
+
+
+def main() -> int:
+    settings_path = pathlib.Path(sys.argv[1])
+    schema_path = pathlib.Path(sys.argv[2])
+    settings = json.loads(
+        remove_trailing_commas(strip_jsonc(settings_path.read_text(encoding="utf-8")))
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    jsonschema.Draft7Validator.check_schema(schema)
+    jsonschema.validate(settings, schema)
+
+    package_sources = {
+        package_source(package) for package in settings.get("packages", [])
+    }
+    if (
+        settings.get("theme") == "terminal"
+        and "npm:pi-terminal-theme" not in package_sources
+    ):
+        raise SystemExit(
+            "FAIL: theme 'terminal' requires package 'npm:pi-terminal-theme' "
+            "in config/pi/settings.jsonc"
+        )
+
+    print("PASS: config/pi/settings.jsonc matches config/pi/settings-schema.json")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

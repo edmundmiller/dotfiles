@@ -10,15 +10,7 @@ let
   cfg = config.modules.agents.claude;
   inherit (config.dotfiles) configDir;
 
-  # Dynamically concatenate all rule files from config/agents/rules/
-  rulesDir = "${configDir}/agents/rules";
-  ruleFiles = builtins.sort builtins.lessThan (
-    builtins.filter (f: lib.hasSuffix ".md" f && f != "AGENTS.md") (
-      builtins.attrNames (builtins.readDir rulesDir)
-    )
-  );
-  readRule = file: builtins.readFile "${rulesDir}/${file}";
-  concatenatedRules = lib.concatMapStringsSep "\n\n" readRule ruleFiles;
+  agentCore = builtins.readFile "${configDir}/agents/core.md";
 in
 {
   options.modules.agents.claude = {
@@ -33,8 +25,8 @@ in
     home.file = {
       # Shared agent modes come from config/agents/.
       ".claude/agents".source = "${configDir}/agents/modes";
-      # CLAUDE.md is built dynamically from config/agents/rules/*.md
-      ".claude/CLAUDE.md".text = concatenatedRules;
+      # Claude's global instruction file receives the same bounded semantic core.
+      ".claude/CLAUDE.md".text = agentCore;
 
       # WakaTime configuration (reads agenix secret from current user's HOME)
       # NOTE: api_key_vault_cmd is argv-split by wakatime-cli (not shell-parsed),

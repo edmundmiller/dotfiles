@@ -27,6 +27,10 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 ## Implement
 
 - Use red/green/refactor for behavior changes. Run focused tests continuously.
+- For a reproduced bug, add a regression at the public seam. When strict
+  expected-failure support exists and split history improves review, first land
+  a green expected-failure test commit, then fix and flip it. Otherwise keep one
+  green change. Never commit a red suite.
 - Run the actual application, service, generated artifact, or runtime surface. A build alone is insufficient when user-visible behavior can be checked.
 - Add deterministic tools under `bin/` when repeated work warrants them. Keep commands non-interactive, structured, bounded, and secret-safe.
 - Use formatters and deterministic `--fix` tools directly. Model-driven repairs are explicit agent actions, never implicit Git hooks.

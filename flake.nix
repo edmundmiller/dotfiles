@@ -363,7 +363,7 @@
               rtk
               workmux
               ;
-            inherit (pkgs.llm-agents) herdr;
+            inherit (pkgs.llm-agents) herdr omp;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -384,7 +384,7 @@
               rtk
               workmux
               ;
-            inherit (darwinPkgs.llm-agents) gitbutler herdr;
+            inherit (darwinPkgs.llm-agents) gitbutler herdr omp;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 
@@ -691,38 +691,39 @@
               agent-instructions = {
                 enable = true;
                 name = "agent-instructions";
-                description = "Validate shared rule metadata and portable skill structure";
+                description = "Validate portable skill structure";
                 entry = toString (
                   pkgs.writeShellScript "agent-instructions" ''
                     set -eu
-                    ${pkgs.python3}/bin/python3 ${./bin/check-agent-rules} ${./config/agents/rules}
                     ${pkgs.python3}/bin/python3 ${./skills/catalog/skill-quality/scripts/validate.py} \
                       ${./skills/catalog} ${./.agents/skills} ${./skills/conditional}
                   ''
                 );
                 language = "system";
                 pass_filenames = false;
-                files = "^(config/agents/rules/|skills/(catalog|conditional)/|\\.agents/skills/)";
+                files = "^(skills/(catalog|conditional)/|\\.agents/skills/)";
                 stages = [ "pre-commit" ];
               };
               omp-thin-harness = {
                 enable = true;
                 name = "omp-thin-harness";
-                description = "Validate the bounded OMP core and local TTSR scenarios";
+                description = "Validate the shared thin core and local OMP TTSR scenarios";
                 entry = toString (
                   pkgs.writeShellScript "omp-thin-harness" ''
                     set -eu
                     cd ${./.}
-                    OMP_BIN=${inputs.llm-agents.packages.${system}.omp}/bin/omp \
+                    OMP_BIN=${self.packages.${system}.omp}/bin/omp \
                       ${pkgs.python3}/bin/python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
+                        tests/test_agent_response_contract.py \
+                        tests/test_codex_model_config.py \
                         tests/test_omp_ttsr_rules.py
                     ${pkgs.bun}/bin/bun test ./tests/omp_lazy_extensions.test.js
                   ''
                 );
                 language = "system";
                 pass_filenames = false;
-                files = "^(config/agents/core\\.md|config/omp/(config\\.yml|extensions/(lazy-|_lib/lazy-extension)|rules/)|modules/agents/(omp|plannotator)/default\\.nix|tests/(fixtures/omp-ttsr-rules\\.json|omp_lazy_extensions\\.test\\.js|test_agent_instruction_wiring\\.py|test_omp_ttsr_rules\\.py))";
+                files = "^(bin/bootstrap|config/agents/core\\.md|config/codex/config\\.toml|config/opencode/opencode\\.jsonc|config/omp/(config\\.yml|extensions/(lazy-|_lib/lazy-extension)|prompts/thread-introspection\\.md|rules/)|modules/agents/(claude|codex|omp|opencode|pi|plannotator)/|tests/(fixtures/omp-ttsr-rules\\.json|omp_lazy_extensions\\.test\\.js|test_agent_instruction_wiring\\.py|test_agent_response_contract\\.py|test_codex_model_config\\.py|test_omp_ttsr_rules\\.py))";
                 stages = [ "pre-commit" ];
               };
               check-flake-portability = {
@@ -1004,7 +1005,7 @@
                   # Copy+codesign like modules/agents/omp isolation wrapper.
                   ompConfigCheck = pkgs.runCommand "omp-config-check" { } ''
                     mkdir -p "$out/bin" "$out/lib/omp"
-                    src=${inputs.llm-agents.packages.${system}.omp}
+                    src=${self.packages.${system}.omp}
                     cp -a "$src/lib/omp/." "$out/lib/omp/"
                     chmod -R u+w "$out/lib/omp"
                     ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
@@ -1289,12 +1290,12 @@
                     nativeBuildInputs = [
                       pkgs.bun
                       pkgs.python3
-                      inputs.llm-agents.packages.${system}.omp
+                      self.packages.${system}.omp
                     ];
                   }
                   ''
                     cd ${./.}
-                    OMP_BIN=${inputs.llm-agents.packages.${system}.omp}/bin/omp \
+                    OMP_BIN=${self.packages.${system}.omp}/bin/omp \
                       PYTHONDONTWRITEBYTECODE=1 \
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \

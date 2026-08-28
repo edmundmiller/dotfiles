@@ -57,7 +57,7 @@ servers do not reappear from `agent.db`.
 ## Thin harness and TTSR
 
 `config/agents/core.md` is the only global `AGENTS.md` content installed for
-OMP. Keep it at or below 250 words. Repository routers, skills, and canonical
+OMP. Keep it at or below 220 words. Repository routers, skills, and canonical
 docs provide task context; do not move their procedures back into the core.
 
 Rules under `config/omp/rules/` use TTSR when they define `condition` or
@@ -117,7 +117,7 @@ requires Git to track `.codex/hooks.json` and `scripts/codex-validate-stop`.
 The model-callable `completion_check` tool records a one-shot content snapshot.
 The next main-session stop must match it or OMP continues the session. OMP core
 limits `session_stop` to eight consecutive continuations. Keep
-`features.unexpectedStopDetection: true` for semantic incomplete-stop detection;
+`features.unexpectedStopDetection: smart` for semantic incomplete-stop detection;
 do not add another classifier. `hooks.timeoutMs` controls legacy hooks, not
 `ExtensionAPI.session_stop`.
 

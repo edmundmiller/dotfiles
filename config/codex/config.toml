@@ -15,16 +15,8 @@ Runtime defaults:
 
 Delegation defaults:
 - Keep Sol as the primary coordinator and final decision-maker.
-- Select `luna_worker` with fresh context for independent, fully specified searches, tests, mechanical edits, log analysis, or summarization when delegation reduces latency or keeps noisy context out of the primary thread.
-- Select `terra_worker` with fresh context for scoped implementation or review that requires cross-file reasoning, risk assessment, or material judgment.
-- Select `sol_reviewer` with fresh context only when an independent read-only review materially reduces risk for a high-risk, wide, or release-bound change; do not require it for routine small edits.
-- Give every worker the outcome, exact file ownership, settled interfaces and constraints, verification commands with success criteria, and required return shape.
-- Keep the primary live for each active goal: wait for each worker before deciding the next step. If a worker returns `CONTINUE` or `PARTIAL`, follow up that worker or take the next bounded step; do not treat a worker's exit as goal completion.
-- Require every worker to return one compact structured return envelope with `status`, `changed_paths`, `verification`, `landing_state`, and `next_action`. Worker `status` is one of `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`; `landing_state` is one of `UNLANDED`, `READY_FOR_DONE`, `LANDED`, or `BLOCKED`.
-- Durable goals are checkpoints, not wake schedulers: an active goal does not relaunch a stopped worker, so keep execution in the live primary session and re-dispatch from fresh evidence when needed.
-- Keep the goal open through `done`; a worker's `DONE` report or passing local checks is not landing proof. The primary may close the goal only after `landing_state = LANDED` or a genuine `BLOCKED` outcome with the exact unmet requirement.
-- Spawn the smallest useful set, normally one to three; never delegate recursively, and require compact summaries back to Sol.
-- Treat worker reports as claims: the primary must inspect the actual diff and rerun the requested verification before acceptance.
+- Delegate the smallest useful set of independent work: Luna for narrow or mechanical tasks, Terra for material judgment, and Sol review only when high risk warrants it. Do not delegate recursively.
+- Treat worker reports as claims. The primary waits for workers, inspects their changes, reruns relevant verification, and decides whether the requested outcome is complete.
 """
 
 [agents]

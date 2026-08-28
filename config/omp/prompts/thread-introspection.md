@@ -28,7 +28,7 @@ Read only the sessions needed to establish patterns. Filter at the source: prefe
 
 1. Extract durable user preferences and project decisions.
 2. Find where agents struggled, looped, repeated work, ignored available tools, overbuilt, under-verified, or violated repo conventions.
-3. Update skills, rules, or prompts only when a change would prevent recurrence.
+3. Update skills or prompts only when a change would prevent recurrence.
 4. Keep changes small, concrete, and tied to observed failures.
 5. Prefer existing files over new files.
 
@@ -50,15 +50,15 @@ Allowed targets:
 
 - `skills/catalog/*/SKILL.md`
 - `skills/catalog/*/references/*`
-- `config/agents/rules/*.md`
 - `config/omp/prompts/*.md`
 - `.agents/skills/*/SKILL.md`
 - `.agents/skills/*/references/*`
 
 Do not edit runtime symlinks under `~/.omp`, `~/.pi`, or `~/.claude`.
+Never edit `config/agents/core.md` from session mining.
 Do not edit secrets, lock files, generated files, or unrelated source.
-Do not add broad generic advice. Add rules only when they would have changed behavior in an observed thread.
-Do not create a new skill unless no existing skill/rule can naturally hold the lesson.
+Do not add broad generic advice. Update a procedure only when it would have changed behavior in an observed thread.
+Do not create a new skill unless no existing skill or canonical document can naturally hold the lesson.
 
 ## Evidence threshold
 

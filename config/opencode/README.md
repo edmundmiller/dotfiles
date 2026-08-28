@@ -1,4 +1,12 @@
-# OpenCode Configuration
+---
+purpose: Explain the OpenCode V2 config source and deployed runtime paths.
+applies_to: Maintaining config/opencode or diagnosing its managed runtime state.
+entrypoint: Edit opencode.jsonc, then use modules/agents/opencode/default.nix.
+verification: Rebuild and inspect ~/.config/opencode2/opencode.
+update_when: OpenCode config, XDG isolation, or plugin ownership changes.
+---
+
+# OpenCode configuration
 
 This directory contains OpenCode configuration for the dotfiles repository.
 
@@ -6,40 +14,27 @@ This directory contains OpenCode configuration for the dotfiles repository.
 
 ### Managed by Nix (via symlinks)
 
-- `opencode.jsonc` - Main OpenCode configuration
-- `AGENTS.md` - Agent instructions for this directory
-- `GLOBAL_INSTRUCTIONS.md` - Global agent instructions
-- `rules/` - Rule files (shell-strategy, etc.)
-- `command/` - Slash commands
-- `agent/` - Custom agent definitions
+- `opencode.jsonc` - Main OpenCode V2 configuration
+- `config/agents/core.md` - Global instructions deployed as V2 `AGENTS.md`
+- `command/` - Slash commands deployed under the isolated V2 root
+- `config/agents/modes/` - Custom agents deployed under the isolated V2 root
 
-Global OpenCode skills are generated into `~/.config/opencode/skills/`.
-
-### Managed by Nix (via activation script)
-
-- `tool/` - Custom tools
-- `package.json` - Dependencies
-
-### NOT Managed by Nix
-
-- `plugin/` - User-managed plugin directory
+Shared OpenCode skills are discovered from `~/.agents/skills/`; explicit
+OpenCode-only skills use `~/.config/opencode/skills/`, a compatibility alias for
+the isolated V2 config root.
 
 ## Plugin Management
 
-Plugins are **NOT** managed by nix. Install manually to `~/.config/opencode/plugin/`.
-
-**Important:** Local plugins must be explicitly registered in `opencode.jsonc` `plugins` array.
-Auto-discovery from `~/.config/opencode/plugin/` does not work for local plugins.
+Plugins are not currently deployed by this module. Add a V2-compatible plugin
+only after wiring its source and explicit `opencode.jsonc` registration through
+the isolated V2 root.
 
 ### Plugin Cache & Updates
 
 OpenCode caches npm plugins in `~/.cache/opencode/node_modules/`. Plugins using `@latest`
 don't auto-update; clearing the cache forces fresh installs on next launch.
 
-**Automatic:** `hey rebuild` clears the plugin cache before rebuilding, so npm plugins
-update whenever you rebuild your system.
-
-**Manual:** To update plugins without a full rebuild:
+Clear the cache explicitly when a plugin update requires fresh resolution:
 
 ```bash
 hey opencode-update   # Clear cache only
@@ -51,73 +46,25 @@ hey opencode-update   # Clear cache only
 - `~/.cache/opencode/node_modules/` - Installed plugins
 - `~/.cache/opencode/bun.lock` - Lock file (forces fresh resolution)
 
-**What's preserved:**
+The command preserves:
 
 - `models.json` - Downloaded model configs
 - `package.json` - Plugin list
 
-### Installing Plugins
-
-```bash
-cd ~/.config/opencode/plugin/
-
-# Fix permissions if needed (nix activation may create read-only directory)
-chmod u+w ~/.config/opencode/plugin
-
-# jj integration
-git clone https://github.com/edmundmiller/opencode-jj.git opencode-jj
-
-# boomerang notifications
-git clone https://github.com/edmundmiller/boomerang-notify.git boomerang-notify
-```
-
-**Note:** Do NOT run `bun install` inside plugin directories. Plugins use the global
-`@opencode-ai/plugin` dependency from `~/.config/opencode/node_modules/`.
-
-### Registering Plugins
-
-After cloning, add plugins to `opencode.jsonc`:
-
-```jsonc
-"plugins": [
-  // ... npm plugins ...
-  "./plugin/opencode-jj",
-  "./plugin/boomerang-notify"
-]
-```
-
-### Required Plugins
-
-- `opencode-jj` - Jujutsu version control integration
-- `boomerang-notify` - Desktop notifications for session completion
-
 ## After System Rebuild
 
-After `hey rebuild`:
+After `hey re`:
 
-- Symlinked files update automatically
-- Tools get re-synced
-- Dependencies update (`bun install` runs)
-- **Plugins are untouched** (manual management)
+- V2 config, `AGENTS.md`, agents, and commands update through Home Manager.
+- The incompatible V1 directory is removed.
+- Herdr recreates `~/.config/opencode` as an alias to the V2 root when its
+  OpenCode integration is enabled.
+- Plugin cache contents remain untouched unless `hey opencode-update` is run.
 
 ## Development
 
 ### Modifying Configurations
 
 1. Edit files in `~/.config/dotfiles/config/opencode/`
-2. Run `hey rebuild`
+2. Run `hey re`
 3. Changes take effect immediately
-
-### Adding New Tools
-
-1. Create tool file in `config/opencode/tool/`
-2. Run `hey rebuild`
-3. Tool syncs to `~/.config/opencode/tool/`
-
-### Plugin Development
-
-Plugins are independent of the nix build:
-
-1. Make changes in `~/.config/opencode/plugin/<plugin-name>/`
-2. For TypeScript: `bun run build`
-3. Test immediately (no rebuild needed)

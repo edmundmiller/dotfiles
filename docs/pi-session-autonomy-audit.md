@@ -1,3 +1,11 @@
+---
+purpose: Record the evidence behind Pi's selective autonomous-goal procedure.
+applies_to: Re-evaluating Pi goal prompts or the autonomous-agent-loop skill.
+entrypoint: Read the aggregate findings, then inspect current prompt and skill sources.
+verification: Compare current prompts and skill behavior with the recorded failure patterns.
+update_when: New session evidence changes the autonomy design or its destinations.
+---
+
 # Pi session autonomy audit
 
 Date: 2026-06-15
@@ -42,7 +50,9 @@ The scan is heuristic, but the imbalance is useful: many sessions have many foll
 
 ## Changes made
 
-- Added shared rule `config/agents/rules/16-autonomous-goal-progress.md` so Pi/Claude/OpenCode prompts explicitly require durable outcome contracts, iteration after partial attempts, no stopping at plans, blocked-stop evidence, and final completion audits.
+- The original audit added an always-on autonomous-goal rule. The 2026-08-28
+  thin-core migration retired that duplicate after preserving the procedure in
+  the selective skill and Pi prompt templates.
 - Added global skill `skills/catalog/autonomous-agent-loop/SKILL.md` for broad/cross-session work, createGoal usage, manual-kick investigations, and evidence-first debugging.
 - Added this audit note as a durable source of the inspected evidence and rationale.
 

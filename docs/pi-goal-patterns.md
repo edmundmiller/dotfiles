@@ -44,14 +44,16 @@ Prompt templates in `config/pi/prompts/` are linked into `~/.pi/agent/prompts/` 
 | `goalize.md`             | Create the one active goal and start execution.   |
 | `goal-continue-audit.md` | Audit fresh evidence and continue unless blocked. |
 
-Shared behavior lives in `config/agents/rules/16-autonomous-goal-progress.md`. The reusable procedure lives in `skills/catalog/autonomous-agent-loop/SKILL.md`. Do not create a parallel checklist or task store.
+Universal scope and evidence boundaries live in `config/agents/core.md`. The
+goal procedure lives in `skills/catalog/autonomous-agent-loop/SKILL.md` and the
+two Pi prompt templates above. Do not create a parallel checklist or task store.
 
 ## Project-specific clauses to add to `goalize`
 
 ### Dotfiles
 
 ```text
-Dotfiles constraints: preserve unrelated user changes; use br for issue tracking if needed; validate with ./bin/hey check; deploy runtime config with hey re, not darwin-rebuild or home-manager directly; make reviewable commits after validation; smoke-check installed agent config under the home directory when prompts/rules/skills change.
+Dotfiles constraints: preserve unrelated user changes; use br for issue tracking if needed; validate with ./bin/hey check; deploy runtime config with hey re, not darwin-rebuild or home-manager directly; make reviewable commits after validation; smoke-check installed agent config under the home directory when prompts/TTSR rules/skills change.
 ```
 
 ### Obsidian vault

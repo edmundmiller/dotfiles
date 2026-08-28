@@ -1,7 +1,7 @@
 {
   builtins,
   configDir,
-  concatenatedRules,
+  agentCore,
   piPkgDeps,
   piCommandPolicyBridge,
   piSettingsValidated,
@@ -14,7 +14,7 @@
 promptLinks
 // agentLinks
 // {
-  ".pi/agent/AGENTS.md".text = concatenatedRules;
+  ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
   ".pi/agent/extensions/pi-permission-system/config.json".source =

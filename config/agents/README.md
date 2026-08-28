@@ -1,6 +1,6 @@
 ---
 purpose: Explain shared agent configuration ownership and deployment.
-applies_to: Changes to shared agent skills, modes, or rules.
+applies_to: Changes to shared agent skills, modes, or startup context.
 entrypoint: Use config/agents/AGENTS.md, then the relevant source directory.
 verification: Rebuild and inspect the affected runtime path.
 update_when: Supported runtimes, paths, or deployment behavior changes.
@@ -8,28 +8,29 @@ update_when: Supported runtimes, paths, or deployment behavior changes.
 
 # Agents Configuration
 
-Shared rules and modes for AI coding agents. Global skills live in `skills/catalog/`; validate them with `skills/catalog/skill-quality/scripts/validate.py`.
+Shared thin startup context and modes for AI coding agents. Global skills live
+in `skills/catalog/`; validate them with
+`skills/catalog/skill-quality/scripts/validate.py`.
 
 ## Directory Structure
 
 ```
 config/agents/
-├── modes/       # Agent modes
-└── rules/       # System prompt rules
+├── core.md      # Bounded universal startup invariants
+└── modes/       # Agent modes
 ```
 
 ## Supported Agents
 
 This configuration is shared across agent runtimes with generated skill targets:
 
-| Agent      | Skills Location              | Modes Location              | Rules                       |
-| ---------- | ---------------------------- | --------------------------- | --------------------------- |
-| dot-agents | `~/.agents/skills/`          | N/A                         | N/A                         |
-| Claude     | N/A                          | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`       |
-| Codex      | `~/.codex/skills/`           | N/A                         | `~/.codex/AGENTS.md`        |
-| OpenCode   | `~/.config/opencode/skills/` | `~/.config/opencode/agent/` | `~/.config/opencode/rules/` |
-| Pi         | `~/.pi/agent/skills/`        | N/A                         | `~/.pi/agent/AGENTS.md`     |
-| Hermes     | `~/.hermes/skills/`          | N/A                         | `~/.hermes/SOUL.md`         |
+| Agent    | Shared skills       | Modes location                        | Instruction surface                      |
+| -------- | ------------------- | ------------------------------------- | ---------------------------------------- |
+| Claude   | `~/.agents/skills/` | `~/.claude/agents/`                   | `~/.claude/CLAUDE.md`                    |
+| Codex    | `~/.agents/skills/` | Native profiles                       | `~/.codex/AGENTS.md`                     |
+| OpenCode | `~/.agents/skills/` | `~/.config/opencode2/opencode/agent/` | `~/.config/opencode2/opencode/AGENTS.md` |
+| OMP      | `~/.agents/skills/` | Native commands and TTSR              | `~/.omp/agent/AGENTS.md`                 |
+| Pi       | `~/.agents/skills/` | Native prompts and agents             | `~/.pi/agent/AGENTS.md`                  |
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
 Generated bundles exist for supported skill targets, but activation only syncs targets whose local agent module is enabled. Defaults live only in `dot-agents`; runtime-specific dirs carry targeted skills. Claude skill deployment is disabled to prevent duplicate OMP discovery.
@@ -74,12 +75,14 @@ Agent modes are specialized configurations for different tasks:
 - **cursor** - Cursor-style code editing
 - **sem-review** - Flexible semantic diff/review mode (sem-first, expand when needed)
 
-## Rules
+## Startup context
 
-Rules are concatenated for Codex, Claude, and Pi and exposed individually to OpenCode. Query their live metadata:
+All supported coding runtimes receive `core.md`. OMP alone adds its tested,
+conditional TTSR layer. Procedures belong in skills or scoped documents; hard
+requirements belong in hooks, lints, policies, and tests. Validate the wiring:
 
 ```bash
-python3 bin/check-agent-rules --json
+python3 -m unittest tests/test_agent_instruction_wiring.py tests/test_agent_response_contract.py
 ```
 
 ## Adding a New Skill

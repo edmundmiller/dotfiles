@@ -50,7 +50,7 @@ model:
   toolCallLoopGuard:
     enabled: true
 compaction:
-  strategy: context-full
+  methodOrder: [remote, soft]
   thresholdPercent: 70
   supersedeReads: true
   dropUseless: true
@@ -157,7 +157,7 @@ task:
     commits: ai
 
 features:
-  unexpectedStopDetection: true
+  unexpectedStopDetection: smart
 
 secrets:
   enabled: true
