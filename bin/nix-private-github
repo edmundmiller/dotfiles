@@ -128,12 +128,23 @@ if [[ -z "$deploy_source_head" || -z "$deploy_source_base" ]]; then
   fi
 fi
 
-remote_main="${NIXOS_DEPLOY_REMOTE_MAIN:-}"
+deploy_git="${NIXOS_DEPLOY_GIT:-git}"
+if [[ "$dotfiles_remote_flake" -eq 1 ]]; then
+  remote_main=""
+else
+  remote_main="${NIXOS_DEPLOY_REMOTE_MAIN:-}"
+fi
 if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 ]]; then
   if [[ -z "$remote_main" ]]; then
-    read -r remote_main _ < <(
-      git ls-remote https://github.com/edmundmiller/dotfiles.git refs/heads/main
-    )
+    if ! remote_main_output="$(
+      "$deploy_git" ls-remote \
+        https://github.com/edmundmiller/dotfiles.git \
+        refs/heads/main
+    )"; then
+      echo "nix-private-github: could not resolve current dotfiles origin/main" >&2
+      exit 69
+    fi
+    read -r remote_main _ <<<"$remote_main_output"
   fi
   if [[ -z "$remote_main" ]]; then
     echo "nix-private-github: could not resolve current dotfiles origin/main" >&2

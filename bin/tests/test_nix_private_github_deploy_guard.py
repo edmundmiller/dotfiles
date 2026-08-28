@@ -187,7 +187,10 @@ class NucDeployGuardTest(unittest.TestCase):
             "--refresh",
             "--flake",
             "github:edmundmiller/dotfiles#nuc",
-            env={"NIXOS_DEPLOY_REMOTE_MAIN": remote_main},
+            env={
+                "FAKE_GIT_REMOTE_MAIN": remote_main,
+                "NIXOS_DEPLOY_GIT": str(self.fake_git),
+            },
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -204,7 +207,10 @@ class NucDeployGuardTest(unittest.TestCase):
             str(self.command),
             "switch",
             "--flake=github:edmundmiller/dotfiles#nuc",
-            env={"NIXOS_DEPLOY_REMOTE_MAIN": remote_main},
+            env={
+                "FAKE_GIT_REMOTE_MAIN": remote_main,
+                "NIXOS_DEPLOY_GIT": str(self.fake_git),
+            },
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -220,14 +226,16 @@ class NucDeployGuardTest(unittest.TestCase):
             "switch",
             "--flake",
             "github:edmundmiller/dotfiles#nuc",
-            env={"NIXOS_DEPLOY_REMOTE_MAIN": "main-sha"},
+            env={
+                "FAKE_GIT_REMOTE_MAIN": "main-sha",
+                "NIXOS_DEPLOY_GIT": str(self.fake_git),
+            },
         )
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("origin/main is not a commit SHA", result.stderr)
         self.assertFalse(self.marker.exists())
 
-    @unittest.expectedFailure
     def test_dotfiles_remote_flake_ignores_stale_remote_main_override(self) -> None:
         stale_main = "c" * 40
         current_main = "d" * 40
@@ -251,7 +259,6 @@ class NucDeployGuardTest(unittest.TestCase):
         )
         self.assertNotIn(stale_main, invocation)
 
-    @unittest.expectedFailure
     def test_dotfiles_remote_flake_rejects_failed_remote_lookup(self) -> None:
         result = self.run_wrapper(
             str(self.command),

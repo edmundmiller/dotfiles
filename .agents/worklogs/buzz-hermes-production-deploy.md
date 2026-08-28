@@ -63,8 +63,8 @@ only remaining blocker.
 - The NUC wrapper now resolves dotfiles `origin/main` over Git transport,
   validates an exact lowercase commit SHA, and rewrites a mutating remote flake
   to that immutable revision before `nixos-rebuild` starts. Its packaged check
-  passes 11 tests, including both flake argument forms and fail-closed invalid
-  revision handling.
+  passes 13 tests, including both flake argument forms, stale override
+  rejection, lookup failure propagation, and fail-closed invalid revisions.
 
 ## Reviews
 
