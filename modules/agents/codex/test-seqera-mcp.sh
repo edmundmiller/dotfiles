@@ -2,11 +2,24 @@
 # Validate host-scoped managed MCP activation without evaluating a full host.
 set -euo pipefail
 
+if [[ "$(uname -s)" == "Darwin" && "$BASH" != "/bin/bash" ]]; then
+    exec /bin/bash "$0" "$@"
+fi
+
 repo_root="${REPO_ROOT:-$(git rev-parse --show-toplevel)}"
 module="$repo_root/modules/agents/codex/default.nix"
 reconciler="$repo_root/config/codex/reconcile_mcp.py"
+launcher="$repo_root/config/codex/codex-ha.sh"
+host="$repo_root/hosts/mactraitorpro/default.nix"
 
-python3 - "$module" "$reconciler" <<'PY'
+grep -Fq "builtins.readFile \"\${configDir}/codex/reconcile_mcp.py\"" "$module"
+grep -Fq "builtins.readFile \"\${configDir}/codex/codex-ha.sh\"" "$module"
+grep -Fq -- '--legacy-cleanup' "$module"
+grep -Fq 'secretReference = "op://Agents/Hermes Laptop HA/credential";' "$host"
+test -f "$reconciler"
+test -f "$launcher"
+
+python3 - "$reconciler" <<'PY'
 import importlib.util
 import pathlib
 import stat
@@ -16,10 +29,7 @@ import tempfile
 import tomllib
 from unittest import mock
 
-module = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
-reconciler = pathlib.Path(sys.argv[2])
-assert 'builtins.readFile "${configDir}/codex/reconcile_mcp.py"' in module
-assert "--legacy-cleanup" in module
+reconciler = pathlib.Path(sys.argv[1])
 assert reconciler.is_file(), reconciler
 
 with tempfile.TemporaryDirectory() as directory:
@@ -107,11 +117,12 @@ with tempfile.TemporaryDirectory() as directory:
 
     home_assistant, _ = activate(0, 1)
     assert "[mcp_servers.seqera]" not in home_assistant, home_assistant
-    assert home_assistant.startswith("mcp_oauth_callback_port = 12345\n"), home_assistant
+    assert "mcp_oauth_callback_port" not in home_assistant, home_assistant
     assert home_assistant.count("[mcp_servers.homeassistant]") == 1, home_assistant
     assert 'url = "https://homeassistant.cinnamon-rooster.ts.net/api/mcp"' in home_assistant
-    assert 'auth = "oauth"' in home_assistant
-    assert 'oauth = { client_id = "http://127.0.0.1:12345" }' in home_assistant
+    assert 'bearer_token_env_var = "HASS_TOKEN"' in home_assistant
+    assert 'auth = "oauth"' not in home_assistant
+    assert "oauth =" not in home_assistant
     assert "Bearer stale" not in home_assistant
     assert unrelated_fff in home_assistant
     assert "memories = true" in home_assistant
@@ -121,16 +132,15 @@ with tempfile.TemporaryDirectory() as directory:
     assert activate(0, 1) == (home_assistant, "changed=false\n")
 
     config.write_text(
-        home_assistant.replace(
-            "mcp_oauth_callback_port = 12345",
-            "mcp_oauth_callback_port = 23456",
-        ),
+        "mcp_oauth_callback_port = 23456\n\n" + home_assistant,
         encoding="utf-8",
     )
     custom_callback, _ = activate(0, 1)
-    assert 'oauth = { client_id = "http://127.0.0.1:23456" }' in custom_callback
+    assert custom_callback.startswith("mcp_oauth_callback_port = 23456\n")
+    assert 'bearer_token_env_var = "HASS_TOKEN"' in custom_callback
     disabled, _ = activate(0, 0)
     assert "[mcp_servers.homeassistant]" not in disabled
+    assert disabled.startswith("mcp_oauth_callback_port = 23456\n")
     assert sentinel.read_text(encoding="utf-8") == "untouched\n"
     assert not list(pathlib.Path(directory).glob(".config.toml.*"))
 
@@ -188,3 +198,23 @@ with tempfile.TemporaryDirectory() as directory:
     assert rejected.returncode != 0
     assert unsupported.read_text(encoding="utf-8") == before_unsupported
 PY
+
+launcher_tmp="$(mktemp -d)"
+trap 'rm -rf "$launcher_tmp"' EXIT
+fake_op="$launcher_tmp/op"
+# shellcheck disable=SC2016
+printf '%s\n' \
+    '#!/bin/sh' \
+    'printf "HASS_TOKEN=%s\n" "$HASS_TOKEN"' \
+    'printf "ARGS="' \
+    'printf "%s|" "$@"' \
+    'printf "\n"' >"$fake_op"
+chmod 0700 "$fake_op"
+launcher_output="$({
+    CODEX_BIN=/usr/bin/true \
+        CODEX_HOME_ASSISTANT_SECRET_REFERENCE='op://Test/Home Assistant/token' \
+        OP_BIN="$fake_op" \
+        bash "$launcher" --version
+})"
+grep -Fqx 'HASS_TOKEN=op://Test/Home Assistant/token' <<<"$launcher_output"
+grep -Fqx 'ARGS=run|--|/usr/bin/true|--version|' <<<"$launcher_output"

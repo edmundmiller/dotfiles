@@ -37,12 +37,13 @@ On Seqeratop, verify the registration with `codex mcp get seqera`.
 Set `modules.agents.codex.homeAssistantMcp.enable = true` only on hosts that
 need access to the existing Home Assistant MCP integration. Activation registers
 `https://homeassistant.cinnamon-rooster.ts.net/api/mcp` and enables `rmcp_client`.
-When no global callback port exists, activation uses port `12345` and matches
-the Home Assistant OAuth client ID to it. Authentication remains in Codex's
-user-managed OAuth store: after rebuilding that host, run
-`codex mcp login homeassistant`. Verify registration with
-`codex mcp get homeassistant`, then use a fresh Codex session for a read-only
-`GetLiveContext` call before trusting the integration.
+Set `homeAssistantMcp.secretReference` to the host's existing 1Password token
+reference. The generated `codex-ha` launcher resolves that reference with
+`op run`, exposes it only as `HASS_TOKEN` for the child Codex process, and uses
+Codex's native `bearer_token_env_var`; no token enters Nix, Git, argv, or the
+writable Codex config. Verify registration with `codex mcp get homeassistant`,
+then start a fresh `codex-ha` session and make a read-only `GetLiveContext`
+call before trusting the integration.
 
 When a broad Darwin activation is unsafe, the checked-in reconciler can update
 only Codex's writable MCP configuration on MacTraitorPro. Preview it first; the

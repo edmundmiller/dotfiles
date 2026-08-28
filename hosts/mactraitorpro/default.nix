@@ -166,7 +166,10 @@ in
         claude.enable = true;
         codex = {
           enable = true;
-          homeAssistantMcp.enable = true;
+          homeAssistantMcp = {
+            enable = true;
+            secretReference = "op://Agents/Hermes Laptop HA/credential";
+          };
         };
         hermes-local = {
           enable = true;

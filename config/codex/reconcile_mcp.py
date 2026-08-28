@@ -130,23 +130,11 @@ def reconcile(
         )
 
     if home_assistant_mcp_enabled:
-        parsed = tomllib.loads(next_content)
-        callback_port = parsed.get("mcp_oauth_callback_port")
-        if callback_port is None:
-            callback_port = 12345
-            next_content = (
-                f"mcp_oauth_callback_port = {callback_port}\n\n" + next_content.lstrip()
-            )
-        elif type(callback_port) is not int or not 1 <= callback_port <= 65535:
-            raise ValueError(
-                "mcp_oauth_callback_port must be an integer from 1 to 65535"
-            )
         next_content = append_table(
             next_content,
             "[mcp_servers.homeassistant]\n"
             'url = "https://homeassistant.cinnamon-rooster.ts.net/api/mcp"\n'
-            'auth = "oauth"\n'
-            f'oauth = {{ client_id = "http://127.0.0.1:{callback_port}" }}',
+            'bearer_token_env_var = "HASS_TOKEN"',
         )
 
     next_content = next_content.rstrip() + "\n"

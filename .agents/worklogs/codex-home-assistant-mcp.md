@@ -9,7 +9,7 @@ Connect Codex to the existing Home Assistant MCP endpoint through the Nix-manage
 ## Decisions
 
 - Prefer Home Assistant's built-in Streamable HTTP MCP server over a third-party server.
-- Prefer Codex-managed OAuth because both Home Assistant and Codex officially support it and it avoids duplicating the existing long-lived access token.
+- Use Codex's native `bearer_token_env_var` after the user explicitly chose token authentication. Resolve the existing laptop-agent token reference with 1Password `op run`; never copy the token into Nix, Git, argv, logs, or `config.toml`.
 - Scope authority to local implementation, activation, and read-only verification; do not push or merge.
 - Do not activate the pending broad Darwin generation; it includes unrelated Hermes, launchd, and agent dependency changes.
 
@@ -34,12 +34,17 @@ Connect Codex to the existing Home Assistant MCP endpoint through the Nix-manage
 - Hardened focused test passes: symlink and non-file targets are refused; trailing table comments are preserved without duplicate tables; normal activation removes only the intended legacy entries; replacement preserves mode and inode-swaps atomically; a simulated replace failure preserves the original and removes its temporary file.
 - Residual review found valid TOML whitespace around table names, dots, and closing brackets was still unsupported. The matcher and regressions now cover main and nested managed tables with those forms; unsupported quoted-key forms fail closed before a write; the reconciled result must parse before replacement.
 - A later boundary review found valid leading indentation before table headers was not treated as a section boundary. All managed, features, and legacy start/boundary patterns now accept leading spaces/tabs; the regression preserves an exact indented FFF block and proves parsed `rmcp_client` remains under `features`, not FFF.
+- Fresh official Home Assistant and Codex documentation confirms `/api/mcp` accepts `Authorization: Bearer <long-lived access token>` and Codex's supported config is `bearer_token_env_var`; `auth = "bearer"` is invalid and inline tokens are rejected.
+- Existing 1Password reference `op://Agents/Hermes Laptop HA/credential` authenticated to the Home Assistant REST API with HTTP 200 while flowing only over stdin; no secret value was printed or stored in the checkout.
+- Red: the focused MCP test failed because the source still emitted OAuth fields and had no `codex-ha` 1Password launcher. Green: the test passes with a single `HASS_TOKEN` bearer reference, preserved unrelated callback state, and behavioral launcher delegation to `op run`.
+- Token revision checks pass: focused MCP behavior, seven Codex unit tests, Python compile/Ruff, ShellCheck, Nix parsing, and diff whitespace. Scoped `hey check --worktree` passed Darwin evaluation, formatting, hooks, tmux, package harness/policy, and ast-grep; it returned nonzero only for the unrelated pre-existing missing DJI Mic Mini check attribute.
+- Live bearer dry-run: the candidate exactly matches the current parsed config plus only the managed Home Assistant field replacement; the callback and every unrelated server are preserved. No matching rebuild process is running, and the live file remains regular rather than a symlink.
 
 ## Reviews
 
-Plan gate: repository pattern review and independent primary-source review completed. Home Assistant's official Codex example requires a matching callback port and OAuth client ID; both are reconciled without storing tokens in Nix.
+Plan gate: repository pattern review and independent primary-source review completed. The final token path uses Home Assistant's maintained HTTP MCP endpoint, Codex's native bearer-token environment field, and the repository's existing 1Password reference; no MCP proxy was added.
 
-Implementation review gate: the first scoped reconciler review returned blocking findings. After two hardening rounds, the terminal re-review reported no actionable findings; focused tests and manual TOML preservation probes passed.
+Implementation review gate: the first scoped reconciler review returned blocking findings. After two hardening rounds, the terminal re-review reported no actionable findings. A fresh review of the token revision also found no actionable issue and confirmed no token enters source, config, argv, or logs; focused tests and manual TOML preservation probes passed.
 
 ## Feedback
 
@@ -48,7 +53,7 @@ None.
 ## Remaining work
 
 - Broad Darwin activation remains explicitly withheld.
-- Commit the reviewed Codex-only reconciler, apply it to `~/.codex/config.toml`, then complete OAuth, discovery, and a read-only `GetLiveContext` proof.
+- Run scoped checks and review, commit the token-auth revision, apply it only to `~/.codex/config.toml`, then complete secret-backed discovery and a read-only `GetLiveContext` proof.
 
 ## Commits
 

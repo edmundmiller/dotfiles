@@ -28,6 +28,12 @@ let
   codexMcpReconciler = pkgs.writeText "codex-mcp-reconciler.py" (
     builtins.readFile "${configDir}/codex/reconcile_mcp.py"
   );
+  codexHomeAssistantLauncher = pkgs.writeShellScriptBin "codex-ha" ''
+    CODEX_HOME_ASSISTANT_SECRET_REFERENCE=${escapeShellArg cfg.homeAssistantMcp.secretReference}
+    OP_BIN=${escapeShellArg (lib.getExe pkgs._1password-cli)}
+    CODEX_BIN=${escapeShellArg (lib.getExe pkgs.llm-agents.codex)}
+    ${builtins.readFile "${configDir}/codex/codex-ha.sh"}
+  '';
 in
 {
   options.modules.agents.codex = {
@@ -35,16 +41,29 @@ in
     homeAssistantMcp.enable = mkBoolOpt false // {
       description = "Ensure Home Assistant MCP is registered in Codex's writable configuration.";
     };
+    homeAssistantMcp.secretReference = mkOption {
+      type = types.str;
+      default = "";
+      description = "1Password reference exposed to token-backed Codex sessions by codex-ha.";
+    };
     seqeraMcp.enable = mkBoolOpt false // {
       description = "Ensure Seqera MCP is registered in Codex's writable configuration.";
     };
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !cfg.homeAssistantMcp.enable || cfg.homeAssistantMcp.secretReference != "";
+        message = "modules.agents.codex.homeAssistantMcp.secretReference is required when Home Assistant MCP is enabled";
+      }
+    ];
+
     user.packages = [
       (lib.hiPrio pkgs.llm-agents.codex)
       codexVaultRestoreGuard
-    ];
+    ]
+    ++ optionals cfg.homeAssistantMcp.enable [ codexHomeAssistantLauncher ];
 
     home.file = {
       # AGENTS.md built from shared agent rules (same source as Claude/OpenCode)
