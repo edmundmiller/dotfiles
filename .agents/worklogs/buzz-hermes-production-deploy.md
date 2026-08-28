@@ -60,6 +60,11 @@ only remaining blocker.
   `configurationRevision` regressed to that bare SHA instead of the required
   two-source stamp. The journal records a GitHub API rate-limit failure, Nix's
   cached-source fallback, and a failed switch result.
+- Generation 1427 also masks the Amos Burton, Anne, Betty, and Finn gateway
+  units. Orchestrator, Scintillate, and the Scintillate dashboard remain active.
+  Generation 1426 is still present with valid combined provenance, but it
+  predates the final published Buzz/Hermes source and is only a recovery datum,
+  not the intended deployment target.
 - The NUC wrapper now resolves dotfiles `origin/main` over Git transport,
   validates an exact lowercase commit SHA, and rewrites a mutating remote flake
   to that immutable revision before `nixos-rebuild` starts. Its packaged check
@@ -93,7 +98,7 @@ only remaining blocker.
 - Publish the current-main pinning guard.
 - Rotate the exposed Kilo credential, update its encrypted NUC payload, then
   rebuild the published revision, dry-activate, deploy, and read back exact
-  revisions and runtimes.
+  revisions and all six gateway runtimes.
 - Run live acceptance and capture the user-visible demo.
 
 ## Commits
