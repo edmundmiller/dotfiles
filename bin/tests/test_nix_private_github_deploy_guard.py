@@ -27,6 +27,25 @@ class NucDeployGuardTest(unittest.TestCase):
         self.command = self.root / "nixos-rebuild"
         bash = shutil.which("bash")
         self.assertIsNotNone(bash)
+        self.git_bin = self.root / "git-bin"
+        self.git_bin.mkdir()
+        self.fake_git = self.git_bin / "git"
+        self.fake_git.write_text(
+            f"#!{bash}\n"
+            "set -euo pipefail\n"
+            'case "${1:-}" in\n'
+            "  rev-parse) exit 1 ;;\n"
+            "  ls-remote)\n"
+            '    if [[ -n "${FAKE_GIT_REMOTE_MAIN:-}" ]]; then\n'
+            '      printf \'%s\\trefs/heads/main\\n\' "$FAKE_GIT_REMOTE_MAIN"\n'
+            "    fi\n"
+            '    exit "${FAKE_GIT_LS_REMOTE_STATUS:-0}"\n'
+            "    ;;\n"
+            "  *) exit 2 ;;\n"
+            "esac\n",
+            encoding="utf-8",
+        )
+        self.fake_git.chmod(0o755)
         self.command.write_text(
             f"#!{bash}\n"
             "set -euo pipefail\n"
@@ -206,6 +225,49 @@ class NucDeployGuardTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("origin/main is not a commit SHA", result.stderr)
+        self.assertFalse(self.marker.exists())
+
+    @unittest.expectedFailure
+    def test_dotfiles_remote_flake_ignores_stale_remote_main_override(self) -> None:
+        stale_main = "c" * 40
+        current_main = "d" * 40
+        result = self.run_wrapper(
+            str(self.command),
+            "switch",
+            "--flake",
+            "github:edmundmiller/dotfiles#nuc",
+            env={
+                "FAKE_GIT_REMOTE_MAIN": current_main,
+                "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                "NIXOS_DEPLOY_REMOTE_MAIN": stale_main,
+            },
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        invocation = self.marker.read_text(encoding="utf-8")
+        self.assertIn(
+            f"github:edmundmiller/dotfiles/{current_main}#nuc",
+            invocation,
+        )
+        self.assertNotIn(stale_main, invocation)
+
+    @unittest.expectedFailure
+    def test_dotfiles_remote_flake_rejects_failed_remote_lookup(self) -> None:
+        result = self.run_wrapper(
+            str(self.command),
+            "switch",
+            "--flake",
+            "github:edmundmiller/dotfiles#nuc",
+            env={
+                "FAKE_GIT_LS_REMOTE_STATUS": "1",
+                "FAKE_GIT_REMOTE_MAIN": "e" * 40,
+                "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                "NIXOS_DEPLOY_REMOTE_MAIN": "",
+            },
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("could not resolve current dotfiles origin/main", result.stderr)
         self.assertFalse(self.marker.exists())
 
     def test_rollback_takes_lock_without_worktree_metadata(self) -> None:
