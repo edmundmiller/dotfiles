@@ -105,10 +105,9 @@ normal Python file made the guarded path deterministic.
 - After a successful activation, independently prove that all five runtime
   instruction files hash to the shared core, OpenCode's legacy rules/glob are
   gone, and OMP still exposes its four native rules.
-- This task remains local-only: the delegation explicitly prohibited a direct
-  push. Publish only after separate authorization and use the clean publication
-  lane because the primary checkout contains unrelated dirt.
+- Publication was separately authorized by an explicit `/done`. Use the clean
+  integration lane so the primary checkout's unrelated dirt remains untouched.
 
 ## Commits
 
-- `refactor(agents): retire legacy startup rules` (local task commit)
+- `refactor(agents): retire legacy startup rules`
