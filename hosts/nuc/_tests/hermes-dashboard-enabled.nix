@@ -31,6 +31,11 @@ let
     pkgs.lib.hasInfix "chown ${runtimeOwner} ${stateDir}/.container-identity" preStart
     && pkgs.lib.hasInfix "chmod 0640 ${stateDir}/.container-identity" preStart
     && pkgs.lib.hasInfix "chmod 0600 ${stateDir}/.container-env-identity" preStart
+    && pkgs.lib.hasInfix "--volume ${stateDir}:/data" preStart
+    && pkgs.lib.hasInfix "--volume ${stateDir}/home:/home/hermes" preStart
+    && pkgs.lib.hasInfix "--env HERMES_HOME=/data/.hermes" preStart
+    && pkgs.lib.hasInfix "--env HERMES_PROFILE=${profile}" preStart
+    && pkgs.lib.hasInfix "/data/current-package/bin/hermes gateway run" preStart
   ) gatewayProfiles;
   packageIdentityMatches =
     (hermesPackage.passthru.hermesVersion or null) == "0.20.5"

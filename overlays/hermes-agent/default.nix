@@ -84,6 +84,10 @@ let
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_gateway_profile_identity.py}
       HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_turn_evidence.py}
+      BUZZ_LIVE_EVIDENCE_SCRIPT=${inputs.agents-workspace + /scripts/buzz-live-evidence.py} \
+        python3 ${inputs.agents-workspace + /tests/test_buzz_live_evidence.py}
+      HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_latest_source.py}
       HERMES_SOURCE="$PWD" \
         python3 ${../../tests/test_hermes_cron_failure_summary.py}
