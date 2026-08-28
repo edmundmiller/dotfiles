@@ -35,6 +35,14 @@ in
       interval = "60s";
       conditions = [ "[STATUS] == 200" ];
     };
+    homepage = {
+      group = "Media";
+      name = "Music Assistant";
+      order = 30;
+      href = "https://music-assistant.cinnamon-rooster.ts.net";
+      description = "Whole-home audio";
+      icon = "music-assistant.svg";
+    };
   };
 
   config = mkIf cfg.enable (
