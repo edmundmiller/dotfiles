@@ -51,12 +51,13 @@ Connect Codex to the existing Home Assistant MCP endpoint through the Nix-manage
 - The stop hook reproduced a missing DJI Mic check only because its installed `hey` was newer than the task's original base. Rebasing onto current `origin/main` made every task patch identical while restoring that check.
 - The next exact gate exposed a private-input seam on current main: Darwin `hey check` did not pass the existing `gh` credential to Nix, and `flake.lock` retained an older `original.rev` than its published `locked.rev`. Red/green hook regressions now require the checkout-local `bin/hey`, authenticate only flake-facing Nix children, and prove Prek plus platform discovery do not inherit the token. Nix normalized the lock to the published `agents-workspace` revision `3fcc88e3b5276ab05dd1f2a18c1912e18207b69a`.
 - Final `./bin/hey check --worktree` passed Darwin evaluation, formatting, pre-commit hooks, tmux, package harness/policy, DJI Mic Mini, and ast-grep checks across all changed files.
+- Exact `scripts/completion-check` passed 199 regression tests with 16 platform skips, then passed every Darwin `hey check` stage from the checkout-local command.
 
 ## Reviews
 
 Plan gate: repository pattern review and independent primary-source review completed. The final token path uses Home Assistant's maintained HTTP MCP endpoint, Codex's native bearer-token environment field, and the repository's existing 1Password reference; no MCP proxy was added.
 
-Implementation review gate: the first scoped reconciler review returned blocking findings. After two hardening rounds, the terminal re-review reported no actionable findings. A fresh review of the token revision also found no actionable issue and confirmed no token enters source, config, argv, or logs; focused tests and manual TOML preservation probes passed.
+Implementation review gate: the first scoped reconciler review returned blocking findings. After two hardening rounds, the terminal re-review reported no actionable findings. A fresh review of the token revision also found no actionable issue and confirmed no token enters source, config, argv, or logs; focused tests and manual TOML preservation probes passed. The completion-gate review found one Linux portability issue in the Darwin-specific regression; after adding the platform guard and an unauthenticated `hostname` probe, re-review found no remaining blocker.
 
 ## Feedback
 
@@ -75,5 +76,6 @@ None within the authorized scope. Broad Darwin activation, push, merge, and Home
 - `54110c05a` — harden narrow MCP reconciliation.
 - `48845976c` — replace OAuth with 1Password-backed bearer authentication.
 - `76c9a406e` — keep the Home Assistant MCP client in the token-bearing launcher process.
+- `8d4682d3e` — make completion checks use current source and scoped private-input authentication.
 
 Push and merge are not authorized.
