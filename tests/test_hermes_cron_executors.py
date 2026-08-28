@@ -319,7 +319,7 @@ class HermesCronExecutorTests(unittest.TestCase):
         ):
             self.assertIn(contract, overlay)
 
-    def test_agents_workspace_url_and_lock_revision_match(self):
+    def test_agents_workspace_url_and_lock_revisions_match(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
         lock = json.loads((ROOT / "flake.lock").read_text(encoding="utf-8"))
         match = re.search(
@@ -331,6 +331,10 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertEqual(
             match.group(1),
             lock["nodes"]["agents-workspace"]["locked"]["rev"],
+        )
+        self.assertEqual(
+            match.group(1),
+            lock["nodes"]["agents-workspace"]["original"]["rev"],
         )
 
     def test_darwin_common_checks_do_not_evaluate_nuc_or_deploy(self):
