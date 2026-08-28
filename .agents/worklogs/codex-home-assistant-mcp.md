@@ -16,7 +16,7 @@ Connect Codex to the existing Home Assistant MCP endpoint through the Nix-manage
 
 ## Evidence
 
-- Checkout: `/Users/emiller/.codex/worktrees/5a18/dotfiles`; detached at `17825e14229cdecbc99dcd7c8580af35cf667d16`; clean before edits; no rebase, merge, or concurrent mutation detected.
+- Checkout: `/Users/emiller/.codex/worktrees/5a18/dotfiles`; initially detached at `17825e14229cdecbc99dcd7c8580af35cf667d16` and clean before edits. The six task commits were later rebased without conflicts onto current `origin/main` `d0599eca2`; `git range-diff` reports all six patches identical and the task diff retains the same seven paths. No merge or concurrent mutation occurred.
 - Host: `MacTraitor-Pro.local`, Darwin arm64.
 - Existing endpoint: `https://homeassistant.cinnamon-rooster.ts.net/api/mcp` in `modules/agents/omp/default.nix`.
 - Official Home Assistant MCP documentation: built-in `/api/mcp`, Streamable HTTP, OAuth supported.
@@ -40,15 +40,17 @@ Connect Codex to the existing Home Assistant MCP endpoint through the Nix-manage
 - Red: the focused MCP test failed because the source still emitted OAuth fields and had no `codex-ha` 1Password launcher. Green: the test passes with a single `HASS_TOKEN` bearer reference, preserved unrelated callback state, and behavioral launcher delegation to `op run`.
 - Token revision checks pass: focused MCP behavior, seven Codex unit tests, Python compile/Ruff, ShellCheck, Nix parsing, and diff whitespace. Scoped `hey check --worktree` passed Darwin evaluation, formatting, hooks, tmux, package harness/policy, and ast-grep; it returned nonzero only for the unrelated pre-existing missing DJI Mic Mini check attribute.
 - Live bearer dry-run: the candidate exactly matches the current parsed config plus only the managed Home Assistant field replacement; the callback and every unrelated server are preserved. No matching rebuild process is running, and the live file remains regular rather than a symlink.
-- Local commit `e5645399e` contains the token-auth source revision; commit hooks passed and the worktree was clean afterward. No push or merge occurred.
+- Local commit `48845976c` contains the rebased token-auth source revision; commit hooks passed and the worktree was clean afterward. No push or merge occurred.
 - Narrow live apply atomically replaced only `~/.codex/config.toml`, preserved its observed mode and ownership, retained the callback and all unrelated runtime entries, and produced an idempotent follow-up dry-run. `codex mcp get homeassistant` reports the enabled Streamable HTTP server with `bearer_token_env_var: HASS_TOKEN` and no OAuth fields.
 - At the first activation checkpoint, `codex-ha` timed out waiting for 1Password. No token was printed and no Home Assistant MCP request ran, so the read-only context proof was still unverified at that point.
 - After interactive 1Password CLI authorization, the same reference returned Home Assistant REST HTTP 200. A minimal authenticated MCP initialize diagnostic reached `/api/mcp` without returning 401; response bodies and token values were discarded.
 - A fresh Codex 0.147 process with `tui_app_server` disabled discovered and invoked `homeassistant/GetLiveContext`; Home Assistant rejected both the model-selected arguments and an explicit empty-object call, so neither failed call is treated as the state proof.
 - Final live proof: fresh `codex-ha`/Codex completed `homeassistant/read_mcp_resource` for `homeassistant://assist/context-snapshot` with `mcp_servers.homeassistant.enabled_tools=[]`. The sanitized result reported `climate.main_floor` in state `cool`. No Home Assistant action/control tool was exposed or called, and the raw household snapshot was neither printed nor stored.
-- Live `~/.codex/config.toml` remained a regular file with SHA-256 `168e0bb885466a0f7059c3ed9cd0fa7f4a0f87ec990e98f2e4a31df3aa62e97e`; repository state stayed clean until the final documented launcher hardening.
+- Final live readback found `~/.codex/config.toml` as a regular mode-`0600` file with SHA-256 `6eed464d67ad503fbdc330401cbb3a3a7a39ad09fd89cbc0bfce48f2ef181f73`; the hardened dry-run reported `would_change=false`.
 - Red/green launcher hardening: the focused MCP test failed before the launcher defaulted `OP_BIOMETRIC_UNLOCK_ENABLED=true` and inserted `--disable tui_app_server`, then passed with an explicit-caller override regression. ShellCheck and `git diff --check` pass.
-- Final scoped `hey check --worktree` passed Darwin evaluation, formatting, pre-commit hooks, package harness/policy, and ast-grep. It returned nonzero only for unrelated existing checks: the tmux OpenCode session fixture produced no `oc-*` rows, and the DJI Mic Mini check attribute is absent from the flake.
+- The stop hook reproduced a missing DJI Mic check only because its installed `hey` was newer than the task's original base. Rebasing onto current `origin/main` made every task patch identical while restoring that check.
+- The next exact gate exposed a private-input seam on current main: Darwin `hey check` did not pass the existing `gh` credential to Nix, and `flake.lock` retained an older `original.rev` than its published `locked.rev`. Red/green hook regressions now require the checkout-local `bin/hey`, authenticate only flake-facing Nix children, and prove Prek plus platform discovery do not inherit the token. Nix normalized the lock to the published `agents-workspace` revision `3fcc88e3b5276ab05dd1f2a18c1912e18207b69a`.
+- Final `./bin/hey check --worktree` passed Darwin evaluation, formatting, pre-commit hooks, tmux, package harness/policy, DJI Mic Mini, and ast-grep checks across all changed files.
 
 ## Reviews
 
@@ -58,7 +60,10 @@ Implementation review gate: the first scoped reconciler review returned blocking
 
 ## Feedback
 
-None.
+- The stop hook's generic failure hid two source/runtime mismatches: an installed
+  `hey` could select checks absent from an older task checkout, and the source
+  checker lacked Darwin authentication for private flake inputs. The completion
+  checker now validates its own checkout, while token scope stays limited to Nix.
 
 ## Remaining work
 
@@ -66,9 +71,9 @@ None within the authorized scope. Broad Darwin activation, push, merge, and Home
 
 ## Commits
 
-- `b51a10dac` — register Home Assistant MCP through the Codex source.
-- `9ab467e2d` — harden narrow MCP reconciliation.
-- `e5645399e` — replace OAuth with 1Password-backed bearer authentication.
-- `6784c2813` — keep the Home Assistant MCP client in the token-bearing launcher process.
+- `34a2e114c` — register Home Assistant MCP through the Codex source.
+- `54110c05a` — harden narrow MCP reconciliation.
+- `48845976c` — replace OAuth with 1Password-backed bearer authentication.
+- `76c9a406e` — keep the Home Assistant MCP client in the token-bearing launcher process.
 
 Push and merge are not authorized.

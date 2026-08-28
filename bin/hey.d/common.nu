@@ -66,6 +66,29 @@ export def is-darwin [] {
   (context).os_name == "macos"
 }
 
+export def darwin-github-nix-config [] {
+  let existing_nix_config = ($env.NIX_CONFIG? | default "")
+  if $nu.os-info.name != "macos" {
+    return $existing_nix_config
+  }
+
+  let token_result = (^gh auth token | complete)
+  if $token_result.exit_code != 0 {
+    return $existing_nix_config
+  }
+
+  let github_token = ($token_result.stdout | str trim)
+  if ($github_token | is-empty) {
+    return $existing_nix_config
+  }
+
+  if ($existing_nix_config | is-empty) {
+    $"access-tokens = github.com=($github_token)"
+  } else {
+    $"($existing_nix_config)\naccess-tokens = github.com=($github_token)"
+  }
+}
+
 export def with-sudo-path [body: closure] {
   let path = (sudo-path)
   if $path != "" {

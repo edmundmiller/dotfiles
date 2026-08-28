@@ -66,8 +66,10 @@ def check-scope-label [scopes: list<string>] {
   if ($scopes | is-empty) { "changed files" } else { $scopes | str join ", " }
 }
 
-def nix-precommit-config [] {
-  let result = (^nix build ".#pre-commit-config" --no-link --print-out-paths | complete)
+def nix-precommit-config [nix_config: string] {
+  let result = (with-env { NIX_CONFIG: $nix_config } {
+    ^nix build ".#pre-commit-config" --no-link --print-out-paths | complete
+  })
   if $result.exit_code != 0 {
     if (($result.stderr | str trim) | is-not-empty) {
       print -e $result.stderr
@@ -87,10 +89,11 @@ def "main check" [
   ...paths: string # Optional path scopes for formatting and pre-commit checks.
 ] {
 
+  let authenticated_nix_config = (darwin-github-nix-config)
   let ctx = (context)
   cd $ctx.flake_dir
 
-  if (is-darwin) {
+  if $ctx.os_name == "macos" {
     print "Running Darwin-compatible checks (skipping NixOS configs)..."
     mut failed = false
 
@@ -111,7 +114,9 @@ def "main check" [
 
     print ""
     print $"==> Checking Darwin configuration: ($ctx.flake_host)"
-    let darwin_eval = (^nix eval $".#darwinConfigurations.($ctx.flake_host).system" --apply 'x: "OK"' | complete)
+    let darwin_eval = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix eval $".#darwinConfigurations.($ctx.flake_host).system" --apply 'x: "OK"' | complete
+    })
     if $darwin_eval.exit_code == 0 {
       print "✓ Darwin configuration OK"
     } else {
@@ -125,7 +130,7 @@ def "main check" [
     let check_files = (changed-check-files --worktree=$worktree ...$paths)
     let check_scope = (check-scope-label $paths)
     let check_files_label = if ($check_files | is-empty) { $"no changed files under ($check_scope)" } else { $"($check_files | length) changed files under ($check_scope)" }
-    let precommit_config = if ($check_files | is-empty) { "" } else { nix-precommit-config }
+    let precommit_config = if ($check_files | is-empty) { "" } else { nix-precommit-config $authenticated_nix_config }
 
     print ""
     print $"==> Running treefmt formatting check \(($check_files_label)\)..."
@@ -169,7 +174,9 @@ def "main check" [
 
     print ""
     print "==> Running tmux tests..."
-    let tmux_check = (^nix build $".#checks.($ctx.nix_system).zunit-tests" --no-link | complete)
+    let tmux_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).zunit-tests" --no-link | complete
+    })
     if $tmux_check.exit_code == 0 {
       print "✓ Tmux tests OK"
     } else {
@@ -182,7 +189,9 @@ def "main check" [
 
     print ""
     print "==> Running package harness tests..."
-    let package_harness_check = (^nix build $".#checks.($ctx.nix_system).package-harness-tests" --no-link | complete)
+    let package_harness_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).package-harness-tests" --no-link | complete
+    })
     if $package_harness_check.exit_code == 0 {
       print "✓ Package harness tests OK"
     } else {
@@ -195,7 +204,9 @@ def "main check" [
 
     print ""
     print "==> Running package policy tests..."
-    let package_policy_check = (^nix build $".#checks.($ctx.nix_system).package-policy-tests" --no-link | complete)
+    let package_policy_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).package-policy-tests" --no-link | complete
+    })
     if $package_policy_check.exit_code == 0 {
       print "✓ Package policy tests OK"
     } else {
@@ -208,10 +219,9 @@ def "main check" [
 
     print ""
     print "==> Running DJI Mic Mini checks..."
-    let dji_mic_check = (^nix build
-      $".#checks.($ctx.nix_system).dji-mic-mini-receiver-mute-regressions"
-      $".#checks.($ctx.nix_system).dji-mic-mini-platform-boundaries"
-      --no-link | complete)
+    let dji_mic_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).dji-mic-mini-receiver-mute-regressions" $".#checks.($ctx.nix_system).dji-mic-mini-platform-boundaries" --no-link | complete
+    })
     if $dji_mic_check.exit_code == 0 {
       print "✓ DJI Mic Mini checks OK"
     } else {
@@ -224,7 +234,9 @@ def "main check" [
 
     print ""
     print "==> Running ast-grep tests..."
-    let ast_grep_check = (^nix build $".#checks.($ctx.nix_system).ast-grep-tests" --no-link | complete)
+    let ast_grep_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).ast-grep-tests" --no-link | complete
+    })
     if $ast_grep_check.exit_code == 0 {
       print "✓ ast-grep tests OK"
     } else {
@@ -244,7 +256,7 @@ def "main check" [
     }
   } else {
     print "Running full flake check..."
-    ^nix flake check
+    with-env { NIX_CONFIG: $authenticated_nix_config } { ^nix flake check }
   }
 }
 

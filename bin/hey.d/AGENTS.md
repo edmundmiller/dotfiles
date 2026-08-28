@@ -14,3 +14,8 @@
   ```
 
 - Prefer agent-friendly output for long Nix commands when `AGENT=1` is set: concise progress, useful errors, and `--show-trace` on failures.
+- The shared completion checker runs the current checkout's `bin/hey`, not an
+  installed generation, so a stop hook validates the same source it is closing.
+- Darwin `hey check` resolves the existing `gh` credential into `NIX_CONFIG`
+  only around Nix child commands. Never print the token or expose that augmented
+  environment to Prek hooks.

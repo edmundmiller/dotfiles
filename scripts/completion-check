@@ -27,7 +27,7 @@ if [ -z "$python" ]; then
   done
 fi
 python=${python:-python3}
-hey=${COMPLETION_CHECK_HEY:-hey}
+hey=${COMPLETION_CHECK_HEY:-"$root/bin/hey"}
 
 "$python" -m unittest discover -s tests -p 'test_*.py' >&2 || {
   printf '%s\n' 'Dotfiles regression tests failed; fix them before stopping.'
