@@ -41,9 +41,12 @@ Set `homeAssistantMcp.secretReference` to the host's existing 1Password token
 reference. The generated `codex-ha` launcher resolves that reference with
 `op run`, exposes it only as `HASS_TOKEN` for the child Codex process, and uses
 Codex's native `bearer_token_env_var`; no token enters Nix, Git, argv, or the
-writable Codex config. Verify registration with `codex mcp get homeassistant`,
-then start a fresh `codex-ha` session and make a read-only `GetLiveContext`
-call before trusting the integration.
+writable Codex config. It defaults 1Password CLI app integration on and disables
+Codex's persistent `tui_app_server` so the MCP client inherits `HASS_TOKEN` from
+the launcher process. An explicit `OP_BIOMETRIC_UNLOCK_ENABLED` value is kept.
+Verify registration with `codex mcp get homeassistant`, then start a fresh
+`codex-ha` session with Home Assistant action tools disabled and read
+`homeassistant://assist/context-snapshot` before trusting the integration.
 
 When a broad Darwin activation is unsafe, the checked-in reconciler can update
 only Codex's writable MCP configuration on MacTraitorPro. Preview it first; the
