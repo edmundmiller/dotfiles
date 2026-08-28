@@ -1490,6 +1490,12 @@
                 inherit pkgs;
               };
 
+              darwin-nix-store-policy = import ./modules/_tests/darwin-nix-store-policy.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
+                inherit pkgs;
+              };
+
               audio-priority-bar-regressions = import ./hosts/mactraitorpro/_tests/audio-priority-bar.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
