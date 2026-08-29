@@ -1549,6 +1549,34 @@
               };
             }
             // lib.optionalAttrs (system == darwinSystem) {
+              hermes-local-libffi-regression =
+                let
+                  hermesPackage = import ./modules/agents/hermes-local/_package.nix {
+                    inherit inputs;
+                    pkgs = darwinPkgs;
+                  };
+                in
+                import ./hosts/mactraitorpro/_tests/hermes-local-libffi.nix {
+                  inherit (hermesPackage)
+                    hermesH5py
+                    hermesPatchedCtypes
+                    hermesPython
+                    ;
+                  inherit pkgs;
+                };
+
+              hermes-local-tokenizers-cc-regression =
+                let
+                  hermesPackage = import ./modules/agents/hermes-local/_package.nix {
+                    inherit inputs;
+                    pkgs = darwinPkgs;
+                  };
+                in
+                import ./hosts/mactraitorpro/_tests/hermes-local-tokenizers-cc.nix {
+                  inherit (hermesPackage) hermesTokenizers;
+                  inherit pkgs;
+                };
+
               dji-mic-mini-receiver-mute-regressions =
                 pkgs.runCommand "dji-mic-mini-receiver-mute-regressions"
                   {

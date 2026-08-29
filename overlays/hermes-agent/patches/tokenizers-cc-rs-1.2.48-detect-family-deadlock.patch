@@ -1,0 +1,38 @@
+From 0a1bc1935f2cbd4966d975f4f6d46dbfb89407f6 Mon Sep 17 00:00:00 2001
+From: Jiahao XU <30436523+NobodyXu@users.noreply.github.com>
+Date: Sat, 6 Dec 2025 18:19:50 +1100
+Subject: [PATCH] Fix detect_family deadlock (#1626)
+
+Backport the upstream cc-rs 1.2.49 fix to the 1.2.48 crate vendored by
+Tokenizers. The child can otherwise block writing stderr while the parent
+blocks reading stdout.
+
+diff --git a/src/tool.rs b/src/tool.rs
+index c2bcd5b..c1d9d1d 100644
+--- a/src/tool.rs
++++ b/src/tool.rs
+@@ -7 +6,0 @@ use crate::{
+-use std::io::Read;
+@@ -15 +14 @@ use std::{
+-    process::{Command, Stdio},
++    process::{Command, Output, Stdio},
+@@ -227 +226,5 @@ impl Tool {
+-            let mut child = spawn(&mut cmd, &captured_cargo_output)?;
++            let Output {
++                status,
++                stdout,
++                stderr,
++            } = spawn(&mut cmd, &captured_cargo_output)?.wait_with_output()?;
+@@ -229,8 +232 @@ impl Tool {
+-            let mut out = vec![];
+-            let mut err = vec![];
+-            child.stdout.take().unwrap().read_to_end(&mut out)?;
+-            child.stderr.take().unwrap().read_to_end(&mut err)?;
+-
+-            let status = child.wait()?;
+-
+-            let stdout = if [&out, &err]
++            let stdout = if [&stdout, &stderr]
+@@ -254 +250 @@ impl Tool {
+-                out
++                stdout

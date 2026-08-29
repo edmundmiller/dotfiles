@@ -8,7 +8,7 @@
 let
   cfg = config.modules.agents.hermes-local;
   agentPackages = inputs.agents-workspace.packages.${pkgs.system};
-  hermesPackage = inputs.agents-workspace.inputs.hermesAgent.packages.${pkgs.system}.default;
+  hermesPackage = import ./_package.nix { inherit inputs pkgs; };
   launcher = name: agentPackages.${name + "-hermes"};
   workspaceRevision = inputs.agents-workspace.rev or "unknown";
   manifest = pkgs.writeText "hermes-local-manifest.json" (
