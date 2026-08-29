@@ -64,6 +64,11 @@ Plugin repositories, build output, logs, backups, lock files, and session state
 are generated and intentionally excluded from Git. AirPods hardware pairing is
 a documented human recovery gate rather than exported secret material.
 
+## Steam game idle policy
+
+Fullscreen Steam games inhibit the screensaver, lock, and suspend because
+game-controller input does not reset Hyprland's idle timer.
+
 ## Rocket League autostart
 
 `local/bin/rocket-league-autostart` starts Rocket League at login. Steam can
