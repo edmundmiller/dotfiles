@@ -1,6 +1,6 @@
 # Worklog: retire-legacy-agent-rules
 
-Status: blocked
+Status: complete
 
 ## Objective
 
@@ -24,10 +24,10 @@ each runtime instruction surface, or after recording an exact harness blocker.
   expected-failure regression sequence belongs in `AGENT_WORKFLOW.md`, while
   routine validation's no-manual-Prek rule belongs in `docs/agent-guardrails.md`.
   No new global skill is justified.
-- Do not absorb the separate Hermes Python/libffi/tokenizers repair into this
-  agent-instruction migration. The normal Darwin candidate build identifies it
-  as the exact activation blocker, and importing it would widen this task into
-  an unrelated runtime-package change.
+- Keep the Hermes Python/libffi/tokenizers repair out of the instruction-
+  migration commit. The repeated `/done` authorization made that blocker the
+  next closeout stage, so port it in a distinct commit from current
+  `origin/main` and verify it against the current agents-workspace pin.
 
 ## Evidence
 
@@ -68,6 +68,32 @@ each runtime instruction surface, or after recording an exact harness blocker.
   and OMP expose the older 212-word core; OpenCode V2 has no `AGENTS.md`, still
   declares the numbered-rule `instructions` glob, and retains the old rule
   symlinks. OMP still exposes the four intended native TTSR rules.
+- The scoped Hermes regression checks pass on agents-workspace `3fcc88e3`: h5py
+  reports 798 passed and 24 skipped, `_ctypes` links to the Darwin system
+  libffi, and Tokenizers' vendored cc-rs probe uses `wait_with_output()`.
+- `hey check --worktree`, `hey agent-audit-tests`, and the complete
+  `hey agent-finish` manifest pass after the repair.
+- `AGENT=1 hey re build` realizes the complete Darwin system closure. The
+  candidate Hermes wrapper reports v0.20.5 with the scoped patched `_ctypes`
+  path.
+- The first live Hermes smoke exposed a status-parser drift: Hermes now reports
+  `Gateway is supervised by launchd (PID ...)`, while `hey` only accepted the
+  old launchctl fragment. A red/green Nu regression now covers both formats.
+- A second `AGENT=1 hey re` activates
+  `/nix/store/8hzc87dragvmdaw8hcgsfknv5xghzsbc-darwin-system-26.11.d5bd9cd`;
+  the system profile, `/run/current-system`, and the build result all resolve to
+  that generation.
+- The installed `hey hermes-local --smoke-only` passes: managed Hermes binary
+  and launchers match the manifest, both profiles validate, Codex ChatGPT login
+  is active, the gateway is supervised, and the Kanban dry-run is healthy.
+- Independent live readback shows Claude, Codex, OMP, Pi, and OpenCode each at
+  217 words with SHA-256
+  `a04160efd7776299d1fc902a55fe80ac4b53e2f117734c1f3147d5e383343338`,
+  byte-for-byte equal to `config/agents/core.md`.
+- OpenCode V2's global alias resolves to its isolated root; the retired
+  `instructions` glob and both legacy rules paths are absent. OMP lists the
+  four intended native rules: `ci-watch`, `commit-house-style`,
+  `pr-house-style`, and `working-with-jj`.
 
 ## Reviews
 
@@ -100,14 +126,10 @@ normal Python file made the guarded path deterministic.
 
 ## Remaining work
 
-- Land the separately reviewed Hermes Darwin Python/libffi/tokenizers repair on
-  current `origin/main`, then rerun the normal `hey re` build/activation gate.
-- After a successful activation, independently prove that all five runtime
-  instruction files hash to the shared core, OpenCode's legacy rules/glob are
-  gone, and OMP still exposes its four native rules.
-- Publication was separately authorized by an explicit `/done`. Use the clean
-  integration lane so the primary checkout's unrelated dirt remains untouched.
+- None.
 
 ## Commits
 
 - `refactor(agents): retire legacy startup rules`
+- `fix(hermes): repair Darwin Python runtime build`
+- `fix(hey): accept managed Hermes gateway status`
