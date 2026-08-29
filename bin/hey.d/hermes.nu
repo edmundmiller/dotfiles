@@ -13,6 +13,15 @@ def require-text [label: string, text: string, expected: string] {
   }
 }
 
+def gateway-status-pids [text: string] {
+  let launchctl = ($text | parse --regex '"PID"\s*=\s*(?<pid>[0-9]+);')
+  if not ($launchctl | is-empty) {
+    return $launchctl
+  }
+
+  $text | parse --regex '\(PID\s+(?<pid>[0-9]+)\)'
+}
+
 def "main hermes-local" [--smoke-only] {
   if not (is-darwin) {
     error make {msg: "hey hermes-local is Darwin-only"}
@@ -68,7 +77,7 @@ def "main hermes-local" [--smoke-only] {
   mut gateway_pid = []
   for _ in 1..10 {
     if $gateway.exit_code == 0 {
-      $gateway_pid = ($gateway.stdout | parse --regex '"PID" = (?<pid>[0-9]+);')
+      $gateway_pid = (gateway-status-pids $gateway.stdout)
       if not ($gateway_pid | is-empty) {
         break
       }

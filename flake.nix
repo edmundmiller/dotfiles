@@ -999,6 +999,16 @@
                 files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix)$";
                 stages = [ "pre-push" ];
               };
+              hey-hermes-local-status = {
+                enable = true;
+                name = "hey-hermes-local-status";
+                description = "Accept managed and launchctl Hermes gateway status output";
+                entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
+                language = "system";
+                pass_filenames = false;
+                files = "^bin/(hey\\.d/hermes\\.nu|tests/hey-hermes-local-status\\.nu)$";
+                stages = [ "pre-commit" ];
+              };
               omp-config-yml =
                 let
                   # Plain llm-agents omp is unsigned; Darwin kills it (SIGKILL).
