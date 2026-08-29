@@ -42,6 +42,9 @@ stdenvNoCC.mkDerivation {
     homepage = "https://vale.sh/";
     license = licenses.mit;
     mainProgram = "vale";
-    platforms = [ "x86_64-linux" "aarch64-darwin" ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-darwin"
+    ];
   };
 }

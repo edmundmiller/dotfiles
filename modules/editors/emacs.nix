@@ -128,8 +128,10 @@ in
       };
 
       home.dataFile = {
-        "vale/styles/config/vocabularies/Base/accept.txt".source = "${configDir}/vale/styles/config/vocabularies/Base/accept.txt";
-        "vale/styles/config/vocabularies/Base/reject.txt".source = "${configDir}/vale/styles/config/vocabularies/Base/reject.txt";
+        "vale/styles/config/vocabularies/Base/accept.txt".source =
+          "${configDir}/vale/styles/config/vocabularies/Base/accept.txt";
+        "vale/styles/config/vocabularies/Base/reject.txt".source =
+          "${configDir}/vale/styles/config/vocabularies/Base/reject.txt";
       };
 
       fonts.packages = [

@@ -44,6 +44,9 @@ stdenvNoCC.mkDerivation {
     homepage = "https://github.com/vale-cli/vale-ls";
     license = licenses.mit;
     mainProgram = "vale-ls";
-    platforms = [ "x86_64-linux" "aarch64-darwin" ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-darwin"
+    ];
   };
 }
