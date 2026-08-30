@@ -57,9 +57,14 @@ link_configs() {
   info "linking agent configs..."
 
   # AGENTS.md / rules
-  mkdir -p "$HOME/.config/dotfiles"
-  if [ "$DOTFILES_DIR" != "$HOME/.config/dotfiles" ]; then
-    ln -sfn "$DOTFILES_DIR" "$HOME/.config/dotfiles"
+  dotfiles_target="$HOME/.config/dotfiles"
+  mkdir -p "$HOME/.config"
+  if [ "$DOTFILES_DIR" != "$dotfiles_target" ]; then
+    if [ -e "$dotfiles_target" ] && [ ! -L "$dotfiles_target" ]; then
+      warn "leaving existing non-symlink dotfiles target: $dotfiles_target"
+    else
+      ln -sfn "$DOTFILES_DIR" "$dotfiles_target"
+    fi
   fi
 
   # Git config (minimal — just name/email/defaults)
@@ -68,15 +73,25 @@ link_configs() {
     git config --global user.email "$GIT_USER_EMAIL"
   fi
 
-  # Agent skills (shared cross-agent skills)
-  mkdir -p "$HOME/.pi/agent/skills"
-  if [ -d "$DOTFILES_DIR/config/agents/skills" ]; then
-    for skill_dir in "$DOTFILES_DIR"/config/agents/skills/*/; do
+  # Checkout-owned shared skills use the harness-neutral discovery surface.
+  skills_source="$DOTFILES_DIR/skills/catalog"
+  skills_target="$HOME/.agents/skills"
+  mkdir -p "$skills_target"
+  skill_count=0
+  if [ -d "$skills_source" ]; then
+    for skill_dir in "$skills_source"/*/; do
+      [ -f "${skill_dir}SKILL.md" ] || continue
       skill_name=$(basename "$skill_dir")
-      ln -sfn "$skill_dir" "$HOME/.pi/agent/skills/$skill_name"
+      target="$skills_target/$skill_name"
+      if [ -e "$target" ] && [ ! -L "$target" ]; then
+        warn "leaving existing non-symlink skill target: $target"
+        continue
+      fi
+      ln -sfn "${skill_dir%/}" "$target"
+      skill_count=$((skill_count + 1))
     done
-    info "linked $(ls -d "$DOTFILES_DIR"/config/agents/skills/*/ 2>/dev/null | wc -l | tr -d ' ') shared skills"
   fi
+  info "linked $skill_count shared skills"
 
   # AGENTS.md for repos the agent works in
   if [ -f "$DOTFILES_DIR/config/agents/core.md" ]; then

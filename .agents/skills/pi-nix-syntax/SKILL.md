@@ -2,7 +2,7 @@
 name: pi-nix-syntax
 description: >
   Use when converting Pi config/extension/skill setup (Pi settings.json packages, ~/.pi/agent/extensions,
-  git:... sources) into this dotfiles repo's Nix representation (skills-catalog/agent-skills-nix,
+  git:... sources) into this dotfiles repo's Nix representation (skills/flake.nix backed by agent-skills-nix,
   modules/agents/pi/default.nix home.file links), or converting the other direction.
 ---
 
@@ -12,7 +12,9 @@ This repo intentionally splits responsibilities:
 
 - **Pi packages + extensions** live in: `config/pi/settings.jsonc` (rendered to `~/.pi/agent/settings.json`).
 - **Local Pi extensions** live in: `config/pi/extensions/*.ts` and are linked into `~/.pi/agent/extensions/` by Nix.
-- **Skills** are **not** loaded via Pi `packages[].skills` anymore; skills are installed via **agent-skills-nix** (child flake `skills/`).
+- **Shared skills** are not loaded via Pi `packages[].skills`; they are installed
+  via **agent-skills-nix** (child flake `skills/`). Package-native skills remain
+  an explicit exception.
 
 If you see skills collisions, it usually means skills were enabled both ways.
 
@@ -49,15 +51,35 @@ Rule: **anything under `~/.pi/agent/extensions/*.ts` must default-export a facto
 
 ### 3) Pi skills → agent-skills-nix catalog
 
-We do **not** use `config/pi/settings.jsonc` `packages[].skills` for installing skills.
+Do not use `config/pi/settings.jsonc` `packages[].skills` for shared skills that
+agent-skills-nix manages. Preserve intentionally package-native resources, such
+as `pi-amplike`'s bundled `session-query` skill, unless they collide with a
+catalog-managed copy.
 
 Instead:
 
-- Local skills: add `config/agents/skills/<skill-name>/SKILL.md`.
-  - auto-enabled (see `skills/flake.nix`: `skills.enableAll = ["local"]`).
+- Shared/global skills: add `skills/catalog/<skill-name>/SKILL.md`.
+  - auto-enabled in `skills/flake.nix` with
+    `skills.enableAll = [ "catalog" ];`
+  - installed into the harness-neutral `~/.agents/skills/` target.
+- Dotfiles-only project skills: add `.agents/skills/<skill-name>/SKILL.md`.
+  - discovered only while working in this repository; never deploy them into
+    the global catalog.
 - Remote/pinned skills: add to `skills/flake.nix`:
+  - declare `inputs.<src> = { url = "..."; flake = false; };`
   - `programs.agent-skills.sources.<src> = { path = inputs.<src>.outPath; ... }`
   - `programs.agent-skills.skills.explicit.<skillId> = { from = "<src>"; path = "..."; }`
+  - for a Pi-only skill, use
+    `programs.dotfiles-agent-skills.targetedExplicit.<skillId>` with
+    `meta.targets = [ "pi" ];`
+
+After changing a remote input, update the child lock and then synchronize the
+parent lock through the guarded repository command:
+
+```bash
+cd skills && nix flake lock --update-input <src>
+cd .. && hey skills-sync
+```
 
 Rule: avoid nested-symlink collisions by **flattening** nested IDs (example: `skill-creator` instead of `extending-pi/skill-creator`).
 
@@ -78,9 +100,13 @@ Given a Pi-ish request, classify it:
 
 3. **Skill** (SKILL.md):
 
-- If local: create `config/agents/skills/<name>/SKILL.md`.
+- If it should be shared across projects: create
+  `skills/catalog/<name>/SKILL.md`.
+- If it is specific to this dotfiles repository: create
+  `.agents/skills/<name>/SKILL.md`.
 - If remote: pin via `skills/flake.nix` (child flake) and select via `skills.explicit`.
-- Ensure `config/pi/settings.jsonc` package entries have `"skills": []` to avoid collisions.
+- Do not add catalog-managed shared skills to Pi package arrays. Preserve
+  deliberate package-native skills when they have no catalog-managed copy.
 
 ### Nix → Pi (how to express the effective Pi result)
 
@@ -96,13 +122,20 @@ Given a Pi-ish request, classify it:
 3. If Nix installs skills via agent-skills-nix, then the Pi-side view is:
 
 - “Shared skills exist on disk in `~/.agents/skills/<name>/SKILL.md`.”
+- “Pi-targeted skills exist on disk in
+  `~/.pi/agent/skills/<name>/SKILL.md`.”
 - They are **not** sourced from Pi `packages[].skills`.
 
 ## Quick templates
 
-### Add a new local skill
+### Add a new shared skill
 
-- Path: `config/agents/skills/<name>/SKILL.md`
+- Path: `skills/catalog/<name>/SKILL.md`
+- Frontmatter must match directory name.
+
+### Add a dotfiles-only project skill
+
+- Path: `.agents/skills/<name>/SKILL.md`
 - Frontmatter must match directory name.
 
 ### Add a new local extension

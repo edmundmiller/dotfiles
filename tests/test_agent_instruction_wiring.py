@@ -1,4 +1,7 @@
 import json
+import os
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -21,6 +24,7 @@ FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
 CODING_STANDARDS = ROOT / "CODING_STANDARDS.md"
 TEST_QUALITY_SKILL = ROOT / "skills" / "catalog" / "test-quality" / "SKILL.md"
+PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
 SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
 
@@ -91,6 +95,99 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertNotIn('config/agents/rules', bootstrap)
         self.assertFalse(LEGACY_RULES.exists())
         self.assertNotIn("For ADHD resources", core)
+
+    def test_headless_bootstrap_links_shared_catalog_to_neutral_target(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            dotfiles = root / "dotfiles"
+            fake_bin = root / "bin"
+            skill = dotfiles / "skills" / "catalog" / "test-quality"
+            second_skill = dotfiles / "skills" / "catalog" / "done"
+            invalid_skill = dotfiles / "skills" / "catalog" / "missing-manifest"
+            core = dotfiles / "config" / "agents" / "core.md"
+
+            home.mkdir()
+            fake_bin.mkdir()
+            skill.mkdir(parents=True)
+            second_skill.mkdir()
+            invalid_skill.mkdir()
+            core.parent.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("---\nname: test-quality\n---\n")
+            (second_skill / "SKILL.md").write_text("---\nname: done\n---\n")
+            (dotfiles / "skills" / "catalog" / "README.md").write_text("catalog\n")
+            core.write_text("thin core\n")
+
+            preserved = home / ".agents" / "skills" / "done"
+            preserved.mkdir(parents=True)
+            (preserved / "user-owned").write_text("keep\n")
+
+            fake_nix = fake_bin / "nix"
+            fake_nix.write_text(
+                "#!/usr/bin/env bash\n"
+                'if [ "${1:-}" = "--version" ]; then echo "nix test"; fi\n'
+            )
+            fake_nix.chmod(0o755)
+
+            env = os.environ.copy()
+            env.update(
+                HOME=str(home),
+                DOTFILES_DIR=str(dotfiles),
+                PATH=f"{fake_bin}:{env['PATH']}",
+            )
+            results = [
+                subprocess.run(
+                    ["bash", str(BOOTSTRAP)],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                for _ in range(2)
+            ]
+
+            for result in results:
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("linked 1 shared skills", result.stdout)
+                self.assertIn("leaving existing non-symlink skill target", result.stdout)
+            config_link = home / ".config" / "dotfiles"
+            self.assertTrue(config_link.is_symlink())
+            self.assertEqual(dotfiles.resolve(), config_link.resolve())
+            installed = home / ".agents" / "skills" / "test-quality"
+            self.assertTrue(installed.is_symlink())
+            self.assertEqual(skill.resolve(), installed.resolve())
+            self.assertEqual("keep\n", (preserved / "user-owned").read_text())
+            self.assertFalse((preserved / "done").exists())
+            self.assertFalse((home / ".agents" / "skills" / "missing-manifest").exists())
+            self.assertFalse((home / ".agents" / "skills" / "README.md").exists())
+            self.assertFalse((home / ".pi" / "agent" / "skills").exists())
+
+    def test_pi_nix_syntax_routes_skills_to_current_catalogs(self) -> None:
+        skill = PI_NIX_SYNTAX_SKILL.read_text()
+        skills_flake = SKILLS_FLAKE.read_text()
+        skills_lock = json.loads((ROOT / "skills" / "flake.lock").read_text())
+
+        self.assertIn("skills/catalog/<skill-name>/SKILL.md", skill)
+        self.assertIn(".agents/skills/<skill-name>/SKILL.md", skill)
+        self.assertIn('skills.enableAll = [ "catalog" ];', skill)
+        self.assertIn("package-native", skill)
+        self.assertIn("cd .. && hey skills-sync", skill)
+        self.assertNotIn("config/agents/skills", skill)
+        self.assertNotIn('skills.enableAll = ["local"]', skill)
+
+        self.assertTrue(PI_NIX_SYNTAX_SKILL.exists())
+        self.assertFalse((ROOT / "skills" / "catalog" / "pi-nix-syntax").exists())
+        self.assertIn("path = ./catalog;", skills_flake)
+        self.assertIn('skills.enableAll = [ "catalog" ];', skills_flake)
+        pi_route_start = skills_flake.index("extending-pi = {")
+        pi_route = skills_flake[pi_route_start : pi_route_start + 180]
+        self.assertIn('from = "pi-extensions";', pi_route)
+        self.assertIn('meta.targets = [ "pi" ];', pi_route)
+
+        pi_input = skills_lock["nodes"]["pi-extension-skills"]
+        self.assertFalse(pi_input["flake"])
+        self.assertTrue(pi_input["locked"]["rev"])
+        self.assertTrue(pi_input["locked"]["narHash"])
 
     def test_test_quality_source_routes_stay_selective(self) -> None:
         core = OMP_CORE.read_text()
