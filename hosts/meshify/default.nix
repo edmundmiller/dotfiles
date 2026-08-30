@@ -69,6 +69,7 @@
     shell = {
       "1password".enable = true;
       age.enable = true;
+      cliamp.enable = true;
       direnv.enable = true;
       mise.enable = true;
       git.enable = true;

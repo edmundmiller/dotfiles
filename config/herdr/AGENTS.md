@@ -211,5 +211,6 @@ Meaning:
 - `packages/herdr-plugin-jj-workspace/` owns the pinned upstream source plus lifecycle-safety and layout-application patches.
 - `packages/herdr-tab-smart-rename/` owns the pinned upstream source, OMP provider patch, and automatic worker lifecycle.
 - `ogulcancelik/herdr-browser` is installed from GitHub; it requires `[experimental].kitty_graphics = true`.
+- `coryshaw1/herdr-cliamp` is installed when `modules.shell.cliamp` is enabled; it requires `[experimental].allow_nested = true`.
 - Other marketplace plugins are installed by `modules/shell/herdr/default.nix`.
 - `overlays/herdr/default.nix` patches only packaging/build issues; local helper behavior should live in Herdr plugins, not inside the Herdr binary.

@@ -145,6 +145,7 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `kkckkc/herdr-plugin-gh-workflow`
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
+- `coryshaw1/herdr-cliamp` when `modules.shell.cliamp` is enabled
 
 Workspace Manager reads the Nix-managed `config/herdr/workspace-manager.yml`.
 Its path matcher covers native Herdr worktrees but not Review Boxes under

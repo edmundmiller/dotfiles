@@ -1007,6 +1007,9 @@ in
           install_plugin kkckkc herdr-plugin-gh-workflow
           install_plugin alon-z herdr-command-palette
           install_plugin 0x5c0f herdr-insight
+          ${optionalString config.modules.shell.cliamp.enable ''
+            install_plugin coryshaw1 herdr-cliamp
+          ''}
           install_plugin persiyanov herdr-reviewr
           install_plugin edmundmiller herdr-which-key "" optional
         '';

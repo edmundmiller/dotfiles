@@ -120,6 +120,7 @@ in
         tmux.enable = false;
         tmux.workmux.enable = false;
         acpx.enable = true;
+        cliamp.enable = true;
         herdr.enable = true;
         herdr.mainCodingAgent = "omp";
         herdr.vercelSandbox.enable = true;

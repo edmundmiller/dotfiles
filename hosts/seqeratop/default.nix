@@ -37,6 +37,7 @@
         jj.enable = true;
         tmux.enable = true;
         acpx.enable = true;
+        cliamp.enable = true;
         tmux.jmux.enable = false;
         herdr.enable = true;
         herdr.mainCodingAgent = "omp";
