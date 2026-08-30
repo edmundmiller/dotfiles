@@ -1,6 +1,6 @@
 # Worklog: fix-headless-skill-routing
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -39,6 +39,13 @@ the harness-neutral discovery surface.
   exposed a test-only sandbox incompatibility: the fake `nix` shim used
   `/usr/bin/env`, which is absent in the Nix sandbox. The shim now uses the
   current Nix-store Python interpreter.
+- Native CI run `33302903949` at
+  `55a22459ecf1231febd95064693690d6e0c2ed95` passed Linux, Darwin, and Herdr;
+  the Linux platform step containing `omp-thin-harness` completed successfully.
+- Security run `33302903930` passed secret scanning and Nix static analysis.
+- Pi Hunk dry-run `33300324838` passed QA and `npm pack --dry-run`; the real
+  `Publish` step was skipped and no package was published. The subsequent
+  sandbox fix did not change package or workflow behavior.
 
 ## Reviews
 
@@ -66,10 +73,12 @@ the harness-neutral discovery surface.
 
 ## Remaining work
 
-- Run repository gates, obtain final diff review, commit and publish this repair,
-  then verify native GitHub Linux and Darwin CI at the landed revision.
+- None.
 
 ## Commits
 
-The isolated compatibility commit and annotated tag will be recorded after
-landing.
+- `bd0695b2bf04d7a166949e053ce0baffa92c5604` —
+  `fix(agents): repair headless skill routing`
+- `55a22459ecf1231febd95064693690d6e0c2ed95` —
+  `fix(ci): make bootstrap test sandbox portable`
+- Annotated tag: `agent-work/fix-headless-skill-routing`

@@ -1,6 +1,6 @@
 # Worklog: fix-skills-lock-sync-ci
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -31,6 +31,9 @@ without relying on ambient Nix experimental-feature settings.
   pass.
 - `hey check --worktree` passes Darwin evaluation, formatting, direct hooks,
   tmux, package harness/policy, DJI Mic Mini, and ast-grep checks.
+- Native CI run `33298881407` at
+  `11bece085ad76949488cf2a1320b135ab993451c` passed Linux, Darwin, and Herdr;
+  the Linux `skills-lock-sync` hook explicitly passed.
 
 ## Reviews
 
@@ -52,10 +55,10 @@ without relying on ambient Nix experimental-feature settings.
 
 ## Remaining work
 
-- Run the repository gates, commit and publish the isolated repair, then verify
-  native GitHub Linux and Darwin CI at the landed revision.
+- None.
 
 ## Commits
 
-The isolated compatibility commit and annotated tag will be recorded after
-landing.
+- `11bece085ad76949488cf2a1320b135ab993451c` —
+  `fix(ci): enable Nix features for skills lock check`
+- Annotated tag: `agent-work/fix-skills-lock-sync-ci`

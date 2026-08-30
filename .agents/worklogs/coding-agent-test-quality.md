@@ -70,13 +70,21 @@ and live files are read back after `hey re`.
 
 ## Remaining work
 
-- Remote publication is not authorized; the branch remains local.
-- The NUC Hermes target was built but not deployed or activated. Local Hermes
-  consumes `~/.agents/skills` and passed live discovery.
+- No repository work remains; the implementation and its isolated repairs are
+  landed on `origin/main`.
+- No new activation was required for the later CI, bootstrap, and documentation
+  repairs. The original Darwin activation and live runtime readback above remain
+  the activation evidence for the unchanged Nix runtime wiring.
+- The NUC Hermes target was not deployed or activated; that was outside this
+  local coding-runtime scope. Local Hermes consumes `~/.agents/skills` and
+  passed live discovery.
 - Claude's local skill discovery succeeded, but an end-to-end model response
   could not complete because the existing Claude OAuth session is expired.
 
 ## Commits
 
-This worklog is included in the final local implementation commit; its hash is
-reported in the task handoff.
+- `17965063eba6b0239cd3928b626e9a79659391f8` —
+  `feat(agents): enforce meaningful test coverage`
+- Annotated tag: `agent-work/coding-agent-test-quality`
+- Subsequent Pi, publish-workflow, lock-sync, and bootstrap compatibility
+  repairs are recorded in their dedicated worklogs and the task receipt.
