@@ -1,5 +1,8 @@
 -- Extra autostart processes migrated from the pre-Quattro config.
 
+-- Add a suspend-only idle listener alongside Omarchy's Quickshell lock timers.
+o.launch_on_start("hypridle -q")
+
 -- Steam controller input bypasses Hyprland's idle monitor. Inhibit idle while
 -- any Steam game is fullscreen so controller-driven play stays uninterrupted.
 o.window("steam_app_.*", { idle_inhibit = "fullscreen" })

@@ -73,6 +73,38 @@ a documented human recovery gate rather than exported secret material.
   Omapods builds, plugin updates, or other writes under the watched local plugin
   directory.
 
+## Idle suspend policy
+
+`config/hypr/hypridle.conf` suspends meshify after 15 minutes without user
+input. Omarchy's Quickshell service still owns the earlier screensaver and lock.
+Its **Stay Awake** control writes the state marker that also defers automatic
+suspend; turn Stay Awake off to restore the normal idle policy.
+
+Check the live policy without suspending:
+
+```bash
+pgrep -a hypridle
+omarchy toggle idle status
+```
+
+## Lock screen wake window
+
+`config/omarchy/plugins/edmundmiller.lock` is a supported clone of Omarchy's
+built-in lock service. It keeps the password prompt and displays awake for 30
+seconds after the last keyboard or pointer event instead of the stock five
+seconds. This prevents the prompt from blanking again while typing after
+resume. `shell.json` enables the clone and disables `omarchy.lock`.
+
+When updating Omarchy, compare the clone with the new built-in `omarchy.lock`
+before carrying the timeout customization forward.
+
+Verify the active implementation without locking the session:
+
+```bash
+omarchy plugin list --json \
+  | jq '.[] | select(.id == "omarchy.lock" or .id == "edmundmiller.lock")'
+```
+
 ## Steam game idle policy
 
 Fullscreen Steam games inhibit the screensaver, lock, and suspend because

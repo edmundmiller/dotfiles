@@ -12,6 +12,12 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/hypr/hypridle.conf",
+      "target": ".config/hypr/hypridle.conf",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/hypr/input.lua",
       "target": ".config/hypr/input.lua",
       "mode": "0644",
@@ -33,6 +39,25 @@
       "source": "config/omarchy/shell.json",
       "target": ".config/omarchy/shell.json",
       "mode": "0600",
+      "sourceMode": "0644",
+      "format": "json"
+    },
+    {
+      "source": "config/omarchy/plugins/edmundmiller.lock/LockView.qml",
+      "target": ".config/omarchy/plugins/edmundmiller.lock/LockView.qml",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/omarchy/plugins/edmundmiller.lock/Service.qml",
+      "target": ".config/omarchy/plugins/edmundmiller.lock/Service.qml",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/omarchy/plugins/edmundmiller.lock/manifest.json",
+      "target": ".config/omarchy/plugins/edmundmiller.lock/manifest.json",
+      "mode": "0644",
       "sourceMode": "0644",
       "format": "json"
     },
@@ -69,6 +94,11 @@
       "name": "herdr",
       "manager": "repo",
       "command": "herdr"
+    },
+    {
+      "name": "hypridle",
+      "manager": "repo",
+      "command": "hypridle"
     },
     {
       "name": "jq",
