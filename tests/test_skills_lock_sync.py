@@ -112,7 +112,10 @@ class SkillsLockSyncTests(unittest.TestCase):
         hook_start = flake.index("skills-lock-sync = {")
         hook = flake[hook_start : hook_start + 700]
         self.assertIn("set -euo pipefail", hook)
-        self.assertIn('nix flake lock --no-update-lock-file "$PWD/skills"', hook)
+        self.assertIn(
+            '--extra-experimental-features "nix-command flakes"', hook
+        )
+        self.assertIn('flake lock --no-update-lock-file "$PWD/skills"', hook)
         self.assertIn("skills/scripts/check-lock-sync.py", hook)
         self.assertIn('"$PWD"', hook)
         self.assertIn("always_run = true;", hook)

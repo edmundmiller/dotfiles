@@ -861,7 +861,9 @@
                 entry = toString (
                   pkgs.writeShellScript "skills-lock-sync" ''
                     set -euo pipefail
-                    ${pkgs.nix}/bin/nix flake lock --no-update-lock-file "$PWD/skills"
+                    ${pkgs.nix}/bin/nix \
+                      --extra-experimental-features "nix-command flakes" \
+                      flake lock --no-update-lock-file "$PWD/skills"
                     exec ${pkgs.python3}/bin/python3 \
                       ${./skills/scripts/check-lock-sync.py} "$PWD"
                   ''
