@@ -28,6 +28,13 @@
       "revision": "8831976d3528c9679ced5d1259d9b63ae4543a3f",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "slcode777.omagotchi",
+      "url": "https://github.com/SLcode777/omagotchi.git",
+      "revision": "669ea0b7eac7a78ec408512cb81d8e5082c3c33b",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }
