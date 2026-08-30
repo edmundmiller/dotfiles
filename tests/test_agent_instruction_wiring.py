@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -124,8 +125,10 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
             fake_nix = fake_bin / "nix"
             fake_nix.write_text(
-                "#!/usr/bin/env bash\n"
-                'if [ "${1:-}" = "--version" ]; then echo "nix test"; fi\n'
+                f"#!{sys.executable}\n"
+                "import sys\n"
+                'if sys.argv[1:] == ["--version"]:\n'
+                '    print("nix test")\n'
             )
             fake_nix.chmod(0o755)
 

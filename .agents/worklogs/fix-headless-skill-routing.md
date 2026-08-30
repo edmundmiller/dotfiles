@@ -35,6 +35,10 @@ the harness-neutral discovery surface.
 - All 13 `tests.test_agent_instruction_wiring` cases pass.
 - `bash -n bin/bootstrap`, `git diff --check`, and the `pi-nix-syntax` skill
   validator pass.
+- First native Linux CI passed `agent-instructions` and `skills-lock-sync` but
+  exposed a test-only sandbox incompatibility: the fake `nix` shim used
+  `/usr/bin/env`, which is absent in the Nix sandbox. The shim now uses the
+  current Nix-store Python interpreter.
 
 ## Reviews
 
