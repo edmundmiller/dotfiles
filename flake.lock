@@ -90,17 +90,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1787900581,
-        "narHash": "sha256-4UE4UUaXB3x/ii7s6U2Ecb1a9Q8iuJUUF008NxA6Z4M=",
+        "lastModified": 1788068565,
+        "narHash": "sha256-7L5pNSt3rbA8Ou0qdn5gtgT9SsScASfdTNpGjSg4mqw=",
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "3fcc88e3b5276ab05dd1f2a18c1912e18207b69a",
+        "rev": "75ab8bfcbd4bf268de61adfc057e4b94c4e4a1c0",
         "type": "github"
       },
       "original": {
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "3fcc88e3b5276ab05dd1f2a18c1912e18207b69a",
+        "rev": "75ab8bfcbd4bf268de61adfc057e4b94c4e4a1c0",
         "type": "github"
       }
     },
@@ -2331,6 +2331,9 @@
         "bun2nix": [
           "bun2nix"
         ],
+        "llm-agents": [
+          "llm-agents"
+        ],
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -2339,17 +2342,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1784680894,
-        "narHash": "sha256-TLZQzIJEOQjR1RMFNBQK0Md48xldxywuPrEqE6DdL6Y=",
+        "lastModified": 1788072109,
+        "narHash": "sha256-jCQ+2PFjZlEgnVgPyxLIen+MOzfkGEQeGk8MI+6ai+s=",
         "owner": "edmundmiller",
         "repo": "tnote",
-        "rev": "3dc5771991322a518c27be09efb76eb79f84a2cb",
+        "rev": "e6f27d4e73274a33bc7fc84a85587c180252c777",
         "type": "github"
       },
       "original": {
         "owner": "edmundmiller",
         "repo": "tnote",
-        "rev": "3dc5771991322a518c27be09efb76eb79f84a2cb",
+        "rev": "e6f27d4e73274a33bc7fc84a85587c180252c777",
         "type": "github"
       }
     },

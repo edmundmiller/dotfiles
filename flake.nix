@@ -72,9 +72,10 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "github:edmundmiller/tnote/3dc5771991322a518c27be09efb76eb79f84a2cb";
+      url = "github:edmundmiller/tnote/e6f27d4e73274a33bc7fc84a85587c180252c777";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
+      inputs.llm-agents.follows = "llm-agents";
       inputs.systems.follows = "systems";
     };
     deploy-rs.url = "github:serokell/deploy-rs";
@@ -108,7 +109,7 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/3fcc88e3b5276ab05dd1f2a18c1912e18207b69a";
+      url = "github:edmundmiller/agents-workspace/75ab8bfcbd4bf268de61adfc057e4b94c4e4a1c0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
