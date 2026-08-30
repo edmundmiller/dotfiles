@@ -19,7 +19,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "bun test ./extensions/hunk.test.ts"
   },
   "peerDependencies": {
     "@mariozechner/pi-coding-agent": "*",

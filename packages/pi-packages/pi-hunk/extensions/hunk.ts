@@ -1,16 +1,46 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 
 const HUNK_TIMEOUT_MS = 30_000;
 
-const textResult = (text: string, details: Record<string, unknown> = {}) => ({
+const herdrWorkspaceContextSchema = Type.Object({ workspace_id: Type.String() });
+const herdrPaneContextSchema = Type.Object({ focused_pane_id: Type.String() });
+const herdrTabCreateResponseSchema = Type.Object({
+  result: Type.Object({
+    root_pane: Type.Object({ pane_id: Type.String() }),
+  }),
+});
+const herdrPaneCreateResponseSchema = Type.Object({
+  result: Type.Object({
+    pane: Type.Object({ pane_id: Type.String() }),
+  }),
+});
+
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
+type HerdrContextKey = "HERDR_WORKSPACE_ID" | "HERDR_PANE_ID";
+type ExecutedCommand = {
+  command: string;
+  args: string[];
+  stdout: string;
+  stderr: string;
+  code: number;
+};
+type TextResultValue = JsonValue | undefined | ExecutedCommand[];
+type TextResultDetails = Record<string, TextResultValue>;
+
+const textResult = (text: string, details: TextResultDetails = {}) => ({
   content: [{ type: "text" as const, text }],
   details,
 });
 
-const parseJson = (text: string): unknown => {
+const parseJson = (text: string): JsonValue => {
   const trimmed = text.trim();
   if (!trimmed) return null;
   try {
@@ -20,8 +50,10 @@ const parseJson = (text: string): unknown => {
   }
 };
 
-const stringify = (value: unknown): string =>
-  typeof value === "string" ? value : JSON.stringify(value, null, 2);
+const stringify = (value: JsonValue): string => {
+  if (Value.Check(Type.String(), value)) return value;
+  return JSON.stringify(value, null, 2) ?? "";
+};
 
 async function runCommand(
   pi: ExtensionAPI,
@@ -93,29 +125,42 @@ async function writePiLastTurnMarker(
   return markerPath;
 }
 
-function contextValue(key: string): string | undefined {
+function contextValue(key: HerdrContextKey): string | undefined {
   const direct = process.env[key];
   if (direct) return direct;
   try {
-    const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}") as Record<
-      string,
-      unknown
-    >;
-    const contextKey = key === "HERDR_WORKSPACE_ID" ? "workspace_id" : "focused_pane_id";
-    const value = context[contextKey];
-    return typeof value === "string" ? value : undefined;
+    const candidate: unknown = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}");
+    if (key === "HERDR_WORKSPACE_ID") {
+      return Value.Check(herdrWorkspaceContextSchema, candidate)
+        ? candidate.workspace_id
+        : undefined;
+    }
+    return Value.Check(herdrPaneContextSchema, candidate) ? candidate.focused_pane_id : undefined;
   } catch {
     return undefined;
   }
 }
 
-function responseString(payload: unknown, path: string[]): string | undefined {
-  let value = payload;
-  for (const key of path) {
-    if (!value || typeof value !== "object") return undefined;
-    value = (value as Record<string, unknown>)[key];
+function tabPaneId(response: string): string | undefined {
+  try {
+    const candidate: unknown = JSON.parse(response);
+    return Value.Check(herdrTabCreateResponseSchema, candidate)
+      ? candidate.result.root_pane.pane_id
+      : undefined;
+  } catch {
+    return undefined;
   }
-  return typeof value === "string" ? value : undefined;
+}
+
+function splitPaneId(response: string): string | undefined {
+  try {
+    const candidate: unknown = JSON.parse(response);
+    return Value.Check(herdrPaneCreateResponseSchema, candidate)
+      ? candidate.result.pane.pane_id
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function shellQuote(value: string): string {
@@ -140,7 +185,7 @@ async function openHunk(
       ["tab", "create", "--workspace", workspaceId, "--cwd", repo, "--label", "hunk"],
       { cwd: repo, timeout: 10_000 }
     );
-    paneId = responseString(parseJson(created.stdout), ["result", "root_pane", "pane_id"]);
+    paneId = tabPaneId(created.stdout);
   } else {
     const focusedPaneId = contextValue("HERDR_PANE_ID");
     if (!focusedPaneId) throw new Error("hunk_diff split placement requires a Herdr pane");
@@ -150,7 +195,7 @@ async function openHunk(
       ["pane", "split", focusedPaneId, "--direction", "right", "--cwd", repo, "--focus"],
       { cwd: repo, timeout: 10_000 }
     );
-    paneId = responseString(parseJson(created.stdout), ["result", "pane", "pane_id"]);
+    paneId = splitPaneId(created.stdout);
   }
   if (!paneId) throw new Error("Herdr created the Hunk target but returned no pane id");
 
@@ -371,8 +416,7 @@ export default function hunkExtension(pi: ExtensionAPI) {
       const message = params.message.trim();
       if (!message) throw new Error("message is required for hunk_commit");
 
-      const commands: Array<{ command: string; args: string[]; stdout: string; stderr: string }> =
-        [];
+      const commands: ExecutedCommand[] = [];
 
       if (params.includeUnstaged) {
         const staged = await runCommand(pi, "git", ["add", "-A"], { cwd: repo });

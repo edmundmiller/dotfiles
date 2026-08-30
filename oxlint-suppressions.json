@@ -680,26 +680,6 @@
       "count": 1
     }
   },
-  "packages/pi-packages/pi-hunk/extensions/hunk.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 1
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 1
-    },
-    "anti-slop/no-unknown-returns": {
-      "count": 1
-    },
-    "anti-slop/no-unsafe-dictionary-type": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 1
-    }
-  },
   "packages/pi-packages/pi-image-attachments/index.ts": {
     "anti-slop/no-runtime-typeof": {
       "count": 2
