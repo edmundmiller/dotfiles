@@ -62,6 +62,18 @@
       "format": "json"
     },
     {
+      "source": "config/systemd/user/voxtype.service",
+      "target": ".config/systemd/user/voxtype.service",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/voxtype/config.toml",
+      "target": ".config/voxtype/config.toml",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "local/bin/rocket-league-autostart",
       "target": ".local/bin/rocket-league-autostart",
       "mode": "0755",
@@ -121,6 +133,11 @@
       "command": "nmcli"
     },
     {
+      "name": "playerctl",
+      "manager": "repo",
+      "command": "playerctl"
+    },
+    {
       "name": "ninja",
       "manager": "repo",
       "command": "ninja"
@@ -149,6 +166,16 @@
       "name": "qt6-tools",
       "manager": "repo",
       "command": "lrelease6"
+    },
+    {
+      "name": "voxtype-bin",
+      "manager": "aur",
+      "command": "voxtype"
+    },
+    {
+      "name": "wtype",
+      "manager": "repo",
+      "command": "wtype"
     }
   ],
   "services": [
@@ -156,6 +183,10 @@
       "name": "librepods.service",
       "setup": "omapods",
       "commands": ["librepods", "librepods-ctl"]
+    },
+    {
+      "name": "voxtype.service",
+      "setup": "voxtype"
     }
   ],
   "privateState": [
@@ -197,6 +228,10 @@
     {
       "id": "airpods-pairing",
       "message": "Re-pair AirPods after hardware or Bluetooth state is replaced."
+    },
+    {
+      "id": "voxtype-gpu",
+      "message": "Run `sudo voxtype setup gpu --enable` after restoring on meshify, then verify that `voxtype setup gpu --status` reports GPU (Vulkan)."
     }
   ],
   "inventory": {

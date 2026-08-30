@@ -1,0 +1,32 @@
+# Voxtype Configuration
+#
+# Location: ~/.config/voxtype/config.toml
+# All settings can be overridden via CLI flags
+
+state_file = "auto"
+
+[hotkey]
+# Hyprland owns F9 push-to-talk and Super + Ctrl + X toggle bindings.
+enabled = false
+
+[audio]
+# Keep dictation on the dedicated microphone when Bluetooth audio changes.
+device = "alsa_input.usb-Antlion_Audio_Antlion_USB_Microphone-00.mono-fallback"
+sample_rate = 16000
+max_duration_secs = 60
+pause_media = true
+
+[whisper]
+model = "base.en"
+language = "en"
+translate = false
+
+[output]
+mode = "type"
+fallback_to_clipboard = true
+type_delay_ms = 1
+
+[output.notification]
+on_recording_start = false
+on_recording_stop = false
+on_transcription = false

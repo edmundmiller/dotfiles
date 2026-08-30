@@ -110,6 +110,25 @@ omarchy plugin list --json \
 Fullscreen Steam games inhibit the screensaver, lock, and suspend because
 game-controller input does not reset Hyprland's idle timer.
 
+## Dictation
+
+Voxtype uses the Antlion USB microphone regardless of Bluetooth audio routing.
+Hold `F9` for push-to-talk or press `Super+Ctrl+X` to toggle recording. The
+restore installs the English `base.en` model, enables the user service, and
+keeps media-pausing support through `playerctl`.
+
+GPU backend selection changes a privileged package symlink and is therefore a
+manual recovery gate rather than repository state. After a fresh restore, run:
+
+```bash
+sudo voxtype setup gpu --enable
+systemctl --user restart voxtype.service
+voxtype setup gpu --status
+```
+
+The final command must report `GPU (Vulkan)`. Verify the remaining setup with
+`voxtype setup check` and `systemctl --user is-active voxtype.service`.
+
 ## Rocket League autostart
 
 `local/bin/rocket-league-autostart` starts Rocket League at login. Steam can

@@ -462,7 +462,12 @@ class ManageCliTest(unittest.TestCase):
             ),
             "omarchy-shell": "#!/usr/bin/env bash\nexit 0\n",
             "systemctl": (
-                "#!/usr/bin/env bash\n[[ -e $SERVICE_STATE ]] && exit 0\nexit 3\n"
+                "#!/usr/bin/env bash\n"
+                "if [[ $* == '--user enable --now fixture.service' ]]; then\n"
+                '  echo "$*" >>"$ACTION_LOG"\n'
+                "fi\n"
+                "[[ -e $SERVICE_STATE ]] && exit 0\n"
+                "exit 3\n"
             ),
             "hyprctl": "#!/usr/bin/env bash\nexit 0\n",
         }
@@ -489,6 +494,58 @@ class ManageCliTest(unittest.TestCase):
         actions = action_log.read_text().splitlines()
         self.assertEqual(actions.count("pkg add fixture-package"), 1)
         self.assertEqual(actions.count("setup"), 1)
+        self.assertEqual(actions.count("--user enable --now fixture.service"), 2)
+
+    def test_restore_configures_and_restarts_voxtype_service(self) -> None:
+        self.write_minimal_module()
+        manifest = json.loads((self.module / "manifest.json").read_text())
+        manifest["services"] = [{"name": "voxtype.service", "setup": "voxtype"}]
+        self.write_json("manifest.json", manifest)
+        fake_bin = self.root / "bin"
+        fake_bin.mkdir()
+        action_log = self.root / "actions.log"
+        scripts = {
+            "omarchy": (
+                "#!/usr/bin/env bash\n"
+                "if [[ $1 == version ]]; then echo 4.0.0-1; exit 0; fi\n"
+                "if [[ $1 == plugin && $2 == list ]]; then echo '[]'; exit 0; fi\n"
+                "exit 0\n"
+            ),
+            "omarchy-shell": "#!/usr/bin/env bash\nexit 0\n",
+            "hyprctl": "#!/usr/bin/env bash\nexit 0\n",
+            "voxtype": "#!/usr/bin/env bash\nexit 0\n",
+            "systemctl": (
+                "#!/usr/bin/env bash\n"
+                "if [[ $* == '--user enable --now voxtype.service' "
+                "|| $* == '--user restart voxtype.service' ]]; then\n"
+                '  echo "$*" >>"$ACTION_LOG"\n'
+                "fi\n"
+                "exit 0\n"
+            ),
+        }
+        for name, body in scripts.items():
+            path = fake_bin / name
+            path.write_text(body)
+            path.chmod(0o755)
+        env = os.environ.copy()
+        env.update(
+            {
+                "HOME": str(self.home),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+                "ACTION_LOG": str(action_log),
+            }
+        )
+
+        result = self.run_manage("restore", "--no-secrets", env=env)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            action_log.read_text().splitlines(),
+            [
+                "--user enable --now voxtype.service",
+                "--user restart voxtype.service",
+            ],
+        )
 
     def test_update_intentionally_advances_the_lock_and_checkout(self) -> None:
         self.write_minimal_module()

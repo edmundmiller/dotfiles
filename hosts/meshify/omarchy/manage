@@ -164,7 +164,7 @@ validate_metadata() {
       and (.command | type == "string" and length > 0)))
     and (all(.services[];
       (.name | type == "string" and length > 0)
-      and (.setup == "omapods")
+      and (.setup == "omapods" or .setup == "voxtype")
       and ((.commands // []) | type == "array")
       and (all((.commands // [])[]; type == "string" and length > 0))))
     and (all(.privateState[];
@@ -550,6 +550,37 @@ run_setup_adapters() {
   done < <(jq -r '.plugins[] | [.id, .revision, .setup] | @tsv' "$LOCKFILE")
 }
 
+run_service_setup_adapters() {
+  local setup
+  (( NO_SYSTEM )) && return 0
+  while IFS= read -r setup; do
+    case "$setup" in
+    omapods)
+      # The locked plugin setup adapter owns this service.
+      ;;
+    voxtype)
+      voxtype setup check >/dev/null 2>&1 \
+        || voxtype setup --download --no-post-install
+      ;;
+    *)
+      fail "unknown service setup adapter: $setup"
+      ;;
+    esac
+  done < <(jq -r '[.services[].setup] | unique[]' "$MANIFEST")
+}
+
+restore_services() {
+  local service setup
+  (( NO_SYSTEM )) && return 0
+  systemctl --user daemon-reload
+  while IFS=$'\t' read -r service setup; do
+    systemctl --user enable --now "$service"
+    if [[ $setup == voxtype ]]; then
+      systemctl --user restart "$service"
+    fi
+  done < <(jq -r '.services[] | [.name, .setup] | @tsv' "$MANIFEST")
+}
+
 restore_runtime_state() {
   local plugins id enabled
   (( NO_SYSTEM )) && return 0
@@ -843,6 +874,8 @@ run_restore() {
   restore_files
   restore_plugins
   run_setup_adapters
+  run_service_setup_adapters
+  restore_services
   restore_private_state
   restore_keyring_secrets
   restore_runtime_state
