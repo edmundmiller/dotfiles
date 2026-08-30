@@ -321,28 +321,6 @@
       "count": 2
     }
   },
-  "packages/pi-packages/pi-beads/src/backend/adapters/beads.test.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 2
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 34
-    }
-  },
-  "packages/pi-packages/pi-beads/src/backend/adapters/beads.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 3
-    }
-  },
   "packages/pi-packages/pi-beads/src/controllers/list.ts": {
     "anti-slop/no-known-value-widening": {
       "count": 2
@@ -359,11 +337,6 @@
       "count": 1
     }
   },
-  "packages/pi-packages/pi-beads/src/extension.ts": {
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
-    }
-  },
   "packages/pi-packages/pi-beads/src/models/list-item.ts": {
     "anti-slop/no-known-value-widening": {
       "count": 1
@@ -375,11 +348,6 @@
     }
   },
   "packages/pi-packages/pi-beads/src/ui/components/min-height.ts": {
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 1
-    }
-  },
-  "packages/pi-packages/pi-beads/src/ui/pages/show.ts": {
     "anti-slop/require-safety-comment-for-type-assertion": {
       "count": 1
     }
