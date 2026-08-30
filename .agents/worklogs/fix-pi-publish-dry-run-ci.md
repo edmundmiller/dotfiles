@@ -1,6 +1,6 @@
 # Worklog: fix-pi-publish-dry-run-ci
 
-Status: active
+Status: complete
 
 ## Objective
 
@@ -32,6 +32,12 @@ without publishing it.
   pass.
 - `hey check --worktree` passes Darwin evaluation, formatting, hooks, tmux,
   package harness/policy, DJI Mic Mini, and ast-grep checks.
+- GitHub workflow-dispatch run `33296773257` passed at
+  `b350d33243d915cb9d846e19acfbd25bae9e27ee`: detection selected `pi-hunk`,
+  package QA passed, Bun installed the locked workspace, and
+  `npm pack --dry-run` validated the five-file package.
+- In that remote run, `Validate package (dry run)` passed and the authenticated
+  `Publish` step was explicitly skipped, so no package was published.
 
 ## Reviews
 
@@ -49,9 +55,11 @@ without publishing it.
 
 ## Remaining work
 
-- Commit and publish the isolated repair, then verify a fresh GitHub dry-run
-  reaches the non-publishing package-validation branch.
+None.
 
 ## Commits
 
-The isolated workflow repair commit and tag will be recorded after landing.
+- `b350d33243d915cb9d846e19acfbd25bae9e27ee` — workflow repair and local
+  evidence.
+- Annotated tag `agent-work/fix-pi-publish-dry-run-ci` is created after final
+  closeout lands.
