@@ -8,7 +8,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import {
   type MemoryStatus,
@@ -799,8 +799,7 @@ describe("createWorktree", () => {
 
   test("creates worktree dir inside memory-worktrees sibling", async () => {
     const wt = await createWorktree(pi, memDir, "sibling");
-    const expectedParent = getWorktreeDir(memDir);
-    expect(wt.path.startsWith(expectedParent)).toBe(true);
+    expect(relative(memDir, wt.path)).toMatch(/^\.\.\/memory-worktrees\/sibling-\d+$/);
   });
 
   test("edits in worktree don't affect main", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -11,9 +11,9 @@ import { tmpdir } from "node:os";
  * (cmd/args/cwd/timeout) and diffs it against a golden capture taken from
  * the pre-extraction implementation on origin/main.
  *
- * The golden file (golden-exec-sequence.json) is generated on first run.
- * On subsequent runs the recorded sequence must match the golden exactly,
- * proving behavior equivalence before and after the extraction.
+ * The recorded sequence must match the committed golden capture exactly,
+ * proving behavior equivalence before and after the extraction. A missing
+ * golden is a test failure rather than an opportunity to bless current output.
  */
 
 type RecordedCall = {
@@ -195,14 +195,8 @@ describe("pr-review-workspace golden equivalence", () => {
       cwd: repoRoot,
     });
 
-    if (!existsSync(GOLDEN_PATH)) {
-      writeFileSync(GOLDEN_PATH, JSON.stringify(recording.calls, null, 2) + "\n");
-      console.log(`Golden capture written to ${GOLDEN_PATH}`);
-      expect(recording.calls.length).toBeGreaterThan(10);
-    } else {
-      const golden: RecordedCall[] = JSON.parse(readFileSync(GOLDEN_PATH, "utf-8"));
-      expect(recording.calls).toEqual(golden);
-    }
+    const golden: RecordedCall[] = JSON.parse(readFileSync(GOLDEN_PATH, "utf-8"));
+    expect(recording.calls).toEqual(golden);
   });
 
   test("prepareReviewWorktree, refreshReviewWorktree, createHerdrReviewWorkspace are exported", async () => {

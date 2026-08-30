@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -12,9 +12,9 @@ import { tmpdir } from "node:os";
  * fixtures. The exec call sequence (cmd/args/cwd/timeout) is diffed against a
  * golden capture from the pre-extraction implementation.
  *
- * Golden files are generated on first run. On subsequent runs the recorded
- * sequence must match the golden exactly, proving behavior equivalence across
- * the extraction.
+ * Each recorded sequence must match its committed golden exactly, proving
+ * behavior equivalence across the extraction. A missing golden is a test
+ * failure rather than an opportunity to bless current output.
  */
 
 type RecordedCall = {
@@ -230,14 +230,8 @@ describe("decision-flow golden equivalence", () => {
     });
 
     const golden = goldenPath("resume");
-    if (!existsSync(golden)) {
-      writeFileSync(golden, JSON.stringify(recording.calls, null, 2) + "\n");
-      console.log(`Golden capture written to ${golden}`);
-      expect(recording.calls.length).toBeGreaterThan(3);
-    } else {
-      const expected: RecordedCall[] = JSON.parse(readFileSync(golden, "utf-8"));
-      expect(recording.calls).toEqual(expected);
-    }
+    const expected: RecordedCall[] = JSON.parse(readFileSync(golden, "utf-8"));
+    expect(recording.calls).toEqual(expected);
   });
 
   test("refresh path exec sequence matches golden capture", async () => {
@@ -255,14 +249,8 @@ describe("decision-flow golden equivalence", () => {
     });
 
     const golden = goldenPath("refresh");
-    if (!existsSync(golden)) {
-      writeFileSync(golden, JSON.stringify(recording.calls, null, 2) + "\n");
-      console.log(`Golden capture written to ${golden}`);
-      expect(recording.calls.length).toBeGreaterThan(10);
-    } else {
-      const expected: RecordedCall[] = JSON.parse(readFileSync(golden, "utf-8"));
-      expect(recording.calls).toEqual(expected);
-    }
+    const expected: RecordedCall[] = JSON.parse(readFileSync(golden, "utf-8"));
+    expect(recording.calls).toEqual(expected);
   });
 
   test("restore path exec sequence matches golden capture", async () => {
@@ -280,13 +268,7 @@ describe("decision-flow golden equivalence", () => {
     });
 
     const golden = goldenPath("restore");
-    if (!existsSync(golden)) {
-      writeFileSync(golden, JSON.stringify(recording.calls, null, 2) + "\n");
-      console.log(`Golden capture written to ${golden}`);
-      expect(recording.calls.length).toBeGreaterThan(10);
-    } else {
-      const expected: RecordedCall[] = JSON.parse(readFileSync(golden, "utf-8"));
-      expect(recording.calls).toEqual(expected);
-    }
+    const expected: RecordedCall[] = JSON.parse(readFileSync(golden, "utf-8"));
+    expect(recording.calls).toEqual(expected);
   });
 });

@@ -24,9 +24,11 @@
   export MOCK_BIN="$TEST_DIR/bin"
   export MOCK_HELPERS="$TEST_DIR/helpers"
   export TMUX_LOG="$TEST_DIR/tmux.log"
+  export RUNTIME_LOG="$TEST_DIR/runtime.log"
   export WORKTREE="$TEST_DIR/work tree"
   mkdir -p "$MOCK_BIN" "$MOCK_HELPERS" "$WORKTREE"
   : > "$TMUX_LOG"
+  : > "$RUNTIME_LOG"
 
   cat > "$MOCK_BIN/tmux" <<'EOF'
 #!/usr/bin/env bash
@@ -76,6 +78,13 @@ EOF
   for runtime in omp pi hermes opencode; do
     cat > "$MOCK_BIN/$runtime" <<'EOF'
 #!/usr/bin/env bash
+{
+  printf '%s\n' "$(basename "$0")"
+  for arg in "$@"; do
+    printf '%s' "$arg" | "$REAL_BASE64" | tr -d '\n'
+    printf '\n'
+  done
+} > "$RUNTIME_LOG"
 [[ "$(basename "$0")" != opencode ]] || exit "${OPENCODE_STATUS:-0}"
 exit 0
 EOF
@@ -143,7 +152,6 @@ EOF
   rm -rf "$TEST_DIR"
 }
 
-
 @test 'new dispatches every runtime in a tagged paired window' {
   local runtime
   for runtime in omp pi hermes opencode; do
@@ -159,21 +167,46 @@ EOF
 }
 
 @test 'resume emits exact native argv and Pi never forks' {
-  local runtime token expected log
+  local runtime token command
+  runtime_arg() {
+    sed -n "${1}p" "$RUNTIME_LOG" | "$REAL_BASE64" -d
+  }
+
   for runtime in omp pi hermes opencode; do
     : > "$TMUX_LOG"
+    : > "$RUNTIME_LOG"
     token=$([[ "$runtime" == pi || "$runtime" == omp ]] && printf '%s' "$TEST_DIR/session file.jsonl" || printf '%s' 'session-id')
-    case "$runtime" in
-      omp) printf -v expected '%q --cwd %q --resume %q' "$MOCK_BIN/omp" "$WORKTREE" "$token" ;;
-      pi) printf -v expected '%q --session %q' "$MOCK_BIN/pi" "$token" ;;
-      hermes) printf -v expected '%q --resume %q' "$MOCK_BIN/hermes" "$token" ;;
-      opencode) printf -v expected '%q --session %q %q' "$MOCK_BIN/opencode" "$token" "$WORKTREE" ;;
-    esac
     run env MOCK_HAS_SESSION=1 MOCK_CANONICAL="$WORKTREE" "$RUN_LAUNCHER" resume "$runtime" "$token" "$WORKTREE"
     assert $state equals 0
-    log=$(cat "$TMUX_LOG")
-    assert "$log" contains "CMD:$expected"
-    [[ "$runtime" != pi ]] || [[ "$log" != *'--fork'* && "$log" != *'--fork-session'* ]]
+    command=$(sed -n 's/^CMD://p' "$TMUX_LOG" | head -n 1)
+    run "$BASH_BIN" -c "$command"
+    assert $state equals 0
+    assert "$(sed -n '1p' "$RUNTIME_LOG")" same_as "$runtime"
+    case "$runtime" in
+      omp)
+        assert "$(runtime_arg 2)" same_as '--cwd'
+        assert "$(runtime_arg 3)" same_as "$WORKTREE"
+        assert "$(runtime_arg 4)" same_as '--resume'
+        assert "$(runtime_arg 5)" same_as "$token"
+        assert "$(wc -l < "$RUNTIME_LOG")" equals 5
+        ;;
+      pi)
+        assert "$(runtime_arg 2)" same_as '--session'
+        assert "$(runtime_arg 3)" same_as "$token"
+        assert "$(wc -l < "$RUNTIME_LOG")" equals 3
+        ;;
+      hermes)
+        assert "$(runtime_arg 2)" same_as '--resume'
+        assert "$(runtime_arg 3)" same_as "$token"
+        assert "$(wc -l < "$RUNTIME_LOG")" equals 3
+        ;;
+      opencode)
+        assert "$(runtime_arg 2)" same_as '--session'
+        assert "$(runtime_arg 3)" same_as "$token"
+        assert "$(runtime_arg 4)" same_as "$WORKTREE"
+        assert "$(wc -l < "$RUNTIME_LOG")" equals 4
+        ;;
+    esac
   done
 }
 

@@ -12,9 +12,15 @@ import { build_plain_text_summary } from "../../ui/plain-text.js";
 
 // ── Mock store ──────────────────────────────────────────────
 
-vi.mock("../../core/qmd-store.js", async () => {
-  const actual =
-    await vi.importActual<typeof import("../../core/qmd-store.js")>("../../core/qmd-store.js");
+vi.mock("../../core/qmd-store.js", () => {
+  const handlized_paths = new Map([
+    ["docs/ARCHITECTURE.md", "docs/architecture.md"],
+    ["docs/QUALITY.md", "docs/quality.md"],
+    ["extensions/qmd/README.md", "extensions/qmd/readme.md"],
+    ["README.md", "readme.md"],
+    ["CHANGELOG.md", "changelog.md"],
+  ]);
+
   return {
     get_status: vi.fn(() =>
       Promise.resolve({
@@ -52,8 +58,11 @@ vi.mock("../../core/qmd-store.js", async () => {
         "CHANGELOG.md",
       ])
     ),
-    // Use real handelize_path so the mapping works correctly in tests
-    handelize_path: actual.handelize_path,
+    handelize_path: vi.fn((file_path: string) => {
+      const handlized_path = handlized_paths.get(file_path);
+      if (handlized_path === undefined) throw new Error(`Unexpected fixture path: ${file_path}`);
+      return handlized_path;
+    }),
   };
 });
 
