@@ -103,6 +103,11 @@
       "command": "git"
     },
     {
+      "name": "grokbot-linux-port-bin",
+      "manager": "aur",
+      "command": "grok-bot"
+    },
+    {
       "name": "herdr",
       "manager": "repo",
       "command": "herdr"
