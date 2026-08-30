@@ -46,6 +46,7 @@ jobs:
           # Find packages whose version changed since last commit
           changed=()
           for pkg_dir in packages/pi-packages/pi-*/; do
+            pkg_dir="${pkg_dir%/}"
             pkg=$(basename "$pkg_dir")
             pkg_json="$pkg_dir/package.json"
             [ -f "$pkg_json" ] || continue
@@ -85,6 +86,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - uses: oven-sh/setup-bun@v2
 
       - name: Run package quality checks
         run: ./bin/qa-changed --package "${{ matrix.package }}"
