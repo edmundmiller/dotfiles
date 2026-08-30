@@ -860,55 +860,10 @@
                 name = "skills-lock-sync";
                 entry = toString (
                   pkgs.writeShellScript "skills-lock-sync" ''
-                                                          set -euo pipefail
-
-                                                          upstream=""
-                                                          if upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null); then
-                                                            upstream="$upstream_ref"
-                                                          elif git rev-parse --verify origin/main >/dev/null 2>&1; then
-                                                            upstream="origin/main"
-                                                          else
-                                                            echo "skills-lock-sync: no upstream branch found; skipping check" >&2
-                                                            exit 0
-                                                          fi
-
-                                                          range="$upstream...HEAD"
-                                                          changed_files=$(git diff --name-only "$range")
-
-                                                          if ! echo "$changed_files" | grep -Eq '^skills/(catalog/|flake\.nix$|flake\.lock$)'; then
-                                                            exit 0
-                                                          fi
-
-                                                          missing=0
-
-                                                          if ! echo "$changed_files" | grep -q '^flake.lock$'; then
-                                                            echo "  missing: flake.lock (parent skills-catalog sync)" >&2
-                                                            missing=1
-                                                          fi
-
-                                                          if echo "$changed_files" | grep -Eq '^skills/(flake\.nix$|catalog/)'; then
-                                                            if ! echo "$changed_files" | grep -q '^skills/flake.lock$'; then
-                                                              echo "  missing: skills/flake.lock (child skills catalog lock)" >&2
-                                                              missing=1
-                                                            fi
-                                                          fi
-
-                                                          if [ "$missing" -eq 0 ]; then
-                                                            exit 0
-                                                          fi
-
-                                                          cat >&2 <<'EOF'
-                                        ERROR: skills catalog changes detected without synced lock files.
-
-                                        Run:
-                                          hey skills-sync
-
-                                        This updates:
-                                          - skills/flake.lock (child skills catalog lock)
-                                          - flake.lock (parent skills-catalog sync)
-                    and rebuilds so shared skills are refreshed everywhere.
-                                        EOF
-                                                          exit 1
+                    set -euo pipefail
+                    ${pkgs.nix}/bin/nix flake lock --no-update-lock-file "$PWD/skills"
+                    exec ${pkgs.python3}/bin/python3 \
+                      ${./skills/scripts/check-lock-sync.py} "$PWD"
                   ''
                 );
                 language = "system";

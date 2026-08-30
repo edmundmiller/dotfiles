@@ -19,12 +19,15 @@ while preserving a small amount of Claude-specific runtime config.
 - `config/claude/settings.json` - Claude-specific settings template
 - `config/agents/core.md` - source for `~/.claude/CLAUDE.md`
 - `config/agents/modes/` - source for `~/.claude/agents/`
+- `skills/catalog/test-quality/` - canonical target of Claude's one shared skill link
 - `config/claude/plugins/` - repo-local Claude plugin sources
 
 ## Facts
 
 - Enable with `modules.agents.claude.enable = true`
-- Shared skills live in `~/.agents/skills`; `~/.claude/skills` is intentionally removed because OMP would discover duplicate copies.
+- Shared skills live in `~/.agents/skills`. Claude receives only
+  `~/.claude/skills/test-quality`, linked to that canonical copy; other Claude
+  skill copies are removed because OMP scans both directories.
 - `~/.claude/settings.json` is bootstrapped as a writable local file, not a Home Manager symlink, so runtime integrations such as Herdr can mutate Claude hooks.
 - Plugins are user-installed; this repo only keeps source trees and settings
 - WakaTime config is Darwin-only and depends on `wakatime-api-key`

@@ -284,7 +284,8 @@ class AgentQualityTests(unittest.TestCase):
             root = Path(tmp)
             test = root / "behavior.test.ts"
             test.write_text(
-                'test("skips empty values", () => { expect([]).toEqual([]); });\n'
+                'test("skips empty values", () => { '
+                'expect(parseValues("1,,2")).toEqual([1, 2]); });\n'
             )
             result = self.run_cli("audit-tests", str(root))
             self.assertEqual(result.returncode, 0, result.stdout)

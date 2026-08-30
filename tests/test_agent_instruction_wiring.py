@@ -19,6 +19,10 @@ OMP_CONFIG = ROOT / "config" / "omp" / "config.yml"
 LEGACY_RULES = ROOT / "config" / "agents" / "rules"
 FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
+CODING_STANDARDS = ROOT / "CODING_STANDARDS.md"
+TEST_QUALITY_SKILL = ROOT / "skills" / "catalog" / "test-quality" / "SKILL.md"
+SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
+SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
@@ -87,6 +91,45 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertNotIn('config/agents/rules', bootstrap)
         self.assertFalse(LEGACY_RULES.exists())
         self.assertNotIn("For ADHD resources", core)
+
+    def test_test_quality_source_routes_stay_selective(self) -> None:
+        core = OMP_CORE.read_text()
+        standard = CODING_STANDARDS.read_text()
+        skill = TEST_QUALITY_SKILL.read_text()
+        claude_module = CLAUDE_MODULE.read_text()
+        skills_flake = SKILLS_FLAKE.read_text()
+
+        self.assertNotIn("tautological", core.lower())
+        self.assertIn("Tautological tests", standard)
+        self.assertIn("independent", skill.lower())
+        self.assertIn("claude-test-quality-skill", claude_module)
+        self.assertIn(
+            'shared="$HOME/.agents/skills/test-quality"',
+            claude_module,
+        )
+        self.assertIn('if [ ! -f "$shared/SKILL.md" ]; then', claude_module)
+        self.assertIn('"dotfiles-agent-skills"', claude_module)
+
+        target_start = skills_flake.index("targetEnabled = {")
+        target_route = skills_flake[target_start : target_start + 420]
+        self.assertIn("agents = true;", target_route)
+
+        route_start = skills_flake.index("test-quality = {")
+        route = skills_flake[route_start : route_start + 420]
+        self.assertIn('from = "catalog";', route)
+        self.assertIn('"agents"', route)
+        self.assertIn('"hermes"', route)
+        self.assertNotIn('"codex"', route)
+
+    def test_skills_sync_has_no_retired_checkout_input(self) -> None:
+        command = SKILLS_COMMAND.read_text()
+        sync_start = command.index('def "main skills-sync"')
+        bump_start = command.index('def "main skills-bump"')
+        sync = command[sync_start:bump_start]
+
+        self.assertNotIn("dotfiles-repo", command)
+        self.assertIn("nix flake update skills-catalog", sync)
+        self.assertIn("main rebuild", sync)
 
     def test_agents_md_use_guarded_hey_interfaces(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()

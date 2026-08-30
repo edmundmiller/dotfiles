@@ -53,7 +53,9 @@ Agent instruction sources live in `config/agents/`:
   Pi, and OpenCode
 - `config/agents/modes/` - Shared agent mode definitions
 
-Global skills live in `~/.agents/skills/` and are discovered natively.
+Global skills live in `~/.agents/skills/` and are discovered natively. Claude
+is the exception: its module exposes only approved cross-runtime skills through
+Claude's native directory as links to that shared tree.
 Plannotator is intentionally excluded from Codex because its global `Stop` hook
 interrupts the normal response workflow.
 `callstack-diff skill` prints the version-matched skill bundled with the shared

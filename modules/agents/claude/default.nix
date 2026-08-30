@@ -42,6 +42,32 @@ in
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
+        # Claude does not discover ~/.agents/skills natively. Expose only this
+        # shared coding skill through Claude's own directory. OMP may scan both
+        # providers, but its name-based discovery exposes one test-quality
+        # entry; the symlink keeps the content canonical whichever provider wins.
+        home.activation.claude-test-quality-skill =
+          lib.hm.dag.entryAfter
+            [
+              "remove-legacy-claude-skills"
+              "dotfiles-agent-skills"
+            ]
+            ''
+              shared="$HOME/.agents/skills/test-quality"
+              if [ ! -f "$shared/SKILL.md" ]; then
+                echo "ERROR: shared test-quality skill is missing: $shared/SKILL.md" >&2
+                exit 1
+              fi
+              ${pkgs.coreutils}/bin/mkdir -p "$HOME/.claude/skills"
+              ${pkgs.coreutils}/bin/ln -sfn \
+                "$shared" \
+                "$HOME/.claude/skills/test-quality"
+              if [ ! -f "$HOME/.claude/skills/test-quality/SKILL.md" ]; then
+                echo "ERROR: Claude test-quality skill link did not resolve" >&2
+                exit 1
+              fi
+            '';
+
         home.activation.claude-settings-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" "${configDir}/claude/settings.json" <<'PY'
           import json

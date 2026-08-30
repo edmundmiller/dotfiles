@@ -242,12 +242,6 @@
           "pi"
           "enable"
         ];
-        claudeEnabled = moduleEnabled [
-          "modules"
-          "agents"
-          "claude"
-          "enable"
-        ];
         opencodeEnabled = moduleEnabled [
           "modules"
           "agents"
@@ -267,10 +261,12 @@
             "enable"
           ];
         targetEnabled = {
-          agents = codexEnabled || piEnabled || opencodeEnabled || hermesEnabled;
+          # ~/.agents/skills is the harness-neutral discovery surface. Keep it
+          # active even on hosts whose coding agent is not represented by a
+          # dedicated Nix module (for example Amp).
+          agents = true;
           codex = codexEnabled;
           pi = piEnabled;
-          claude = claudeEnabled;
           opencode = opencodeEnabled;
           hermes = hermesEnabled;
         };
@@ -390,6 +386,17 @@
                 from = "codex-local";
                 path = "walking-mode";
                 meta.targets = [ "codex" ];
+              };
+              # All coding runtimes consume the shared copy. Hermes also gets
+              # a direct copy for profiles whose external_dirs still point at
+              # ~/.hermes/skills.
+              test-quality = {
+                from = "catalog";
+                path = "test-quality";
+                meta.targets = [
+                  "agents"
+                  "hermes"
+                ];
               };
             }
             // lib.optionalAttrs piEnabled {

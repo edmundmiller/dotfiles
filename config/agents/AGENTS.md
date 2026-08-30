@@ -13,11 +13,17 @@ Unified skills, modes, and startup context for Codex, Claude, OpenCode, Pi, and 
 ## Quick Reference
 
 - **Generated skills**: `skills/catalog/` → per-agent targets
-- **Skills sync workflow**: see `skills/AGENTS.md` (commit+push skill edits first, then run `hey skills-sync`, then commit+push lockfile updates)
-- **Dot-agents target**: `~/.agents/skills` for shared defaults read by Codex, Pi, OpenCode, and Hermes
+- **Skills sync workflow**: see `skills/AGENTS.md`; run `hey skills-sync`
+  after checkout-local catalog or selection changes, and update the child lock
+  only when a remote input pin changes
+- **Dot-agents target**: `~/.agents/skills` for shared defaults read by Codex,
+  Pi, OpenCode, OMP, Amp, and Hermes
 - **Agent targets**: `~/.codex/skills`, `~/.pi/agent/skills`,
   `~/.config/opencode/skills` (V2 compatibility alias), `~/.hermes/skills`
-- **Install gating**: target dirs are synced only when the matching local agent module is enabled; `~/.claude/skills` is intentionally removed
+- **Claude exception**: `~/.claude/skills/test-quality` is a single symlink
+  to the shared skill; other Claude skill copies are removed
+- **Install gating**: the shared target is always synced; runtime-specific
+  target dirs are synced only when the matching local agent module is enabled
 - **Project-local skills**: `.agents/skills/` (dotfiles-only; never global)
 - **Modes**: `config/agents/modes/` → `~/.claude/agents`,
   `~/.config/opencode2/opencode/agent`
@@ -33,6 +39,10 @@ Unified skills, modes, and startup context for Codex, Claude, OpenCode, Pi, and 
   is not an active instruction-loading surface.
 - Skills default only to `dot-agents`; other agent dirs are for target-specific skills.
 - Target-specific skills set `meta.targets` in `programs.dotfiles-agent-skills.targetedExplicit`.
+- Claude does not discover `~/.agents/skills` natively. Its module exposes only
+  the cross-runtime `test-quality` skill through Claude's native directory;
+  OMP's name-based discovery exposes one entry, and the symlink keeps either
+  provider backed by the same canonical content.
 
 ## Adding Skills
 
@@ -51,7 +61,8 @@ description: When to trigger this skill
 
 ## Nix Modules
 
-- `modules/agents/claude/default.nix` - Installs the thin core → CLAUDE.md
+- `modules/agents/claude/default.nix` - Installs the thin core and targeted
+  `test-quality` skill → CLAUDE.md and Claude skills
 - `modules/agents/codex/default.nix` - Installs the thin core → AGENTS.md
 - `modules/agents/omp/default.nix` - Installs the thin core and OMP TTSR rules
 - `modules/agents/opencode/default.nix` - Installs the thin core → V2 AGENTS.md

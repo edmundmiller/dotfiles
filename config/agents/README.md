@@ -24,16 +24,25 @@ config/agents/
 
 This configuration is shared across agent runtimes with generated skill targets:
 
-| Agent    | Shared skills       | Modes location                        | Instruction surface                      |
-| -------- | ------------------- | ------------------------------------- | ---------------------------------------- |
-| Claude   | `~/.agents/skills/` | `~/.claude/agents/`                   | `~/.claude/CLAUDE.md`                    |
-| Codex    | `~/.agents/skills/` | Native profiles                       | `~/.codex/AGENTS.md`                     |
-| OpenCode | `~/.agents/skills/` | `~/.config/opencode2/opencode/agent/` | `~/.config/opencode2/opencode/AGENTS.md` |
-| OMP      | `~/.agents/skills/` | Native commands and TTSR              | `~/.omp/agent/AGENTS.md`                 |
-| Pi       | `~/.agents/skills/` | Native prompts and agents             | `~/.pi/agent/AGENTS.md`                  |
+| Agent    | Shared skills         | Modes location                        | Instruction surface                      |
+| -------- | --------------------- | ------------------------------------- | ---------------------------------------- |
+| Claude   | Targeted shared links | `~/.claude/agents/`                   | `~/.claude/CLAUDE.md`                    |
+| Codex    | `~/.agents/skills/`   | Native profiles                       | `~/.codex/AGENTS.md`                     |
+| OpenCode | `~/.agents/skills/`   | `~/.config/opencode2/opencode/agent/` | `~/.config/opencode2/opencode/AGENTS.md` |
+| OMP      | `~/.agents/skills/`   | Native commands and TTSR              | `~/.omp/agent/AGENTS.md`                 |
+| Pi       | `~/.agents/skills/`   | Native prompts and agents             | `~/.pi/agent/AGENTS.md`                  |
+
+Claude receives only `~/.claude/skills/test-quality`, linked to the canonical
+copy under `~/.agents/skills`; the rest of the shared catalog stays out of
+Claude's native directory so OMP does not load duplicate copies.
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
-Generated bundles exist for supported skill targets, but activation only syncs targets whose local agent module is enabled. Defaults live only in `dot-agents`; runtime-specific dirs carry targeted skills. Claude skill deployment is disabled to prevent duplicate OMP discovery.
+Generated bundles exist for supported skill targets. Activation always syncs
+the harness-neutral `dot-agents` target so runtimes without a dedicated Nix
+module, including Amp, still receive shared skills. Runtime-specific targets
+are synced only when their local agent module is enabled. Defaults live only
+in `dot-agents`; runtime-specific dirs carry targeted skills. Claude's single
+shared link is installed by its module rather than by a generated bundle.
 
 ## Skills
 
