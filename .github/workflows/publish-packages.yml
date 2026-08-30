@@ -109,17 +109,20 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      - uses: oven-sh/setup-bun@v2
+
       - name: Install workspace dependencies
         working-directory: packages/pi-packages
-        run: npm install --ignore-scripts
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Validate package (dry run)
+        if: inputs.dry-run == true
+        working-directory: packages/pi-packages/${{ matrix.package }}
+        run: npm pack --dry-run
 
       - name: Publish
+        if: inputs.dry-run != true
         working-directory: packages/pi-packages/${{ matrix.package }}
-        run: |
-          FLAGS=(--access public)
-          if [ "${{ inputs.dry-run }}" = "true" ]; then
-            FLAGS+=(--dry-run)
-          fi
-          npm publish "${FLAGS[@]}"
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
