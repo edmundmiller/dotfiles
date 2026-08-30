@@ -351,6 +351,22 @@
         "type": "github"
       }
     },
+    "common-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787969178,
+        "narHash": "sha256-wjzrSaAB6y5+wWo6XlMJZp2ZqJSiDBKZk6AuNBZPBBI=",
+        "owner": "warpdotdev",
+        "repo": "common-skills",
+        "rev": "f589e224907eda566c13755529f59db563090d14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "warpdotdev",
+        "repo": "common-skills",
+        "type": "github"
+      }
+    },
     "cronalytics": {
       "flake": false,
       "locked": {
@@ -1977,6 +1993,7 @@
         "agent-tail-repo": "agent-tail-repo",
         "anti-slop-repo": "anti-slop-repo",
         "browser-control-repo": "browser-control-repo",
+        "common-skills": "common-skills",
         "diffity-repo": "diffity-repo",
         "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",

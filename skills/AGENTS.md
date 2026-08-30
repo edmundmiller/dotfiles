@@ -93,6 +93,14 @@ programs.dotfiles-agent-skills.targetedExplicit.my-skill = {
 
 **⚠️ CRITICAL: Whenever you change `skills/flake.nix` or `skills/flake.lock`, you MUST also run `hey skills-sync` from the repo root to sync the parent lock. Forgetting this causes `attribute 'xxx' missing` errors at rebuild time.**
 
+## Overlaying a Remote Skill
+
+Use an explicit skill `transform` when only `SKILL.md` changes. For scripts,
+references, or tests, keep a patch under `skills/overlays/<name>/` and apply it
+to the pinned input with `pkgs.applyPatches` before registering the source.
+Build the overlaid bundle and run its focused tests; an upstream update that no
+longer accepts the patch must fail instead of silently dropping local behavior.
+
 ## Updating Remote Skills
 
 ```bash

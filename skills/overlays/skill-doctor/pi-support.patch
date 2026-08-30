@@ -1,0 +1,419 @@
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -79,0 +80,2 @@
++- `--pi-home PATH` — nonstandard Pi configuration directory.
++- `--pi-session-dir PATH` — nonstandard Pi session storage.
+--- a/references/supported-harnesses.md
++++ b/references/supported-harnesses.md
+@@ -11,0 +12 @@
++| Pi | `pi` | Tree-structured session JSONL |
+@@ -29,0 +31,2 @@
++- `--pi-home PATH` — nonstandard Pi configuration directory.
++- `--pi-session-dir PATH` — nonstandard Pi session directory; overrides `<pi-home>/sessions`.
+@@ -39,0 +43 @@
++- `.pi/skills`
+--- a/scripts/collect_sessions.py
++++ b/scripts/collect_sessions.py
+@@ -2 +2 @@
+-"""Collect local Claude Code, Codex, and Warp sessions and skills for scoring.
++"""Collect local Claude Code, Codex, Pi, and Warp sessions and skills for scoring.
+@@ -4 +4 @@
+-Scans Claude Code project history, Codex rollout files, and/or Warp's local
++Scans Claude Code project history, Codex and Pi JSONL files, and/or Warp's local
+@@ -35,0 +36 @@
++PI_CODE_EDIT_TOOLS = {"edit", "write"}
+@@ -42 +43 @@
+-        choices=("auto", "all", "claude", "codex", "warp"),
++        choices=("auto", "all", "claude", "codex", "pi", "warp"),
+@@ -52,0 +54,10 @@
++        "--pi-home",
++        default=os.environ.get("PI_CODING_AGENT_DIR", "~/.pi/agent"),
++        help="Pi configuration directory (default: PI_CODING_AGENT_DIR or ~/.pi/agent)",
++    )
++    p.add_argument(
++        "--pi-session-dir",
++        default=os.environ.get("PI_CODING_AGENT_SESSION_DIR"),
++        help="Pi session directory (default: PI_CODING_AGENT_SESSION_DIR or <pi-home>/sessions)",
++    )
++    p.add_argument(
+@@ -114 +125,7 @@
+-def discover_skills(repos, codex_home: Path, extra_dirs, include_global: bool):
++def discover_skills(
++    repos,
++    codex_home: Path,
++    extra_dirs,
++    include_global: bool,
++    pi_home=None,
++):
+@@ -122,0 +140 @@
++            repo / ".pi" / "skills",
+@@ -128,0 +147 @@
++            (pi_home or (Path.home() / ".pi" / "agent")) / "skills",
+@@ -196,0 +216,17 @@
++def find_pi_session_files(session_dir: Path, cutoff: datetime):
++    """Find recent persistent Pi JSONL sessions."""
++    if not session_dir.is_dir():
++        return []
++
++    files = []
++    for path in session_dir.rglob("*.jsonl"):
++        try:
++            mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
++        except OSError:
++            continue
++        if mtime >= cutoff:
++            files.append((mtime, path))
++    files.sort(key=lambda item: item[0], reverse=True)
++    return files
++
++
+@@ -372,0 +409,144 @@
++def pi_active_branch(objects):
++    """Return the current Pi branch by walking parentId from the last entry."""
++    entries = [obj for obj in objects if obj.get("id")]
++    if not entries:
++        return []
++    by_id = {entry["id"]: entry for entry in entries}
++    branch = []
++    current = entries[-1]
++    seen = set()
++    while current and current["id"] not in seen:
++        seen.add(current["id"])
++        branch.append(current)
++        current = by_id.get(current.get("parentId"))
++    branch.reverse()
++    return branch
++
++
++def pi_skill_invocation(text, skill_names):
++    """Extract a skill command envelope without copying its instructions."""
++    match = re.match(r'^\s*<skill\s+name=["\']([^"\']+)["\'][^>]*>', text)
++    if not match or match.group(1) not in skill_names:
++        return None, text
++    closing = text.find("</skill>", match.end())
++    remainder = text[closing + len("</skill>"):] if closing >= 0 else ""
++    remainder = re.sub(r"^\s*User:\s*", "", remainder).strip()
++    return match.group(1), remainder
++
++
++def parse_pi_session(path: Path, skill_names, include_subagents: bool):
++    """Normalize one persistent Pi JSONL session to the shared transcript shape."""
++    del include_subagents  # Pi does not mark forked sessions as subagents reliably.
++    try:
++        raw = path.read_text(errors="replace")
++    except OSError:
++        return None
++    if len(raw) > MAX_FILE_BYTES:
++        raw = raw[:MAX_FILE_BYTES]
++
++    objects = []
++    for line in raw.splitlines():
++        try:
++            obj = json.loads(line)
++        except (json.JSONDecodeError, ValueError):
++            continue
++        if isinstance(obj, dict):
++            objects.append(obj)
++
++    header = next((obj for obj in objects if obj.get("type") == "session"), {})
++    branch = pi_active_branch(objects)
++    stats = {
++        "user_turns": 0,
++        "assistant_turns": 0,
++        "tool_calls": 0,
++        "repeated_tool_calls": 0,
++        "error_outputs": 0,
++    }
++    entries = []
++    seen_calls = {}
++    call_args_text = []
++    used_tool_names = set()
++    skills_used = set()
++    first_ts = last_ts = None
++
++    for obj in branch:
++        ts = obj.get("timestamp")
++        if ts:
++            first_ts = first_ts or ts
++            last_ts = ts
++        if obj.get("type") != "message":
++            continue
++        message = obj.get("message")
++        if not isinstance(message, dict):
++            continue
++        role = message.get("role")
++        content = message.get("content")
++
++        if role == "user":
++            text = extract_text(content)
++            if not text or looks_injected(text):
++                continue
++            skill_name, user_text = pi_skill_invocation(text, skill_names)
++            if skill_name:
++                skills_used.add(skill_name)
++                entries.append(("skill", json.dumps({"name": skill_name})))
++                stats["user_turns"] += 1
++                if user_text:
++                    entries.append(("user", truncate(user_text, MAX_MSG_CHARS)))
++            else:
++                stats["user_turns"] += 1
++                entries.append(("user", truncate(text, MAX_MSG_CHARS)))
++
++        elif role == "assistant":
++            stats["assistant_turns"] += 1
++            blocks = content if isinstance(content, list) else []
++            for block in blocks:
++                if not isinstance(block, dict):
++                    continue
++                block_type = block.get("type")
++                if block_type == "text":
++                    text = block.get("text")
++                    if isinstance(text, str) and text:
++                        entries.append(("assistant", truncate(text, MAX_MSG_CHARS)))
++                elif block_type == "toolCall":
++                    stats["tool_calls"] += 1
++                    name = str(block.get("name") or "unknown")
++                    args = block.get("arguments") or {}
++                    args_text = args if isinstance(args, str) else json.dumps(args, ensure_ascii=False)
++                    key = hashlib.sha1((name + args_text).encode()).hexdigest()
++                    seen_calls[key] = seen_calls.get(key, 0) + 1
++                    if seen_calls[key] > 1:
++                        stats["repeated_tool_calls"] += 1
++                    call_args_text.append(args_text)
++                    used_tool_names.add(name)
++                    entries.append((f"tool:{name}", truncate(args_text, MAX_TOOL_CHARS)))
++
++        elif role == "toolResult":
++            result = extract_text(content)
++            low = result[:2000].lower()
++            if message.get("isError") or "error" in low or "failed" in low or "traceback" in low:
++                stats["error_outputs"] += 1
++            entries.append(("output", truncate(result, MAX_TOOL_CHARS)))
++
++    args_blob = "\n".join(call_args_text)
++    skills_used.update(
++        name for name in skill_names
++        if f"skills/{name}/" in args_blob or f"{name}/SKILL.md" in args_blob
++    )
++    meta = {
++        "id": header.get("id") or path.stem,
++        "cwd": header.get("cwd"),
++        "started_at": header.get("timestamp") or first_ts,
++        "originator": "pi",
++        "thread_source": None,
++        "session_version": header.get("version"),
++    }
++    stats["first_ts"] = first_ts
++    stats["last_ts"] = last_ts
++    stats["has_code_edits"] = (
++        bool(used_tool_names & PI_CODE_EDIT_TOOLS)
++        or any(hint in args_blob for hint in CODE_EDIT_HINTS)
++    )
++    return meta, stats, entries, sorted(skills_used)
++
++
+@@ -904,0 +1085,6 @@
++    pi_home = Path(args.pi_home).expanduser()
++    pi_session_dir = (
++        Path(args.pi_session_dir).expanduser()
++        if args.pi_session_dir
++        else pi_home / "sessions"
++    )
+@@ -914,0 +1101 @@
++        pi_home,
+@@ -994,0 +1182,35 @@
++    requested_pi = args.harness in ("auto", "all", "pi")
++    if requested_pi and pi_session_dir.is_dir():
++        pi_files = find_pi_session_files(pi_session_dir, cutoff)
++        sources["pi"] = {
++            "home": str(pi_home),
++            "session_dir": str(pi_session_dir),
++            "records_in_window": len(pi_files),
++        }
++        scanned_count += len(pi_files)
++        for mtime, path in pi_files:
++            parsed = parse_pi_session(path, skills.keys(), args.include_subagents)
++            if parsed is None:
++                continue
++            meta, stats, entries, skills_used = parsed
++            if not args.all_conversations and not session_matches_repos(
++                meta.get("cwd"),
++                repos,
++            ):
++                continue
++            in_scope_count += 1
++            if stats["assistant_turns"] < 1 or stats["tool_calls"] < 1:
++                continue
++            sessions.append({
++                "harness": "pi",
++                "meta": meta,
++                "stats": stats,
++                "skills_used": skills_used,
++                "file": str(path),
++                "modified_at": mtime.isoformat(),
++                "_entries": entries,
++            })
++    elif args.harness == "pi":
++        print(f"error: Pi session history not found at {pi_session_dir}", file=sys.stderr)
++        sys.exit(1)
++
+@@ -1040 +1262 @@
+-            "error: no Claude Code or Codex session home, or Warp conversation database found",
++            "error: no Claude Code, Codex, or Pi session home, or Warp conversation database found",
+@@ -1050,0 +1273 @@
++            pi_home,
+@@ -1114,0 +1338,2 @@
++        "pi_home": str(pi_home) if "pi" in sources else None,
++        "pi_session_dir": str(pi_session_dir) if "pi" in sources else None,
+--- a/scripts/test_collect_sessions.py
++++ b/scripts/test_collect_sessions.py
+@@ -14,0 +15 @@
++    find_pi_session_files,
+@@ -15,0 +17 @@
++    parse_pi_session,
+@@ -192,0 +195,145 @@
++
++
++class PiSessionTests(unittest.TestCase):
++    def test_discovers_recent_pi_sessions(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            session_dir = Path(tmp) / "sessions"
++            recent = session_dir / "--repo--" / "recent.jsonl"
++            old = session_dir / "--repo--" / "old.jsonl"
++            write_jsonl(recent, [{"type": "session", "id": "recent"}])
++            write_jsonl(old, [{"type": "session", "id": "old"}])
++            old_time = (datetime.now(timezone.utc) - timedelta(days=10)).timestamp()
++            os.utime(old, (old_time, old_time))
++
++            found = find_pi_session_files(
++                session_dir,
++                datetime.now(timezone.utc) - timedelta(days=1),
++            )
++
++            self.assertEqual([path for _, path in found], [recent])
++
++    def test_parses_active_branch_tools_skills_and_edits(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            path = Path(tmp) / "session.jsonl"
++            timestamp = "2026-08-30T10:00:00Z"
++            write_jsonl(path, [
++                {
++                    "type": "session",
++                    "version": 3,
++                    "id": "pi-session",
++                    "timestamp": timestamp,
++                    "cwd": "/tmp/repo",
++                },
++                {
++                    "type": "message",
++                    "id": "u1",
++                    "parentId": None,
++                    "timestamp": timestamp,
++                    "message": {
++                        "role": "user",
++                        "content": '<skill name="alpha" location="/skills/alpha/SKILL.md">\nInstructions\n</skill>\nUser: Fix the overlay',
++                    },
++                },
++                {
++                    "type": "message",
++                    "id": "a1",
++                    "parentId": "u1",
++                    "timestamp": timestamp,
++                    "message": {
++                        "role": "assistant",
++                        "content": [
++                            {"type": "text", "text": "I will inspect it."},
++                            {
++                                "type": "toolCall",
++                                "id": "call-1",
++                                "name": "read",
++                                "arguments": {"path": "/repo/.agents/skills/beta/SKILL.md"},
++                            },
++                        ],
++                    },
++                },
++                {
++                    "type": "message",
++                    "id": "r1",
++                    "parentId": "a1",
++                    "timestamp": timestamp,
++                    "message": {
++                        "role": "toolResult",
++                        "toolCallId": "call-1",
++                        "toolName": "read",
++                        "content": [{"type": "text", "text": "skill body"}],
++                        "isError": False,
++                    },
++                },
++                {
++                    "type": "message",
++                    "id": "stale-user",
++                    "parentId": "r1",
++                    "timestamp": timestamp,
++                    "message": {"role": "user", "content": "Abandoned branch"},
++                },
++                {
++                    "type": "message",
++                    "id": "stale-assistant",
++                    "parentId": "stale-user",
++                    "timestamp": timestamp,
++                    "message": {
++                        "role": "assistant",
++                        "content": [{"type": "text", "text": "Abandoned answer"}],
++                    },
++                },
++                {
++                    "type": "message",
++                    "id": "u2",
++                    "parentId": "r1",
++                    "timestamp": timestamp,
++                    "message": {"role": "user", "content": "Use the active branch"},
++                },
++                {
++                    "type": "message",
++                    "id": "a2",
++                    "parentId": "u2",
++                    "timestamp": timestamp,
++                    "message": {
++                        "role": "assistant",
++                        "content": [
++                            {
++                                "type": "toolCall",
++                                "id": "call-2",
++                                "name": "edit",
++                                "arguments": {"path": "/tmp/repo/file.py"},
++                            }
++                        ],
++                    },
++                },
++                {
++                    "type": "message",
++                    "id": "r2",
++                    "parentId": "a2",
++                    "timestamp": timestamp,
++                    "message": {
++                        "role": "toolResult",
++                        "toolCallId": "call-2",
++                        "toolName": "edit",
++                        "content": [{"type": "text", "text": "failed to match"}],
++                        "isError": True,
++                    },
++                },
++            ])
++
++            meta, stats, entries, skills = parse_pi_session(
++                path,
++                {"alpha", "beta"},
++                False,
++            )
++
++            self.assertEqual(meta["id"], "pi-session")
++            self.assertEqual(meta["cwd"], "/tmp/repo")
++            self.assertEqual(stats["user_turns"], 2)
++            self.assertEqual(stats["assistant_turns"], 2)
++            self.assertEqual(stats["tool_calls"], 2)
++            self.assertEqual(stats["error_outputs"], 1)
++            self.assertTrue(stats["has_code_edits"])
++            self.assertEqual(skills, ["alpha", "beta"])
++            self.assertIn(("user", "Fix the overlay"), entries)
++            self.assertNotIn(("user", "Abandoned branch"), entries)

@@ -47,6 +47,11 @@
       flake = false;
     };
 
+    common-skills = {
+      url = "github:warpdotdev/common-skills";
+      flake = false;
+    };
+
     mattpocock-skills = {
       url = "github:mattpocock/skills/5b15a47f2d7150f545fbcacbfe381787fc0230dc";
       flake = false;
@@ -299,6 +304,11 @@
           "tmux"
           "enable"
         ];
+        skillDoctorWithPi = pkgs.applyPatches {
+          name = "skill-doctor-with-pi";
+          src = inputs.common-skills.outPath + "/.agents/skills/skill-doctor";
+          patches = [ ./overlays/skill-doctor/pi-support.patch ];
+        };
         mattpocockCodexSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-codex-skills.json);
         mattpocockCodexSkills = lib.mapAttrs (_: path: {
           from = "mattpocock";
@@ -541,6 +551,12 @@
                   filter.maxDepth = 3;
                 };
 
+                common-skill-doctor = {
+                  path = skillDoctorWithPi;
+                  subdir = ".";
+                  filter.maxDepth = 3;
+                };
+
                 mattpocock = {
                   path = inputs.mattpocock-skills.outPath;
                   subdir = "skills";
@@ -696,6 +712,9 @@
 
                 agent-tail.from = "agent-tail";
                 agent-tail.path = "agent-tail";
+
+                skill-doctor.from = "common-skill-doctor";
+                skill-doctor.path = ".";
 
                 # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
               }
