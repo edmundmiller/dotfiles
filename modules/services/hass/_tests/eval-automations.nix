@@ -582,10 +582,10 @@ let
           action:
           (action.action or null) == "script.book_player_start"
           && (action.continue_on_error or false)
-          && (action.data.book_uri or null) == "library://audiobook/84"
+          && (action.data.book_uri or null) == "library://audiobook/83"
           && (action.data.player_entity_id or null) == "media_player.bedtime"
         ) (toList (getReadyForBedScript.sequence or [ ]));
-      msg = "script.get_ready_for_bed must resume Chamber of Secrets on the Bedtime group";
+      msg = "script.get_ready_for_bed must resume Prisoner of Azkaban on the Bedtime group";
     }
     {
       test =
@@ -627,11 +627,11 @@ let
             fallback:
             (fallback.action or null) == "script.book_player_start"
             && (fallback.continue_on_error or false)
-            && (fallback.data.book_uri or null) == "library://audiobook/84"
+            && (fallback.data.book_uri or null) == "library://audiobook/83"
             && (fallback.data.player_entity_id or null) == "media_player.bedtime"
           ) (toList (action."then" or [ ]))
         ) (toList (goodNightScript.sequence or [ ]));
-      msg = "script.goodnight must start Chamber of Secrets only when Bedtime is not already playing";
+      msg = "script.goodnight must start Prisoner of Azkaban only when Bedtime is not already playing";
     }
     {
       test =
