@@ -12,16 +12,31 @@ test -n "$cwd" || cwd=$PWD
 root=$(cd "$(dirname "$0")/.." && pwd)
 repo=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || exit 0
 test "$repo" = "$root" || exit 0
-checker=${CODEX_STOP_CHECKER:-$root/scripts/completion-check}
+hey=${CODEX_STOP_HEY:-$root/bin/hey}
+serializer=${CODEX_STOP_SERIALIZER:-python3}
+diagnostics=$(mktemp) || {
+  printf '%s\n' '{"decision":"block","reason":"hey check --worktree could not create a diagnostics file; fix the environment before stopping."}'
+  exit 0
+}
+trap 'rm -f "$diagnostics" "${diagnostics}.json"' EXIT
 
 block() {
-  python3 -c 'import json,sys; print(json.dumps({"decision":"block","reason":sys.argv[1]}))' "$1"
+  response="${diagnostics}.json"
+  if tail -c 32768 "$diagnostics" | "$serializer" -c '
+import json
+import sys
+
+reason = sys.stdin.read().strip() or "hey check --worktree failed; fix it before stopping."
+print(json.dumps({"decision": "block", "reason": reason}))
+' >"$response" && test -s "$response"; then
+    cat "$response"
+  else
+    printf '%s\n' '{"decision":"block","reason":"hey check --worktree failed and diagnostics could not be serialized; fix it before stopping."}'
+  fi
+  rm -f "$response"
   exit 0
 }
 
-reason=$("$checker")
-status=$?
-if test "$status" -ne 0; then
-  test -n "$reason" || reason="Completion checks failed; fix them before stopping."
-  block "$reason"
+if ! "$hey" check --worktree >"$diagnostics" 2>&1; then
+  block
 fi

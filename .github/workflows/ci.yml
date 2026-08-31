@@ -45,6 +45,8 @@ jobs:
             .#checks.x86_64-linux.pre-commit \
             .#checks.x86_64-linux.zunit-tests \
             .#checks.x86_64-linux.package-harness-tests \
+            .#checks.x86_64-linux.agent-run-tests \
+            .#checks.x86_64-linux.completion-hook-tests \
             .#checks.x86_64-linux.herdr-config-check \
             .#checks.x86_64-linux.agent-docs-contract
 

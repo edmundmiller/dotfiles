@@ -1,28 +1,27 @@
 ---
 purpose: Canonical evidence-gated workflow for agent-authored changes.
 applies_to: Broad, autonomous, high-risk, or multi-session tasks in this repository.
-entrypoint: Copy .agents/worklogs/TEMPLATE.md and use hey agent-* commands.
-verification: hey agent-finish, runtime smoke checks, and remote-equality proof.
+entrypoint: Define the outcome, run focused checks, then run hey check --worktree.
+verification: Focused checks, hey check --worktree, runtime smoke checks, and landing proof.
 update_when: Repeated workflow evidence exposes drift in this contract.
 ---
 
 # Agent workflow
 
-Use this workflow when work is broad, autonomous, high-risk, or likely to cross sessions. Small changes use the same evidence standards without a worklog or Git tag.
+Use this workflow when work is broad, autonomous, high-risk, or likely to cross sessions. Humans and agents use the same repository checks. Worklogs and run receipts are optional bookkeeping for work that benefits from a durable handoff; they are not quality gates.
 
 ## Start
 
 1. Inspect repository, runtime, issue state, and unrelated dirt.
-2. Copy `.agents/worklogs/TEMPLATE.md` to `.agents/worklogs/<issue-or-slug>.md`.
-3. Define the outcome, stopping condition, and verification surfaces before editing.
-4. Run `hey agent-start --repo "$PWD" --task <issue-or-slug> --runtime <runtime> --model <model>` and retain the schema-v2 JSON receipt path. Outside Herdr, in a jj repository, add `--workspace <path> --base 'trunk()'` to create an isolated workspace. If Herdr already created the current jj task workspace, omit `--workspace` and record that workspace instead; never create a second workspace for the same task. Git-only runs use the base command. If work began without a receipt, `done` may use `hey agent-adopt` only after proving its start and task revisions.
-5. Route through root and nearest nested `AGENTS.md`. Load every matching skill before acting.
-6. Find canonical docs by searching the first seven lines for `purpose`, `applies_to`, or `update_when`.
+2. Define the outcome, stopping condition, and verification surfaces before editing.
+3. Route through root and nearest nested `AGENTS.md`. Load every matching skill before acting.
+4. Find canonical docs by searching the first seven lines for `purpose`, `applies_to`, or `update_when`.
+5. For multi-session work that needs a durable handoff, use `.agents/worklogs/TEMPLATE.md` and `hey agent-start`. If Herdr already created the current jj task workspace, record that workspace instead of creating another one. Do not create bookkeeping merely to satisfy this document.
 
 ## Research
 
-- Keep research source-backed and record consequential findings in the worklog.
-- Cross-model review is optional. Run `hey agent-review` only when the user explicitly requests it; reviewer availability never gates implementation or landing.
+- Keep research source-backed and record consequential findings in the task's durable notes when they exist.
+- Cross-model review is optional and runs only when the user explicitly requests it; reviewer availability never gates implementation or landing.
 
 ## Implement
 
@@ -40,24 +39,20 @@ Use this workflow when work is broad, autonomous, high-risk, or likely to cross 
 - Update canonical docs in the same change as behavior, ownership, commands, or recovery.
 - Start each canonical doc with the YAML summary in [docs/agent-guardrails.md](docs/agent-guardrails.md); close it by line 7.
 - Name the source of truth and a live check. Generate facts that would otherwise be copied.
-- If docs and reality disagree, verify reality, fix the doc and its enforcement, then record recurring friction in worklog `Feedback`.
+- If docs and reality disagree, verify reality, fix the doc and its enforcement, then record recurring friction in the task's durable notes when they exist.
 - Move repeated feedback into the smallest existing durable surface: doc, rule, skill, linter, or command. Do not create a parallel convention.
 
 ## Landing gate
 
-1. Run focused tests, then `hey agent-audit-tests` and `hey agent-finish --worklog <path>`.
-2. For UI/performance paths, add or update the subsystem manifest command before claiming those checks pass.
-3. Update evidence, feedback, remaining work, commits, worklog status, and issue status.
-4. Use the global `done` skill to commit/shape, reconcile, publish, prove remote equality, and clean up. Record partial outcomes with `hey agent-checkpoint`; complete the run receipt only for proved `done` or `done_local` outcomes.
-5. Run `br sync --flush-only`, commit `.beads/` only if task-shaped state changed, and verify upstream again.
-6. Create and push annotated tag `agent-work/<issue-or-slug>`.
+1. Run focused tests and exercise the affected runtime surface.
+2. Run `hey check --worktree`. This is the shared local validation command used by people, Git hooks, CI, and agent completion hooks.
+3. Update any worklog, receipt, or issue that the task actually uses.
+4. When publication is authorized, use the global `done` skill to shape commits, reconcile, publish, prove remote equality, and clean up.
 
-`PASS` requires an exercised check. `NOT_APPLICABLE`, `SKIP`, no tests collected, and missing validators are not passes.
+A successful command is evidence only for the behavior it exercised. Missing validators, skipped tests, and untested runtime behavior are not passes.
 
 ## Periodic maintenance
 
-- A weekly launchd job runs `agent-sweep` over bounded durable receipts. Run `hey agent-sweep --json` on demand and file concrete partial, blocked, false-done, retry, correction, or error patterns in `br`.
-- Periodically synthesize repeated worklog feedback into durable rules, skills, linters, docs, or commands.
+- A weekly launchd job runs `agent-sweep` over any durable receipts that were created. Run `hey agent-sweep --json` on demand when investigating incomplete runs.
+- Periodically synthesize repeated feedback into durable rules, skills, linters, docs, or commands.
 - Run false-confidence audits after test infrastructure changes and investigate skips, vacuous assertions, over-mocking, and tests that never reach production behavior.
-
-The quality manifest is trusted repository code: `agent-finish` executes its commands through the shell. Review manifest changes like scripts; never interpolate secrets or untrusted input into commands.

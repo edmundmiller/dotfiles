@@ -121,7 +121,7 @@ export default function completionGate(pi) {
 
       let result;
       try {
-        result = await pi.exec("bash", ["scripts/completion-check"], {
+        result = await pi.exec(path.join(root, "bin", "hey"), ["check", "--worktree"], {
           cwd: root,
           signal,
           timeout: 1_200_000,

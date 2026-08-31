@@ -684,6 +684,10 @@
                 enable = true;
                 package = config.treefmt.build.wrapper;
               };
+              actionlint = {
+                enable = true;
+                stages = [ "pre-commit" ];
+              };
               check-merge-conflicts = {
                 enable = true;
                 args = [ "--assume-in-merge" ];
@@ -1182,6 +1186,52 @@
                     touch $out
                   '';
 
+              agent-run-tests =
+                pkgs.runCommand "agent-run-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.git
+                      pkgs.jujutsu
+                      pkgs.python3
+                    ];
+                  }
+                  ''
+                    export HOME=$TMPDIR
+                    export GIT_CONFIG_COUNT=1
+                    export GIT_CONFIG_KEY_0=commit.gpgsign
+                    export GIT_CONFIG_VALUE_0=false
+                    git config --global user.email "test@test.com"
+                    git config --global user.name "Test User"
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests/test_agent_run.py \
+                      tests/test_skill_quality_validator.py
+                    touch $out
+                  '';
+
+              completion-hook-tests =
+                pkgs.runCommand "completion-hook-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.bun
+                      pkgs.git
+                      pkgs.python3
+                    ];
+                  }
+                  ''
+                    export HOME=$TMPDIR
+                    export GIT_CONFIG_COUNT=1
+                    export GIT_CONFIG_KEY_0=commit.gpgsign
+                    export GIT_CONFIG_VALUE_0=false
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests/test_codex_stop_hook.py \
+                      tests/test_completion_hooks.py
+                    bun test tests/omp_completion_gate.test.js
+                    touch $out
+                  '';
+
               displayctl-tests =
                 pkgs.runCommand "displayctl-tests"
                   {
@@ -1224,7 +1274,6 @@
                     status=0
                     for doc in AGENTS.md AGENT_WORKFLOW.md docs/README.md; do
                       [ -f "$doc" ] || continue
-                      [ "$doc" = docs/agent-quality.md ] && continue
                       summary="$(head -n 7 "$doc")"
                       for key in purpose applies_to entrypoint verification update_when; do
                         case "$summary" in

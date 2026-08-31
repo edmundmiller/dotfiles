@@ -224,7 +224,7 @@ supported coding runtimes:
   command boundaries prevent quoted search text from triggering them.
 - `ci-watch` changed from always-on guidance to a non-interrupting post-tool
   TTSR reminder.
-- Pre-commit, flake, and agent-finish gates run the core-wiring and TTSR
+- Pre-commit, flake, and `hey check --worktree` run the core-wiring and TTSR
   scenarios. The generated prompt budget is enforced by the wiring test.
 
 Host activation remains a separate authorized operation. Source-level tests and

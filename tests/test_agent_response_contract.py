@@ -21,13 +21,11 @@ class AgentResponseContractTests(unittest.TestCase):
         ):
             self.assertIn(expected, normalized)
 
-    def test_agent_quality_gate_runs_the_response_contract(self) -> None:
-        manifest = json.loads((ROOT / ".agents/quality.json").read_text())
-        check = next(
-            item for item in manifest["checks"] if item["id"] == "agent-quality-tests"
-        )
+    def test_repository_checks_run_the_response_contract(self) -> None:
+        flake = (ROOT / "flake.nix").read_text()
 
-        self.assertIn("tests/test_agent_response_contract.py", check["command"])
+        self.assertIn("agent-response-contract =", flake)
+        self.assertIn("tests/test_agent_response_contract.py", flake)
 
     def test_codex_bootstrap_instructions_stay_bounded(self) -> None:
         config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())

@@ -107,12 +107,13 @@ modules.agents.omp.enable = true;
 
 ## Completion gate
 
-`scripts/completion-check` is the shared source of truth for Codex and OMP
-completion checks. OMP discovers `.omp/hooks/post/completion-gate.ts` only when
-launched from this repository root; it is not installed in the user-wide OMP
-configuration. Project hook factories are loaded through OMP's extension runner,
-so this hook can register `session_stop` as well as ordinary tool events. It also
-requires Git to track `.codex/hooks.json` and `scripts/codex-validate-stop`.
+The Codex and OMP completion hooks run the checkout's `bin/hey check --worktree`,
+the same validation command used by people. OMP discovers
+`.omp/hooks/post/completion-gate.ts` only when launched from this repository
+root; it is not installed in the user-wide OMP configuration. Project hook
+factories are loaded through OMP's extension runner, so this hook can register
+`session_stop` as well as ordinary tool events. It also requires Git to track
+`.codex/hooks.json` and `scripts/codex-validate-stop`.
 
 The model-callable `completion_check` tool records a one-shot content snapshot.
 The next main-session stop must match it or OMP continues the session. OMP core
@@ -126,8 +127,7 @@ Verify changes with:
 ```sh
 bun test tests/omp_completion_gate.test.js
 python3 -m unittest tests/test_completion_hooks.py
-scripts/completion-check
-COMPLETION_CHECK_PYTHON=/usr/bin/true COMPLETION_CHECK_HEY=/usr/bin/true omp --max-time 180 -p 'First reply PRECHECK without tools. If continued, call completion_check and reply GATE_OK.'
+CODEX_STOP_HEY=/usr/bin/true omp --max-time 180 -p 'First reply PRECHECK without tools. If continued, call completion_check and reply GATE_OK.'
 ```
 
 ## Permission policy guard

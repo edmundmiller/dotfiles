@@ -158,16 +158,15 @@ let
     cp ${../../../config/omp/extensions/lazy-agent-browser.mjs} "$out/lazy-agent-browser.mjs"
     cp ${../../../config/omp/extensions/lazy-plannotator.mjs} "$out/lazy-plannotator.mjs"
   '';
-  agentQuality = pkgs.writeShellApplication {
-    name = "agent-quality";
+  agentRun = pkgs.writeShellApplication {
+    name = "agent-run";
     runtimeInputs = [
       pkgs.git
       pkgs.jujutsu
       pkgs.python3
     ];
     text = ''
-      export AGENT_QUALITY_ROOT="''${AGENT_QUALITY_ROOT:-${../../..}}"
-      exec python3 ${../../../bin/agent-quality} "$@"
+      exec python3 ${../../../bin/agent-run} "$@"
     '';
   };
   skilloptSleepPlugin = ../../../packages/pi-packages/omp-skillopt-sleep;
@@ -642,7 +641,7 @@ in
     {
       user.packages = [
         (lib.hiPrio ompPackage)
-        agentQuality
+        agentRun
         hassMcpServer
       ]
       ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
@@ -859,16 +858,16 @@ in
           };
         }
         // {
-          agent-quality-sweep = {
-            command = "${agentQuality}/bin/agent-quality sweep --json";
+          agent-run-sweep = {
+            command = "${agentRun}/bin/agent-run sweep --json";
             serviceConfig = {
               StartCalendarInterval = {
                 Weekday = 1;
                 Hour = 9;
                 Minute = 15;
               };
-              StandardOutPath = "${config.user.home}/Library/Logs/agent-quality-sweep.log";
-              StandardErrorPath = "${config.user.home}/Library/Logs/agent-quality-sweep.err.log";
+              StandardOutPath = "${config.user.home}/Library/Logs/agent-run-sweep.log";
+              StandardErrorPath = "${config.user.home}/Library/Logs/agent-run-sweep.err.log";
               EnvironmentVariables = {
                 HOME = config.user.home;
               };

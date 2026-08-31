@@ -32,6 +32,6 @@ catalog changes.
 - Darwin or Nix work: load `nix-darwin-reference`; use `hey` when it provides
   the operation.
 - NUC deployment: [deploy-nuc.md](docs/runbooks/deploy-nuc.md).
-- Agent quality gates: [agent-quality.md](docs/agent-quality.md).
+- Repository validation: run focused checks, then `hey check --worktree`.
 - Hermes runtime behavior: work in `agents-workspace`; this repo
   owns only host deployment wiring.

@@ -302,19 +302,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
         )
         self.assertNotIn('path.startswith("config/agents/rules/")', module)
 
-    def test_finish_manifest_runs_core_and_skill_checks(self) -> None:
-        manifest = json.loads((ROOT / ".agents" / "quality.json").read_text())
-        check = next(item for item in manifest["checks"] if item["id"] == "agent-instructions")
-        self.assertNotIn("check-agent-rules", check["command"])
-        self.assertIn("skill-quality/scripts/validate.py", check["command"])
-
-        behavior = next(
-            item for item in manifest["checks"] if item["id"] == "agent-quality-tests"
-        )
-        self.assertNotIn("tests/test_agent_rules.py", behavior["command"])
-        self.assertIn("tests/test_agent_instruction_wiring.py", behavior["command"])
-        self.assertIn("tests/test_omp_ttsr_rules.py", behavior["command"])
-
     def test_pre_commit_hooks_run_core_and_skill_checks(self) -> None:
         flake = (ROOT / "flake.nix").read_text()
         start = flake.index("agent-instructions = {")

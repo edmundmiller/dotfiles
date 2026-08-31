@@ -27,6 +27,7 @@ async function repository(target = true) {
   run("git", ["init", "-q"], { cwd: root });
   run("git", ["config", "user.email", "test@example.com"], { cwd: root });
   run("git", ["config", "user.name", "Test"], { cwd: root });
+  run("git", ["config", "commit.gpgsign", "false"], { cwd: root });
   await writeFile(path.join(root, "tracked.txt"), "initial\n");
   if (target) {
     await mkdir(path.join(root, ".codex"));
@@ -61,7 +62,8 @@ async function harness(
       activeTools = value;
     },
     async exec(command, args, options = {}) {
-      if (command === "bash" && args[0] === "scripts/completion-check") return checker(options);
+      if (command.endsWith(path.join("bin", "hey")) && args.join(" ") === "check --worktree")
+        return checker(options);
       return run(command, args, options);
     },
   };

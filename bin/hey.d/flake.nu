@@ -218,6 +218,36 @@ def "main check" [
     }
 
     print ""
+    print "==> Running agent run bookkeeping tests..."
+    let agent_run_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).agent-run-tests" --no-link | complete
+    })
+    if $agent_run_check.exit_code == 0 {
+      print "✓ Agent run bookkeeping tests OK"
+    } else {
+      print "✗ Agent run bookkeeping tests FAILED"
+      if (($agent_run_check.stderr | str trim) | is-not-empty) {
+        print -e $agent_run_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
+    print "==> Running completion hook tests..."
+    let completion_hook_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
+      ^nix build $".#checks.($ctx.nix_system).completion-hook-tests" --no-link | complete
+    })
+    if $completion_hook_check.exit_code == 0 {
+      print "✓ Completion hook tests OK"
+    } else {
+      print "✗ Completion hook tests FAILED"
+      if (($completion_hook_check.stderr | str trim) | is-not-empty) {
+        print -e $completion_hook_check.stderr
+      }
+      $failed = true
+    }
+
+    print ""
     print "==> Running DJI Mic Mini checks..."
     let dji_mic_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
       ^nix build $".#checks.($ctx.nix_system).dji-mic-mini-receiver-mute-regressions" $".#checks.($ctx.nix_system).dji-mic-mini-platform-boundaries" --no-link | complete
@@ -255,6 +285,35 @@ def "main check" [
       error make {msg: "Darwin check failed"}
     }
   } else {
+    let check_files = (changed-check-files --worktree=$worktree ...$paths)
+    if ($check_files | is-not-empty) {
+      let precommit_config = (nix-precommit-config $authenticated_nix_config)
+
+      print $"Running treefmt on ($check_files | length) changed files..."
+      let treefmt_check = (^prek --config $precommit_config run treefmt --files ...$check_files --no-progress | complete)
+      if $treefmt_check.exit_code != 0 {
+        if (($treefmt_check.stdout | str trim) | is-not-empty) {
+          print $treefmt_check.stdout
+        }
+        if (($treefmt_check.stderr | str trim) | is-not-empty) {
+          print -e $treefmt_check.stderr
+        }
+        error make {msg: "Formatting check failed"}
+      }
+
+      print $"Running pre-commit hooks on ($check_files | length) changed files..."
+      let precommit_check = (^prek --config $precommit_config run --stage pre-commit --skip treefmt --files ...$check_files --no-progress | complete)
+      if $precommit_check.exit_code != 0 {
+        if (($precommit_check.stdout | str trim) | is-not-empty) {
+          print $precommit_check.stdout
+        }
+        if (($precommit_check.stderr | str trim) | is-not-empty) {
+          print -e $precommit_check.stderr
+        }
+        error make {msg: "Pre-commit check failed"}
+      }
+    }
+
     print "Running full flake check..."
     with-env { NIX_CONFIG: $authenticated_nix_config } { ^nix flake check }
   }

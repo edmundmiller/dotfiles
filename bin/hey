@@ -15,7 +15,7 @@ source ./hey.d/ergodox.nu
 source ./hey.d/skillkit.nu
 source ./hey.d/skills-catalog.nu
 source ./hey.d/zbench.nu
-source ./hey.d/agent-quality.nu
+source ./hey.d/agent-run.nu
 
 def hey-help [] {
   let ctx = (context)
@@ -42,7 +42,7 @@ def hey-help [] {
   print "Benchmark/Test"
   print "  ztest"
   print "  zbench, zbench-save, zbench-compare, zbench-check, zbench-baseline, zbench-history"
-  print "  agent-review, agent-audit-tests, agent-sweep, agent-finish, agent-inventory, agent-worklog-check"
+  print "  agent-start, agent-adopt, agent-checkpoint, agent-complete, agent-sweep"
   print ""
   print "Other"
   print "  opencode-update"
