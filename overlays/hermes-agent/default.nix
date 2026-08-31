@@ -11,6 +11,7 @@ let
     (agentsWorkspacePatchRoot + "/0002-bounded-smart-model-routing.patch")
     (agentsWorkspacePatchRoot + "/0003-kanban-platform-toolsets.patch")
     (agentsWorkspacePatchRoot + "/0004-kanban-fan-in-guidance.patch")
+    (agentsWorkspacePatchRoot + "/0004-kanban-bounded-intake-policy.patch")
     (agentsWorkspacePatchRoot + "/0005-gateway-profile-identity.patch")
   ];
   dashboardLivenessPatch = agentsWorkspacePatchRoot + "/0006-dashboard-profile-lock-liveness.patch";

@@ -90,17 +90,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1788198969,
-        "narHash": "sha256-tSTnvadC4qvw9EwiTFl/73GhRLc9wD9PpxMmGI9aXKc=",
+        "lastModified": 1788201981,
+        "narHash": "sha256-D2qiqS8REjPGZZ2jUIvavXuCUPJJAq4Wu8T3fkG2Hh4=",
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "b5dae114e36dc17fc04fef78dca2cd8ccf44768a",
+        "rev": "20e2236b19c80330756fdd2cfafce930cdd57a95",
         "type": "github"
       },
       "original": {
         "owner": "edmundmiller",
         "repo": "agents-workspace",
-        "rev": "b5dae114e36dc17fc04fef78dca2cd8ccf44768a",
+        "rev": "20e2236b19c80330756fdd2cfafce930cdd57a95",
         "type": "github"
       }
     },
