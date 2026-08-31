@@ -172,6 +172,27 @@ remained blocked for more than eight hours in an uninterruptible root
 `lsof -n -w -F n` child. A long-running GC with that process shape is stalled,
 not evidence that Nix collection is progressing.
 
+#### When `hey gc` hangs in `lsof`
+
+This failure reproduced on the next GC attempt after the original parent was
+stopped. The command removed old generations and stale roots, then blocked in
+the same runtime-root scan. Check it with:
+
+```bash
+ps -axo pid,ppid,user,state,etime,command \
+  | awk '$4 ~ /U/ && /lsof -n -w -F n/'
+```
+
+`U` is uninterruptible kernel I/O. Even `SIGKILL` cannot finish that process;
+restarting `hey gc` only creates another blocked `lsof`. Normal laptop use may
+continue, but completing Nix garbage collection requires a normal macOS reboot.
+After rebooting, run one new `hey gc` and confirm that it advances beyond
+`finding garbage collector roots...`.
+
+Nix contains a private test-only `_NIX_TEST_NO_LSOF` escape hatch. Do not use it
+for production cleanup: bypassing runtime-root discovery could collect store
+paths that live processes still use.
+
 ## What grew after the low point
 
 The confirmed low at 2026-08-29 08:52 CDT was 737.132 GiB used and
