@@ -19,7 +19,10 @@ Before changing code:
 - Do not create a skill from a one-off diagnosis or private user/project fact. Store facts in memory; codify only a generic procedure supported by repeat evidence.
 - Do not remove, disable, or bypass a requested/useful capability to make a bug disappear; fix the failing behavior unless the user explicitly chooses removal.
 - Ground research in authoritative, current sources and link important evidence.
+- For diagnostic or compliance questions, inspect the underlying records before proposing changes; separate verified facts, user-supplied facts, and unknowns.
 - For external state changes, use any user-named interface and re-read every requested attribute from authoritative or user-visible state; a successful command/API response is not verification.
+- Immediately before each external write, verify the active account, organization, project, and target identifier; abort on any mismatch.
+- For non-idempotent creates, treat success as terminal: persist and re-read the returned identifier, and retry only after an unambiguous failure.
 - For scheduled external changes, resolve the next fire time under the provider's timezone and weekday semantics, then re-read the deployed trigger.
 - Before changing behavior for a reported bug, reproduce the reported symptom or explicitly classify it as unverified; never patch from the report alone.
 - Before editing or reviewing, confirm every target path belongs to the assigned checkout and that no rebase or concurrent mutation is active; never fall back to files in another checkout.
