@@ -19,6 +19,7 @@ let
     ]
     ++ optional cfg.vercelSandbox.enable pkgs.my.herdr-vercel-sandbox-plugin;
   };
+  caBundle = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
   launchPath = concatStringsSep ":" [
     "${pkgs.my.rift}/bin"
     "/etc/profiles/per-user/${config.user.name}/bin"
@@ -910,6 +911,8 @@ in
 
         home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           export PATH=$PATH:${escapeShellArg launchPath}
+          export SSL_CERT_FILE=${escapeShellArg caBundle}
+          export NIX_SSL_CERT_FILE=${escapeShellArg caBundle}
           herdr_cmd=${escapeShellArg cfg.command}
           runtime_deferred=0
 

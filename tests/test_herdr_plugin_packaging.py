@@ -70,6 +70,8 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
     assert 'installed_json=$("$herdr_cmd" plugin list --json 2>&1)' in module
+    assert "export SSL_CERT_FILE=${escapeShellArg caBundle}" in module
+    assert "export NIX_SSL_CERT_FILE=${escapeShellArg caBundle}" in module
     assert "protocol_mismatch" in module
     assert "deferring marketplace plugin installation" in module
 
