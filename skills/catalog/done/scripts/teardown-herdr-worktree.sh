@@ -58,7 +58,8 @@ if ! worktree_json=$(
 fi
 
 if ! provenance_error=$(
-  python3 -c '
+  printf '%s' "$worktree_json" |
+    python3 -c '
 import json
 import os
 import sys
@@ -94,7 +95,7 @@ matches = [
 ]
 if len(matches) != 1:
     reject("Herdr workspace does not own the recorded task worktree")
-' "$workspace_id" "$candidate" <<<"$worktree_json" 2>&1
+' "$workspace_id" "$candidate" 2>&1
 ); then
   defer "$provenance_error"
 fi
