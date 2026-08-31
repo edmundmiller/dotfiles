@@ -286,6 +286,38 @@ ssh nuc "readlink -f /run/current-system"
 hey nuc-logs home-assistant.service 30
 ```
 
+## Amp Remote Runner
+
+The NUC serves remote Amp threads from the clean manuscript checkout at
+`/home/emiller/src/fg/nascent-manuscript-main`. Amp's official installer owns
+the mutable, self-updating CLI under `~/.amp/`; Nix owns the persistent
+`amp-nascent-manuscript-runner.service`. Do not replace the unrelated CLIamp
+package or copy Amp credentials from another host.
+
+Bootstrap a new NUC home once, then complete Amp's displayed browser flow:
+
+```bash
+set -euo pipefail
+ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
+ssh -t nuc 'curl -fsSL https://ampcode.com/install.sh | bash && ~/.amp/bin/amp login'
+```
+
+After login and `hey nuc`, verify the service, runner identity, and checkout:
+
+```bash
+ssh nuc 'systemctl is-active amp-nascent-manuscript-runner.service'
+ssh nuc 'systemctl show amp-nascent-manuscript-runner.service -p User -p WorkingDirectory -p ExecStart -p NRestarts'
+ssh nuc '~/.amp/bin/amp version'
+ssh nuc 'git -C ~/src/fg/nascent-manuscript-main status --short --branch'
+```
+
+The runner appears on ampcode.com as `nuc-nascent-manuscript` and allows remote
+terminal control. Amp updates itself in the background; restart the service to
+load an updated binary. If authentication expires, stop the service, run
+`~/.amp/bin/amp login` interactively, and start it again. The runner inherits no
+forwarded SSH agent, so GitHub fetch and push remain host-side operations until
+the NUC has its own approved GitHub credential.
+
 ## Codex Remote Control
 
 Codex remote control deliberately splits ownership. The foreground `codex` command remains

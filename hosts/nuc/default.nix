@@ -8,6 +8,26 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
+  ampRunnerBinary = "/home/emiller/.amp/bin/amp";
+  ampRunnerWorkingDirectory = "/home/emiller/src/fg/nascent-manuscript-main";
+  ampNascentManuscriptRunner = pkgs.writeShellScript "amp-nascent-manuscript-runner" ''
+    set -eu
+    export PATH="/home/emiller/.local/bin:/etc/profiles/per-user/emiller/bin:/run/current-system/sw/bin:$PATH"
+
+    if [ ! -x ${lib.escapeShellArg ampRunnerBinary} ]; then
+      echo "Amp CLI is missing; install it with https://ampcode.com/install.sh" >&2
+      exit 1
+    fi
+    if [ ! -d ${lib.escapeShellArg ampRunnerWorkingDirectory} ]; then
+      echo "Amp runner checkout is missing: ${ampRunnerWorkingDirectory}" >&2
+      exit 1
+    fi
+
+    exec ${lib.escapeShellArg ampRunnerBinary} \
+      --no-tui \
+      --runner-id nuc-nascent-manuscript \
+      --remote-control-terminal
+  '';
   # The overlay exposes one patched Hermes v0.20.5 derivation. Every gateway,
   # cron/oneshot executor, and ACP companion must consume this exact path.
   hermesAgentBase = pkgs.llm-agents."hermes-agent";
@@ -2248,6 +2268,30 @@ in
       Type = "oneshot";
       TimeoutStartSec = "15min";
       ExecStart = "${hermesRuntimeSmoke}/bin/hermes-runtime-smoke";
+    };
+  };
+
+  # Amp owns its mutable, self-updating CLI binary and login state. Nix owns
+  # the boot-persistent runner process and the repository it serves.
+  systemd.services.amp-nascent-manuscript-runner = {
+    description = "Amp runner for the nascent manuscript";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    environment = {
+      HOME = "/home/emiller";
+      XDG_CACHE_HOME = "/home/emiller/.cache";
+      XDG_CONFIG_HOME = "/home/emiller/.config";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "emiller";
+      Group = "users";
+      WorkingDirectory = ampRunnerWorkingDirectory;
+      ExecStart = ampNascentManuscriptRunner;
+      Restart = "always";
+      RestartSec = "10s";
+      UMask = "0077";
     };
   };
 

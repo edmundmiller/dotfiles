@@ -91,6 +91,10 @@ Timer-driven profiles declare their executor in `$HERMES_HOME/cron/executor.json
 
 ### Other
 
+- **Amp runner** — Persistent remote-thread runner for the clean nascent
+  manuscript checkout at `~/src/fg/nascent-manuscript-main`. Nix owns
+  `amp-nascent-manuscript-runner.service`; Amp's official installer owns the
+  mutable CLI under `~/.amp/`.
 - **Podman** — Container runtime, with a Docker-compatible CLI/API shim for Compose consumers
 - **Homepage** — Dashboard
 - **Taskchampion** — Task sync server
