@@ -420,6 +420,7 @@ in
       # but fails to install them ("No such file or directory: 'chip-ota-provider-app'").
       services.matter-server = mkIf cfg.matter.enable {
         enable = true;
+        extraArgs.bluetooth-adapter = 0;
       };
 
       systemd.services.matter-server = mkIf cfg.matter.enable {
