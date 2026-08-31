@@ -142,7 +142,11 @@ let
     profile:
     profile
     // {
-      extraPackages = [ pkgs.my.displayctl ] ++ (profile.extraPackages or [ ]);
+      extraPackages = [
+        pkgs.my.buzz
+        pkgs.my.displayctl
+      ]
+      ++ (profile.extraPackages or [ ]);
       environmentFiles = [ hermesDisplayctlEnvironment ] ++ (profile.environmentFiles or [ ]);
     };
   scintillateTerminalInit = pkgs.writeText "scintillate-terminal-init.sh" ''
@@ -1630,7 +1634,6 @@ in
           pnpm
           prek
           himalaya
-          my.buzz
           whisper-cpp
           rtk
         ];
