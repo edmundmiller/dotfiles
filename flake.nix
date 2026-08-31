@@ -1653,6 +1653,11 @@
                 };
               };
 
+              nuc-hermes-gateway-restart-policy = import ./hosts/nuc/_tests/hermes-gateway-restart-policy.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               nuc-buzz-hermes-staged-runtime = import ./hosts/nuc/_tests/buzz-hermes-staged-runtime.nix {
                 nixosConfig = self.nixosConfigurations.nuc-buzz-scintillate;
                 inherit pkgs;
