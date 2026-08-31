@@ -181,6 +181,10 @@ in
     edmundmiller
     nuc
   ];
+  "buzz-mill-docs-flue-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "buzz-hermes-amosburton-agent-env.age".publicKeys = [
     edmundmiller
     nuc

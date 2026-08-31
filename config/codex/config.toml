@@ -45,6 +45,8 @@ trust_level = "trusted"
 command = "fff-mcp"
 
 [features]
+hooks = true
+default_mode_request_user_input = true
 rmcp_client = true
 
 [plugins."computer-use@openai-bundled"]
