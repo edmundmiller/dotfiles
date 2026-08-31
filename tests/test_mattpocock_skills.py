@@ -5,7 +5,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 FLAKE = ROOT / "skills/flake.nix"
-MANIFEST = ROOT / "skills/mattpocock-codex-skills.json"
+MANIFEST = ROOT / "skills/mattpocock-skills.json"
 
 EXPECTED_SKILLS = {
     "ask-matt": "engineering/ask-matt",
@@ -36,19 +36,24 @@ EXPECTED_SKILLS = {
 }
 
 
-class MattPocockCodexSkillsTest(unittest.TestCase):
+class MattPocockSkillsTest(unittest.TestCase):
     def test_curated_manifest_matches_agents_workspace_selection(self) -> None:
         self.assertEqual(EXPECTED_SKILLS, json.loads(MANIFEST.read_text()))
 
-    def test_flake_routes_manifest_only_to_codex(self) -> None:
+    def test_flake_routes_manifest_to_shared_agents_bundle(self) -> None:
         flake = FLAKE.read_text()
+        mattpocock_block = flake[
+            flake.index("        mattpocockSkillPaths =") : flake.index(
+                "        }) mattpocockSkillPaths;"
+            )
+        ]
 
         for declaration in (
             "mattpocock-skills = {",
             'url = "github:mattpocock/skills/5b15a47f2d7150f545fbcacbfe381787fc0230dc";',
-            "mattpocockCodexSkillPaths = builtins.fromJSON",
+            "mattpocockSkillPaths = builtins.fromJSON",
             'from = "mattpocock";',
-            'meta.targets = [ "codex" ];',
+            'meta.targets = [ "agents" ];',
             'lib.hasPrefix "disable-model-invocation:" line',
             'lib.hasPrefix "argument-hint:" line',
             '"](link)"',
@@ -56,6 +61,28 @@ class MattPocockCodexSkillsTest(unittest.TestCase):
         ):
             with self.subTest(declaration=declaration):
                 self.assertIn(declaration, flake)
+
+        self.assertNotIn('meta.targets = [ "codex" ];', mattpocock_block)
+
+    def test_runtime_overlay_preserves_native_capabilities(self) -> None:
+        flake = FLAKE.read_text()
+        normalized_flake = " ".join(flake.split())
+
+        for phrase in (
+            "Runtime capability routing",
+            "Amp: call the `skill` tool",
+            "OMP: read `skill://<name>`",
+            "Pi: use `read` on the skill path",
+            "OMP: use `ask`",
+            "Pi: use `ask_user`",
+            "Codex: use `request_user_input`",
+            "Amp: use `Task`",
+            "OMP: use `task`",
+            "Pi: use `subagent`",
+            "Codex: use `spawn_agent`, `wait_agent`, and `close_agent`",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, normalized_flake)
 
 
 if __name__ == "__main__":

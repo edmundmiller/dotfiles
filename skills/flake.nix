@@ -309,21 +309,45 @@
           src = inputs.common-skills.outPath + "/.agents/skills/skill-doctor";
           patches = [ ./overlays/skill-doctor/pi-support.patch ];
         };
-        mattpocockCodexSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-codex-skills.json);
-        mattpocockCodexSkills = lib.mapAttrs (_: path: {
+        mattpocockSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-skills.json);
+        mattpocockRuntimeOverlay = ''
+
+          ## Runtime capability routing
+
+          References to skill loading, interviews, and subagents in this skill are
+          capability names. Use the current runtime's native surface rather than
+          emulating it with shell-launched agents or plain text when a native tool exists.
+
+          - Load another skill with the runtime's Agent Skills mechanism. Amp: call the
+            `skill` tool. OMP: read `skill://<name>`. Pi: use `read` on the skill path
+            advertised in the available-skills list. Codex: load the skill from its
+            advertised path using the native Agent Skills mechanism.
+          - Ask a decision frontier through the runtime's native interview surface. Amp:
+            ask the complete frontier directly in chat because Amp has no agent-callable
+            structured question tool. OMP: use `ask`. Pi: use `ask_user`. Codex: use
+            `request_user_input`, splitting a frontier only when the tool's question limit
+            requires it. Preserve recommendations, option tradeoffs, and multi-select intent.
+          - Delegate independent work through the native subagent surface. Amp: use `Task`
+            for bounded in-turn work and `create_thread` only for durable asynchronous work.
+            OMP: use `task`. Pi: use `subagent`. Codex: use `spawn_agent`, `wait_agent`, and
+            `close_agent`. Preserve requested parallelism and keep concurrent writers on
+            disjoint files or in isolated worktrees.
+        '';
+        mattpocockSkills = lib.mapAttrs (_: path: {
           from = "mattpocock";
           inherit path;
-          meta.targets = [ "codex" ];
+          meta.targets = [ "agents" ];
           transform =
             { original, ... }:
-            builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
+            (builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
               lib.concatStringsSep "\n" (
                 lib.filter (
                   line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
                 ) (lib.splitString "\n" original)
               )
-            );
-        }) mattpocockCodexSkillPaths;
+            ))
+            + mattpocockRuntimeOverlay;
+        }) mattpocockSkillPaths;
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -416,7 +440,7 @@
                 meta.targets = [ "pi" ];
               };
             }
-            // mattpocockCodexSkills;
+            // mattpocockSkills;
 
             home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
               if [ -L "$HOME/.claude/skills" ]; then
