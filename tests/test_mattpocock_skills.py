@@ -70,6 +70,7 @@ class MattPocockSkillsTest(unittest.TestCase):
 
         for phrase in (
             "Runtime capability routing",
+            "Treat `/skill-name` references as references to the named skill",
             "Amp: call the `skill` tool",
             "OMP: read `skill://<name>`",
             "Pi: use `read` on the skill path",
@@ -78,11 +79,16 @@ class MattPocockSkillsTest(unittest.TestCase):
             "Codex: use `request_user_input`",
             "Amp: use `Task`",
             "OMP: use `task`",
-            "Pi: use `subagent`",
-            "Codex: use `spawn_agent`, `wait_agent`, and `close_agent`",
+            "Pi has no baseline subagent surface",
+            "execute the work inline and sequentially",
+            "hand the workflow to OMP when delegation is required",
+            "Codex: use `spawn_agent`, `wait_agent`, `interrupt_agent`, and `list_agents`",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, normalized_flake)
+
+        self.assertNotIn("Pi: use `subagent`", normalized_flake)
+        self.assertNotIn("`close_agent`", normalized_flake)
 
 
 if __name__ == "__main__":

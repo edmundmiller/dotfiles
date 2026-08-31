@@ -318,10 +318,12 @@
           capability names. Use the current runtime's native surface rather than
           emulating it with shell-launched agents or plain text when a native tool exists.
 
-          - Load another skill with the runtime's Agent Skills mechanism. Amp: call the
-            `skill` tool. OMP: read `skill://<name>`. Pi: use `read` on the skill path
-            advertised in the available-skills list. Codex: load the skill from its
-            advertised path using the native Agent Skills mechanism.
+          - Treat `/skill-name` references as references to the named skill, not as
+            literal slash commands. Load the skill with the runtime's Agent Skills
+            mechanism. Amp: call the `skill` tool. OMP: read `skill://<name>`. Pi: use
+            `read` on the skill path advertised in the available-skills list. Codex:
+            load the skill from its advertised path using the native Agent Skills
+            mechanism.
           - Ask a decision frontier through the runtime's native interview surface. Amp:
             ask the complete frontier directly in chat because Amp has no agent-callable
             structured question tool. OMP: use `ask`. Pi: use `ask_user`. Codex: use
@@ -329,9 +331,12 @@
             requires it. Preserve recommendations, option tradeoffs, and multi-select intent.
           - Delegate independent work through the native subagent surface. Amp: use `Task`
             for bounded in-turn work and `create_thread` only for durable asynchronous work.
-            OMP: use `task`. Pi: use `subagent`. Codex: use `spawn_agent`, `wait_agent`, and
-            `close_agent`. Preserve requested parallelism and keep concurrent writers on
-            disjoint files or in isolated worktrees.
+            OMP: use `task`. Pi has no baseline subagent surface: do not call `subagent` or
+            launch nested agent processes; execute the work inline and sequentially, or hand
+            the workflow to OMP when delegation is required. Codex: use `spawn_agent`,
+            `wait_agent`, `interrupt_agent`, and `list_agents`. Preserve requested parallelism
+            where the runtime supports it, and keep concurrent writers on disjoint files or
+            in isolated worktrees.
         '';
         mattpocockSkills = lib.mapAttrs (_: path: {
           from = "mattpocock";
