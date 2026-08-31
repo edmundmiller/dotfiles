@@ -109,7 +109,7 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/e4403056cb156d9d2561dc85a794f51e8c1c52f6";
+      url = "github:edmundmiller/agents-workspace/8b7a09b784e60d89af7814b2af63049e27d302eb";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
@@ -1680,6 +1680,26 @@
                   hermes_python_root="$candidate"
                 done
                 test -n "$hermes_python_root"
+                test -f "$hermes_python_root/hermes_turn_ledger.py"
+                (
+                  cd "$TMPDIR"
+                  PYTHONNOUSERSITE=1 \
+                    PYTHONPATH="$hermes_python_root" \
+                    ${pkgs.python3}/bin/python3 - "$hermes_python_root" <<'PY'
+                from pathlib import Path
+                import sys
+
+                import hermes_turn_ledger
+
+                site = Path(sys.argv[1])
+                expected = (site / "hermes_turn_ledger.py").resolve()
+                module = Path(hermes_turn_ledger.__file__).resolve()
+                if module != expected:
+                    raise SystemExit(
+                        f"turn ledger import mismatch: expected {expected}, got {module}"
+                    )
+                PY
+                )
                 grep -q _should_reply_in_thread \
                   "$package/share/hermes/plugins/platforms/buzz/adapter.py"
                 grep -Fq 'gateway_ticker' \

@@ -74,6 +74,27 @@ let
       PY
     '';
     postInstallCheck = (old.postInstallCheck or "") + ''
+      turn_ledger_site="$out/${final.python3.sitePackages}"
+      test -f "$turn_ledger_site/hermes_turn_ledger.py"
+      (
+        cd "$TMPDIR"
+        PYTHONNOUSERSITE=1 \
+          PYTHONPATH="$turn_ledger_site" \
+          ${final.python3}/bin/python3 - "$turn_ledger_site" <<'PY'
+      from pathlib import Path
+      import sys
+
+      import hermes_turn_ledger
+
+      site = Path(sys.argv[1])
+      expected = (site / "hermes_turn_ledger.py").resolve()
+      module = Path(hermes_turn_ledger.__file__).resolve()
+      if module != expected:
+          raise SystemExit(
+              f"turn ledger import mismatch: expected {expected}, got {module}"
+          )
+      PY
+      )
       grep -q _should_reply_in_thread $out/share/hermes/plugins/platforms/buzz/adapter.py
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_singuloid_pilot.py}

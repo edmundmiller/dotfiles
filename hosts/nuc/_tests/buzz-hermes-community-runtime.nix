@@ -239,10 +239,14 @@ let
   scintillateGateway = gatewayOf "scintillate";
   scintillatePreStart = scriptRefs (listValue (scintillateGateway.serviceConfig.ExecStartPre or [ ]));
   orchestratorGateway = gatewayOf "orchestrator";
-  orchestratorPreStart = scriptRefs (
-    listValue (orchestratorGateway.serviceConfig.ExecStartPre or [ ])
-  );
+  orchestratorPreStartValues = listValue (orchestratorGateway.serviceConfig.ExecStartPre or [ ]);
+  orchestratorPreStart = scriptRefs orchestratorPreStartValues;
+  orchestratorMirrorScripts = builtins.filter (
+    script: lib.hasInfix "hermes-orchestrator-profile-list-mirror" (toString script)
+  ) orchestratorPreStartValues;
   orchestratorSettings = cfg.services.hermes-agent.profiles.orchestrator.settings;
+  scintillateSettings = cfg.services.hermes-agent.profiles.scintillate.settings;
+  expectedProfileMirrorLoop = "for profile in ${lib.concatStringsSep " " expectedProfiles}; do";
 
   assertions = [
     {
@@ -302,7 +306,9 @@ let
         &&
           cfg.services.hermes-agent.profiles.orchestrator.environment.HERMES_KANBAN_DISPATCH_IN_GATEWAY
           == "true"
-        && lib.hasInfix "hermes-orchestrator-profile-list-mirror" orchestratorPreStart;
+        && lib.hasInfix "hermes-orchestrator-profile-list-mirror" orchestratorPreStart
+        && builtins.length orchestratorMirrorScripts == 1
+        && scintillateSettings.kanban.tool_role == "intake";
       msg = "Only Orchestrator may dispatch the shared Kanban board, with the canonical profile roster available before startup.";
     }
     {
@@ -380,6 +386,12 @@ pkgs.runCommand "nuc-buzz-hermes-community-runtime" { } ''
   EOF
     exit 1
   fi
+
+  for mirror_script in ${
+    lib.concatMapStringsSep " " (script: lib.escapeShellArg (toString script)) orchestratorMirrorScripts
+  }; do
+    grep -Fq -- ${lib.escapeShellArg expectedProfileMirrorLoop} "$mirror_script"
+  done
 
   touch "$out"
 ''
