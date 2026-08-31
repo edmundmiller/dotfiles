@@ -7,6 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "codex" / "config.toml"
 AGENTS = ROOT / "config" / "codex" / "agents"
 MODULE = ROOT / "modules" / "agents" / "codex" / "default.nix"
+MODULE_GUIDE = ROOT / "modules" / "agents" / "codex" / "AGENTS.md"
 
 
 class CodexModelConfigTests(unittest.TestCase):
@@ -36,8 +37,8 @@ class CodexModelConfigTests(unittest.TestCase):
         self.assertNotIn("model_providers", self.config)
         guidance = self.config["developer_instructions"]
         self.assertIn("Keep Sol as the primary coordinator", guidance)
-        self.assertIn("normally one to three", guidance)
-        self.assertIn("never delegate recursively", guidance)
+        self.assertIn("smallest useful set", guidance)
+        self.assertIn("Do not delegate recursively", guidance)
 
     def test_runtime_guidance_and_docs_connector_remain_top_level(self):
         self.assertTrue(self.config["developer_instructions"].startswith("Runtime defaults:"))
@@ -65,29 +66,56 @@ class CodexModelConfigTests(unittest.TestCase):
             self.assertTrue(profile["developer_instructions"])
             self.assertIn(f'".codex/agents/{filename}"', module)
 
-    def test_primary_routes_fresh_context_to_named_agent_lanes(self):
+    def test_module_router_documents_named_agent_lanes_without_bootstrap_duplication(
+        self,
+    ):
+        router = MODULE_GUIDE.read_text()
+
+        for phrase in (
+            "fresh-context lanes",
+            "Luna Max",
+            "Terra High",
+            "Sol High reviewer",
+            "normally one to three",
+            "inspect the diff",
+            "rerun verification",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, router)
+
         guidance = self.config["developer_instructions"]
+        for detail in (
+            "normally one to three",
+            "luna_worker",
+            "terra_worker",
+            "sol_reviewer",
+        ):
+            with self.subTest(bootstrap_detail=detail):
+                self.assertNotIn(detail, guidance)
 
-        for agent_name in ("luna_worker", "terra_worker", "sol_reviewer"):
-            self.assertIn(agent_name, guidance)
-        self.assertIn("fresh context", guidance)
-        self.assertIn("actual diff", guidance)
-        self.assertIn("rerun the requested verification", guidance)
-
-    def test_primary_keeps_work_live_until_landed_or_blocked(self):
+    def test_primary_bootstrap_keeps_only_compact_delegation_invariants(self):
         guidance = self.config["developer_instructions"]
         normalized = guidance.lower()
         for phrase in (
-            "wait for each worker",
-            "CONTINUE",
-            "PARTIAL",
-            "LANDED",
-            "BLOCKED",
-            "durable goals are checkpoints, not wake schedulers",
-            "keep the goal open through `done`",
+            "worker reports as claims",
+            "waits for workers",
+            "reruns relevant verification",
+            "requested outcome is complete",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase.lower(), normalized)
+
+        for detail in (
+            "continue",
+            "partial",
+            "landed",
+            "blocked",
+            "structured",
+            "durable goals are checkpoints",
+            "keep the goal open through `done`",
+        ):
+            with self.subTest(bootstrap_detail=detail):
+                self.assertNotIn(detail, normalized)
 
     def test_luna_returns_structured_progress_report(self):
         profile = tomllib.loads(

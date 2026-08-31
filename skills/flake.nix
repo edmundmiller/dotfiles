@@ -364,11 +364,21 @@
               target: lib.filterAttrs (_: skill: builtins.elem target (targetsForSkill skill)) selection;
             bundles = lib.genAttrs allSkillTargets (
               target:
-              agentLib.mkBundle {
-                inherit pkgs;
-                selection = selectionFor target;
-                name = "dotfiles-agent-skills-${target}";
-              }
+              let
+                bundle = agentLib.mkBundle {
+                  inherit pkgs;
+                  selection = selectionFor target;
+                  name = "dotfiles-agent-skills-${target}";
+                };
+              in
+              if pkgs.stdenv.isDarwin then
+                bundle.overrideAttrs (_: {
+                  # Bash 5.3 can deadlock while materializing generated
+                  # heredocs; compatibility level 5.0 uses temporary files.
+                  BASH_COMPAT = "50";
+                })
+              else
+                bundle
             );
             syncScripts = lib.genAttrs allSkillTargets (
               target:

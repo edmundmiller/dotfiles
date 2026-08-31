@@ -54,7 +54,7 @@ servers do not reappear from `agent.db`.
 ## Thin harness and TTSR
 
 `config/agents/core.md` is the only global `AGENTS.md` content installed for
-OMP. Keep it at or below 250 words. Repository routers, skills, and canonical
+OMP. Keep it at or below 220 words. Repository routers, skills, and canonical
 docs provide task context; do not move their procedures back into the core.
 
 Rules under `config/omp/rules/` use TTSR when they define `condition` or

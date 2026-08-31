@@ -707,7 +707,7 @@
               omp-thin-harness = {
                 enable = true;
                 name = "omp-thin-harness";
-                description = "Validate the bounded OMP core and local TTSR scenarios";
+                description = "Validate bounded OMP/Codex context and OMP TTSR scenarios";
                 entry = toString (
                   pkgs.writeShellScript "omp-thin-harness" ''
                     set -eu
@@ -715,13 +715,15 @@
                     OMP_BIN=${inputs.llm-agents.packages.${system}.omp}/bin/omp \
                       ${pkgs.python3}/bin/python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
-                        tests/test_omp_ttsr_rules.py
+                        tests/test_omp_ttsr_rules.py \
+                        tests/test_agent_response_contract.py \
+                        tests/test_codex_model_config.py
                     ${pkgs.bun}/bin/bun test ./tests/omp_lazy_extensions.test.js
                   ''
                 );
                 language = "system";
                 pass_filenames = false;
-                files = "^(config/agents/core\\.md|config/omp/(config\\.yml|extensions/(lazy-|_lib/lazy-extension)|rules/)|modules/agents/(omp|plannotator)/default\\.nix|tests/(fixtures/omp-ttsr-rules\\.json|omp_lazy_extensions\\.test\\.js|test_agent_instruction_wiring\\.py|test_omp_ttsr_rules\\.py))";
+                files = "^(config/agents/core\\.md|config/codex/config\\.toml|config/omp/(config\\.yml|extensions/(lazy-|_lib/lazy-extension)|prompts/thread-introspection\\.md|rules/)|modules/agents/(codex|omp|plannotator)/default\\.nix|tests/(fixtures/omp-ttsr-rules\\.json|omp_lazy_extensions\\.test\\.js|test_agent_instruction_wiring\\.py|test_agent_response_contract\\.py|test_codex_model_config\\.py|test_omp_ttsr_rules\\.py))";
                 stages = [ "pre-commit" ];
               };
               check-flake-portability = {
@@ -1297,6 +1299,7 @@
                       PYTHONDONTWRITEBYTECODE=1 \
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
+                        tests/test_codex_model_config.py \
                         tests/test_omp_ttsr_rules.py
                     bun test ./tests/omp_lazy_extensions.test.js
                     touch $out
@@ -1633,6 +1636,35 @@
                 herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
+            }
+            // lib.optionalAttrs (system == darwinSystem) {
+              hermes-local-libffi-regression =
+                let
+                  hermesPackage = import ./modules/agents/hermes-local/_package.nix {
+                    inherit inputs;
+                    pkgs = darwinPkgs;
+                  };
+                in
+                import ./hosts/mactraitorpro/_tests/hermes-local-libffi.nix {
+                  inherit (hermesPackage)
+                    hermesH5py
+                    hermesPatchedCtypes
+                    hermesPython
+                    ;
+                  inherit pkgs;
+                };
+
+              hermes-local-tokenizers-cc-regression =
+                let
+                  hermesPackage = import ./modules/agents/hermes-local/_package.nix {
+                    inherit inputs;
+                    pkgs = darwinPkgs;
+                  };
+                in
+                import ./hosts/mactraitorpro/_tests/hermes-local-tokenizers-cc.nix {
+                  inherit (hermesPackage) hermesTokenizers;
+                  inherit pkgs;
+                };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
               trmnl-agent-message-render =

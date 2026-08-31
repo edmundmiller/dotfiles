@@ -68,6 +68,20 @@ let
     };
   };
 
+  # OpenClaw - native conversation agent + chat card for Assist
+  # https://github.com/techartdev/OpenClawHomeAssistantIntegration
+  openclaw-integration = buildHassComponent {
+    owner = "techartdev";
+    domain = "openclaw";
+    version = "0.1.61";
+    src = pkgs.fetchFromGitHub {
+      owner = "techartdev";
+      repo = "OpenClawHomeAssistantIntegration";
+      tag = "0.1.61";
+      hash = "sha256-4c5Yc+AaX4cNMnS8dMSmPAHVkWm3oAajk4i8NArlatQ=";
+    };
+  };
+
   # pypura - upstream Python client library required by the Pura integration
   # Build against Home Assistant's Python (currently 3.14) to avoid version skew.
   pypura = pkgs.python314Packages.buildPythonPackage rec {
@@ -256,6 +270,7 @@ in
           adaptive-lighting
           hacs
           eight-sleep
+          openclaw-integration
           pura-integration
         ]
         ++ cfg.customComponents;

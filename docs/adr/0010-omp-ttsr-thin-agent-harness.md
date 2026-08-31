@@ -10,7 +10,7 @@ update_when: OMP rule semantics, harness scope, or migration evidence changes.
 
 ## Status
 
-Implemented in source for OMP; activation and other harnesses remain follow-up work
+Implemented in source for OMP and Codex; Codex activation and other harnesses remain follow-up work
 
 ## Date
 
@@ -18,10 +18,10 @@ Implemented in source for OMP; activation and other harnesses remain follow-up w
 
 ## Context
 
-The shared agent configuration currently concatenates every numbered file under
-`config/agents/rules/` into the startup instructions for OMP, Codex, and Pi.
-OMP then loads additional files from `config/omp/rules/`. This mixes several
-different concerns in the always-on context:
+At the time of this decision, the shared configuration concatenated every
+numbered file under `config/agents/rules/` into the startup instructions for
+OMP, Codex, and Pi. OMP also loaded files from `config/omp/rules/`. This mixed
+several different concerns in the always-on context:
 
 - durable safety and authority boundaries;
 - repository and subsystem routing;
@@ -50,7 +50,7 @@ matching tool result. Injections persist in session state and survive
 compaction. OMP exposes `ttsr list`, `ttsr test`, and `ttsr scan` so rules can be
 inspected and tested without relying on prompt intuition.
 
-The current installed runtime, `omp/17.2.11`, already registers the local
+The current installed runtime, `omp/17.3.5`, registers the local `ci-watch`,
 `commit-house-style`, `pr-house-style`, and `working-with-jj` rules as TTSR.
 Bundled Go, Rust, and TypeScript corrections use the same mechanism. The choice
 is therefore whether to make this existing mechanism the deliberate corrective
@@ -148,11 +148,12 @@ examples, tool inventories, or motivational prose.
 
 ### Harness boundary
 
-The taxonomy is harness-agnostic; the delivery mechanism is not. OMP gets the
+The taxonomy is harness-agnostic; the delivery mechanism is not. OMP got the
 first pilot because TTSR is present, observable, testable, and already in use.
-Codex and Pi keep their current instruction wiring until the OMP evaluation
-shows which rules can be removed safely and an equivalent native mechanism or
-small adapter is chosen for each harness.
+Codex now uses the same semantic core with task-selected skills, nested
+`AGENTS.md`, and deterministic hooks; it does not emulate TTSR. Pi, Claude, and
+OpenCode keep their legacy wiring until each receives a separate evaluation and
+native adapter decision.
 
 Do not emulate TTSR in another harness by injecting a large dispatcher prompt.
 If a harness lacks dormant stream correction, use its native conditional rules,
@@ -195,21 +196,27 @@ skills, hooks, or deterministic tooling and accept a smaller shared core.
 - Keep the thin configuration only if safety and completion behavior do not
   regress materially.
 
-### Phase 4: Adapt Codex and Pi separately
+### Phase 4: Adapt remaining runtimes separately
 
 - Reuse the classification and scenario corpus, not OMP-specific frontmatter.
 - Prefer each harness's native conditional loading and enforcement surfaces.
 - Keep shared content semantic and small; keep adapters mechanical.
+- Codex uses the bounded core plus stable skill search, memory, nested routers,
+  and hooks. Pi, Claude, and OpenCode remain separate follow-up work.
 
-## Implemented pilot
+## Implemented pilots
 
-The OMP pilot implements the source-controlled portions of Phases 0 through 3:
+The source-controlled pilots implement Phases 0 through 3 for OMP and the first
+Phase 4 adapter for Codex:
 
-- `config/agents/core.md` is a 250-word-budgeted semantic core. Only OMP reads it;
-  Codex and Pi retain the legacy bundle.
+- `config/agents/core.md` is a 220-word-budgeted semantic core read by OMP and
+  Codex. Codex's startup source falls from 2,864 words to 212 words.
 - `modules/agents/omp/default.nix` installs that core as OMP's global
   `AGENTS.md` and no longer installs the duplicate incremental-architecture
   rule.
+- `modules/agents/codex/default.nix` installs the same core instead of
+  concatenating the legacy bundle. Procedures remain in existing skills and
+  repository routers.
 - `config/omp/config.yml` explicitly enables discard-context, interrupting,
   once-per-session TTSR behavior and bundled rules.
 - Four local rules have 33 named positive and negative CLI scenarios. Shell
@@ -221,9 +228,8 @@ The OMP pilot implements the source-controlled portions of Phases 0 through 3:
 
 Host activation remains a separate authorized operation. Source-level tests and
 Nix evaluation prove the configuration before `hey re` changes the live runtime.
-The same-model current-versus-thin live comparison remains an activation
-acceptance check; it is not simulated by adding the thin core on top of the
-currently deployed legacy prompt.
+Live readback must show the generated core at `~/.codex/AGENTS.md`; source wiring
+alone does not establish activation.
 
 ## Consequences
 
@@ -248,7 +254,7 @@ Tradeoffs:
   inventory and source metadata must be checked when behavior is surprising.
 - Interrupted generations and hidden reminders add control flow that must stay
   visible through TTSR notifications and transcript evidence.
-- The OMP pilot temporarily leaves Codex and Pi with a larger legacy bundle.
+- Pi, Claude, and OpenCode temporarily retain the larger legacy bundle.
 
 ## Rejected alternatives
 

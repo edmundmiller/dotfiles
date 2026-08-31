@@ -8,14 +8,17 @@ update_when: Supported runtimes, paths, or deployment behavior changes.
 
 # Agents Configuration
 
-Shared rules and modes for AI coding agents. Global skills live in `skills/catalog/`; validate them with `skills/catalog/skill-quality/scripts/validate.py`.
+Shared startup context, compatibility rules, and modes for AI coding agents.
+Global skills live in `skills/catalog/`; validate them with
+`skills/catalog/skill-quality/scripts/validate.py`.
 
 ## Directory Structure
 
 ```
 config/agents/
+├── core.md      # Bounded startup invariants for thin runtimes
 ├── modes/       # Agent modes
-└── rules/       # System prompt rules
+└── rules/       # Legacy compatibility bundle
 ```
 
 ## Supported Agents
@@ -74,9 +77,11 @@ Agent modes are specialized configurations for different tasks:
 - **cursor** - Cursor-style code editing
 - **sem-review** - Flexible semantic diff/review mode (sem-first, expand when needed)
 
-## Rules
+## Startup context
 
-Rules are concatenated for Codex, Claude, and Pi and exposed individually to OpenCode. Query their live metadata:
+OMP and Codex load `core.md`. Claude and Pi still concatenate the legacy rules,
+and OpenCode exposes them individually, until each runtime gets a separate
+thin-context evaluation. Query legacy rule metadata with:
 
 ```bash
 python3 bin/check-agent-rules --json

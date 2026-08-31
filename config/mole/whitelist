@@ -26,7 +26,23 @@ FINDER_METADATA
 ~/Library/Caches/antidote*
 ~/.local/share/antidote*
 
-# Preserve Codex session traces and diagnostic logs.
+# Preserve agent session traces and diagnostic logs.
+~/.omp/agent/sessions/*
 ~/.codex/sessions/*
 ~/.codex/archived_sessions/*
+~/.claude/sessions/*
+~/.claude/projects/*
+~/.pi/agent/sessions/*
+~/.local/share/opencode/*
+~/.codex/amp-bridge/*
+~/.droid/sessions/*
+~/.config/droid/sessions/*
+~/.local/share/amp/*
+~/.local/share/devin/*
+~/.local/state/goose/*
+~/.local/state/opencode/*
+~/.factory/sessions/*
+~/.hermes/sessions/*
+~/.acpx/sessions/*
+~/.local/state/agent-traces/*
 ~/Library/Logs/com.openai.codex/*

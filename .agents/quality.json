@@ -9,7 +9,7 @@
     {
       "id": "agent-quality-tests",
       "kind": "test",
-      "command": "python3 -m unittest tests/test_agent_quality.py tests/test_agent_rules.py tests/test_skill_quality_validator.py tests/test_agent_instruction_wiring.py tests/test_omp_ttsr_rules.py tests/test_agent_response_contract.py",
+      "command": "python3 -m unittest tests/test_agent_quality.py tests/test_agent_rules.py tests/test_skill_quality_validator.py tests/test_agent_instruction_wiring.py tests/test_omp_ttsr_rules.py tests/test_agent_response_contract.py tests/test_codex_model_config.py tests/test_claude_activation.py tests/test_darwin_home_manager_activation.py tests/test_hermes_local_wiring.py tests/test_done_skill.py",
       "description": "Agent workflow engine behavior"
     },
     {

@@ -26,19 +26,27 @@ class AgentResponseContractTests(unittest.TestCase):
         ):
             self.assertIn(expected, normalized_rule)
 
-    def test_omp_core_keeps_the_same_compact_response_contract(self) -> None:
+    def test_thin_core_keeps_a_compact_response_contract(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 250)
+        self.assertLessEqual(len(core.split()), 220)
         for expected in (
-            "lead with the outcome or next action",
-            "preserve warnings, exact thresholds, and scope",
-            "give requested depth",
-            "return requested deliverables without a wrapper",
-            "re-anchor long work",
+            "Communicate concisely",
+            "lead with the outcome",
+            "separate evidence from uncertainty",
+            "state blockers with the smallest action that resolves them",
         ):
             self.assertIn(expected, normalized)
+
+    def test_codex_bootstrap_instructions_stay_bounded(self) -> None:
+        config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
+        instructions = config["developer_instructions"]
+
+        self.assertLessEqual(len(instructions.split()), 150)
+        self.assertNotIn("READY_FOR_DONE", instructions)
+        self.assertNotIn("Durable goals are checkpoints", instructions)
+        self.assertIn("Keep Sol as the primary coordinator", instructions)
 
     def test_agent_quality_gate_runs_the_response_contract(self) -> None:
         manifest = json.loads((ROOT / ".agents/quality.json").read_text())

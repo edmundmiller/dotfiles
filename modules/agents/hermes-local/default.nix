@@ -8,8 +8,15 @@
 let
   cfg = config.modules.agents.hermes-local;
   agentPackages = inputs.agents-workspace.packages.${pkgs.system};
-  hermesPackage = inputs.agents-workspace.inputs.hermesAgent.packages.${pkgs.system}.default;
-  launcher = name: agentPackages.${name + "-hermes"};
+  hermesPackage = import ./_package.nix { inherit inputs pkgs; };
+  upstreamLauncher = name: agentPackages.${name + "-hermes"};
+  launcher =
+    name:
+    pkgs.writeShellScriptBin "${name}-hermes" ''
+      # Nix Bash 5.3 can deadlock while materializing the upstream launcher's
+      # embedded policy heredoc on Darwin. The system Bash completes it safely.
+      exec /bin/bash ${upstreamLauncher name}/bin/${name}-hermes "$@"
+    '';
   workspaceRevision = inputs.agents-workspace.rev or "unknown";
   manifest = pkgs.writeText "hermes-local-manifest.json" (
     builtins.toJSON {

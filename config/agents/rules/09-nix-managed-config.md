@@ -13,7 +13,7 @@ Managed agent config files under `~/.codex/`, `~/.pi/agent/`, `~/.claude/`, and 
 | Runtime path                | Source                                                                                          |
 | --------------------------- | ----------------------------------------------------------------------------------------------- |
 | `~/.agents/skills/*`        | Global skills from `skills/catalog/` plus allowed manual global skills; never `.agents/skills/` |
-| `~/.codex/AGENTS.md`        | `config/agents/rules/*.md` (concatenated)                                                       |
+| `~/.codex/AGENTS.md`        | `config/agents/core.md`                                                                         |
 | `~/.pi/agent/settings.json` | `config/pi/settings.jsonc`                                                                      |
 | `~/.pi/agent/AGENTS.md`     | `config/agents/rules/*.md` (concatenated)                                                       |
 | `~/.pi/agent/extensions/*`  | `config/pi/extensions/*`                                                                        |

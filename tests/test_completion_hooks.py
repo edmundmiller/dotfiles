@@ -12,11 +12,12 @@ CHECKER = ROOT / "scripts/completion-check"
 HOOK = ROOT / "scripts/codex-validate-stop"
 
 
-def write_command(path, name, exit_code=0, stdout="", stderr=""):
+def write_command(path, name, exit_code=0, stdout="", stderr="", log_name=None):
     command = path / name
+    label = log_name or name
     command.write_text(
         "#!/usr/bin/env bash\n"
-        f'printf \'{name} %s\\n\' "$*" >>"$COMPLETION_TEST_LOG"\n'
+        f'printf \'{label} %s\\n\' "$*" >>"$COMPLETION_TEST_LOG"\n'
         f"printf '%b' {stdout!r}\n"
         f"printf '%b' {stderr!r} >&2\n"
         f"exit {exit_code}\n"
@@ -95,6 +96,66 @@ class CompletionHookTests(unittest.TestCase):
                 "hey check",
             ],
         )
+
+    def test_shared_checker_defaults_to_checkout_local_hey(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = pathlib.Path(directory)
+            checkout = temporary / "checkout"
+            scripts = checkout / "scripts"
+            local_bin = checkout / "bin"
+            ambient_bin = temporary / "ambient-bin"
+            scripts.mkdir(parents=True)
+            local_bin.mkdir()
+            ambient_bin.mkdir()
+            log = temporary / "commands.log"
+            checker = scripts / "completion-check"
+            checker.write_text(
+                CHECKER.read_text().replace(
+                    'export PATH="/run/current-system/sw/bin:$PATH"',
+                    'export PATH="$PATH"',
+                )
+            )
+            checker.chmod(checker.stat().st_mode | stat.S_IXUSR)
+            python = write_command(temporary, "python", stderr="python output\n")
+            write_command(
+                local_bin,
+                "hey",
+                stderr="local hey output\n",
+                log_name="local-hey",
+            )
+            write_command(
+                ambient_bin,
+                "hey",
+                exit_code=41,
+                stderr="ambient hey output\n",
+                log_name="ambient-hey",
+            )
+            env = {
+                **os.environ,
+                "COMPLETION_CHECK_PYTHON": str(python),
+                "COMPLETION_TEST_LOG": str(log),
+                "PATH": f"{ambient_bin}:/usr/bin:/bin",
+            }
+            env.pop("COMPLETION_CHECK_HEY", None)
+
+            result = subprocess.run(
+                ["/bin/bash", str(checker)],
+                cwd=temporary,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(result.stderr, "python output\nlocal hey output\n")
+            self.assertEqual(
+                log.read_text().splitlines(),
+                [
+                    "python -m unittest discover -s tests -p test_*.py",
+                    "local-hey check",
+                ],
+            )
 
     def test_shared_checker_reports_regression_failure(self):
         result, commands = run_checker(python_exit=1)

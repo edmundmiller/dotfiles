@@ -143,9 +143,8 @@ class AgentQualityTests(unittest.TestCase):
         self.assertIn("Continue unless", audit)
         self.assertIn("planning or passing local checks alone is not completion", audit)
 
-    def test_return_and_land_contract_covers_primary_worker_and_goal_surfaces(self) -> None:
+    def test_return_and_land_contract_lives_on_selective_goal_surfaces(self) -> None:
         sources = {
-            "primary": CODEX_CONFIG.read_text(),
             "worker": LUNA_PROFILE.read_text(),
             "shared rule": AUTONOMOUS_RULE.read_text(),
             "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
@@ -167,10 +166,23 @@ class AgentQualityTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.assertIn(field, worker)
 
-        primary = sources["primary"].lower()
-        self.assertIn("wait for each worker", primary)
-        self.assertIn("durable goals are checkpoints, not wake schedulers", primary)
-        self.assertIn("keep the goal open through `done`", primary)
+        primary = CODEX_CONFIG.read_text().lower()
+        for phrase in (
+            "worker reports as claims",
+            "waits for workers",
+            "requested outcome is complete",
+        ):
+            self.assertIn(phrase, primary)
+
+        for detail in (
+            "continue",
+            "partial",
+            "landed",
+            "blocked",
+            "structured",
+            "durable goals are checkpoints",
+        ):
+            self.assertNotIn(detail, primary)
 
     def test_omp_go_command_requires_parent_worker_return_and_landing_contract(self) -> None:
         command = OMP_GO_COMMAND.read_text().lower()
@@ -200,7 +212,6 @@ class AgentQualityTests(unittest.TestCase):
 
     def test_return_contract_uses_structured_wording_without_machine_readable_claims(self) -> None:
         sources = {
-            "primary": CODEX_CONFIG.read_text(),
             "worker": LUNA_PROFILE.read_text(),
             "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
             "omp go command": OMP_GO_COMMAND.read_text(),
@@ -211,6 +222,10 @@ class AgentQualityTests(unittest.TestCase):
                 normalized = source.lower()
                 self.assertNotIn("machine-readable", normalized)
                 self.assertIn("structured", normalized)
+
+        primary = CODEX_CONFIG.read_text().lower()
+        self.assertNotIn("machine-readable", primary)
+        self.assertNotIn("structured", primary)
 
     def test_done_skill_preserves_landing_safety_contract(self) -> None:
         references = DONE_SKILL.parent / "references"

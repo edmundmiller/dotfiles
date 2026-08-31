@@ -1,5 +1,7 @@
 use ./common.nu *
 
+export const GATEWAY_PID_PATTERN = '(?:"PID"\s*=\s*|PID\s+)(?P<pid>[0-9]+)'
+
 def require-success [label: string, result: record] {
   if $result.exit_code != 0 {
     let detail = ([$result.stdout $result.stderr] | str join "\n" | str trim)
@@ -68,7 +70,7 @@ def "main hermes-local" [--smoke-only] {
   mut gateway_pid = []
   for _ in 1..10 {
     if $gateway.exit_code == 0 {
-      $gateway_pid = ($gateway.stdout | parse --regex '"PID" = (?<pid>[0-9]+);')
+      $gateway_pid = ($gateway.stdout | parse --regex $GATEWAY_PID_PATTERN)
       if not ($gateway_pid | is-empty) {
         break
       }

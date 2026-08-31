@@ -62,21 +62,12 @@ compaction:
 snapcompact:
   systemPrompt: none
   toolResults: false
-# omp 18 gates onboarding steps behind setupVersion: a scene runs when its
-# minVersion exceeds this number, and omp then writes the new value back. That
-# write cannot land here -- ~/.omp/agent/config.yml is a read-only Nix store
-# symlink -- so any unsatisfied scene re-runs on every launch and the handoff
-# drops to the shell. Pin this at or above the highest scene minVersion
-# (composer-shape is 2; glyph-mode/model/providers/theme are 1) and set the
-# values those scenes would ask for. Re-check after an omp major bump with:
+# OMP gates onboarding steps behind setupVersion and writes the new value back.
+# That write cannot land through the read-only Nix store symlink, so pin this at
+# the highest scene version in the currently packaged OMP. Re-check after an OMP
+# major bump with:
 #   strings -a $(readlink -f $(command -v omp)) | grep -B2 minVersion
-setupVersion: 2
-composer:
-  # Accent Rail: filled one-row field with a single left accent mark. Pairs
-  # with statusLine.sessionAccent and avoids the heavy end caps of `field`
-  # competing with the powerline-thin separator. Alternatives: box (upstream
-  # default), claude, pi, borderless, rule, field.
-  shape: rail
+setupVersion: 1
 modelRoles:
   default: openai-codex/gpt-5.6-sol:medium
   smol: xai-oauth/grok-composer-2.5-fast

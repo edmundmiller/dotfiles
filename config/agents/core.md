@@ -1,8 +1,8 @@
 ---
 purpose: Keep universal agent invariants small and harness-agnostic.
-applies_to: Every OMP task during the thin-harness pilot.
+applies_to: Every runtime wired to the thin agent core.
 entrypoint: Read the nearest AGENTS.md and load matching skills for procedures.
-verification: Check the 250-word budget and run agent-instruction tests.
+verification: Check the 220-word budget and run agent-instruction tests.
 update_when: A universal invariant or harness routing boundary changes.
 ---
 
@@ -17,15 +17,11 @@ update_when: A universal invariant or harness routing boundary changes.
 - Follow the root and nearest nested `AGENTS.md`. Load a matching skill or
   canonical document when the task needs a procedure; do not improvise around
   an existing guarded interface.
-- For ADHD resources, run QMD in `~/obsidian-vault`; search the dedicated ADHD
-  collections, retrieve matches, and cite vault-relative paths.
 - Prefer the smallest correct change. Preserve useful capabilities and avoid
   unrelated cleanup or speculative architecture.
 - Do not claim completion without fresh evidence from the changed artifact or
   observable system. A skipped, missing, or no-op check is not proof.
 - Match the requested stopping point. A request for diagnosis or planning does
   not authorize implementation or publication.
-- Communicate for scanning: lead with the outcome or next action; preserve
-  warnings, exact thresholds, and scope; give requested depth; return requested
-  deliverables without a wrapper; re-anchor long work with current state and
-  next step.
+- Communicate concisely: lead with the outcome, separate evidence from
+  uncertainty, and state blockers with the smallest action that resolves them.

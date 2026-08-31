@@ -49,8 +49,8 @@ modules.agents = {
 
 Agent instruction sources live in `config/agents/`:
 
-- `config/agents/core.md` - bounded semantic core used by OMP during the thin-harness pilot
-- `config/agents/rules/` - legacy shared rules used by Claude, Codex, Pi, and OpenCode
+- `config/agents/core.md` - bounded semantic core used by OMP and Codex
+- `config/agents/rules/` - legacy compatibility rules used by Claude, Pi, and OpenCode
 - `config/agents/modes/` - Shared agent mode definitions
 
 Global skills live in `~/.agents/skills/` and are discovered natively.

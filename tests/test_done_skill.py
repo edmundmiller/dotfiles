@@ -62,6 +62,12 @@ class DoneSkillContractTest(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
+    def test_herdr_teardown_streams_provenance_without_a_here_string(self) -> None:
+        teardown = HERDR_TEARDOWN.read_text()
+
+        self.assertNotIn('<<<"$worktree_json"', teardown)
+        self.assertIn('printf \'%s\' "$worktree_json" |', teardown)
+
     def test_dirty_default_attempts_safe_fast_forward_before_blocking(self) -> None:
         skill = self.done_contract()
 
