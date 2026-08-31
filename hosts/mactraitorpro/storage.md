@@ -146,6 +146,32 @@ Archiving a Codex task does not by itself prove that its worktree was removed.
 Never manually delete an active or dirty Codex worktree. Close it through the
 owning task only after landing and ownership checks.
 
+### Codex retirement outcome
+
+On 2026-08-31, a second bounded inventory found 162 remaining Codex paths:
+95 clean and 67 dirty. All unpublished and dirty work was published to verified
+`archive/codex/*` refs before cleanup; the final disposition manifest is
+`~/.local/state/codex-worktree-final-disposition-20260831T054149Z.json`.
+
+The trace/runtime state was then transactionally backed up, encrypted, uploaded
+to the NUC, read back, decrypted, decompressed, and fully listed before local
+removal. The final archives are:
+
+- `codex-final-state-20260831T121524Z.tar.zst.age`, SHA-256
+  `858294097982b486ace98a8c3c6f1c5935a6346a8a53efbf4a94c58651a336ee`
+- `codex-final-tail-20260831T122811Z.tar.zst.age`, SHA-256
+  `ff4f2ff41425782c157bc967c4c09c284541f6b21e000a13b38905a0972b2fc4`
+
+MacTraitor-Pro no longer enables the direct Codex module or Codex-backed
+LaunchAgents. The applied configuration has no `codex` executable in `PATH`,
+no `~/.codex`, and no Buzz Codex ACP tools. Free space reached 114 GiB before
+the final verification builds, versus 25 GiB at cleanup start.
+
+The concurrently started `hey gc` did not contribute to that recovery. It
+remained blocked for more than eight hours in an uninterruptible root
+`lsof -n -w -F n` child. A long-running GC with that process shape is stalled,
+not evidence that Nix collection is progressing.
+
 ## What grew after the low point
 
 The confirmed low at 2026-08-29 08:52 CDT was 737.132 GiB used and
