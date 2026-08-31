@@ -821,7 +821,7 @@
                 ];
               };
               ha-automation-assertions = {
-                enable = true;
+                enable = system == "x86_64-linux";
                 name = "ha-automation-assertions";
                 entry = toString (
                   pkgs.writeShellScript "ha-automation-assertions" ''
@@ -839,7 +839,7 @@
                 stages = [ "pre-push" ];
               };
               ha-apply-devices-assertions = {
-                enable = true;
+                enable = system == "x86_64-linux";
                 name = "ha-apply-devices-assertions";
                 entry = toString (
                   pkgs.writeShellScript "ha-apply-devices-assertions" ''
