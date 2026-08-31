@@ -1528,6 +1528,11 @@ in
             name = "hermes-gateway-${profile}";
             value = {
               enable = builtins.elem profile buzzNativeProfiles;
+              # Preserve in-flight interactive conversations across routine
+              # NixOS switches. Apply package and unit changes on the next
+              # explicit gateway restart instead of broadcasting a shutdown
+              # interruption to the channel.
+              restartIfChanged = false;
               serviceConfig = {
                 EnvironmentFile = config.services.hermes-agent.profiles.${profile}.environmentFiles;
                 ExecStartPre = lib.mkBefore [ (mkNativeGatewayStateCleanup profile) ];
