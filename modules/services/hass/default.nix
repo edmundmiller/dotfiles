@@ -429,8 +429,16 @@ in
       };
 
       # Matter Server
+      # The OTA provider binary (chip-ota-provider-app) must be in the service
+      # PATH so matter-server can spawn it to serve firmware images to Matter
+      # devices over Thread. Without it, matter-server detects available updates
+      # but fails to install them ("No such file or directory: 'chip-ota-provider-app'").
       services.matter-server = mkIf cfg.matter.enable {
         enable = true;
+      };
+
+      systemd.services.matter-server = mkIf cfg.matter.enable {
+        path = [ pkgs.my.chip-ota-provider-app ];
       };
 
       # PostgreSQL recorder backend

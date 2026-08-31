@@ -25,6 +25,7 @@ stdenvNoCC.mkDerivation {
 
     for plugin in ${lib.escapeShellArgs pluginNames}; do
       cp -R "$src/$plugin" "$plugins_dir/$plugin"
+      chmod -R u+w "$plugins_dir/$plugin"
       rm -rf "$plugins_dir/$plugin/__pycache__"
     done
 
