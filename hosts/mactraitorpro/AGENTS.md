@@ -43,6 +43,7 @@ No agenix secrets on this host (credentials in 1Password). The laptop Hermes CLI
 ## Related Files
 
 - `README.md` — human-facing host setup and troubleshooting
+- `workload-placement.md` — Amp Orb, Mac, NUC, and Meshify routing policy
 - `default.nix` — host config
 - `homebrew.nix` — casks, formulae, MAS apps
 - `modules/desktop/macos/` — shared macOS defaults (dock, finder, trackpad, Siri off, etc.)

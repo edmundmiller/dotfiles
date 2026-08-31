@@ -10,6 +10,12 @@ update_when: Host hardware, cabling, or a verified recovery procedure changes.
 
 Human-facing setup and troubleshooting for the personal Mac.
 
+## Workload placement
+
+- [Amp Orb, Mac, NUC, and Meshify routing](workload-placement.md) — keeps
+  repository-contained agent work remote while reserving each physical host
+  for its data, platform, hardware, and final acceptance boundaries.
+
 ## Storage
 
 - [Disk-space ledger and recovery](storage.md) — explains the APFS total,
