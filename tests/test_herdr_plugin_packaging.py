@@ -76,6 +76,14 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
     assert "deferring marketplace plugin installation" in module
 
 
+def test_tnote_today_plugin_is_installed_with_its_runtime() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    assert "install_plugin edmundmiller tnote packages/tn/herdr-plugin" in module
+    assert '"${pkgs.my.tnote}/bin"' in module
+    assert "herdrPackages ++ [ pkgs.my.tnote ]" in module
+
+
 def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     package = ROOT / "packages" / "herdr-vercel-sandbox-plugin"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()

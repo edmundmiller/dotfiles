@@ -22,6 +22,7 @@ let
   caBundle = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
   launchPath = concatStringsSep ":" [
     "${pkgs.my.rift}/bin"
+    "${pkgs.my.tnote}/bin"
     "/etc/profiles/per-user/${config.user.name}/bin"
     "/run/current-system/sw/bin"
     "${config.user.home}/.nix-profile/bin"
@@ -347,8 +348,8 @@ in
     modules.shell.herdr.package = mkDefault pkgs.my.herdr;
     modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
-    user.packages = herdrPackages;
-    environment.systemPackages = herdrPackages;
+    user.packages = herdrPackages ++ [ pkgs.my.tnote ];
+    environment.systemPackages = herdrPackages ++ [ pkgs.my.tnote ];
     env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
 
     home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
@@ -1015,6 +1016,7 @@ in
           ''}
           install_plugin persiyanov herdr-reviewr
           install_plugin edmundmiller herdr-which-key "" optional
+          install_plugin edmundmiller tnote packages/tn/herdr-plugin
         '';
 
         home.activation.herdr-agent-integrations =
