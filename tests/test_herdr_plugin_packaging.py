@@ -4,6 +4,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_herdr_agent_state_sounds_are_disabled_and_upserted() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+
+    assert config["ui"]["sound"]["enabled"] is False
+    assert 'sound_enabled = sys.argv[5]' in module
+
+
 def test_jj_workspace_plugin_is_a_patched_local_package() -> None:
     package = ROOT / "packages" / "herdr-plugin-jj-workspace"
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()

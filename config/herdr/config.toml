@@ -27,6 +27,9 @@ prompt_new_tab_name = false
 [ui.toast]
 delivery = "herdr"
 
+[ui.sound]
+enabled = false
+
 
 [session]
 resume_agents_on_restore = true

@@ -605,7 +605,7 @@ in
           # Keep the managed prefix in sync even after the initial bootstrap.
           # Herdr's config stays writable for onboarding/settings, so existing
           # files need an explicit upsert rather than only copying the template.
-          ${pkgs.python3}/bin/python3 - "$target" ${escapeShellArg cfg.prefix} ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
+          ${pkgs.python3}/bin/python3 - "$target" ${escapeShellArg cfg.prefix} ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} "false" <<'PY'
           import json
           import pathlib
           import sys
@@ -614,6 +614,7 @@ in
           prefix = sys.argv[2]
           theme_name = sys.argv[3]
           theme_custom = json.loads(sys.argv[4])
+          sound_enabled = sys.argv[5]
           lines = path.read_text().splitlines()
           managed_commands = {
               "herdr-tab previous",
@@ -749,6 +750,38 @@ in
               out.append("[keys]")
               for key, value in managed_keys.items():
                   out.append(f'{key} = "{value}"')
+
+          lines = out
+          out = []
+          in_sound = False
+          saw_sound = False
+          wrote_sound_enabled = False
+
+          for line in lines:
+              stripped = line.strip()
+              if stripped.startswith("[") and stripped.endswith("]"):
+                  if in_sound and not wrote_sound_enabled:
+                      out.append(f"enabled = {sound_enabled}")
+                  in_sound = stripped == "[ui.sound]"
+                  saw_sound = saw_sound or in_sound
+                  out.append(line)
+                  continue
+
+              if in_sound and stripped.startswith("enabled") and "=" in stripped:
+                  if not wrote_sound_enabled:
+                      out.append(f"enabled = {sound_enabled}")
+                      wrote_sound_enabled = True
+                  continue
+
+              out.append(line)
+
+          if saw_sound and in_sound and not wrote_sound_enabled:
+              out.append(f"enabled = {sound_enabled}")
+
+          if not saw_sound:
+              if out and out[-1].strip():
+                  out.append("")
+              out.extend(["[ui.sound]", f"enabled = {sound_enabled}"])
 
           command_block = [
               "",
