@@ -1669,6 +1669,7 @@ in
         environmentFiles = [
           "/run/hermes-scintillate-env/secrets.env"
           config.age.secrets.buzz-hermes-scintillate-agent-env.path
+          config.age.secrets.slack-hermes-scintillate-agent-env.path
         ];
       };
       amosburton = withHermesDisplayctl {
@@ -2370,6 +2371,11 @@ in
               cron.gateway_ticker = false;
               stt.provider = "local_command";
               terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
+              slack.require_mention = true;
+              platforms.slack.extra = {
+                allow_bots = "none";
+                reply_in_thread = true;
+              };
             };
             providers = {
               obsidianVault.hostPath = "/home/emiller/obsidian-vault";
@@ -2597,6 +2603,11 @@ in
     mode = "0400";
   };
   age.secrets.buzz-hermes-scintillate-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.slack-hermes-scintillate-agent-env = {
     owner = "emiller";
     group = "users";
     mode = "0400";

@@ -18,6 +18,7 @@ let
   cronTickService = cfg.systemd.services.hermes-scintillate-cron-tick;
   cronTickTimer = cfg.systemd.timers.hermes-scintillate-cron-tick;
   runtimeSmokeService = cfg.systemd.services.hermes-runtime-smoke;
+  slackSecret = cfg.age.secrets.slack-hermes-scintillate-agent-env;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
   nucHostSource = builtins.readFile ../default.nix;
@@ -113,6 +114,21 @@ let
     {
       test = hermesAgent.providers.tnote.repoPath == "/home/emiller/src/personal/tnote";
       msg = "NUC must provide Scintillate's tnote repo provider.";
+    }
+    {
+      test = builtins.elem slackSecret.path profile.environmentFiles;
+      msg = "Scintillate's gateway must receive its dedicated Slack credentials.";
+    }
+    {
+      test = slackSecret.owner == "emiller" && slackSecret.group == "users" && slackSecret.mode == "0400";
+      msg = "Scintillate's Slack credentials must remain private to the gateway user.";
+    }
+    {
+      test =
+        profile.settings.slack.require_mention
+        && profile.settings.platforms.slack.extra.allow_bots == "none"
+        && profile.settings.platforms.slack.extra.reply_in_thread;
+      msg = "Scintillate Slack must require an initial mention, ignore peer bots, and keep replies threaded.";
     }
     {
       test = profile.workingDirectory == "/home/hermes/repos/obsidian-vault";

@@ -64,6 +64,10 @@ in
     edmundmiller
     nuc
   ];
+  "slack-hermes-scintillate-agent-env.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "anne-linear-mcp-token.age".publicKeys = [
     edmundmiller
     nuc
