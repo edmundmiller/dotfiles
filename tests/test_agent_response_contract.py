@@ -103,6 +103,19 @@ class AgentResponseContractTests(unittest.TestCase):
 
         self.assertNotRegex("git status", condition)
 
+    def test_thin_core_keeps_a_compact_response_contract(self) -> None:
+        core = (ROOT / "config/agents/core.md").read_text()
+        normalized = " ".join(core.split())
+
+        self.assertLessEqual(len(core.split()), 220)
+        for expected in (
+            "Communicate concisely",
+            "lead with the outcome",
+            "separate evidence from uncertainty",
+            "state blockers with the smallest action that resolves them",
+        ):
+            self.assertIn(expected, normalized)
+
 
 if __name__ == "__main__":
     unittest.main()
