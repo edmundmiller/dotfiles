@@ -2278,6 +2278,7 @@ in
     wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
+    path = [ pkgs.unstable.pixi ];
     environment = {
       HOME = "/home/emiller";
       XDG_CACHE_HOME = "/home/emiller/.cache";
