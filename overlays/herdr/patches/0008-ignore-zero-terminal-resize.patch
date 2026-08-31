@@ -1,10 +1,11 @@
---- i/src/ghostty/mod.rs
-+++ w/src/ghostty/mod.rs
-@@ -686,6 +686,15 @@
+diff --git a/src/ghostty/mod.rs b/src/ghostty/mod.rs
+index 685c0735..cd6a8579 100644
+--- a/src/ghostty/mod.rs
++++ b/src/ghostty/mod.rs
+@@ -872,6 +872,14 @@ impl Terminal {
+         cell_width_px: u32,
+         cell_height_px: u32,
      ) -> Result<(), Error> {
-         let cell_width_px = cell_width_px.max(1);
-         let cell_height_px = cell_height_px.max(1);
-+
 +        // libghostty's PageList resize path can abort the host process on
 +        // transient tiny terminal areas. macOS wake/display reconfiguration and
 +        // narrow remote clients can briefly produce those for split panes, so
@@ -13,14 +14,13 @@
 +            return Ok(());
 +        }
 +
-         // SAFETY: self.raw is valid and sizes are plain values.
-         unsafe {
-             ffi::ghostty_terminal_resize(self.raw, cols, rows, cell_width_px, cell_height_px)
-@@ -3024,6 +3033,19 @@
-         out
+         let size_report = ffi::GhosttySizeReportSize {
+             rows,
+             columns: cols,
+@@ -3233,6 +3241,18 @@ mod tests {
      }
  
-+    #[test]
+     #[test]
 +    fn terminal_resize_ignores_unsafe_tiny_dimensions() {
 +        let mut terminal = Terminal::new(8, 3, 100).unwrap();
 +
@@ -33,6 +33,6 @@
 +        assert_eq!(terminal.rows().unwrap(), 3);
 +    }
 +
-     #[test]
      fn kitty_image_fingerprint_covers_full_payload() {
          let mut data = vec![1u8; 4096 * 4];
+         let original =
