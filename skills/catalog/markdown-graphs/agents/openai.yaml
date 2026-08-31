@@ -1,0 +1,4 @@
+interface:
+  display_name: "Markdown Graphs"
+  short_description: "Design text-forward diagrams for MDX"
+  default_prompt: "Use $markdown-graphs to design and implement a clear MDX diagram for this concept."
