@@ -7,6 +7,11 @@ let
   bettyGateway = cfg.systemd.services.hermes-gateway-betty;
   bettySecretMaterialization = cfg.system.activationScripts.hermesBettySecretsMaterialize.text;
   bettyGoodMorningDj = cfg.systemd.services.hermes-betty-good-morning-dj;
+  bettyGoodMorningDjExecStart = toString bettyGoodMorningDj.serviceConfig.ExecStart;
+  # Source-of-truth helper/prompt (not Linux store paths — cross-eval safe).
+  bettyGoodMorningDjHelper = builtins.readFile ../betty-good-morning-dj.py;
+  bettyGoodMorningDjPrompt = builtins.readFile ../betty-good-morning-dj.prompt;
+  bettyGoodMorningDjAll = bettyGoodMorningDjHelper + "\n" + bettyGoodMorningDjPrompt + "\n" + bettyGoodMorningDjExecStart;
   goodMorningScript = cfg.services.home-assistant.config.script.good_morning;
   goodMorningShellCommand =
     cfg.services.home-assistant.config.shell_command.hermes_betty_good_morning_dj;
@@ -94,6 +99,42 @@ let
     {
       test = builtins.elem "/run/hermes-betty-env/secrets.env" bettyGoodMorningDj.serviceConfig.EnvironmentFile;
       msg = "Betty Good Morning DJ must use Betty's materialized environment.";
+    }
+    {
+      test = hasInfix "HASS_URL=http://127.0.0.1:8123" (
+        concatStringsSep " " bettyGoodMorningDj.serviceConfig.Environment
+      );
+      msg = "Betty Good Morning DJ must target local Home Assistant via HASS_URL.";
+    }
+    {
+      test =
+        hasInfix "added_uris" bettyGoodMorningDjAll
+        && hasInfix "player_queues/items" bettyGoodMorningDjHelper
+        && hasInfix "MUSIC_ASSISTANT_TOKEN" bettyGoodMorningDjHelper
+        && hasInfix "media_player.kitchen" bettyGoodMorningDjHelper
+        && hasInfix "Good Morning" bettyGoodMorningDjAll
+        && hasInfix "receipt" bettyGoodMorningDjAll
+        && hasInfix "websockets" bettyGoodMorningDjHelper
+        && hasInfix "exactly 5 distinct track uris" bettyGoodMorningDjHelper
+        && hasInfix "betty-hermes-good-morning-dj" bettyGoodMorningDjExecStart
+        && !hasInfix "SuccessExitStatus" bettyGoodMorningDjExecStart;
+      msg = "Betty Good Morning DJ must verify a machine-readable receipt against MA queue item URIs.";
+    }
+    {
+      test = hasInfix "MUSIC_ASSISTANT_TOKEN" bettySecretMaterialization;
+      msg = "Betty secrets materialization must export the Music Assistant WS token for DJ verification.";
+    }
+    {
+      test = hasInfix "MUSIC_ASSISTANT_URL=http://127.0.0.1:8095" (
+        concatStringsSep " " bettyGoodMorningDj.serviceConfig.Environment
+      );
+      msg = "Betty Good Morning DJ must target local Music Assistant over loopback.";
+    }
+    {
+      test =
+        builtins.any (p: hasInfix "-curl-" (toString p)) bettyGoodMorningDj.path
+        && builtins.any (p: hasInfix "-jq-" (toString p)) bettyGoodMorningDj.path;
+      msg = "Betty Good Morning DJ PATH must include curl and jq for skill smoke helpers.";
     }
     {
       test = hasInfix "betty-hermes" (toString bettyGoodMorningDj.serviceConfig.ExecStart);

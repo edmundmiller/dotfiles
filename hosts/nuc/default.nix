@@ -114,11 +114,35 @@ let
     export OP_SERVICE_ACCOUNT_TOKEN="$(${pkgs.coreutils}/bin/cat /etc/opnix-token)"
     exec ${bettyHermesLauncher}/bin/betty-hermes cron tick
   '';
+  bettyDjPython = pkgs.python3.withPackages (ps: [ ps.websockets ]);
+  bettyGoodMorningDjHelperText = builtins.readFile ./betty-good-morning-dj.py;
+  bettyGoodMorningDjPrompt = builtins.readFile ./betty-good-morning-dj.prompt;
+  bettyGoodMorningDjHelper = pkgs.writeText "betty-good-morning-dj.py" bettyGoodMorningDjHelperText;
   bettyGoodMorningDjExecutor = pkgs.writeShellScript "betty-hermes-good-morning-dj" ''
     set -eu
-    exec ${bettyHermesLauncher}/bin/betty-hermes --oneshot ${lib.escapeShellArg ''
-      Play the Spotify playlist named exactly "Good Morning" on the Kitchen player through Home Assistant's Music Assistant integration. Then add five complementary upbeat tracks to that Music Assistant queue. Use Spotify search for curation, but do not use Spotify Connect for playback. Fail clearly if the playlist, player, or Music Assistant is unavailable.
-    ''}
+
+    receipt_path="$(${pkgs.coreutils}/bin/mktemp)"
+    cleanup() { ${pkgs.coreutils}/bin/rm -f "$receipt_path"; }
+    trap cleanup EXIT
+
+    ${bettyDjPython}/bin/python ${bettyGoodMorningDjHelper} prepare
+
+    set +e
+    ${bettyHermesLauncher}/bin/betty-hermes --oneshot ${lib.escapeShellArg bettyGoodMorningDjPrompt} >"$receipt_path" 2>/dev/null
+    hermes_status=$?
+    set -e
+
+    # hermes --oneshot often SIGABRTs (134) during Py_Finalize after a completed
+    # answer. Accept only 0/134 as candidates; receipt + MA queue decide success.
+    case "$hermes_status" in
+      0|134) ;;
+      *)
+        echo "betty good-morning-dj: hermes exited $hermes_status" >&2
+        exit "$hermes_status"
+        ;;
+    esac
+
+    ${bettyDjPython}/bin/python ${bettyGoodMorningDjHelper} verify "$receipt_path"
   '';
   bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit lib; };
   radarHermesLauncher = inputs.agents-workspace.packages.${hostSystem}.radar-hermes;
@@ -880,6 +904,39 @@ in
         )}
         unset secret_value OP_SERVICE_ACCOUNT_TOKEN
 
+        # Music Assistant WS token lives in HA config entry data (not agenix).
+        # Betty DJ verifier needs it to list queue items and match receipt URIs.
+        ${pkgs.python3}/bin/python3 - "$ENV_TMP" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+env_tmp = Path(sys.argv[1])
+entries_path = Path("/var/lib/hass/.storage/core.config_entries")
+if not entries_path.is_file():
+    raise SystemExit(0)
+data = json.loads(entries_path.read_text())
+entries = data.get("data", {}).get("entries", data.get("data", []))
+if isinstance(entries, dict):
+    entries = list(entries.values())
+token = None
+url = None
+for entry in entries:
+    if entry.get("domain") != "music_assistant":
+        continue
+    payload = entry.get("data") or {}
+    token = (payload.get("token") or "").strip() or None
+    url = (payload.get("url") or "").strip() or None
+    if token:
+        break
+if not token:
+    raise SystemExit(0)
+with env_tmp.open("a", encoding="utf-8") as fh:
+    fh.write(f"MUSIC_ASSISTANT_TOKEN={token}\n")
+    if url:
+        fh.write(f"MUSIC_ASSISTANT_URL={url}\n")
+PY
+
         chown emiller:users "$ENV_TMP"
         mv -f "$ENV_TMP" "$ENV_FILE"
         trap - EXIT
@@ -1565,7 +1622,9 @@ in
       hermesAgentBase
       pkgs.bashInteractive
       pkgs.coreutils
+      pkgs.curl
       pkgs.home-assistant-cli
+      pkgs.jq
       pkgs.python3
     ];
     serviceConfig = {
@@ -1582,6 +1641,11 @@ in
         "HERMES_PROFILE=betty"
         "MESSAGING_CWD=/repos/mill-docs"
         "CODEX_HOME=/var/lib/hermes-betty/.codex"
+        # Built-in ha_* tools read HASS_URL; default homeassistant.local fails on NUC.
+        "HASS_URL=http://127.0.0.1:8123"
+        "HA_URL=http://127.0.0.1:8123"
+        # Verifier prefers loopback even when HA stores the LAN URL.
+        "MUSIC_ASSISTANT_URL=http://127.0.0.1:8095"
       ];
       ExecStart = "${pkgs.util-linux}/bin/flock /var/lib/hermes-betty/.profile.lock ${bettyGoodMorningDjExecutor}";
       NoNewPrivileges = true;
