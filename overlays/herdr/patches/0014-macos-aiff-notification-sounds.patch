@@ -1,0 +1,48 @@
+diff --git i/src/config/sound.rs w/src/config/sound.rs
+index c84f0d59..a2e73fd0 100644
+--- i/src/config/sound.rs
++++ w/src/config/sound.rs
+@@ -89,12 +89,17 @@ impl SoundConfig {
+             if resolved
+                 .extension()
+                 .and_then(|ext| ext.to_str())
+-                .is_none_or(|ext: &str| !ext.eq_ignore_ascii_case("mp3"))
++                .is_none_or(|ext: &str| !supported_sound_extension(ext))
+             {
+                 diagnostics.push(format!(
+-                    "unsupported sound file format: {field} = {} resolves to {}; expected an mp3 file; using default sound",
++                    "unsupported sound file format: {field} = {} resolves to {}; expected an mp3 file{}; using default sound",
+                     path.display(),
+-                    resolved.display()
++                    resolved.display(),
++                    if cfg!(target_os = "macos") {
++                        " or macOS aiff file"
++                    } else {
++                        ""
++                    }
+                 ));
+                 continue;
+             }
+@@ -117,6 +122,11 @@ impl SoundConfig {
+     }
+ }
+
++fn supported_sound_extension(extension: &str) -> bool {
++    extension.eq_ignore_ascii_case("mp3")
++        || (cfg!(target_os = "macos") && extension.eq_ignore_ascii_case("aiff"))
++}
++
+ impl AgentSoundOverrides {
+     pub fn for_agent(&self, agent: Option<Agent>) -> AgentSoundSetting {
+         match agent {
+@@ -275,4 +285,10 @@ path = "sounds/notification.wav"
+             diag.contains("ui.sound.path") && diag.contains("expected an mp3 file")
+         }));
+     }
++
++    #[test]
++    fn aiff_sound_files_are_supported_only_on_macos() {
++        assert_eq!(supported_sound_extension("aiff"), cfg!(target_os = "macos"));
++        assert_eq!(supported_sound_extension("AIFF"), cfg!(target_os = "macos"));
++    }
+ }

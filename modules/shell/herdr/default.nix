@@ -1,5 +1,6 @@
 {
   config,
+  isDarwin,
   lib,
   pkgs,
   ...
@@ -793,11 +794,32 @@ in
                   if not isinstance(value, dict)
               }
 
+          def managed_nested_section(parent, section):
+              return {
+                  key: toml_value(value)
+                  for key, value in canonical_config.get(parent, {}).get(section, {}).items()
+                  if not isinstance(value, dict)
+              }
+
           out = remove_deprecated_worktree_keys(out)
           out = upsert_simple_section(out, "worktrees", managed_section("worktrees"))
           out = upsert_simple_section(out, "session", managed_section("session"))
           out = upsert_simple_section(out, "experimental", managed_section("experimental"))
           out = upsert_simple_section(out, "ui", managed_section("ui"))
+          ${
+            if isDarwin then
+              ''
+                out = upsert_simple_section(
+                    out,
+                    "ui.sound",
+                    managed_nested_section("ui", "sound"),
+                )
+              ''
+            else
+              ''
+                out = replace_section(out, "[ui.sound]", [])
+              ''
+          }
           out = replace_section(out, "[theme]", [f'name = "{theme_name}"'])
           out = replace_section(
               out,

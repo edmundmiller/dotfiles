@@ -33,6 +33,10 @@ window_title = "{hostname}: {workspace}"
 [ui.toast]
 delivery = "herdr"
 
+[ui.sound]
+enabled = true
+# Amp plays this macOS system sound directly when an agent finishes.
+done_path = "/System/Library/Sounds/Submarine.aiff"
 
 [session]
 resume_agents_on_restore = true

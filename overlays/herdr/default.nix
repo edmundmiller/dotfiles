@@ -17,6 +17,7 @@ let
       ./patches/0008-ignore-zero-terminal-resize.patch # bead: dotfiles-1t6d
       ./patches/0009-defer-background-tab-resize.patch # bead: dotfiles-0qcg
       ./patches/0013-hyperlink-string-chunk-ceiling.patch # herdr-2026-07-19 PageList link dupe
+      ./patches/0014-macos-aiff-notification-sounds.patch
     ];
   };
   herdrFromSource = final.callPackage "${src}/nix/package.nix" { };
