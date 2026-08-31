@@ -122,4 +122,4 @@ No cross-model review requested. The safety plan is evidence-gated per
 
 ## Commits
 
-None.
+- `9d0e6ea72 chore(agents): retire local Codex runtime`
