@@ -144,15 +144,28 @@ in
           '';
         };
         mo.enable = true;
-        # TODO: mirror the seqeratop purgePaths audit (13976f8c8e38). This list
-        # REPLACES mole's built-in defaults, so the agent worktree roots and the
-        # standard project dirs are currently never scanned. Verify which paths
-        # exist on THIS host before copying — the seqeratop list was pruned for
-        # its own layout, and ~/Library/CloudStorage should stay omitted since
-        # purging artifacts there propagates deletions across machines.
+        # Scan roots for `mo purge` (rebuildable project artifacts). This list
+        # replaces Mole's defaults. Missing future roots are harmless no-ops.
+        # Keep cloud-synced directories omitted so purges stay local.
         mo.purgePaths = [
+          # Primary repositories and local agent worktrees
           "~/src"
           "~/repos"
+          "~/.codex/worktrees"
+          "~/.local/share/herdr/worktrees"
+          "~/.claude/worktrees"
+          "~/.config/workspaces"
+          "~/orca/workspaces"
+          "~/conductor"
+          "~/worktrees"
+          # Mole defaults, retained for current and future projects
+          "~/www"
+          "~/dev"
+          "~/Projects"
+          "~/GitHub"
+          "~/Code"
+          "~/Workspace"
+          "~/Development"
         ];
       };
 

@@ -10,6 +10,11 @@ update_when: Host hardware, cabling, or a verified recovery procedure changes.
 
 Human-facing setup and troubleshooting for the personal Mac.
 
+## Storage
+
+- [Disk-space ledger and recovery](storage.md) — explains the APFS total,
+  nested home/iCloud/Codex usage, likely regrowth, and supported reclaim paths.
+
 ## CalDigit TS5 dual displays on macOS 27
 
 ### Stable topology
