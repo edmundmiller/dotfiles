@@ -2374,7 +2374,7 @@ in
               terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
               slack.require_mention = true;
               platforms.slack.extra = {
-                allow_bots = "none";
+                allow_bots = "mentions";
                 reply_in_thread = true;
               };
             };
