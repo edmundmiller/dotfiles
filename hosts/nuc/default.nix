@@ -1616,6 +1616,9 @@ in
           CODEX_HOME = lib.mkForce "/data/.codex";
           HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
+          # Keep Slack peer traffic auditable and reciprocal: Edmund plus
+          # Scintillate only. Channel and strict-mention gates still apply.
+          SLACK_ALLOWED_USERS = "U0BTZ41HQ2W,U0BUTKZ6C7J";
         };
         hostPathMounts = lib.mkForce {
           "${hermesSharedHome}" = hermesSharedHome;
@@ -1662,6 +1665,9 @@ in
           HERMES_KANBAN_DISPATCH_IN_GATEWAY = "false";
           HERMES_KANBAN_HOME = hermesSharedHome;
           HERMES_LOCAL_STT_COMMAND = "${pkgs.whisper-cpp}/bin/whisper-cli -m ${scintillateWhisperModel} -f {input_path} --language {language} --output-txt --output-file {output_dir}/transcript --no-timestamps --no-prints";
+          # Keep Slack peer traffic auditable and reciprocal: Edmund plus
+          # Betty only. Channel and strict-mention gates still apply.
+          SLACK_ALLOWED_USERS = "U0BTZ41HQ2W,U0BTKLZTJGP";
         };
         hostPathMounts = {
           "${hermesSharedHome}" = hermesSharedHome;

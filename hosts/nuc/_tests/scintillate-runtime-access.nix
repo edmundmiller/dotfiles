@@ -125,6 +125,10 @@ let
       msg = "Scintillate's Slack credentials must remain private to the gateway user.";
     }
     {
+      test = profile.environment.SLACK_ALLOWED_USERS == "U0BTZ41HQ2W,U0BTKLZTJGP";
+      msg = "Scintillate Slack must admit only Edmund and the Betty canary identity.";
+    }
+    {
       test =
         profile.settings.slack.require_mention
         && profile.settings.slack.strict_mention
@@ -145,6 +149,10 @@ let
         && bettySlackSecret.group == "users"
         && bettySlackSecret.mode == "0400";
       msg = "Betty's Slack credentials must remain private to the gateway user.";
+    }
+    {
+      test = bettyProfile.environment.SLACK_ALLOWED_USERS == "U0BTZ41HQ2W,U0BUTKZ6C7J";
+      msg = "Betty Slack must admit only Edmund and the Scintillate canary identity.";
     }
     {
       test =
