@@ -1626,6 +1626,7 @@ in
         environmentFiles = [
           "/run/hermes-betty-env/secrets.env"
           config.age.secrets.buzz-hermes-betty-agent-env.path
+          config.age.secrets.slack-hermes-betty-agent-env.path
         ];
       };
       finn = withHermesDisplayctl {
@@ -2608,6 +2609,11 @@ in
     mode = "0400";
   };
   age.secrets.slack-hermes-scintillate-agent-env = {
+    owner = "emiller";
+    group = "users";
+    mode = "0400";
+  };
+  age.secrets.slack-hermes-betty-agent-env = {
     owner = "emiller";
     group = "users";
     mode = "0400";

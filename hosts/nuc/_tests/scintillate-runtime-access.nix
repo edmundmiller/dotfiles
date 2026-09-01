@@ -10,6 +10,7 @@ let
   orchestratorAgent = cfg.modules.services.hermes.agents.orchestrator;
   profile = cfg.services.hermes-agent.profiles.scintillate;
   bettyProfile = cfg.services.hermes-agent.profiles.betty;
+  bettySlackSecret = cfg.age.secrets.slack-hermes-betty-agent-env;
   anneProfile = cfg.services.hermes-agent.profiles.anne;
   finnProfile = cfg.services.hermes-agent.profiles.finn;
   gatewayService = cfg.systemd.services.hermes-gateway-scintillate;
@@ -126,9 +127,34 @@ let
     {
       test =
         profile.settings.slack.require_mention
-        && profile.settings.platforms.slack.extra.allow_bots == "none"
-        && profile.settings.platforms.slack.extra.reply_in_thread;
-      msg = "Scintillate Slack must require an initial mention, ignore peer bots, and keep replies threaded.";
+        && profile.settings.slack.strict_mention
+        && profile.settings.platforms.slack.extra.allow_bots == "mentions"
+        && profile.settings.platforms.slack.extra.reply_in_thread
+        && profile.settings.platforms.slack.extra.native_task_cards
+        && profile.settings.display.platforms.slack.streaming
+        && !profile.settings.display.platforms.buzz.streaming;
+      msg = "Scintillate Slack must keep strict mention-gated teamwork, native UX, and Buzz final-only delivery.";
+    }
+    {
+      test = builtins.elem bettySlackSecret.path bettyProfile.environmentFiles;
+      msg = "Betty's gateway must receive its dedicated Slack credentials.";
+    }
+    {
+      test =
+        bettySlackSecret.owner == "emiller"
+        && bettySlackSecret.group == "users"
+        && bettySlackSecret.mode == "0400";
+      msg = "Betty's Slack credentials must remain private to the gateway user.";
+    }
+    {
+      test =
+        bettyProfile.settings.slack.require_mention
+        && bettyProfile.settings.slack.strict_mention
+        && bettyProfile.settings.platforms.slack.extra.allow_bots == "mentions"
+        && bettyProfile.settings.platforms.slack.extra.native_task_cards
+        && bettyProfile.settings.display.platforms.slack.streaming
+        && !bettyProfile.settings.display.platforms.buzz.streaming;
+      msg = "Betty Slack must match the bounded Scintillate teamwork and native UX policy.";
     }
     {
       test = profile.workingDirectory == "/home/hermes/repos/obsidian-vault";
