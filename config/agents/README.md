@@ -32,17 +32,18 @@ This configuration is shared across agent runtimes with generated skill targets:
 | OMP      | `~/.agents/skills/`   | Native commands and TTSR              | `~/.omp/agent/AGENTS.md`                 |
 | Pi       | `~/.agents/skills/`   | Native prompts and agents             | `~/.pi/agent/AGENTS.md`                  |
 
-Claude receives only `~/.claude/skills/test-quality`, linked to the canonical
-copy under `~/.agents/skills`; the rest of the shared catalog stays out of
-Claude's native directory so OMP does not load duplicate copies.
+Claude receives only `~/.claude/skills/test-quality` and
+`~/.claude/skills/github-cli-media`, linked to the canonical copies under
+`~/.agents/skills`; the rest of the shared catalog stays out of Claude's
+native directory so OMP does not load duplicate copies.
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
 Generated bundles exist for supported skill targets. Activation always syncs
 the harness-neutral `dot-agents` target so runtimes without a dedicated Nix
 module, including Amp, still receive shared skills. Runtime-specific targets
 are synced only when their local agent module is enabled. Defaults live only
-in `dot-agents`; runtime-specific dirs carry targeted skills. Claude's single
-shared link is installed by its module rather than by a generated bundle.
+in `dot-agents`; runtime-specific dirs carry targeted skills. Claude's targeted
+shared links are installed by its module rather than by a generated bundle.
 
 ## Skills
 

@@ -18,7 +18,7 @@ Manages global agent skills via `agent-skills-nix`. Dotfiles project-local skill
 2. **Skill selection** — which skills to enable
 3. **Targets** — where skills are installed (`~/.agents/skills`, `~/.codex/skills`, `~/.pi/agent/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`)
 
-Default skills go only to `agents`. OMP, Pi, Codex, Amp, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Claude does not read that shared directory, so its module exposes only `test-quality` as a symlink to the canonical shared copy. Do not copy the full catalog into `~/.claude/skills`: OMP scans both locations. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-opencode`, `dot-hermes`).
+Default skills go only to `agents`. OMP, Pi, Codex, Amp, OpenCode, and Hermes read `~/.agents/skills`; their own dirs are for target-specific skills only. Claude does not read that shared directory, so its module exposes only `test-quality` and `github-cli-media` as symlinks to the canonical shared copies. Do not copy the full catalog into `~/.claude/skills`: OMP scans both locations. Target-specific skills use `meta.targets`, accepting canonical names (`agents`, `codex`, `pi`, `opencode`, `hermes`) or dot-name aliases (`dot-agents`, `dot-codex`, `dot-pi`, `dot-opencode`, `dot-hermes`).
 
 ## Upgrade safety
 
@@ -31,10 +31,10 @@ so activation stops instead of replacing locally modified content.
 
 **Amp note:** Amp discovers `~/.agents/skills` natively and surfaces those skills under `/skill` in the TUI. `amp skill list` enumerates them after login. Add shared skills here instead of with `amp skill add` so Nix manages one copy for every agent.
 
-**Claude note:** `modules/agents/claude/default.nix` owns the one allowed
-Claude skill link. Keep its target under `~/.agents/skills`; OMP may scan both
-providers, but its name-based discovery exposes one skill and the symlink keeps
-the selected content canonical.
+**Claude note:** `modules/agents/claude/default.nix` owns the allowed shared
+skill links. Keep their targets under `~/.agents/skills`; OMP may scan both
+providers, but its name-based discovery exposes one entry per skill and the
+symlinks keep the selected content canonical.
 
 ## Adding a Global Skill
 

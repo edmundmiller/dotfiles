@@ -25,6 +25,9 @@ FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
 CODING_STANDARDS = ROOT / "CODING_STANDARDS.md"
 TEST_QUALITY_SKILL = ROOT / "skills" / "catalog" / "test-quality" / "SKILL.md"
+GITHUB_CLI_MEDIA_SKILL = (
+    ROOT / "skills" / "catalog" / "github-cli-media" / "SKILL.md"
+)
 PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
 SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
@@ -192,22 +195,29 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertTrue(pi_input["locked"]["rev"])
         self.assertTrue(pi_input["locked"]["narHash"])
 
-    def test_test_quality_source_routes_stay_selective(self) -> None:
+    def test_shared_skill_source_routes_stay_selective(self) -> None:
         core = OMP_CORE.read_text()
         standard = CODING_STANDARDS.read_text()
         skill = TEST_QUALITY_SKILL.read_text()
+        github_skill = GITHUB_CLI_MEDIA_SKILL.read_text()
         claude_module = CLAUDE_MODULE.read_text()
         skills_flake = SKILLS_FLAKE.read_text()
 
         self.assertNotIn("tautological", core.lower())
         self.assertIn("Tautological tests", standard)
         self.assertIn("independent", skill.lower())
-        self.assertIn("claude-test-quality-skill", claude_module)
+        self.assertIn("agent-browser", github_skill)
+        self.assertIn("--attach", github_skill)
+        self.assertIn("agent-browser-before.png", github_skill)
+        self.assertIn("agent-browser-after.png", github_skill)
+        self.assertIn("claude-shared-skill-links", claude_module)
         self.assertIn(
-            'shared="$HOME/.agents/skills/test-quality"',
+            "for skill in test-quality github-cli-media; do",
             claude_module,
         )
+        self.assertIn('shared="$HOME/.agents/skills/$skill"', claude_module)
         self.assertIn('if [ ! -f "$shared/SKILL.md" ]; then', claude_module)
+        self.assertIn('"$HOME/.claude/skills/$skill"', claude_module)
         self.assertIn('"dotfiles-agent-skills"', claude_module)
 
         target_start = skills_flake.index("targetEnabled = {")
@@ -220,6 +230,13 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn('"agents"', route)
         self.assertIn('"hermes"', route)
         self.assertNotIn('"codex"', route)
+
+        github_route_start = skills_flake.index("github-cli-media = {")
+        github_route = skills_flake[github_route_start : github_route_start + 420]
+        self.assertIn('from = "catalog";', github_route)
+        self.assertIn('"agents"', github_route)
+        self.assertIn('"hermes"', github_route)
+        self.assertNotIn('"codex"', github_route)
 
     def test_skills_sync_has_no_retired_checkout_input(self) -> None:
         command = SKILLS_COMMAND.read_text()

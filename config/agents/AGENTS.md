@@ -20,8 +20,8 @@ Unified skills, modes, and startup context for Codex, Claude, OpenCode, Pi, and 
   Pi, OpenCode, OMP, Amp, and Hermes
 - **Agent targets**: `~/.codex/skills`, `~/.pi/agent/skills`,
   `~/.config/opencode/skills` (V2 compatibility alias), `~/.hermes/skills`
-- **Claude exception**: `~/.claude/skills/test-quality` is a single symlink
-  to the shared skill; other Claude skill copies are removed
+- **Claude exception**: `~/.claude/skills/{test-quality,github-cli-media}`
+  link to the shared skills; other Claude skill copies are removed
 - **Install gating**: the shared target is always synced; runtime-specific
   target dirs are synced only when the matching local agent module is enabled
 - **Project-local skills**: `.agents/skills/` (dotfiles-only; never global)
@@ -39,10 +39,9 @@ Unified skills, modes, and startup context for Codex, Claude, OpenCode, Pi, and 
   is not an active instruction-loading surface.
 - Skills default only to `dot-agents`; other agent dirs are for target-specific skills.
 - Target-specific skills set `meta.targets` in `programs.dotfiles-agent-skills.targetedExplicit`.
-- Claude does not discover `~/.agents/skills` natively. Its module exposes only
-  the cross-runtime `test-quality` skill through Claude's native directory;
-  OMP's name-based discovery exposes one entry, and the symlink keeps either
-  provider backed by the same canonical content.
+- Claude does not discover `~/.agents/skills` natively. Its module exposes the
+  cross-runtime `test-quality` and `github-cli-media` skills through Claude's
+  native directory; OMP's name-based discovery keeps each entry canonical.
 
 ## Adding Skills
 
@@ -62,7 +61,7 @@ description: When to trigger this skill
 ## Nix Modules
 
 - `modules/agents/claude/default.nix` - Installs the thin core and targeted
-  `test-quality` skill → CLAUDE.md and Claude skills
+  shared skills → CLAUDE.md and Claude skills
 - `modules/agents/codex/default.nix` - Installs the thin core → AGENTS.md
 - `modules/agents/omp/default.nix` - Installs the thin core and OMP TTSR rules
 - `modules/agents/opencode/default.nix` - Installs the thin core → V2 AGENTS.md

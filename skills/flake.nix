@@ -429,6 +429,14 @@
               # All coding runtimes consume the shared copy. Hermes also gets
               # a direct copy for profiles whose external_dirs still point at
               # ~/.hermes/skills.
+              github-cli-media = {
+                from = "catalog";
+                path = "github-cli-media";
+                meta.targets = [
+                  "agents"
+                  "hermes"
+                ];
+              };
               test-quality = {
                 from = "catalog";
                 path = "test-quality";
