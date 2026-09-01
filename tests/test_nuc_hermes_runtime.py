@@ -63,7 +63,11 @@ class NucHermesRuntimeTest(unittest.TestCase):
         end = source.index("hermesAmosburtonSecretsMaterialize = {", start)
         activation = source[start:end]
 
-        self.assertIn('rm -f "$SHARED_HOME/profiles/"*', activation)
+        self.assertIn(
+            'find "$SHARED_HOME/profiles" -mindepth 1 -maxdepth 1 -type l -delete',
+            activation,
+        )
+        self.assertNotIn('rm -f "$SHARED_HOME/profiles/"*', activation)
         self.assertIn('ln -s "$profile_home" "$aggregate_link"', activation)
         self.assertNotIn('"$profile_home/profile.yaml"', activation)
         self.assertNotIn(
