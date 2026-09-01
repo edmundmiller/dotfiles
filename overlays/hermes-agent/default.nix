@@ -13,6 +13,7 @@ let
     (agentsWorkspacePatchRoot + "/0004-kanban-fan-in-guidance.patch")
     (agentsWorkspacePatchRoot + "/0004-kanban-bounded-intake-policy.patch")
     (agentsWorkspacePatchRoot + "/0005-gateway-profile-identity.patch")
+    (agentsWorkspacePatchRoot + "/0007-slack-native-task-card-payload.patch")
   ];
   dashboardLivenessPatch = agentsWorkspacePatchRoot + "/0006-dashboard-profile-lock-liveness.patch";
 
@@ -119,6 +120,8 @@ let
         python3 ${inputs.agents-workspace + /tests/test_hermes_cron_external_executor.py}
       HERMES_SOURCE="$PWD" \
         python3 ${inputs.agents-workspace + /tests/test_hermes_dashboard_profile_liveness.py}
+      HERMES_SOURCE="$PWD" \
+        python3 ${inputs.agents-workspace + /tests/test_hermes_slack_native_task_cards.py}
       test -f $out/share/hermes/plugins/platforms/photon/sidecar/node_modules/.package-lock.json
       grep -Fq 'sidecar deps already installed' $out/share/hermes/plugins/platforms/photon/cli.py
     '';
