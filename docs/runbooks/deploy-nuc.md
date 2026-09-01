@@ -416,7 +416,7 @@ remain active. Orchestrator stays internal with no Buzz identity, listener, or
 presence companion.
 
 Every Hermes profile, gateway, cron executor, one-shot automation, and dashboard
-uses the same patched Hermes v0.20.5 (`v2026.8.19`) package. Canonical profile
+uses the same patched Hermes v0.21.0 (`v2026.8.31`) package. Canonical profile
 settings enforce `approvals.mode=smart`, `approvals.cron_mode=deny`, automatic
 tool-use enforcement, stall guards, Bot Mode protocol, and Hermes-owned loop
 warning/hard-stop thresholds. The trusted one-shot lane remains an intentional
@@ -447,7 +447,7 @@ Buzz identity remains available for repository credentials and queue execution.
 
 The flake exports four deployable canary configurations plus the final `nuc`
 configuration. Unselected profiles receive exactly one ACP fallback service
-using the shared v0.20.5 package. Expand in this order:
+using the shared v0.21.0 package. Expand in this order:
 
 ```text
 nuc-buzz-scintillate
@@ -476,7 +476,7 @@ ssh nuc 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=
 hey nuc-wt build "$stage"
 # Copy the exact NUC_WORKTREE_REMOTE_DIR printed by the build.
 remote_dir='PASTE_NUC_WORKTREE_REMOTE_DIR_VALUE_HERE'
-ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0205-package"
+ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-hermes-v0210-package"
 ssh nuc "cd '$remote_dir' && sudo nix-private-github nix build --no-link .#checks.x86_64-linux.nuc-buzz-hermes-staged-runtime"
 
 # Validate that the staged snapshot evaluates to the exact source revisions
@@ -500,7 +500,7 @@ ssh nuc 'set -eu; for p in scintillate finn amosburton anne betty; do native=0; 
 The first stage is package convergence as well as the Scintillate canary.
 Because Scintillate deliberately has `restartIfChanged=false`, explicitly
 restart it after the switch, then verify the gateway, cron executor, dashboard,
-and remaining ACP fallbacks report Hermes v0.20.5 before expanding the selector.
+and remaining ACP fallbacks report Hermes v0.21.0 before expanding the selector.
 
 ```bash
 set -euo pipefail

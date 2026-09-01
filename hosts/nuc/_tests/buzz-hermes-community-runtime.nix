@@ -269,12 +269,12 @@ let
     }
     {
       test =
-        fleetPackage.hermesVersion == "0.20.5"
-        && fleetPackage.hermesRelease == "v2026.8.19"
+        fleetPackage.hermesVersion == "0.21.0"
+        && fleetPackage.hermesRelease == "v2026.8.31"
         && fleetPackage.smartModelRouting
         && !(fleetPackage ? pilotHermesVersion)
         && !lib.hasInfix "buzz-pilot" (toString fleetPackage);
-      msg = "Fleet must converge on the shared patched Hermes v0.20.5 package, not a pilot split.";
+      msg = "Fleet must converge on the shared patched Hermes v0.21.0 package, not a pilot split.";
     }
     {
       test = cfg.services.hermes-agent.configFile == null;

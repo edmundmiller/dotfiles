@@ -28,7 +28,7 @@ let
       --runner-id nuc-nascent-manuscript \
       --remote-control-terminal
   '';
-  # The overlay exposes one patched Hermes v0.20.5 derivation. Every gateway,
+  # The overlay exposes one patched Hermes v0.21.0 derivation. Every gateway,
   # cron/oneshot executor, and ACP companion must consume this exact path.
   hermesAgentBase = pkgs.llm-agents."hermes-agent";
   mkCronExecutorHeartbeat =

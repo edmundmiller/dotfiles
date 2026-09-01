@@ -1,6 +1,9 @@
 { config, pkgs, ... }:
 let
   restic-backup-id = "c351536f-39a4-4725-9d92-04fcb26b6306";
+  hermesProfileHomes = map (
+    profile: "${config.services.hermes-agent.profiles.${profile}.stateDir}/.hermes"
+  ) (builtins.attrNames config.services.hermes-agent.profiles);
 
   commonBackupOptions = {
     initialize = true;
@@ -8,6 +11,7 @@ let
     user = "root";
 
     pruneOpts = [
+      "--keep-within 24h"
       "--keep-daily 7"
       "--keep-weekly 5"
       "--keep-monthly 12"
@@ -22,8 +26,25 @@ let
   nucR2Backup = commonBackupOptions // {
     environmentFile = config.age.secrets."restic/nuc-r2-env".path;
   };
+  hermesProfileRestic = pkgs.writeShellApplication {
+    name = "hermes-profile-restic";
+    runtimeInputs = [ pkgs.restic ];
+    excludeShellChecks = [ "SC1091" ];
+    text = ''
+      if [ "$(id -u)" -ne 0 ]; then
+        echo "hermes-profile-restic must run as root; retry with sudo" >&2
+        exit 1
+      fi
+      set -a
+      . ${config.age.secrets."restic/nuc-r2-env".path}
+      set +a
+      exec restic "$@"
+    '';
+  };
 in
 {
+  environment.systemPackages = [ hermesProfileRestic ];
+
   services.restic.backups = {
     daily = nucR2Backup // {
       paths = [
@@ -57,6 +78,22 @@ in
       timerConfig = {
         OnCalendar = "*-*-* 00:45:00";
         RandomizedDelaySec = "15m";
+      };
+    };
+
+    # Preserve runtime-installed skills, config edits, sessions, databases, and
+    # other mutable profile state. Canonical config still belongs in
+    # agents-workspace; these snapshots provide rollback and diff evidence for
+    # changes made by or through a running Hermes agent between deployments.
+    hermes-profile-state = nucR2Backup // {
+      paths = hermesProfileHomes;
+      extraBackupArgs = [
+        "--tag"
+        "hermes-profile-state"
+      ];
+      timerConfig = {
+        OnCalendar = "*-*-* *:15:00";
+        RandomizedDelaySec = "10m";
       };
     };
 

@@ -1,0 +1,41 @@
+From: numtide/llm-agents.nix
+Subject: [PATCH] fix slash worker Python environment for Hermes 0.21.0
+
+Dashboard slash workers re-exec the bare sys.executable, which can neither
+import Hermes modules nor its dependencies under Nix. Use wrapper-provided
+interpreter and source root instead.
+
+Upstream: https://github.com/NousResearch/hermes-agent/pull/51277
+Rebased-Against: NousResearch/hermes-agent@29112bef099274229cadff79cdff7bf7b99c4b77
+---
+ tui_gateway/server.py | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/tui_gateway/server.py b/tui_gateway/server.py
+--- a/tui_gateway/server.py
++++ b/tui_gateway/server.py
+@@ -456,7 +456,7 @@ class _SlashWorker:
+         self.stdout_queue: queue.Queue[dict | None] = queue.Queue()
+ 
+         argv = [
+-            sys.executable,
++            os.environ.get("HERMES_PYTHON", sys.executable),
+             "-m",
+             "tui_gateway.slash_worker",
+             "--session-key",
+@@ -483,6 +483,15 @@ class _SlashWorker:
+             inherit_profile_home=False,  # base already carries the HOME contract
+             extra={"HERMES_HOME": str(profile_home)} if profile_home else None,
+         )
++        if os.environ.get("HERMES_PYTHON_SRC_ROOT"):
++            env["PYTHONPATH"] = os.pathsep.join(
++                p
++                for p in (
++                    os.environ["HERMES_PYTHON_SRC_ROOT"],
++                    env.get("PYTHONPATH"),
++                )
++                if p
++            )
+         # Prepend the Hermes venv bin dir and the user-local bin dir to PATH so
+         # slash_worker child processes can resolve Hermes-managed CLIs
+         # (browser-use, uvx) even when the parent gateway was launched with a

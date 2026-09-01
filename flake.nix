@@ -109,15 +109,15 @@
     agents-workspace = {
       # The NUC's nix-private-github wrapper authenticates private GitHub
       # archive fetches without requiring a host-level SSH deployment key.
-      url = "github:edmundmiller/agents-workspace/5d9e50b6ed1c485247b9681027a2c03dda07d3af";
+      url = "github:edmundmiller/agents-workspace/8c2e074cdc64c7b4e4e59f1f77ef7157db866fb5";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.llm-agents.follows = "llm-agents";
     };
 
     hermes-agent = {
       # Shared source for every Hermes gateway, cron/oneshot executor, and
-      # ACP companion. v2026.8.19 is Hermes v0.20.5.
-      url = "github:NousResearch/hermes-agent/fcbd1076a93841fa88855acce810e342a5b78101";
+      # ACP companion. v2026.8.31 is Hermes v0.21.0.
+      url = "github:NousResearch/hermes-agent/29112bef099274229cadff79cdff7bf7b99c4b77";
       flake = false;
     };
 
@@ -1667,6 +1667,11 @@
                 inherit pkgs;
               };
 
+              nuc-hermes-profile-backups = import ./hosts/nuc/_tests/hermes-profile-backups.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
@@ -1718,10 +1723,10 @@
                     bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
                   };
 
-              nuc-hermes-v0205-package = pkgs.runCommand "nuc-hermes-v0205-package" { } ''
+              nuc-hermes-v0210-package = pkgs.runCommand "nuc-hermes-v0210-package" { } ''
                 package=${self.nixosConfigurations.nuc.config.services.hermes-agent.package}
                 "$package/bin/hermes" --version \
-                  | grep -F 'Hermes Agent v0.20.5 (2026.8.19)'
+                  | grep -F 'Hermes Agent v0.21.0 (2026.8.31)'
                 hermes_python_root=""
                 for candidate in "$package"/lib/python*/site-packages; do
                   [ -d "$candidate/hermes_cli" ] || continue

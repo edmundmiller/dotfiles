@@ -89,7 +89,7 @@ class NucHermesRuntimeTest(unittest.TestCase):
     def test_hermes_revision_includes_profile_descriptions(self):
         flake = (ROOT / "flake.nix").read_text()
         self.assertIn(
-            "github:NousResearch/hermes-agent/fcbd1076a93841fa88855acce810e342a5b78101",
+            "github:NousResearch/hermes-agent/29112bef099274229cadff79cdff7bf7b99c4b77",
             flake,
         )
 

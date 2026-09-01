@@ -38,8 +38,8 @@ let
     && pkgs.lib.hasInfix "/data/current-package/bin/hermes gateway run" preStart
   ) gatewayProfiles;
   packageIdentityMatches =
-    (hermesPackage.passthru.hermesVersion or null) == "0.20.5"
-    && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.19";
+    (hermesPackage.passthru.hermesVersion or null) == "0.21.0"
+    && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.31";
   dashboardStart = toString service.serviceConfig.ExecStart;
   expectedDashboardExec = "${hermesPackage}/bin/hermes dashboard";
   assertions = [
@@ -53,7 +53,7 @@ let
     }
     {
       test = packageIdentityMatches;
-      msg = "Every NUC Hermes consumer must use the shared Hermes v0.20.5 (2026.8.19) package.";
+      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.0 (2026.8.31) package.";
     }
     {
       test = allGatewaysUseSharedPackage;
