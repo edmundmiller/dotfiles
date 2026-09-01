@@ -34,7 +34,7 @@ window_title = "{hostname}: {workspace}"
 delivery = "herdr"
 
 [ui.sound]
-enabled = true
+enabled = false
 # Amp plays this macOS system sound directly when an agent finishes.
 done_path = "/System/Library/Sounds/Submarine.aiff"
 
