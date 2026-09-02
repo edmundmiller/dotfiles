@@ -116,12 +116,14 @@ hey agents-rollout --deploy-mode dry-activate  # build, then preview activation
 ```
 
 Production deployment remains intentionally operator-triggered rather than a
-GitHub Actions job. An Amp orb does not inherit access to the personal tailnet;
-run deployment work from an authenticated Amp runner on a tailnet-connected
-Mac that has both repository checkouts instead of granting general CI a
-reusable tailnet deployment credential. If CI deployment is added later,
-prefer Tailscale workload identity with narrowly scoped grants and keep NUC
-activation environment-protected.
+GitHub Actions job. The agents-workspace Amp project can join the tailnet with
+Amp OIDC as an ephemeral `tag:amp-agents-workspace` node; the tailnet grants
+that project tag Tailscale SSH access only as `emiller` on `tag:server` hosts.
+From that project's orb, use its `scripts/deploy-nuc` wrapper. It passes the
+orb checkout through `--workspace`, while this command remains the owner of
+pinning, pushing, building, and activation. Keep broader CI on ship-only mode
+unless it receives an equally narrow workload identity and an explicit
+deployment approval boundary.
 
 ## Cron trigger ownership
 

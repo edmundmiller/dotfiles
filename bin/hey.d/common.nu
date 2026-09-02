@@ -66,9 +66,9 @@ export def is-darwin [] {
   (context).os_name == "macos"
 }
 
-export def darwin-github-nix-config [] {
+export def github-nix-config [] {
   let existing_nix_config = ($env.NIX_CONFIG? | default "")
-  if $nu.os-info.name != "macos" {
+  if (which gh | is-empty) {
     return $existing_nix_config
   }
 

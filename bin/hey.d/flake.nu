@@ -89,7 +89,7 @@ def "main check" [
   ...paths: string # Optional path scopes for formatting and pre-commit checks.
 ] {
 
-  let authenticated_nix_config = (darwin-github-nix-config)
+  let authenticated_nix_config = (github-nix-config)
   let ctx = (context)
   cd $ctx.flake_dir
 

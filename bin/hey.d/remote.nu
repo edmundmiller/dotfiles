@@ -514,10 +514,15 @@ def require-clean-rollout-repository [repository: string, label: string] {
 
 def "main agents-rollout" [
   dotfiles_msg: string = "chore: bump agents-workspace"
+  --workspace: string = ""
   --deploy-mode: string = "switch"
 ] {
   let ctx = (context)
-  let workspace = ($env.HOME | path join "src" "personal" "agents-workspace")
+  let workspace = if ($workspace | is-empty) {
+    $env.HOME | path join "src" "personal" "agents-workspace"
+  } else {
+    $workspace | path expand
+  }
   let dotfiles = $ctx.flake_dir
   let validated_deploy_mode = (agents-rollout-deploy-mode $deploy_mode)
 
@@ -538,7 +543,7 @@ def "main agents-rollout" [
   print "=== Pin agents-workspace input ==="
   cd $dotfiles
   pin-agents-workspace-input ($dotfiles | path join "flake.nix") $workspace_revision
-  let authenticated_nix_config = (darwin-github-nix-config)
+  let authenticated_nix_config = (github-nix-config)
   with-env { NIX_CONFIG: $authenticated_nix_config } {
     ^nix flake update agents-workspace
   }
