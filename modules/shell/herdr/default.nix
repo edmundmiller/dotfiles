@@ -34,6 +34,9 @@ let
     "${config.user.home}/.cargo/bin"
     "${pkgs.cargo}/bin"
     "${pkgs.rustc}/bin"
+    # Marketplace plugins invoke Node and Bun after installation.
+    "${pkgs.nodejs}/bin"
+    "${pkgs.bun}/bin"
     config.dotfiles.binDir
     "/nix/var/nix/profiles/default/bin"
     "/usr/local/bin"
@@ -933,7 +936,7 @@ in
         '';
 
         home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          export PATH=$PATH:${escapeShellArg launchPath}
+          export PATH=$PATH:${escapeShellArg launchPath}:${escapeShellArg "${pkgs.go}/bin"}
           export SSL_CERT_FILE=${escapeShellArg caBundle}
           export NIX_SSL_CERT_FILE=${escapeShellArg caBundle}
           herdr_cmd=${escapeShellArg cfg.command}
@@ -964,7 +967,11 @@ in
               return 1
             fi
 
-            if printf '%s\n' "$installed_json" | ${pkgs.gnugrep}/bin/grep -q "\"owner\":\"$owner\",\"repo\":\"$repo\""; then
+            if printf '%s\n' "$installed_json" | ${pkgs.jq}/bin/jq -e \
+              --arg owner "$owner" \
+              --arg repo "$repo" \
+              --arg subdir "$subdir" \
+              'any(.result.plugins[]?; .source.kind == "github" and .source.owner == $owner and .source.repo == $repo and (.source.subdir // "") == $subdir)' >/dev/null; then
               echo "herdr: $spec plugin already installed"
             else
               echo "herdr: installing $spec plugin"
@@ -1037,6 +1044,12 @@ in
             install_plugin coryshaw1 herdr-cliamp
           ''}
           install_plugin persiyanov herdr-reviewr
+          install_plugin ChmaraX herdr-nvim
+          install_plugin plannotator herdr-annotate
+          install_plugin kryptamine herdr-auto-title
+          install_plugin nicosuave memex
+          install_plugin jhochenbaum herdr-hunk-diff
+          install_plugin thanhdat77 herdr-navigator
           install_plugin edmundmiller herdr-which-key "" optional
           install_plugin edmundmiller tnote packages/tn/herdr-plugin
         '';

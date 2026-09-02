@@ -159,6 +159,47 @@ def test_auto_title_hook_is_pinned_and_installed_for_codex_and_claude() -> None:
     assert "--codex" in module
 
 
+def test_requested_marketplace_plugins_are_installed_with_build_toolchains() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    launch_path = re.search(
+        r'launchPath = concatStringsSep ":" \[(.*?)\n  \];', module, re.DOTALL
+    )
+    marketplace_activation = module.split(
+        "home.activation.herdr-marketplace-plugins =", 1
+    )[1].split("home.activation.herdr-agent-integrations =", 1)[0]
+
+    assert launch_path
+
+    for spec in (
+        "install_plugin ChmaraX herdr-nvim",
+        "install_plugin plannotator herdr-annotate",
+        "install_plugin kryptamine herdr-auto-title",
+        "install_plugin nicosuave memex",
+        "install_plugin jhochenbaum herdr-hunk-diff",
+        "install_plugin thanhdat77 herdr-navigator",
+        "install_plugin wyattjoh herdr-plugin-gh-pr",
+    ):
+        assert spec in module
+
+    # Node and Bun are plugin runtimes; Go is only needed while installing.
+    assert '"${pkgs.nodejs}/bin"' in launch_path.group(1)
+    assert '"${pkgs.bun}/bin"' in launch_path.group(1)
+    assert '"${pkgs.go}/bin"' not in launch_path.group(1)
+    assert "${pkgs.go}/bin" in marketplace_activation
+
+
+def test_marketplace_plugin_source_match_includes_exact_subdir() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    marketplace_activation = module.split(
+        "home.activation.herdr-marketplace-plugins =", 1
+    )[1].split("home.activation.herdr-agent-integrations =", 1)[0]
+
+    assert '--arg subdir "$subdir"' in marketplace_activation
+    assert ".source.owner == $owner" in marketplace_activation
+    assert ".source.repo == $repo" in marketplace_activation
+    assert '(.source.subdir // "") == $subdir' in marketplace_activation
+
+
 def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
