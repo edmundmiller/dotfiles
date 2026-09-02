@@ -322,6 +322,18 @@ let
     }
     {
       test =
+        orchestratorSettings.stt.provider == "local"
+        && scintillateSettings.stt.provider == "local_command"
+        && orchestratorSettings.tts.provider == "elevenlabs"
+        && scintillateSettings.tts.provider == "elevenlabs"
+        && orchestratorSettings.voice.auto_tts
+        && orchestratorSettings.voice.barge_in
+        && scintillateSettings.voice.auto_tts
+        && scintillateSettings.voice.barge_in;
+      msg = "Orchestrator and Scintillate must keep conversational voice enabled with local transcription and ElevenLabs speech.";
+    }
+    {
+      test =
         cfg.systemd.services.hermes-amosburton-cron-tick.serviceConfig.ExecStart
         == "${fleetPackage}/bin/hermes cron tick"
         && scintillateCron.serviceConfig.ExecStart == "${fleetPackage}/bin/hermes cron tick"
