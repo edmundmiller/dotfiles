@@ -31,7 +31,7 @@ def hey-help [] {
   print "  nuc [auto|switch|test|dry-activate|build|vm|local|wt <mode>], rebuild-nuc, nuc-worktree/nuc-wt [mode] [configuration], nuc-ssh, nuc-status, nuc-hermes-smoke, nuc-service, nuc-logs, nuc-rollback, nuc-generations"
   print "  login-scintillate, login-betty"
   print "  unas, unas-ssh"
-  print "  agents-rollout"
+  print "  agents-rollout [message] [--deploy-mode none|build|dry-activate|test|switch]"
   print ""
   print "Ergodox"
   print "  ergodox-build, ergodox-flash, ergodox-build-flash, ergodox-edit, ergodox-draw, ergodox-info"

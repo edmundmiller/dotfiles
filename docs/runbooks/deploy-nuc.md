@@ -89,6 +89,40 @@ overwrites stale diagnostics safely. After explicit review, bypass only the
 stale-source check with `NUC_DEPLOY_ALLOW_STALE=1 hey nuc-wt switch`; the shared
 lock still applies.
 
+## Roll out agents-workspace
+
+Run the rollout from a clean dotfiles host after committing the
+agents-workspace change. The default deployment mode also requires tailnet
+access to the NUC:
+
+```bash
+hey agents-rollout
+```
+
+The command pushes `agents-workspace`, updates and commits its exact source pin
+and lock entry in dotfiles, pushes dotfiles, builds the pinned pair on the NUC,
+and only then switches the NUC. It uses the same isolated worktree,
+source-provenance, and deployment-lock path as `hey nuc`; it does not depend on
+a checkout on the NUC.
+Deployment modes also verify the NUC's tailnet SSH identity before either
+repository is pushed; ship-only mode does not require NUC access.
+
+Use a narrower final stage when needed:
+
+```bash
+hey agents-rollout --deploy-mode none          # ship and pin only
+hey agents-rollout --deploy-mode build         # ship, pin, and remote-build
+hey agents-rollout --deploy-mode dry-activate  # build, then preview activation
+```
+
+Production deployment remains intentionally operator-triggered rather than a
+GitHub Actions job. An Amp orb does not inherit access to the personal tailnet;
+run deployment work from an authenticated Amp runner on a tailnet-connected
+Mac that has both repository checkouts instead of granting general CI a
+reusable tailnet deployment credential. If CI deployment is added later,
+prefer Tailscale workload identity with narrowly scoped grants and keep NUC
+activation environment-protected.
+
 ## Cron trigger ownership
 
 Systemd is the sole recurring cron executor for Amos Burton, Betty, and

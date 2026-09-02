@@ -475,41 +475,98 @@ def "main nuc-generations" [] {
   ^ssh $NUC_HOST "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system"
 }
 
-def "main agents-rollout" [dotfiles_msg: string = "chore: bump agents-workspace"] {
+def agents-rollout-deploy-mode [mode: string] {
+  let allowed = ["none" "build" "dry-activate" "test" "switch"]
+  if not ($mode in $allowed) {
+    print -e $"error: agents rollout deploy mode must be one of: ($allowed | str join ', ')"
+    error make {msg: "invalid agents rollout deploy mode"}
+  }
+  $mode
+}
+
+def pin-agents-workspace-input [flake_path: string, revision: string] {
+  let parsed_revision = ($revision | parse -r '^(?<revision>[0-9a-f]{40})$')
+  if ($parsed_revision | is-empty) {
+    error make {msg: "agents-workspace pin requires an exact 40-character lowercase Git revision"}
+  }
+
+  let source = (open --raw $flake_path)
+  let pins = ($source | parse -r 'github:edmundmiller/agents-workspace/(?<revision>[0-9a-f]{40})')
+  if ($pins | length) != 1 {
+    error make {msg: "expected exactly one pinned agents-workspace input in flake.nix"}
+  }
+
+  let current_revision = ($pins | get 0.revision)
+  $source
+    | str replace $"github:edmundmiller/agents-workspace/($current_revision)" $"github:edmundmiller/agents-workspace/($revision)"
+    | save --force $flake_path
+}
+
+def require-clean-rollout-repository [repository: string, label: string] {
+  let status = (^git -C $repository status --porcelain=v1 --untracked-files=normal | complete)
+  if $status.exit_code != 0 {
+    error make {msg: $"could not inspect ($label) repository"}
+  }
+  if not ($status.stdout | str trim | is-empty) {
+    error make {msg: $"($label) repository is dirty; commit or stash it first"}
+  }
+}
+
+def "main agents-rollout" [
+  dotfiles_msg: string = "chore: bump agents-workspace"
+  --deploy-mode: string = "switch"
+] {
   let ctx = (context)
   let workspace = ($env.HOME | path join "src" "personal" "agents-workspace")
   let dotfiles = $ctx.flake_dir
+  let validated_deploy_mode = (agents-rollout-deploy-mode $deploy_mode)
 
-  print "=== 1/4 Push agents-workspace ==="
-  cd $workspace
-  let ws_dirty = (^bash -lc "set -euo pipefail; ! git diff --quiet || ! git diff --cached --quiet" | complete)
-  if $ws_dirty.exit_code == 0 {
-    print -e "workspace repo dirty; commit/stash first"
-    error make {msg: "workspace repo dirty"}
+  require-clean-rollout-repository $workspace "agents-workspace"
+  require-clean-rollout-repository $dotfiles "dotfiles"
+
+  if $validated_deploy_mode != "none" {
+    print "=== Verify NUC tailnet target ==="
+    ^ssh $NUC_HOST 'set -eu; hostname="$(hostname)"; uname="$(uname -a)"; printf "hostname=%s\nuname=%s\n" "$hostname" "$uname"; test "$hostname" = "nuc"'
   }
+
+  print "=== Push agents-workspace ==="
+  cd $workspace
   ^git pull --rebase
   ^git push
+  let workspace_revision = (^git rev-parse HEAD | str trim)
 
-  print "=== 2/4 Update agents-workspace input ==="
+  print "=== Pin agents-workspace input ==="
   cd $dotfiles
-  let df_dirty = (^bash -lc "set -euo pipefail; ! git diff --quiet || ! git diff --cached --quiet" | complete)
-  if $df_dirty.exit_code == 0 {
-    print -e "dotfiles repo dirty; commit/stash first"
-    error make {msg: "dotfiles repo dirty"}
+  pin-agents-workspace-input ($dotfiles | path join "flake.nix") $workspace_revision
+  let authenticated_nix_config = (darwin-github-nix-config)
+  with-env { NIX_CONFIG: $authenticated_nix_config } {
+    ^nix flake update agents-workspace
   }
-  ^nix flake update agents-workspace
 
-  print "=== 3/4 Commit + push dotfiles ==="
-  let lock_changed = (^git diff --quiet -- flake.lock | complete)
-  if $lock_changed.exit_code == 0 {
-    print "flake.lock unchanged; skipping commit"
+  print "=== Commit + push dotfiles ==="
+  let pin_changed = (^git diff --quiet -- flake.nix flake.lock | complete)
+  if $pin_changed.exit_code == 0 {
+    print "agents-workspace pin unchanged; skipping commit"
   } else {
-    ^git add flake.lock
+    ^git add flake.nix flake.lock
     ^git commit -m $dotfiles_msg
   }
   ^git pull --rebase
   ^git push
 
-  print "=== 4/4 Deploy on NUC ==="
-  ^ssh $NUC_HOST "cd ~/.config/dotfiles && git pull && hey re"
+  if $validated_deploy_mode == "none" {
+    print "=== NUC deployment skipped (--deploy-mode none) ==="
+    return
+  }
+
+  print "=== Build pinned dotfiles + agents-workspace on NUC ==="
+  main nuc build
+
+  if $validated_deploy_mode == "build" {
+    print "=== NUC activation skipped (--deploy-mode build) ==="
+    return
+  }
+
+  print $"=== Activate NUC with mode: ($validated_deploy_mode) ==="
+  main nuc $validated_deploy_mode
 }

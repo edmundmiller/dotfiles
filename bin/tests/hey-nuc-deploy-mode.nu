@@ -12,6 +12,16 @@ assert equal (nuc-worktree-configuration "nuc-buzz-scintillate") "nuc-buzz-scint
 assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn") "nuc-buzz-scintillate-finn"
 assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton") "nuc-buzz-scintillate-finn-amosburton"
 assert equal (nuc-worktree-configuration "nuc-buzz-scintillate-finn-amosburton-anne") "nuc-buzz-scintillate-finn-amosburton-anne"
+for mode in ["none" "build" "dry-activate" "test" "switch"] {
+  assert equal (agents-rollout-deploy-mode $mode) $mode
+}
+let invalid_agents_rollout_mode_blocked = (try {
+  agents-rollout-deploy-mode "vm"
+  false
+} catch {|err|
+  $err.msg | str contains "invalid agents rollout deploy mode"
+})
+assert $invalid_agents_rollout_mode_blocked
 
 let source_revision = "1111111111111111111111111111111111111111"
 let revision_command = (nuc-worktree-revision-command "/tmp/dotfiles-worktree-test" $source_revision)
@@ -42,6 +52,22 @@ assert ($lifecycle_script | str contains "/tmp/dotfiles-worktree-test/.nuc-deplo
 assert ($lifecycle_script | str contains "prune-nuc-deploy-snapshots' '/tmp' 'tester' 5")
 
 let temp_dir = (^mktemp -d | str trim)
+let pin_fixture = ($temp_dir | path join "flake-pin.nix")
+let old_agents_revision = "2222222222222222222222222222222222222222"
+let new_agents_revision = "3333333333333333333333333333333333333333"
+$"url = \"github:edmundmiller/agents-workspace/($old_agents_revision)\";" | save $pin_fixture
+pin-agents-workspace-input $pin_fixture $new_agents_revision
+let pinned_fixture = (open --raw $pin_fixture)
+assert ($pinned_fixture | str contains $"agents-workspace/($new_agents_revision)")
+assert not ($pinned_fixture | str contains $old_agents_revision)
+let invalid_agents_revision_blocked = (try {
+  pin-agents-workspace-input $pin_fixture "not-a-revision"
+  false
+} catch {|err|
+  $err.msg | str contains "exact 40-character lowercase Git revision"
+})
+assert $invalid_agents_revision_blocked
+
 let source_dir = ($temp_dir | path join "source")
 let clean_destination_dir = ($temp_dir | path join "clean-synced")
 let dirty_destination_dir = ($temp_dir | path join "dirty-synced")
@@ -87,6 +113,16 @@ assert equal $lifecycle_command_failure.exit_code 7 "failed deployment command m
 ^git -C $source_dir add flake.nix .gitignore bin/write-nuc-deploy-revision
 ^git -C $source_dir add --force .nuc-deploy-active
 ^git -C $source_dir -c user.name=Test -c user.email=test@example.invalid commit --quiet -m fixture
+require-clean-rollout-repository $source_dir "fixture"
+"dirty" | save ($source_dir | path join "rollout-dirty.txt")
+let dirty_rollout_repository_blocked = (try {
+  require-clean-rollout-repository $source_dir "fixture"
+  false
+} catch {|err|
+  $err.msg | str contains "fixture repository is dirty"
+})
+assert $dirty_rollout_repository_blocked
+rm ($source_dir | path join "rollout-dirty.txt")
 let fixture_revision = (^git -C $source_dir rev-parse HEAD | str trim)
 ^git -C $source_dir update-ref refs/remotes/origin/main $fixture_revision
 "mutated after status could have been checked" | save --force ($source_dir | path join "flake.nix")
