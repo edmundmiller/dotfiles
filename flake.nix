@@ -1224,7 +1224,10 @@
                     export GIT_CONFIG_COUNT=1
                     export GIT_CONFIG_KEY_0=commit.gpgsign
                     export GIT_CONFIG_VALUE_0=false
-                    cd ${./.}
+                    cp -R ${./.} source
+                    chmod -R u+w source
+                    cd source
+                    git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_codex_stop_hook.py \
                       tests/test_completion_hooks.py
