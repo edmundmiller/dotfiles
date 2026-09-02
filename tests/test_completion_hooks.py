@@ -11,13 +11,16 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 HOOK = ROOT / "scripts/codex-validate-stop"
+BASH = shutil.which("bash")
+if BASH is None:
+    raise RuntimeError("bash is required for completion-hook tests")
 
 
 def write_command(path, name, exit_code=0, stdout="", stderr="", log_name=None):
     command = path / name
     label = log_name or name
     command.write_text(
-        "#!/usr/bin/env bash\n"
+        f"#!{BASH}\n"
         f'printf \'{label} %s\\n\' "$*" >>"$COMPLETION_TEST_LOG"\n'
         f"printf '%b' {stdout!r}\n"
         f"printf '%b' {stderr!r} >&2\n"
@@ -77,7 +80,7 @@ class CompletionHookTests(unittest.TestCase):
 
             gh = fake_bin / "gh"
             gh.write_text(
-                "#!/usr/bin/env bash\n"
+                f"#!{BASH}\n"
                 'printf \'gh %s\\n\' "$*" >>"$HEY_AUTH_TEST_LOG"\n'
                 'test "$1 $2" = "auth token"\n'
                 "printf 'test-token\\n'\n"
@@ -86,7 +89,7 @@ class CompletionHookTests(unittest.TestCase):
 
             hostname = fake_bin / "hostname"
             hostname.write_text(
-                "#!/usr/bin/env bash\n"
+                f"#!{BASH}\n"
                 'case "${NIX_CONFIG:-}" in\n'
                 "  *'access-tokens = github.com=test-token'*) auth=authenticated ;;\n"
                 "  *) auth=unauthenticated ;;\n"
@@ -98,7 +101,7 @@ class CompletionHookTests(unittest.TestCase):
 
             fake_nix = fake_bin / "nix"
             fake_nix.write_text(
-                "#!/usr/bin/env bash\n"
+                f"#!{BASH}\n"
                 'case "${NIX_CONFIG:-}" in\n'
                 "  *'access-tokens = github.com=test-token'*) auth=authenticated ;;\n"
                 "  *) auth=unauthenticated ;;\n"
@@ -112,7 +115,7 @@ class CompletionHookTests(unittest.TestCase):
 
             prek = fake_bin / "prek"
             prek.write_text(
-                "#!/usr/bin/env bash\n"
+                f"#!{BASH}\n"
                 'case "${NIX_CONFIG:-}" in\n'
                 "  *'access-tokens = github.com=test-token'*) auth=authenticated ;;\n"
                 "  *) auth=unauthenticated ;;\n"

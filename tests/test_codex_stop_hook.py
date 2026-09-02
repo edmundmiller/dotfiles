@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -10,12 +11,15 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 HOOK = ROOT / "scripts/codex-validate-stop"
 DISPATCH = ROOT / "scripts/codex-stop-dispatch"
+BASH = shutil.which("bash")
+if BASH is None:
+    raise RuntimeError("bash is required for stop-hook tests")
 
 
 def write_command(path, name, exit_code=0, stdout=""):
     command = path / name
     command.write_text(
-        "#!/usr/bin/env bash\n"
+        f"#!{BASH}\n"
         f'printf \'{name} %s\\n\' "$*" >>"$CODEX_STOP_LOG"\n'
         f"printf '%s' {stdout!r}\n"
         f"exit {exit_code}\n"
