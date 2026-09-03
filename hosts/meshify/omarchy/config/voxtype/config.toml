@@ -11,7 +11,7 @@ enabled = false
 
 [audio]
 # Keep dictation on the dedicated microphone when Bluetooth audio changes.
-device = "alsa_input.usb-Antlion_Audio_Antlion_USB_Microphone-00.mono-fallback"
+device = "sysdefault:CARD=Microphone"
 sample_rate = 16000
 max_duration_secs = 60
 pause_media = true
