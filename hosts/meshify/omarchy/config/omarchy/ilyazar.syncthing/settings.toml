@@ -1,0 +1,9 @@
+version = 1
+
+[style]
+icon_style = "themed"
+web_ui_theme = "omarchy"
+
+[service]
+service_state = "enabled"
+probe_interval_seconds = 15

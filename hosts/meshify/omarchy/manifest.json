@@ -42,6 +42,13 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/omarchy/ilyazar.syncthing/settings.toml",
+      "target": ".config/omarchy/ilyazar.syncthing/settings.toml",
+      "mode": "0644",
+      "sourceMode": "0644",
+      "format": "toml"
+    },
+    {
       "source": "config/omarchy/shell.json",
       "target": ".config/omarchy/shell.json",
       "mode": "0600",
