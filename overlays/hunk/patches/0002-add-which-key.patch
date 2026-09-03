@@ -1,8 +1,8 @@
 diff --git a/src/ui/App.tsx b/src/ui/App.tsx
-index 613a3322..3d34469d 100644
+index a754053..e1e1818 100644
 --- a/src/ui/App.tsx
 +++ b/src/ui/App.tsx
-@@ -71,6 +71,7 @@ import { ConfirmDialog, confirmDialogHeight } from "./components/chrome/ConfirmD
+@@ -43,6 +43,7 @@ import { ConfirmDialog, confirmDialogHeight } from "./components/chrome/ConfirmD
  import { ExtensionDialog } from "./components/chrome/ExtensionDialog";
  import { ExtensionToast } from "./components/chrome/ExtensionToast";
  import { StatusBar } from "./components/chrome/StatusBar";
@@ -10,7 +10,7 @@ index 613a3322..3d34469d 100644
  import { DiffPane } from "./components/panes/DiffPane";
  import { ExtensionPaneHost } from "./components/panes/ExtensionPane";
  import { PaneDivider } from "./components/panes/PaneDivider";
-@@ -2165,7 +2166,7 @@ export function App({
+@@ -1172,7 +1173,7 @@ export function App({
      toggleMenu,
    } = useMenuController(menus);
  
@@ -19,7 +19,7 @@ index 613a3322..3d34469d 100644
      activateMenuItemByHint,
      activeMenuId,
      activateCurrentMenuItem,
-@@ -2195,6 +2196,8 @@ export function App({
+@@ -1202,6 +1203,8 @@ export function App({
      moveThemeSelector,
      openMenu,
      openSourceSelector: () => openMenu("source"),
@@ -28,37 +28,22 @@ index 613a3322..3d34469d 100644
      saveConfigPromptOpen,
      saveViewPreferencesAndQuit,
      discardViewPreferencesAndQuit,
-@@ -2544,6 +2547,14 @@ export function App({
+@@ -1505,6 +1508,10 @@ export function App({
          </Suspense>
        ) : null}
  
 +      {!pagerMode && whichKeyState.visible ? (
-+        <WhichKeyDock
-+          state={whichKeyState}
-+          terminalWidth={terminal.width}
-+          theme={baseTheme}
-+        />
++        <WhichKeyDock state={whichKeyState} terminalWidth={terminal.width} theme={baseTheme} />
 +      ) : null}
 +
        {showHelp ? (
          <Suspense fallback={null}>
            <LazyHelpDialog
 diff --git a/src/ui/AppHost.interactions.test.tsx b/src/ui/AppHost.interactions.test.tsx
-index 1effa1b1..2a16f225 100644
+index f53a9eb..f87456d 100644
 --- a/src/ui/AppHost.interactions.test.tsx
 +++ b/src/ui/AppHost.interactions.test.tsx
-@@ -1518,6 +1518,10 @@ describe("App interactions", () => {
-       expect(frame).toContain("Reload");
-       expect(frame).toContain("Quit");
- 
-+      await act(async () => {
-+        await setup.mockInput.pressArrow("right");
-+      });
-+      await flush(setup);
-       await act(async () => {
-         await setup.mockInput.pressArrow("right");
-       });
-@@ -2233,7 +2237,7 @@ describe("App interactions", () => {
+@@ -2336,7 +2336,7 @@ describe("App interactions", () => {
      }
    });
  
@@ -67,7 +52,7 @@ index 1effa1b1..2a16f225 100644
      // Create a file with many lines so Space has room to scroll
      const before =
        Array.from(
-@@ -2274,6 +2278,12 @@ describe("App interactions", () => {
+@@ -2377,6 +2377,12 @@ describe("App interactions", () => {
        await flush(setup);
        setup.captureCharFrame();
  
@@ -80,7 +65,7 @@ index 1effa1b1..2a16f225 100644
        await act(async () => {
          await setup.mockInput.pressKey(" ");
        });
-@@ -2281,6 +2291,62 @@ describe("App interactions", () => {
+@@ -2384,6 +2390,62 @@ describe("App interactions", () => {
  
        const frame = setup.captureCharFrame();
        expect(frame).toContain("export const line");
@@ -144,7 +129,7 @@ index 1effa1b1..2a16f225 100644
        await act(async () => {
          setup.renderer.destroy();
 diff --git a/src/ui/AppHost.reload.test.tsx b/src/ui/AppHost.reload.test.tsx
-index 8867709a..0fe72461 100644
+index 2dcba00..14f6ad1 100644
 --- a/src/ui/AppHost.reload.test.tsx
 +++ b/src/ui/AppHost.reload.test.tsx
 @@ -1,5 +1,5 @@
@@ -154,8 +139,8 @@ index 8867709a..0fe72461 100644
  import { tmpdir } from "node:os";
  import { join } from "node:path";
  import { describe, expect, test } from "bun:test";
-@@ -465,4 +465,94 @@ describe("reload agent attention marks", () => {
-       rmSync(dir, { force: true, recursive: true });
+@@ -518,4 +518,94 @@ describe("reload agent attention marks", () => {
+       await removeTestDirectory(dir);
      }
    });
 +
@@ -176,7 +161,7 @@ index 8867709a..0fe72461 100644
 +
 +    const bootstrap = await loadAppBootstrap(
 +      { kind: "vcs", staged: false, options: { mode: "stack", excludeUntracked: true } },
-+      { cwd: dir },
++      { cwd: dir, vcsCatalog: getBundledVcsCatalog() },
 +    );
 +
 +    const setup = await testRender(<AppHost bootstrap={bootstrap} />, {
@@ -245,13 +230,13 @@ index 8867709a..0fe72461 100644
 +      await act(async () => {
 +        setup.renderer.destroy();
 +      });
-+      rmSync(dir, { force: true, recursive: true });
++      await removeTestDirectory(dir);
 +    }
 +  });
  });
 diff --git a/src/ui/components/chrome/WhichKeyDock.tsx b/src/ui/components/chrome/WhichKeyDock.tsx
 new file mode 100644
-index 00000000..178b748c
+index 0000000..178b748
 --- /dev/null
 +++ b/src/ui/components/chrome/WhichKeyDock.tsx
 @@ -0,0 +1,98 @@
@@ -354,12 +339,12 @@ index 00000000..178b748c
 +  );
 +}
 diff --git a/src/ui/hooks/useAppKeyboardShortcuts.ts b/src/ui/hooks/useAppKeyboardShortcuts.ts
-index c8931da4..6ad2e6e6 100644
+index 4b410f1..265ce63 100644
 --- a/src/ui/hooks/useAppKeyboardShortcuts.ts
 +++ b/src/ui/hooks/useAppKeyboardShortcuts.ts
 @@ -1,12 +1,13 @@
  import type { KeyEvent } from "@opentui/core";
- import { useKeyboard } from "@opentui/react";
+ import { useKeyboard, useRenderer } from "@opentui/react";
 -import { useRef } from "react";
 +import { useEffect, useMemo, useRef, useState } from "react";
  import type {
@@ -410,7 +395,7 @@ index c8931da4..6ad2e6e6 100644
 +}
 +
  type FocusArea = "files" | "filter" | "note";
-
+ 
  export interface UseAppKeyboardShortcutsOptions {
 @@ -56,6 +86,8 @@ export interface UseAppKeyboardShortcutsOptions {
    sendFileViewModeKey: (key: ExtensionKeyEvent) => ExtensionFileViewModeKeyResult;
@@ -430,7 +415,7 @@ index c8931da4..6ad2e6e6 100644
    activeMenuId,
    activateCurrentMenuItem,
    closeAgentSkill,
-@@ -193,6 +227,236 @@ export function useAppKeyboardShortcuts({
+@@ -194,6 +228,243 @@ export function useAppKeyboardShortcuts({
      key.preventDefault();
      key.stopPropagation();
    };
@@ -500,18 +485,20 @@ index c8931da4..6ad2e6e6 100644
 +        enabled: item.enabled,
 +        run: () => switchReviewSource(item.id),
 +      })),
-+      ...([
-+        ["1", "split view", "hunk.view.layoutSplit"],
-+        ["2", "stack view", "hunk.view.layoutStack"],
-+        ["0", "auto view", "hunk.view.layoutAuto"],
-+        ["s", "sidebar", "hunk.view.toggleFilesPane"],
-+        ["t", "theme selector", "hunk.view.openThemeSelector"],
-+        ["a", "agent notes", "hunk.view.toggleAgentNotes"],
-+        ["l", "line numbers", "hunk.view.toggleLineNumbers"],
-+        ["w", "line wrap", "hunk.view.toggleLineWrap"],
-+        ["m", "hunk metadata", "hunk.view.toggleHunkHeaders"],
-+        ["z", "toggle context", "hunk.review.toggleHunkGap"],
-+      ] as const).map(([key, label, commandId]) => ({
++      ...(
++        [
++          ["1", "split view", "hunk.view.layoutSplit"],
++          ["2", "stack view", "hunk.view.layoutStack"],
++          ["0", "auto view", "hunk.view.layoutAuto"],
++          ["s", "sidebar", "hunk.view.toggleFilesPane"],
++          ["t", "theme selector", "hunk.view.openThemeSelector"],
++          ["a", "agent notes", "hunk.view.toggleAgentNotes"],
++          ["l", "line numbers", "hunk.view.toggleLineNumbers"],
++          ["w", "line wrap", "hunk.view.toggleLineWrap"],
++          ["m", "hunk metadata", "hunk.view.toggleHunkHeaders"],
++          ["z", "toggle context", "hunk.review.toggleHunkGap"],
++        ] as const
++      ).map(([key, label, commandId]) => ({
 +        id: `view.${commandId}`,
 +        label,
 +        group: "View",
@@ -599,7 +586,13 @@ index c8931da4..6ad2e6e6 100644
 +    setWhichKeyState((state) => {
 +      const pinned = !state.pinned;
 +      return pinned
-+        ? { entries: directEntries, pinned: true, sequence: [], title: "Active keys", visible: true }
++        ? {
++            entries: directEntries,
++            pinned: true,
++            sequence: [],
++            title: "Active keys",
++            visible: true,
++          }
 +        : HIDDEN_WHICH_KEY;
 +    });
 +  };
@@ -663,14 +656,13 @@ index c8931da4..6ad2e6e6 100644
 +    armLeader(["SPC"]);
 +    return "mine";
 +  };
-+
  
    /**
     * Move an ordered modal surface through the active review keymap.
-@@ -590,21 +854,23 @@ export function useAppKeyboardShortcuts({
+@@ -594,21 +865,19 @@ export function useAppKeyboardShortcuts({
      return "mine";
    };
-
+ 
 -  /** Dispatch one command shortcut and honor its menu-closing policy. */
 +  /** Dispatch a command shortcut and close an open menu when requested. */
    const dispatchCommandShortcut = (key: KeyEvent) => {
@@ -688,11 +680,7 @@ index c8931da4..6ad2e6e6 100644
 -    // Route through the active menu first. Its navigation keys stay host-owned,
 -    // while an advertised accelerator gets one direct trip to the command table
 -    // before focused inputs or extension modes can claim it.
-+    const whichKeyToggleOwned = routeKeyOwnership(
-+      [handleWhichKeyToggleShortcut],
-+      key,
-+      consumeKey,
-+    );
++    const whichKeyToggleOwned = routeKeyOwnership([handleWhichKeyToggleShortcut], key, consumeKey);
 +    if (whichKeyToggleOwned) return;
 +
 +    // Modal surfaces outrank the leader, so a focused prompt or menu retains
@@ -700,7 +688,7 @@ index c8931da4..6ad2e6e6 100644
      const surfaceOwned = routeKeyOwnership(
        [
          handleExtensionTrustPromptShortcut,
-@@ -621,6 +887,13 @@ export function useAppKeyboardShortcuts({
+@@ -625,6 +894,13 @@ export function useAppKeyboardShortcuts({
      );
      if (surfaceOwned) return;
  
@@ -712,9 +700,9 @@ index c8931da4..6ad2e6e6 100644
 +    if (leaderOwned) return;
 +
      if (activeMenuIdRef.current && dispatchCommandShortcut(key)) return;
-
+ 
      // Without an open-menu command match, focused inputs and extension modes
-@@ -634,4 +907,6 @@ export function useAppKeyboardShortcuts({
+@@ -638,4 +914,6 @@ export function useAppKeyboardShortcuts({
  
      dispatchCommandShortcut(key);
    });
@@ -723,7 +711,7 @@ index c8931da4..6ad2e6e6 100644
  }
 diff --git a/src/ui/lib/keybindingRegistry.ts b/src/ui/lib/keybindingRegistry.ts
 new file mode 100644
-index 00000000..74907f46
+index 0000000..74907f4
 --- /dev/null
 +++ b/src/ui/lib/keybindingRegistry.ts
 @@ -0,0 +1,98 @@
@@ -826,7 +814,7 @@ index 00000000..74907f46
 +  return entries;
 +}
 diff --git a/src/ui/lib/keyboard.ts b/src/ui/lib/keyboard.ts
-index 73d66afa..43455638 100644
+index 73d66af..4345563 100644
 --- a/src/ui/lib/keyboard.ts
 +++ b/src/ui/lib/keyboard.ts
 @@ -14,6 +14,9 @@ const CTRL_S = "\u0013";

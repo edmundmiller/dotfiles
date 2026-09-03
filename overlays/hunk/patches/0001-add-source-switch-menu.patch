@@ -1,11 +1,11 @@
 diff --git a/src/ui/App.tsx b/src/ui/App.tsx
-index 9f744b24..613a3322 100644
+index 9c5cdd1..a754053 100644
 --- a/src/ui/App.tsx
 +++ b/src/ui/App.tsx
-@@ -145,6 +145,14 @@ import { verifyWorkspaceWriteTarget } from "./lib/workspaceWriteGuard";
+@@ -106,6 +106,14 @@ import { setMouseCapture } from "./lib/mouseCapture";
  import { openSelectedFileInEditor } from "./lib/openInEditor";
  import { resolveResponsiveLayout } from "./lib/responsive";
- import { resizeSidebarWidth } from "./lib/sidebar";
+ import type { WorkspaceRefreshRequest } from "./currentReviewRefresh";
 +import {
 +  buildReviewSourceItems,
 +  repoPathForInput,
@@ -14,13 +14,46 @@ index 9f744b24..613a3322 100644
 +  sourceIndicatorLabel,
 +  type ReviewSourceId,
 +} from "./lib/sourceSwitch";
- import { availableThemes, resolveTheme, withTransparentSurfaces } from "./themes";
  
  type FocusArea = "files" | "filter" | "note";
-@@ -1614,32 +1622,50 @@ export function App({
  
-   const canRefreshCurrentInput = canReloadInput(bootstrap.input);
-   const watchEnabled = Boolean(bootstrap.input.options.watch && canRefreshCurrentInput);
+@@ -850,6 +858,19 @@ export function App({
+     setShowMenuBar((current) => !current);
+   };
+ 
++  const currentViewOptions = useMemo(
++    () => ({
++      layoutMode,
++      themeId,
++      showAgentNotes,
++      showHunkHeaders,
++      showLineNumbers,
++      showMenuBar,
++      wrapLines,
++    }),
++    [layoutMode, showAgentNotes, showHunkHeaders, showLineNumbers, showMenuBar, themeId, wrapLines],
++  );
++
+   const { canRefreshCurrentInput, refreshCurrentInput, triggerRefreshCurrentInput } =
+     useCurrentReviewRefreshController({
+       input: bootstrap.input,
+@@ -858,18 +879,48 @@ export function App({
+       onWatchReloadPending: publishWatchReloadPending,
+       reloadContext: bootstrap.reloadContext,
+       sourceLabel: bootstrap.changeset.sourceLabel,
+-      view: {
+-        layoutMode,
+-        themeId,
+-        showAgentNotes,
+-        showHunkHeaders,
+-        showLineNumbers,
+-        showMenuBar,
+-        wrapLines,
+-      },
++      view: currentViewOptions,
+       watchRuntime,
+     });
+ 
 +  const gitBackedRepoPath = repoPathForInput(bootstrap.input, bootstrap.changeset.sourceLabel);
 +  const [reviewSourceRepoPath, setReviewSourceRepoPath] = useState(gitBackedRepoPath);
 +  const repoPath = gitBackedRepoPath ?? reviewSourceRepoPath;
@@ -33,61 +66,7 @@ index 9f744b24..613a3322 100644
 +    () => buildReviewSourceItems(bootstrap.input, repoPath),
 +    [bootstrap.input, repoPath],
 +  );
-+  const currentViewOptions = useMemo(
-+    () => ({
-+      layoutMode,
-+      themeId,
-+      showAgentNotes,
-+      showHunkHeaders,
-+      showLineNumbers,
-+      showMenuBar,
-+      wrapLines,
-+    }),
-+    [
-+      layoutMode,
-+      showAgentNotes,
-+      showHunkHeaders,
-+      showLineNumbers,
-+      showMenuBar,
-+      themeId,
-+      wrapLines,
-+    ],
-+  );
-   const workspaceRefreshRequest = useMemo<WorkspaceRefreshRequest | null>(() => {
-     if (!canRefreshCurrentInput) return null;
- 
-     return {
--      nextInput: withCurrentViewOptions(bootstrap.input, {
--        layoutMode,
--        themeId,
--        showAgentNotes,
--        showHunkHeaders,
--        showLineNumbers,
--        showMenuBar,
--        wrapLines,
--      }),
-+      nextInput: withCurrentViewOptions(bootstrap.input, currentViewOptions),
-       sourcePath: isVcsReviewInput(bootstrap.input) ? bootstrap.changeset.sourceLabel : undefined,
-     };
-   }, [
-     bootstrap.changeset.sourceLabel,
-     bootstrap.input,
-     canRefreshCurrentInput,
--    layoutMode,
--    showAgentNotes,
--    showHunkHeaders,
--    showLineNumbers,
--    showMenuBar,
--    themeId,
--    wrapLines,
-+    currentViewOptions,
-   ]);
- 
-   useLayoutEffect(() => {
-@@ -1673,6 +1699,37 @@ export function App({
-     [refreshCurrentInput],
-   );
- 
++
 +  const switchReviewSource = useCallback(
 +    (sourceId: ReviewSourceId) => {
 +      const result = resolveReviewSourceInput(sourceId, repoPath, currentViewOptions);
@@ -110,19 +89,13 @@ index 9f744b24..613a3322 100644
 +          showSessionNotice(`Failed to switch source: ${reviewSourceLabel(sourceId)}`);
 +        });
 +    },
-+    [
-+      currentViewOptions,
-+      onReloadSession,
-+      repoPath,
-+      showSessionNotice,
-+      showTransientNotice,
-+    ],
++    [currentViewOptions, onReloadSession, repoPath, showSessionNotice, showTransientNotice],
 +  );
 +
-   /**
-    * Open the trust prompt whenever a repo root needs an answer it has not been asked for.
-    *
-@@ -2078,6 +2135,8 @@ export function App({
+   const {
+     closeExtensionTrustPrompt,
+     denyRepoExtensions,
+@@ -1091,6 +1142,8 @@ export function App({
            action: exitKeyboardMode,
          }
        : undefined,
@@ -131,7 +104,7 @@ index 9f744b24..613a3322 100644
      copyDecorations,
      layoutMode,
      filesPaneVisible,
-@@ -2094,6 +2153,7 @@ export function App({
+@@ -1107,6 +1160,7 @@ export function App({
      activeMenuId,
      activeMenuItemIndex,
      activeMenuSpec,
@@ -139,15 +112,15 @@ index 9f744b24..613a3322 100644
      activeMenuWidth,
      activateCurrentMenuItem,
      closeMenu,
-@@ -2106,6 +2166,7 @@ export function App({
+@@ -1119,6 +1173,7 @@ export function App({
    } = useMenuController(menus);
-
+ 
    useAppKeyboardShortcuts({
 +    activateMenuItemByHint,
      activeMenuId,
      activateCurrentMenuItem,
      closeAgentSkill,
-@@ -2133,6 +2194,7 @@ export function App({
+@@ -1146,6 +1201,7 @@ export function App({
      moveMenuItem,
      moveThemeSelector,
      openMenu,
@@ -155,7 +128,7 @@ index 9f744b24..613a3322 100644
      saveConfigPromptOpen,
      saveViewPreferencesAndQuit,
      discardViewPreferencesAndQuit,
-@@ -2207,7 +2269,8 @@ export function App({
+@@ -1169,7 +1225,8 @@ export function App({
      (sum, file) => sum + file.stats.deletions,
      0,
    );
@@ -166,10 +139,10 @@ index 9f744b24..613a3322 100644
    const diffHeaderLabelWidth = Math.max(0, diffContentWidth - diffHeaderStatsWidth - 1);
    const diffSeparatorWidth = Math.max(0, diffContentWidth - 2);
 diff --git a/src/ui/AppHost.interactions.test.tsx b/src/ui/AppHost.interactions.test.tsx
-index 2a6a9d1a..1effa1b1 100644
+index e7c7074..f53a9eb 100644
 --- a/src/ui/AppHost.interactions.test.tsx
 +++ b/src/ui/AppHost.interactions.test.tsx
-@@ -778,7 +778,7 @@ describe("App interactions", () => {
+@@ -789,7 +789,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -178,7 +151,7 @@ index 2a6a9d1a..1effa1b1 100644
  
        await act(async () => {
          await setup.mockInput.pressKey("m", { shift: true });
-@@ -786,7 +786,7 @@ describe("App interactions", () => {
+@@ -797,7 +797,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        frame = setup.captureCharFrame();
@@ -187,7 +160,7 @@ index 2a6a9d1a..1effa1b1 100644
        expect(firstNonEmptyLine(frame)).not.toContain("─");
  
        await act(async () => {
-@@ -796,7 +796,7 @@ describe("App interactions", () => {
+@@ -807,7 +807,7 @@ describe("App interactions", () => {
          nextFrame.includes("Toggle files/filter focus"),
        );
        expect(frame).toContain("Toggle files/filter focus");
@@ -196,7 +169,7 @@ index 2a6a9d1a..1effa1b1 100644
      } finally {
        await act(async () => {
          setup.renderer.destroy();
-@@ -817,7 +817,7 @@ describe("App interactions", () => {
+@@ -828,7 +828,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -205,7 +178,7 @@ index 2a6a9d1a..1effa1b1 100644
        expect(firstNonEmptyLine(frame)).not.toContain("─");
  
        await act(async () => {
-@@ -827,7 +827,7 @@ describe("App interactions", () => {
+@@ -838,7 +838,7 @@ describe("App interactions", () => {
          nextFrame.includes("Toggle files/filter focus"),
        );
        expect(frame).toContain("Toggle files/filter focus");
@@ -214,7 +187,27 @@ index 2a6a9d1a..1effa1b1 100644
      } finally {
        await act(async () => {
          setup.renderer.destroy();
-@@ -3044,7 +3044,7 @@ describe("App interactions", () => {
+@@ -1617,6 +1617,10 @@ describe("App interactions", () => {
+       expect(frame).toContain("Reload");
+       expect(frame).toContain("Quit");
+ 
++      await act(async () => {
++        await setup.mockInput.pressArrow("right");
++      });
++      await flush(setup);
+       await act(async () => {
+         await setup.mockInput.pressArrow("right");
+       });
+@@ -1941,7 +1945,7 @@ describe("App interactions", () => {
+       });
+       await waitForFrame(setup, (frame) => frame.includes("Toggle files/filter focus"), 12);
+ 
+-      for (let index = 0; index < 3; index += 1) {
++      for (let index = 0; index < 4; index += 1) {
+         await act(async () => {
+           await setup.mockInput.pressArrow("right");
+         });
+@@ -3228,7 +3232,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -223,7 +216,7 @@ index 2a6a9d1a..1effa1b1 100644
        expect((frame.match(/alpha\.ts/g) ?? []).length).toBe(1);
  
        await act(async () => {
-@@ -3053,7 +3053,7 @@ describe("App interactions", () => {
+@@ -3237,7 +3241,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        frame = setup.captureCharFrame();
@@ -233,10 +226,10 @@ index 2a6a9d1a..1effa1b1 100644
  
        await act(async () => {
 diff --git a/src/ui/AppHost.reload.test.tsx b/src/ui/AppHost.reload.test.tsx
-index b7b758d5..8867709a 100644
+index eafe0f2..2dcba00 100644
 --- a/src/ui/AppHost.reload.test.tsx
 +++ b/src/ui/AppHost.reload.test.tsx
-@@ -400,4 +400,69 @@ describe("reload agent attention marks", () => {
+@@ -453,4 +453,69 @@ describe("reload agent attention marks", () => {
        await removeTestDirectory(dir);
      }
    });
@@ -258,7 +251,7 @@ index b7b758d5..8867709a 100644
 +
 +    const bootstrap = await loadAppBootstrap(
 +      { kind: "vcs", staged: false, options: { mode: "stack", excludeUntracked: true } },
-+      { cwd: dir },
++      { cwd: dir, vcsCatalog: getBundledVcsCatalog() },
 +    );
 +
 +    const setup = await testRender(<AppHost bootstrap={bootstrap} />, {
@@ -302,15 +295,15 @@ index b7b758d5..8867709a 100644
 +      await act(async () => {
 +        setup.renderer.destroy();
 +      });
-+      rmSync(dir, { force: true, recursive: true });
++      await removeTestDirectory(dir);
 +    }
 +  });
  });
 diff --git a/src/ui/AppHost.responsive.test.tsx b/src/ui/AppHost.responsive.test.tsx
-index 2958da6a..4a9b5546 100644
+index 24d688d..5be3216 100644
 --- a/src/ui/AppHost.responsive.test.tsx
 +++ b/src/ui/AppHost.responsive.test.tsx
-@@ -154,6 +154,12 @@ describe("responsive app", () => {
+@@ -165,6 +165,12 @@ describe("responsive app", () => {
        await act(async () => {
          await setup.renderOnce();
        });
@@ -322,10 +315,10 @@ index 2958da6a..4a9b5546 100644
 +      });
  
        const menuFrame = setup.captureCharFrame();
-       expect(menuFrame).toContain("[ ] Files pane");
-@@ -212,12 +218,12 @@ describe("responsive app", () => {
-     const wide = await captureFrameForBootstrap(createBootstrap("auto", true), 220);
+       expect(menuFrame).toContain("[x] Files pane");
+@@ -224,12 +230,12 @@ describe("responsive app", () => {
      const narrow = await captureFrameForBootstrap(createBootstrap("auto", true), 150);
+     const tight = await captureFrameForBootstrap(createBootstrap("auto", true), 110);
  
 -    expect(wide).not.toContain("File  View  Navigate  Agent  Help");
 +    expect(wide).not.toContain("File  Source  View  Navigate  Agent  Help");
@@ -337,14 +330,14 @@ index 2958da6a..4a9b5546 100644
 +    expect(narrow).not.toContain("File  Source  View  Navigate  Agent  Help");
      expect(narrow).not.toContain("F10 menu");
      expect((narrow.match(/alpha\.ts/g) ?? []).length).toBe(1);
-     expect(narrow).not.toMatch(/▌.*▌/);
+     expect(narrow).toMatch(/▌.*▌/);
 diff --git a/src/ui/components/chrome/menu.ts b/src/ui/components/chrome/menu.ts
-index 952aff71..5a545ad9 100644
+index 952aff7..5a545ad 100644
 --- a/src/ui/components/chrome/menu.ts
 +++ b/src/ui/components/chrome/menu.ts
 @@ -1,6 +1,6 @@
  import { measureTextWidth } from "../../lib/text";
-
+ 
 -export type MenuId = "file" | "view" | "navigate" | "agent" | "extensions" | "help";
 +export type MenuId = "file" | "source" | "view" | "navigate" | "agent" | "extensions" | "help";
  
@@ -359,10 +352,10 @@ index 952aff71..5a545ad9 100644
    navigate: "Navigate",
    agent: "Agent",
 diff --git a/src/ui/components/ui-components.test.tsx b/src/ui/components/ui-components.test.tsx
-index c175ea7d..6a37d791 100644
+index 74d9acd..839ecd4 100644
 --- a/src/ui/components/ui-components.test.tsx
 +++ b/src/ui/components/ui-components.test.tsx
-@@ -3992,7 +3992,7 @@ describe("UI components", () => {
+@@ -4537,7 +4537,7 @@ describe("UI components", () => {
      const bootstrap = createBootstrap();
      const frame = await captureFrame(<AppHost bootstrap={bootstrap} />, 280, 24);
  
@@ -372,7 +365,7 @@ index c175ea7d..6a37d791 100644
      expect(frame).toContain("beta.ts");
      expect(frame).toContain("@@ -1,1 +1,2 @@");
 diff --git a/src/ui/hooks/useAppKeyboardShortcuts.ts b/src/ui/hooks/useAppKeyboardShortcuts.ts
-index ac288555..c8931da4 100644
+index 23327df..4b410f1 100644
 --- a/src/ui/hooks/useAppKeyboardShortcuts.ts
 +++ b/src/ui/hooks/useAppKeyboardShortcuts.ts
 @@ -23,6 +23,7 @@ type FocusArea = "files" | "filter" | "note";
@@ -407,10 +400,10 @@ index ac288555..c8931da4 100644
    moveThemeSelector,
    openMenu,
    saveConfigPromptOpen,
-@@ -229,6 +233,14 @@ export function useAppKeyboardShortcuts({
+@@ -230,6 +234,14 @@ export function useAppKeyboardShortcuts({
      return "mine";
    };
-
+ 
 +  /** F9 opens the source menu without affecting normal app shortcuts. */
 +  const handleSourceSelectorShortcut = (key: KeyEvent): KeyOwner => {
 +    if (key.name !== "f9") return "notMine";
@@ -422,7 +415,7 @@ index ac288555..c8931da4 100644
    /** Escape closes the topmost open overlay (agent skill, then help). */
    const handleDialogShortcut = (key: KeyEvent): KeyOwner => {
      if (!isEscapeKey(key)) {
-@@ -460,6 +472,10 @@ export function useAppKeyboardShortcuts({
+@@ -461,6 +473,10 @@ export function useAppKeyboardShortcuts({
        return "mine";
      }
  
@@ -433,7 +426,7 @@ index ac288555..c8931da4 100644
      return "notMine";
    };
  
-@@ -594,6 +610,7 @@ export function useAppKeyboardShortcuts({
+@@ -598,6 +614,7 @@ export function useAppKeyboardShortcuts({
          handleExtensionTrustPromptShortcut,
          handleSaveConfigPromptShortcut,
          handleExtensionDialogShortcut,
@@ -442,7 +435,7 @@ index ac288555..c8931da4 100644
          handleDialogShortcut,
          handleThemeSelectorShortcut,
 diff --git a/src/ui/hooks/useMenuController.ts b/src/ui/hooks/useMenuController.ts
-index c1c94942..e8a7e261 100644
+index c1c9494..e8a7e26 100644
 --- a/src/ui/hooks/useMenuController.ts
 +++ b/src/ui/hooks/useMenuController.ts
 @@ -107,6 +107,18 @@ export function useMenuController(menus: AppMenus) {
@@ -463,7 +456,7 @@ index c1c94942..e8a7e261 100644
 +
    const activeMenuSpec = menuSpecs.find((menu) => menu.id === openMenuId);
    const activeMenuWidth = menuWidth(activeMenuEntries) + 2;
-
+ 
 @@ -117,6 +129,7 @@ export function useMenuController(menus: AppMenus) {
      activeMenuSpec,
      activeMenuWidth,
@@ -473,10 +466,10 @@ index c1c94942..e8a7e261 100644
      menuSpecs,
      moveMenuItem,
 diff --git a/src/ui/lib/appCommands.test.ts b/src/ui/lib/appCommands.test.ts
-index 55947e5c..9260accc 100644
+index 7e0ddd0..3873fe0 100644
 --- a/src/ui/lib/appCommands.test.ts
 +++ b/src/ui/lib/appCommands.test.ts
-@@ -435,6 +435,8 @@ describe("command catalog parity", () => {
+@@ -447,6 +447,8 @@ describe("command catalog parity", () => {
      const { commands } = createTestCommands();
      const catalogued = new Set(APP_COMMAND_CATALOG.map((entry) => entry.id));
      const menus = buildAppMenus({
@@ -486,7 +479,7 @@ index 55947e5c..9260accc 100644
        copyDecorations: false,
        cursorLine: "row",
 diff --git a/src/ui/lib/appMenus.test.ts b/src/ui/lib/appMenus.test.ts
-index a738816d..b73dcdbd 100644
+index a738816..b73dcdb 100644
 --- a/src/ui/lib/appMenus.test.ts
 +++ b/src/ui/lib/appMenus.test.ts
 @@ -25,6 +25,11 @@ const MENU_STATE: Omit<BuildAppMenusOptions, "commands" | "extensionCommands"> =
@@ -499,7 +492,7 @@ index a738816d..b73dcdbd 100644
 +  ],
 +  switchReviewSource: () => {},
  };
-
+ 
  /** Build the built-in command table over recording callbacks, plus the log it writes. */
 @@ -340,3 +345,21 @@ describe("the Extensions menu", () => {
      expect(ran).toEqual(["notes", "blame"]);
@@ -524,11 +517,11 @@ index a738816d..b73dcdbd 100644
 +  });
 +});
 diff --git a/src/ui/lib/appMenus.ts b/src/ui/lib/appMenus.ts
-index 0a9e5498..cc5d2b0d 100644
+index 0614b6c..4fa8cbf 100644
 --- a/src/ui/lib/appMenus.ts
 +++ b/src/ui/lib/appMenus.ts
 @@ -1,5 +1,6 @@
- import type { CursorLine, LayoutMode } from "../../core/types";
+ import type { CursorLine, LayoutMode } from "../../core/run/commandInputs";
  import type { AppMenus, MenuEntry, MenuId } from "../components/chrome/menu";
 +import type { ReviewSourceId, ReviewSourceItem } from "./sourceSwitch";
  import { executeAppCommand, isCommandEnabled, type AppCommand } from "./appCommands";
@@ -577,7 +570,7 @@ index 0a9e5498..cc5d2b0d 100644
        ...fileViewEntries,
 diff --git a/src/ui/lib/sourceSwitch.test.ts b/src/ui/lib/sourceSwitch.test.ts
 new file mode 100644
-index 00000000..9c31ac40
+index 0000000..5dd08f1
 --- /dev/null
 +++ b/src/ui/lib/sourceSwitch.test.ts
 @@ -0,0 +1,282 @@
@@ -601,7 +594,7 @@ index 00000000..9c31ac40
 +  repoPathForInput,
 +  sourceIndicatorLabel,
 +} from "./sourceSwitch";
-+import type { CliInput } from "../../core/types";
++import type { CliInput } from "../../core/run/commandInputs";
 +
 +function git(repo: string, args: string[]) {
 +  return execFileSync("git", args, {
@@ -865,14 +858,14 @@ index 00000000..9c31ac40
 +});
 diff --git a/src/ui/lib/sourceSwitch.ts b/src/ui/lib/sourceSwitch.ts
 new file mode 100644
-index 00000000..e438844c
+index 0000000..c1ef257
 --- /dev/null
 +++ b/src/ui/lib/sourceSwitch.ts
 @@ -0,0 +1,447 @@
 +import { execFileSync } from "node:child_process";
 +import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 +import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
-+import type { CliInput, CommonOptions } from "../../core/types";
++import type { CliInput, CommonOptions } from "../../core/run/commandInputs";
 +
 +export type BaseReviewSourceId = "unstaged" | "staged" | "commit" | "branch";
 +export type LastAgentTurnReviewSourceId = "last-agent-turn";
@@ -1317,10 +1310,10 @@ index 00000000..e438844c
 +  return { kind: "notice", message: "Unsupported source." };
 +}
 diff --git a/test/pty/chrome.test.ts b/test/pty/chrome.test.ts
-index 5f5e2b4c..27e9bc79 100644
+index 0eea9d9..73a7b79 100644
 --- a/test/pty/chrome.test.ts
 +++ b/test/pty/chrome.test.ts
-@@ -138,7 +138,7 @@ describe("PTY chrome", () => {
+@@ -174,7 +174,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1329,7 +1322,7 @@ index 5f5e2b4c..27e9bc79 100644
          timeout: 15_000,
        });
  
-@@ -173,7 +173,7 @@ describe("PTY chrome", () => {
+@@ -209,7 +209,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1338,7 +1331,7 @@ index 5f5e2b4c..27e9bc79 100644
          timeout: 15_000,
        });
  
-@@ -216,7 +216,7 @@ describe("PTY chrome", () => {
+@@ -252,7 +252,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1347,7 +1340,7 @@ index 5f5e2b4c..27e9bc79 100644
          timeout: 15_000,
        });
  
-@@ -246,7 +246,7 @@ describe("PTY chrome", () => {
+@@ -282,7 +282,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1356,7 +1349,7 @@ index 5f5e2b4c..27e9bc79 100644
          timeout: 15_000,
        });
  
-@@ -287,7 +287,7 @@ describe("PTY chrome", () => {
+@@ -323,7 +323,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1366,7 +1359,7 @@ index 5f5e2b4c..27e9bc79 100644
        });
  
 diff --git a/test/pty/pager.test.ts b/test/pty/pager.test.ts
-index 553530dc..9b8f2394 100644
+index dab2b0d..f7efa2b 100644
 --- a/test/pty/pager.test.ts
 +++ b/test/pty/pager.test.ts
 @@ -48,7 +48,7 @@ describe("PTY pager", () => {
