@@ -1663,6 +1663,13 @@
                 inherit pkgs;
               };
 
+              # Pure Nix/build test: the Git dirt audit is a data-hygiene check
+              # and must never fail the sync dead-man-switch (false DOWN alerts).
+              obsidian-dirt-audit-healthcheck-decoupled = import ./modules/services/obsidian-sync/_tests/eval-dirt-decoupled.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               # Pure Nix eval: keep the Desktop dashboard enabled across
               # automatic NUC upgrades from the default branch.
               nuc-hermes-dashboard-enabled = import ./hosts/nuc/_tests/hermes-dashboard-enabled.nix {

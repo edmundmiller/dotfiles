@@ -72,9 +72,11 @@ let
       exit 0
     fi
     echo "$output" >&2
-    ${optionalString (cfg.healthcheck.enable && cfg.healthcheck.pingUrl != "")
-      "${pkgs.curl}/bin/curl -fsS -m 10 ${escapeShellArg "${cfg.healthcheck.pingUrl}/fail"} >/dev/null || true"
-    }
+    # Deliberately no Healthchecks fail ping here: the dirt audit is a
+    # data-hygiene check, not a sync-availability check. Failing the sync
+    # dead-man-switch on vault dirt creates false "DOWN | nuc/obsidian-sync"
+    # alerts while sync is healthy. Dirt evidence stays in the failed unit
+    # and its journal; the sync check only reports the guard and service.
     exit "$rc"
   '';
 
