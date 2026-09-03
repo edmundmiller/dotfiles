@@ -74,6 +74,18 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/systemd/user/omarchy-plugin-watch.service",
+      "target": ".config/systemd/user/omarchy-plugin-watch.service",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
+      "source": "config/systemd/user/omarchy-plugin-watch.timer",
+      "target": ".config/systemd/user/omarchy-plugin-watch.timer",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/voxtype/config.toml",
       "target": ".config/voxtype/config.toml",
       "mode": "0644",
@@ -94,6 +106,12 @@
     {
       "source": "local/bin/omamail-doctor",
       "target": ".local/bin/omamail-doctor",
+      "mode": "0755",
+      "sourceMode": "0755"
+    },
+    {
+      "source": "local/bin/omarchy-plugin-watch",
+      "target": ".local/bin/omarchy-plugin-watch",
       "mode": "0755",
       "sourceMode": "0755"
     }
@@ -143,6 +161,11 @@
       "name": "libsecret",
       "manager": "repo",
       "command": "secret-tool"
+    },
+    {
+      "name": "libnotify",
+      "manager": "repo",
+      "command": "notify-send"
     },
     {
       "name": "networkmanager",
@@ -213,6 +236,11 @@
     {
       "name": "voxtype.service",
       "setup": "voxtype"
+    },
+    {
+      "name": "omarchy-plugin-watch.timer",
+      "setup": "none",
+      "commands": ["pi"]
     }
   ],
   "privateState": [
