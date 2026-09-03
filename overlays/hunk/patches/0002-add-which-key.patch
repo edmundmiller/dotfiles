@@ -40,7 +40,7 @@ index a754053..e1e1818 100644
          <Suspense fallback={null}>
            <LazyHelpDialog
 diff --git a/src/ui/AppHost.interactions.test.tsx b/src/ui/AppHost.interactions.test.tsx
-index f53a9eb..f87456d 100644
+index f53a9eb..d0205f5 100644
 --- a/src/ui/AppHost.interactions.test.tsx
 +++ b/src/ui/AppHost.interactions.test.tsx
 @@ -2336,7 +2336,7 @@ describe("App interactions", () => {
@@ -65,7 +65,7 @@ index f53a9eb..f87456d 100644
        await act(async () => {
          await setup.mockInput.pressKey(" ");
        });
-@@ -2384,6 +2390,62 @@ describe("App interactions", () => {
+@@ -2384,6 +2390,107 @@ describe("App interactions", () => {
  
        const frame = setup.captureCharFrame();
        expect(frame).toContain("export const line");
@@ -125,6 +125,51 @@ index f53a9eb..f87456d 100644
 +      });
 +      await flush(setup);
 +      expect(setup.captureCharFrame()).not.toContain("Active keys");
++    } finally {
++      await act(async () => {
++        setup.renderer.destroy();
++      });
++    }
++  });
++
++  test("pinned which-key uses resolved v0.21 bindings and exposes note actions", async () => {
++    const bootstrap = {
++      ...createBootstrap(),
++      keybindings: { "hunk.review.halfPageDown": "ctrl+n" },
++    };
++    const setup = await testRender(<AppHost bootstrap={bootstrap} />, {
++      width: 240,
++      height: 30,
++      useKittyKeyboard: null,
++    });
++
++    try {
++      await flush(setup);
++
++      await act(async () => {
++        await setup.mockInput.typeText("c");
++      });
++      await flush(setup);
++      await act(async () => {
++        await setup.mockInput.typeText("Keep this thread visible.");
++      });
++      await flush(setup);
++      await act(async () => {
++        await setup.mockInput.pressKeys(["\u001b[115;5u"]);
++      });
++      await flush(setup);
++
++      await act(async () => {
++        await setup.mockInput.pressKeys(["\u001b\u000b"]);
++      });
++      await flush(setup);
++
++      const frame = setup.captureCharFrame();
++      expect(frame).toContain("Ctrl+N");
++      expect(frame).not.toContain("Ctrl+D");
++      expect(frame).toContain("Scroll down half a page");
++      expect(frame).toContain("Edit active review note");
++      expect(frame).toContain("Reply to active review note");
      } finally {
        await act(async () => {
          setup.renderer.destroy();
@@ -339,10 +384,10 @@ index 0000000..178b748
 +  );
 +}
 diff --git a/src/ui/hooks/useAppKeyboardShortcuts.ts b/src/ui/hooks/useAppKeyboardShortcuts.ts
-index 4b410f1..265ce63 100644
+index 4b410f1..cc697ca 100644
 --- a/src/ui/hooks/useAppKeyboardShortcuts.ts
 +++ b/src/ui/hooks/useAppKeyboardShortcuts.ts
-@@ -1,12 +1,13 @@
+@@ -1,23 +1,55 @@
  import type { KeyEvent } from "@opentui/core";
  import { useKeyboard, useRenderer } from "@opentui/react";
 -import { useRef } from "react";
@@ -357,7 +402,10 @@ index 4b410f1..265ce63 100644
  import {
    dispatchAppCommand,
    executeAppCommand,
-@@ -15,9 +16,38 @@ import {
++  findAppCommandById,
++  isCommandEnabled,
+   type AppCommand,
+   verticalCommandDirection,
  } from "../lib/appCommands";
  import type { ExtensionDialogRequest } from "../lib/extensionDialogs";
  import { toExtensionKeyEvent } from "../lib/extensionKeyEvent";
@@ -397,7 +445,7 @@ index 4b410f1..265ce63 100644
  type FocusArea = "files" | "filter" | "note";
  
  export interface UseAppKeyboardShortcutsOptions {
-@@ -56,6 +86,8 @@ export interface UseAppKeyboardShortcutsOptions {
+@@ -56,6 +88,8 @@ export interface UseAppKeyboardShortcutsOptions {
    sendFileViewModeKey: (key: ExtensionKeyEvent) => ExtensionFileViewModeKeyResult;
    /** Whether a session-scoped extension keyboard mode currently owns review keys. */
    isKeyboardModeActive: () => boolean;
@@ -406,7 +454,7 @@ index 4b410f1..265ce63 100644
    /** Leave the active session keyboard mode. */
    exitKeyboardMode: () => void;
    /** Offer one key to the active session keyboard mode. */
-@@ -99,6 +131,8 @@ export interface UseAppKeyboardShortcutsOptions {
+@@ -99,6 +133,8 @@ export interface UseAppKeyboardShortcutsOptions {
   */
  export function useAppKeyboardShortcuts({
    activateMenuItemByHint,
@@ -415,12 +463,32 @@ index 4b410f1..265ce63 100644
    activeMenuId,
    activateCurrentMenuItem,
    closeAgentSkill,
-@@ -194,6 +228,243 @@ export function useAppKeyboardShortcuts({
+@@ -194,6 +230,204 @@ export function useAppKeyboardShortcuts({
      key.preventDefault();
      key.stopPropagation();
    };
-+  const keybindingRegistry = useMemo<KeybindingRegistryAction[]>(
-+    () => [
++  const keybindingRegistry = useMemo<KeybindingRegistryAction[]>(() => {
++    const commandAction = (
++      id: string,
++      group: string,
++      commandId: string,
++      leaderBindings: string[][] = [],
++    ): KeybindingRegistryAction => {
++      const command = findAppCommandById(commands, commandId);
++      return {
++        id,
++        label: command?.title ?? commandId,
++        group,
++        bindings: [
++          ...(command?.keyLabels ?? []).map((key) => ({ keys: [key] })),
++          ...leaderBindings.map((keys) => ({ keys })),
++        ],
++        enabled: command ? isCommandEnabled(command) : false,
++        run: () => executeAppCommand(commands, commandId),
++      };
++    };
++
++    return [
 +      {
 +        id: "leader.pageDown",
 +        label: "page down",
@@ -429,46 +497,11 @@ index 4b410f1..265ce63 100644
 +        enabled: true,
 +        run: () => executeAppCommand(commands, "hunk.review.pageDown"),
 +      },
-+      {
-+        id: "file.focus",
-+        label: "toggle files/filter focus",
-+        group: "File",
-+        bindings: [{ keys: ["Tab"] }, { keys: ["SPC", "f", "Tab"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.app.toggleFocusArea"),
-+      },
-+      {
-+        id: "file.filter",
-+        label: "focus filter",
-+        group: "File",
-+        bindings: [{ keys: ["/"] }, { keys: ["SPC", "f", "/"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.review.focusFilter"),
-+      },
-+      {
-+        id: "file.edit",
-+        label: "open file in editor",
-+        group: "File",
-+        bindings: [{ keys: ["e"] }, { keys: ["SPC", "f", "e"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.review.editSelectedFile"),
-+      },
-+      {
-+        id: "file.reload",
-+        label: "reload",
-+        group: "File",
-+        bindings: [{ keys: ["r"] }, { keys: ["SPC", "f", "r"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.app.refresh"),
-+      },
-+      {
-+        id: "file.quit",
-+        label: "quit",
-+        group: "File",
-+        bindings: [{ keys: ["q"] }, { keys: ["SPC", "f", "q"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.app.quit"),
-+      },
++      commandAction("file.focus", "File", "hunk.app.toggleFocusArea", [["SPC", "f", "Tab"]]),
++      commandAction("file.filter", "File", "hunk.review.focusFilter", [["SPC", "f", "/"]]),
++      commandAction("file.edit", "File", "hunk.review.editSelectedFile", [["SPC", "f", "e"]]),
++      commandAction("file.reload", "File", "hunk.app.refresh", [["SPC", "f", "r"]]),
++      commandAction("file.quit", "File", "hunk.app.quit", [["SPC", "f", "q"]]),
 +      {
 +        id: "source.open",
 +        label: "open source menu",
@@ -487,60 +520,36 @@ index 4b410f1..265ce63 100644
 +      })),
 +      ...(
 +        [
-+          ["1", "split view", "hunk.view.layoutSplit"],
-+          ["2", "stack view", "hunk.view.layoutStack"],
-+          ["0", "auto view", "hunk.view.layoutAuto"],
-+          ["s", "sidebar", "hunk.view.toggleFilesPane"],
-+          ["t", "theme selector", "hunk.view.openThemeSelector"],
-+          ["a", "agent notes", "hunk.view.toggleAgentNotes"],
-+          ["l", "line numbers", "hunk.view.toggleLineNumbers"],
-+          ["w", "line wrap", "hunk.view.toggleLineWrap"],
-+          ["m", "hunk metadata", "hunk.view.toggleHunkHeaders"],
-+          ["z", "toggle context", "hunk.review.toggleHunkGap"],
++          ["1", "hunk.view.layoutSplit"],
++          ["2", "hunk.view.layoutStack"],
++          ["0", "hunk.view.layoutAuto"],
++          ["s", "hunk.view.toggleFilesPane"],
++          ["t", "hunk.view.openThemeSelector"],
++          ["a", "hunk.view.toggleAgentNotes"],
++          ["l", "hunk.view.toggleLineNumbers"],
++          ["w", "hunk.view.toggleLineWrap"],
++          ["m", "hunk.view.toggleHunkHeaders"],
++          ["z", "hunk.review.toggleHunkGap"],
 +        ] as const
-+      ).map(([key, label, commandId]) => ({
-+        id: `view.${commandId}`,
-+        label,
-+        group: "View",
-+        bindings: [{ keys: [key] }, { keys: ["SPC", "v", key] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, commandId),
-+      })),
-+      {
-+        id: "navigate.top",
-+        label: "top",
-+        group: "Navigate",
-+        bindings: [{ keys: ["g"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.review.jumpToTop"),
-+      },
-+      {
-+        id: "navigate.bottom",
-+        label: "bottom",
-+        group: "Navigate",
-+        bindings: [{ keys: ["G"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.review.jumpToBottom"),
-+      },
-+      {
-+        id: "review.note",
-+        label: "create note",
-+        group: "Review",
-+        bindings: [{ keys: ["c"] }, { keys: ["SPC", "a", "c"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.review.startNote"),
-+      },
-+      {
-+        id: "help.controls",
-+        label: "controls help",
-+        group: "Help",
-+        bindings: [{ keys: ["?"] }, { keys: ["SPC", "h", "?"] }],
-+        enabled: true,
-+        run: () => executeAppCommand(commands, "hunk.app.toggleHelp"),
-+      },
-+    ],
-+    [commands, openSourceSelector, reviewSourceItems, switchReviewSource],
-+  );
++      ).map(([key, commandId]) =>
++        commandAction(`view.${commandId}`, "View", commandId, [["SPC", "v", key]]),
++      ),
++      commandAction("navigate.top", "Navigate", "hunk.review.jumpToTop"),
++      commandAction("navigate.bottom", "Navigate", "hunk.review.jumpToBottom"),
++      commandAction("navigate.halfPageDown", "Navigate", "hunk.review.halfPageDown", [
++        ["SPC", "n", "d"],
++      ]),
++      commandAction("navigate.halfPageUp", "Navigate", "hunk.review.halfPageUp", [
++        ["SPC", "n", "u"],
++      ]),
++      commandAction("review.note", "Review", "hunk.review.startNote", [["SPC", "a", "c"]]),
++      commandAction("review.editNote", "Review", "hunk.review.editActiveNote", [["SPC", "a", "e"]]),
++      commandAction("review.replyToNote", "Review", "hunk.review.replyToActiveNote", [
++        ["SPC", "a", "r"],
++      ]),
++      commandAction("help.controls", "Help", "hunk.app.toggleHelp", [["SPC", "h", "?"]]),
++    ];
++  }, [commands, openSourceSelector, reviewSourceItems, switchReviewSource]);
 +  const directEntries = useMemo(
 +    () => directWhichKeyEntries(keybindingRegistry),
 +    [keybindingRegistry],
@@ -659,7 +668,7 @@ index 4b410f1..265ce63 100644
  
    /**
     * Move an ordered modal surface through the active review keymap.
-@@ -594,21 +865,19 @@ export function useAppKeyboardShortcuts({
+@@ -594,21 +828,19 @@ export function useAppKeyboardShortcuts({
      return "mine";
    };
  
@@ -688,7 +697,7 @@ index 4b410f1..265ce63 100644
      const surfaceOwned = routeKeyOwnership(
        [
          handleExtensionTrustPromptShortcut,
-@@ -625,6 +894,13 @@ export function useAppKeyboardShortcuts({
+@@ -625,6 +857,13 @@ export function useAppKeyboardShortcuts({
      );
      if (surfaceOwned) return;
  
@@ -702,7 +711,7 @@ index 4b410f1..265ce63 100644
      if (activeMenuIdRef.current && dispatchCommandShortcut(key)) return;
  
      // Without an open-menu command match, focused inputs and extension modes
-@@ -638,4 +914,6 @@ export function useAppKeyboardShortcuts({
+@@ -638,4 +877,6 @@ export function useAppKeyboardShortcuts({
  
      dispatchCommandShortcut(key);
    });

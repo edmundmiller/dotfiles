@@ -541,7 +541,7 @@ index 848f1f9..fe2770f 100644
    // OpenTUI stays behind the interactive plan so headless commands never materialize its embedded
    // native library. The highlighting client starts the compiled worker only when an opted-in,
 diff --git a/src/ui/AppHost.interactions.test.tsx b/src/ui/AppHost.interactions.test.tsx
-index f87456d..e06ee73 100644
+index d0205f5..b081a1e 100644
 --- a/src/ui/AppHost.interactions.test.tsx
 +++ b/src/ui/AppHost.interactions.test.tsx
 @@ -14,6 +14,7 @@ import type {
