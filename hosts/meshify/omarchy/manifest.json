@@ -12,6 +12,12 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/hypr/bindings.lua",
+      "target": ".config/hypr/bindings.lua",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/hypr/hypridle.conf",
       "target": ".config/hypr/hypridle.conf",
       "mode": "0644",

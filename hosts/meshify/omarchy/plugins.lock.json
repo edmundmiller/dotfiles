@@ -56,6 +56,13 @@
       "revision": "6fdf2903e7c8f3d3b289e44d5b20d1f4c109c992",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "quickshell.spotify",
+      "url": "https://github.com/stappmus/Omarchy-Spotify.git",
+      "revision": "6024f3109080691821ad51d11b38d17ac610dc54",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }
