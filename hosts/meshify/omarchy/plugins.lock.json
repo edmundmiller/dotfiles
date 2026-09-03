@@ -35,6 +35,13 @@
       "revision": "669ea0b7eac7a78ec408512cb81d8e5082c3c33b",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "njpatel.omabot",
+      "url": "https://github.com/njpatel/omabot.git",
+      "revision": "801cb4b1dc3d20e75b43094aed36c3703e3f72e5",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }
