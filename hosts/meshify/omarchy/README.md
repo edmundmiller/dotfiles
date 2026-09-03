@@ -116,7 +116,10 @@ The scanner advances a journal cursor without calling a model when no relevant
 warning or error exists. When it finds one, a read-only Pi invocation classifies
 the excerpt, writes a report under
 `~/.local/state/omarchy-plugin-watch/reports/`, and sends a desktop
-notification. Journal excerpts are sent to the configured `openai-codex`
+notification. Actionable reports offer **Ask Pi to fix**, which opens an
+interactive agent in the plugin's source repository with the report attached;
+the repair prompt permits local edits and commits but forbids pushes and
+deployments. Journal excerpts are sent to the configured `openai-codex`
 provider; temporary prompt and journal files are deleted after each run.
 
 Inspect or run it directly with:
