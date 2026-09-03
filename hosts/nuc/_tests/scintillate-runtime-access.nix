@@ -243,8 +243,8 @@ let
       msg = "Old Scintillate gateway ping timer must remain removed.";
     }
     {
-      test = gatewayService.enable == false;
-      msg = "Scintillate's interactive gateway must remain disabled while the isolated cron executor is active.";
+      test = gatewayService.enable;
+      msg = "Scintillate's native messaging gateway must remain enabled while systemd owns cron execution.";
     }
     {
       test = cronTickTimer.timerConfig.Unit == "hermes-scintillate-cron-tick.service";
