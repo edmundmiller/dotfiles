@@ -49,6 +49,13 @@
       "revision": "48883141db0f6031b6a9c0b1b5173051443b40cb",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "omamail",
+      "url": "https://github.com/huacnlee/omamail.git",
+      "revision": "6fdf2903e7c8f3d3b289e44d5b20d1f4c109c992",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }
