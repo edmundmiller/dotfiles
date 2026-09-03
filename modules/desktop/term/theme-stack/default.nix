@@ -11,7 +11,7 @@ let
 
   stacks = {
     catppuccin = {
-      description = "Catppuccin Ghostty with Herdr/Pi/Hunk adapters pinned explicitly.";
+      description = "Catppuccin Ghostty inherited by Herdr, with Pi/Hunk adapters pinned explicitly.";
       ghosttyConfig = ''
         # Terminal theme stack: Catppuccin substrate for Ghostty; child TUIs are pinned below.
         theme = light:Catppuccin Latte,dark:Catppuccin Mocha
@@ -19,7 +19,6 @@ let
       ghosttyThemeFiles = { };
       herdr = {
         managePiTheme = false;
-        themeVariant = "catppuccin-auto";
       };
       hunk = {
         dark = "catppuccin-mocha";
@@ -30,7 +29,7 @@ let
     };
 
     seqera = {
-      description = "Seqera Ghostty palette with matching Herdr/Pi adapters.";
+      description = "Seqera Ghostty palette inherited by Herdr, with a matching Pi adapter.";
       ghosttyConfig = ''
         # Terminal theme stack: Seqera substrate for Ghostty; child TUIs are pinned below.
         theme = light:SeqeraLight,dark:SeqeraDark
@@ -42,7 +41,6 @@ let
       herdr = {
         managePiTheme = true;
         piThemeVariant = "seqera";
-        themeVariant = "seqera";
       };
       hunk = {
         # Hunk has no Seqera palette; keep the child TUI polarity explicit.
@@ -79,9 +77,9 @@ in
       type = enum (attrNames stacks);
       default = "catppuccin";
       description = ''
-        Host-level terminal theme stack. This pins the Ghostty substrate and the
-        Herdr, Pi, and Hunk adapters together instead of scattering polarity
-        choices across their individual modules.
+        Host-level terminal theme stack. Herdr inherits the Ghostty palette;
+        this pins the separate Pi and Hunk adapters instead of scattering
+        polarity choices across their individual modules.
       '';
     };
     description = mkOption {
@@ -99,7 +97,6 @@ in
       modules.shell.herdr = mkIf config.modules.shell.herdr.enable (
         {
           managePiTheme = mkDefault stack.herdr.managePiTheme;
-          themeVariant = mkDefault stack.herdr.themeVariant;
         }
         // optionalAttrs (stack.herdr ? piThemeVariant) {
           piThemeVariant = mkDefault stack.herdr.piThemeVariant;

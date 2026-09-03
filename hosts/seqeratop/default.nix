@@ -260,9 +260,8 @@
               "cursor/gemini-3.5-flash"
             ];
           };
-          # Match the rest of this host's Seqera branding (stylix seqera-dark,
-          # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
-          # keeps the shared Catppuccin default.
+          # Match the rest of this host's Seqera branding. Herdr inherits the
+          # active Ghostty SeqeraDark/Light palette directly.
           themeDark = "dark-seqera";
           themeLight = "light-seqera";
           mcpServers.seqera = {

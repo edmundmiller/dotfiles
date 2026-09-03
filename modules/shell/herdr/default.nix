@@ -128,51 +128,6 @@ let
     else
       "${piThemeBaseName}-${cfg.piThemeVariant}";
   piThemeVars = piThemePalettes.${cfg.piThemeVariant};
-
-  # Herdr UI theme (separate from the Pi popup theme above). Each variant
-  # is rendered into `[theme]` / `[theme.custom]` blocks by the bootstrap
-  # activation.
-  herdrThemePalettes = {
-    default = {
-      name = "terminal";
-      custom = {
-        panel_bg = "reset";
-        surface0 = "#ccd0da";
-        surface1 = "#bcc0cc";
-        surface_dim = "#dce0e8";
-        overlay0 = "#8c8fa1";
-        overlay1 = "#7c7f93";
-        text = "#4c4f69";
-        subtext0 = "#6c6f85";
-        accent = "#1e66f5";
-        blue = "#1e66f5";
-        green = "#40a02b";
-        yellow = "#df8e1d";
-        red = "#d20f39";
-        teal = "#179299";
-        peach = "#fe640b";
-        mauve = "#8839ef";
-      };
-    };
-    catppuccin-auto = {
-      name = "terminal";
-      custom = {
-        panel_bg = "reset";
-      };
-    };
-    seqera = {
-      name = "terminal";
-      custom = {
-        panel_bg = "reset";
-        accent = "#31c9ac";
-        green = "#95bf2f";
-        blue = "#5ea0ff";
-        red = "#f38ba8";
-        yellow = "#e6d06c";
-      };
-    };
-  };
-  herdrTheme = herdrThemePalettes.${cfg.themeVariant};
   piThemeFile = pkgs.writeText "${piThemeName}.json" ''
     {
       "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
@@ -288,15 +243,6 @@ in
         Which palette variant to ship as the Pi `dotfiles-herdr` theme.
         `default` is tuned for the Ghostty light theme; use `seqera` on hosts
         whose ghostty background is the Seqera dark purple (`#201637`).
-      '';
-    };
-    themeVariant = mkOption {
-      type = enum (attrNames herdrThemePalettes);
-      default = "default";
-      description = ''
-        Which Herdr UI theme variant to apply via `[theme]` / `[theme.custom]`.
-        `catppuccin-auto` leaves Catppuccin polarity to Ghostty and terminal
-        defaults; `seqera` adds Seqera brand accents.
       '';
     };
     piThemeName = mkOption {
@@ -513,7 +459,7 @@ in
 
           # Herdr's config stays writable for onboarding/settings, so reapply
           # values from the selected template rather than only copying it once.
-          ${pkgs.python3}/bin/python3 - "$target" "$template" ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
+          ${pkgs.python3}/bin/python3 - "$target" "$template" <<'PY'
           import json
           import pathlib
           import sys
@@ -524,8 +470,9 @@ in
           canonical_config = tomllib.loads(template_path.read_text())
           canonical_keys = canonical_config.get("keys", {})
           canonical_commands = canonical_keys.get("command", [])
-          theme_name = sys.argv[3]
-          theme_custom = json.loads(sys.argv[4])
+          canonical_theme = canonical_config.get("theme", {})
+          theme_name = canonical_theme.get("name", "terminal")
+          theme_custom = canonical_theme.get("custom", {})
           lines = path.read_text().splitlines()
 
           def toml_value(value):

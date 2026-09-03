@@ -31,9 +31,9 @@ Unlike most files under `config/`, Herdr's live config is not a read-only symlin
 Because of that:
 
 - make intentional config changes in `config/herdr/config.toml`
-- let activation read managed keys, commands, UI, session, experimental, and
-  worktree values from that selected template
-- keep only host-specific additions, plugin lifecycle, and theme selection in Nix
+- let activation read managed keys, commands, theme, UI, session, experimental,
+  and worktree values from that selected template
+- keep only host-specific additions and plugin lifecycle in Nix
 - do not track transient Herdr state like `onboarding = false`
 
 ## Current keybindings
@@ -92,7 +92,8 @@ Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental 
 
 Native session context is intentionally compact: visible tab rows show zoom state
 and hostname, while the host terminal title uses `{hostname}: {workspace}`.
-Herdr owns both directly; no window-title plugin is installed.
+Herdr owns both directly; no window-title plugin is installed. The `terminal`
+theme inherits every color from the active terminal palette on every host.
 
 ## Herdr 0.8.0 lifecycle
 

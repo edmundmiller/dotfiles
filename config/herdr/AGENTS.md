@@ -6,6 +6,7 @@ and reapplies managed sections to writable `~/.config/herdr/config.toml`, leavin
 Herdr-owned settings intact. Keep managed values in the template rather than
 duplicating them in activation code.
 
+- Use Herdr's `terminal` theme without custom colors so every host inherits its terminal palette.
 - Let Herdr manage onboarding. Use packaged event hooks instead of
   `[worktrees].post_create_command`.
 - Use explicit `prefix+...` bindings; printable direct bindings steal shell input.
