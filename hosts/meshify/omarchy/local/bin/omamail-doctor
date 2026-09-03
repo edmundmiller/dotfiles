@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+COMMAND="check"
+TARGET_HOME="$HOME"
+
+usage() {
+  cat <<'EOF'
+Usage: omamail-doctor [check|repair] [--home PATH]
+
+Check Omamail account and keyring consistency, or repair missing Gmail account
+rows from keyring metadata. Output never includes account names or secrets.
+EOF
+}
+
+fail() {
+  printf 'omamail-doctor: %s\n' "$*" >&2
+  exit 1
+}
+
+while (( $# > 0 )); do
+  case "$1" in
+  check | repair)
+    COMMAND="$1"
+    shift
+    ;;
+  --home)
+    [[ $# -ge 2 ]] || fail "--home requires a path"
+    TARGET_HOME="$2"
+    shift 2
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    fail "unknown argument: $1"
+    ;;
+  esac
+done
+
+for command in jq secret-tool; do
+  command -v "$command" >/dev/null 2>&1 || fail "missing command: $command"
+done
+
+TARGET_HOME="$(realpath -m -- "$TARGET_HOME")"
+[[ -n $TARGET_HOME && $TARGET_HOME != / ]] || fail "refusing unsafe home: $TARGET_HOME"
+
+readonly CONFIG_DIR="$TARGET_HOME/.config/omamail"
+readonly ACCOUNTS="$CONFIG_DIR/accounts.json"
+readonly CREDENTIALS="$CONFIG_DIR/credentials.json"
+readonly STATE_DIR="$TARGET_HOME/.local/state/omamail-recovery"
+
+[[ -f $ACCOUNTS && ! -L $ACCOUNTS ]] || fail "accounts.json is missing or not a regular file"
+jq empty "$ACCOUNTS" >/dev/null 2>&1 || fail "accounts.json is not valid JSON"
+
+metadata="$(secret-tool search --all service omamail 2>&1 || true)"
+token_records="$(printf '%s\n' "$metadata" | awk '
+  function emit() {
+    if (kind == "refresh-token" && account != "" && client != "")
+      print account "\t" client
+  }
+  /^\[\// { emit(); account = ""; client = ""; kind = ""; next }
+  /^attribute\.account = / { account = substr($0, index($0, "=") + 2); next }
+  /^attribute\.client-id = / { client = substr($0, index($0, "=") + 2); next }
+  /^attribute\.kind = / { kind = substr($0, index($0, "=") + 2); next }
+  END { emit() }
+')"
+
+account_shape_is_valid() {
+  jq -e '
+    .version == 1
+    and (.accounts | type == "array" and length > 0)
+    and ([.accounts[].id] | all(length > 0))
+    and ([.accounts[].id] | length == (unique | length))
+    and (.activeId as $active | any(.accounts[]; .id == $active))
+    and all(.accounts[];
+      if .provider == "gmail" then .id == (.email | ascii_downcase)
+      elif .provider == "imap" then .id == ("imap:" + (.email | ascii_downcase))
+      elif .provider == "hey" then .id == ("hey:" + (.email | ascii_downcase))
+      else false
+      end)
+  ' "$ACCOUNTS" >/dev/null
+}
+
+gmail_credentials_match() {
+  local account="$1" client="$2"
+  [[ -f $CREDENTIALS && ! -L $CREDENTIALS ]] || return 1
+  jq -e --arg account "$account" --arg client "$client" '
+    (.installed.client_id? == $client)
+    or any(.accounts[]?; .id == $account and .installed.client_id == $client)
+  ' "$CREDENTIALS" >/dev/null 2>&1
+}
+
+keyring_is_complete() {
+  local entry provider id matched token_entry token_account token_client
+  local -a account_rows token_rows
+  mapfile -t account_rows < <(jq -r '.accounts[] | [.provider, .id] | @tsv' "$ACCOUNTS")
+  mapfile -t token_rows <<<"$token_records"
+  for entry in "${account_rows[@]}"; do
+    IFS=$'\t' read -r provider id <<<"$entry"
+    case "$provider" in
+    gmail)
+      matched=0
+      for token_entry in "${token_rows[@]}"; do
+        IFS=$'\t' read -r token_account token_client <<<"$token_entry"
+        if [[ $token_account == "$id" ]] && gmail_credentials_match "$id" "$token_client"; then
+          matched=1
+          break
+        fi
+      done
+      (( matched == 1 )) || return 1
+      ;;
+    imap)
+      secret-tool lookup service omamail kind imap-password account "$id" \
+        </dev/null >/dev/null 2>&1 || return 1
+      ;;
+    esac
+  done
+}
+
+check_state() {
+  account_shape_is_valid || return 1
+  keyring_is_complete || return 1
+}
+
+if [[ $COMMAND == check ]]; then
+  if check_state; then
+    printf 'omamail-doctor: ok (%s account(s))\n' "$(jq '.accounts | length' "$ACCOUNTS")"
+    exit 0
+  fi
+  fail "account configuration and keyring metadata are inconsistent; run 'omamail-doctor repair'"
+fi
+
+[[ -n $token_records ]] || fail "no Gmail token metadata is available for repair"
+mkdir -p -- "$CONFIG_DIR" "$STATE_DIR"
+chmod 0700 "$CONFIG_DIR" "$STATE_DIR"
+exec {LOCK_FD}>"$STATE_DIR/doctor.lock"
+flock -n "$LOCK_FD" || fail "another repair is running"
+
+payload="$(jq -c --arg records "$token_records" '
+  ($records | split("\n") | map(select(length > 0) | split("\t")[0]) | unique) as $gmail
+  | .accounts = (
+      [.accounts[] | select(.id != "")]
+      + [$gmail[] as $id
+          | select(any(.accounts[]; .id == $id) | not)
+          | {
+              id: $id,
+              email: $id,
+              provider: "gmail",
+              clientId: "",
+              clientSecret: "",
+              imap: {
+                imapHost: "",
+                imapPort: 993,
+                smtpHost: "",
+                smtpPort: 465,
+                username: "",
+                aliases: [],
+                insecure: false
+              },
+              label: "",
+              signature: ""
+            }]
+    )
+  | .activeId as $active
+  | if any(.accounts[]; .id == $active) then . else .activeId = .accounts[0].id end
+' "$ACCOUNTS")"
+
+printf '%s\n' "$payload" | jq -e '
+  .version == 1 and (.accounts | length > 0) and ([.accounts[].id] | all(length > 0))
+' >/dev/null || fail "refusing to write an invalid repaired account list"
+
+stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+backup="$STATE_DIR/$stamp"
+mkdir -p -- "$backup"
+chmod 0700 "$backup"
+cp -p -- "$ACCOUNTS" "$backup/accounts.json"
+
+temp="$(mktemp "$CONFIG_DIR/.accounts.XXXXXX")"
+trap 'rm -f -- "$temp"' EXIT HUP INT TERM
+printf '%s\n' "$payload" >"$temp"
+chmod 0600 "$temp"
+mv -f -- "$temp" "$ACCOUNTS"
+trap - EXIT HUP INT TERM
+
+check_state || fail "repair was written but account or keyring validation still fails"
+printf 'omamail-doctor: repaired account list; backup saved under %s\n' \
+  "${backup/#$TARGET_HOME/~}"

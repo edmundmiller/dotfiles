@@ -90,6 +90,12 @@
       "target": ".local/bin/rocket-league-lmstudio-guard",
       "mode": "0755",
       "sourceMode": "0755"
+    },
+    {
+      "source": "local/bin/omamail-doctor",
+      "target": ".local/bin/omamail-doctor",
+      "mode": "0755",
+      "sourceMode": "0755"
     }
   ],
   "packages": [

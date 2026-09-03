@@ -166,6 +166,23 @@ Generate the current plugin inventory instead of copying it into documentation:
 jq -r '.plugins[] | [.id, .url, .revision] | @tsv' plugins.lock.json
 ```
 
+## Omamail account recovery
+
+`omamail-doctor` checks that Omamail's account list agrees with its system
+keyring entries without printing account names or credentials. If Gmail has a
+token but its account row was replaced by blank setup rows, repair the list
+from keyring metadata:
+
+```bash
+omamail-doctor check
+omamail-doctor repair
+omarchy restart shell
+```
+
+Repair preserves configured accounts, removes blank setup rows, adds missing
+Gmail rows, and saves the previous account list under
+`~/.local/state/omamail-recovery/`.
+
 ## 1Password recovery item
 
 Create a secure item named `meshify-omarchy` in the `Private` vault. Add these
