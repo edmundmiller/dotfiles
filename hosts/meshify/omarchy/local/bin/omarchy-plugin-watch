@@ -2,6 +2,50 @@
 
 set -euo pipefail
 
+notify_report() {
+  local report="${1:-}" action="" pi_bin="" workdir=""
+  [[ -f $report ]] || exit 0
+
+  action="$(
+    notify-send \
+      --app-name="Omarchy Plugin Watch" \
+      --urgency=critical \
+      --expire-time=43200000 \
+      --action=fix="Ask Pi to fix" \
+      --action=dismiss="Dismiss" \
+      --wait \
+      "Omarchy Quattro plugin error" \
+      "This thing failed. Do you want an agent to fix it?" || true
+  )"
+  [[ $action == fix ]] || exit 0
+
+  if grep -Fqi 'obsishell' "$report"; then
+    workdir="$HOME/src/obsishell"
+  elif grep -Fqi 'edmundmiller.lock' "$report"; then
+    workdir="$HOME/.config/dotfiles"
+  fi
+  [[ -d $workdir ]] || {
+    notify-send --app-name="Omarchy Plugin Watch" --urgency=critical \
+      "Cannot start repair agent" "The plugin source directory was not found" || true
+    exit 1
+  }
+
+  pi_bin="$(command -v pi 2>/dev/null || true)"
+  [[ -n $pi_bin ]] || exit 1
+  uwsm-app -- xdg-terminal-exec \
+    --title="Fix Omarchy plugin error" \
+    --dir="$workdir" \
+    -- "$pi_bin" \
+    --name "Fix Omarchy plugin error" \
+    "@$report" \
+    "Diagnose and fix the reported issue. Inspect current code and live logs first, make the smallest correct change, verify it, and commit logical local changes. Do not push, deploy, or modify unrelated work."
+}
+
+if [[ ${1:-} == notify-report ]]; then
+  notify_report "${2:-}"
+  exit
+fi
+
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy-plugin-watch"
 cursor_file="$state_dir/journal.cursor"
 reports_dir="$state_dir/reports"
@@ -122,8 +166,15 @@ fi
 chmod 600 -- "$report"
 
 summary="$(sed -n '/[^#[:space:]]/ { s/^[*-] *//; p; q; }' "$report")"
-notify-send --app-name="Omarchy Plugin Watch" --urgency=normal \
-  "Custom plugin log report" "${summary:-New report saved to $report}" || true
+if grep -Eiq 'Verdict[^[:alpha:]]*Actionable' "$report"; then
+  systemd-run --user --quiet --collect \
+    --unit="omarchy-plugin-watch-notify-$timestamp" \
+    --property=RuntimeMaxSec=12h \
+    "$0" notify-report "$report"
+else
+  notify-send --app-name="Omarchy Plugin Watch" --urgency=normal \
+    "Custom plugin log report" "${summary:-New report saved to $report}" || true
+fi
 
 printf '%s\n' "$latest_cursor" >"$cursor_file"
 chmod 600 -- "$cursor_file"
