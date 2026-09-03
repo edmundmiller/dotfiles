@@ -19,6 +19,32 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "io.github.sspaeti.timezones",
+          "zones": [
+            {
+              "home": true,
+              "label": "Home",
+              "shortLabel": "HOME",
+              "zone": ""
+            },
+            {
+              "label": "East Coast",
+              "shortLabel": "NY",
+              "zone": "America/New_York"
+            },
+            {
+              "label": "West Coast",
+              "shortLabel": "SF",
+              "zone": "America/Los_Angeles"
+            },
+            {
+              "label": "Barcelona",
+              "shortLabel": "BCN",
+              "zone": "Europe/Madrid"
+            }
+          ]
+        },
+        {
           "id": "omarchy.system-update"
         }
       ],

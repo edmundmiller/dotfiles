@@ -63,6 +63,13 @@
       "revision": "6024f3109080691821ad51d11b38d17ac610dc54",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "io.github.sspaeti.timezones",
+      "url": "https://github.com/sspaeti/omarchy-timezones-plugin.git",
+      "revision": "9faa0be5525bec76c3bce42a13900ac2736b9841",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }
