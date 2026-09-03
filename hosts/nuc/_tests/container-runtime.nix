@@ -6,9 +6,7 @@ let
   podman = cfg.virtualisation.podman;
   smoke = cfg.systemd.services.hermes-runtime-smoke;
   composeEnvironment = service: service.environment.DOCKER_HOST or null;
-  nucHostSource = builtins.readFile ../default.nix;
   inherit (builtins) elem filter length;
-  inherit (pkgs.lib.strings) hasInfix;
 
   assertions = [
     {
@@ -32,10 +30,6 @@ let
       msg = "Hermes runtime smoke must wait for Podman, not Docker Engine.";
     }
     {
-      test = hasInfix "pkgs.podman" nucHostSource && !(hasInfix "pkgs.docker" nucHostSource);
-      msg = "Scintillate refresh must use Podman for container cleanup.";
-    }
-    {
       test =
         composeEnvironment cfg.systemd.services.latitude-compose == "unix:///run/podman/podman.sock"
         && composeEnvironment cfg.systemd.services.sparkyfitness == "unix:///run/podman/podman.sock"
@@ -51,6 +45,12 @@ pkgs.runCommand "nuc-container-runtime-assertions" { passthru = { inherit assert
       echo "${toString (length failures)} NUC container runtime assertions failed" >&2
       exit 1
     fi
+
+    if ! grep -Fq 'pkgs.podman' ${../default.nix} || grep -Fq 'pkgs.docker' ${../default.nix}; then
+      echo "Scintillate refresh must use Podman for container cleanup." >&2
+      exit 1
+    fi
+
     mkdir -p "$out"
     echo "All NUC container runtime assertions passed." > "$out/result"
   ''

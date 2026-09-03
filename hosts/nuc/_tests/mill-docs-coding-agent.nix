@@ -3,7 +3,6 @@ let
   cfg = nixosConfig.config;
   service = cfg.systemd.services.mill-docs-coding-agent;
   timer = cfg.systemd.timers.mill-docs-coding-agent;
-  source = builtins.readFile ../default.nix;
   acpxDir = "/var/lib/mill-docs-coding-agent/acpx";
   failures = builtins.filter (assertion: !assertion.test) [
     {
@@ -39,10 +38,6 @@ let
       msg = "Mill Docs coding agent must load the OpenAI model credential.";
     }
     {
-      test = !(pkgs.lib.hasInfix "unset NOSTR_PRIVATE_KEY" source);
-      msg = "Mill Docs coding runner must retain its Nostr signing key for runner-owned git operations.";
-    }
-    {
       test = timer.wantedBy == [ "timers.target" ];
       msg = "Mill Docs coding agent timer must be enabled after credential rotation.";
     }
@@ -55,5 +50,12 @@ pkgs.runCommand "nuc-mill-docs-coding-agent" { } ''
   EOF
     exit 1
   fi
+
+  if ! grep -Fq 'export NOSTR_PRIVATE_KEY="$BUZZ_PRIVATE_KEY"' ${../default.nix} \
+    || ! grep -Pzq 'git merge --ff-only origin/main\n      unset NOSTR_PRIVATE_KEY BUZZ_PRIVATE_KEY' ${../default.nix}; then
+    echo "Mill Docs coding runner must retain its Nostr key through runner-owned Git operations, then clear it." >&2
+    exit 1
+  fi
+
   touch "$out"
 ''

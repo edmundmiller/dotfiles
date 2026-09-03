@@ -8,35 +8,25 @@ let
     "orchestrator"
     "scintillate"
   ];
-  inherit (pkgs.lib) hasInfix;
-  hostSource = builtins.readFile ../default.nix;
-
-  assertions = [
-    {
-      test = hasInfix "DISPLAYCTL_CONFIG=" hostSource;
-      msg = "NUC must declare the DISPLAYCTL_CONFIG assignment in its shared Hermes environment file.";
-    }
-    {
-      test = hasInfix "extraPackages = [ pkgs.my.displayctl ]" hostSource;
-      msg = "NUC's Hermes profile wrapper must prepend the displayctl package.";
-    }
-  ]
-  ++ map (name: {
-    test = hasInfix "${name} = withHermesDisplayctl" hostSource;
-    msg = "Hermes profile ${name} must use the host's displayctl-wiring profile wrapper.";
-  }) profileNames;
-  failures = builtins.filter (assertion: !assertion.test) assertions;
-  failureText = builtins.concatStringsSep "\n" (map (failure: "- ${failure.msg}") failures);
 in
 pkgs.runCommand "nuc-hermes-displayctl-wiring" { } ''
-  if [ ${toString (builtins.length failures)} -ne 0 ]; then
-    cat >&2 <<'EOF'
-  NUC Hermes displayctl wiring assertions failed:
-  ${failureText}
-  EOF
+  if ! grep -Fq 'DISPLAYCTL_CONFIG=' ${../default.nix}; then
+    echo "NUC must declare the DISPLAYCTL_CONFIG assignment in its shared Hermes environment file." >&2
     exit 1
   fi
 
+  if ! grep -Pzq 'withHermesDisplayctl =\n    profile:\n    profile\n    // \{\n      extraPackages = \[\n        pkgs\.my\.buzz\n        pkgs\.my\.displayctl' ${../default.nix}; then
+    echo "NUC's Hermes profile wrapper must include the displayctl package." >&2
+    exit 1
+  fi
+
+  for profile in ${builtins.concatStringsSep " " profileNames}; do
+    if ! grep -Fq "$profile = withHermesDisplayctl" ${../default.nix}; then
+      echo "Hermes profile $profile must use the host's displayctl-wiring profile wrapper." >&2
+      exit 1
+    fi
+  done
+
   mkdir -p "$out"
-  echo "All ${toString (builtins.length assertions)} NUC Hermes displayctl wiring assertions passed." > "$out/result"
+  echo "All NUC Hermes displayctl wiring assertions passed." > "$out/result"
 ''
