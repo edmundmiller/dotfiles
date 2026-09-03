@@ -89,6 +89,19 @@ pgrep -a hypridle
 omarchy toggle idle status
 ```
 
+## Solar night light
+
+`wlsunset` warms the display to 4000K between sunset and sunrise using
+meshify's home coordinates, then returns it to 6500K during daylight. It starts
+with the Hyprland session from `config/hypr/autostart.lua` and replaces
+Hyprsunset, whose profiles support only fixed clock times.
+
+Verify the live process with:
+
+```bash
+pgrep -a wlsunset
+```
+
 ## Lock screen wake window
 
 `config/omarchy/plugins/edmundmiller.lock` is a supported clone of Omarchy's

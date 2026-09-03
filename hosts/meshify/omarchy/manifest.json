@@ -225,6 +225,11 @@
       "command": "voxtype"
     },
     {
+      "name": "wlsunset",
+      "manager": "repo",
+      "command": "wlsunset"
+    },
+    {
       "name": "wtype",
       "manager": "repo",
       "command": "wtype"
