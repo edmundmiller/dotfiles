@@ -1670,6 +1670,10 @@
                 inherit pkgs;
               };
 
+              hermes-tailscale-cli-regressions = import ./hosts/nuc/_tests/hermes-tailscale-cli.nix {
+                inherit pkgs;
+              };
+
               nuc-hermes-profile-backups = import ./hosts/nuc/_tests/hermes-profile-backups.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;

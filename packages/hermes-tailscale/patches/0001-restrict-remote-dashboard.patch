@@ -1,0 +1,581 @@
+--- a/plugin.js
++++ b/plugin.js
+@@ -29 +28,0 @@
+-const HERMES_PORT = 9119;
+@@ -31,4 +30,2 @@
+-const XTERM_ESM = "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm";
+-const XTERM_ESM_ALT = "https://esm.sh/@xterm/xterm@5.5.0";
+-const XTERM_UMD =
+-  "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js";
++const REMOTE_CHUNK_BYTES = 2048;
++const MAX_REMOTE_SNAPSHOT_BYTES = 2 * 1024 * 1024;
+@@ -69,2 +65,0 @@
+-let TerminalCtor = null;
+-let xtermLoad = null;
+@@ -805,0 +801,51 @@
++function decodeBase64(value) {
++  const decoded = globalThis.atob(String(value || "").trim());
++  return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
++}
++
++async function readRestrictedJson(bin, kind, source) {
++  let token = "";
++  try {
++    const snapshot = await runShell(
++      binCommand(bin, `hermes-json snapshot ${source}`, kind),
++    );
++    if (!snapshot || snapshot.code) return "";
++
++    const metadata = JSON.parse(String(snapshot.stdout || "").trim());
++    const bytes = Number(metadata && metadata.bytes);
++    token = String((metadata && metadata.token) || "");
++    if (
++      !/^[0-9a-f]{32}$/.test(token) ||
++      !Number.isSafeInteger(bytes) ||
++      bytes < 1 ||
++      bytes > MAX_REMOTE_SNAPSHOT_BYTES
++    ) {
++      return "";
++    }
++
++    const payload = new Uint8Array(bytes);
++    for (let offset = 0; offset < bytes; offset += REMOTE_CHUNK_BYTES) {
++      const result = await runShell(
++        binCommand(bin, `hermes-json chunk ${token} ${offset}`, kind),
++      );
++      if (!result || result.code) return "";
++      const chunk = decodeBase64(result.stdout);
++      const expected = Math.min(REMOTE_CHUNK_BYTES, bytes - offset);
++      if (chunk.length !== expected) return "";
++      payload.set(chunk, offset);
++    }
++
++    return new TextDecoder("utf-8", { fatal: true }).decode(payload);
++  } catch {
++    return "";
++  } finally {
++    if (token) {
++      try {
++        await runShell(binCommand(bin, `hermes-json delete ${token}`, kind));
++      } catch {
++        /* stale snapshots are pruned by the restricted CLI */
++      }
++    }
++  }
++}
++
+@@ -905,2 +951 @@
+-  const outPath = await resolveOutPath(kind);
+-  let rawText = "";
++  let rawText = await readRestrictedJson(probed.bin, kind, "status");
+@@ -908,11 +953,19 @@
+-    if (outPath) {
+-      const redirected = await runShell(
+-        statusRedirectCommand(probed.bin, outPath, kind),
+-      );
+-      if (redirected && redirected.code) {
+-        const why = classifyCliError(redirected);
+-        if (why === "daemon") {
+-          return {
+-            kind: "daemon",
+-            message: "Tailscale is installed, but the daemon is not running.",
+-          };
++    if (!looksCompleteJson(rawText)) {
++      const outPath = await resolveOutPath(kind);
++      if (outPath) {
++        const redirected = await runShell(
++          statusRedirectCommand(probed.bin, outPath, kind),
++        );
++        if (redirected && redirected.code) {
++          const why = classifyCliError(redirected);
++          if (why === "daemon") {
++            return {
++              kind: "daemon",
++              message: "Tailscale is installed, but the daemon is not running.",
++            };
++          }
++          // A missing cache directory looks like "cannot find the path" on
++          // Windows. The version probe already proved the binary exists, so
++          // fall through to the inline status read.
++        } else {
++          rawText = await readCacheFile(outPath);
+@@ -920,5 +972,0 @@
+-        // A missing cache directory looks like "cannot find the path" on
+-        // Windows. The version probe already proved the binary exists, so
+-        // fall through to the inline status read.
+-      } else {
+-        rawText = await readCacheFile(outPath);
+@@ -967 +1015 @@
+-        "Tailscale status was truncated. Hermes only returns the last 4k of a shell command, and the cache file could not be read.",
++        "Tailscale status was truncated, and neither the restricted transfer nor the local cache returned a complete response.",
+@@ -984 +1031,0 @@
+-  let accounts = [];
+@@ -986,6 +1033,8 @@
+-    const serveRun = await runShell(
+-      binCommand(probed.bin, "serve status --json", kind),
+-    );
+-    if (serveRun && !serveRun.code) {
+-      const textOut = String(serveRun.stdout || "").trim() || "{}";
+-      serve = parseServeStatus(JSON.parse(textOut));
++    let textOut = await readRestrictedJson(probed.bin, kind, "serve");
++    if (!textOut) {
++      const serveRun = await runShell(
++        binCommand(probed.bin, "serve status --json", kind),
++      );
++      if (serveRun && !serveRun.code) {
++        textOut = String(serveRun.stdout || "").trim();
++      }
+@@ -992,0 +1042 @@
++    serve = parseServeStatus(JSON.parse(textOut || "{}"));
+@@ -996,11 +1045,0 @@
+-  try {
+-    const switchRun = await runShell(
+-      binCommand(probed.bin, "switch --list --json", kind),
+-    );
+-    if (switchRun && !switchRun.code) {
+-      const textOut = String(switchRun.stdout || "").trim() || "[]";
+-      accounts = parseSwitchList(JSON.parse(textOut));
+-    }
+-  } catch {
+-    /* switch list is optional */
+-  }
+@@ -1008 +1047 @@
+-  return { kind: "ready", status, serve, accounts, at: Date.now() };
++  return { kind: "ready", status, serve, at: Date.now() };
+@@ -1086,24 +1124,0 @@
+-async function runCli(args) {
+-  const kind = platformKind();
+-  const probed = await probeBinary(kind);
+-  if (!probed.bin)
+-    return {
+-      ok: false,
+-      error: probed.kind || "missing",
+-      stdout: "",
+-      stderr: "",
+-      code: 1,
+-      kind,
+-    };
+-  const result = await runShell(binCommand(probed.bin, args, kind));
+-  const code = result && typeof result.code === "number" ? result.code : 1;
+-  return {
+-    ok: code === 0,
+-    error: "",
+-    stdout: String((result && result.stdout) || ""),
+-    stderr: String((result && result.stderr) || ""),
+-    code,
+-    kind,
+-  };
+-}
+-
+@@ -1176,67 +1190,0 @@
+-async function publishHermes() {
+-  const result = await runCli(`serve --bg --yes ${HERMES_PORT}`);
+-  if (!result.ok) {
+-    say(
+-      result.stderr.trim() || result.stdout.trim() || "tailscale serve failed",
+-    );
+-    return;
+-  }
+-  say(`Serving local port ${HERMES_PORT} on the tailnet`);
+-  refresh();
+-}
+-
+-async function resetServe() {
+-  const result = await runCli("serve reset");
+-  if (!result.ok) {
+-    say(result.stderr.trim() || "serve reset failed");
+-    return;
+-  }
+-  say("Serve config cleared");
+-  refresh();
+-}
+-
+-async function setExitNode(name) {
+-  const kind = platformKind();
+-  const probed = await probeBinary(kind);
+-  if (!probed.bin) {
+-    say("Tailscale CLI is not available.");
+-    return;
+-  }
+-  if (name && !isSafeHost(name)) {
+-    say("That exit node name is not safe to pass to the CLI.");
+-    return;
+-  }
+-  const flag = name ? `--exit-node=${name}` : "--exit-node=";
+-  const result = await runShell(binCommand(probed.bin, `set ${flag}`, kind));
+-  if (result && result.code) {
+-    say(
+-      String(
+-        result.stderr || result.stdout || "could not set exit node",
+-      ).trim(),
+-    );
+-    return;
+-  }
+-  say(name ? `Exit node: ${name}` : "Exit node cleared");
+-  refresh();
+-}
+-
+-async function switchAccount(id) {
+-  if (!isSafeHost(id) && !/^[A-Za-z0-9._@+-]+$/.test(String(id || ""))) {
+-    say("That account id is not safe to pass to the CLI.");
+-    return;
+-  }
+-  const kind = platformKind();
+-  const probed = await probeBinary(kind);
+-  if (!probed.bin) return;
+-  const result = await runShell(
+-    binCommand(probed.bin, `switch ${quoteShell(id, kind)}`, kind),
+-  );
+-  if (result && result.code) {
+-    say(String(result.stderr || result.stdout || "switch failed").trim());
+-    return;
+-  }
+-  cachedBin = probed.bin;
+-  say(`Switched to ${id}`);
+-  refresh();
+-}
+-
+@@ -1294,20 +1241,0 @@
+-async function sendFileShell(bin, kind, filePath, dest) {
+-  const result = await runShell(
+-    binCommand(
+-      bin,
+-      `file cp ${quoteShell(filePath, kind)} ${quoteShell(dest, kind)}`,
+-      kind,
+-    ),
+-  );
+-  if (result && result.code) {
+-    finishSend({
+-      state: "err",
+-      text: String(result.stderr || result.stdout || "Taildrop failed")
+-        .trim()
+-        .slice(0, 180),
+-    });
+-    return;
+-  }
+-  finishSend({ state: "ok", percent: 100, text: "" });
+-}
+-
+@@ -1319 +1247,4 @@
+-    await sendFileShell(bin, kind, filePath, dest);
++    finishSend({
++      state: "err",
++      text: "Taildrop requires Desktop local terminal support.",
++    });
+@@ -1371 +1302,4 @@
+-      await sendFileShell(bin, kind, filePath, dest);
++      finishSend({
++        state: "err",
++        text: "Taildrop could not attach to the Desktop local terminal.",
++      });
+@@ -1449 +1383,4 @@
+-    await sendFileShell(probed.bin, kind, path, dest);
++    finishSend({
++      state: "err",
++      text: "Taildrop requires Desktop local terminal support.",
++    });
+@@ -1511,32 +1447,0 @@
+-function ctorFromModule(mod) {
+-  if (!mod) return null;
+-  if (typeof mod.Terminal === "function") return mod.Terminal;
+-  if (typeof mod.default === "function") return mod.default;
+-  if (mod.default && typeof mod.default.Terminal === "function")
+-    return mod.default.Terminal;
+-  return null;
+-}
+-
+-function importFromUrl(href) {
+-  return import(href);
+-}
+-
+-function loadUmd(url) {
+-  return new Promise((resolve, reject) => {
+-    const script = document.createElement("script");
+-    script.src = url;
+-    script.async = true;
+-    script.onload = () => {
+-      const Terminal = globalThis.Terminal;
+-      script.remove();
+-      if (typeof Terminal === "function") resolve(Terminal);
+-      else reject(new Error("UMD build did not expose Terminal"));
+-    };
+-    script.onerror = () => {
+-      script.remove();
+-      reject(new Error("UMD script failed to load"));
+-    };
+-    document.head.appendChild(script);
+-  });
+-}
+-
+@@ -1544,40 +1449 @@
+-  if (typeof TerminalCtor === "function") return TerminalCtor;
+-  if (typeof globalThis.Terminal === "function") {
+-    TerminalCtor = globalThis.Terminal;
+-    injectXtermCss();
+-    return TerminalCtor;
+-  }
+-  if (xtermLoad) return xtermLoad;
+-  xtermLoad = (async () => {
+-    injectXtermCss();
+-    const errors = [];
+-    for (const url of [XTERM_ESM, XTERM_ESM_ALT]) {
+-      try {
+-        const ctor = ctorFromModule(await importFromUrl(url));
+-        if (ctor) {
+-          TerminalCtor = ctor;
+-          return ctor;
+-        }
+-        errors.push(`${url}: no Terminal export`);
+-      } catch (err) {
+-        errors.push(
+-          `${url}: ${err && err.message ? err.message : String(err)}`,
+-        );
+-      }
+-    }
+-    try {
+-      TerminalCtor = await loadUmd(XTERM_UMD);
+-      return TerminalCtor;
+-    } catch (err) {
+-      errors.push(`umd: ${err && err.message ? err.message : String(err)}`);
+-    }
+-    throw new Error(
+-      `Could not load a terminal emulator. ${errors.join(" | ")}`,
+-    );
+-  })();
+-  try {
+-    return await xtermLoad;
+-  } catch (err) {
+-    xtermLoad = null;
+-    throw err;
+-  }
++  throw new Error("Embedded SSH is disabled. Copy the ssh command instead.");
+@@ -1671 +1537,2 @@
+-  $sshAsk.set({ row });
++  copyText(sshLine(row));
++  say("Copied the Tailscale SSH command.");
+@@ -2619,6 +2485,0 @@
+-                  row.isSelf
+-                    ? null
+-                    : jsx(SmallButton, {
+-                        onClick: () => askSshUser(row),
+-                        children: "SSH",
+-                      }),
+@@ -2643,14 +2503,0 @@
+-                  row.exitNodeOption && !row.exitNode
+-                    ? jsx(SmallButton, {
+-                        onClick: () => {
+-                          const name = hostArg(row);
+-                          ask(
+-                            `Use ${row.label} as exit node?`,
+-                            "Internet traffic from this device will leave through that machine until you clear the exit node.",
+-                            "Use exit node",
+-                            () => setExitNode(name),
+-                          );
+-                        },
+-                        children: "Use as exit",
+-                      })
+-                    : null,
+@@ -2671,2 +2517,0 @@
+-  const [exitOpen, setExitOpen] = useState(false);
+-  const [acctOpen, setAcctOpen] = useState(false);
+@@ -2680,2 +2524,0 @@
+-  const accounts =
+-    snap.kind === "ready" && Array.isArray(snap.accounts) ? snap.accounts : [];
+@@ -2683,2 +2525,0 @@
+-  const exits = exitNodeChoices(rows);
+-  const currentExit = rows.find((row) => row.exitNode);
+@@ -2759,165 +2599,0 @@
+-                : snap.kind === "ready" && !vacant
+-                  ? jsx(SmallButton, {
+-                      onClick: () => {
+-                        const extra =
+-                          serve && serve.proxy
+-                            ? ` This replaces the current target (${serve.proxy}).`
+-                            : "";
+-                        ask(
+-                          "Publish Hermes on the tailnet?",
+-                          `This runs tailscale serve --bg on local port ${HERMES_PORT}. Other devices on the tailnet can open https://<this-node>.<tailnet>.ts.net. It is not Funnel. It is not on the public internet.${extra}`,
+-                          "Publish",
+-                          () => publishHermes(),
+-                        );
+-                      },
+-                      children: "Publish",
+-                    })
+-                  : null,
+-              serve && !serve.empty
+-                ? jsx(SmallButton, {
+-                    onClick: () => {
+-                      ask(
+-                        "Stop serving?",
+-                        "This runs tailscale serve reset and drops the tailnet HTTPS endpoint on this node.",
+-                        "Stop serving",
+-                        () => resetServe(),
+-                      );
+-                    },
+-                    children: "Stop serve",
+-                  })
+-                : null,
+-              exits.length
+-                ? jsxs("span", {
+-                    style: { position: "relative" },
+-                    children: [
+-                      jsx(SmallButton, {
+-                        active: !!currentExit || exitOpen,
+-                        onClick: () => {
+-                          tap();
+-                          setExitOpen((open) => !open);
+-                          setAcctOpen(false);
+-                          setSettingsOpen(false);
+-                        },
+-                        children: currentExit
+-                          ? `Exit: ${currentExit.label}`
+-                          : "Exit node",
+-                      }),
+-                      exitOpen
+-                        ? jsxs("div", {
+-                            style: {
+-                              position: "absolute",
+-                              right: 0,
+-                              top: "100%",
+-                              zIndex: 6,
+-                              marginTop: 4,
+-                              minWidth: 180,
+-                              padding: 6,
+-                              border: "1px solid var(--ui-stroke-secondary)",
+-                              borderRadius: 8,
+-                              background:
+-                                "var(--ui-surface-background, Canvas)",
+-                              display: "flex",
+-                              flexDirection: "column",
+-                              gap: 4,
+-                            },
+-                            children: [
+-                              ...exits.map((row) =>
+-                                jsx(
+-                                  SmallButton,
+-                                  {
+-                                    active: row.exitNode,
+-                                    onClick: () => {
+-                                      setExitOpen(false);
+-                                      const name = hostArg(row);
+-                                      ask(
+-                                        `Use ${row.label} as exit node?`,
+-                                        "Internet traffic from this device will leave through that machine until you clear the exit node.",
+-                                        "Use exit node",
+-                                        () => setExitNode(name),
+-                                      );
+-                                    },
+-                                    children: row.label,
+-                                  },
+-                                  row.id,
+-                                ),
+-                              ),
+-                              currentExit
+-                                ? jsx(SmallButton, {
+-                                    onClick: () => {
+-                                      setExitOpen(false);
+-                                      ask(
+-                                        "Clear the exit node?",
+-                                        "This device will send internet traffic out its own connection again.",
+-                                        "Clear",
+-                                        () => setExitNode(""),
+-                                      );
+-                                    },
+-                                    children: "Clear",
+-                                  })
+-                                : null,
+-                            ],
+-                          })
+-                        : null,
+-                    ],
+-                  })
+-                : null,
+-              accounts.length > 1
+-                ? jsxs("span", {
+-                    style: { position: "relative" },
+-                    children: [
+-                      jsx(SmallButton, {
+-                        active: acctOpen,
+-                        onClick: () => {
+-                          tap();
+-                          setAcctOpen((open) => !open);
+-                          setExitOpen(false);
+-                          setSettingsOpen(false);
+-                        },
+-                        children: "Account",
+-                      }),
+-                      acctOpen
+-                        ? jsxs("div", {
+-                            style: {
+-                              position: "absolute",
+-                              right: 0,
+-                              top: "100%",
+-                              zIndex: 6,
+-                              marginTop: 4,
+-                              minWidth: 220,
+-                              padding: 6,
+-                              border: "1px solid var(--ui-stroke-secondary)",
+-                              borderRadius: 8,
+-                              background:
+-                                "var(--ui-surface-background, Canvas)",
+-                              display: "flex",
+-                              flexDirection: "column",
+-                              gap: 4,
+-                            },
+-                            children: accounts.map((account) =>
+-                              jsx(
+-                                SmallButton,
+-                                {
+-                                  active: account.selected,
+-                                  onClick: () => {
+-                                    setAcctOpen(false);
+-                                    if (account.selected) return;
+-                                    const ident =
+-                                      account.nickname ||
+-                                      account.account ||
+-                                      account.id;
+-                                    ask(
+-                                      `Switch to ${ident}?`,
+-                                      "This changes the Tailscale account on this device.",
+-                                      "Switch",
+-                                      () => switchAccount(ident),
+-                                    );
+-                                  },
+-                                  children: `${account.nickname || account.account}${account.selected ? " · current" : ""}`,
+-                                },
+-                                account.id || account.account,
+-                              ),
+-                            ),
+-                          })
+-                        : null,
+-                    ],
+-                  })
+@@ -2933,2 +2608,0 @@
+-                      setExitOpen(false);
+-                      setAcctOpen(false);
+@@ -3000 +2673,0 @@
+-      jsx(SshAskBar, {}),
+@@ -3074 +2746,0 @@
+-      jsx(SshOverlay, {}),
+@@ -3181,18 +2852,0 @@
+-      {
+-        id: "publish",
+-        area: PALETTE_AREA,
+-        data: {
+-          id: `${PLUGIN_ID}.publish`,
+-          label: "Publish Hermes on Tailscale",
+-          keywords: ["tailscale", "serve", "publish", "share", "https"],
+-          run: () => {
+-            go(ROUTE);
+-            ask(
+-              "Publish Hermes on the tailnet?",
+-              `This runs tailscale serve --bg on local port ${HERMES_PORT}. Other devices on the tailnet can open https://<this-node>.<tailnet>.ts.net. It is not Funnel. It is not on the public internet.`,
+-              "Publish",
+-              () => publishHermes(),
+-            );
+-          },
+-        },
+-      },
+@@ -3237,0 +2892,2 @@
++  decodeBase64,
++  readRestrictedJson,

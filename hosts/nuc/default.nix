@@ -153,6 +153,7 @@ let
   hermesScintillateTailscaleServiceName = "hermes";
   hermesSharedStateDir = "/var/lib/hermes";
   hermesSharedHome = "${hermesSharedStateDir}/.hermes";
+  hermesTailscaleCli = import ./hermes-tailscale-cli.nix { inherit pkgs; };
   hermesDisplayctlEnvironment = toString (
     pkgs.writeText "hermes-displayctl.env" ''
       DISPLAYCTL_CONFIG=${pkgs.my.displayctl}/share/displayctl/config.json
@@ -1851,9 +1852,9 @@ in
 
   systemd.services.hermes-scintillate-desktop-dashboard = {
     enable = true;
-    # Preserve the Mac remote dashboard across routine NixOS switches. Apply
-    # package and unit changes on its next explicit restart instead.
-    restartIfChanged = false;
+    # The service PATH is a plugin capability boundary. Apply wrapper changes
+    # immediately rather than leaving an older, broader command set running.
+    restartIfChanged = true;
     description = "Hermes Desktop-compatible dashboard for Scintillate";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -1868,6 +1869,7 @@ in
       hermesAgentBase
       pkgs.bash
       pkgs.coreutils
+      hermesTailscaleCli
     ];
     environment = {
       HOME = hermesSharedStateDir;

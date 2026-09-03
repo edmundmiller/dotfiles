@@ -70,8 +70,8 @@ let
       msg = "The Hermes Desktop dashboard must be enabled.";
     }
     {
-      test = !desktopDashboardService.restartIfChanged;
-      msg = "Routine NixOS switches must not interrupt the remote Mac dashboard.";
+      test = desktopDashboardService.restartIfChanged;
+      msg = "The remote Mac dashboard must restart when its plugin capability boundary changes.";
     }
     {
       test = desktopDashboardService.serviceConfig.ReadWritePaths == expectedDashboardAccessPaths;

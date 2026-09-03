@@ -65,6 +65,18 @@ let
       "$notification" >/dev/null 2>&1 || true
     exit "$rc"
   '';
+  hermesTailscalePlugin = "${pkgs.my.hermes-tailscale}/plugin.js";
+  hermesTailscalePluginFiles =
+    lib.genAttrs
+      (
+        [ ".hermes/desktop-plugins/hermes-tailscale/plugin.js" ]
+        ++ map (
+          profile: ".hermes/profiles/${profile}/desktop-plugins/hermes-tailscale/plugin.js"
+        ) config.modules.agents.hermes-local.profiles
+      )
+      (_: {
+        source = hermesTailscalePlugin;
+      });
 in
 {
 
@@ -445,6 +457,13 @@ in
     home-manager.users.${config.user.name} =
       { lib, ... }:
       {
+        home.file = hermesTailscalePluginFiles // {
+          "Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
+            "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
+          "Library/Application Support/com.clin.clin/config.toml".source =
+            "${config.dotfiles.configDir}/clin/config.toml";
+        };
+
         home.sessionVariables = {
           PI_MODEL_SWITCH_INTENT = "opencode-go/kimi-2.5";
           PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
@@ -462,11 +481,6 @@ in
         home.activation.removeLegacyOpenWiki = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.cache/npm/bin/openwiki"
         '';
-
-        home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
-          "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
-        home.file."Library/Application Support/com.clin.clin/config.toml".source =
-          "${config.dotfiles.configDir}/clin/config.toml";
 
         # Keep the Seqera work wallpaper in a stable location and apply it to the desktop.
         # macOS wallpaper automation reliably accepts the PNG export; the SVG sibling

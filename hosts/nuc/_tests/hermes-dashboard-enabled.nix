@@ -48,6 +48,20 @@ let
       msg = "Scintillate's Desktop dashboard must remain enabled so auto-upgrades do not mask it.";
     }
     {
+      test = service.restartIfChanged;
+      msg = "The Hermes Desktop dashboard must restart when its plugin capability boundary changes.";
+    }
+    {
+      test = !builtins.elem pkgs.tailscale service.path;
+      msg = "The Hermes Desktop dashboard must not expose the unrestricted host Tailscale CLI to plugins.";
+    }
+    {
+      test = builtins.any (
+        package: pkgs.lib.hasInfix "hermes-tailscale-cli" (builtins.baseNameOf (toString package))
+      ) service.path;
+      msg = "The Hermes Desktop dashboard must expose only the restricted Tailscale plugin CLI.";
+    }
+    {
       test = builtins.elem "multi-user.target" service.wantedBy;
       msg = "Scintillate's Desktop dashboard must start from multi-user.target after every NUC activation.";
     }
