@@ -375,7 +375,10 @@ class ManageCliTest(unittest.TestCase):
         manifest["packages"] = [
             {"name": "missing-package", "manager": "repo", "command": "missing-cmd"}
         ]
-        manifest["services"] = [{"name": "fixture.service", "setup": "omapods"}]
+        manifest["services"] = [
+            {"name": "fixture.service", "setup": "omapods"},
+            {"name": "generic.service", "setup": "none"},
+        ]
         self.write_json("manifest.json", manifest)
         target = self.home / ".config" / "omarchy" / "shell.json"
         target.parent.mkdir(parents=True)
@@ -424,7 +427,10 @@ class ManageCliTest(unittest.TestCase):
                 "command": "fixture-command",
             }
         ]
-        manifest["services"] = [{"name": "fixture.service", "setup": "omapods"}]
+        manifest["services"] = [
+            {"name": "fixture.service", "setup": "omapods"},
+            {"name": "generic.service", "setup": "none"},
+        ]
         manifest["inventory"]["generated"] = [".config/omarchy/plugins/*"]
         self.write_json("manifest.json", manifest)
         self.write_json(
@@ -463,7 +469,8 @@ class ManageCliTest(unittest.TestCase):
             "omarchy-shell": "#!/usr/bin/env bash\nexit 0\n",
             "systemctl": (
                 "#!/usr/bin/env bash\n"
-                "if [[ $* == '--user enable --now fixture.service' ]]; then\n"
+                "if [[ $* == '--user enable --now fixture.service' "
+                "|| $* == '--user enable --now generic.service' ]]; then\n"
                 '  echo "$*" >>"$ACTION_LOG"\n'
                 "fi\n"
                 "[[ -e $SERVICE_STATE ]] && exit 0\n"
@@ -495,6 +502,7 @@ class ManageCliTest(unittest.TestCase):
         self.assertEqual(actions.count("pkg add fixture-package"), 1)
         self.assertEqual(actions.count("setup"), 1)
         self.assertEqual(actions.count("--user enable --now fixture.service"), 2)
+        self.assertEqual(actions.count("--user enable --now generic.service"), 2)
 
     def test_restore_configures_and_restarts_voxtype_service(self) -> None:
         self.write_minimal_module()

@@ -164,7 +164,7 @@ validate_metadata() {
       and (.command | type == "string" and length > 0)))
     and (all(.services[];
       (.name | type == "string" and length > 0)
-      and (.setup == "omapods" or .setup == "voxtype")
+      and (.setup == "none" or .setup == "omapods" or .setup == "voxtype")
       and ((.commands // []) | type == "array")
       and (all((.commands // [])[]; type == "string" and length > 0))))
     and (all(.privateState[];
@@ -555,6 +555,8 @@ run_service_setup_adapters() {
   (( NO_SYSTEM )) && return 0
   while IFS= read -r setup; do
     case "$setup" in
+    none)
+      ;;
     omapods)
       # The locked plugin setup adapter owns this service.
       ;;

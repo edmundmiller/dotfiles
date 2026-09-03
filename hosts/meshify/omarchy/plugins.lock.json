@@ -70,6 +70,13 @@
       "revision": "9faa0be5525bec76c3bce42a13900ac2736b9841",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "io.github.ilyazar.syncthing",
+      "url": "https://github.com/ilyaZar/syncshell.git",
+      "revision": "5ad22b544a62da89bebd90d82f570c2abd8cc0f2",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }

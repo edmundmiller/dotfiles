@@ -110,6 +110,26 @@ omarchy plugin list --json \
 Fullscreen Steam games inhibit the screensaver, lock, and suspend because
 game-controller input does not reset Hyprland's idle timer.
 
+## Syncthing
+
+The Syncshell bar widget monitors Meshify's user-level `syncthing.service`.
+Restore installs Syncthing and enables the service. Meshify trusts the NUC as
+device `AUP2DGW-DVFZ5CT-D3TU2OH-SR7AO4A-WGAVWUE-Z2WWUTE-C67Z3KO-ERF4LQN`;
+the NUC's NixOS configuration declares the reciprocal pairing and owns the
+folders it offers to Meshify.
+
+Meshify's device identity is generated state. Its current ID is recorded as
+`meshify` in `modules/services/syncthing.nix`. If the identity is replaced,
+update that ID and redeploy the NUC before accepting its folder offers again.
+
+Verify the local half of the pairing with:
+
+```bash
+syncthing cli show system | jq -r .myID
+syncthing cli config devices list
+systemctl --user is-active syncthing.service
+```
+
 ## Dictation
 
 Voxtype uses the Antlion USB microphone regardless of Bluetooth audio routing.

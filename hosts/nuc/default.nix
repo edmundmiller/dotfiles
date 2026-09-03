@@ -2539,7 +2539,7 @@ in
         hookSecretsFile = config.age.secrets.moshi-hook-secrets-json.path;
       };
       ssh.enable = true;
-      syncthing.enable = false;
+      syncthing.enable = true;
       tailscale.enable = true;
       obsidian-sync = {
         enable = true;

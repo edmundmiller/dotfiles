@@ -179,6 +179,11 @@
       "command": "lrelease6"
     },
     {
+      "name": "syncthing",
+      "manager": "repo",
+      "command": "syncthing"
+    },
+    {
       "name": "voxtype-bin",
       "manager": "aur",
       "command": "voxtype"
@@ -194,6 +199,10 @@
       "name": "librepods.service",
       "setup": "omapods",
       "commands": ["librepods", "librepods-ctl"]
+    },
+    {
+      "name": "syncthing.service",
+      "setup": "none"
     },
     {
       "name": "voxtype.service",
@@ -239,6 +248,10 @@
     {
       "id": "airpods-pairing",
       "message": "Re-pair AirPods after hardware or Bluetooth state is replaced."
+    },
+    {
+      "id": "syncthing-pairing",
+      "message": "After replacing meshify's Syncthing identity, update its device ID in modules/services/syncthing.nix and redeploy the NUC."
     },
     {
       "id": "voxtype-gpu",
