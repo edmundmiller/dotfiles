@@ -1,6 +1,4 @@
-# Pure Nix eval: Darwin must not start a competing Nix tailscaled.
-# Official Tailscale.app is declared via Homebrew, not Nix pkgs.tailscale
-# and not the Homebrew tailscale formula (that ships tailscaled).
+# Pure Nix eval: Darwin must use exactly one open-source tailscaled owner.
 {
   darwinConfig,
   pkgs,
@@ -27,16 +25,16 @@ let
       msg = "MacTraitor-Pro must keep Tailscale aliases and the MagicDNS resolver";
     }
     {
-      test = !(mac.services.tailscale.enable or false);
-      msg = "MacTraitor-Pro must not enable Nix tailscaled; Tailscale.app owns the tunnel";
+      test = mac.services.tailscale.enable or false;
+      msg = "MacTraitor-Pro must enable Nix tailscaled for Tailscale SSH hosting";
     }
     {
-      test = !(mac.launchd.daemons ? tailscaled);
-      msg = "MacTraitor-Pro must not install com.tailscale.tailscaled";
+      test = mac.launchd.daemons ? tailscaled;
+      msg = "MacTraitor-Pro must install the tailscaled launch daemon";
     }
     {
-      test = hasCask "tailscale-app";
-      msg = "MacTraitor-Pro must declare the official Homebrew tailscale-app cask";
+      test = !(hasCask "tailscale-app");
+      msg = "MacTraitor-Pro must not declare the competing Tailscale GUI app";
     }
     {
       test = !(hasCask "tailscale");
@@ -47,14 +45,14 @@ let
       msg = "MacTraitor-Pro must not declare the Homebrew tailscale formula";
     }
     {
-      test = !(elem pkgs.tailscale (mac.environment.systemPackages or [ ]));
-      msg = "MacTraitor-Pro must not install Nix pkgs.tailscale; Tailscale.app owns the CLI";
+      test = elem mac.services.tailscale.package (mac.environment.systemPackages or [ ]);
+      msg = "MacTraitor-Pro must install the CLI package that owns tailscaled";
     }
   ];
 
   failures = filter (assertion: !assertion.test) assertions;
 in
-pkgs.runCommand "darwin-tailscale-app-owner-assertions"
+pkgs.runCommand "darwin-tailscaled-owner-assertions"
   {
     passthru = {
       inherit assertions failures;
@@ -66,5 +64,5 @@ pkgs.runCommand "darwin-tailscale-app-owner-assertions"
       exit 1
     fi
     mkdir -p "$out"
-    echo "All Darwin Tailscale ownership assertions passed." > "$out/result"
+    echo "All Darwin tailscaled ownership assertions passed." > "$out/result"
   ''

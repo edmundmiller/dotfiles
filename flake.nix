@@ -1535,7 +1535,7 @@
                     touch "$out"
                   '';
 
-              darwin-tailscale-app-owner-assertions = import ./modules/services/tailscale/_tests/eval-darwin.nix {
+              darwin-tailscaled-owner-assertions = import ./modules/services/tailscale/_tests/eval-darwin.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
               };

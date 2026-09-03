@@ -38,7 +38,7 @@ No agenix secrets on this host (credentials in 1Password). The laptop Hermes CLI
 ## Gotchas
 
 - **Hey not found after rebuild**: open a new terminal to pick up `$DOTFILES_BIN`
-- **Tailscale.app owns the tunnel**: keep Nix `services.tailscale.enable` off and declare Homebrew `tailscale-app`. Do not add the Homebrew `tailscale` formula or CLI-only cask. A competing `com.tailscale.tailscaled` leaves the official VPN Connecting with no `100.x` address. If the Network Extension still says provider unavailable after a rebuild, reboot to finish uninstalling the leftover extension.
+- **Nix tailscaled owns the tunnel**: this open-source variant supports hosting Tailscale SSH. Keep GUI Tailscale variants and the Homebrew `tailscale` formula absent so only one daemon owns the tunnel. Authentication and `tailscale set --ssh` are stateful one-time commands; see `docs/tailscale.md`.
 
 ## Related Files
 

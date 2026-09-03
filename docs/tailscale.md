@@ -2,7 +2,7 @@
 purpose: Describe Tailscale ownership, ACLs, and Darwin vs NixOS wiring.
 applies_to: Tailscale module, host tunnel, or tailnet service changes.
 entrypoint: Read this doc, then modules/services/tailscale.nix.
-verification: On Darwin, build darwin-tailscale-app-owner-assertions and check Tailscale.app is Connected with a 100.x address. On NixOS, check tailscaled is active.
+verification: On Darwin, build darwin-tailscaled-owner-assertions and check tailscaled is connected with SSH enabled. On NixOS, check tailscaled is active.
 update_when: Tunnel ownership, Homebrew cask, ACLs, or Tailscale service wiring changes.
 ---
 
@@ -57,7 +57,15 @@ Enables Tailscale with:
 
 - Shell aliases (`tsc`, `tsu`, `tsd`, `tss`)
 - NixOS: `tailscaled`, open firewall, operator mode (no sudo for `tailscale serve`), MagicDNS via resolved
-- Darwin: Homebrew `tailscale-app` plus MagicDNS resolver. Do **not** start Nix `tailscaled`, install `pkgs.tailscale`, or add the Homebrew `tailscale` formula or CLI-only cask; the official `Tailscale.app` Network Extension owns the tunnel. A second daemon leaves the GUI stuck Connecting and `/usr/local/bin/tailscale` returning `Tailscale.CLIError error 1`. Login and Network Extension approval stay out of Nix.
+- Darwin: Nix-managed open-source `tailscaled`, CLI, and MagicDNS resolver. This variant is required for hosting Tailscale SSH. Do not install a GUI Tailscale variant or the Homebrew `tailscale` formula alongside it; only one daemon can own the tunnel. Login and `tailscale set --ssh` remain one-time stateful commands outside Nix.
+
+After the first rebuild or after logging out, authenticate and enable Tailscale SSH:
+
+```bash
+sudo tailscale up --ssh --accept-routes
+```
+
+The tailnet policy must also authorize the source identity, destination device, and local macOS user in its `ssh` section.
 
 ## Tailnet Info
 
@@ -71,3 +79,5 @@ Enables Tailscale with:
 - [Tailscale Services](https://tailscale.com/docs/features/services)
 - [ACL Grants](https://tailscale.com/kb/1324/acl-grants)
 - [Tailscale Serve](https://tailscale.com/kb/1312/serve)
+- [Tailscale SSH](https://tailscale.com/docs/features/tailscale-ssh)
+- [Open-source tailscaled on macOS](https://github.com/tailscale/tailscale/wiki/Tailscaled-on-macOS)

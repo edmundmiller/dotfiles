@@ -25,10 +25,6 @@ in
       };
     }
 
-    # NixOS owns tailscaled. On Darwin the official Tailscale.app / Network
-    # Extension owns the tunnel; starting a second logged-out daemon leaves
-    # the GUI stuck Connecting and the CLI returning CLIError 1.
-
     (optionalAttrs (!isDarwin) {
       services.tailscale.enable = true;
       services.tailscale.openFirewall = true;
@@ -45,10 +41,10 @@ in
       networking.search = [ "cinnamon-rooster.ts.net" ];
     })
 
-    # macOS: official Tailscale.app owns the tunnel. Homebrew keeps the
-    # standalone app current; Nix only adds MagicDNS resolver + aliases.
+    # Tailscale SSH hosting on macOS requires the open-source tailscaled
+    # variant. The GUI app must not be installed alongside this daemon.
     (optionalAttrs isDarwin {
-      homebrew.casks = [ "tailscale-app" ];
+      services.tailscale.enable = true;
       environment.etc = {
         "resolver/cinnamon-rooster.ts.net".text = ''
           nameserver 100.100.100.100
