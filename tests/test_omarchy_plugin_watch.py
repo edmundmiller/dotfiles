@@ -25,6 +25,7 @@ class OmarchyPluginWatchTest(unittest.TestCase):
         self.bin = self.root / "bin"
         self.home.mkdir()
         self.bin.mkdir()
+        (self.home / "src" / "obsishell").mkdir(parents=True)
 
         self.write_executable(
             "journalctl",
@@ -49,13 +50,26 @@ for argument in "$@"; do
     grep -Fq 'Stopping Obsidian Headless' "${argument#@}"
   fi
 done
-printf '# Plugin log report\n\nVerdict: actionable\n'
+printf '# Plugin log report\n\nVerdict: actionable\nAffected: obsishell.service\n'
 """,
         )
         self.write_executable(
             "notify-send",
             """#!/usr/bin/env bash
 printf '%s\n' "$*" >>"$WATCH_TEST_DIR/notifications"
+if [[ " $* " == *" --action=fix="* ]]; then printf 'fix\n'; fi
+""",
+        )
+        self.write_executable(
+            "systemd-run",
+            """#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$WATCH_TEST_DIR/systemd-runs"
+""",
+        )
+        self.write_executable(
+            "uwsm-app",
+            """#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$WATCH_TEST_DIR/agent-launches"
 """,
         )
 
@@ -83,14 +97,12 @@ printf '%s\n' "$*" >>"$WATCH_TEST_DIR/notifications"
 
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual((self.root / "pi-runs").read_text(), "run\n")
-        self.assertIn(
-            "Custom plugin log report", (self.root / "notifications").read_text()
-        )
         reports = list(
             (self.root / "state" / "omarchy-plugin-watch" / "reports").glob("*.md")
         )
         self.assertEqual(len(reports), 1)
         self.assertIn("Verdict: actionable", reports[0].read_text())
+        self.assertIn("notify-report", (self.root / "systemd-runs").read_text())
         self.assertEqual(
             (
                 self.root / "state" / "omarchy-plugin-watch" / "journal.cursor"
@@ -115,6 +127,23 @@ printf '%s\n' "$*" >>"$WATCH_TEST_DIR/notifications"
         self.assertNotIn("journal.jsonl", state_files)
         self.assertNotIn("findings.jsonl", state_files)
         self.assertNotIn("prompt.txt", state_files)
+
+        notification = subprocess.run(
+            [WATCH, "notify-report", reports[0]],
+            check=False,
+            capture_output=True,
+            text=True,
+            env={
+                **os.environ,
+                "HOME": str(self.home),
+                "PATH": f"{self.bin}:/usr/bin:/bin",
+                "WATCH_TEST_DIR": str(self.root),
+            },
+        )
+        self.assertEqual(notification.returncode, 0, notification.stderr)
+        launch = (self.root / "agent-launches").read_text()
+        self.assertIn("xdg-terminal-exec", launch)
+        self.assertIn(str(reports[0]), launch)
 
 
 if __name__ == "__main__":
