@@ -236,6 +236,22 @@
       "mode": "0600",
       "onePasswordRef": "op://Private/meshify-omarchy/ai-usagebar-credentials",
       "format": "json"
+    },
+    {
+      "id": "omamail-accounts",
+      "target": ".config/omamail/accounts.json",
+      "mode": "0600",
+      "onePasswordRef": "op://Private/meshify-omamail/omamail-accounts",
+      "format": "json",
+      "restore": "if-missing"
+    },
+    {
+      "id": "omamail-credentials",
+      "target": ".config/omamail/credentials.json",
+      "mode": "0600",
+      "onePasswordRef": "op://Private/meshify-omamail/omamail-credentials",
+      "format": "json",
+      "restore": "if-missing"
     }
   ],
   "keyringSecrets": [
@@ -244,6 +260,19 @@
       "onePasswordRef": "op://Private/meshify-omarchy/hass-token",
       "adapter": "hass-token",
       "configTarget": ".config/omarchy/hass/config.json"
+    },
+    {
+      "id": "omamail-gmail-refresh-token",
+      "onePasswordRef": "op://Private/meshify-omamail/omamail-gmail-refresh-token",
+      "adapter": "omamail-gmail-refresh-token",
+      "configTarget": ".config/omamail/accounts.json",
+      "credentialsTarget": ".config/omamail/credentials.json"
+    },
+    {
+      "id": "omamail-fastmail-password",
+      "onePasswordRef": "op://Private/meshify-omamail/omamail-fastmail-password",
+      "adapter": "omamail-fastmail-password",
+      "configTarget": ".config/omamail/accounts.json"
     }
   ],
   "manualRecovery": [

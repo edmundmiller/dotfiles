@@ -183,7 +183,7 @@ Repair preserves configured accounts, removes blank setup rows, adds missing
 Gmail rows, and saves the previous account list under
 `~/.local/state/omamail-recovery/`.
 
-## 1Password recovery item
+## 1Password recovery items
 
 Create a secure item named `meshify-omarchy` in the `Private` vault. Add these
 concealed or multiline fields using the 1Password desktop application:
@@ -195,10 +195,20 @@ concealed or multiline fields using the 1Password desktop application:
 | `ai-usagebar-config`      | Entire `~/.config/ai-usagebar/config.toml` file      |
 | `ai-usagebar-credentials` | Entire `~/.config/ai-usagebar/credentials.json` file |
 
+The separate `meshify-omamail` secure item contains:
+
+| Field                          | Contents                                      |
+| ------------------------------ | --------------------------------------------- |
+| `omamail-accounts`             | Entire `~/.config/omamail/accounts.json` file |
+| `omamail-credentials`          | Entire Gmail OAuth client configuration       |
+| `omamail-gmail-refresh-token`  | Gmail refresh token from the system keyring   |
+| `omamail-fastmail-password`    | Fastmail app password from the system keyring |
+
 The references are declared in `manifest.json`. Do not commit the resolved
-values. Restore writes private files with mode `0600`; the Home Assistant token
-is streamed to `secret-tool` on stdin and never appears in argv or command
-output.
+values. Restore writes private files with mode `0600`; application-owned
+Omamail files are bootstrapped only when missing, so recovery cannot overwrite
+newer live settings. Keyring values are streamed to `secret-tool` on stdin and
+never appear in argv or command output.
 
 If 1Password is locked or an item is absent, restore preserves existing live
 private state and reports warnings. A fresh host remains partially recovered

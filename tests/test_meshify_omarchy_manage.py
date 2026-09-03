@@ -308,6 +308,135 @@ class ManageCliTest(unittest.TestCase):
         self.assertIn("check: ok (1 warning(s))", result.stdout)
         self.assertNotIn("PRESERVE-CANARY", result.stdout + result.stderr)
 
+    def test_if_missing_private_state_never_overwrites_live_application_state(
+        self,
+    ) -> None:
+        self.write_minimal_module()
+        manifest = json.loads((self.module / "manifest.json").read_text())
+        manifest["privateState"] = [
+            {
+                "id": "mutable-fixture",
+                "target": ".config/application/state.json",
+                "mode": "0600",
+                "onePasswordRef": "op://Private/fixture/state",
+                "format": "json",
+                "restore": "if-missing",
+            }
+        ]
+        self.write_json("manifest.json", manifest)
+        state = self.home / ".config" / "application" / "state.json"
+        state.parent.mkdir(parents=True)
+        state.write_text('{"value": "LIVE-CANARY"}\n')
+        state.chmod(0o644)
+        fake_bin = self.root / "bin"
+        fake_bin.mkdir()
+        op = fake_bin / "op"
+        op.write_text("#!/usr/bin/env bash\nprintf '%s' '{\"value\":\"REPLACEMENT-CANARY\"}'\n")
+        op.chmod(0o755)
+        env = os.environ.copy()
+        env["PATH"] = f"{fake_bin}:{env['PATH']}"
+
+        result = self.run_manage(
+            "restore", "--home", str(self.home), "--no-system", env=env
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(state.read_text(), '{"value": "LIVE-CANARY"}\n')
+        self.assertEqual(stat.S_IMODE(state.stat().st_mode), 0o600)
+        self.assertNotIn("LIVE-CANARY", result.stdout + result.stderr)
+        self.assertNotIn("REPLACEMENT-CANARY", result.stdout + result.stderr)
+
+    def test_restore_bootstraps_omamail_files_and_keyring_without_exposure(
+        self,
+    ) -> None:
+        self.write_minimal_module()
+        manifest = json.loads((self.module / "manifest.json").read_text())
+        manifest["privateState"] = [
+            {
+                "id": "omamail-accounts",
+                "target": ".config/omamail/accounts.json",
+                "mode": "0600",
+                "onePasswordRef": "op://Private/fixture/omamail-accounts",
+                "format": "json",
+                "restore": "if-missing",
+            },
+            {
+                "id": "omamail-credentials",
+                "target": ".config/omamail/credentials.json",
+                "mode": "0600",
+                "onePasswordRef": "op://Private/fixture/omamail-credentials",
+                "format": "json",
+                "restore": "if-missing",
+            },
+        ]
+        manifest["keyringSecrets"] = [
+            {
+                "id": "omamail-gmail-refresh-token",
+                "onePasswordRef": "op://Private/fixture/gmail-token",
+                "adapter": "omamail-gmail-refresh-token",
+                "configTarget": ".config/omamail/accounts.json",
+                "credentialsTarget": ".config/omamail/credentials.json",
+            },
+            {
+                "id": "omamail-fastmail-password",
+                "onePasswordRef": "op://Private/fixture/fastmail-password",
+                "adapter": "omamail-fastmail-password",
+                "configTarget": ".config/omamail/accounts.json",
+            },
+        ]
+        self.write_json("manifest.json", manifest)
+        fake_bin = self.root / "bin"
+        fake_bin.mkdir()
+        op = fake_bin / "op"
+        op.write_text(
+            "#!/usr/bin/env bash\n"
+            'case "${!#}" in\n'
+            "  */omamail-accounts) printf '%s' '{\"version\":1,\"activeId\":\"imap:fast@example.invalid\",\"accounts\":[{\"id\":\"imap:fast@example.invalid\",\"email\":\"fast@example.invalid\",\"provider\":\"imap\",\"imap\":{\"imapHost\":\"imap.fastmail.com\"}},{\"id\":\"gmail@example.invalid\",\"email\":\"gmail@example.invalid\",\"provider\":\"gmail\"}]}' ;;\n"
+            "  */omamail-credentials) printf '%s' '{\"installed\":{\"client_id\":\"CLIENT-CANARY\"}}' ;;\n"
+            "  */gmail-token) printf '%s' 'GMAIL-TOKEN-CANARY' ;;\n"
+            "  */fastmail-password) printf '%s' 'FASTMAIL-PASSWORD-CANARY' ;;\n"
+            "  *) exit 1 ;;\n"
+            "esac\n"
+        )
+        op.chmod(0o755)
+        secret_tool = fake_bin / "secret-tool"
+        secret_tool.write_text(
+            "#!/usr/bin/env bash\n"
+            "if [[ $1 == lookup ]]; then cat >/dev/null; exit 0; fi\n"
+            'printf \'%s\\n\' "$*" >>"$SECRET_ARGV_CAPTURE"\n'
+            'cat >>"$SECRET_STDIN_CAPTURE"\n'
+            'printf \'\\n\' >>"$SECRET_STDIN_CAPTURE"\n'
+        )
+        secret_tool.chmod(0o755)
+        env = os.environ.copy()
+        env.update(
+            {
+                "HOME": str(self.home),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+                "SECRET_ARGV_CAPTURE": str(self.root / "secret.argv"),
+                "SECRET_STDIN_CAPTURE": str(self.root / "secret.stdin"),
+            }
+        )
+
+        result = self.run_manage("restore", "--no-system", env=env)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        combined = result.stdout + result.stderr
+        argv = Path(env["SECRET_ARGV_CAPTURE"]).read_text()
+        secret_input = Path(env["SECRET_STDIN_CAPTURE"]).read_text()
+        for secret in ("GMAIL-TOKEN-CANARY", "FASTMAIL-PASSWORD-CANARY"):
+            self.assertNotIn(secret, combined)
+            self.assertNotIn(secret, argv)
+            self.assertIn(secret, secret_input)
+        self.assertIn("kind refresh-token", argv)
+        self.assertIn("kind imap-password", argv)
+        self.assertEqual(
+            stat.S_IMODE(
+                (self.home / ".config" / "omamail" / "accounts.json").stat().st_mode
+            ),
+            0o600,
+        )
+
     def test_restore_streams_keyring_secrets_without_printing_or_argv_exposure(
         self,
     ) -> None:

@@ -119,11 +119,12 @@ lockfile and restore command cover its behavior.
 
 ### Secret and private-state policy
 
-Home Assistant tokens remain in the system keyring. Home Assistant private
-configuration and AI Usage configuration or credentials must either be restored
-from designated 1Password items or remain explicit manual recovery steps until
-a secret-safe adapter exists. AirPods pairing material is re-created by pairing
-unless a separate decision approves secure export and restoration.
+Home Assistant and Omamail tokens remain in the system keyring. Their private
+configuration and AI Usage configuration or credentials are restored from
+designated 1Password items. Mutable application configuration may declare an
+`if-missing` restore strategy so a recovery bootstrap never overwrites newer
+live state. AirPods pairing material is re-created by pairing unless a separate
+decision approves secure export and restoration.
 
 The repository may record 1Password references and field names, but never their
 resolved values. A locked or unavailable 1Password session causes a clear

@@ -172,12 +172,20 @@ validate_metadata() {
       and (.target | type == "string" and length > 0)
       and (.mode | type == "string" and test("^0[0-7]{3}$"))
       and (.onePasswordRef | type == "string" and startswith("op://"))
-      and (.format == "json" or .format == "toml")))
+      and (.format == "json" or .format == "toml")
+      and ((.restore // "replace") == "replace" or .restore == "if-missing")))
     and (all(.keyringSecrets[];
       (.id | type == "string" and length > 0)
       and (.onePasswordRef | type == "string" and startswith("op://"))
-      and (.adapter == "hass-token")
-      and (.configTarget | type == "string" and length > 0)))
+      and (.configTarget | type == "string" and length > 0)
+      and (
+        .adapter == "hass-token"
+        or .adapter == "omamail-fastmail-password"
+        or (
+          .adapter == "omamail-gmail-refresh-token"
+          and (.credentialsTarget | type == "string" and length > 0)
+        )
+      )))
     and (([.files[].target] | length) == ([.files[].target] | unique | length))
     and (([.files[].source] | length) == ([.files[].source] | unique | length))
     and (([.privateState[].target] | length) == ([.privateState[].target] | unique | length))
@@ -240,6 +248,18 @@ validate_metadata() {
         failed=1
       fi
     done < <(jq -r '.keyringSecrets[].configTarget' "$MANIFEST")
+
+    while IFS= read -r target; do
+      [[ -z $target ]] && continue
+      if ! safe_relative_path "$target"; then
+        report_error "unsafe keyring credentials target: $target"
+        failed=1
+      fi
+      if ! jq -e --arg target "$target" 'any(.privateState[]; .target == $target)' "$MANIFEST" >/dev/null; then
+        report_error "keyring credentials target is not declared private state: $target"
+        failed=1
+      fi
+    done < <(jq -r '.keyringSecrets[] | .credentialsTarget // empty' "$MANIFEST")
 
     while IFS= read -r pattern; do
       if ! safe_relative_path "$pattern"; then
@@ -309,7 +329,7 @@ cleanup_stale_secret_temps() {
 }
 
 restore_private_state() {
-  local id target mode reference format target_path temp actual_mode
+  local id target mode reference format strategy target_path temp actual_mode
   if (( NO_SECRETS )); then
     report_info "private-state restore disabled"
     return 0
@@ -319,8 +339,13 @@ restore_private_state() {
     return 0
   fi
 
-  while IFS=$'\t' read -r id target mode reference format; do
+  while IFS=$'\t' read -r id target mode reference format strategy; do
     target_path="$TARGET_HOME/$target"
+    [[ ! -L $target_path ]] || fail "refusing symlinked private state: $target"
+    if [[ $strategy == if-missing && -f $target_path && ! -L $target_path ]]; then
+      chmod "$mode" "$target_path"
+      continue
+    fi
     mkdir -p -- "$(dirname "$target_path")"
     temp="$(mktemp "$(dirname "$target_path")/.meshify-private.XXXXXX")"
     TEMP_FILES+=("$temp")
@@ -354,7 +379,7 @@ restore_private_state() {
     chmod "$mode" "$temp"
     mv -f -- "$temp" "$target_path"
     printf 'restore: restored private state %s\n' "$id"
-  done < <(jq -r '.privateState[] | [.id, .target, .mode, .onePasswordRef, .format] | @tsv' "$MANIFEST")
+  done < <(jq -r '.privateState[] | [.id, .target, .mode, .onePasswordRef, .format, (.restore // "replace")] | @tsv' "$MANIFEST")
 }
 
 hass_origin_from_config() {
@@ -381,14 +406,15 @@ except (TypeError, ValueError):
 }
 
 restore_keyring_secrets() {
-  local id reference adapter config_target config_path origin temp
+  local id reference adapter config_target credentials_target config_path credentials_path
+  local origin temp account client_id
   (( NO_SECRETS )) && return 0
   if ! command -v op >/dev/null 2>&1 || ! command -v secret-tool >/dev/null 2>&1; then
     report_warning "keyring restore unavailable; existing keyring entries were preserved"
     return 0
   fi
 
-  while IFS=$'\t' read -r id reference adapter config_target; do
+  while IFS=$'\t' read -r id reference adapter config_target credentials_target; do
     config_path="$TARGET_HOME/$config_target"
     if [[ ! -f $config_path || -L $config_path ]]; then
       report_warning "cannot restore $id without private config $config_target"
@@ -422,11 +448,79 @@ restore_keyring_secrets() {
       rm -f -- "$temp"
       printf 'restore: restored keyring secret %s\n' "$id"
       ;;
+    omamail-gmail-refresh-token)
+      credentials_path="$TARGET_HOME/$credentials_target"
+      if [[ ! -f $credentials_path || -L $credentials_path ]]; then
+        report_warning "cannot restore $id without private credentials $credentials_target"
+        continue
+      fi
+      account="$(jq -r '[.accounts[] | select(.provider == "gmail") | .id] | if length == 1 then .[0] else empty end' "$config_path")"
+      client_id="$(jq -r --arg account "$account" '
+        .installed.client_id
+        // ([.accounts[]? | select(.id == $account) | .installed.client_id][0] // empty)
+      ' "$credentials_path")"
+      if [[ -z $account || -z $client_id ]]; then
+        report_warning "cannot restore $id because Omamail Gmail metadata is ambiguous"
+        continue
+      fi
+      mkdir -p -- "$TARGET_HOME/.local/state/meshify-omarchy"
+      temp="$(mktemp "$TARGET_HOME/.local/state/meshify-omarchy/.keyring-secret.XXXXXX")"
+      TEMP_FILES+=("$temp")
+      chmod 0600 "$temp"
+      if ! timeout --foreground "$OP_TIMEOUT" op read --no-newline "$reference" >"$temp" 2>/dev/null; then
+        rm -f -- "$temp"
+        report_warning "1Password item unavailable for $id; preserved existing keyring entry"
+        continue
+      fi
+      if [[ ! -s $temp ]]; then
+        rm -f -- "$temp"
+        fail "1Password item for $id is empty"
+      fi
+      if ! secret-tool store --label='Omamail refresh token' \
+        service omamail account "$account" client-id "$client_id" \
+        grant calendar-events-v1 kind refresh-token <"$temp" >/dev/null; then
+        rm -f -- "$temp"
+        fail "failed to store $id in the system keyring"
+      fi
+      rm -f -- "$temp"
+      printf 'restore: restored keyring secret %s\n' "$id"
+      ;;
+    omamail-fastmail-password)
+      account="$(jq -r '
+        [.accounts[] | select(
+          .provider == "imap" and .imap.imapHost == "imap.fastmail.com"
+        ) | .id] | if length == 1 then .[0] else empty end
+      ' "$config_path")"
+      if [[ -z $account ]]; then
+        report_warning "cannot restore $id because Omamail Fastmail metadata is ambiguous"
+        continue
+      fi
+      mkdir -p -- "$TARGET_HOME/.local/state/meshify-omarchy"
+      temp="$(mktemp "$TARGET_HOME/.local/state/meshify-omarchy/.keyring-secret.XXXXXX")"
+      TEMP_FILES+=("$temp")
+      chmod 0600 "$temp"
+      if ! timeout --foreground "$OP_TIMEOUT" op read --no-newline "$reference" >"$temp" 2>/dev/null; then
+        rm -f -- "$temp"
+        report_warning "1Password item unavailable for $id; preserved existing keyring entry"
+        continue
+      fi
+      if [[ ! -s $temp ]]; then
+        rm -f -- "$temp"
+        fail "1Password item for $id is empty"
+      fi
+      if ! secret-tool store --label='Omamail Fastmail password' \
+        service omamail account "$account" kind imap-password <"$temp" >/dev/null; then
+        rm -f -- "$temp"
+        fail "failed to store $id in the system keyring"
+      fi
+      rm -f -- "$temp"
+      printf 'restore: restored keyring secret %s\n' "$id"
+      ;;
     *)
       fail "unknown keyring adapter: $adapter"
       ;;
     esac
-  done < <(jq -r '.keyringSecrets[] | [.id, .onePasswordRef, .adapter, .configTarget] | @tsv' "$MANIFEST")
+  done < <(jq -r '.keyringSecrets[] | [.id, .onePasswordRef, .adapter, .configTarget, (.credentialsTarget // "")] | @tsv' "$MANIFEST")
 }
 
 restore_plugins() {
@@ -696,13 +790,14 @@ restore_files() {
 }
 
 check_keyring_secrets() {
-  local id adapter config_target config_path origin
+  local id adapter config_target credentials_target config_path credentials_path
+  local origin account client_id
   (( NO_SECRETS )) && return 0
   if ! command -v secret-tool >/dev/null 2>&1; then
     report_error "missing command for keyring verification: secret-tool"
     return 0
   fi
-  while IFS=$'\t' read -r id adapter config_target; do
+  while IFS=$'\t' read -r id adapter config_target credentials_target; do
     config_path="$TARGET_HOME/$config_target"
     [[ -f $config_path && ! -L $config_path ]] || {
       report_error "cannot verify $id without private config $config_target"
@@ -713,7 +808,40 @@ check_keyring_secrets() {
       origin="$(hass_origin_from_config "$config_path")"
       if [[ -z $origin ]]; then
         report_error "cannot verify $id because Home Assistant baseUrl is invalid"
-      elif ! secret-tool lookup service hass origin "$origin" >/dev/null 2>&1; then
+      elif ! secret-tool lookup service hass origin "$origin" \
+        </dev/null >/dev/null 2>&1; then
+        report_error "missing keyring secret: $id"
+      fi
+      ;;
+    omamail-gmail-refresh-token)
+      credentials_path="$TARGET_HOME/$credentials_target"
+      if [[ ! -f $credentials_path || -L $credentials_path ]]; then
+        report_error "cannot verify $id without private credentials $credentials_target"
+        continue
+      fi
+      account="$(jq -r '[.accounts[] | select(.provider == "gmail") | .id] | if length == 1 then .[0] else empty end' "$config_path")"
+      client_id="$(jq -r --arg account "$account" '
+        .installed.client_id
+        // ([.accounts[]? | select(.id == $account) | .installed.client_id][0] // empty)
+      ' "$credentials_path")"
+      if [[ -z $account || -z $client_id ]]; then
+        report_error "cannot verify $id because Omamail Gmail metadata is ambiguous"
+      elif ! secret-tool lookup service omamail account "$account" \
+        client-id "$client_id" grant calendar-events-v1 kind refresh-token \
+        </dev/null >/dev/null 2>&1; then
+        report_error "missing keyring secret: $id"
+      fi
+      ;;
+    omamail-fastmail-password)
+      account="$(jq -r '
+        [.accounts[] | select(
+          .provider == "imap" and .imap.imapHost == "imap.fastmail.com"
+        ) | .id] | if length == 1 then .[0] else empty end
+      ' "$config_path")"
+      if [[ -z $account ]]; then
+        report_error "cannot verify $id because Omamail Fastmail metadata is ambiguous"
+      elif ! secret-tool lookup service omamail account "$account" kind imap-password \
+        </dev/null >/dev/null 2>&1; then
         report_error "missing keyring secret: $id"
       fi
       ;;
@@ -721,7 +849,7 @@ check_keyring_secrets() {
       report_error "unknown keyring adapter: $adapter"
       ;;
     esac
-  done < <(jq -r '.keyringSecrets[] | [.id, .adapter, .configTarget] | @tsv' "$MANIFEST")
+  done < <(jq -r '.keyringSecrets[] | [.id, .adapter, .configTarget, (.credentialsTarget // "")] | @tsv' "$MANIFEST")
 }
 
 check_private_file_modes() {
