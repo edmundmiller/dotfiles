@@ -135,7 +135,7 @@ class CompletionHookTests(unittest.TestCase):
                     (
                         f"source {ROOT / 'bin/hey.d/common.nu'}; "
                         f"source {ROOT / 'bin/hey.d/flake.nu'}; "
-                        "main check"
+                        "main check --worktree"
                     ),
                 ],
                 cwd=ROOT,
