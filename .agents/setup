@@ -60,9 +60,8 @@ if ! /usr/sbin/swapon --show=NAME --noheadings | grep -Fxq "$swapfile"; then
   sudo /usr/sbin/swapon "$swapfile"
 fi
 
-step "Warm the headless agent development shell"
-nix --accept-flake-config develop --no-write-lock-file "$repo_root#agent" --command true
-
+# The root flake includes private inputs. Resolve them after snapshot activation
+# with the current user's GitHub credential, never while building shared setup.
 step "Make the agent shell available to orb login shells"
 orb_env="$HOME/.config/amp/dotfiles-orb-env.sh"
 mkdir -p "$(dirname "$orb_env")"
@@ -70,7 +69,13 @@ cat > "$orb_env" <<EOF
 if [[ "\${AMP_ORB:-}" == "1" && "\${PWD:-}" == "$repo_root" && -z "\${DOTFILES_AGENT_ENV_ACTIVE:-}" ]]; then
   source "$nix_env"
   export DOTFILES_AGENT_ENV_ACTIVE=1
-  eval "\$("$nix_profile/bin/nix" --accept-flake-config print-dev-env --no-write-lock-file '$repo_root#agent')"
+  nix_config="\${NIX_CONFIG:-}"
+  if command -v gh >/dev/null 2>&1 && github_token="\$(gh auth token 2>/dev/null)" && [[ -n "\$github_token" ]]; then
+    nix_config="\${nix_config:+\$nix_config
+}access-tokens = github.com=\$github_token"
+  fi
+  eval "\$(NIX_CONFIG=\$nix_config "$nix_profile/bin/nix" --accept-flake-config print-dev-env --no-write-lock-file '$repo_root#agent')"
+  unset github_token nix_config
   export PATH="$nix_profile/bin:\$PATH"
 fi
 EOF
