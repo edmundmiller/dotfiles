@@ -517,6 +517,7 @@ in
               "vercel.sandbox.reconnect",
               "vercel.sandbox.stop",
               "vercel.sandbox.info",
+              "herdr-cliamp.open",
               "obsidian-neovide",
           })
 
@@ -609,6 +610,17 @@ in
                   'type = "shell"',
                   'command = "obsidian-neovide"',
               ])
+
+          ${optionalString config.modules.shell.cliamp.enable ''
+            command_block.extend([
+                "",
+                "[[keys.command]]",
+                'key = "prefix+M"',
+                'type = "plugin_action"',
+                'command = "herdr-cliamp.open"',
+                'description = "open cliamp player"',
+            ])
+          ''}
 
           ${optionalString cfg.vercelSandbox.enable ''
             command_block.extend([
@@ -1027,7 +1039,8 @@ in
           install_plugin persiyanov herdr-reviewr
           install_plugin ChmaraX herdr-nvim
           install_plugin plannotator herdr-annotate
-          install_plugin kryptamine herdr-auto-title
+          # Do not install kryptamine/herdr-auto-title: it requires a newer
+          # Herdr and would race the managed OMP-backed smart-rename worker.
           install_plugin nicosuave memex
           install_plugin jhochenbaum herdr-hunk-diff
           install_plugin thanhdat77 herdr-navigator

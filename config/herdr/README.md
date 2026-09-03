@@ -58,6 +58,11 @@ Custom/current mappings:
 | `prefix+c`                        | New tab                                            |
 | `prefix+alt+t`                    | Rename tab                                         |
 | `prefix+1..9`                     | Switch tab                                         |
+| `prefix+shift+1..9`               | Switch workspace                                   |
+| `prefix+alt+1..9`                 | Focus agent                                        |
+| `prefix+J` / `prefix+K`           | Next/previous agent                                |
+| `prefix+shift+left/right`          | Move tab                                           |
+| `prefix+X`                        | Close tab                                          |
 | `prefix+h/j/k/l`                  | Focus pane                                         |
 | `prefix+ctrl+w`                   | Last pane                                          |
 | `prefix+tab` / `prefix+shift+tab` | Cycle panes                                        |
@@ -82,6 +87,8 @@ Custom/current mappings:
 | `prefix+t`                        | Smart rename current agent tab                     |
 | `prefix+T`                        | Agent timeline                                     |
 | `prefix+R`                        | Refresh GitHub PR status                           |
+| `prefix+P`                        | Open issue or PR in Ghzinga                        |
+| `prefix+M`                        | Open cliamp player (cliamp-enabled hosts)          |
 | `prefix+I`                        | Start GitHub issue workflow                        |
 | `prefix+O`                        | Start from GitHub item                             |
 | `prefix+B`                        | Open Herdr Browser in a right split                |
@@ -146,6 +153,12 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `kkckkc/herdr-plugin-gh-workflow`
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
+- `ChmaraX/herdr-nvim`
+- `plannotator/herdr-annotate`
+- `nicosuave/memex`
+- `jhochenbaum/herdr-hunk-diff`
+- `thanhdat77/herdr-navigator`
+- `persiyanov/herdr-reviewr`
 - `coryshaw1/herdr-cliamp` when `modules.shell.cliamp` is enabled
 - `eliasstravik/herdr-projects` when `modules.shell.herdr.projects.enable` is
   true, pinned to `a4cdb0a69713d982d96f9062548cf885f013c442` via
@@ -162,6 +175,9 @@ to `herdr plugin install`; it does not copy a token into Nix, export one to the
 rest of activation, or modify the user's Git config. Verify or recover the
 credential with `gh auth status --hostname github.com` or `gh auth login
 --hostname github.com`.
+
+`kryptamine/herdr-auto-title` is intentionally excluded: it requires Herdr
+0.8.2 or newer and duplicates the managed OMP-backed smart-rename worker.
 
 Workspace Manager reads the Nix-managed `config/herdr/workspace-manager.yml`.
 Its path matcher covers native Herdr worktrees but not Review Boxes under

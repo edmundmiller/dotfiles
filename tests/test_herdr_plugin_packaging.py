@@ -215,13 +215,16 @@ def test_requested_marketplace_plugins_are_installed_with_build_toolchains() -> 
     for spec in (
         "install_plugin ChmaraX herdr-nvim",
         "install_plugin plannotator herdr-annotate",
-        "install_plugin kryptamine herdr-auto-title",
         "install_plugin nicosuave memex",
         "install_plugin jhochenbaum herdr-hunk-diff",
         "install_plugin thanhdat77 herdr-navigator",
         "install_plugin wyattjoh herdr-plugin-gh-pr",
     ):
         assert spec in module
+
+    # The marketplace auto-title plugin requires Herdr >=0.8.2 and would race
+    # the repo-owned OMP-backed smart rename worker.
+    assert "install_plugin kryptamine herdr-auto-title" not in module
 
     # Node and Bun are plugin runtimes; Go is only needed while installing.
     assert '"${pkgs.nodejs}/bin"' in launch_path.group(1)
@@ -251,6 +254,33 @@ def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() ->
 
     assert 'command["command"]' in module
     assert "for command in canonical_commands" in module
+
+
+def test_navigation_bindings_cover_tabs_workspaces_and_agents() -> None:
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    keys = config["keys"]
+
+    assert keys["switch_tab"] == "prefix+1..9"
+    assert keys["switch_workspace"] == "prefix+shift+1..9"
+    assert keys["focus_agent"] == "prefix+alt+1..9"
+    assert keys["move_tab_previous"] == "prefix+shift+left"
+    assert keys["move_tab_next"] == "prefix+shift+right"
+    assert keys["close_tab"] == "prefix+X"
+
+
+def test_hunk_bindings_reference_installed_plugin_actions() -> None:
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    commands = config["keys"]["command"]
+
+    assert {
+        command["command"]
+        for command in commands
+        if command["key"] in {"prefix+]", "prefix+}", "prefix+{"}
+    } == {
+        "jhochenbaum.hunkdiff.review",
+        "jhochenbaum.hunkdiff.review:staged",
+        "jhochenbaum.hunkdiff.review:branch",
+    }
 
 
 def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:

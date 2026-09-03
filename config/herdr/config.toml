@@ -42,11 +42,15 @@ open_worktree = "prefix+G"
 new_tab = "prefix+c"
 rename_tab = "prefix+alt+t"
 switch_tab = "prefix+1..9"
+switch_workspace = "prefix+shift+1..9"
 focus_agent = "prefix+alt+1..9"
 next_agent = "prefix+J"
 previous_agent = "prefix+K"
 previous_tab = "prefix+p"
 next_tab = "prefix+n"
+move_tab_previous = "prefix+shift+left"
+move_tab_next = "prefix+shift+right"
+close_tab = "prefix+X"
 focus_pane_left = "prefix+h"
 focus_pane_down = "prefix+j"
 focus_pane_up = "prefix+k"
@@ -91,19 +95,19 @@ description = "open file viewer in a tab"
 [[keys.command]]
 key = "prefix+]"
 type = "plugin_action"
-command = "hunk.diff.worktree-split"
+command = "jhochenbaum.hunkdiff.review"
 description = "open worktree Hunk diff in a split"
 
 [[keys.command]]
 key = "prefix+}"
 type = "plugin_action"
-command = "hunk.diff.staged-split"
+command = "jhochenbaum.hunkdiff.review:staged"
 description = "open staged Hunk diff in a split"
 
 [[keys.command]]
 key = "prefix+{"
 type = "plugin_action"
-command = "hunk.diff.branch-split"
+command = "jhochenbaum.hunkdiff.review:branch"
 description = "open branch Hunk diff in a split"
 
 [[keys.command]]
