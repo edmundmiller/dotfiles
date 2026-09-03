@@ -72,6 +72,8 @@ a documented human recovery gate rather than exported secret material.
 - [Plugin reloads while locked](docs/plugin-reload-lock-crash.md): read before
   Omapods builds, plugin updates, or other writes under the watched local plugin
   directory.
+- [Agent-assisted plugin log watch](docs/plugin-log-watch.md): read when changing
+  monitored plugins, Pi triage, actionable notifications, or repair authority.
 
 ## Idle suspend policy
 
