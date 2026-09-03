@@ -22,7 +22,6 @@ let
   slackSecret = cfg.age.secrets.slack-hermes-scintillate-agent-env;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
-  nucHostSource = builtins.readFile ../default.nix;
 
   inherit (builtins) any concatStringsSep toString;
   inherit (pkgs.lib) hasInfix mapAttrsToList;
@@ -283,18 +282,6 @@ let
       test = !(builtins.hasAttr "hermes-agent-anne-healthcheck-ping" cfg.systemd.timers);
       msg = "Old Anne gateway ping timer must remain removed.";
     }
-    {
-      test = !(hasInfix "skills.config.wiki.path = \"/home/hermes/repos/obsidian-vault\"" nucHostSource);
-      msg = "NUC host config must not re-author Scintillate's wiki runtime default.";
-    }
-    {
-      test = !(hasInfix "extraPackages = [\n          pkgs.my.tnote" nucHostSource);
-      msg = "NUC host config must not inject Scintillate's ordinary tnote runtime package directly.";
-    }
-    {
-      test = !(hasInfix "hermes-scintillate-repo-compat-links" nucHostSource);
-      msg = "NUC host config must not carry Scintillate's ordinary repo/tnote compatibility link script.";
-    }
   ];
 
   failures = builtins.filter (assertion: !assertion.test) assertions;
@@ -305,6 +292,21 @@ pkgs.runCommand "nuc-scintillate-runtime-access" { } ''
   Scintillate runtime access assertions failed:
   ${concatStringsSep "\n" (map (failure: "- ${failure.msg}") failures)}
   EOF
+      exit 1
+    fi
+
+    if grep -Fq 'skills.config.wiki.path = "/home/hermes/repos/obsidian-vault"' ${../default.nix}; then
+      echo "NUC host config must not re-author Scintillate's wiki runtime default." >&2
+      exit 1
+    fi
+
+    if grep -Pzq 'extraPackages = \[\n          pkgs\.my\.tnote' ${../default.nix}; then
+      echo "NUC host config must not inject Scintillate's ordinary tnote runtime package directly." >&2
+      exit 1
+    fi
+
+    if grep -Fq 'hermes-scintillate-repo-compat-links' ${../default.nix}; then
+      echo "NUC host config must not carry Scintillate's ordinary repo/tnote compatibility link script." >&2
       exit 1
     fi
 
