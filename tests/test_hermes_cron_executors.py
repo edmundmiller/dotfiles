@@ -302,7 +302,9 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertIn("buzz-stack-order.txt", overlay)
         self.assertRegex(
             overlay,
-            r"patches\s*=\s*\(old\.patches or \[\s*\]\)\s*\+\+\s*"
+            r"patches\s*=\s*\[\s*"
+            r"\./patches/slash-worker-hermes-python\.patch\s*"
+            r"\./patches/daemon-pool-python314\.patch\s*\]\s*\+\+\s*"
             r"canonicalBuzzPatches\s*\+\+\s*auxiliaryHermesPatches\s*\+\+\s*"
             r"\[\s*dashboardLivenessPatch\s*\]",
         )
