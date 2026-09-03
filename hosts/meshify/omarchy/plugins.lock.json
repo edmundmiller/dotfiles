@@ -42,6 +42,13 @@
       "revision": "801cb4b1dc3d20e75b43094aed36c3703e3f72e5",
       "enabled": true,
       "setup": "none"
+    },
+    {
+      "id": "anagrius.resume",
+      "url": "https://github.com/anagrius/omarchy-resume.git",
+      "revision": "48883141db0f6031b6a9c0b1b5173051443b40cb",
+      "enabled": true,
+      "setup": "none"
     }
   ]
 }

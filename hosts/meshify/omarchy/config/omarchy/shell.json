@@ -88,6 +88,9 @@
   "plugins": [
     {
       "id": "edmundmiller.lock"
+    },
+    {
+      "id": "anagrius.resume"
     }
   ],
   "version": 1,
