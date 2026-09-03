@@ -11,6 +11,9 @@ o.window("steam_app_.*", { idle_inhibit = "fullscreen" })
 -- the active gaming workspaces.
 o.window({ class = "^steam_proton$", xwayland = true }, { workspace = "10 silent" })
 
+-- Keep Grok Bot on its dedicated workspace without changing the active workspace.
+o.window("^grok-bot$", { workspace = "10 silent" })
+
 -- Reserve the GPU for Rocket League whenever the game is running.
 o.launch_on_start("/home/edmundmiller/.local/bin/rocket-league-lmstudio-guard")
 
