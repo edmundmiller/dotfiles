@@ -105,6 +105,28 @@ omarchy plugin list --json \
   | jq '.[] | select(.id == "omarchy.lock" or .id == "edmundmiller.lock")'
 ```
 
+## Custom plugin log watch
+
+`omarchy-plugin-watch.timer` scans new journal entries every two hours for
+`edmundmiller.lock`, `io.github.edmundmiller.obsishell`, and
+`obsishell.service`. Its persistent calendar trigger catches up after resume
+when meshify slept through a scheduled run.
+
+The scanner advances a journal cursor without calling a model when no relevant
+warning or error exists. When it finds one, a read-only Pi invocation classifies
+the excerpt, writes a report under
+`~/.local/state/omarchy-plugin-watch/reports/`, and sends a desktop
+notification. Journal excerpts are sent to the configured `openai-codex`
+provider; temporary prompt and journal files are deleted after each run.
+
+Inspect or run it directly with:
+
+```bash
+systemctl --user list-timers omarchy-plugin-watch.timer
+systemctl --user start omarchy-plugin-watch.service
+journalctl --user -u omarchy-plugin-watch.service --since today
+```
+
 ## Steam game idle policy
 
 Fullscreen Steam games inhibit the screensaver, lock, and suspend because
