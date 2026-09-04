@@ -5,6 +5,8 @@
   ...
 }:
 {
+  imports = [ ./agento11y.nix ];
+
   config = {
     modules = {
       editors = {
