@@ -22,6 +22,11 @@
       flake = false;
     };
 
+    specstory-lore = {
+      url = "github:specstoryai/getspecstory/1e49496c560c0862990b9496e9778e8251c453cc";
+      flake = false;
+    };
+
     agent-tail-repo = {
       url = "github:gillkyle/agent-tail";
       flake = false;
@@ -534,6 +539,12 @@
                   filter.maxDepth = 2;
                 };
 
+                specstory = {
+                  path = inputs.specstory-lore.outPath;
+                  subdir = ".";
+                  filter.maxDepth = 1;
+                };
+
                 agent-tail = {
                   path = inputs.agent-tail-repo.outPath;
                   subdir = "skills";
@@ -810,6 +821,36 @@
 
                       Use a lower-level HTML-to-Markdown converter instead when full-document
                       fidelity, streaming, or offline stdin conversion is required.
+                    '';
+                };
+
+                lore = {
+                  from = "specstory";
+                  path = "lore";
+                  transform =
+                    { original, ... }:
+                    ''
+                      ${original}
+
+                      ## Nix-managed skill installation
+
+                      On these hosts, the dotfiles repository is the source of truth for global
+                      skills. This section overrides upstream Step 2 scope placement, Step 4, and
+                      destructive skill reset instructions:
+
+                      - Treat `~/.agents/skills`, `~/.claude/skills`, and other harness skill
+                        directories as generated runtime targets. Never write, remove, or relink
+                        skills there directly.
+                      - Mining and dossier generation may update Lore's local SQLite corpus without
+                        forge approval. They must not change installed skills.
+                      - After the user explicitly approves a personal candidate, write its package
+                        to `~/.config/dotfiles/skills/catalog/<name>/`, register that source
+                        `SKILL.md` path with `forged add`, validate it with the repository's skill
+                        validator, and deploy it with `hey skills-sync` from the dotfiles root.
+                      - For project-scoped candidates, follow that project's agent guidance and
+                        native skill location instead of assuming `.claude/skills`.
+                      - Never run `reset --and-skills`. Remove a forged skill from its repository
+                        source only after separate explicit confirmation, then resync the catalog.
                     '';
                 };
 

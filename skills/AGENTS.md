@@ -32,9 +32,10 @@ so activation stops instead of replacing locally modified content.
 **Amp note:** Amp discovers `~/.agents/skills` natively and surfaces those skills under `/skill` in the TUI. `amp skill list` enumerates them after login. Add shared skills here instead of with `amp skill add` so Nix manages one copy for every agent.
 
 **Claude note:** `modules/agents/claude/default.nix` owns the allowed shared
-skill links. Keep their targets under `~/.agents/skills`; OMP may scan both
-providers, but its name-based discovery exposes one entry per skill and the
-symlinks keep the selected content canonical.
+skill links, currently `test-quality`, `github-cli-media`, and `lore`. Keep
+their targets under `~/.agents/skills`; OMP may scan both providers, but its
+name-based discovery exposes one entry per skill and the symlinks keep the
+selected content canonical.
 
 ## Adding a Global Skill
 

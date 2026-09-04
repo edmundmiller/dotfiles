@@ -508,6 +508,7 @@
         "qmd-repo": "qmd-repo",
         "shadcn-improve": "shadcn-improve",
         "shaping-skills": "shaping-skills",
+        "specstory-lore": "specstory-lore",
         "stack-repo": "stack-repo",
         "zele-repo": "zele-repo"
       }
@@ -541,6 +542,23 @@
       "original": {
         "owner": "rjs",
         "repo": "shaping-skills",
+        "type": "github"
+      }
+    },
+    "specstory-lore": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788450636,
+        "narHash": "sha256-9y0nhhQIWNrbPlj3r0XbdrarfpA5d7vQnsZrkaF0iu0=",
+        "owner": "specstoryai",
+        "repo": "getspecstory",
+        "rev": "1e49496c560c0862990b9496e9778e8251c453cc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "specstoryai",
+        "repo": "getspecstory",
+        "rev": "1e49496c560c0862990b9496e9778e8251c453cc",
         "type": "github"
       }
     },

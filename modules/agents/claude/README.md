@@ -22,7 +22,7 @@ modules.agents.claude.enable = true;
 - `~/.claude/settings.json` from `config/claude/settings.json`
 - `~/.claude/CLAUDE.md` from the bounded `config/agents/core.md`
 - `~/.claude/agents/` from `config/agents/modes/`
-- `~/.claude/skills/{test-quality,github-cli-media}` linked to shared catalog copies
+- `~/.claude/skills/{test-quality,github-cli-media,lore}` linked to shared catalog copies
 - Darwin-only `~/.wakatime.cfg`
 
 ## Repo-local Claude plugin sources
@@ -36,7 +36,7 @@ These stay in the repo for development/reference, but installed plugins still li
 ## Notes
 
 - Shared skills live in `~/.agents/skills`; Claude receives only the
-  `test-quality` and `github-cli-media` links while activation removes other
-  Claude skill copies
+  `test-quality`, `github-cli-media`, and `lore` links while activation removes
+  other Claude skill copies
 - Project-local skills belong in `.agents/skills/`
 - If Claude reports settings schema errors, check `config/claude/settings.json`
