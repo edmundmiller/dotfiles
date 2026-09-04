@@ -183,6 +183,7 @@ in
         };
         agentsview.enable = true;
         claude.enable = true;
+        exo.enable = true;
         hermes-local = {
           enable = true;
           profiles = [

@@ -16,6 +16,7 @@ Keep runtime-specific packages and configuration in the matching submodule.
 - `agentsview/` - agentsview TUI from numtide/llm-agents.nix
 - `claude/` - Claude Code CLI (Anthropic)
 - `codex/` - Codex CLI (OpenAI)
+- `exo/` - Exo CLI for running coding agents in isolated environments
 - `hermes/` - NixOS-only Hermes Gateway/runtime host wiring
 - `omp/` - Oh My Pi CLI, isolated from Pi's `~/.pi/agent`
 - `opencode/` - OpenCode CLI
@@ -31,6 +32,7 @@ modules.agents = {
   agentsview.enable = true;
   claude.enable = true;
   codex.enable = true;
+  exo.enable = true;
   hermes = {
     enable = true;
     secretReferences = { ... };
