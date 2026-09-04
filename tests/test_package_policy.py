@@ -11,6 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PackagePolicyTest(unittest.TestCase):
+    def test_packages_do_not_fetch_git_during_evaluation(self):
+        offenders = [
+            str(path.relative_to(ROOT))
+            for path in (ROOT / "packages").rglob("*.nix")
+            if "allowBuiltinFetchGit = true;" in path.read_text()
+        ]
+
+        self.assertEqual(
+            offenders,
+            [],
+            "Package Git dependencies must use outputHashes instead of evaluation-time fetchGit",
+        )
+
     def test_pi_policy_bridge_uses_nix_managed_runtime_path(self):
         settings = (ROOT / "config/pi/settings.jsonc").read_text()
         home_files = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()

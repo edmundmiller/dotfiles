@@ -36,7 +36,9 @@ rustPlatform.buildRustPackage rec {
 
   cargoLock = {
     lockFile = ./inspect.Cargo.lock;
-    allowBuiltinFetchGit = true;
+    outputHashes = {
+      "sem-core-0.3.5" = "sha256-eRRcPgsZ5icklVOw6bjPMb9qqkNUiPS1QA6toK62AS8=";
+    };
   };
 
   # Upstream tests expect local fixture paths unavailable in nix sandbox.
