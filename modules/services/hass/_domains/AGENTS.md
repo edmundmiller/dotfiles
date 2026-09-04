@@ -108,16 +108,16 @@ hey nuc-status
 
 ## Lights
 
-| Entity ID                              | Friendly Name       | Area        | Color Temp |
-| -------------------------------------- | ------------------- | ----------- | ---------- |
-| `light.kitchen_trashcan`               | Trashcan            | Kitchen     | ✅         |
-| `light.kitchen_dishwasher`             | Dishwasher          | Kitchen     | ✅         |
-| `light.essentials_a19_a60_3`           | Bathroom Nightstand | Bedroom     | ✅         |
-| `light.essentials_a19_a60_4`           | Window Nightstand   | Bedroom     | ✅         |
-| `light.essentials_a19_a60_5`           | Wall Lamp           | Living Room | ✅         |
-| `light.nanoleaf_multicolor_floor_lamp` | Couch Lamp          | Living Room | ✅         |
-| `light.nanoleaf_multicolor_hd_ls`      | Edmund Desk         | Office      | ✅         |
-| `light.smart_night_light_w`            | Night Light         | Entrance    | ✅         |
+| Entity ID                         | Friendly Name    | Area        | Color Temp |
+| --------------------------------- | ---------------- | ----------- | ---------- |
+| `light.kitchen_trashcan`          | Trashcan         | Kitchen     | ✅         |
+| `light.kitchen_dishwasher`        | Dishwasher       | Kitchen     | ✅         |
+| `light.essentials_a19_a60_3`      | Left Night Stand | Bedroom     | ✅         |
+| `light.essentials_a19_a60_4`      | Right Nightstand | Bedroom     | ✅         |
+| `light.essentials_a19_a60_5`      | Wall Lamp        | Living Room | ✅         |
+| `light.living_room_couch_lamp`    | Couch Lamp       | Living Room | ✅         |
+| `light.nanoleaf_multicolor_hd_ls` | Edmund Desk      | Office      | ✅         |
+| `light.smart_night_light_w`       | Night Light      | Entrance    | ✅         |
 
 ## Switches
 

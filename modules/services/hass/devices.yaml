@@ -8,12 +8,13 @@ areas:
   bathroom:
     - "Bathroom"
   bedroom:
-    - "Bathroom Nightstand"
-    - "Window Nightstand"
+    - "Left Night Stand"
+    - "Right Nightstand"
     - "Whitenoise Machine"
     - "SmartWings Window Covering"
   entrance:
     - "Night Light"
+    - "Frontdoor"
   kitchen:
     - "Kitchen"
     - "Trashcan"

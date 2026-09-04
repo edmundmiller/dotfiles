@@ -14,10 +14,10 @@ in
         entities = {
           "light.kitchen_trashcan" = "off";
           "light.kitchen_dishwasher" = "off";
-          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_3" = "off"; # Left Night Stand
+          "light.essentials_a19_a60_4" = "off"; # Right Nightstand
           "light.essentials_a19_a60_5" = "off"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.living_room_couch_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
           "cover.smartwings_window_covering" = "closed";
@@ -33,13 +33,13 @@ in
           "light.essentials_a19_a60_3" = {
             state = "on";
             brightness = 64; # 25%
-          }; # Bathroom Nightstand
+          }; # Left Night Stand
           "light.essentials_a19_a60_4" = {
             state = "on";
             brightness = 64; # 25%
-          }; # Window Nightstand
+          }; # Right Nightstand
           "light.essentials_a19_a60_5" = "on"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "on";
+          "light.living_room_couch_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
           "light.smart_night_light_w" = "on";
           "cover.smartwings_window_covering" = "closed";
@@ -54,10 +54,10 @@ in
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "light.kitchen_trashcan" = "on";
           "light.kitchen_dishwasher" = "on";
-          "light.essentials_a19_a60_3" = "on"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "on"; # Window Nightstand
+          "light.essentials_a19_a60_3" = "on"; # Left Night Stand
+          "light.essentials_a19_a60_4" = "on"; # Right Nightstand
           "light.essentials_a19_a60_5" = "on"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "on";
+          "light.living_room_couch_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
           "light.smart_night_light_w" = "on";
         };
@@ -68,10 +68,10 @@ in
         icon = "mdi:home-export-outline";
         entities = {
           "cover.smartwings_window_covering" = "closed";
-          "light.essentials_a19_a60_3" = "off"; # Bathroom Nightstand
-          "light.essentials_a19_a60_4" = "off"; # Window Nightstand
+          "light.essentials_a19_a60_3" = "off"; # Left Night Stand
+          "light.essentials_a19_a60_4" = "off"; # Right Nightstand
           "light.essentials_a19_a60_5" = "off"; # Wall Lamp
-          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.living_room_couch_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
           "switch.eve_energy_20ebu4101" = "off";
@@ -171,20 +171,96 @@ in
         ];
       }
 
-      # --- Balcony door ---
+      # --- Doors ---
+      {
+        alias = "Front door opened after dark";
+        id = "front_door_night_lights";
+        description = "Light the entrance and living room when the front door opens after dark";
+        trigger = {
+          platform = "state";
+          entity_id = "binary_sensor.eve_door_20ebn9901_door";
+          to = "on";
+        };
+        condition = [
+          {
+            condition = "state";
+            entity_id = "sun.sun";
+            state = "below_horizon";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "light.turn_on";
+            target.entity_id = [
+              "light.smart_night_light_w"
+              "light.living_room_couch_lamp"
+            ];
+          }
+        ];
+      }
       {
         alias = "Balcony door opened";
         id = "balcony_opens_couch_lamp";
-        description = "Turn on couch lamp when balcony door opens";
+        description = "Use a dim warm couch light for late-night dog trips, then turn it off after the balcony closes";
+        mode = "single";
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.living_room_balcony_door";
           to = "on";
         };
+        condition = [
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
+          }
+          {
+            condition = "state";
+            entity_id = "light.living_room_couch_lamp";
+            state = "off";
+          }
+        ];
         action = [
           {
             action = "light.turn_on";
-            target.entity_id = "light.nanoleaf_multicolor_floor_lamp";
+            target.entity_id = "light.living_room_couch_lamp";
+            data = {
+              brightness_pct = 10;
+              rgb_color = [
+                255
+                56
+                0
+              ];
+            };
+          }
+          {
+            wait_for_trigger = [
+              {
+                platform = "state";
+                entity_id = "binary_sensor.living_room_balcony_door";
+                to = "off";
+                "for".minutes = 2;
+              }
+            ];
+            timeout.hours = 1;
+            continue_on_timeout = false;
+          }
+          {
+            action = "light.turn_off";
+            target.entity_id = "light.living_room_couch_lamp";
+          }
+          {
+            action = "adaptive_lighting.set_manual_control";
+            data = {
+              entity_id = "switch.adaptive_lighting_living_space";
+              lights = [ "light.living_room_couch_lamp" ];
+              manual_control = false;
+            };
           }
         ];
       }

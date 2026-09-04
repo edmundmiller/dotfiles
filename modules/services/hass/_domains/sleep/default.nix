@@ -97,18 +97,18 @@ let
       state = "on";
       brightness = 90;
       color_temp_kelvin = 2700;
-    }; # Bathroom Nightstand
+    }; # Left Night Stand
     "light.essentials_a19_a60_4" = {
       state = "on";
       brightness = 90;
       color_temp_kelvin = 2700;
-    }; # Window Nightstand
+    }; # Right Nightstand
     "light.essentials_a19_a60_5" = {
       state = "on";
       brightness = 115;
       color_temp_kelvin = 2700;
     }; # Wall Lamp
-    "light.nanoleaf_multicolor_floor_lamp" = {
+    "light.living_room_couch_lamp" = {
       state = "on";
       brightness = 115;
       color_temp_kelvin = 2700;
@@ -341,7 +341,7 @@ in
           "light.essentials_a19_a60_3" = "off";
           "light.essentials_a19_a60_4" = "off";
           "light.essentials_a19_a60_5" = "off";
-          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.living_room_couch_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
         };
@@ -362,7 +362,7 @@ in
           "light.essentials_a19_a60_3" = "off";
           "light.essentials_a19_a60_4" = "off";
           "light.essentials_a19_a60_5" = "off";
-          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.living_room_couch_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
         };
@@ -392,7 +392,7 @@ in
           "light.kitchen_trashcan" = "on";
           "light.kitchen_dishwasher" = "on";
           "light.essentials_a19_a60_5" = "on";
-          "light.nanoleaf_multicolor_floor_lamp" = "on";
+          "light.living_room_couch_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
         };
       }

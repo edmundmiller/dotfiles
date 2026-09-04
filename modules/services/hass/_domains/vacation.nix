@@ -88,7 +88,7 @@ in
           "light.kitchen_dishwasher" = "off";
           "light.essentials_a19_a60_3" = "off";
           "light.essentials_a19_a60_4" = "off";
-          "light.nanoleaf_multicolor_floor_lamp" = "off";
+          "light.living_room_couch_lamp" = "off";
           "light.nanoleaf_multicolor_hd_ls" = "off";
           "light.smart_night_light_w" = "off";
           "switch.eve_energy_20ebu4101" = "off";

@@ -33,9 +33,9 @@ in
           target.entity_id = [
             "light.kitchen_trashcan" # Trashcan
             "light.kitchen_dishwasher" # Dishwasher
-            "light.essentials_a19_a60_3" # Bathroom Nightstand
-            "light.essentials_a19_a60_4" # Window Nightstand
-            "light.nanoleaf_multicolor_floor_lamp" # Couch Lamp
+            "light.essentials_a19_a60_3" # Left Night Stand
+            "light.essentials_a19_a60_4" # Right Nightstand
+            "light.living_room_couch_lamp" # Couch Lamp
             "light.nanoleaf_multicolor_hd_ls" # Edmund Desk
             "light.smart_night_light_w" # Night light
           ];

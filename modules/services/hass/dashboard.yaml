@@ -91,7 +91,7 @@ views:
               icon: false
 
           - type: custom:mushroom-light-card
-            entity: light.nanoleaf_multicolor_floor_lamp
+            entity: light.living_room_couch_lamp
             name: Couch Lamp
             icon: mdi:floor-lamp
             use_light_color: true
@@ -213,7 +213,7 @@ views:
             icon: mdi:sofa
 
           - type: custom:mushroom-light-card
-            entity: light.nanoleaf_multicolor_floor_lamp
+            entity: light.living_room_couch_lamp
             name: Couch Lamp
             icon: mdi:floor-lamp
             use_light_color: true
@@ -231,14 +231,14 @@ views:
 
           - type: custom:mushroom-light-card
             entity: light.essentials_a19_a60_3
-            name: Bathroom Nightstand
+            name: Left Night Stand
             show_brightness_control: true
             fill_container: true
             collapsible_controls: true
 
           - type: custom:mushroom-light-card
             entity: light.essentials_a19_a60_4
-            name: Window Nightstand
+            name: Right Nightstand
             show_brightness_control: true
             fill_container: true
             collapsible_controls: true

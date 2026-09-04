@@ -344,6 +344,7 @@ let
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
+  frontDoorNightLights = findAutomation "front_door_night_lights";
   balconyOpensCouchLamp = findAutomation "balcony_opens_couch_lamp";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
   legacyRoombaStart = findAutomation "roomba_start_last_person_leaves";
@@ -925,6 +926,31 @@ let
       msg = "automation 'entrance_occupancy_night_light' missing";
     }
     {
+      test = frontDoorNightLights != null;
+      msg = "automation 'front_door_night_lights' missing";
+    }
+    {
+      test = hasStateTrigger frontDoorNightLights "binary_sensor.eve_door_20ebn9901_door" "on";
+      msg = "front_door_night_lights must trigger when the front door opens";
+    }
+    {
+      test = hasStateCondition (toList (frontDoorNightLights.condition or [ ])) "sun.sun" "below_horizon";
+      msg = "front_door_night_lights must only run after dark";
+    }
+    {
+      test = hasStateCondition (toList (
+        frontDoorNightLights.condition or [ ]
+      )) "input_boolean.goodnight" "off";
+      msg = "front_door_night_lights must not wake the house after Good Night";
+    }
+    {
+      test = hasActionTarget (toList (frontDoorNightLights.action or [ ])) "light.turn_on" [
+        "light.smart_night_light_w"
+        "light.living_room_couch_lamp"
+      ];
+      msg = "front_door_night_lights must turn on the entrance and couch lights";
+    }
+    {
       test = balconyOpensCouchLamp != null;
       msg = "automation 'balcony_opens_couch_lamp' missing";
     }
@@ -935,8 +961,38 @@ let
     {
       test = hasActionTarget (toList (
         balconyOpensCouchLamp.action or [ ]
-      )) "light.turn_on" "light.nanoleaf_multicolor_floor_lamp";
+      )) "light.turn_on" "light.living_room_couch_lamp";
       msg = "balcony_opens_couch_lamp must turn on the couch lamp";
+    }
+    {
+      test = hasStateCondition (toList (
+        balconyOpensCouchLamp.condition or [ ]
+      )) "input_boolean.goodnight" "on";
+      msg = "balcony_opens_couch_lamp must only run after Good Night";
+    }
+    {
+      test = hasStateCondition (toList (
+        balconyOpensCouchLamp.condition or [ ]
+      )) "light.living_room_couch_lamp" "off";
+      msg = "balcony_opens_couch_lamp must preserve an already-on couch lamp";
+    }
+    {
+      test = hasActionDataDeep (toList (
+        balconyOpensCouchLamp.action or [ ]
+      )) "light.turn_on" "brightness_pct" 10;
+      msg = "balcony_opens_couch_lamp must use 10% brightness";
+    }
+    {
+      test = hasWaitForStateDeep (toList (
+        balconyOpensCouchLamp.action or [ ]
+      )) "binary_sensor.living_room_balcony_door" "off";
+      msg = "balcony_opens_couch_lamp must wait for the balcony door to close";
+    }
+    {
+      test = hasActionTarget (toList (
+        balconyOpensCouchLamp.action or [ ]
+      )) "light.turn_off" "light.living_room_couch_lamp";
+      msg = "balcony_opens_couch_lamp must turn the couch lamp back off";
     }
     {
       test = arrivalFlashWallLamp != null;
