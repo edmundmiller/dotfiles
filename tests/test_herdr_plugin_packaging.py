@@ -76,6 +76,25 @@ def test_marketplace_activation_defers_protocol_mismatch() -> None:
     assert "deferring marketplace plugin installation" in module
 
 
+def test_marketplace_private_plugin_auth_is_scoped_to_git_install() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    marketplace_activation = module.split(
+        "home.activation.herdr-marketplace-plugins =", 1
+    )[1].split("home.activation.herdr-agent-integrations =", 1)[0]
+    install_command = marketplace_activation.split("if ! install_output=$(\n", 1)[1]
+    install_command = install_command.split("\n              ); then", 1)[0]
+
+    assert "GIT_CONFIG_COUNT=2" in install_command
+    assert "GIT_CONFIG_KEY_0=credential.https://github.com.helper" in install_command
+    assert "GIT_CONFIG_VALUE_0=" in install_command
+    assert "GIT_CONFIG_KEY_1=credential.https://github.com.helper" in install_command
+    assert "auth git-credential" in install_command
+    assert "GIT_TERMINAL_PROMPT=0" in install_command
+    assert "GH_TOKEN" not in marketplace_activation
+    assert "GITHUB_TOKEN" not in marketplace_activation
+    assert "githubNixToken" not in marketplace_activation
+
+
 def test_tnote_today_plugin_is_installed_with_its_runtime() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 

@@ -147,6 +147,13 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `0x5c0f/herdr-insight`
 - `coryshaw1/herdr-cliamp` when `modules.shell.cliamp` is enabled
 
+Private GitHub plugins use the active `gh` login through a transient,
+`github.com`-scoped Git credential helper. Activation passes that helper only
+to `herdr plugin install`; it does not copy a token into Nix, export one to the
+rest of activation, or modify the user's Git config. Verify or recover the
+credential with `gh auth status --hostname github.com` or `gh auth login
+--hostname github.com`.
+
 Workspace Manager reads the Nix-managed `config/herdr/workspace-manager.yml`.
 Its path matcher covers native Herdr worktrees but not Review Boxes under
 `/.pi/worktrees/`; the Review Box launcher therefore remains the sole owner of

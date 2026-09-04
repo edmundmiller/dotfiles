@@ -975,7 +975,16 @@ in
               echo "herdr: $spec plugin already installed"
             else
               echo "herdr: installing $spec plugin"
-              if ! install_output=$("$herdr_cmd" plugin install "$spec" --yes 2>&1); then
+              if ! install_output=$(
+                ${pkgs.coreutils}/bin/env \
+                  GIT_CONFIG_COUNT=2 \
+                  GIT_CONFIG_KEY_0=credential.https://github.com.helper \
+                  GIT_CONFIG_VALUE_0= \
+                  GIT_CONFIG_KEY_1=credential.https://github.com.helper \
+                  GIT_CONFIG_VALUE_1=${escapeShellArg "!${lib.getExe pkgs.gh} auth git-credential"} \
+                  GIT_TERMINAL_PROMPT=0 \
+                  "$herdr_cmd" plugin install "$spec" --yes 2>&1
+              ); then
                 printf '%s\n' "$install_output" >&2
                 if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
                   echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
