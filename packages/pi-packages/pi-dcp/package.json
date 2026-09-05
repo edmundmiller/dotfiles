@@ -40,6 +40,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@mariozechner/pi-ai": "^0.62.0"
+    "@mariozechner/pi-ai": "^0.73.0"
   }
 }
