@@ -356,6 +356,8 @@ in
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
           "switch.desk_monitor" = "off";
           "switch.desk_pop" = "off";
+          "switch.kitchen_dog_fountain" = "off";
+          "switch.plant_glow_light" = "off";
           "cover.smartwings_window_covering" = "closed";
           "light.kitchen_trashcan" = "off";
           "light.kitchen_dishwasher" = "off";

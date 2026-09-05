@@ -84,7 +84,7 @@ The test tick still requires Edmund to be home, but bypasses the normal 8 PM–m
 
 - **Trigger:** Calculated Sleep time after the fall-asleep buffer
 - **Intent:** Final asleep state
-- **Actions:** Deep sleep mode — everything quiet/off as appropriate
+- **Actions:** Deep sleep mode — everything quiet/off as appropriate, including the dog fountain and plant light
 
 ## Wake Detection (Tracking Only)
 

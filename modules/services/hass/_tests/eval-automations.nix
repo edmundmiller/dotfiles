@@ -1154,6 +1154,14 @@ let
       msg = "Sleep scene doesn't turn off switch.desk_pop";
     }
     {
+      test = (sleepScene.entities."switch.kitchen_dog_fountain" or null) == "off";
+      msg = "Sleep scene doesn't turn off switch.kitchen_dog_fountain";
+    }
+    {
+      test = (sleepScene.entities."switch.plant_glow_light" or null) == "off";
+      msg = "Sleep scene doesn't turn off switch.plant_glow_light";
+    }
+    {
       test = (goodMorningScene.entities."switch.desk_monitor" or null) == "on";
       msg = "Good Morning scene doesn't turn on switch.desk_monitor";
     }
