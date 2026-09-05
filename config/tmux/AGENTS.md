@@ -1,2 +1,5 @@
-https://tao-of-tmux.readthedocs.io/en/latest/_images/session.png
-https://tao-of-tmux.readthedocs.io/en/latest/_images/server.png
+# Tmux sources
+
+Runtime wiring and startup ownership are documented in
+[the tmux module](../../modules/shell/tmux/AGENTS.md). Edit scripts/config here;
+the module generates `extraInit` and launcher helpers.

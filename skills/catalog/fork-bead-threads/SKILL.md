@@ -1,6 +1,6 @@
 ---
 name: fork-bead-threads
-description: Fork one isolated Codex worktree thread per Beads issue and start each with a dependency-aware completion contract. Use when the user asks to start, fork, split, parallelize, or create separate chats for beads, tickets, issues, or a backlog with the goal of fixing them all.
+description: Starts isolated Codex worktree threads for dependency-aware Beads work. Use when explicitly asked to split a Beads backlog into separate implementation threads.
 ---
 
 # Fork Bead Threads

@@ -66,22 +66,20 @@ class CodexModelConfigTests(unittest.TestCase):
             self.assertTrue(profile["developer_instructions"])
             self.assertIn(f'".codex/agents/{filename}"', module)
 
-    def test_module_router_documents_named_agent_lanes_without_bootstrap_duplication(
+    def test_module_router_routes_model_policy_without_recipe_duplication(
         self,
     ):
         router = MODULE_GUIDE.read_text()
 
         for phrase in (
-            "fresh-context lanes",
-            "Luna Max",
-            "Terra High",
-            "Sol High reviewer",
-            "normally one to three",
-            "inspect the diff",
-            "rerun verification",
+            "config/codex/config.toml",
+            "config/codex/agents/",
+            "writable live config may differ",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, router)
+
+        self.assertNotIn("normally one to three", router)
 
         guidance = self.config["developer_instructions"]
         for detail in (

@@ -1,105 +1,26 @@
-# Tmux Module - Agent Guide
+# Tmux integration
 
-## Purpose
+The wrapper supplies `TMUX_HOME`, `DOTFILES`, and `DOTFILES_BIN` fallbacks for
+GUI launches without shell profiles and forces `-f "$TMUX_HOME/config"`.
+Load the theme before prefix-highlight so its placeholder can be replaced.
+Actual bindings/scripts live under `config/tmux/`.
 
-Nix module for tmux terminal multiplexer with custom wrapper script for XDG path support, plugin management via nix, and Catppuccin theme integration.
+## Optional integrations
 
-## Module Structure
+- Opensessions uses a mutable upstream checkout at
+  `~/.local/share/opensessions/current` and a one-time runtime config seed.
+  `config/opensessions/plugins/hunk.js` is linked as its Hunk watcher.
+  Native `prefix o` and which-key's `prefix Space o` remain available.
+- Jmux reads `~/.config/jmux/config.json`, not KDL. Generated launchers and a
+  compatibility `~/.tmux.conf` shim preserve XDG tmux config. `pkgs.my.jmux`
+  aligns its prefix to `C-c` and new-session/worktree action to `prefix M`,
+  reserving `prefix n` for tmux next-window. Keep `unbind M` after plugin load.
+  The generated zsh alias also selects that packaged binary.
 
-```
-modules/shell/tmux/
-├── default.nix     # Module definition
-├── README.md       # Human docs
-└── AGENTS.md       # This file
+## Sesh
 
-config/tmux/
-├── config          # Main tmux config (keybindings, behavior)
-├── theme.conf      # Catppuccin theme + auto-hide status bar
-├── aliases.zsh     # Shell aliases (ta, tl, tf, etc.)
-├── opensessions.sh # Declarative opensessions loader wrapper
-└── swap-pane.sh    # Pane swapping script for H/J/K/L bindings
-
-config/opensessions/plugins/
-└── hunk.js         # Local opensessions watcher plugin for Hunk sessions
-```
-
-## Key Technical Facts
-
-- **Custom wrapper script**: Exports `TMUX_HOME`, `DOTFILES`, `DOTFILES_BIN` with fallback defaults for Ghostty compatibility (launches with `--noprofile --norc`)
-- **XDG workaround**: tmux 3.0/3.1 doesn't support XDG natively; wrapper forces `-f "$TMUX_HOME/config"`
-- **Plugin fetching**: `tmux-opencode-status` fetched via `fetchFromGitHub`, others from nixpkgs `tmuxPlugins.*`
-- **Loading order**: Theme config MUST load BEFORE prefix-highlight plugin (sets `#{prefix_highlight}` placeholder for replacement)
-- **Auto-generated extraInit**: Contains plugin `run-shell` commands and tmux-opencode-integrated configuration
-- **Optional opensessions integration**: Enable with `modules.shell.tmux.opensessions.enable`; module syncs upstream checkout to `~/.local/share/opensessions/current`, runs bun bootstrap, and loads via `opensessions.sh`
-- **Generated config editor helper**: module writes `~/.config/tmux/open-opensessions-config.sh` when opensessions is enabled (used by `prefix O` popup)
-- **Seeded runtime config**: if missing, writes `~/.config/opensessions/config.json` with defaults for theme, width, left-side sidebar, and window detail visibility
-- **Hunk watcher plugin (opensessions)**: module links `config/opensessions/plugins/hunk.js` into `~/.config/opensessions/plugins/hunk.js`; opensessions auto-loads it to track Hunk sessions
-- **Keybinding handoff (opensessions)**: when enabled, opensessions keeps its native `prefix o` command table (`s` focus, `t` toggle, `1-9` jump); tmux-which-key also exposes an `opensessions` submenu on `prefix Space o`
-- **Optional jmux integration**: when `modules.shell.tmux.jmux.enable = true`, the module writes `~/.config/tmux/open-jmux.sh`, `~/.config/tmux/jmux.conf`, and a compatibility `~/.tmux.conf` shim so jmux can inherit the XDG tmux config
-- **Jmux runtime config path**: current jmux reads `~/.config/jmux/config.json` (not `config.kdl`); keep docs/comments aligned with upstream behavior
-- **Packaged jmux override**: `modules.shell.tmux.jmux.package = pkgs.my.jmux` switches Ghostty/jmux launches to the locally packaged wrapper that keeps jmux's UI prefix aligned with tmux (`C-c` here) and moves jmux's new-session/worktree prompt to `prefix M`, preserving `prefix n` for tmux `next-window`; `config/tmux/config` also explicitly `unbind M` after plugin load so tmux stays out of the way
-- **Generated shell alias**: when a jmux package is configured, the module also writes `~/.config/tmux/jmux-aliases.zsh` so interactive shells resolve `jmux` to the packaged binary
-
-## Dependencies
-
-**Nix packages:**
-
-- `pkgs.tmux` - Base tmux package
-- `pkgs.tmuxPlugins.{copycat,prefix-highlight,yank}` - Standard plugins
-- `pkgs.my.tmux-opencode-integrated` - Custom package (defined in `packages/`)
-- `pkgs.my.opensessions` - Pinned upstream opensessions source package
-- `pkgs.bun`, `pkgs.curl`, `pkgs.unstable.fzf`, `pkgs.rsync` - opensessions runtime/bootstrap dependencies
-
-**Other modules:**
-
-- `modules.shell.zsh` - Shell integration (tmuxifier init, aliases)
-- `modules.theme` - Registers theme reload hook
-
-## Common Issues
-
-| Issue               | Cause                         | Fix                         |
-| ------------------- | ----------------------------- | --------------------------- |
-| Env vars not set    | Ghostty `--noprofile --norc`  | Wrapper provides fallbacks  |
-| Plugin order wrong  | prefix-highlight before theme | Check `rcFiles` loads first |
-| tmuxifier not found | PATH not updated              | Restart shell after rebuild |
-
-## Sesh Integration
-
-**Keybinding:** `C-c t` - Smart session manager with zoxide integration
-
-**Filter modes (inside fzf):**
-
-- `^a` - All sources (tmux + zoxide)
-- `^t` - Tmux sessions only
-- `^x` - Zoxide directories only
-- `^d` - Kill selected session
-
-**How it works:**
-
-1. `display-popup` opens fzf with `sesh list`
-2. Select session/directory, press Enter
-3. `sesh connect` switches to existing session or creates new one from zoxide path
-
-**Related files:**
-
-- `config/tmux/config` - Keybinding definition (line ~79)
-- `~/.config/sesh/sesh.toml` - Sesh config (manual, not nix-managed yet)
-- `modules/shell/sesh/` - Nix module (disabled, for future use)
-
-### Sesh perf + PATH gotchas (important)
-
-- Popup shells can have minimal PATH; never hardcode only `/opt/homebrew/bin/*`.
-- `config/tmux/sesh-picker.sh` and `config/tmux/sesh-all.sh` use `SESH_BIN`/`FZF_TMUX_BIN` + resolver fallbacks. Keep that pattern.
-- Biggest perf hotspot is zoxide filtering, not `sesh list`. Optimize `config/tmux/zoxide-list.sh` first.
-- `zoxide-list.sh` must:
-  - drop accidental `/.git` entries
-  - skip non-existent dirs early
-  - only call `git-worktree-cwd` for bare-hub-like paths (`HEAD` exists, `.git` absent)
-- Regression tests live in `config/tmux/tests/sesh.zunit` (minimal PATH + `/.git` filter). Update tests with script changes.
-
-## Related Files
-
-- `modules/shell/zsh/default.nix` - Provides rcFiles/rcInit mechanism
-- `modules/theme/default.nix` - Registers theme reload hooks
-- `packages/tmux-opencode-integrated/default.nix` - Custom package definition
-- `config/tmux/*` - Actual configuration files
+Popup shells may have minimal PATH. Preserve `SESH_BIN`/`FZF_TMUX_BIN` resolver
+fallbacks in `sesh-picker.sh` and `sesh-all.sh`, not Homebrew-only paths.
+`zoxide-list.sh` drops `/.git` entries and missing directories, and calls
+`git-worktree-cwd` only for bare-hub candidates (HEAD exists, .git absent).
+Focused regressions are in `config/tmux/tests/sesh.zunit`.

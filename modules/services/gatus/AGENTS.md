@@ -1,105 +1,21 @@
----
-purpose: Document Gatus uptime monitors and secret injection for NUC services.
-applies_to: Changes under modules/services/gatus or host Gatus endpoint config.
-entrypoint: Edit endpoints in default.nix; keep AGENTS.md and README.md in sync.
-verification: hey nuc switch, then curl localhost:8084/health and Gatus UI statuses.
-update_when: Endpoint URLs, conditions, alert providers, or secret injection change.
----
+# Gatus
 
-# Gatus Module - Agent Guide
+Uptime dashboard on port 8084, SQLite `/var/lib/gatus/data.db`, systemd
+`DynamicUser`. The build produces a template; `ExecStartPre` replaces secret
+placeholders into `/run/gatus/config.yaml`. Keep Telegram tokens out of the
+Nix store and diagnostics.
 
-## Purpose
+Service-owned endpoints come from their `registry.gatus`; only resources without
+an owning module are hard-coded here. HTTP conditions commonly use
+`[STATUS] == 200`, TCP `[CONNECTED] == true`. Registry `alerts = true` or local
+`withAlerts` attaches providers; Telegram defaults to three failures and recovery.
 
-Uptime monitoring dashboard for NUC services. Checks HTTP/TCP endpoints every 60-120s, stores results in SQLite, serves web UI. Alerts via Telegram when services go down. Pings healthchecks.io as a dead man's switch.
+Adding an alert provider affects options, `alertingConfig`, `endpointAlerts`,
+and runtime secret substitution together.
 
-## Module Structure
-
-```
-modules/services/gatus/
-├── default.nix   # Module definition
-├── README.md     # Human docs
-└── AGENTS.md     # This file
-```
-
-## Key Facts
-
-- **Port:** 8084 (configurable via `cfg.port`)
-- **Storage:** SQLite at `/var/lib/gatus/data.db`
-- **Config:** Template at build time, secrets injected at runtime via `ExecStartPre`
-- **Runtime config:** `/run/gatus/config.yaml` (secrets replaced from template)
-- **Systemd:** `DynamicUser = true` — no manual user creation needed
-- **NixOS-only:** Wrapped in `optionalAttrs (!isDarwin)`
-
-## Secret Injection
-
-The config template contains a `__TELEGRAM_TOKEN__` placeholder when Telegram alerting is enabled. `ExecStartPre` copies the template to `/run/gatus/` and uses `sed` to replace placeholders with values read from agenix secret files. This keeps secrets out of the nix store.
-
-## Alerting
-
-- **Telegram:** Sends alerts to a chat when endpoints fail 3x in a row, and on recovery
-
-## Dead Man's Switch (healthchecks.io)
-
-Three-phase systemd timer using the [healthchecks.io systemd pattern](https://healthchecks.io/docs/monitoring_systemd_tasks/):
-
-1. **ExecStartPre** — `curl .../start` signals check began (- prefix: failure doesn't block main command)
-2. **ExecStart** — `curl localhost:8084/health` verifies Gatus is responding
-3. **ExecStopPost** — `curl .../${EXIT_STATUS}` reports result (0=success, >0=failure)
-
-This means healthchecks.io alerts if:
-
-- The NUC goes down entirely (no pings at all)
-- Gatus crashes but NUC stays up (ExecStart fails → EXIT_STATUS > 0 reported)
-- The timer itself stops running (no start signal)
-
-**Timer interval:** 2 min (`cfg.healthcheck.interval`), 10s randomized delay.
-
-**Systemd units:** `gatus-healthcheck-ping.timer` + `gatus-healthcheck-ping.service`
-
-**Manual test:** `sudo systemctl start gatus-healthcheck-ping.service && journalctl -u gatus-healthcheck-ping -n 10`
-
-## Monitored Endpoints
-
-| Service        | Group          | URL                                   | Protocol            |
-| -------------- | -------------- | ------------------------------------- | ------------------- |
-| Home Assistant | Smart Home     | localhost:8123/manifest.json          | HTTP                |
-| Homebridge     | Smart Home     | localhost:8581                        | HTTP                |
-| Matter Server  | Smart Home     | localhost:5580                        | TCP                 |
-| Jellyfin       | Media          | localhost:8096/health                 | HTTP                |
-| Sonarr         | Media          | localhost:8989/ping                   | HTTP                |
-| Radarr         | Media          | localhost:7878/ping                   | HTTP                |
-| Prowlarr       | Media          | localhost:9696/ping                   | HTTP                |
-| PostgreSQL     | Infrastructure | localhost:5432                        | TCP                 |
-| AgentsView     | Infrastructure | localhost:8087                        | HTTP (conditional)  |
-| Tailscale      | Infrastructure | localhost:41112/healthz               | HTTP                |
-| Hermes Web UI  | Infrastructure | 127.0.0.1:8642                        | HTTP (conditional)  |
-| Audiobookshelf | Media          | localhost:13378/healthcheck           | HTTP (conditional)  |
-| SparkyFitness  | Health         | sparkyfitness.cinnamon-rooster.ts.net | HTTPS (conditional) |
-
-## Adding New Endpoints
-
-If the service has its own module, do **not** edit `default.nix`. Declare the
-endpoint in that module via `lib.my.mkRegistry { gatus = { ... }; }`; this file
-aggregates `registry.gatus` from every enabled service automatically. See
-`modules/services/AGENTS.md` §4.
-
-Only services with no owning module (Router, NextDNS, Grafana Cloud, ...) are
-hard-coded in the `endpoints` list here.
-
-HTTP endpoints use `[STATUS] == 200`, TCP use `[CONNECTED] == true`. Registry
-entries opt into alert providers with `alerts = true`; hard-coded entries use
-`withAlerts`.
-
-## Adding New Alert Providers
-
-1. Add options under `cfg.alerting.<provider>`
-2. Add provider config to `alertingConfig` (with placeholder for secrets)
-3. Add `{ type = "<provider>"; }` to `endpointAlerts`
-4. Add sed replacement in `ExecStartPre` for any secret placeholders
-
-## Related Files
-
-- `hosts/nuc/default.nix` — Enables module with alerting + healthcheck config
-- `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
-- `hosts/nuc/secrets/telegram-bot-token.age` — Encrypted bot token
-- `modules/services/AGENTS.md` — Tailscale serve pattern docs
+The dead-man's-switch uses `gatus-healthcheck-ping.timer/service`: `/start`
+ping → local `/health` check → `/${EXIT_STATUS}` result. Start-ping failure
+does not block the health command. The two-minute timer plus randomized delay
+detects Gatus, host, or timer failure. `curl -fsS http://localhost:8084/health`
+checks Gatus; starting the ping service also writes to Healthchecks and is not
+a read-only diagnostic.

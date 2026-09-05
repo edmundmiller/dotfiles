@@ -1,6 +1,6 @@
 ---
 name: code-search
-description: Use when searching code by unknown means or choosing between text and structural search tools. Owns ast-grep vs ripgrep selection and text-search guidance.
+description: Compares text and structural search strategies. Use when selecting a search/codemod approach, not for ordinary known-string lookups.
 ---
 
 # Code Search Tool Selection

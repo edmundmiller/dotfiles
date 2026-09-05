@@ -1,78 +1,15 @@
-# Ghostty Module - Agent Guide
+# Ghostty
 
-## Purpose
+Darwin installs the Homebrew cask; Linux uses the Ghostty flake package. Sources
+live in `config/ghostty/`; the module generates config/keybindings/behavior and
+symlinks other fragments. Behavior generation injects Nix PATH for GUI startup.
+Darwin also generates the Stylix-backed Terminal.app `Ghostty Match` profile.
 
-Nix module for Ghostty terminal emulator. Generates config files with extensible keybindings.
+Extension options are `keybindingFiles`, `keybindingsInit`, and `configInit`.
+Later keybinding fragments override earlier ones. Keybinding changes require a
+full Ghostty restart; colors/fonts support reload. Use `ghostty-config` for
+option details.
 
-## Module Structure
-
-```
-modules/desktop/term/ghostty/
-├── default.nix   # Module definition
-├── README.md     # Human docs
-└── AGENTS.md     # This file
-
-config/ghostty/
-├── config              # Main config (includes other files)
-├── keybindings.conf    # Base keybindings
-├── behavior.conf       # Shell/command settings
-├── macos.conf          # macOS-specific settings
-├── ui.conf             # Font, colors, window settings
-└── pi-keybindings.conf # Pi coding agent keybindings
-```
-
-## Key Facts
-
-- **macOS:** Installed via Homebrew cask, not nixpkgs
-- **Linux:** Uses `inputs.ghostty.packages.x86_64-linux.default`
-- **Generated files:** config, keybindings.conf, behavior.conf (others symlinked)
-- **Terminal.app:** Darwin activation creates a Stylix-backed `Ghostty Match` profile and makes it default/startup
-- **PATH injection:** behavior.conf gets nix paths appended for startup command discovery
-
-## Extension Pattern
-
-Similar to modules/shell/zsh/default.nix rcFiles/rcInit pattern:
-
-```nix
-# Add keybinding file
-modules.desktop.term.ghostty.keybindingFiles = [ "path/to/file.conf" ];
-
-# Add inline keybindings
-modules.desktop.term.ghostty.keybindingsInit = ''
-  keybind = ...
-'';
-
-# Add inline config
-modules.desktop.term.ghostty.configInit = ''
-  font-size = 14
-'';
-```
-
-## Options
-
-| Option                     | Type         | Description                           |
-| -------------------------- | ------------ | ------------------------------------- |
-| `enable`                   | bool         | Enable module                         |
-| `keybindingFiles`          | list of path | Files concatenated into keybindings   |
-| `keybindingsInit`          | lines        | Inline keybindings appended           |
-| `configInit`               | lines        | Inline config appended to main config |
-| `macosTerminalProfileName` | str          | Generated Terminal.app profile name   |
-
-## Startup Ownership
-
-Ghostty should have exactly one workspace owner. When `modules.shell.herdr.enable = true`, Ghostty starts `~/.config/tmux/open-herdr.sh` and Herdr owns the terminal. Do not add a tmux fallback to the Herdr launcher or route Ghostty through tmux in this mode; that recreates the bad `Ghostty -> Herdr helper -> tmux -> Herdr` nesting loop.
-
-When Herdr is disabled, tmux/jmux should own startup directly. Precedence is: Herdr when enabled; otherwise jmux if enabled; otherwise plain tmux. Do not make one owner fall back into another.
-
-## Common Issues
-
-**Startup command not found** → PATH injection in behavior.conf should fix; verify after rebuild
-
-**Keybinding conflicts** → Later files/init override earlier (pi's shift+enter vs OpenCode's)
-
-**Keybindings not updating after reload** → Ghostty caches keybindings at startup for performance. Config reload works for colors/fonts but keybindings require full restart (Cmd+Q → reopen)
-
-## Related Files
-
-- `modules/agents/pi/default.nix` - Adds pi-keybindings.conf via keybindingFiles
-- `modules/shell/zsh/default.nix` - Pattern inspiration (rcFiles/rcInit)
+Startup has exactly one workspace owner: Herdr when enabled, otherwise jmux,
+otherwise tmux. `~/.config/tmux/open-herdr.sh` launches Herdr, not tmux. No
+fallback between owners: it recreates the Ghostty → Herdr → tmux → Herdr loop.

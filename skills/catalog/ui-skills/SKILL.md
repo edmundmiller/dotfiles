@@ -1,6 +1,6 @@
 ---
 name: ui-skills
-description: Opinionated constraints for building better interfaces with agents.
+description: Applies an opinionated React/Tailwind UI checklist. Use when explicitly requested or when adopting that stack's component and interaction conventions.
 ---
 
 # UI Skills

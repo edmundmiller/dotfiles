@@ -1,198 +1,53 @@
----
-purpose: Route Home Assistant domain changes to the correct patterns and safety contracts.
-applies_to: Declarative scenes, scripts, helpers, and automations under this directory.
-entrypoint: Read the relevant domain file and its cross-domain dependencies.
-verification: Run the HA eval assertions remotely, then the NUC build and runtime checks.
-update_when: Domain ownership, entity contracts, or verification commands change.
----
+# HA domains
 
-# HA Domains
+Domains are explicitly imported by `../default.nix`. Append automation/scene
+lists with `lib.mkAfter`; scripts/helpers are attribute sets. Wrap automation
+lists with `ensureEnabled` from `../_lib.nix`: final merged automations require
+`initial_state = true`, enforced by `../_tests/eval-automations.nix`. UI toggles
+are temporary, not durable enablement policy.
 
-Each file is a logical grouping of HA config (scenes, automations, scripts, input helpers). Imported explicitly from `../default.nix`. Use `lib.mkAfter` for automations/scenes to append to base lists.
+Scenes assert complete desired states; scripts own sequences/service calls;
+automations own triggers/conditions. Dynamic waits, notifications, tracking,
+and simple timed toggles need not be forced into scenes.
 
-## Scene vs Automation vs Script
+## Cross-domain contracts
 
-Pick the simplest primitive that fits:
+- `sleep/` owns `goodnight` and per-person awake booleans. Ambient presence, TV,
+  lighting, modes, climate, and voice intents consume them. Good Morning is
+  manual/voice only; unreliable bed presence cannot trigger it.
+- `vacation.nix` owns `vacation_mode`; ambient skips ordinary leave-home behavior
+  during vacation. `modes.nix` owns guest/DND state and `everything_off`.
+- Cleaning remains fail-closed: saved-map IDs are required before enablement;
+  restored HA timestamps are not fresh iPhone verification. Preserve the bounded
+  scheduler refresh/noon retry, arrival docking, and mission success tracking.
+- Apple TV `start_off` stays enabled. `script.tv_on` connects `remote.living_room`,
+  waits for availability, then powers on `media_player.living_room`. Every off
+  path powers off the player before disconnecting the remote to avoid CEC wakeups.
+- Adaptive Lighting manual takeover pauses adaptation for that light. Bedtime
+  scenes enable sleep mode; Good Morning disables it, with a 7 AM hard cutoff.
+  Current schedules/entity IDs belong in `lighting.nix` and the domain sources.
 
-| Primitive      | What it does                                                                 | When to use                                             |
-| -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- |
-| **Scene**      | Sets entity states. No logic, no service calls. Idempotent — safe to repeat. | Desired end-states (bedtime, morning, away, etc.)       |
-| **Script**     | Sequence of actions with optional logic. Can call any service.               | Reusable multi-step procedures (everything_off, nudges) |
-| **Automation** | Listens for triggers, runs actions with optional conditions.                 | Reactive behavior (presence, time, sensor changes)      |
+## Climate safety
 
-**Design pattern:** Scenes define _what_ the state should be. Automations define _when_ to apply it. Scripts define _how_ to do complex procedures. Automations should `scene.turn_on` wherever possible — keeps entity state centralized in scenes, automations stay thin trigger→scene wrappers.
+`climate.nix` is the sole HA thermostat policy. Ecobee native Home/Sleep/Work
+profiles are 72 F and Away 76 F on both thermostats, with native schedules as
+fallback. Vacation is an explicit 78 F exception.
 
-Scenes are idempotent — every stage should assert the full expected state for that stage, even if a prior stage already set it. This makes each scene a reliable safety net regardless of entry path.
+Precedence: Vacation → two-hour shared manual override → Away after two hours
+→ Sleep → Home. GPS home or `Aviato` SSID is positive occupancy evidence;
+ordinary Away requires all GPS/SSID signals away for two hours. Return by
+either signal restores Home/Sleep immediately. Stale SSID home can delay savings,
+not cause false-away cooling.
 
-Ref: [Scenes vs Automations](https://community.home-assistant.io/t/scenes-vs-automations/288105), [Automations and Scenes and Scripts, Oh My!](https://community.home-assistant.io/t/automations-and-scenes-and-scripts-oh-my/583417)
+Transitions verify both thermostat readbacks, retry once, then notify through
+`ecobee_climate_transition_failed`; no continuous drift correction. Authenticated
+target changes apply to both thermostats for two hours with recorder-restored
+helper target. Invalid core state or front-door pause clears both holds; door
+close reapplies policy. Vacation end replaces its raw hold with the active profile.
 
-### Intentionally not scene-ified
+## Checks
 
-These automations have inline actions by design — do not refactor them into scenes:
-
-| Automation                                                | Why inline is correct                                                                                                  |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `entrance_occupancy_night_light` (ambient.nix)            | Dynamic wait-loop (`wait_for_trigger`); scenes are static snapshots                                                    |
-| `plant_glow_light_on/off` (ambient.nix)                   | Single entity toggled on a time schedule; no state to compose                                                          |
-| `al_sleep_mode_off` (lighting.nix)                        | Hard cutoff only; Good Night/Sleep scenes own enabling AL sleep mode                                                   |
-| `Mid-morning` / `Sundown` scenes                          | AL sleep mode not included — it's always off by those times of day (7 AM hard cutoff)                                  |
-| `Leave Home` scene                                        | AL sleep mode not included — irrelevant when nobody is home                                                            |
-| `Vacation` scene                                          | AL sleep mode not included — long-term away state, not a sleep cycle                                                   |
-| 8Sleep/focus/wake-detection tracking automations (sleep/) | Arbitrary service calls and per-person conditions; wake detection updates helper booleans only, Good Morning is manual |
-| `bedtime_nudge` script (sleep/)                           | One-shot notification; no entity state to capture                                                                      |
-| `dnd_on` automation (modes.nix)                           | Sends a notification; no entity state change worth a scene                                                             |
-
-## Files
-
-- `ambient.nix` — Sun-based scenes (mid-morning, sundown), presence (arrive/leave), entrance occupancy night light
-- `aranet.nix` — Aranet4 CO2 sensor: elevated/poor/cleared push notifications (thresholds: 1000/1500 ppm). Update `prefix` var to match device entity ID.
-- `cleaning.nix` — Fail-closed Rosie/Squirty mapped-room scheduler, silent iPhone presence preflight, mission success tracking, arrival docking, and explicit two-job enablement
-- `conversation.nix` — Voice/conversation config
-- `lighting.nix` — Adaptive Lighting (circadian color temp + brightness)
-- `modes.nix` — DND, guest mode, everything_off script
-- `pura.nix` — Pura diffuser routines (arrive-home freshen script + automation)
-- `sleep/` — Sleep lifecycle: goodnight toggle, awake helper booleans, circadian phases (Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning), 8Sleep wake scheduling, focus-off alarm dismissal, wake detection tracking. Auto-Good-Morning flow intentionally removed.
-- `vacation.nix` — Vacation mode (owns input_boolean): 8Sleep away_mode, HA climate policy, lights/blinds/TV off; presence-triggered return
-- `tv.nix` — TV/media inputs, scripts, automations (sleep timer, idle auto-off)
-
-## Cross-domain dependencies
-
-```
-sleep/ (input_boolean.goodnight, input_boolean.*_awake)
-  ├── ambient.nix reads goodnight for presence scene conditions
-  ├── modes.nix everything_off delegates to Winding Down scene
-  ├── lighting.nix AL sleep mode: currently time-based triggers; sleep lifecycle may move these toward alarm-relative circadian timing
-  ├── conversation.nix GoodMorning voice intent calls scene.good_morning directly
-  └── tv.nix reads goodnight for idle auto-off condition
-vacation.nix (input_boolean.vacation_mode)
-  └── ambient.nix skips last-person-leaves during vacation
-cleaning.nix (input_boolean.robot_cleaning_*, input_datetime.robot_cleaning_*)
-  ├── reads vacation_mode, guest_mode, and goodnight
-  ├── uses direct iPhone tracker events; restored HA timestamps never count as fresh verification
-  ├── requests at most one scheduler refresh plus one noon retry instead of polling phones every five minutes
-  └── requires live saved-map IDs before robot_cleaning_enabled may be turned on
-```
-
-## TV remote lifecycle
-
-Keep the physical Apple TV integration option `start_off` enabled. `script.tv_on`
-must connect `remote.living_room`, wait for it to become available, then power on
-`media_player.living_room`. Every power-off path must power off the media player
-before disconnecting the remote. Leaving the remote connected keeps pyatv control
-connections active and can wake the Apple TV and HDMI-CEC display.
-
-## Climate ownership
-
-`climate.nix` is the sole Home Assistant thermostat policy:
-
-- Native Ecobee comfort profiles own normal cooling targets: Home 72 F, Sleep 72 F, Work 72 F, and Away 76 F on both thermostats. The Ecobee schedule is the safe fallback when HA is unavailable.
-- HA selects one profile only on startup, presence, Goodnight, and vacation transitions. Vacation has highest precedence, followed by the two-hour shared manual override, Away after two hours, Sleep, and Home.
-- Awake occupancy is true when either person GPS is `home` or either phone reports the `Aviato` SSID. The SSID is positive climate evidence only: a stale home value may delay energy savings, but cannot cause false-away cooling.
-- Ordinary Away starts only after every GPS and home-SSID signal has remained away for two hours. Returning home by either signal selects Home or Sleep immediately; Vacation remains an explicit 78 F exception.
-- `script.apply_ecobee_profile` and `script.apply_ecobee_target` verify both thermostat readbacks, retry once, and create `persistent_notification.ecobee_climate_transition_failed` instead of continuously correcting drift.
-- An authenticated HA target change starts `timer.climate_manual_override`, applies the same target to both thermostats for two hours, then restores the active native profile. The helper target is recorder-restored across HA restarts.
-- Front-door pause uses `binary_sensor.eve_door_20ebn9901_door`; close must reapply policy.
-- Invalid core state and the door-open pause clear both holds. Vacation end replaces its raw hold with the active Home, Sleep, or Away profile.
-
-Verify with:
-
-```bash
-hey nuc-wt build
-# Copy the exact NUC_WORKTREE_REMOTE_DIR printed by the build.
-remote_dir='PASTE_NUC_WORKTREE_REMOTE_DIR_VALUE_HERE'
-ssh nuc "cd '$remote_dir' && nix build '.#checks.x86_64-linux.ha-automation-assertions' --no-link"
-hey nuc dry-activate
-hey nuc
-hey nuc-status
-```
-
-## Lights
-
-| Entity ID                         | Friendly Name    | Area        | Color Temp |
-| --------------------------------- | ---------------- | ----------- | ---------- |
-| `light.kitchen_trashcan`          | Trashcan         | Kitchen     | ✅         |
-| `light.kitchen_dishwasher`        | Dishwasher       | Kitchen     | ✅         |
-| `light.essentials_a19_a60_3`      | Left Night Stand | Bedroom     | ✅         |
-| `light.essentials_a19_a60_4`      | Right Nightstand | Bedroom     | ✅         |
-| `light.essentials_a19_a60_5`      | Wall Lamp        | Living Room | ✅         |
-| `light.living_room_couch_lamp`    | Couch Lamp       | Living Room | ✅         |
-| `light.nanoleaf_multicolor_hd_ls` | Edmund Desk      | Office      | ✅         |
-| `light.smart_night_light_w`       | Night Light      | Entrance    | ✅         |
-
-## Switches
-
-| Entity ID                     | Friendly Name      | Area        | Notes                                  |
-| ----------------------------- | ------------------ | ----------- | -------------------------------------- |
-| `switch.eve_energy_20ebu4101` | Whitenoise Machine | Bedroom     | Controlled by sleep scenes             |
-| `switch.plant_glow_light`     | Plant Glow Light   | Living Room | Onvis S4 Matter plug; on 8am–9pm daily |
-
-## People & devices
-
-| Entity ID                            | Notes                                     |
-| ------------------------------------ | ----------------------------------------- |
-| `person.edmund_miller`               | Edmund — presence tracking                |
-| `person.moni`                        | Monica — presence tracking                |
-| `binary_sensor.edmunds_iphone_focus` | Any focus active (Sleep, DND, Work, etc.) |
-| `binary_sensor.monicas_iphone_focus` | Any focus active (Sleep, DND, Work, etc.) |
-| `notify.mobile_app_edmunds_iphone`   | Push notifications → Edmund               |
-| `notify.mobile_app_monicas_iphone`   | Push notifications → Monica               |
-
-## Adaptive Lighting
-
-Configured in `lighting.nix`. One "Living Space" switch covers all color-temp lights.
-
-- Color temp: 2000K (warm) → 5500K (cool daylight)
-- Brightness: 20% min → 100% max
-- Sleep mode: 10% brightness, 1000K (deep warm red, melatonin-friendly)
-- `take_over_control: true` — manual adjustments pause AL for that light
-- Sleep mode schedule: currently **on at 10:00 PM**, **off at 7:00 AM** (hard cutoff) via time-based automations in `lighting.nix`; new sleep lifecycle work should move bedtime behavior toward alarm-relative circadian timing
-- Sleep mode also embedded in scenes: bedtime phases → on, Good Morning → off
-
-### HA entities
-
-- `switch.adaptive_lighting_living_space` — main toggle
-- `switch.adaptive_lighting_sleep_mode_living_space` — sleep mode
-- `switch.adaptive_lighting_adapt_brightness_living_space`
-- `switch.adaptive_lighting_adapt_color_living_space`
-
-### Splitting into multiple switches
-
-Add another entry to the `adaptive_lighting` list. Each entry creates its own `switch.adaptive_lighting_*` entities. Useful if office should have different brightness/color curves than living room.
-
-## ensureEnabled — initial_state wrapper
-
-**Every automation must use `ensureEnabled` from `../_lib.nix`.** This injects
-`initial_state = true` so automations always re-enable on HA restart. Without it,
-HA's default behavior ("persist entity registry state") means a UI-toggled or
-registry-stale automation stays off forever after restart — silently.
-
-```nix
-{ lib, ... }:
-let
-  inherit (import ../_lib.nix) ensureEnabled;
-in {
-  services.home-assistant.config.automation = lib.mkAfter (ensureEnabled [
-    { alias = "My Thing"; id = "my_thing"; trigger = ...; action = ...; }
-  ]);
-}
-```
-
-Individual automations can still override with `initial_state = false` if needed —
-`ensureEnabled` uses `{ initial_state = true; } // a` so the automation's own
-value wins. But we never want this in practice; Nix is the source of truth and
-automations should never be toggled in the HA UI.
-
-**Build-time enforcement:** `_tests/eval-automations.nix` asserts every automation
-in the final merged config has `initial_state = true`. Forgetting `ensureEnabled`
-(or explicitly setting `false`) fails `nix flake check` with a clear error message
-pointing to `_lib.nix`.
-
-## Adding a new domain
-
-1. Create `_domains/<name>.nix` (simple) or `_domains/<name>/default.nix` (complex)
-2. Add import to `../default.nix` imports list
-3. Use `lib.mkAfter` for `automation`, `scene`, `script` to append (not override)
-4. **Wrap automation lists with `ensureEnabled`** — see pattern above
-5. DRY with let-bindings for repeated action sets (see `vacationStart`/`vacationEnd` in `vacation.nix`)
-
-**Use a directory** when the domain has non-obvious logic, troubleshooting steps, or entity references worth documenting (see `sleep/` for reference).
+`hey nuc-wt build` prints the snapshot `NUC_WORKTREE_REMOTE_DIR`; on NUC, build
+that snapshot's `.#checks.x86_64-linux.ha-automation-assertions`. Deployment and
+live device actions need authorization and are separate from eval checks. The
+`hass-declarative` skill covers manifests, entity identity, and orphan cleanup.

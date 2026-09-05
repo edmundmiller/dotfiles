@@ -1,27 +1,8 @@
-# Desktop Modules
+# Desktop modules
 
-GUI applications, terminals, window managers, and desktop environment config. Most subdirectories are **Linux-only** (X11/Wayland); macOS-specific modules live in `macos/`.
+Most desktop modules target Linux X11/Wayland; `macos/` owns Darwin defaults.
+Apps, media, and terminals may support both platforms.
 
-## Subdirectories
-
-| Directory   | Purpose                                   | Platform |
-| ----------- | ----------------------------------------- | -------- |
-| `apps/`     | Desktop applications                      | Mixed    |
-| `browsers/` | Firefox, qutebrowser                      | Linux    |
-| `gaming/`   | Game-related packages                     | Linux    |
-| `gnome/`    | GNOME desktop tweaks                      | Linux    |
-| `macos/`    | macOS-specific desktop config             | Darwin   |
-| `media/`    | Media players, mpv, etc.                  | Mixed    |
-| `term/`     | Terminal emulators (ghostty, kitty, etc.) | Mixed    |
-| `themes/`   | Desktop theming                           | Linux    |
-| `vm/`       | Virtual machine config                    | Linux    |
-
-## Top-Level Files
-
-- `default.nix` — Shared desktop config (fonts, picom, Qt/GTK theming). Only activates when `services.xserver.enable = true`.
-- `bspwm.nix`, `gnome.nix`, `kde.nix` — Window manager / DE modules. Only one can be enabled at a time (enforced by assertion).
-
-## Subdirectories with Their Own AGENTS.md
-
-- `macos/` — macOS desktop settings
-- `term/ghostty/` — Ghostty terminal emulator
+Shared `default.nix` font/compositor/Qt/GTK configuration activates only with
+`services.xserver.enable`. Window-manager/desktop selections are mutually
+exclusive, enforced by assertion.

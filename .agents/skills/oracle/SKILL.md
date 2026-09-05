@@ -1,6 +1,6 @@
 ---
 name: oracle
-description: Use Oracle to bundle prompts + files for another AI (GPT 5 Pro, etc.) when stuck, debugging, or reviewing. Also covers self-improvement — codifying learnings into agent memory and noting tool improvement ideas.
+description: Bundles prompts and files with the Oracle CLI. Use when explicitly requesting that CLI or preparing a focused unresolved question for an external model.
 ---
 
 # Rules

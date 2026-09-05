@@ -1,17 +1,6 @@
 ---
 name: hass-declarative
-description: >
-  Manage Home Assistant automations, scenes, and scripts declaratively
-  via NixOS modules. Covers adding/editing/removing entities in the
-  domain-based Nix structure, the ensureEnabled wrapper (initial_state
-  enforcement), the sweep service that cleans orphaned entities, entity
-  identity (IDs, slugs, unique_ids), the eval test assertions, and the
-  build-time manifest.
-  Trigger phrases: "add HA automation", "new scene", "new script",
-  "remove automation", "declarative HA", "sweep unmanaged",
-  "entity drift", "ghost entity", "orphaned automation",
-  "HA domain file", "eval-automations test", "hass assertion",
-  "ensureEnabled", "initial_state".
+description: Manages Nix-owned HA automations, scenes, scripts, and entity identity. Use for domain edits, ensureEnabled assertions, or orphan-sweep debugging.
 ---
 
 # HA Declarative Entity Management

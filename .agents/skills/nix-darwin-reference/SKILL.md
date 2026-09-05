@@ -1,7 +1,6 @@
 ---
 name: nix-darwin-reference
-description: >
-  This skill should be used when editing nix-darwin or Darwin-specific Nix configuration in this dotfiles repo, troubleshooting darwin-rebuild failures, looking up macOS module options, bootstrapping a Mac with Lix/Nix, or using legacy nix-build during nix-darwin work.
+description: Provides nix-darwin references for macOS module options, Mac bootstrap, and Darwin rebuild failures in dotfiles.
 ---
 
 # nix-darwin reference workflow
@@ -12,7 +11,7 @@ Use this skill for Darwin/macOS Nix work in this repo. Keep it out of the global
 
 - Verify the host before host-specific rebuilds or Darwin/NixOS decisions: `hostname` and `uname -a`.
 - Edit repo sources, not generated targets. Runtime files under `~/.config`, `~/.claude`, `~/.pi`, and similar paths are usually Nix-store symlinks.
-- Prefer repo wrappers for validation: `hey check` for current Darwin host, `hey re` or full `darwin-rebuild` for local rebuilds.
+- Use `hey check` for validation and `hey re` for authorized local activation; raw rebuild commands are not an alternative to repository command policy.
 - Avoid generic `nix flake check` on macOS in this repo because it evaluates NUC outputs and can hit known cross-system noise.
 
 ## Primary references

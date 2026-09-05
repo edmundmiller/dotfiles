@@ -1,99 +1,20 @@
----
-purpose: Route changes among managed AI-agent modules.
-applies_to: Agent packages, runtime config, integrations, and host wiring.
-entrypoint: Read the nearest agent module AGENTS.md or README.
-verification: Run the affected agent check, then hey check.
-update_when: Agent module ownership or integration boundaries change.
----
+# Agent modules
 
-# Agents Module Directory
+`default.nix` installs shared agent CLI tools. Runtime-specific packages and
+wiring belong in `modules.agents.<runtime>`; shared instruction sources live in
+`config/agents/` and skills in `skills/catalog/`.
 
-This directory contains Nix modules for AI agents:
+Herdr's shell module installs integrations for enabled runtimes during
+activation. Agent modules bootstrap their runtime directories before that step;
+they do not install Herdr integrations themselves.
 
-`default.nix` installs shared command-line tools used by every agent runtime.
-Keep runtime-specific packages and configuration in the matching submodule.
+`pi-runtime-drift` and `hermes-runtime-drift` pre-push hooks are warning-only,
+read-only checks of mutable state. They neither repair state nor block pushes.
+Authorized repairs use the relevant rebuild/update command.
 
-- `agentsview/` - agentsview TUI from numtide/llm-agents.nix
-- `claude/` - Claude Code CLI (Anthropic)
-- `codex/` - Codex CLI (OpenAI)
-- `exo/` - Exo CLI for running coding agents in isolated environments
-- `hermes/` - NixOS-only Hermes Gateway/runtime host wiring
-- `omp/` - Oh My Pi CLI, isolated from Pi's `~/.pi/agent`
-- `opencode/` - OpenCode CLI
-- `plannotator/` - Shared Plannotator package and native agent integrations
-- `pi/` - Pi coding agent + shell helpers (worktree management, PR review)
-
-## Option Namespace
-
-All modules live under `modules.agents.*`:
-
-```nix
-modules.agents = {
-  agentsview.enable = true;
-  claude.enable = true;
-  codex.enable = true;
-  exo.enable = true;
-  hermes = {
-    enable = true;
-    secretReferences = { ... };
-  };
-  opencode.enable = true;
-  omp.enable = true;
-  pi = {
-    enable = true;
-    honcho.enable = true;
-    memoryRemote = "git@github.com:edmundmiller/pi-memory";
-  };
-};
-```
-
-## Shared Config Source
-
-Agent instruction sources live in `config/agents/`:
-
-- `config/agents/core.md` - bounded semantic core used by OMP, Codex, Claude,
-  Pi, and OpenCode
-- `config/agents/modes/` - Shared agent mode definitions
-
-Global skills live in `~/.agents/skills/` and are discovered natively. Claude
-is the exception: its module exposes only approved cross-runtime skills through
-Claude's native directory as links to that shared tree.
-Plannotator is intentionally excluded from Codex because its global `Stop` hook
-interrupts the normal response workflow.
-`callstack-diff skill` prints the version-matched skill bundled with the shared
-`callstack-diff`/`csd` package.
-
-## Agent Runtime Drift Hooks
-
-Warning-only prek `pre-push` hooks check mutable runtime state for agent drift:
-
-- `pi-runtime-drift` checks `~/.pi/agent` for dirty git extension caches and obvious Pi binary/settings drift.
-- `hermes-runtime-drift` checks managed `$HERMES_HOME` for stale repo-managed Hermes config, SOUL, skins, hooks, and plugins.
-
-These hooks must never mutate runtime state or block pushes for drift. Fix warnings with the appropriate rebuild/update command, usually `hey re` and, for Pi extensions, `pi update --extensions`.
-
-## Herdr Integration
-
-When `modules.shell.herdr.enable = true`, the Herdr shell module automatically installs Herdr integrations for enabled agent modules during activation. Agent modules should create/bootstrap their runtime config directories before Herdr's activation step, but they do not need to call `herdr integration install` themselves.
-
-## Module Boundaries
-
-Hermes boundary:
-
-- `modules.agents.hermes` is NixOS-only host wiring for declarative Hermes Gateway/runtime setup.
-- macOS Hermes Desktop installs are intentionally outside this repo module for now.
-- Reusable Hermes profile/preset logic belongs in `agents-workspace`; dotfiles selects and wires host-specific deployment choices.
-
-These modules are for AI coding agents and managed agent runtimes only. Do NOT put:
-
-- Shell tools here (see `modules/shell/`)
-- System services here (see `modules/services/`)
-
-## Adding a New Agent
-
-1. Create `modules/agents/<name>/default.nix`
-2. Use `options.modules.agents.<name>` as the option namespace
-3. Choose the smallest native instruction surface. Do not recreate broad
-   startup context when the harness supports conditional or task-time loading.
-4. Enable in host configs under `modules.agents.<name>.enable = true`
-5. Update this AGENTS.md
+`modules.agents.exo.enable` installs the Exo CLI for isolated agent environments.
+`modules.agents.hermes` is NixOS host wiring; `hermes-local` owns the Mac CLI.
+Reusable Hermes profiles/presets belong in `agents-workspace`. Desktop app
+installation is separate. Plannotator is excluded from Codex because its global
+Stop hook interrupts normal responses. `callstack-diff skill` prints that tool's
+version-matched instructions.

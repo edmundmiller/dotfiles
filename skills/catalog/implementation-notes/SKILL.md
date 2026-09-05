@@ -1,6 +1,6 @@
 ---
 name: implementation-notes
-description: Keep a running implementation-notes.html while implementing a spec. Use this whenever the user asks to implement a SPEC, PRD, design doc, issue, or feature and wants ongoing notes about design decisions, spec interpretations, deviations, tradeoffs, or open questions. Also trigger for prompts like “maintain implementation notes”, “document how this diverges from the spec”, or “capture anything I should know as you build”.
+description: Maintains reviewable HTML notes on spec decisions and deviations. Use when the user requests ongoing implementation notes alongside a build.
 ---
 
 # Implementation Notes

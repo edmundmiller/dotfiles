@@ -1,30 +1,9 @@
-# modules/shell/git
+# Git integration
 
-Git tooling module. Symlinks configs from `config/git/`, `config/gh/`, `config/lazygit/`.
+Nix links Git, lazygit, and gh-dash sources under `config/`. GitHub CLI's
+`config.yml` is a writable one-time seed; gh owns subsequent changes. ghui's
+generated config uses the system theme with automatic reload.
 
-## Options
-
-- `modules.shell.git.enable` — core git packages + config symlinks
-- `modules.shell.git.ai.enable` — git-ai authorship tracking; injects `pi-git-ai` into `modules.agents.pi.extraPackages` when pi is also enabled
-- `modules.shell.git.stack.enable` — install Kit Langton's squash-safe stacked PR `stack` CLI (defaults off because the package is currently not exported in flake checks)
-- `modules.shell.git.lazydiff.enable` — install LazyDiff terminal diff/PR reviewer (defaults on with git)
-- `modules.shell.git.gitbutler.enable` — install llm-agents GitButler CLIs (`gitbutler` and `but`)
-- `modules.shell.git.gitnexus.enable` — install llm-agents `gitnexus`
-
-## Packages
-
-git-open, difftastic, git-ai (when `ai.enable`), hunk (when `hunk.enable`), sem, inspect, weave, LGTM, lazydiff, diffity, delta, git-crypt (if gnupg enabled), git-lfs, pre-commit, git-hunks, ghui (`pkgs.my.ghui` from `overlays/ghui`)
-
-## Config files
-
-- `config/git/{config,config-seqera,config-nfcore,ignore,allowed_signers}` → `~/.config/git/`
-- `config/gh/config.yml` seeds a mutable `~/.config/gh/config.yml` once; GitHub CLI owns it thereafter
-- `config/gh-dash/config.yml` → `~/.config/gh-dash/`
-- `config/lazygit/config.yml` → `~/.config/lazygit/` (force-overwrite)
-- `~/.config/ghui/config.json` — generated; `theme = "system"` with `systemThemeAutoReload`
-- `config/git/aliases.zsh` → zsh rcFiles
-
-## Cross-module deps
-
-- `modules.shell.gnupg` — conditionally adds git-crypt
-- `modules.agents.pi` — `ai.enable` pushes pi-git-ai package via `extraPackages`
+`modules.shell.git.ai.enable` injects `pi-git-ai` into Pi's `extraPackages` only
+when Pi is enabled. GnuPG enablement controls git-crypt. Package selection and
+option defaults live in `default.nix`, not in this guide.

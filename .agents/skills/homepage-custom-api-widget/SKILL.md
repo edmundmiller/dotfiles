@@ -1,6 +1,6 @@
 ---
 name: homepage-custom-api-widget
-description: This skill should be used when the user asks to "configure a Homepage customapi widget", "map API fields in Homepage", "use dynamic-list in Homepage", or mentions Homepage Custom API widget mappings.
+description: Maps API responses into Homepage customapi widgets, including dynamic-list. Use when configuring those widget mappings.
 version: 0.1.0
 ---
 

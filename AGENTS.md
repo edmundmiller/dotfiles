@@ -1,37 +1,34 @@
----
-purpose: Route agents to the smallest authoritative workflow, skill, doc, or tool.
-applies_to: Every task in this nix-darwin dotfiles repository.
-entrypoint: Inspect the checkout, then follow the matching route below.
-verification: Run the routed check; use `hey check` for Darwin changes.
-update_when: A route, ownership boundary, or repository-wide guard changes.
----
+# Dotfiles
 
-# Agent router
+Nix-managed macOS and NixOS configuration. Complete the requested local work,
+including resolving failures caused by the change. Make routine decisions
+autonomously; ask when an unresolved choice changes the outcome or authority.
+Preserve unrelated work in the assigned checkout.
 
-This is a Nix-managed macOS and NixOS dotfiles repository. Package management,
-builds, and deployments use Nix through `hey`: use `hey re` or `hey rebuild`
-for Darwin activation, and `hey skills-update` or `hey skills-sync` for skills
-catalog changes.
+## Boundaries
 
-1. Confirm the assigned checkout and preserve unrelated changes.
-2. Read the nearest nested `AGENTS.md` before changing a subsystem.
-3. Read [agent guardrails](docs/agent-guardrails.md) for repository-wide
-   safety, documentation, tooling, and landing requirements.
+- Host activation, deployment, publication, secret rotation, and destructive
+  cleanup need explicit authorization. Local edits and checks do not imply it.
+- Use `hey` for guarded system operations: `hey re` / `hey rebuild` for Darwin,
+  `hey nuc` for NUC deployment, and `hey skills-update` / `hey skills-sync` for
+  catalog updates. Details: [command policy](docs/adr/0001-agent-command-policy.md).
+- Edit repository sources, not generated files or deployed Nix store symlinks.
+  Some agent configs are intentionally writable; their scoped guides identify them.
+- Keep decrypted secrets out of Git, logs, command arguments, and Nix output.
+- Hermes runtime/profile behavior belongs in `agents-workspace`; this repo owns
+  host deployment wiring.
 
-## Route by task
+## Task routes
 
-- Broad, autonomous, high-risk, or multi-session work: load
-  `dotfiles-agent-workflow`, then follow [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md).
-- Documentation: search the first seven lines under `docs/` for `purpose:`,
-  `applies_to:`, or `update_when:`, then read the match.
-- Agent rules, modes, or runtime configuration:
-  [config/agents/AGENTS.md](config/agents/AGENTS.md).
-- Skills: [skills/AGENTS.md](skills/AGENTS.md), then load the matching skill.
-- Package or overlay: its nested `AGENTS.md`; use `pkg-list` and
-  `pkg-check <unit>`.
-- Darwin or Nix work: load `nix-darwin-reference`; use `hey` when it provides
-  the operation.
-- NUC deployment: [deploy-nuc.md](docs/runbooks/deploy-nuc.md).
-- Repository validation: run focused checks, then `hey check --worktree`.
-- Hermes runtime behavior: work in `agents-workspace`; this repo
-  owns only host deployment wiring.
+- Agent configuration: [config/agents](config/agents/AGENTS.md).
+- Skills and selection: [skills](skills/AGENTS.md).
+- Packages/overlays: `pkg-list`, then `pkg-check <unit>` for upstream patch checks.
+- Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped
+  guide; [NUC runbook](docs/runbooks/deploy-nuc.md) for remote deployment.
+- Multi-session handoff or landing: [workflow](AGENT_WORKFLOW.md).
+- Canonical docs use seven-line YAML summaries under `docs/` for discovery.
+
+`hey check --worktree` is the shared repository check, also used by completion
+hooks. Use checks relevant to the changed surface; prose-only work needs no host
+build or activation. Report the result, verification limits, and any remaining
+approval in a concise handoff.

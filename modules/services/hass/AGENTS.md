@@ -1,109 +1,26 @@
----
-purpose: Route agents working on the Nix-managed Home Assistant module.
-applies_to: Changes under modules/services/hass.
-entrypoint: Classify the change, then follow the matching module or domain guidance.
-verification: Run the focused HA evaluation and the repository finish checks.
-update_when: Module boundaries, operational commands, or agent research guidance changes.
----
+# Home Assistant
 
-# Home Assistant Module
+Native NixOS `services.home-assistant`, not an OCI container. `default.nix`
+owns infrastructure, core config, and custom components; explicitly imported
+`_domains/` owns declarative automations/scenes/scripts. UI resources are separate
+`!include` files. `devices.yaml` owns device/area assignments, applied by
+`apply-devices.py` through WebSocket after HA starts.
 
-Native `services.home-assistant` NixOS module. NixOS-only (`isDarwin` guard).
+- Runtime is `/var/lib/hass` as user `hass`; PostgreSQL recorder is optional.
+  HTTP uses loopback `::1` with forwarded headers; firewall exposure is tailnet-only.
+- Credentials are runtime-only. Use the `hass-config-flow` skill for API access;
+  avoid tokens in SSH command arguments or printed state.
+- Native HA backup integration is intentionally disabled: nightly restic covers
+  `/var/lib/hass`; see [README.md](README.md). Removing that config is not a fix.
+- `.storage` is HA's state database, not an editing interface. Use supported APIs
+  for live state and config-entry operations; Nix remains declarative source.
+- ZHA uses ZBT-2; sleepy devices need a mesh router before pairing. See
+  [Zigbee mesh](docs/zigbee-mesh.md).
 
-## Structure
+For domain work, use [_domains guidance](_domains/AGENTS.md) and the
+`home-assistant-best-practices` / `hass-declarative` skills. Architecture research
+has a [targeted guide](docs/public-config-patterns.md); it is not required for
+routine edits. Custom-component pins/hashes are in `default.nix`.
 
-- `default.nix` — Module definition (options, core HA config, infra/systemd, custom components)
-- `_domains/` — Domain files (scenes, automations, scripts) — see `_domains/AGENTS.md`
-- `devices.yaml` — Declarative device→area assignments + area icons (applied via WebSocket API)
-- `apply-devices.py` — Script to apply devices.yaml (runs as systemd oneshot after HA starts)
-- `blueprints/` — Custom automation blueprints
-- `README.md` — Human docs with migration guide and home-ops parity table
-
-Before redesigning the module or adding a new configuration pattern, use the
-[public configuration research guide](./docs/public-config-patterns.md). It
-provides reproducible GitHub searches, representative Nix examples, and
-rejection criteria. Public repositories are examples, not behavioral authority.
-
-## Custom Components
-
-Built via `pkgs.buildHomeAssistantComponent` in `default.nix`:
-
-| Component         | Domain              | Version | Purpose                                    |
-| ----------------- | ------------------- | ------- | ------------------------------------------ |
-| adaptive-lighting | `adaptive_lighting` | 1.30.1  | Sun-synchronized color temp & brightness   |
-| hacs              | `hacs`              | 2.0.5   | Home Assistant Community Store             |
-| eight-sleep       | `eight_sleep`       | 1.0.22  | Smart mattress (bed presence, temperature) |
-
-### Updating custom components
-
-1. Find new version tag on GitHub
-2. `nix-prefetch-url --unpack "https://github.com/<owner>/<repo>/archive/refs/tags/<tag>.tar.gz"`
-3. Convert hash: `nix hash convert --hash-algo sha256 --to sri <hash>`
-4. Update `version`, `tag`, and `hash` in `default.nix`
-
-## Key Facts
-
-- Uses native `services.home-assistant` (NOT OCI container)
-- Config dir: `/var/lib/hass` (NixOS default), runs as `hass` user
-- Declarative config: `default_config`, HTTP on `::1` with `use_x_forwarded_for`
-- Automations declared in Nix (domain files), not YAML — enables helper functions/variables
-- UI automations/scenes/scripts via `!include` + tmpfiles for empty yaml
-- Device→area assignments: `devices.yaml` applied by `hass-apply-devices.service` via WebSocket API
-- Token: auto-generated JWT from `/var/lib/hass/.storage/auth` (client_name=`agent-automation`)
-- PostgreSQL recorder via `postgres.enable` (provisions db + psycopg2)
-- Firewall only opens on `tailscale0` interface
-- Host config: `hosts/nuc/default.nix` enables hass + postgres + homebridge + tailscale
-- Native backup integration is intentionally disabled (restic covers `/var/lib/hass` nightly; the HA integration has no backup agent on NixOS and fails with `backup_manager_error`). See `README.md` → "Native backup integration is intentionally disabled" for the full rationale and why deletion is not durable.
-- Zigbee: ZHA via ZBT-2 dongle; sleepy end devices need a router on the mesh before pairing — see [docs/zigbee-mesh.md](docs/zigbee-mesh.md)
-
-## hass-cli (agent-friendly API wrapper)
-
-`home-assistant-cli` is installed on the NUC. Configure via env vars then run over SSH:
-
-```bash
-# One-liner: get token + run command
-TOKEN=$(ssh nuc "sudo python3 -c '...'")  # see hass-config-flow skill
-ssh nuc "HASS_SERVER=http://localhost:8123 HASS_TOKEN=$TOKEN hass-cli state list"
-```
-
-Or set env vars in your SSH session:
-
-```bash
-ssh nuc
-export HASS_SERVER=http://localhost:8123
-export HASS_TOKEN=<token>
-hass-cli state list
-hass-cli state list 'light.*'
-hass-cli device list
-hass-cli area list
-hass-cli service call homeassistant.toggle --arguments entity_id=light.office
-hass-cli device assign Kitchen --match "Kitchen Light"
-hass-cli event watch
-```
-
-`-o json` outputs a clean JSON array — pipe directly to `jq` or `python3`:
-
-```bash
-# jq: extract entity/name/state
-hass-cli -o json state list 'light.*' | jq '[.[] | {entity: .entity_id, name: .attributes.friendly_name, state: .state}]'
-
-# python: count by state
-hass-cli -o json state list 'light.*' | python3 -c "
-import json, sys; lights = json.load(sys.stdin)
-print('on:', sum(1 for l in lights if l['state'] == 'on'))
-"
-```
-
-The `devices.yaml` → `apply-devices.py` pattern could be replaced with `hass-cli device assign` for one-off changes.
-
-**Note:** `hass-cli info` is broken on current HA (hits deprecated `/api/discovery_info`). All other commands work.
-
-## NixOS Wiki Reference
-
-Before making changes, fetch the NixOS HA wiki for current best practices:
-
-```bash
-bunx defuddle parse https://wiki.nixos.org/wiki/Home_Assistant --md --frontmatter
-```
-
-Covers: native `services.home-assistant`, declarative config, component deps, USB passthrough, postgres recorder, nginx reverse proxy, custom components, Zigbee OTA.
+NUC `hass-cli -o json` supports filtered entity/device/area reads. `hass-cli info`
+uses a deprecated endpoint; do not treat that failure as an HA outage.

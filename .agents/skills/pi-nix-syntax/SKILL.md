@@ -1,9 +1,6 @@
 ---
 name: pi-nix-syntax
-description: >
-  Use when converting Pi config/extension/skill setup (Pi settings.json packages, ~/.pi/agent/extensions,
-  git:... sources) into this dotfiles repo's Nix representation (skills/flake.nix backed by agent-skills-nix,
-  modules/agents/pi/default.nix home.file links), or converting the other direction.
+description: Maps Pi packages, extensions, and skills to this repository's Nix ownership. Use when converting between Pi setup instructions and declarative dotfiles.
 ---
 
 # Pi ↔ Nix syntax conversions (this repo)

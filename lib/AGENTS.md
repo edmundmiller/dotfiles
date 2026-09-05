@@ -1,41 +1,9 @@
----
-purpose: Define conventions for the auto-discovered shared Nix helper library.
-applies_to: Changes under lib/.
-entrypoint: Read the export table, then the helper file being changed.
-verification: Evaluate the affected Darwin or NixOS configuration.
-update_when: Helper exports, discovery behavior, or library conventions change.
----
+# Nix helper library
 
-# Lib — Nix Helper Library
+Helpers are exposed as `lib.my.*`. Each `.nix` file except `default.nix` receives
+`{ self, lib, pkgs, inputs, ... }` and returns attributes merged into that set.
 
-Shared utility functions exposed as `lib.my.*` throughout the flake. Auto-discovered: every `.nix` file here (except `default.nix`) is imported and merged into a single attribute set.
-
-## Key Files
-
-| File             | Exports                                                   | Used For                            |
-| ---------------- | --------------------------------------------------------- | ----------------------------------- |
-| `options.nix`    | `mkOpt`, `mkOpt'`, `mkBoolOpt`                            | Shorthand NixOS option constructors |
-| `attrs.nix`      | `mapFilterAttrs`, `attrsToList`, `anyAttrs`, `countAttrs` | Attribute set manipulation          |
-| `modules.nix`    | `mapModules`, `mapModulesRec`, `mapModulesRec'`           | Auto-discovery of modules and hosts |
-| `nixos.nix`      | `mkHost`, `mapHosts`                                      | Building NixOS host configurations  |
-| `platform.nix`   | `isDarwin`, `isLinux`, `homeBase`                         | Platform detection helpers          |
-| `paths.nix`      | Path manipulation utilities                               | File path helpers                   |
-| `generators.nix` | Config file generators                                    | Generating config file formats      |
-
-## How Auto-Discovery Works
-
-`modules.nix` provides `mapModules` which scans a directory and imports every `.nix` file (excluding `default.nix`) and every subdirectory containing `default.nix`. Directories prefixed with `_` are skipped.
-
-This is how `modules/`, `hosts/`, and `lib/` itself are auto-loaded — no manual imports needed.
-
-## Usage in Modules
-
-```nix
-{ config, lib, ... }:
-with lib;
-with lib.my;  # ← brings mkBoolOpt, mkOpt, etc. into scope
-```
-
-## Adding a New Helper
-
-Create a new `.nix` file in this directory. It receives `{ self, lib, pkgs, inputs, ... }` and should return an attribute set. It will be auto-merged into `lib.my`.
+`modules.nix` owns discovery: `.nix` files and directories with `default.nix`
+are imported, while `_`-prefixed directories are skipped. `options.nix` owns
+`mkOpt`, `mkOpt'`, and `mkBoolOpt`; `nixos.nix` owns host assembly; `platform.nix`
+owns platform helpers. Changes to discovery affect modules, hosts, and packages.

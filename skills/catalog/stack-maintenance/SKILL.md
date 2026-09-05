@@ -1,6 +1,6 @@
 ---
 name: stack-maintenance
-description: Maintains stacked GitHub PRs and branches. Triggers on "fix stacked PRs", "merge this PR stack", "restack branches", "turn on auto-merge", `gh stack`, `gh pr`, `jj spr`, wrong PR bases, merge queues, or force-pushing stack repairs.
+description: Maintains dependent GitHub PR stacks. Use for restacking, repairing PR bases, or coordinating stack merges and merge queues.
 ---
 
 # Stack Maintenance

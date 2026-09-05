@@ -1,6 +1,5 @@
-# Amoxide Package
+# Amoxide package
 
-- Upstream repo: <https://github.com/sassman/amoxide-rs>
-- Package both workspace binaries together from one source/version: `am` (CLI) and `am-tui` (TUI).
-- Prefer multiple Nix outputs over separate package definitions when the binaries share the same upstream release and Cargo dependency graph.
-- Keep `meta.mainProgram = "am"` on the combined package so `nix run` defaults to the CLI.
+Package upstream `sassman/amoxide-rs` binaries `am` and `am-tui` from one
+source/version and Cargo graph, using multiple outputs rather than duplicate
+derivations. Keep `meta.mainProgram = "am"` so `nix run` selects the CLI.

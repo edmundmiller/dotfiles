@@ -1,6 +1,6 @@
 ---
 name: callstack-diff
-description: This skill should be used when a user asks to "map the logic flow", "show the call flow", "visualize how this request branches", presents a prose or architecture flow such as `A → B → C` with branches, or asks to render or compare static JavaScript and TypeScript call-stack trees.
+description: Renders and compares static JS/TS call trees with callstack-diff. Use for requested branching call-flow maps from source or stated architecture.
 ---
 
 # Callstack Diff

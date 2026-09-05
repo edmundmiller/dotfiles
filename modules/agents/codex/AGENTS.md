@@ -1,92 +1,42 @@
----
-purpose: Define ownership and recovery for Codex CLI configuration and remote control.
-applies_to: Changes to the Codex package, Home Manager module, or NUC remote-control setup.
-entrypoint: modules/agents/codex/default.nix
-verification: python3 -m unittest tests.test_codex_model_config; bash modules/agents/codex/test-seqera-mcp.sh; command -v codex
-update_when: Codex installation paths, ownership, bootstrap, or recovery behavior changes.
----
+# Codex module
 
-# Codex Module
+Nix/Home Manager owns the foreground CLI and configuration bootstrap. The remote
+control daemon uses a separate official-installer-managed writable binary under
+`~/.codex/packages/standalone`. Keep both installations and Nix's PATH precedence.
 
-Nix/Home Manager owns the writable configuration bootstrap and the foreground CLI.
-Remote control deliberately uses a second, installer-managed Codex binary for its daemon.
+`config/codex/config.toml` seeds writable `~/.codex/config.toml`; subsequent
+settings are user-managed except enabled MCP blocks. Rules are writable seeds;
+`agents/*.toml` and the shared core `AGENTS.md` are managed. OAuth, sessions, and
+history remain runtime-owned. Shared skills use `~/.agents/skills`; Codex-only
+skills use `meta.targets = [ "codex" ]`.
 
-## Files
+## MCP and permissions
 
-- `config.toml` — bootstrapped from `config/codex/config.toml` if missing; kept as a writable local file so Codex can mutate settings
-- `AGENTS.md` — the bounded `config/agents/core.md`; procedures load through
-  skills and nested repository routers
-- `agents/*.toml` — Nix-managed custom agent profiles sourced from `config/codex/agents/`
-- `rules/` — sandbox allow-rules, bootstrapped into `~/.codex/rules/` during activation as local writable files
+- `seqeraMcp.enable` registers `https://mcp.seqera.io/mcp` with `rmcp_client`.
+  OAuth is user-managed (`codex mcp login seqera`); inspect with `codex mcp get seqera`.
+- `homeAssistantMcp` registers the existing HA integration. `codex-ha` resolves
+  `secretReference` using `op run` into child-only `HASS_TOKEN`, using native
+  `bearer_token_env_var`. Keep tokens out of Nix, Git, argv, and config.
+  Persistent `tui_app_server` is disabled so the client inherits that environment;
+  explicit `OP_BIOMETRIC_UNLOCK_ENABLED` is preserved.
+- HA integration proof is a fresh `codex-ha` read of
+  `homeassistant://assist/context-snapshot` with action tools disabled.
+- `python3 config/codex/reconcile_mcp.py --dry-run "$HOME/.codex/config.toml" 0 1`
+  previews the narrow MacTraitorPro MCP repair without printing config. Applying
+  it changes live state and requires authorization.
+- Trusted repository `.codex/config.toml` owns repository permissions. Named
+  `default_permissions` profiles use `:minimal = "read"` and explicit roots;
+  legacy `sandbox_mode` takes precedence and cannot remain alongside them.
+  NUC needs read access to the standalone tree for bundled Bubblewrap.
+- Local filesystem/network profiles do not constrain MCP, hooks, plugins, or
+  browser capabilities; scope those separately.
 
-## Not Managed by Nix
+## Sources and checks
 
-- `auth.json` — OAuth credentials (user-managed)
-- `sessions/`, `history.jsonl` — runtime data
-- `config.toml` after bootstrap — user-managed and writable, except enabled host integrations such as `homeAssistantMcp` and `seqeraMcp`, which reconcile their MCP block and prerequisite feature
-- `packages/standalone/` — mutable daemon runtime installed and updated by the official Codex installer
+Model defaults and delegation policy live in `config/codex/config.toml` and
+`config/codex/agents/`, not in this router. The writable live config may differ;
+`codex features list` shows effective feature state.
 
-## Seqera MCP
-
-Set `modules.agents.codex.seqeraMcp.enable = true` only on hosts that need it.
-Activation registers `https://mcp.seqera.io/mcp` and enables `rmcp_client`.
-OAuth remains user-managed: after rebuilding that host, run `codex mcp login seqera`.
-On Seqeratop, verify the registration with `codex mcp get seqera`.
-
-## Home Assistant MCP
-
-Set `modules.agents.codex.homeAssistantMcp.enable = true` only on hosts that
-need access to the existing Home Assistant MCP integration. Activation registers
-`https://homeassistant.cinnamon-rooster.ts.net/api/mcp` and enables `rmcp_client`.
-Set `homeAssistantMcp.secretReference` to the host's existing 1Password token
-reference. The generated `codex-ha` launcher resolves that reference with
-`op run`, exposes it only as `HASS_TOKEN` for the child Codex process, and uses
-Codex's native `bearer_token_env_var`; no token enters Nix, Git, argv, or the
-writable Codex config. It defaults 1Password CLI app integration on and disables
-Codex's persistent `tui_app_server` so the MCP client inherits `HASS_TOKEN` from
-the launcher process. An explicit `OP_BIOMETRIC_UNLOCK_ENABLED` value is kept.
-Verify registration with `codex mcp get homeassistant`, then start a fresh
-`codex-ha` session with Home Assistant action tools disabled and read
-`homeassistant://assist/context-snapshot` before trusting the integration.
-
-When a broad Darwin activation is unsafe, the checked-in reconciler can update
-only Codex's writable MCP configuration on MacTraitorPro. Preview it first; the
-command reports only whether a change is needed and never prints config content:
-
-```bash
-python3 config/codex/reconcile_mcp.py --dry-run "$HOME/.codex/config.toml" 0 1
-python3 config/codex/reconcile_mcp.py "$HOME/.codex/config.toml" 0 1
-```
-
-## Project Permissions
-
-Put repository-specific policies in the repository's trusted `.codex/config.toml`.
-Use a named `default_permissions` profile with `:minimal = "read"` and explicit
-absolute or `~/...` roots when reads must be confined. Legacy `sandbox_mode`
-settings take precedence over named profiles and must not remain in loaded config.
-On the NUC, grant read access to `~/.codex/packages/standalone` so bundled
-Bubblewrap can launch the installer-managed command runtime.
-
-Permission profiles constrain local command filesystem and network access only.
-Scope or disable filesystem-capable MCP servers separately. Hooks, plugins, browser
-tools, and remote MCP services remain independent capabilities.
-
-## NUC Remote Control
-
-Keep both installations: the foreground CLI remains Nix-managed, while the daemon uses the
-installer-managed writable path. Do not put `$HOME/.local/bin` before the Nix profile, remove
-`pkgs.llm-agents.codex`, or manage the standalone tree with Nix.
-
-Follow the [NUC deployment runbook](../../../docs/runbooks/deploy-nuc.md#codex-remote-control)
-for bootstrap, pairing, verification, and recovery.
-
-## Skills
-
-Codex reads shared generated skills from `~/.agents/skills/`.
-`~/.codex/skills/` is only for Codex-specific skills with `meta.targets = [ "codex" ]`.
-
-## Model roles
-
-`config/codex/config.toml` seeds Sol Medium for normal interactive work and Luna Max as the unnamed subagent default. Named profiles add three explicit fresh-context lanes: Luna Max for narrow repeatable work, Terra High for scoped work requiring material judgment, and a read-only Sol High reviewer for high-risk, wide, or release-bound changes. Use normally one to three non-recursive workers, then have the primary inspect the diff and rerun verification. Raise the primary Sol effort only for exceptional work; the configured ceiling matches Codex's supported session maximum.
-
-The live `~/.codex/config.toml` is writable and may differ after app changes. Compare its model and `[agents]` fields with the source, then verify feature state with `codex features list`.
+Focused checks: `python3 -m unittest tests.test_codex_model_config` and
+`bash modules/agents/codex/test-seqera-mcp.sh`. Remote-control bootstrap, pairing,
+and recovery: [NUC runbook](../../../docs/runbooks/deploy-nuc.md#codex-remote-control).

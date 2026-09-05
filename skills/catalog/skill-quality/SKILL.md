@@ -1,7 +1,7 @@
 ---
 name: skill-quality
 compatibility: portable
-description: Validate and review agent skills for portable structure, clear triggers, executable helpers, and reliable behavior across Terra and Sol.
+description: Validates skill structure and invocation boundaries. Use when auditing a skill, debugging its trigger, or checking portability across agent runtimes.
 ---
 
 # Skill Quality

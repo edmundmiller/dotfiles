@@ -1,63 +1,18 @@
-## <!-- Purpose: Teach agents fast day-to-day memory browse/search/read/sync workflows in pi-context-repo. -->
-
+---
 name: searching-memory
-description: >
-Search, browse, and inspect memory quickly in pi-context-repo. Use when asked
-to find prior notes, inspect memory files, locate preferences, or sync recent
-memory updates. Trigger phrases: "search memory", "list memory files",
-"find in memory", "read memory file", "memory status", "sync memory".
-
+description: Retrieves pi-context-repo notes and checks memory sync state. Use to find prior preferences, read memory files, or synchronize requested updates.
 ---
 
-# Searching Memory
+# Searching memory
 
-Use this workflow for fast retrieval and lightweight maintenance.
+Use `memory_read` for a known path, `memory_search` for a keyword,
+`memory_list` for directory discovery, and `memory_recall` for old conversation
+context. Paths are relative to the memory repository (e.g. `system/style.md`).
 
-## 1) Find candidate files
+For requested maintenance, merge stale notes with `memory_write` and
+`memory_commit`; preserve frontmatter `description`, `limit`, and protected
+`read_only`. Stay within file limits and leave read-only files unchanged.
 
-- `memory_search` when you have a keyword.
-- `memory_list` when you need directory-oriented discovery.
-
-Start broad, then narrow:
-
-- `memory_list` (root overview)
-- `memory_list { directory: "system" }`
-- `memory_list { directory: "reference" }`
-
-## 2) Read exact file
-
-Use `memory_read` with a single relative path (e.g. `system/style.md`).
-
-- Prefer reading one file at a time.
-- If result is close but not exact, branch back to `memory_search`.
-
-## 3) Update only if needed
-
-If memory is stale:
-
-1. `memory_write` with concise, merged content
-2. `memory_commit` with clear message
-
-Avoid duplicate files or repetitive notes.
-
-## 4) Verify sync state
-
-- Run `/memory` for status + recent history.
-- If ahead of remote, push from shell:
-
-```bash
-git -C "$MEMORY_DIR" push
-```
-
-## Heuristics
-
-- **Known file path?** → `memory_read`
-- **Known keyword, unknown file?** → `memory_search`
-- **Unknown shape entirely?** → `memory_list`
-- **Need old conversation context?** → `memory_recall`
-
-## Constraints
-
-- Keep writes under file `limit`.
-- Never modify `read_only` files.
-- Preserve frontmatter schema (`description`, `limit`, optional protected `read_only`).
+`/memory` shows status/history. When remote synchronization is authorized,
+`git -C "$MEMORY_DIR" push` publishes local memory commits; an ahead status
+alone does not authorize publication.

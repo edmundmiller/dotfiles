@@ -1,10 +1,6 @@
 ---
 name: agenix-secrets
-description: >
-  Create, edit, and wire up agenix-encrypted secrets in this dotfiles repo.
-  Use when adding API keys, tokens, credentials, passwords, or any sensitive
-  values to NixOS host configs. Trigger phrases: "add a secret", "encrypt
-  with agenix", "new age secret", "hide this value", "agenix secret".
+description: Creates and wires agenix-encrypted dotfiles secrets. Use for age recipients, encrypted credential updates, and NixOS service secret ownership.
 ---
 
 # Agenix Secrets

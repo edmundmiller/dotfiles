@@ -1,6 +1,6 @@
 ---
 name: omp-model-config
-description: Configure OMP model roles, providers, fallback chains, and per-host overrides in this nix-darwin dotfiles repo. Use when changing which models OMP uses, shifting providers, fixing fallback chains, or troubleshooting why a model change didn't take effect after rebuild.
+description: Configures OMP model roles, provider fallbacks, and per-host overrides. Use for OMP model changes or mismatches between source and active configuration.
 ---
 
 # OMP Model Configuration

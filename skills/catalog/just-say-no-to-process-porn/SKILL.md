@@ -1,6 +1,6 @@
 ---
 name: just-say-no-to-process-porn
-description: Stop AI process-porn, ceremony, and fake progress so work finishes as real software. Use at session start when the user wants anti-ceremony defaults; mid-session when the agent is planning, todoling, scaffolding, or status-reporting instead of shipping; before claiming done; or when the user mentions process porn, ceremony, performative work, reward hacking, or endless foundation/MVP theater. Do not use for genuine multi-stakeholder process the user explicitly requested.
+description: Diagnoses performative process that displaces delivery. Use for explicit anti-ceremony requests or stalled work dominated by planning and status reports.
 ---
 
 # Just say no to process porn and ceremony

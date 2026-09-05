@@ -1,6 +1,6 @@
 ---
 name: derive-web-api-client
-description: Derive a narrow, efficient API client or CLI from an authorized browser workflow by recording and analyzing HAR network traffic. Use when repeated browser automation is slow or brittle, when asked to inspect a HAR or reverse-engineer a site's first-party requests, or when turning a demonstrated website action into a structured command-line tool.
+description: Derives a task-focused API client from authorized HAR/browser traffic. Use to inspect first-party requests or replace a demonstrated browser workflow with a CLI.
 ---
 
 # Derive a Web API Client

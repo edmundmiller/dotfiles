@@ -1,38 +1,12 @@
-# gh-dash Configuration
+# gh-dash keybindings
 
-## Keybinding Template Variables
+Go-template variables depend on context:
 
-Custom keybinding commands use Go templates. Available variables differ by context:
+- PRs: `.RepoName`, `.RepoPath`, `.PrNumber`, `.HeadRefName`.
+- Issues: `.RepoName`, `.RepoPath`, `.IssueNumber`.
 
-**PRs:**
+There is no `.Url` variable or `builtin: "open"`. Use a custom command with a
+quoted URL, for example `open 'https://github.com/{{.RepoName}}/pull/{{.PrNumber}}'`.
+Issue URLs use `/issues/{{.IssueNumber}}`.
 
-- `{{.RepoName}}` - owner/repo
-- `{{.RepoPath}}` - local path
-- `{{.PrNumber}}` - PR number
-- `{{.HeadRefName}}` - branch name
-
-**Issues:**
-
-- `{{.RepoName}}` - owner/repo
-- `{{.RepoPath}}` - local path
-- `{{.IssueNumber}}` - issue number
-
-**There is no `{{.Url}}` variable.** Construct URLs manually:
-
-```yaml
-# PR
-command: "open 'https://github.com/{{.RepoName}}/pull/{{.PrNumber}}'"
-
-# Issue
-command: "open 'https://github.com/{{.RepoName}}/issues/{{.IssueNumber}}'"
-```
-
-## Common Gotchas
-
-1. `builtin: "open"` does not exist - use custom `command` instead
-2. Template variables must match context (PR vs Issue)
-3. Quote URLs in commands to handle special characters
-
-## Docs
-
-- https://gh-dash.dev/configuration/keybindings
+[Keybinding reference](https://gh-dash.dev/configuration/keybindings).

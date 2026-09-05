@@ -1,32 +1,25 @@
-# Sleep Domain — Agent Reference
+# Sleep lifecycle
 
-Owns the full sleep/wake lifecycle. See `README.md` for flow diagrams and `../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md` for the decision record.
+`default.nix` owns helpers/scenes/wake tracking; `wake_up_at.nix` owns alarm-relative
+scheduling. [README.md](README.md) and the
+[ADR](../../docs/adr/0001-alarm-driven-circadian-sleep-lifecycle.md) explain the flow.
 
-## Files
+- Owns `input_boolean.goodnight`, `edmund_awake`, and `monica_awake`.
+- Phases: Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning.
+  Winding Down is soft cueing, not goodnight state or house shutdown.
+- Edmund's Eight Sleep alarm while home drives timing. Ideal wake is alarm minus
+  30 minutes; Sleep is six 90-minute cycles earlier. Winding Down is Sleep minus
+  60 minutes; Good Night is Sleep minus 15 minutes; Get Ready for Bed is ten
+  minutes before Good Night.
+- Homeostasis checks every five minutes from 8 PM to midnight, once per phase
+  per night. `sleep_homeostasis_test_tick` with ISO8601 `now` exercises the same
+  actions, so firing it is not read-only verification.
+- iOS next-alarm sync is disabled pending a helper/Shortcut bridge. Eight Sleep
+  refreshes every two minutes from 7:30–11 PM while Edmund is home; focus off
+  dismisses its alarm from 6–9 AM. Focus sensors are generic, not mode-specific.
+- Wake detection updates booleans only. Good Morning is manual/voice; Eight Sleep
+  bed presence is too unreliable to activate it automatically.
 
-- `default.nix` — Core sleep domain config (helpers, scenes, scripts, 8Sleep wake schedule, wake tracking)
-- `wake_up_at.nix` — Alarm-relative bedtime scheduler/homeostasis automation
-- `README.md` — Human docs (flow diagrams, troubleshooting)
-
-## Key Facts
-
-- Owns: `input_boolean.goodnight`, `input_boolean.edmund_awake`, `input_boolean.monica_awake`
-- Canonical bedtime lifecycle: Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning
-- Circadian driver: Edmund's next Eight Sleep smart alarm when Edmund is home; iOS next-alarm sync is declaratively disabled until we add an HA helper or Shortcut bridge
-- Timing model: latest wake = Eight Sleep alarm, ideal wake = latest wake - 30m smart window, Sleep = ideal wake - 6 × 90-minute cycles; Winding Down = Sleep - 60m, Get Ready for Bed = Good Night - 10m, Good Night = Sleep - 15m
-- Homeostasis check: every 5 minutes between 8 PM and midnight; hidden `sleep_homeostasis_test_tick` event with ISO8601 `now` exercises the same logic for debugging; apply each phase once per night using helpers
-- Winding Down is soft circadian cueing only; do not set `input_boolean.goodnight` or hard-shutdown the house there
-- Good Night is the in-bed settling phase; historical/voice aliases like “Ignite” and the old In Bed path are retired, not canonical terms
-- Wake: detection automations set `input_boolean.*_awake`; Good Morning is manual/voice scene activation only
-- Apple/8Sleep: iPhone next-alarm sync is declaratively disabled; Eight Sleep alarm refresh runs every 2 minutes 7:30–11pm while Edmund is home; focus off dismisses 8Sleep alarm (6–9am)
-- Per-person automations DRY'd via `mkSleepFocusOff` and `mkWakeDetection`
-- All iPhone focus sensors are **generic** — no per-mode (Sleep/Work/DND) sensors exist
-- 8Sleep bed presence is **unreliable** — do not use it to auto-fire Good Morning
-
-## Cross-domain Touchpoints
-
-- `modes.nix` `everything_off` currently delegates to Winding Down scene; revisit when Winding Down becomes soft-only
-- `ambient.nix` Arrive Home scene sets `goodnight = off`
-- `lighting.nix` AL sleep mode time triggers (10pm / 7am) may need to move from fixed times to circadian timing
-- `conversation.nix` GoodMorning voice intent calls `scene.good_morning` directly
-- `vacation.nix` reads `goodnight` state but doesn't modify it
+Consumers include ambient presence, `modes.nix`/`everything_off`, lighting,
+climate, vacation, and the GoodMorning voice intent. Preserve their helper
+contracts when changing phases; retired “Ignite”/In Bed aliases are not canonical.

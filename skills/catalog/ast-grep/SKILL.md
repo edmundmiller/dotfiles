@@ -1,10 +1,6 @@
 ---
 name: ast-grep
-description: >
-  Structural code search, refactoring, and repository lint-rule setup with
-  ast-grep. Use when searching by syntax shape, writing or testing ast-grep
-  rules, configuring sgconfig.yml, enforcing coding standards, selecting rule
-  severity, or adding ast-grep to project checks and CI.
+description: Searches and rewrites syntax with ast-grep. Use for AST-pattern codemods or authoring, testing, and configuring structural lint rules.
 license: MIT
 metadata:
   version: "2.0.2"

@@ -1,36 +1,13 @@
----
-purpose: Route changes to the Claude CLI Nix module.
-applies_to: Claude package, startup instructions, modes, settings, plugins, or WakaTime wiring.
-entrypoint: Edit modules/agents/claude/default.nix and its config sources.
-verification: Rebuild and run the affected Claude smoke check.
-update_when: Claude module ownership, paths, or runtime behavior changes.
----
+# Claude module
 
-# Claude CLI Module - Agent Guide
+`modules.agents.claude.enable` installs the CLI, `config/agents/core.md` as
+`~/.claude/CLAUDE.md`, and shared modes as `~/.claude/agents/`.
 
-## Purpose
+Settings are a writable bootstrap from `config/claude/settings.json`, preserving
+Herdr/runtime hooks. Plugins are user-installed; `config/claude/plugins/` holds
+sources only. WakaTime is Darwin-only and uses `wakatime-api-key`.
 
-Minimal Nix module for Claude Code. It installs the shared thin core and modes
-while preserving a small amount of Claude-specific runtime config.
-
-## Key paths
-
-- `modules/agents/claude/default.nix` - module definition
-- `config/claude/settings.json` - Claude-specific settings template
-- `config/agents/core.md` - source for `~/.claude/CLAUDE.md`
-- `config/agents/modes/` - source for `~/.claude/agents/`
-- `skills/catalog/test-quality/`, `skills/catalog/github-cli-media/`, and the
-  selected `lore` source in `skills/flake.nix` - canonical targets of Claude's
-  shared skill links
-- `config/claude/plugins/` - repo-local Claude plugin sources
-
-## Facts
-
-- Enable with `modules.agents.claude.enable = true`
-- Shared skills live in `~/.agents/skills`. Claude receives only
-  `~/.claude/skills/{test-quality,github-cli-media,lore}`, linked to those
-  canonical copies; other Claude skill copies are removed because OMP scans
-  both directories.
-- `~/.claude/settings.json` is bootstrapped as a writable local file, not a Home Manager symlink, so runtime integrations such as Herdr can mutate Claude hooks.
-- Plugins are user-installed; this repo only keeps source trees and settings
-- WakaTime config is Darwin-only and depends on `wakatime-api-key`
+Claude gets only `test-quality`, `github-cli-media`, and `lore` links into the
+canonical `~/.agents/skills` tree. Other Claude skill copies are removed because
+OMP scans both locations; the full catalog must not be duplicated there.
+`skills/flake.nix` selects the Lore source; the other two come from `skills/catalog/`.

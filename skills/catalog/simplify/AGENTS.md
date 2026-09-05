@@ -1,45 +1,10 @@
-# Updating the Simplify Skill
+# Simplify provenance
 
-The prompt lives in variable `zY4` in Claude Code's minified JS bundle.
+This skill adapts Claude Code's bundled `/simplify` prompt. Installed versions
+live under `~/.local/share/claude/versions/`. Search the selected binary for the
+Simplify heading/registration; minified variable names such as historical `zY4`
+are version-specific, not a stable extraction interface.
 
-## Binary location
-
-```
-~/.local/share/claude/versions/<version>
-```
-
-## Extraction
-
-```bash
-python3 -c "
-with open('<binary_path>', 'rb') as f:
-    data = f.read()
-marker = b'zY4=\`# Simplify'
-idx = data.find(marker)
-start = idx + 5  # skip 'zY4=\`'
-end = data.find(b'\`});', start)
-print(data[start:end].decode('utf-8', errors='replace'))
-"
-```
-
-## Registration in the bundle
-
-```js
-Mz({
-  name: "simplify",
-  description: "Review changed code for reuse, quality, and efficiency, then fix any issues found.",
-  userInvocable: true,
-  async getPromptForCommand(T) {
-    let _ = zY4;
-    if (T) _ += `\n\n## Additional Focus\n\n${T}`;
-    return [{ type: "text", text: _ }];
-  },
-});
-```
-
-## After extracting
-
-1. Replace `${uA}` → `subagent tool`
-2. Replace `${b$}` → `grep/search`
-3. Unescape JS artifacts (`\`` → backtick, `\u2014`→`—`)
-4. Diff against `SKILL.md` and update
+When refreshing, decode JavaScript escapes and replace tool interpolation with
+portable descriptions (historically `${uA}` → subagent tool, `${b$}` → search).
+Verify those substitutions against the selected version before updating SKILL.md.

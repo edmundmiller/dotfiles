@@ -1,7 +1,7 @@
 ---
 name: honcho-integration
 compatibility: portable
-description: Integrate Honcho memory and social cognition into existing Python or TypeScript codebases. Use when adding Honcho SDK, setting up peers, configuring sessions, implementing the dialectic chat endpoint for AI agents, or wiring Honcho into bot frameworks (nanobot, openclaw, picoclaw, etc).
+description: Integrates Honcho memory into Python or TypeScript agents. Use for Honcho SDK peers, sessions, and dialectic chat wiring.
 ---
 
 # Honcho Integration Guide

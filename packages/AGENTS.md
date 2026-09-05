@@ -1,36 +1,18 @@
----
-purpose: Define packaging and patch-maintenance conventions for local packages.
-applies_to: Changes under packages/.
-entrypoint: Use pkg-list, then read the target package definition and metadata.
-verification: Run pkg-check for declared units and build the affected package.
-update_when: Package discovery, patch policy, or maintainer tooling changes.
----
-
 # Packages
 
-Auto-discovered with `lib.my.mapModules ./packages`: new packages must use `packages/<name>/default.nix`. Existing `packages/<name>.nix` files are migration exceptions only. Packages are exposed as `pkgs.my.*` via the overlay in `flake.nix` and built per-system (`x86_64-linux` and `aarch64-darwin`).
+New packages use `<name>/default.nix`; existing single-file packages are migration
+exceptions. `lib.my.mapModules` discovers them and flake outputs expose
+`pkgs.my.*` per system (`x86_64-linux`, `aarch64-darwin`).
 
-Cross-package imports under `packages/pi-packages` use workspace package imports
-with a `"workspace:*"` dependency. `bin/lint-ts-architecture` rejects relative
-`../../` imports across packages.
+Cross-package Pi imports use workspace package names with `workspace:*`
+dependencies; `bin/lint-ts-architecture` rejects relative cross-package imports.
 
-## Maintainer checks
+`pkg-list` discovers optional harness metadata. `pkg-check <unit>` handles
+fresh upstream checkout, patch application, and upstream tests. Use the
+`nix-package-patching` skill for updates. Keep ordered plain patches beside
+the package, matching `default.nix`, rather than large inline source rewrites.
 
-- Run `pkg-list` to find units with optional adjacent `package-harness.json` metadata.
-- Run `ast-grep scan packages/` for fast structural checks.
-- Run `pkg-check <unit>` for read-only validation against a fresh upstream checkout.
-- Use `hey check` for repository-wide package policy and host validation, not fresh upstream checks.
-
-## Check placement
-
-- Put Nix syntax and AST-shape rules under `ast-grep/rules/`, with cases under `ast-grep/rule-tests/`.
-- Put repository path and cross-file package policies in the root test suite and expose them as a dedicated flake check selected by `hey check`.
-- Keep clone, checkout, patch-application, and upstream test behavior in `package-harness`; declare it beside the package and run `pkg-check <unit>`.
-- Keep implementation tests beside the tool they exercise.
-
-## Patch policy
-
-- Prefer patch files in `packages/<name>/patches/*.patch` for upstream source changes.
-- Keep patch stacks focused and reviewable (small, single-purpose patches applied in order).
-- Avoid large inline `postPatch` source-rewrite scripts when the same change can live as a plain patch file.
-- If a patch stack is split/reordered, update the corresponding package `default.nix` `patches = [ ... ]` list to match.
+Check ownership: AST rules in `ast-grep/rules/`, cross-file/path policy in root
+tests/flake checks, implementation tests beside the tool, upstream checks in
+the package harness. `hey check --worktree` covers repository policy; package
+builds and host activation are distinct checks/actions.

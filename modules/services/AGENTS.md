@@ -1,245 +1,43 @@
----
-purpose: Define how to add, register, test, and deploy NUC service modules.
-applies_to: Changes under modules/services or hosts/nuc service configuration.
-entrypoint: Start with the numbered service checklist below.
-verification: Run hey check and targeted Linux VM checks for repository-specific behavior.
-update_when: Service ownership, registry, testing, or deployment conventions change.
----
+# NUC services
 
-# Adding a New Service (Checklist)
+Wrap upstream NixOS modules under `modules.services.<name>` and enable them in
+`hosts/nuc/default.nix`. Both `<name>.nix` and `<name>/default.nix` are discovered.
+NixOS-only options need `optionalAttrs (!isDarwin)`. Credentials use agenix
+paths, with ownership matching the consuming service user.
 
-End-to-end flow for adding a self-hosted service to the NUC.
+## Registry ownership
 
-## 1. Module (`modules/services/<name>.nix` or `<name>/default.nix`)
+Each service declares its own `lib.my.mkRegistry` defaults for `gatus` and/or
+`homepage`. Aggregators collect enabled services; add endpoints/cards in the
+owner, not in Gatus/Homepage. Only resources without a module remain hard-coded
+in aggregators. Hosts can override defaults.
 
-Use a single file for small services, or a directory with `default.nix` + `AGENTS.md`/README for services with operational details. Both are auto-discovered.
+Homepage groups must already exist or cards are silently dropped. Widget secrets
+use `{{HOMEPAGE_VAR_*}}` backed by `homepage-env.age`. Gatus registry entries
+opt into alert providers with `alerts = true`.
 
-Wrap the upstream NixOS module. Follow the audiobookshelf/lubelogger pattern:
+## Validation and deployment
 
-```nix
-{ config, lib, isDarwin, ... }:
-with lib; with lib.my;
-let cfg = config.modules.services.<name>;
-in {
-  options.modules.services.<name> = {
-    enable = mkBoolOpt false;
-    environmentFile = mkOption {
-      type = types.nullOr types.path;
-      default = null;
-      description = "Path to env file for secrets.";
-    };
-  };
-  config = mkIf cfg.enable (optionalAttrs (!isDarwin) {
-    services.<name> = {
-      enable = true;
-      environmentFile = cfg.environmentFile;
-    };
-  });
-}
-```
+Repository tests cover wrapper options, guards, registries, generated config,
+and local integration, not daemon behavior already tested by nixpkgs. Prefer
+the service's native parser for generated config; reserve `_tests/` VM checks
+for runtime contracts and targeted Linux/NUC runs, not every routine CI run.
 
-## 2. Host Config (`hosts/nuc/default.nix`)
+Build with `hey nuc-wt build`; deploy with `hey nuc` when authorized. A local
+build or Mac activation does not update the NUC. Deployment completion includes
+checking the changed service on the target host.
 
-```nix
-modules.services.<name>.enable = true;
-```
+## Tailscale services
 
-## 3. Secrets (if service needs credentials)
+HTTPS for `svc:<name>` runs through the WireGuard overlay; do not open firewall
+port 443. Keep backends loopback-only where supported, or restrict their port
+to `tailscale0`. Existing proxy examples are in `agentsview/`, `opencode/`, and
+`hass/`.
 
-See the `agenix-secrets` skill. Quick summary:
-
-1. Generate creds → store in 1Password (`op item create`)
-2. Create `hosts/nuc/secrets/<name>-env.age` (encrypted env file)
-3. Add entry to `hosts/nuc/secrets/secrets.nix`
-4. Wire in host config: `environmentFile = config.age.secrets.<name>-env.path;`
-5. Override owner: `age.secrets.<name>-env.owner = "<service-user>";`
-
-## 4. Status page & dashboard (`registry`)
-
-Do **not** edit `gatus/default.nix` or `homepage.nix`. Append a `registry`
-block to your own module's option declaration instead; both aggregators read it
-off every service and merge in the enabled ones:
-
-```nix
-  options.modules.services.<name> = {
-    enable = mkBoolOpt false;
-    # ...
-  }
-  // lib.my.mkRegistry {
-    gatus = {
-      name = "<Name>";
-      group = "<Group>";
-      url = "http://localhost:${toString cfg.port}";
-      conditions = [ "[STATUS] < 500" ];
-      # interval defaults to "60s"; set alerts = true to attach alert providers
-    };
-    homepage = {
-      group = "<Group>";
-      name = "<Name>";
-      description = "...";
-      icon = "<name>.svg";
-      href = "http://nuc.${tailnet}:${toString cfg.port}";
-      widget = {
-        type = "<name>";
-        url = "http://localhost:${toString cfg.port}";
-        username = "{{HOMEPAGE_VAR_<NAME>_USERNAME}}";
-        password = "{{HOMEPAGE_VAR_<NAME>_PASSWORD}}";
-      };
-    };
-  };
-```
-
-Both keys are optional — omit `homepage` for an unmonitored internal service,
-omit `gatus` for a dashboard-only link. The entries become option _defaults_, so
-a host can still override any field.
-
-Homepage `group` must match an existing group ("Media", "Home", "Network",
-...); a card with an unknown group is silently dropped.
-
-Services with no owning module (a router, hosted SaaS) stay hard-coded in the
-aggregator — there is nothing to hang a registry off.
-
-Add `HOMEPAGE_VAR_*` entries to `homepage-env.age` (decrypt → append → re-encrypt).
-
-## 5. Tests
-
-Before adding a NixOS VM test, check whether nixpkgs already covers the upstream
-module:
-
-```bash
-gh search code '<service> repo:NixOS/nixpkgs path:nixos/tests'
-```
-
-Do not duplicate upstream service tests here. Nixpkgs owns whether its module
-starts the daemon and exposes the standard endpoints. Tests under
-`modules/services/**/_tests/` cover only this repository's behavior: wrapper
-options, guards, registry aggregation, generated configuration, and local
-service integration. Keep VM checks discoverable for targeted Linux/NUC runs;
-do not add every service VM to routine CI.
-
-When repository code generates a service configuration, validate the rendered
-artifact with the service's native parser or check command whenever one exists.
-Prefer that focused build/eval check over a VM. Use a VM only when native
-validation requires the running service or when the repository-specific
-behavior itself is runtime behavior. Text assertions may cover dotfiles
-invariants, but they are not a substitute for native config validation.
-
-## 6. Deploy
-
-```bash
-git push && hey nuc
-```
-
-For user-facing bridge/agent services, always verify the target host after
-deploying. A local build or macOS rebuild does not update the NUC service; run
-`hey nuc` before debugging client connectivity.
-
----
-
-# Tailscale Services Pattern
-
-Tailscale Services route HTTPS through the WireGuard overlay — **do NOT open port 443 in firewall**.
-
-## Adding Tailscale Service Support to a Module
-
-### 1. Module Options
-
-```nix
-options.modules.services.myservice = {
-  enable = mkBoolOpt false;
-  port = mkOpt types.port 8080;
-
-  tailscaleService = {
-    enable = mkBoolOpt false;
-    serviceName = mkOpt types.str "myservice";
-  };
-};
-```
-
-### 2. Firewall (Backend Port Only)
-
-```nix
-# Only backend port - Tailscale handles HTTPS internally
-networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
-```
-
-### 3. Systemd Proxy Service
-
-```nix
-systemd.services.myservice-tailscale-serve = mkIf cfg.tailscaleService.enable {
-  description = "Tailscale Service proxy for MyService";
-  wantedBy = [ "multi-user.target" ];
-  after = [ "myservice.service" "tailscaled.service" ];
-
-  serviceConfig = {
-    Type = "oneshot";
-    RemainAfterExit = true;
-    ExecStart = "${pkgs.bash}/bin/bash -c 'for i in $(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString cfg.port} && exit 0; sleep 1; done; exit 1'";
-    ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
-  };
-};
-```
-
-### 4. Module Header
-
-```nix
-# MyService - Description
-# Tailscale: https://myservice.<tailnet>.ts.net
-# Direct: http://<tailscale-ip>:8080
-#
-# Setup (one-time):
-# 1. Create/update svc:myservice in ~/src/personal/tailnet via Tailscale API
-# 2. Add svc:myservice to tailscale/policy.hujson explicit service grant
-# 3. Apply tailnet ACL with OpenTofu
-# 4. Deploy: hey nuc
-```
-
-## Examples
-
-- `modules/services/agentsview/default.nix`
-- `modules/services/opencode/default.nix`
-- `modules/services/hass/default.nix`
-
-## Tailscale Service Setup Source of Truth
-
-Do **not** rely on manual admin-console approval. Tailscale service definitions and ACL grants live in `~/src/personal/tailnet`.
-
-1. Add `svc:<name>` to `~/src/personal/tailnet/tailscale/policy.hujson` explicit service grant list.
-2. Create/update the VIP service with the Tailscale API from that repo's direnv shell:
-
-   ```bash
-   cd ~/src/personal/tailnet/tailscale
-   direnv exec . bash -lc '
-     KEY="$TF_VAR_tailscale_api_key"
-     curl -fsS -X PUT -u "$KEY:" \
-       -H "Content-Type: application/json" \
-       -d "{\"name\":\"svc:myservice\",\"comment\":\"My Service\",\"ports\":[\"tcp:443\"],\"tags\":[\"tag:server\"]}" \
-       "https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:myservice"
-   '
-   ```
-
-   If updating an existing service, include its existing two `addrs` values in the PUT body; otherwise the API returns `400`.
-
-3. Apply ACL:
-
-   ```bash
-   cd ~/src/personal/tailnet/tailscale
-   direnv exec . tofu apply -auto-approve
-   ```
-
-4. Verify:
-
-   ```bash
-   curl -fsS -u "$TF_VAR_tailscale_api_key:" \
-     https://api.tailscale.com/api/v2/tailnet/-/vip-services/svc:myservice/devices | jq .
-   ```
-
-   Expected: `approvalLevel` is `approved:auto` and `configured` is `ready`.
-
-5. Deploy service wiring:
-
-   ```bash
-   git push && hey nuc
-   ```
-
-6. Access: `https://<servicename>.<tailnet>.ts.net`
+VIP service definitions and explicit ACL grants belong to
+`~/src/personal/tailnet`, not manual admin-console approval. Tailnet changes
+require separate authorization. Use that repo's current deployment workflow;
+when updating a VIP service through the API, preserve its two existing `addrs`.
+Successful device registration reports `approvalLevel: approved:auto` and
+`configured: ready`. The dotfiles module owns the systemd `tailscale serve`
+proxy, including startup retry and service-specific cleanup.

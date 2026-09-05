@@ -1,221 +1,59 @@
----
-purpose: Route NUC host changes to its deployment and subsystem conventions.
-applies_to: Changes under `hosts/nuc` and live NUC verification.
-entrypoint: Read the matching section, then use `hey nuc-wt build`.
-verification: Evaluate on the NUC and inspect the changed live service or state.
-update_when: NUC ownership, deployment, authentication, or service behavior changes.
----
+# NUC
 
-# NUC Host
+NixOS home server, user `emiller`, timezone America/Chicago. Access via `ssh nuc`.
+`default.nix` owns service selection; [deployment runbook](../../docs/runbooks/deploy-nuc.md)
+owns deployment/recovery. Do not evaluate `nixosConfigurations.nuc` on Darwin;
+the agent-skills platform mismatch requires Linux/NUC evaluation.
 
-Intel NUC home server running NixOS. Primary role: Hermes agents, media services, home automation.
+## Deployment provenance
 
-## Key Info
+`hey nuc-wt build` builds an isolated snapshot of the current worktree on NUC;
+`vm` builds its VM. Uncommitted snapshots allow only those two actions.
+`hey nuc-wt` defaults to dry-activate; `test` and `switch` activate and require a
+clean commit. Use the printed `NUC_WORKTREE_REMOTE_DIR` for checks on that exact
+snapshot. Active leases protect builds; pruning retains five recent snapshots.
 
-- **Hostname**: nuc
-- **Timezone**: America/Chicago
-- **SSH**: `ssh nuc` (192.168.1.222 via tailscale, 1Password SSH agent forwarding)
-- **Deploy**: `hey nuc` from dotfiles repo (syncs worktree, evaluates/builds on NUC)
-- **User**: emiller (password from agenix)
+`hey nuc` is the deployment interface. Daily auto-upgrade resolves current main
+to an exact commit through `nix-private-github`, failing before activation if
+resolution fails. Its opnix token is root-only. There is no persistent
+`~/dotfiles-deploy` clone to repair or recreate.
 
-## Nix Settings
+## Runtime ownership
 
-- **`sandbox = "relaxed"`** — Required for packages needing network during build (e.g. qmd's bun install). Allows `__noChroot = true` derivations.
-- **`programs.nix-ld.enable = true`** — Required for generic linux binaries (e.g. sag from nix-steipete-tools). Libraries: `alsa-lib` (libasound.so.2 for sag audio).
+- Hermes uses `pkgs.llm-agents."hermes-agent"` plus `overlays/hermes-agent/`,
+  including the declarative Honcho SDK. Mutable pip repairs are not package fixes.
+  Inspect `hermes-agent.service` and profile `hermes-gateway-*` units; timer
+  executors and `$HERMES_HOME/cron/executor.json` stay synchronized.
+- QMD uses llm-agents packaging. The host wrapper sets `NODE_LLAMA_CPP_GPU=off`;
+  state stays under `~/.cache/qmd`, `~/.cache/node-llama-cpp`, and `~/.config/qmd`.
+- Relaxed Nix sandbox permits network-dependent `__noChroot` builds. Generic
+  Linux binaries use `programs.nix-ld`; missing libraries are diagnosed with `ldd`.
+- Podman provides the Docker-compatible CLI/API. The manuscript Amp runner unit
+  targets `~/src/fg/nascent-manuscript-main`; the official installer owns `~/.amp`.
+- `~/.local/bin/tnote` targets `~/src/personal/tnote`, with no legacy fallback.
+- Scintillate's declared vault `/home/hermes/repos/obsidian-vault` may resolve
+  inside its compatibility container to `/home/emiller/obsidian-vault`; `.git`
+  must exist at the resolved mount.
 
-## System Packages (non-module)
+## Data and recovery constraints
 
-| Package                  | Purpose                                               |
-| ------------------------ | ----------------------------------------------------- |
-| chromium                 | Agent browser control                                 |
-| nodejs                   | Agent plugins, npm                                    |
-| python3                  | node-gyp (native module compilation)                  |
-| gcc, gnumake, cmake      | Native compilation (node-gyp, node-llama-cpp)         |
-| claude-code, codex       | Agent CLI backends                                    |
-| bun                      | Pi CLI backend (`bunx @mariozechner/pi-coding-agent`) |
-| qmd                      | llm-agents.nix QMD package                            |
-| zele                     | Packaged upstream+patches zele CLI                    |
-| sag (nix-steipete-tools) | TTS utility via ElevenLabs                            |
-| sqlite                   | General utility                                       |
-| taskwarrior3             | Task management                                       |
-| wake-meshify             | Send Meshify's Wake-on-LAN packet over the wired LAN  |
-
-## QMD (llm-agents.nix)
-
-- **qmd** (thin local wrapper around `pkgs.llm-agents.qmd`) — Hermes memory backend. The real package comes from `numtide/llm-agents.nix`, which upstream QMD contributors explicitly pointed Nix users to in https://github.com/tobi/qmd/pull/285#issuecomment-4012495904.
-- Package source: `numtide/llm-agents.nix/packages/qmd/`.
-- It uses bun2nix + targeted node-llama-cpp patches instead of our local runtime-bootstrap wrapper.
-- Cache/models still live under `~/.cache/qmd/`; patched node-llama-cpp writable state goes under `~/.cache/node-llama-cpp/`; config lives under `~/.config/qmd/`.
-- The package includes fixes/workarounds for the stale `bun.lock` problem and NixOS/node-llama-cpp runtime path issues; CUDA works there upstream too.
-- On this NUC the local wrapper exports `NODE_LLAMA_CPP_GPU=off`; the upstream Linux default tried Vulkan first, then hit a bad fallback path while cloning/building `llama.cpp`.
-
-## Services
-
-### Hermes Agents
-
-Hermes is the active system-managed agent runtime. Check `systemctl status hermes-agent.service` and profile-specific `hermes-gateway-*` units when debugging.
-
-Hermes packaging for this host comes from `pkgs.llm-agents."hermes-agent"`, not directly from `inputs.hermes-agent.packages.*`. Upstream Hermes still exposes a flake, but its Nix packaging has lagged normal app development; the 2026-06 update reached a current Hermes commit while shipping a stale fixed-output npm hash. Use `llm-agents.nix` as the maintained Nix packaging seam, and put local Hermes package adjustments in `overlays/hermes-agent/` so version/hash bumps stay package-level instead of leaking into `hosts/nuc/default.nix`.
-
-The repo overlay wraps the llm-agents Hermes package with the Nix-built Honcho SDK. Keep that as a declarative package dependency; do not repair Nix-managed Hermes profiles with container-local `pip install` or mutable package edits.
-
-Timer-driven profiles declare their executor in `$HERMES_HOME/cron/executor.json`. `hermes cron list/status` verifies the named systemd timer; keep the marker and timer configuration together in this host module.
-
-### Media Stack
-
-- **Jellyfin** — Media server
-- **Sonarr/Radarr/Prowlarr** — Media automation
-- **Audiobookshelf** — Audiobook/podcast server
-
-### Backups
-
-- The old BorgBase restic repository is quota-limited to **10 GB**. Do not add large media paths there; prefer R2 for new backup repositories.
-- General NUC backups use a dedicated Cloudflare R2 restic repository (`nuc-restic`).
-- Audiobook media (`/audiobooks`, currently tens of GB) uses a separate dedicated R2/restic repository (`audiobooks-restic`). Prefer a single `/audiobooks` media backup job rather than separate `main`/`private` jobs unless there is a restore/retention reason to split them.
-- Restic can talk to Cloudflare R2 directly through its S3 backend; no rclone is required. Use an agenix EnvironmentFile-style secret with `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESTIC_PASSWORD`, and `RESTIC_REPOSITORY=s3:https://<account id>.r2.cloudflarestorage.com/<bucket name>`.
-
-### Home Automation
-
-- **Home Assistant** — With PostgreSQL backend, Homebridge, Tailscale
-- Extra components: homekit_controller, apple_tv, samsungtv, cast, mobile_app, bluetooth
-- **HA state persists across Nix rebuilds** — Automation on/off states, entity states, etc. are stored in `/var/lib/hass/.storage/` and survive `hey nuc` redeploys. Toggling an automation off via API does not need a corresponding Nix change.
-- **UPS telemetry** — NUT owns the CyberPower USB device and low-battery shutdown; HA is a loopback-only read client. Follow [UPS.md](UPS.md), and never edit HA `.storage` or invoke NUT power-cut commands during routine testing.
-
-### Monitoring
-
-- **Gatus** — Uptime monitoring for all NUC services. See `modules/services/gatus/AGENTS.md`.
-  - **Dashboard:** `https://gatus.cinnamon-rooster.ts.net` (Tailscale serve on port 8084)
-  - **Alerting:** Telegram (chat 8357890648)
-  - **Dead man's switch:** systemd timer checks Gatus health, reports to healthchecks.io every 2 min. Alerts if Gatus OR NUC goes down.
-  - **Monitored:** HA, Homebridge, Matter, Jellyfin, Sonarr, Radarr, Prowlarr, PostgreSQL, Tailscale, Hermes Web UI, AgentsView, Audiobookshelf
-
-### Other
-
-- **Amp runner** — Persistent remote-thread runner for the clean nascent
-  manuscript checkout at `~/src/fg/nascent-manuscript-main`. Nix owns
-  `amp-nascent-manuscript-runner.service`; Amp's official installer owns the
-  mutable CLI under `~/.amp/`.
-- **Podman** — Container runtime, with a Docker-compatible CLI/API shim for Compose consumers
-- **Homepage** — Dashboard
-- **Taskchampion** — Task sync server
-- **Obsidian Sync** — Note sync
-- **OpenCode** — AI coding service
-- **deploy-rs** — Self-deployment target
-
-## Linear OAuth Token Lifecycle
-
-Scintillate's Hermes profile reads its Linear app-user token from
-`~/.local/state/hermes-linear/token`. Agenix supplies the bootstrap token.
-
-### Token Chain
-
-The Nix activation bootstraps `~/.local/state/hermes-linear/token` from
-`linear-api-token.age` only when the runtime token is absent. The recovery
-script writes a fresh access and refresh token to that state directory.
-
-### Recovery (when refresh token dies)
-
-Run from your Mac:
-
-```bash
-linear-oauth-refresh          # full: re-auth → encrypt → seed → deploy
-linear-oauth-refresh --no-deploy  # just tokens, skip hey nuc
-```
-
-The script starts a callback server on `:9999`, opens the OAuth consent page, exchanges the code, encrypts with agenix, seeds on NUC, and deploys. Requires: logged into Linear in browser, SSH access to NUC.
-
-### Key Files
-
-| File                                         | Purpose                             |
-| -------------------------------------------- | ----------------------------------- |
-| `hosts/nuc/default.nix`                      | Token bootstrap and Hermes wiring   |
-| `bin/linear-oauth-refresh`                   | Manual re-bootstrap from Mac        |
-| `hosts/nuc/secrets/linear-api-token.age`     | Agenix-encrypted access token seed  |
-| `hosts/nuc/secrets/linear-refresh-token.age` | Agenix-encrypted refresh token seed |
-
-### OAuth App Details
-
-- **Client ID:** `c64c969674a02fccc863d4aa950ec132`
-- **Redirect:** `http://localhost:9999/callback`
-- **Scopes:** `read,write,issues:create,comments:create,app:assignable,app:mentionable`
-- **Actor:** `app` (app-user tokens, not personal)
-
-## Secrets (agenix)
-
-Located in `hosts/nuc/secrets/`:
-
-- `emiller_password.age` — User password
-- `anthropic-api-key.age` — Claude API
-- `opencode-api-key.age` — OpenCode API
-- `openai-api-key.age` — OpenAI API
-- `gemini-api-key.age` — Gemini API
-- `elevenlabs-api-key.age` — ElevenLabs TTS
-- `telegram-bot-token.age` — Telegram bot token (used by Gatus alerting)
-- `linear-api-token.age` — Linear OAuth access token (see Linear OAuth Token Lifecycle)
-- `linear-refresh-token.age` — Linear OAuth refresh token (see Linear OAuth Token Lifecycle)
-
-## Deployment
-
-Two mechanisms:
-
-| Method                | Trigger     | Source                                                     |
-| --------------------- | ----------- | ---------------------------------------------------------- |
-| `hey nuc`             | Manual      | Synced worktree eval/build on NUC                          |
-| `nixos-upgrade.timer` | Daily 04:40 | Authenticated exact current-main commit, pinned by wrapper |
-
-**Manual rebuild on NUC** (no local clone needed):
-
-```bash
-ssh nuc "sudo nix-private-github nixos-rebuild switch --refresh --flake github:edmundmiller/dotfiles#nuc"
-```
-
-Config: `hosts/_server.nix` — `system.autoUpgrade.flake = "github:edmundmiller/dotfiles#${hostname}"`.
-Private inputs use the root-only opnix secret at
-`/var/lib/opnix/secrets/githubNixToken`; never print its contents.
-Before a mutating rebuild, `nix-private-github` resolves dotfiles `origin/main`
-over Git transport and rewrites this mutable reference to the exact commit. It
-fails before activation if the revision cannot be resolved or validated.
-
-### Worktree Testing
-
-When testing uncommitted NUC changes from a secondary Git worktree (Herdr/side-agent/etc.), prefer the worktree deploy helper instead of `hey nuc`:
-
-```bash
-hey nuc-wt build          # safest first check: remote build only
-hey nuc-wt                # default: dry-activate from the synced worktree
-hey nuc-wt test           # activate until next reboot, but do not set boot generation
-hey nuc-wt switch         # real deploy from this worktree
-hey nuc-wt vm             # build the NUC VM derivation on the NUC
-```
-
-`hey nuc-wt` materializes the current local worktree in a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints that exact path as `NUC_WORKTREE_REMOTE_DIR`. Clean runs stream the committed Git archive; uncommitted worktrees may use `build` or `vm`, while `dry-activate`, `test`, and `switch` require a clean commit so the deployed generation has exact provenance. The isolated snapshot avoids concurrent sync/marker races. Active leases prevent pruning a running build; exit cleanup re-prunes to the five newest revision-scoped snapshots, and abandoned leases age out after 24 hours without touching legacy task directories.
-
-The rsync intentionally excludes local-only/heavy directories like `.git/`, `.pi/`, `node_modules/`, `result`, and caches. If a worktree deploy seems slow or stuck, check for unexpected large local directories before changing deployment logic:
-
-```bash
-du -sh . ./* ./.??* 2>/dev/null | sort -h | tail
-du -sh .pi/side-agents/runtime/* 2>/dev/null | sort -h | tail
-```
-
-## Gotchas
-
-- **Mill Docs pull conflicts**: `mill-docs-git-pull.service` exits successfully when `/home/emiller/mill-docs` has unmerged index entries, but reports that run as `/fail` to Healthchecks. It checks before fetch and again immediately before pull. A manual Git writer does not share a service lock, so Git's own refusal to pull an unmerged index remains the last-line race guard. Inspect Healthchecks and the journal, then resolve the checkout manually; never reset, clean, abort, or drop its stash to make the timer green. After the index is clean, start the service once and verify the pull result from its journal.
-- **No local NUC eval from macOS**: Do not run `nix flake check`, `nix eval .#nixosConfigurations.nuc...`, or `nix build .#nixosConfigurations.nuc...` from Darwin. It hits the known `agent-skills` `x86_64-linux` vs `aarch64-darwin` mismatch. Use `hey nuc-wt build`, `hey nuc dry-activate`, or run `nixos-rebuild` on the NUC.
-- **Deploy builds remotely**: `hey nuc` evaluates and builds on the NUC. Large rebuilds (home-assistant, etc.) take time.
-- **No local dotfiles clone on NUC**: Removed `~/dotfiles-deploy` — auto-upgrade fetches from GitHub directly. Don't recreate it.
-- **`tnote` path is canonicalized**: `~/.local/bin/tnote` points at `~/src/personal/tnote`. No legacy `tn-monorepo` fallback is kept; fix the canonical repo path directly if `tnote` is stale or missing.
-- **Scintillate vault path nuance**: declarative config points Hermes/Scintillate at `/home/hermes/repos/obsidian-vault`, while the Podman-backed compatibility CLI may show the bind mount as `/home/emiller/obsidian-vault -> /home/emiller/obsidian-vault`. That is expected as long as `docker exec hermes-agent-scintillate realpath /home/hermes/repos/obsidian-vault` resolves to `/home/emiller/obsidian-vault` and `.git` exists there.
-- **New agenix secrets**: If a first deploy lands new secrets before a service has picked them up, verify the current gateway/service model before restarting anything. Hermes runs as system service `hermes-agent.service`; check `sudo systemctl status hermes-agent.service` and restart that if needed.
-- **QMD now comes from llm-agents.nix**: if packaging breaks again, check `numtide/llm-agents.nix/packages/qmd/` and the upstream QMD note at https://github.com/tobi/qmd/pull/285#issuecomment-4012495904 before reviving a local wrapper.
-- **nix-ld libraries**: Any new generic linux binary that fails with "cannot run dynamically linked executable" needs its missing libs added to `programs.nix-ld.libraries`. Use `ldd /path/to/binary` to find missing `.so` files.
-- **ZFS/znapzend**: Currently disabled (FIXME). Backup config exists but not active.
-- **Logrotate**: `checkConfig = false` due to missing group 30000 issue.
-
-## Related Files
-
-- `hosts/nuc/hardware-configuration.nix` — Hardware/boot config
-- `hosts/nuc/disko.nix` — Disk partitioning
-- `hosts/nuc/backups.nix` — Backup configuration
-- `hosts/nuc/secrets/secrets.nix` — Agenix secret declarations
-- `modules/services/gatus/` — Uptime monitoring module + AGENTS.md
-- `hosts/nuc/DEPLOY.md` — Deployment documentation
+- General and audiobook backups use separate R2/restic repositories. BorgBase
+  is quota-limited to 10 GB; keep large media out. Preserve one `/audiobooks`
+  backup unless retention/restore requirements justify splitting it.
+- R2 uses restic's S3 backend directly. Agenix environment files carry
+  `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESTIC_PASSWORD`, and
+  `RESTIC_REPOSITORY`; no rclone is needed. ZFS/znapzend remains disabled.
+- HA `.storage` persists across rebuilds; do not edit it directly. Declarative
+  automation startup policy is defined in the HA domain guide. NUT owns USB UPS
+  and shutdown; HA is a loopback read client. [UPS.md](UPS.md) covers recovery;
+  routine checks must not invoke power-cut commands.
+- Mill Docs pull conflicts are reported as Healthchecks failures even when the
+  service exits successfully. Preserve its index/stash; do not reset, clean,
+  abort, or drop data to make the timer green. Resolve the conflict, then verify
+  the next authorized service run from its journal.
+- Linear OAuth bootstrap seeds `~/.local/state/hermes-linear/token` only when
+  absent. `bin/linear-oauth-refresh` recovers access/refresh tokens from a Mac;
+  `--no-deploy` still reauthorizes, encrypts, and seeds state. The full command
+  also deploys. It needs browser consent and SSH, with callback on port 9999.
+- Gatus monitoring and dead-man's-switch details belong in
+  [its module guide](../../modules/services/gatus/AGENTS.md).

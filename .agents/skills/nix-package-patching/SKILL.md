@@ -1,6 +1,6 @@
 ---
 name: nix-package-patching
-description: This skill should be used when the user asks to "bump a package", "update an upstream revision", "refresh a Nix source hash", "rebase local patches", "carry fork changes as patches", "hack on upstream software in this repo", or fix a package whose patches no longer apply.
+description: Updates Nix package pins, source hashes, and carried upstream patches. Use for package bumps, patch rebases, or upstream source changes packaged here.
 purpose: Maintain pinned upstream software and small local patch stacks in this dotfiles repository.
 applies_to: Packages under packages/ and patched overlays under overlays/.
 update_when: Package discovery, package-harness, patch policy, or repository validation commands change.

@@ -1,6 +1,6 @@
 ---
 name: spec-driven-spock
-description: Use Spock 2.x metadata annotations (@Title, @Narrative, @Subject, @See, @Issue, @PendingFeature, @Unroll, @Snapshot) to make Spock specs act as executable design documentation — each spec tied to the ADR, ticket, or design doc it exercises. Use this skill whenever the user is writing or refactoring a Spock test, drafting an ADR that should ship with an executable contract, pinning design decisions to tests, splitting a large spec, marking unimplemented behaviour as pending, or wants the test suite to read as a self-documenting checklist of what the design promises — even if they do not explicitly mention Spock annotations.
+description: Uses Spock metadata to connect executable specs to design decisions. Use when authoring or refactoring Spock specifications as design documentation.
 ---
 
 # Spec-driven Spock

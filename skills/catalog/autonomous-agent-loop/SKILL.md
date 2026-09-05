@@ -1,6 +1,6 @@
 ---
 name: autonomous-agent-loop
-description: Use when a task is broad, multi-step, cross-session, or the user says agents need too many re-prompts/kicks, asks to use createGoal/goals, says continue/keep going, or wants rough Pi/agent sessions improved. Keeps work moving from objective to evidence-backed completion.
+description: Maintains durable goal and handoff state. Use for explicit goal-management requests, resuming a recorded goal, or diagnosing agents that stall and need repeated prompts.
 ---
 
 # Autonomous Agent Loop

@@ -1,22 +1,10 @@
-# Hermes Config
+# Hermes seed configuration
 
-Repo-managed Hermes seed files for the NixOS-only `modules.agents.hermes` runtime. `config.yml` is merged into writable `$HERMES_HOME/config.yaml` by `modules/agents/hermes/default.nix`; do not edit `$HERMES_HOME/config.yaml` for durable repo defaults.
+`modules/agents/hermes/default.nix` merges `config.yml` into writable
+`$HERMES_HOME/config.yaml` for the NixOS runtime. Durable defaults belong here,
+not in the live file. Reusable runtime/profile logic belongs in `agents-workspace`.
 
-## MCP servers
-
-Declare safe-to-commit MCP server configuration in `config.yml` under `mcp_servers`. For secrets, use Hermes environment interpolation and host-managed `.env` entries instead of plaintext values.
-
-Example:
-
-```yaml
-mcp_servers:
-  github:
-    command: "npx"
-    args: ["-y", "@modelcontextprotocol/server-github"]
-    env:
-      GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_TOKEN}"
-```
-
-Then add `GITHUB_TOKEN = "op://.../credential";` to the enabled NixOS host's `modules.agents.hermes.secretReferences`. Activation writes `$HERMES_HOME/.env`; Hermes loads it and resolves `${GITHUB_TOKEN}` before launching the MCP server.
-
-Never commit literal API tokens or PATs here.
+Declare MCP servers under `mcp_servers`. Use `${GITHUB_TOKEN}`-style environment
+interpolation for credentials; host `modules.agents.hermes.secretReferences`
+maps those names to 1Password references and materializes `$HERMES_HOME/.env`.
+The MCP server's expected variable name can differ from the interpolated name.

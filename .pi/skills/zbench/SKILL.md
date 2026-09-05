@@ -1,11 +1,6 @@
 ---
 name: zbench
-description: >
-  Benchmark interactive zsh performance with zsh-bench and track regressions.
-  Use when benchmarking shell startup, comparing zsh latency after config
-  changes, investigating slow shell, or running git bisect on performance.
-  Trigger phrases: "benchmark zsh", "shell is slow", "zbench", "zsh-bench",
-  "shell startup time", "profile zsh", "zsh performance".
+description: Measures interactive zsh latency with zsh-bench. Use for slow-shell diagnosis, performance comparisons, or regression bisection.
 ---
 
 # zsh-bench Integration

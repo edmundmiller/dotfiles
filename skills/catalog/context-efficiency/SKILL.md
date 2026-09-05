@@ -1,12 +1,6 @@
 ---
 name: context-efficiency
-description: >
-  Filter data at the source before it enters context. Use when querying APIs,
-  CLIs, or databases where the full output would be large. Prefer structured
-  output + jg when available, or python/tool-native selectors when not. Use jq
-  only when jg cannot express the needed transformation. Trigger phrases:
-  "find the entity for", "get the ID of", "which service handles", "what's the
-  value of", or any time you'd otherwise dump a large dataset to find one thing.
+description: Filters large API, CLI, or database results before retrieval. Use when a query needs source-side selection or projection to avoid oversized output.
 license: MIT
 ---
 

@@ -1,43 +1,20 @@
 ---
 name: nix-rebuild
-description: >
-  Rebuild nix-darwin/NixOS system after dotfiles changes. Use when config files
-  managed by Nix (lazygit, ghostty, etc.) need to be regenerated, or after
-  editing any .nix file in the dotfiles repo.
+description: Activates dotfiles on managed hosts through hey. Use when a system rebuild, activation, or rollback is explicitly requested, not after every Nix edit.
 ---
 
-# Nix System Rebuild
+# Activate Nix configuration
 
-After changing any Nix-managed config in `~/.config/dotfiles`, the system must be rebuilt for changes to take effect. Nix store symlinks are read-only — you cannot edit them in place.
+Source edits do not update the running host. When activation is authorized,
+confirm the target with `hostname` / `uname -a` and use `hey re` or
+`hey rebuild` for Darwin. Sudo availability is host-specific; Seqeratop may
+require the user at an interactive terminal.
 
-## Quick Rebuild
+NUC operations follow `docs/runbooks/deploy-nuc.md` through `hey nuc`;
+`hey nuc-wt build` prepares isolated build evidence without activation.
+Do not evaluate NUC configuration on Darwin.
 
-```bash
-cd ~/.config/dotfiles
-sudo darwin-rebuild switch --flake .
-```
-
-`darwin-rebuild` has a NOPASSWD sudoers rule, so this works non-interactively.
-
-## Using hey
-
-The `hey` command wraps rebuilds:
-
-```bash
-hey rebuild    # or: hey re
-hey test       # build + activate without boot entry
-hey rollback   # roll back to previous generation
-```
-
-## When to Rebuild
-
-- After editing any `.nix` file
-- After editing config files symlinked through home-manager (lazygit, ghostty, etc.)
-- When you see "permission denied" writing to a Nix store path
-
-## Workflow
-
-1. Edit source config in `~/.config/dotfiles/`
-2. Commit changes
-3. Run `sudo darwin-rebuild switch --flake ~/.config/dotfiles`
-4. Verify the symlink now points to updated Nix store path
+After activation, check the changed runtime config/service. `hey rollback`
+returns to the previous generation when rollback is requested. Edit repository
+sources, not deployed store symlinks; raw rebuild commands bypass repository
+command policy.

@@ -1,24 +1,6 @@
-# Pi Command Policy Bridge Tests
+# Command policy contracts
 
-These tests are a living spec for `pi-command-policy-bridge`.
-
-We are trying to dogfood this package in our own Pi workflow: the tests should
-prove that the package blocks commands we do not want agents to run, while still
-allowing the safe paths we expect agents to use.
-
-Treat each regression test like an antibody in an organism, or a T cell: when we
-hit a bug in the permission gate, capture it here so the same failure cannot
-silently come back later.
-
-## What Belongs Here
-
-- Bugs we have already hit in real agent runs.
-- Commands that must be denied, such as direct nix rebuilds or `git commit --no-verify`.
-- Commands that must stay allowed, such as the blessed wrapper command `hey re`.
-- Edge cases around command extraction from extension tools, not just direct
-  `bash` tool invocations.
-
-## Maintenance Rule
-
-When changing the package or `config/pi/pi-permission-system.jsonc`, update
-these tests as executable documentation of the intended behavior.
+Cover denied raw rebuilds and `git commit --no-verify`, allowed `hey re`, and
+command extraction from extension tools as well as direct bash calls. These
+are enforcement seams for `config/pi/pi-permission-system.jsonc`, not just
+string-matching examples.

@@ -1,6 +1,6 @@
 ---
 name: code-simplifier
-description: Simplify and refine code for clarity, consistency, and maintainability while preserving all functionality. Use when asked to "simplify", "clean up", "refine", or "tidy" code, or after a round of changes to polish recently modified code.
+description: Refines code without changing behavior. Use when explicitly asked to simplify, clean up, or improve code readability.
 ---
 
 # Code Simplifier
