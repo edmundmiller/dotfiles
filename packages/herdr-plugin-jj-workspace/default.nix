@@ -9,7 +9,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "herdr-plugin-jj-workspace";
-  version = "0.1.0-unstable-2026-07-19";
+  version = "v0.3.0";
 
   src = fetchFromGitHub {
     owner = "NathanFlurry";
