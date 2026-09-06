@@ -6,13 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "agent-traces"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = [
-  "duckdb",
-  "letta-trajectory",
-  "marimo",
-  "pyarrow",
-  "pyiceberg[pyarrow,sql-sqlite]",
-]
+dependencies = ["duckdb", "letta-trajectory", "marimo", "pyarrow", "pyiceberg[pyarrow,sql-sqlite]"]
 
 [tool.setuptools.packages.find]
 where = ["."]
