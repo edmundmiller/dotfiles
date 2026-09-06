@@ -1264,9 +1264,9 @@
                     touch $out
                   '';
 
-              # The three always-enforced agent docs must open with a summary
-              # block closing on line 7. Not globbed: some existing docs/*.md and
-              # */AGENTS.md predate the contract.
+              # Canonical agent workflow docs open with a summary closing on
+              # line 7. Short AGENTS.md scope routers are exempt; older docs
+              # outside this explicit set may predate the contract.
               agent-docs-contract =
                 pkgs.runCommand "agent-docs-contract"
                   {
@@ -1275,7 +1275,7 @@
                   ''
                     cd ${./.}
                     status=0
-                    for doc in AGENTS.md AGENT_WORKFLOW.md docs/README.md; do
+                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md; do
                       [ -f "$doc" ] || continue
                       summary="$(head -n 7 "$doc")"
                       for key in purpose applies_to entrypoint verification update_when; do
