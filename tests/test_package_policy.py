@@ -123,14 +123,25 @@ class PackagePolicyTest(unittest.TestCase):
                 script,
                 "packages/stack/patches/fix.patch",
                 "overlays/hunk/patches/fix.patch",
+                "skills/overlays/skill-doctor/pi-support.patch",
             ],
             capture_output=True,
             text=True,
         )
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        locality_message = (
+            "Patch must live at packages/<name>/patches/*.patch, "
+            "overlays/<name>/patches/*.patch, or skills/overlays/<name>/*.patch"
+        )
         invalid_cases = [
             (["patches/fix.patch"], "patches/fix.patch"),
             (["misc/fix.patch"], "misc/fix.patch"),
+            (["skills/fix.patch"], "skills/fix.patch"),
+            (["skills/overlays/fix.patch"], "skills/overlays/fix.patch"),
+            (
+                ["skills/overlays/skill-doctor/nested/fix.patch"],
+                "skills/overlays/skill-doctor/nested/fix.patch",
+            ),
             (["packages/group/tool/patches/fix.patch"], "packages/group/tool/patches/fix.patch"),
             (
                 [
@@ -145,10 +156,7 @@ class PackagePolicyTest(unittest.TestCase):
             with self.subTest(paths=paths):
                 rejected = subprocess.run(["bash", script, *paths], capture_output=True, text=True)
                 self.assertEqual(rejected.returncode, 1)
-                self.assertIn(
-                    "Patch must live at packages/<name>/patches/*.patch or overlays/<name>/patches/*.patch",
-                    rejected.stderr,
-                )
+                self.assertIn(locality_message, rejected.stderr)
                 self.assertIn(offending_path, rejected.stderr)
 
     def test_renovate_patch_repair_uses_trusted_agent_shell(self):
