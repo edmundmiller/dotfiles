@@ -224,12 +224,12 @@ concealed or multiline fields using the 1Password desktop application:
 
 The separate `meshify-omamail` secure item contains:
 
-| Field                          | Contents                                      |
-| ------------------------------ | --------------------------------------------- |
-| `omamail-accounts`             | Entire `~/.config/omamail/accounts.json` file |
-| `omamail-credentials`          | Entire Gmail OAuth client configuration       |
-| `omamail-gmail-refresh-token`  | Gmail refresh token from the system keyring   |
-| `omamail-fastmail-password`    | Fastmail app password from the system keyring |
+| Field                         | Contents                                      |
+| ----------------------------- | --------------------------------------------- |
+| `omamail-accounts`            | Entire `~/.config/omamail/accounts.json` file |
+| `omamail-credentials`         | Entire Gmail OAuth client configuration       |
+| `omamail-gmail-refresh-token` | Gmail refresh token from the system keyring   |
+| `omamail-fastmail-password`   | Fastmail app password from the system keyring |
 
 The references are declared in `manifest.json`. Do not commit the resolved
 values. Restore writes private files with mode `0600`; application-owned
