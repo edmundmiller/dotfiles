@@ -286,11 +286,17 @@
               HERDR_HASH="$hash" perl -0pi -e 's/(^[[:space:]]*hash = ")[^"]+(";$)/$1 . $ENV{HERDR_HASH} . $2/em' "$file"
             }
 
+            flake_package_exists() {
+              local attr="$1"
+              nix --accept-flake-config eval --raw ".#packages.x86_64-linux.''${attr}.name" >/dev/null 2>&1 \
+                || nix --accept-flake-config eval --raw ".#packages.aarch64-darwin.''${attr}.name" >/dev/null 2>&1
+            }
+
             while IFS= read -r file; do
               [[ -f "$file" ]] || continue
               if [[ "$file" == "flake.nix" ]]; then
                 echo "Refreshing flake lock for Hunk ($file)"
-                nix flake update hunk
+                nix --accept-flake-config flake update hunk
                 continue
               fi
               if [[ "$file" == "overlays/herdr/default.nix" ]]; then
@@ -299,8 +305,12 @@
                 continue
               fi
               attr=$(attr_for_file "$file")
+              if ! flake_package_exists "$attr"; then
+                echo "Skipping Nix hash refresh for ''${attr} (''${file}); not a flake package output."
+                continue
+              fi
               echo "Refreshing Nix hashes for .#''${attr} (''${file}) with nix-update"
-              nix-update --flake --version=skip --build "''${attr}"
+              nix-update --flake --version=skip "''${attr}"
             done <<< "$changed_files"
           '';
         };
