@@ -158,6 +158,19 @@
       "automergeType": "branch"
     },
     {
+      "description": "Keep major updates on the Dependency Dashboard until explicitly approved.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false,
+      "labels": ["dependencies", "major"]
+    },
+    {
+      "description": "Automerge low-risk non-major updates after the stability window and CI pass. Do not set groupSlug here; that previously collapsed unrelated PRs onto renovate/low-risk-non-major.",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
       "description": "Let the patch-repair workflow validate Herdr before enabling platform automerge.",
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["herdr"],
@@ -174,19 +187,6 @@
       "groupSlug": "hunk",
       "labels": ["dependencies", "nix", "packages", "flue-review"],
       "automerge": false
-    },
-    {
-      "description": "Keep major updates on the Dependency Dashboard until explicitly approved.",
-      "matchUpdateTypes": ["major"],
-      "dependencyDashboardApproval": true,
-      "automerge": false,
-      "labels": ["dependencies", "major"]
-    },
-    {
-      "description": "Automerge low-risk non-major updates after the stability window and CI pass. Do not set groupSlug here; that previously collapsed unrelated PRs onto renovate/low-risk-non-major.",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true,
-      "automergeType": "branch"
     }
   ],
   "osvVulnerabilityAlerts": true,
