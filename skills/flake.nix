@@ -487,7 +487,10 @@
             );
 
             programs.agent-skills = {
-              enable = true;
+              # This module owns deployment through the per-target bundles and
+              # dotfiles-agent-skills activation above. Keep the upstream
+              # installer disabled so it does not require a duplicate target.
+              enable = false;
 
               sources = {
                 # Checkout-owned Codex-specific skills.

@@ -7,7 +7,7 @@
 }:
 let
   cfg = config.modules.agents.hermes-local;
-  agentPackages = inputs.agents-workspace.packages.${pkgs.system};
+  agentPackages = inputs.agents-workspace.packages.${pkgs.stdenv.hostPlatform.system};
   hermesPackage = import ./_package.nix { inherit inputs pkgs; };
   launcher = name: agentPackages.${name + "-hermes"};
   workspaceRevision = inputs.agents-workspace.rev or "unknown";
