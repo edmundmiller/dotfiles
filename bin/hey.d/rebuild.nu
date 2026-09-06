@@ -5,8 +5,8 @@ def "main rebuild" [action: string = "switch", ...args: string] {
   fail-if-moshi-client-rebuild $ctx $action
   check-flake-lock
   check-local-skill-leaks
-  system-rebuild $action ...$args
-  post-rebuild
+  system-rebuild $ctx $action ...$args
+  post-rebuild $ctx
 }
 
 def "main re" [action: string = "switch", ...args: string] {
@@ -16,12 +16,12 @@ def "main re" [action: string = "switch", ...args: string] {
 def "main test" [...args: string] {
   let ctx = (context)
   fail-if-moshi-client-rebuild $ctx "test"
-  system-rebuild "test" ...$args
+  system-rebuild $ctx "test" ...$args
 }
 
 def "main rollback" [] {
   let ctx = (context)
-  if (is-darwin) {
+  if $ctx.os_name == "macos" {
     with-sudo-path { ^sudo $ctx.darwin_rebuild --rollback }
   } else {
     with-sudo-path { ^nixos-rebuild --sudo --rollback switch }

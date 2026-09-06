@@ -112,11 +112,6 @@ export def sudo-path [] {
   }
 }
 
-export def run-in-flake [cmd: string] {
-  let ctx = (context)
-  ^bash -c $"set -euo pipefail; cd '($ctx.flake_dir)'; ($cmd)"
-}
-
 export def maybe-suggest-cache-bootstrap [stderr: string] {
   if ($stderr | str contains "--accept-flake-config") {
     print -e ""
@@ -201,12 +196,11 @@ export def check-local-skill-leaks [] {
 }
 
 
-export def wait-homebrew-idle [] {
-  if not (is-darwin) {
+export def wait-homebrew-idle [ctx: record] {
+  if $ctx.os_name != "macos" {
     return
   }
 
-  let ctx = (context)
   ^bash ($ctx.flake_dir | path join "bin" "hey.d" "wait-homebrew-idle.sh")
 }
 
@@ -229,8 +223,7 @@ export def fail-if-moshi-client-rebuild [ctx: record, action: string] {
   }
 }
 
-export def system-rebuild [action: string, ...args: string] {
-  let ctx = (context)
+export def system-rebuild [ctx: record, action: string, ...args: string] {
   let agent_mode = (
     (($env.AGENT? | default "") == "1")
     or (($env.PI_CODING_AGENT? | default "") == "true")
@@ -238,14 +231,11 @@ export def system-rebuild [action: string, ...args: string] {
   )
   let agent_rebuild_args = if $agent_mode { ["--no-write-lock-file" "--show-trace"] } else { ["--no-write-lock-file"] }
   let agent_nix_args = if $agent_mode { ["--quiet" "--show-trace"] } else { [] }
-  let github_token = if $ctx.os_name == "macos" { ^gh auth token | str trim } else { "" }
   let existing_nix_config = ($env.NIX_CONFIG? | default "")
-  let authenticated_nix_config = if ($github_token | is-empty) {
-    $existing_nix_config
-  } else if ($existing_nix_config | is-empty) {
-    $"access-tokens = github.com=($github_token)"
+  let authenticated_nix_config = if $ctx.os_name == "macos" {
+    github-nix-config
   } else {
-    $"($existing_nix_config)\naccess-tokens = github.com=($github_token)"
+    $existing_nix_config
   }
 
   # Pre-fetch every locked input before rebuilding. Darwin uses its gh token;
@@ -281,7 +271,7 @@ export def system-rebuild [action: string, ...args: string] {
     }
   }
   if $ctx.os_name == "macos" {
-    wait-homebrew-idle
+    wait-homebrew-idle $ctx
   }
 
   if $agent_mode {
@@ -320,8 +310,8 @@ export def system-rebuild [action: string, ...args: string] {
   }
 }
 
-export def post-rebuild [] {
-  if (is-darwin) {
+export def post-rebuild [ctx: record] {
+  if $ctx.os_name == "macos" {
     return
   }
 

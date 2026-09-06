@@ -2,6 +2,7 @@ use ./common.nu *
 
 const NUC_HOST = "nuc"
 const UNAS_HOST = "192.168.1.101"
+const NUC_WORKTREE_MODES = ["dry-activate" "test" "switch" "build" "vm"]
 
 def "main deploy" [host: string] {
   let ctx = (context)
@@ -30,7 +31,7 @@ def nuc-deploy-source [repository: string = "."] {
     $env.HOSTNAME | str trim
   }
   let owner = $"($env.USER? | default 'user')@($short_hostname)"
-  let dirty = (($worktree_status.stdout | str trim | is-empty) == false)
+  let dirty = ($worktree_status.stdout | str trim | is-not-empty)
   {head: $head, base: $base, owner: $owner, dirty: $dirty}
 }
 
@@ -100,8 +101,6 @@ def "main nuc" [mode: string = "auto", worktree_mode: string = "switch"] {
 
   let local_hostname = (^hostname -s | str trim)
   let local_system = ((^nix eval --impure --raw --expr builtins.currentSystem | complete).stdout | str trim)
-  let worktree_modes = ["dry-activate" "test" "switch" "build" "vm"]
-  let allowed_modes = ["auto" "dry-activate" "test" "switch" "build" "vm"]
 
   if $mode == "local" {
     print $"=== NUC deploy mode: local from ($local_hostname) (($local_system)) ==="
@@ -115,15 +114,15 @@ def "main nuc" [mode: string = "auto", worktree_mode: string = "switch"] {
     return
   }
 
-  if not ($mode in $allowed_modes) {
-    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm"
-    error make {msg: "invalid hey nuc mode"}
-  }
-
-  if $mode in $worktree_modes {
+  if $mode in $NUC_WORKTREE_MODES {
     print $"=== NUC deploy mode: worktree ($mode) from ($local_hostname) (($local_system)) ==="
     main nuc-worktree $mode
     return
+  }
+
+  if $mode != "auto" {
+    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm"
+    error make {msg: "invalid hey nuc mode"}
   }
 
   let deploy_mode = (nuc-deploy-mode $local_hostname)
@@ -138,9 +137,8 @@ def "main nuc" [mode: string = "auto", worktree_mode: string = "switch"] {
 }
 
 def validate-nuc-worktree-mode [mode: string] {
-  let allowed = ["dry-activate" "test" "switch" "build" "vm"]
-  if not ($mode in $allowed) {
-    print -e $"error: mode must be one of: ($allowed | str join ', ')"
+  if not ($mode in $NUC_WORKTREE_MODES) {
+    print -e $"error: mode must be one of: ($NUC_WORKTREE_MODES | str join ', ')"
     error make {msg: "invalid nuc worktree deploy mode"}
   }
 }
