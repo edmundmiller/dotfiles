@@ -60,6 +60,7 @@ hooks = true
 default_mode_request_user_input = true
 rmcp_client = true
 multi_agent_v2 = true
+context_management.experimental_mode = true
 
 [plugins."computer-use@openai-bundled"]
 enabled = true
