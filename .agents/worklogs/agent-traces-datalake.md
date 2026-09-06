@@ -13,6 +13,8 @@ Use private Cloudflare R2 Data Catalog as the only durable agent-trace store. St
 - Writer and reader are Mac-only, bucket-scoped Cloudflare user tokens encrypted to the `MacTraitor-Pro` host key.
 - Queryable data uses Cloudflare server-side encryption; no local catalog, spool, transcript copy, or client-side ciphertext.
 - File-backed sources are discovered by root path; Hermes/OpenCode/Amp use deterministic per-session exports; Deep Agents uses checkpoint export bytes, not the whole SQLite file.
+- Grok Bot conversation blobs are retained verbatim from Sand persistence and normalized from user messages and text responses; unrelated application-state blobs are ignored.
+- Amp trajectory metadata preserves the exported executor type so orb (`sandbox`) and local-client sessions remain distinguishable.
 - OMP daily introspection materializes only the latest normalized trajectory per `(source, native_id)` for the day.
 
 ## Evidence
@@ -48,6 +50,8 @@ Use private Cloudflare R2 Data Catalog as the only durable agent-trace store. St
 - `hey check` Darwin green after formatting. `darwin-rebuild switch` activated `org.nixos.agent-traces` at 03:30 with secret path env only.
 - OMP materialize smoke for 2026-07-26: 28 temporary trajectory files, meta-leading JSON, cleaned with tempdir.
 - Full first launchd kick still running historical backfill (stdout buffered until PYTHONUNBUFFERED rebuild).
+- Grok Bot and Amp executor coverage: focused tests pass 11/11; Ruff format/check and `git diff --check` pass. Live Grok discovery found 24 conversation blobs with no empty normalized trajectories, and a real Amp orb export reported `executor_type=sandbox`.
+- Live R2 ingest inserted 24/24 Grok Bot versions with no failures. Reader verification found all 24 normalized rows in `agent_traces.sessions`.
 
 ## Remaining work
 
