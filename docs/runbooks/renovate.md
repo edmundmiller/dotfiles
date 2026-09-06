@@ -27,15 +27,15 @@ a second runner would duplicate PRs.
 
 ## Expected PR shape
 
-| Branch / group | What lands |
-| --- | --- |
-| `renovate/lock-file-maintenance` | Monday `flake.lock` refresh (branch automerge) |
-| `renovate/javascript-package-dependencies` | Non-major npm/bun bumps |
-| `renovate/github-actions` | Non-major Actions and digest pins |
-| `renovate/nix-flake-inputs` | Versioned flake inputs only |
-| `renovate/repo-local-nix-package-patches` | Regex-managed Nix package patches plus hash refresh |
-| `renovate/herdr`, `renovate/hunk` | Overlay/harness + flake tag, no automerge |
-| Major updates | Stay on the Dependency Dashboard until checked |
+| Branch / group                             | What lands                                          |
+| ------------------------------------------ | --------------------------------------------------- |
+| `renovate/lock-file-maintenance`           | Monday `flake.lock` refresh (branch automerge)      |
+| `renovate/javascript-package-dependencies` | Non-major npm/bun bumps                             |
+| `renovate/github-actions`                  | Non-major Actions and digest pins                   |
+| `renovate/nix-flake-inputs`                | Versioned flake inputs only                         |
+| `renovate/repo-local-nix-package-patches`  | Regex-managed Nix package patches plus hash refresh |
+| `renovate/herdr`, `renovate/hunk`          | Overlay/harness + flake tag, no automerge           |
+| Major updates                              | Stay on the Dependency Dashboard until checked      |
 
 Unversioned flake pins and private inputs (`agents-workspace`, `tnote`) are not
 individual PRs. Bump those with `hey upgrade` when the PAT cannot see the repo.
