@@ -373,6 +373,76 @@ class PackagePolicyTest(unittest.TestCase):
             rejected.stderr,
         )
 
+    def test_renovate_config_keeps_hash_refresh_and_reduces_noise(self):
+        config = json.loads((ROOT / "renovate.json").read_text())
+        workflow = (ROOT / ".github/workflows/renovate.yml").read_text()
+        command = "nix run --accept-flake-config .#renovate-update-nix-hashes"
+
+        self.assertIn("config:recommended", config["extends"])
+        self.assertTrue(config["nix"]["enabled"])
+        self.assertTrue(config["dependencyDashboard"])
+        self.assertTrue(config["lockFileMaintenance"]["enabled"])
+        self.assertEqual(config["minimumReleaseAge"], "3 days")
+        self.assertEqual(config["prHourlyLimit"], 2)
+        self.assertLessEqual(config["prConcurrentLimit"], 5)
+        self.assertFalse(config["automerge"])
+        self.assertFalse(config["platformAutomerge"])
+        self.assertEqual(config["postUpgradeTasks"]["commands"], [command])
+        self.assertRegex(command, config["allowedCommands"][0])
+        self.assertIn("nix run --accept-flake-config", workflow)
+        self.assertIn("renovate-update-nix-hashes", workflow)
+        self.assertIn("accept-flake-config = true", workflow)
+        hash_script = (ROOT / "flake.nix").read_text()
+        self.assertIn("nix-update --flake --version=skip", hash_script)
+        self.assertNotIn("nix-update --flake --version=skip --build", hash_script)
+
+        descriptions = {manager["description"] for manager in config["customManagers"]}
+        self.assertGreaterEqual(len(config["customManagers"]), 5)
+        self.assertTrue(any("packages/" in description for description in descriptions))
+        self.assertTrue(any("Herdr overlay" in description for description in descriptions))
+        self.assertTrue(any("Hunk's flake input" in description for description in descriptions))
+
+        grouped_without_name = [
+            rule
+            for rule in config["packageRules"]
+            if "groupSlug" in rule and "groupName" not in rule
+        ]
+        self.assertEqual(
+            grouped_without_name,
+            [],
+            "groupSlug without groupName collapses unrelated PRs onto one branch",
+        )
+
+        herdr = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "herdr")
+        hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
+        self.assertFalse(herdr["automerge"])
+        self.assertFalse(hunk["automerge"])
+
+        digest_rule = next(
+            rule
+            for rule in config["packageRules"]
+            if rule.get("matchDatasources") == ["git-refs"]
+            and rule.get("matchUpdateTypes") == ["digest"]
+        )
+        self.assertFalse(digest_rule["enabled"])
+
+        nix_groups = [
+            rule
+            for rule in config["packageRules"]
+            if rule.get("matchManagers") == ["nix"] and "groupName" in rule
+        ]
+        self.assertTrue(nix_groups)
+        for rule in nix_groups:
+            self.assertNotIn(
+                "lockFileMaintenance",
+                rule.get("matchUpdateTypes", []),
+                "lockFileMaintenance must stay off grouped flake-input PRs",
+            )
+
+        majors = next(rule for rule in config["packageRules"] if rule.get("matchUpdateTypes") == ["major"])
+        self.assertTrue(majors["dependencyDashboardApproval"])
+        self.assertFalse(majors["automerge"])
+
 
 if __name__ == "__main__":
     unittest.main()

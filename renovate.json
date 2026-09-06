@@ -5,14 +5,17 @@
     "enabled": true,
     "managerFilePatterns": ["/(^|/)flake\\.nix$/"]
   },
+  "timezone": "America/Chicago",
+  "schedule": ["* 4-8 * * 1-5"],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"],
     "automerge": true,
     "automergeType": "branch"
   },
+  "allowedCommands": ["^nix run --accept-flake-config \\.#renovate-update-nix-hashes$"],
   "postUpgradeTasks": {
-    "commands": ["nix run .#renovate-update-nix-hashes"],
+    "commands": ["nix run --accept-flake-config .#renovate-update-nix-hashes"],
     "fileFilters": [
       "packages/**/*.nix",
       "packages/*.nix",
@@ -83,8 +86,32 @@
   ],
   "packageRules": [
     {
-      "description": "Group Nix flake input bumps for local packages and agent package sources so a Flue agent can review them together.",
+      "description": "Skip Gemfile and Poetry files; they are not the intended update surface.",
+      "matchManagers": ["bundler", "poetry"],
+      "enabled": false
+    },
+    {
+      "description": "The Actions PAT cannot ls-remote these private flake inputs. Bump them with hey upgrade when needed.",
       "matchManagers": ["nix"],
+      "matchPackageNames": [
+        "agents-workspace",
+        "tnote",
+        "https://github.com/edmundmiller/agents-workspace",
+        "https://github.com/edmundmiller/tnote"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Unversioned flake pins update through Monday lockFileMaintenance instead of per-input digest PRs.",
+      "matchManagers": ["nix"],
+      "matchDatasources": ["git-refs"],
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
+    },
+    {
+      "description": "Group versioned first-party flake inputs so a Flue agent can review them together.",
+      "matchManagers": ["nix"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin"],
       "matchDepNames": ["agents-workspace", "skills-catalog", "/.*-repo$/"],
       "groupName": "@packages flake inputs",
       "groupSlug": "packages-flake-inputs",
@@ -93,43 +120,42 @@
       "automergeType": "branch"
     },
     {
-      "description": "Keep all other Nix flake input bumps available for normal Renovate review.",
+      "description": "Group remaining versioned Nix flake input bumps. Exclude lockFileMaintenance so it stays on its own Monday branch.",
       "matchManagers": ["nix"],
+      "matchUpdateTypes": ["major", "minor", "patch", "pin"],
+      "groupName": "Nix flake inputs",
+      "groupSlug": "nix-flake-inputs",
       "labels": ["dependencies", "nix"]
     },
     {
-      "description": "Group JavaScript dependency bumps across package workspaces to reduce Dependabot-style PR noise.",
+      "description": "Group non-major JavaScript workspace bumps.",
       "matchManagers": ["npm", "bun"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "JavaScript package dependencies",
       "groupSlug": "javascript-package-dependencies",
-      "labels": ["dependencies", "javascript"]
-    },
-    {
-      "groupSlug": "low-risk-non-major",
-      "description": "Automerge low-risk non-major updates after the stability window and CI pass.",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "labels": ["dependencies", "javascript"],
       "automerge": true,
       "automergeType": "branch"
     },
     {
-      "groupSlug": "manual-major",
-      "description": "Keep major updates visible for manual review.",
-      "matchUpdateTypes": ["major"],
-      "automerge": false
+      "description": "Group non-major GitHub Actions and pin/digest refreshes.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "GitHub Actions",
+      "groupSlug": "github-actions",
+      "labels": ["dependencies", "github_actions"],
+      "automerge": true,
+      "automergeType": "branch"
     },
     {
-      "groupSlug": "nix-flake-inputs",
-      "description": "Group all remaining Nix flake input bumps to reduce PR noise.",
-      "matchManagers": ["nix"],
-      "groupName": "Nix flake inputs"
-    },
-    {
-      "groupSlug": "repo-local-nix-packages",
-      "description": "Group repo-local Nix package source bumps to reduce PR noise.",
+      "description": "Group only repo-local Nix package patches so hash refresh stays small enough to finish.",
       "matchManagers": ["custom.regex"],
-      "groupName": "repo-local Nix packages",
-      "labels": ["dependencies", "nix", "packages"]
+      "matchUpdateTypes": ["patch", "pin", "digest"],
+      "groupName": "repo-local Nix package patches",
+      "groupSlug": "repo-local-nix-package-patches",
+      "labels": ["dependencies", "nix", "packages"],
+      "automerge": true,
+      "automergeType": "branch"
     },
     {
       "description": "Let the patch-repair workflow validate Herdr before enabling platform automerge.",
@@ -148,18 +174,32 @@
       "groupSlug": "hunk",
       "labels": ["dependencies", "nix", "packages", "flue-review"],
       "automerge": false
+    },
+    {
+      "description": "Keep major updates on the Dependency Dashboard until explicitly approved.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false,
+      "labels": ["dependencies", "major"]
+    },
+    {
+      "description": "Automerge low-risk non-major updates after the stability window and CI pass. Do not set groupSlug here; that previously collapsed unrelated PRs onto renovate/low-risk-non-major.",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "branch"
     }
   ],
   "osvVulnerabilityAlerts": true,
   "dependencyDashboard": true,
-  "timezone": "America/Chicago",
   "prCreation": "not-pending",
   "internalChecksFilter": "strict",
   "minimumReleaseAge": "3 days",
-  "automerge": true,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "automerge": false,
   "automergeType": "branch",
-  "platformAutomerge": true,
+  "platformAutomerge": false,
   "rebaseWhen": "conflicted",
   "prHourlyLimit": 2,
-  "prConcurrentLimit": 5
+  "prConcurrentLimit": 4
 }
