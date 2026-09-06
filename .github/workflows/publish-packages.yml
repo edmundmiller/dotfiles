@@ -32,7 +32,7 @@ jobs:
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -79,7 +79,7 @@ jobs:
       matrix:
         package: ${{ fromJson(needs.detect.outputs.packages) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -102,7 +102,7 @@ jobs:
       matrix:
         package: ${{ fromJson(needs.detect.outputs.packages) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
