@@ -5,7 +5,7 @@ description: Applies dotfiles completion and durable handoff conventions for mul
 
 # Dotfiles workflow
 
-[AGENT_WORKFLOW.md](../../../AGENT_WORKFLOW.md) owns completion and approval
+The dotfiles repository's root `AGENT_WORKFLOW.md` owns completion and approval
 boundaries. Use its optional worklog/receipt commands when a durable handoff is
 useful. Record an existing Herdr workspace rather than creating another one.
 There is no plan-review gate or mandatory worklog.
