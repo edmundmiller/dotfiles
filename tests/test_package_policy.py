@@ -373,6 +373,11 @@ class PackagePolicyTest(unittest.TestCase):
             rejected.stderr,
         )
 
+    def test_herdr_config_template_uses_supported_sound_format(self):
+        template = (ROOT / "config/herdr/config.toml").read_text()
+        self.assertNotIn("done_path", template)
+        self.assertIn("[ui.sound]", template)
+
     def test_herdr_vm_test_does_not_evaluate_private_tnote(self):
         herdr_module = (ROOT / "modules/shell/herdr/default.nix").read_text()
         vm_test = (ROOT / "modules/shell/herdr/_tests/vm-test.nix").read_text()

@@ -35,8 +35,8 @@ delivery = "herdr"
 
 [ui.sound]
 enabled = false
-# Amp plays this macOS system sound directly when an agent finishes.
-done_path = "/System/Library/Sounds/Submarine.aiff"
+# Herdr only accepts mp3 paths. Set a local mp3 on a host if you want
+# a finish sound; do not pin a macOS system sound in this template.
 
 [session]
 resume_agents_on_restore = true
