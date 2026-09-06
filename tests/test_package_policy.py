@@ -373,6 +373,17 @@ class PackagePolicyTest(unittest.TestCase):
             rejected.stderr,
         )
 
+    def test_herdr_vm_test_does_not_evaluate_private_tnote(self):
+        herdr_module = (ROOT / "modules/shell/herdr/default.nix").read_text()
+        vm_test = (ROOT / "modules/shell/herdr/_tests/vm-test.nix").read_text()
+        self.assertIn("tnote.enable = mkBoolOpt true;", herdr_module)
+        self.assertIn('optional cfg.tnote.enable "${pkgs.my.tnote}/bin"', herdr_module)
+        self.assertIn(
+            "herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote",
+            herdr_module,
+        )
+        self.assertIn("modules.shell.herdr.tnote.enable = false;", vm_test)
+
     def test_renovate_config_keeps_hash_refresh_and_reduces_noise(self):
         config = json.loads((ROOT / "renovate.json").read_text())
         workflow = (ROOT / ".github/workflows/renovate.yml").read_text()
