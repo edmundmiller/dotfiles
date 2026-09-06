@@ -413,8 +413,12 @@ class PackagePolicyTest(unittest.TestCase):
             "groupSlug without groupName collapses unrelated PRs onto one branch",
         )
 
+        slugs = [rule.get("groupSlug") for rule in config["packageRules"]]
+        self.assertLess(slugs.index("javascript-package-dependencies"), slugs.index("herdr"))
         herdr = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "herdr")
         hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
+        self.assertEqual(config["packageRules"][-2]["groupSlug"], "herdr")
+        self.assertEqual(config["packageRules"][-1]["groupSlug"], "hunk")
         self.assertFalse(herdr["automerge"])
         self.assertFalse(hunk["automerge"])
 
