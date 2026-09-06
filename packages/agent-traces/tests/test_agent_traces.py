@@ -13,7 +13,7 @@ from unittest import mock
 
 from agent_traces.ingest import ingest_candidates, writer_lock
 from agent_traces.schema import ICEBERG_SCHEMA, PARTITION_SPEC
-from agent_traces.sources import Candidate, amp_candidates, opencode_candidates, stable_read
+from agent_traces.sources import Candidate, amp_candidates, grok_bot_candidates, opencode_candidates, stable_read
 
 
 class AgentTracesTests(unittest.TestCase):
@@ -66,13 +66,60 @@ class AgentTracesTests(unittest.TestCase):
         pages = [
             subprocess.CompletedProcess([], 0, stdout=json.dumps([{"id": "a", "updated": "2026-07-27T00:00:00Z"}]), stderr=""),
             subprocess.CompletedProcess([], 0, stdout="[]", stderr=""),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"id": "a", "messages": []}), stderr=""),
+            subprocess.CompletedProcess(
+                [],
+                0,
+                stdout=json.dumps({"id": "a", "meta": {"executorType": "sandbox"}, "messages": []}),
+                stderr="",
+            ),
         ]
         run.side_effect = pages
         candidates = list(amp_candidates(page_size=1))
         self.assertEqual([candidate.native_id for candidate in candidates], ["a"])
         self.assertEqual(json.loads(candidates[0].read())["id"], "a")
+        records, _ = candidates[0].normalize(candidates[0].read())
+        self.assertEqual(records[0]["executor_type"], "sandbox")
         self.assertEqual(run.call_count, 3)
+
+    def test_grok_bot_reads_conversation_blobs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            conversation = {
+                "schemaVersion": 1,
+                "value": {
+                    "persistedAt": 1_700_000_000_000,
+                    "entries": [
+                        {"kind": "message", "role": "user", "content": "question", "timestampMs": 1_700_000_001_000},
+                        {
+                            "kind": "send-message",
+                            "message": {"type": "text", "content": "answer"},
+                            "timestampMs": 1_700_000_002_000,
+                        },
+                        {"kind": "event", "timestampMs": 1_700_000_003_000},
+                    ],
+                },
+            }
+            native = json.dumps(conversation).encode()
+            (root / "conversation.blob").write_bytes(native)
+            (root / "settings.blob").write_text(json.dumps({"schemaVersion": 1, "value": {"sidebar": {}}}))
+
+            candidates = list(grok_bot_candidates(root))
+
+            self.assertEqual([candidate.native_id for candidate in candidates], ["conversation"])
+            self.assertEqual(candidates[0].read(), native)
+            self.assertEqual(candidates[0].native_format, "grok-bot-sand-v1")
+            self.assertEqual(candidates[0].started_at, datetime.fromtimestamp(1_700_000_001, UTC))
+            self.assertEqual(candidates[0].updated_at, datetime.fromtimestamp(1_700_000_003, UTC))
+            records, diagnostics = candidates[0].normalize(native)
+            self.assertEqual(diagnostics, [])
+            self.assertEqual(
+                records,
+                [
+                    {"role": "meta", "source": "grok-bot", "model": "grok"},
+                    {"role": "user", "content": "question", "timestamp": "2023-11-14T22:13:21Z"},
+                    {"role": "assistant", "content": "answer", "timestamp": "2023-11-14T22:13:22Z"},
+                ],
+            )
 
     def test_missing_sources_are_noop(self) -> None:
         from agent_traces.sources import discover_candidates

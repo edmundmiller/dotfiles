@@ -379,6 +379,64 @@ def _normalize_opencode(native: bytes) -> tuple[list[dict[str, object]], list[ob
     return records, []
 
 
+def grok_bot_candidates(path: Path, since: datetime | None = None) -> Iterator[Candidate]:
+    if not path.exists():
+        return
+    for blob in sorted(path.glob("*.blob")):
+        modified = datetime.fromtimestamp(blob.stat().st_mtime, UTC)
+        if since and modified < since:
+            continue
+        native = stable_read(blob)
+        try:
+            value = json.loads(native).get("value")
+        except (AttributeError, json.JSONDecodeError):
+            continue
+        if not isinstance(value, dict) or not isinstance(value.get("entries"), list):
+            continue
+        timestamps = [
+            parsed
+            for entry in value["entries"]
+            if isinstance(entry, dict) and (parsed := _parse_time(entry.get("timestampMs"))) is not None
+        ]
+        yield Candidate(
+            source="grok-bot",
+            native_id=blob.stem,
+            native_format="grok-bot-sand-v1",
+            native_locator=home_relative(blob),
+            native_modified_at=modified,
+            native_size=len(native),
+            read=lambda data=native: data,
+            normalize=_normalize_grok_bot,
+            started_at=min(timestamps) if timestamps else None,
+            updated_at=max(timestamps) if timestamps else modified,
+            model="grok",
+        )
+
+
+def _normalize_grok_bot(native: bytes) -> tuple[list[dict[str, object]], list[object]]:
+    value = json.loads(native)["value"]
+    fallback = _parse_time(value.get("persistedAt")) or datetime.fromtimestamp(0, UTC)
+    records: list[dict[str, object]] = [{"role": "meta", "source": "grok-bot", "model": "grok"}]
+    for entry in value["entries"]:
+        if not isinstance(entry, dict):
+            continue
+        timestamp = _iso(entry.get("timestampMs"), fallback)
+        role = entry.get("role")
+        content = entry.get("content")
+        if entry.get("kind") == "message" and role in {"user", "assistant"} and isinstance(content, str):
+            records.append({"role": role, "content": content, "timestamp": timestamp})
+            continue
+        message = entry.get("message")
+        if (
+            entry.get("kind") == "send-message"
+            and isinstance(message, dict)
+            and message.get("type") == "text"
+            and isinstance(message.get("content"), str)
+        ):
+            records.append({"role": "assistant", "content": message["content"], "timestamp": timestamp})
+    return records, []
+
+
 def amp_candidates(since: datetime | None = None, page_size: int = 100) -> Iterator[Candidate]:
     if shutil.which("amp") is None and not os.environ.get("AGENT_TRACES_TEST_AMP"):
         return
@@ -434,7 +492,14 @@ def amp_candidates(since: datetime | None = None, page_size: int = 100) -> Itera
 def _normalize_amp(native: bytes) -> tuple[list[dict[str, object]], list[object]]:
     export = json.loads(native)
     created = _parse_time(export.get("created")) or datetime.fromtimestamp(0, UTC)
-    records: list[dict[str, object]] = [{"role": "meta", "source": "amp", "model": export.get("agentMode")}]
+    records: list[dict[str, object]] = [
+        {
+            "role": "meta",
+            "source": "amp",
+            "model": export.get("agentMode"),
+            "executor_type": (export.get("meta") or {}).get("executorType"),
+        }
+    ]
     for message in export.get("messages", []):
         role = message.get("role")
         timestamp = _iso((message.get("meta") or {}).get("sentAt"), created)
@@ -478,4 +543,5 @@ def discover_candidates(since: datetime | None = None) -> Iterable[Candidate]:
     yield from hermes_candidates(Path("~/.hermes/state.db").expanduser(), since)
     yield from deepagents_candidates(Path("~/.deepagents/sessions.db").expanduser(), since)
     yield from opencode_candidates(Path("~/.local/share/opencode/opencode.db").expanduser(), since)
+    yield from grok_bot_candidates(Path("~/Library/Application Support/Grok Bot/sand-client-persistence").expanduser(), since)
     yield from amp_candidates(since)
