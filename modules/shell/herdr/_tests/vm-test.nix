@@ -124,6 +124,9 @@ dotfilesLib.my.mkServiceVmTest {
       modules.shell.tmux.enable = false;
 
       modules.shell.herdr.enable = true;
+      # tnote is a private flake input. Interpolating pkgs.my.tnote 404s in
+      # GitHub Actions. This test asserts activated config.toml, not tnote.
+      modules.shell.herdr.tnote.enable = false;
       # Keep the harness minimal: each integration reaches into a
       # `modules.agents.*` / `modules.services.*` module that is not imported
       # here. They default to true, and disabling them short-circuits those
