@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+usage: discrawl-backup snapshot --source PATH --snapshot PATH
+       discrawl-backup run --source PATH --snapshot PATH --repository R2_URL
+EOF
+  exit 64
+}
+
+command_name="${1:-}"
+if [[ "$command_name" != "snapshot" && "$command_name" != "run" ]]; then
+  usage
+fi
+shift
+
+source_db=""
+snapshot_db=""
+repository=""
+while (($# > 0)); do
+  case "$1" in
+    --source)
+      (($# >= 2)) || usage
+      source_db="$2"
+      shift 2
+      ;;
+    --snapshot)
+      (($# >= 2)) || usage
+      snapshot_db="$2"
+      shift 2
+      ;;
+    --repository)
+      (($# >= 2)) || usage
+      repository="$2"
+      shift 2
+      ;;
+    *) usage ;;
+  esac
+done
+
+[[ -n "$source_db" && -n "$snapshot_db" ]] || usage
+if [[ "$command_name" == "run" ]]; then
+  case "$repository" in
+    s3:https://57398029d3d0add95bdad89deaa41864.r2.cloudflarestorage.com/discrawl-backups) ;;
+    *)
+      printf 'Discrawl backup repository must target the dedicated private discrawl-backups R2 bucket\n' >&2
+      exit 64
+      ;;
+  esac
+fi
+[[ -r "$source_db" ]] || {
+  printf 'Discrawl source database is not readable: %s\n' "$source_db" >&2
+  exit 66
+}
+
+umask 077
+snapshot_dir="$(dirname "$snapshot_db")"
+mkdir -p "$snapshot_dir"
+chmod 0700 "$snapshot_dir"
+snapshot_tmp="$(mktemp "$snapshot_dir/.discrawl.db.XXXXXX")"
+trap 'rm -f "$snapshot_tmp"' EXIT
+
+sqlite3 -readonly "$source_db" ".backup '$snapshot_tmp'"
+integrity_result="$(sqlite3 -readonly "$snapshot_tmp" 'PRAGMA quick_check;')"
+if [[ "$integrity_result" != "ok" ]]; then
+  printf 'Discrawl snapshot integrity check failed: %s\n' "$integrity_result" >&2
+  exit 74
+fi
+chmod 0600 "$snapshot_tmp"
+mv -f "$snapshot_tmp" "$snapshot_db"
+trap - EXIT
+
+snapshot_output="$(sqlite3 -readonly -json "$snapshot_db" <<'SQL'
+SELECT
+  (SELECT user_version FROM pragma_user_version) AS schemaVersion,
+  (SELECT COUNT(*) FROM messages) AS messages,
+  (SELECT COUNT(*) FROM messages WHERE guild_id = '@me') AS directMessages;
+SQL
+)"
+snapshot_output="$(jq -ce '.[0]' <<<"$snapshot_output")"
+
+if [[ "$command_name" == "snapshot" ]]; then
+  printf '%s\n' "$snapshot_output"
+  exit 0
+fi
+
+security_command="${DISCRAWL_BACKUP_SECURITY:-/usr/bin/security}"
+restic_command="${DISCRAWL_BACKUP_RESTIC:-restic}"
+keychain_account="${DISCRAWL_BACKUP_KEYCHAIN_ACCOUNT:-${USER:?USER is required}}"
+
+read_keychain_secret() {
+  local service="$1"
+  local value
+  value="$($security_command find-generic-password -a "$keychain_account" -s "$service" -w)"
+  [[ -n "$value" ]] || {
+    printf 'Discrawl backup Keychain service is empty: %s\n' "$service" >&2
+    exit 78
+  }
+  printf '%s' "$value"
+}
+
+export RESTIC_REPOSITORY="$repository"
+AWS_ACCESS_KEY_ID="$(read_keychain_secret com.emiller.discrawl-backup.r2-access-key-id)"
+AWS_SECRET_ACCESS_KEY="$(read_keychain_secret com.emiller.discrawl-backup.r2-secret-access-key)"
+RESTIC_PASSWORD="$(read_keychain_secret com.emiller.discrawl-backup.restic-password)"
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD
+
+"$restic_command" backup --tag discrawl "$snapshot_db" >/dev/null
+snapshots_json="$($restic_command snapshots --json --latest 1 --path "$snapshot_db")"
+snapshot_id="$(jq -er 'if length == 1 then .[0].id else empty end' <<<"$snapshots_json")"
+
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD RESTIC_REPOSITORY
+jq -cn --argjson database "$snapshot_output" --arg snapshotId "$snapshot_id" \
+  '{database: $database, snapshotId: $snapshotId}'

@@ -407,6 +407,36 @@ in
         };
       };
 
+    launchd.user.agents.discrawl-backup =
+      let
+        executable = "${pkgs.my.discrawl-backup}/bin/discrawl-backup";
+      in
+      {
+        serviceConfig = {
+          Program = executable;
+          ProgramArguments = [
+            executable
+            "run"
+            "--source"
+            "${config.user.home}/.local/share/discrawl/discrawl.db"
+            "--snapshot"
+            "${config.user.home}/.local/state/discrawl-backup/discrawl.db"
+            "--repository"
+            "s3:https://57398029d3d0add95bdad89deaa41864.r2.cloudflarestorage.com/discrawl-backups"
+          ];
+          StartCalendarInterval = {
+            Hour = 23;
+            Minute = 45;
+          };
+          StandardOutPath = "${config.user.home}/Library/Logs/discrawl-backup.log";
+          StandardErrorPath = "${config.user.home}/Library/Logs/discrawl-backup.err.log";
+          EnvironmentVariables = {
+            HOME = config.user.home;
+            USER = config.user.name;
+          };
+        };
+      };
+
     # Manage native macOS Login Items declaratively. Keep Raycast Beta here and
     # do not also start it with a launchd.user.agent, or macOS will run two instances.
     environment.loginItems = {
@@ -451,6 +481,7 @@ in
     environment.systemPackages = with pkgs; [
       clinWithVaultEnv
       llm-agents.qmd
+      my.discrawl-backup
       my.hex
       my.meat
       my.openwiki

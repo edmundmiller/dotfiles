@@ -1535,6 +1535,27 @@
                     touch "$out"
                   '';
 
+              discrawl-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/discrawl-backup.nix {
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
+              discrawl-backup-cli-tests =
+                pkgs.runCommand "discrawl-backup-cli-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.coreutils
+                      pkgs.gnugrep
+                      pkgs.jq
+                      pkgs.sqlite
+                    ];
+                  }
+                  ''
+                    ${pkgs.bash}/bin/bash ${./packages/discrawl-backup/discrawl-backup.test.sh} \
+                      ${self.packages.${system}.discrawl-backup}/bin/discrawl-backup
+                    touch "$out"
+                  '';
+
               darwin-tailscaled-owner-assertions = import ./modules/services/tailscale/_tests/eval-darwin.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
