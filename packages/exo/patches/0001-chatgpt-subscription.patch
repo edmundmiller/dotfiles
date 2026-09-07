@@ -1,0 +1,2293 @@
+diff --git a/crates/cli/src/main.rs b/crates/cli/src/main.rs
+index 2ac4ea7..b6bf841 100644
+--- a/crates/cli/src/main.rs
++++ b/crates/cli/src/main.rs
+@@ -998,6 +998,11 @@ struct SandboxPlayArgs {
+ #[derive(Debug, Subcommand)]
+ enum SecretCommands {
+     List,
++    /// Sign in with a ChatGPT subscription using a browser device code.
++    LoginChatgpt {
++        #[arg(default_value = "chatgpt")]
++        name: String,
++    },
+     Set {
+         name: String,
+         #[arg(long, value_parser = parse_env_var_name)]
+@@ -2359,6 +2364,21 @@ async fn main() -> Result<()> {
+             handle_sandbox_command(harness.as_ref(), command).await?;
+         }
+         Commands::Secret { command } => match command {
++            SecretCommands::LoginChatgpt { name } => {
++                let secret = executor::login_chatgpt_device(|url, code| {
++                    eprintln!("Open {url} in your browser and enter code: {code}");
++                    eprintln!("Waiting for authorization (Ctrl-C to cancel)…");
++                })
++                .await?;
++                let id = harness
++                    .exoharness_handle()
++                    .put_secret(PutSecretRequest {
++                        name: name.clone(),
++                        secret,
++                    })
++                    .await?;
++                println!("saved ChatGPT subscription secret {name} ({id})");
++            }
+             SecretCommands::List => {
+                 let secrets = harness.exoharness_handle().list_secrets().await?;
+                 print_table(
+diff --git a/crates/cli/src/secret_tests.rs b/crates/cli/src/secret_tests.rs
+index a9a0a50..20230b4 100644
+--- a/crates/cli/src/secret_tests.rs
++++ b/crates/cli/src/secret_tests.rs
+@@ -2,6 +2,23 @@ use std::collections::HashMap;
+ 
+ use crate::secret_value_from_env_arg;
+ 
++#[test]
++fn chatgpt_login_accepts_default_or_named_secret() {
++    use clap::Parser;
++    for (args, expected) in [
++        (vec!["exo", "secret", "login-chatgpt"], "chatgpt"),
++        (
++            vec!["exo", "secret", "login-chatgpt", "personal"],
++            "personal",
++        ),
++    ] {
++        let cli = crate::Cli::try_parse_from(args).unwrap();
++        assert!(matches!(cli.command, crate::Commands::Secret {
++            command: crate::SecretCommands::LoginChatgpt { name }
++        } if name == expected));
++    }
++}
++
+ #[test]
+ fn env_secret_error_does_not_echo_shell_expanded_secret() {
+     let expanded_secret = "sk-proj-sensitive-secret-value";
+diff --git a/crates/executor/src/adapter/runtime.rs b/crates/executor/src/adapter/runtime.rs
+index 8a55d6d..d2456e4 100644
+--- a/crates/executor/src/adapter/runtime.rs
++++ b/crates/executor/src/adapter/runtime.rs
+@@ -1057,6 +1057,7 @@ async fn worker_secret_env(
+         let value = match secret {
+             Secret::Key { value } => value,
+             Secret::Oauth { .. } => bail!("adapter worker secrets must be key secrets"),
++            Secret::ChatGpt { .. } => bail!("adapter worker secrets must be key secrets"),
+         };
+         env.push((secret_env.env.clone(), value));
+     }
+diff --git a/crates/executor/src/basic.rs b/crates/executor/src/basic.rs
+index 5cd68fb..f0a8968 100644
+--- a/crates/executor/src/basic.rs
++++ b/crates/executor/src/basic.rs
+@@ -602,6 +602,7 @@ async fn build_model_request(
+         model: model_binding.model,
+         api_key: model_binding.api_key,
+         base_url: model_binding.base_url,
++        chatgpt: model_binding.chatgpt,
+         messages,
+         tools: build_tool_definitions(conversation_config),
+         max_output_tokens: agent_config.max_output_tokens,
+diff --git a/crates/executor/src/chatgpt.rs b/crates/executor/src/chatgpt.rs
+new file mode 100644
+index 0000000..b1ebe6e
+--- /dev/null
++++ b/crates/executor/src/chatgpt.rs
+@@ -0,0 +1,411 @@
++use std::time::{Duration, SystemTime, UNIX_EPOCH};
++
++use base64::Engine;
++use exoharness::{Result, Secret};
++use reqwest::{Client, StatusCode};
++use serde::{Deserialize, Serialize};
++
++pub(crate) const CODEX_ENDPOINT: &str = "https://chatgpt.com/backend-api/codex/responses";
++const ISSUER: &str = "https://auth.openai.com";
++const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
++const DEVICE_REDIRECT_URI: &str = "https://auth.openai.com/deviceauth/callback";
++const DEVICE_AUTH_TIMEOUT: Duration = Duration::from_secs(15 * 60);
++const HTTP_TIMEOUT: Duration = Duration::from_secs(30);
++
++#[derive(Debug, Deserialize)]
++struct DeviceCodeResponse {
++    device_auth_id: String,
++    user_code: String,
++    interval: DeviceInterval,
++}
++
++#[derive(Debug, Deserialize)]
++#[serde(untagged)]
++enum DeviceInterval {
++    String(String),
++    Number(u64),
++}
++
++impl DeviceInterval {
++    fn seconds(&self) -> u64 {
++        match self {
++            Self::String(value) => value.trim().parse().unwrap_or(5),
++            Self::Number(value) => *value,
++        }
++        .max(1)
++    }
++}
++
++#[derive(Debug, Serialize)]
++struct DeviceCodeRequest<'a> {
++    client_id: &'a str,
++}
++
++#[derive(Debug, Serialize)]
++struct DevicePollRequest<'a> {
++    device_auth_id: &'a str,
++    user_code: &'a str,
++}
++
++#[derive(Debug, Deserialize)]
++struct DevicePollResponse {
++    authorization_code: String,
++    code_verifier: String,
++}
++
++#[derive(Debug, Deserialize)]
++struct TokenResponse {
++    access_token: String,
++    refresh_token: Option<String>,
++    expires_in: Option<i64>,
++    id_token: Option<String>,
++}
++
++#[derive(Debug, Deserialize)]
++struct JwtClaims {
++    chatgpt_account_id: Option<String>,
++    organizations: Option<Vec<OrganizationClaim>>,
++    #[serde(rename = "https://api.openai.com/auth")]
++    openai_auth: Option<OpenAiAuthClaims>,
++}
++
++#[derive(Debug, Deserialize)]
++struct OrganizationClaim {
++    id: String,
++}
++
++#[derive(Debug, Deserialize)]
++struct OpenAiAuthClaims {
++    chatgpt_account_id: Option<String>,
++}
++
++pub async fn login_chatgpt_device(on_prompt: impl Fn(&str, &str)) -> Result<Secret> {
++    let client = Client::builder().timeout(HTTP_TIMEOUT).build()?;
++    tokio::time::timeout(
++        DEVICE_AUTH_TIMEOUT,
++        login_chatgpt_device_with(&client, ISSUER, on_prompt),
++    )
++    .await
++    .map_err(|_| anyhow::anyhow!("ChatGPT device authorization timed out"))?
++}
++
++async fn login_chatgpt_device_with(
++    client: &Client,
++    issuer: &str,
++    on_prompt: impl Fn(&str, &str),
++) -> Result<Secret> {
++    let response = client
++        .post(format!("{issuer}/api/accounts/deviceauth/usercode"))
++        .timeout(HTTP_TIMEOUT)
++        .json(&DeviceCodeRequest {
++            client_id: CLIENT_ID,
++        })
++        .send()
++        .await?;
++    let response = response.error_for_status()?;
++    let device: DeviceCodeResponse = response.json().await?;
++    require_nonempty(&device.device_auth_id, "device_auth_id")?;
++    require_nonempty(&device.user_code, "user_code")?;
++    let interval = device.interval.seconds();
++    on_prompt(&format!("{issuer}/codex/device"), &device.user_code);
++
++    let code = loop {
++        let response = client
++            .post(format!("{issuer}/api/accounts/deviceauth/token"))
++            .timeout(HTTP_TIMEOUT)
++            .json(&DevicePollRequest {
++                device_auth_id: &device.device_auth_id,
++                user_code: &device.user_code,
++            })
++            .send()
++            .await?;
++        if response.status().is_success() {
++            break response.json::<DevicePollResponse>().await?;
++        }
++        if !matches!(
++            response.status(),
++            StatusCode::FORBIDDEN | StatusCode::NOT_FOUND
++        ) {
++            anyhow::bail!(
++                "ChatGPT device authorization failed ({})",
++                response.status()
++            );
++        }
++        tokio::time::sleep(Duration::from_secs(interval + 3)).await;
++    };
++    require_nonempty(&code.authorization_code, "authorization_code")?;
++    require_nonempty(&code.code_verifier, "code_verifier")?;
++
++    let token = client
++        .post(format!("{issuer}/oauth/token"))
++        .timeout(HTTP_TIMEOUT)
++        .form(&[
++            ("grant_type", "authorization_code"),
++            ("code", code.authorization_code.as_str()),
++            ("redirect_uri", DEVICE_REDIRECT_URI),
++            ("client_id", CLIENT_ID),
++            ("code_verifier", code.code_verifier.as_str()),
++        ])
++        .send()
++        .await?
++        .error_for_status()?
++        .json::<TokenResponse>()
++        .await?;
++    secret_from_token(token, None, None)
++}
++
++pub(crate) async fn refresh_chatgpt(refresh_token: &str, account_id: &str) -> Result<Secret> {
++    let client = Client::builder().timeout(HTTP_TIMEOUT).build()?;
++    refresh_chatgpt_with(&client, ISSUER, refresh_token, Some(account_id)).await
++}
++
++async fn refresh_chatgpt_with(
++    client: &Client,
++    issuer: &str,
++    refresh_token: &str,
++    previous_account_id: Option<&str>,
++) -> Result<Secret> {
++    let token = client
++        .post(format!("{issuer}/oauth/token"))
++        .timeout(HTTP_TIMEOUT)
++        .form(&[
++            ("grant_type", "refresh_token"),
++            ("refresh_token", refresh_token),
++            ("client_id", CLIENT_ID),
++        ])
++        .send()
++        .await?
++        .error_for_status()?
++        .json::<TokenResponse>()
++        .await?;
++    secret_from_token(token, Some(refresh_token), previous_account_id)
++}
++
++fn secret_from_token(
++    token: TokenResponse,
++    previous_refresh_token: Option<&str>,
++    previous_account_id: Option<&str>,
++) -> Result<Secret> {
++    require_nonempty(&token.access_token, "access_token")?;
++    let refresh_token = token
++        .refresh_token
++        .as_deref()
++        .or(previous_refresh_token)
++        .ok_or_else(|| anyhow::anyhow!("ChatGPT token response omitted refresh_token"))?;
++    require_nonempty(refresh_token, "refresh_token")?;
++    let expires_in = token.expires_in.unwrap_or(3600);
++    if expires_in <= 0 {
++        anyhow::bail!("ChatGPT token response contained invalid expires_in");
++    }
++    let account_id = token
++        .id_token
++        .as_deref()
++        .and_then(account_id_from_jwt)
++        .or_else(|| account_id_from_jwt(&token.access_token))
++        .or_else(|| previous_account_id.map(str::to_owned))
++        .ok_or_else(|| anyhow::anyhow!("ChatGPT token did not contain an account id"))?;
++    require_nonempty(&account_id, "account_id")?;
++    let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as i64;
++    let expires_at_ms = expires_in
++        .checked_mul(1000)
++        .and_then(|duration| now.checked_add(duration))
++        .ok_or_else(|| anyhow::anyhow!("ChatGPT token response contained invalid expires_in"))?;
++    Ok(Secret::ChatGpt {
++        access_token: token.access_token,
++        refresh_token: refresh_token.to_owned(),
++        expires_at_ms,
++        account_id,
++    })
++}
++
++fn require_nonempty(value: &str, field: &str) -> Result<()> {
++    if value.trim().is_empty() {
++        anyhow::bail!("ChatGPT response contained empty {field}");
++    }
++    Ok(())
++}
++
++fn account_id_from_jwt(token: &str) -> Option<String> {
++    let payload = token.split('.').nth(1)?;
++    let bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
++        .decode(payload)
++        .ok()?;
++    let claims: JwtClaims = serde_json::from_slice(&bytes).ok()?;
++    claims
++        .chatgpt_account_id
++        .or_else(|| claims.openai_auth.and_then(|auth| auth.chatgpt_account_id))
++        .or_else(|| {
++            claims
++                .organizations
++                .and_then(|orgs| orgs.into_iter().next().map(|org| org.id))
++        })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::collections::VecDeque;
++    use std::sync::{Arc, Mutex};
++    use tokio::io::{AsyncReadExt, AsyncWriteExt};
++    use tokio::net::TcpListener;
++
++    async fn mock_server(responses: Vec<(&str, String)>) -> (String, Arc<Mutex<Vec<String>>>) {
++        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
++        let address = listener.local_addr().unwrap();
++        let requests = Arc::new(Mutex::new(Vec::new()));
++        let captured = Arc::clone(&requests);
++        let mut responses: VecDeque<_> = responses
++            .into_iter()
++            .map(|(status, body)| (status.to_owned(), body))
++            .collect();
++        tokio::spawn(async move {
++            while let Some((status, body)) = responses.pop_front() {
++                let (mut socket, _) = listener.accept().await.unwrap();
++                let mut request = Vec::new();
++                let mut buffer = [0; 1024];
++                loop {
++                    let count = socket.read(&mut buffer).await.unwrap();
++                    request.extend_from_slice(&buffer[..count]);
++                    let headers_end = request.windows(4).position(|w| w == b"\r\n\r\n");
++                    if let Some(end) = headers_end {
++                        let headers = String::from_utf8_lossy(&request[..end]);
++                        let length = headers
++                            .lines()
++                            .find_map(|line| {
++                                line.to_ascii_lowercase()
++                                    .strip_prefix("content-length: ")
++                                    .map(str::to_owned)
++                            })
++                            .and_then(|value| value.parse::<usize>().ok())
++                            .unwrap_or(0);
++                        if request.len() >= end + 4 + length {
++                            break;
++                        }
++                    }
++                }
++                captured
++                    .lock()
++                    .unwrap()
++                    .push(String::from_utf8(request).unwrap());
++                let reply = format!(
++                    "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
++                    body.len()
++                );
++                socket.write_all(reply.as_bytes()).await.unwrap();
++            }
++        });
++        (format!("http://{address}"), requests)
++    }
++
++    #[test]
++    fn device_protocol_uses_exact_openai_fields() {
++        assert_eq!(
++            serde_json::to_string(&DeviceCodeRequest {
++                client_id: CLIENT_ID
++            })
++            .unwrap(),
++            format!(r#"{{"client_id":"{CLIENT_ID}"}}"#)
++        );
++        assert_eq!(
++            serde_json::to_string(&DevicePollRequest {
++                device_auth_id: "device",
++                user_code: "CODE",
++            })
++            .unwrap(),
++            r#"{"device_auth_id":"device","user_code":"CODE"}"#
++        );
++    }
++
++    #[test]
++    fn token_conversion_extracts_nested_account_and_expiry() {
++        let claims = base64::engine::general_purpose::URL_SAFE_NO_PAD
++            .encode(r#"{"https://api.openai.com/auth":{"chatgpt_account_id":"acct"}}"#);
++        let secret = secret_from_token(
++            TokenResponse {
++                access_token: format!("header.{claims}.signature"),
++                refresh_token: Some("refresh".to_string()),
++                expires_in: Some(60),
++                id_token: None,
++            },
++            None,
++            None,
++        )
++        .unwrap();
++        assert!(matches!(secret, Secret::ChatGpt { account_id, .. } if account_id == "acct"));
++    }
++
++    #[tokio::test]
++    async fn login_runs_the_device_protocol_and_token_exchange() {
++        let claims = base64::engine::general_purpose::URL_SAFE_NO_PAD
++            .encode(r#"{"chatgpt_account_id":"acct"}"#);
++        let (issuer, requests) = mock_server(vec![
++            (
++                "200 OK",
++                r#"{"device_auth_id":"dev","user_code":"CODE","interval":1}"#.to_owned(),
++            ),
++            (
++                "200 OK",
++                r#"{"authorization_code":"auth","code_verifier":"verify"}"#.to_owned(),
++            ),
++            (
++                "200 OK",
++                format!(
++                    r#"{{"access_token":"h.{claims}.s","refresh_token":"new","expires_in":60}}"#
++                ),
++            ),
++        ])
++        .await;
++        let prompt = Arc::new(Mutex::new(None));
++        let prompt_copy = Arc::clone(&prompt);
++        let secret = login_chatgpt_device_with(&Client::new(), &issuer, move |url, code| {
++            *prompt_copy.lock().unwrap() = Some((url.to_owned(), code.to_owned()));
++        })
++        .await
++        .unwrap();
++
++        assert_eq!(prompt.lock().unwrap().as_ref().unwrap().1, "CODE");
++        assert!(matches!(secret, Secret::ChatGpt { refresh_token, .. } if refresh_token == "new"));
++        let requests = requests.lock().unwrap();
++        assert!(requests[0].starts_with("POST /api/accounts/deviceauth/usercode "));
++        assert!(requests[1].contains(r#"{"device_auth_id":"dev","user_code":"CODE"}"#));
++        assert!(requests[2].contains("grant_type=authorization_code"));
++        assert!(requests[2].contains("code_verifier=verify"));
++    }
++
++    #[tokio::test]
++    async fn refresh_rotates_or_preserves_refresh_token() {
++        for (response, expected) in [
++            (
++                r#"{"access_token":"access","refresh_token":"rotated"}"#,
++                "rotated",
++            ),
++            (r#"{"access_token":"access"}"#, "original"),
++        ] {
++            let (issuer, _) = mock_server(vec![("200 OK", response.to_owned())]).await;
++            let secret = refresh_chatgpt_with(&Client::new(), &issuer, "original", Some("acct"))
++                .await
++                .unwrap();
++            assert!(
++                matches!(secret, Secret::ChatGpt { refresh_token, .. } if refresh_token == expected)
++            );
++        }
++    }
++
++    #[tokio::test]
++    async fn rejects_http_malformed_and_empty_token_responses() {
++        for (status, response) in [
++            ("400 Bad Request", r#"{"error":"invalid_grant"}"#),
++            ("200 OK", "not-json"),
++            ("200 OK", r#"{"access_token":" ","refresh_token":"new"}"#),
++            ("200 OK", r#"{"access_token":"access","refresh_token":" "}"#),
++            ("200 OK", r#"{"access_token":"access","expires_in":0}"#),
++        ] {
++            let (issuer, _) = mock_server(vec![(status, response.to_owned())]).await;
++            assert!(
++                refresh_chatgpt_with(&Client::new(), &issuer, "original", Some("acct"))
++                    .await
++                    .is_err()
++            );
++        }
++    }
++}
+diff --git a/crates/executor/src/executor_types.rs b/crates/executor/src/executor_types.rs
+index b4b142a..922778d 100644
+--- a/crates/executor/src/executor_types.rs
++++ b/crates/executor/src/executor_types.rs
+@@ -190,11 +190,21 @@ pub struct ModelRequest {
+     pub model: String,
+     pub api_key: Option<String>,
+     pub base_url: Option<String>,
++    /// Host-only subscription credentials. Deliberately excluded from every
++    /// serialized model/TypeScript wire representation.
++    #[serde(skip)]
++    pub(crate) chatgpt: Option<ChatGptModelAuth>,
+     pub messages: Vec<Message>,
+     pub tools: Vec<ToolDefinition>,
+     pub max_output_tokens: Option<i64>,
+ }
+ 
++#[derive(Debug, Clone)]
++pub(crate) struct ChatGptModelAuth {
++    pub(crate) access_token: String,
++    pub(crate) account_id: String,
++}
++
+ #[derive(Debug, Clone, Serialize, Deserialize)]
+ pub struct ModelResponse {
+     pub response_id: Option<ResponseId>,
+diff --git a/crates/executor/src/harness_helpers.rs b/crates/executor/src/harness_helpers.rs
+index 703a9d8..7a845a3 100644
+--- a/crates/executor/src/harness_helpers.rs
++++ b/crates/executor/src/harness_helpers.rs
+@@ -1,6 +1,6 @@
+ use std::collections::HashMap;
+ use std::str::FromStr;
+-use std::sync::Arc;
++use std::sync::{Arc, OnceLock};
+ 
+ use exoharness::{
+     AddEventsRequest, AgentHandle, Binding, ConversationHandle, EventData, EventKind, EventQuery,
+@@ -14,6 +14,8 @@ use lingua::universal::{
+ use serde::{Deserialize, Serialize};
+ 
+ use crate::ConversationModelConfig;
++use crate::chatgpt::refresh_chatgpt;
++use crate::executor_types::ChatGptModelAuth;
+ 
+ pub(crate) const CONVERSATION_MODEL_CONFIG_EVENT_TYPE: &str = "conversation_model_config";
+ 
+@@ -192,8 +194,11 @@ pub(crate) struct ResolvedModelBinding {
+     pub(crate) model: String,
+     pub(crate) api_key: Option<String>,
+     pub(crate) base_url: Option<String>,
++    pub(crate) chatgpt: Option<ChatGptModelAuth>,
+ }
+ 
++static CHATGPT_REFRESH_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
++
+ pub(crate) async fn resolve_model_binding(
+     conversation: &dyn ConversationHandle,
+     name: &str,
+@@ -217,8 +222,15 @@ pub(crate) async fn resolve_model_binding(
+     else {
+         return Err(anyhow::anyhow!("binding is not a model: {name}"));
+     };
++    let mut chatgpt = None;
+     let api_key = match secret_id {
+         Some(secret_id) => {
++            // Re-read under the lock: another conversation may have rotated
++            // this shared credential while this request was waiting.
++            let _refresh_guard = CHATGPT_REFRESH_LOCK
++                .get_or_init(|| tokio::sync::Mutex::new(()))
++                .lock()
++                .await;
+             let secret = conversation
+                 .get_secret(&secret_id)
+                 .await?
+@@ -230,6 +242,45 @@ pub(crate) async fn resolve_model_binding(
+                         "model secret must be a key secret, got oauth for {name}"
+                     ));
+                 }
++                Secret::ChatGpt {
++                    access_token,
++                    refresh_token,
++                    expires_at_ms,
++                    account_id,
++                } => {
++                    if base_url.is_some() {
++                        return Err(anyhow::anyhow!(
++                            "ChatGPT subscription secrets cannot be used with a custom base URL"
++                        ));
++                    }
++                    let now = chrono::Utc::now().timestamp_millis();
++                    let secret = if expires_at_ms <= now + 30_000 {
++                        let secret = refresh_chatgpt(&refresh_token, &account_id).await?;
++                        conversation
++                            .update_secret(&secret_id, secret.clone())
++                            .await?;
++                        secret
++                    } else {
++                        Secret::ChatGpt {
++                            access_token,
++                            refresh_token,
++                            expires_at_ms,
++                            account_id,
++                        }
++                    };
++                    if let Secret::ChatGpt {
++                        access_token,
++                        account_id,
++                        ..
++                    } = &secret
++                    {
++                        chatgpt = Some(ChatGptModelAuth {
++                            access_token: access_token.clone(),
++                            account_id: account_id.clone(),
++                        });
++                    }
++                    None
++                }
+             }
+         }
+         None => None,
+@@ -238,6 +289,7 @@ pub(crate) async fn resolve_model_binding(
+         model,
+         api_key,
+         base_url,
++        chatgpt,
+     })
+ }
+ 
+diff --git a/crates/executor/src/harness_runtime.rs b/crates/executor/src/harness_runtime.rs
+index 299a2d6..a671e56 100644
+--- a/crates/executor/src/harness_runtime.rs
++++ b/crates/executor/src/harness_runtime.rs
+@@ -18,10 +18,11 @@ use lingua::serde_json as lingua_json;
+ use lingua::universal::{
+     AssistantContent, AssistantContentPart, TextContentPart, TokenBudget, ToolCallArguments,
+     ToolChoiceConfig, ToolChoiceMode, UniversalParams, UniversalRequest, UniversalResponse,
+-    UniversalStreamChunk, UniversalTool,
++    UniversalStreamChunk, UniversalTool, UserContent, UserContentPart,
+ };
+ use lingua::{Message, ProviderFormat};
+ use reqwest::Url;
++use serde::{Deserialize, Serialize};
+ 
+ type RawChunkStream = Pin<
+     Box<
+@@ -48,6 +49,11 @@ impl RouterModelClient {
+ #[async_trait]
+ impl ModelClient for RouterModelClient {
+     async fn complete(&self, request: ModelRequest) -> Result<ModelResponse> {
++        if request.chatgpt.is_some() {
++            let mut stream = self.complete_chatgpt_stream(request).await?;
++            while stream.next_chunk().await?.is_some() {}
++            return stream.finish().await;
++        }
+         let config = resolve_runtime_config(&request, self.env.as_ref())?;
+         let format = config.format;
+         let router = build_router(&request, format, &config)?;
+@@ -64,6 +70,9 @@ impl ModelClient for RouterModelClient {
+     }
+ 
+     async fn complete_stream(&self, request: ModelRequest) -> Result<Box<dyn ModelResponseStream>> {
++        if request.chatgpt.is_some() {
++            return self.complete_chatgpt_stream(request).await;
++        }
+         let config = resolve_runtime_config(&request, self.env.as_ref())?;
+         let format = config.format;
+         let router = build_router(&request, format, &config)?;
+@@ -85,6 +94,203 @@ impl ModelClient for RouterModelClient {
+     }
+ }
+ 
++impl RouterModelClient {
++    async fn complete_chatgpt_stream(
++        &self,
++        request: ModelRequest,
++    ) -> Result<Box<dyn ModelResponseStream>> {
++        let auth = request
++            .chatgpt
++            .as_ref()
++            .ok_or_else(|| anyhow::anyhow!("missing ChatGPT credentials"))?;
++        let payload = build_codex_request(&request)?;
++        let response = reqwest::Client::new()
++            .post(crate::chatgpt::CODEX_ENDPOINT)
++            .bearer_auth(&auth.access_token)
++            .header("ChatGPT-Account-Id", &auth.account_id)
++            .header("originator", "exo")
++            .header("Accept", "text/event-stream")
++            .header("User-Agent", "exo")
++            .json(&payload)
++            .send()
++            .await?;
++        if !response.status().is_success() {
++            anyhow::bail!("ChatGPT Codex request failed ({})", response.status());
++        }
++        Ok(Box::new(ChatGptResponseStream {
++            raw: Box::pin(response.bytes_stream()),
++            buffer: Vec::new(),
++            response: None,
++        }))
++    }
++}
++
++fn build_codex_request(request: &ModelRequest) -> Result<CodexRequest> {
++    let mut universal = build_universal_request(request, true)?;
++    let mut instructions = Vec::new();
++    for message in &universal.messages {
++        if let Message::System { content } | Message::Developer { content } = message {
++            match content {
++                UserContent::String(text) => instructions.push(text.clone()),
++                UserContent::Array(parts) => {
++                    for part in parts {
++                        match part {
++                            UserContentPart::Text(text) => instructions.push(text.text.clone()),
++                            _ => anyhow::bail!("ChatGPT instructions must contain only text"),
++                        }
++                    }
++                }
++            }
++        }
++    }
++    universal
++        .messages
++        .retain(|message| !matches!(message, Message::System { .. } | Message::Developer { .. }));
++    let bytes = serialize_request(ProviderFormat::Responses, &universal)?;
++    let mut payload: CodexRequest = lingua_json::from_slice(&bytes)?;
++    payload.instructions = Some(instructions.join("\n\n"));
++    payload.include = Some(vec!["reasoning.encrypted_content".to_string()]);
++    payload.stream = true;
++    payload.store = false;
++    for tool in payload.tools.iter_mut().flatten() {
++        tool.strict = Some(false);
++    }
++    Ok(payload)
++}
++
++#[derive(Debug, Deserialize, Serialize)]
++struct CodexRequest {
++    #[serde(skip_serializing_if = "Option::is_none")]
++    model: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    instructions: Option<String>,
++    input: lingua_json::Value,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    tools: Option<Vec<CodexTool>>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    tool_choice: Option<lingua_json::Value>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    parallel_tool_calls: Option<bool>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    reasoning: Option<lingua_json::Value>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    text: Option<lingua_json::Value>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    include: Option<Vec<String>>,
++    #[serde(default)]
++    stream: bool,
++    #[serde(default)]
++    store: bool,
++}
++
++#[derive(Debug, Deserialize, Serialize)]
++struct CodexTool {
++    r#type: String,
++    name: String,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    description: Option<String>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    parameters: Option<lingua_json::Value>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    strict: Option<bool>,
++}
++
++type HttpByteStream = Pin<Box<dyn Stream<Item = reqwest::Result<Bytes>> + Send>>;
++
++struct ChatGptResponseStream {
++    raw: HttpByteStream,
++    buffer: Vec<u8>,
++    response: Option<UniversalResponse>,
++}
++
++#[derive(Deserialize)]
++struct CodexEventKind {
++    r#type: String,
++    response: Option<lingua_json::Value>,
++}
++
++#[async_trait]
++impl ModelResponseStream for ChatGptResponseStream {
++    async fn next_chunk(&mut self) -> Result<Option<UniversalStreamChunk>> {
++        loop {
++            if self.response.is_some() {
++                return Ok(None);
++            }
++            if let Some(data) = take_sse_data(&mut self.buffer) {
++                if data == b"[DONE]" {
++                    anyhow::bail!("ChatGPT stream ended without a completed response");
++                }
++                let event: CodexEventKind = lingua_json::from_slice(&data)?;
++                match event.r#type.as_str() {
++                    "error" | "response.failed" | "response.incomplete" => {
++                        anyhow::bail!("ChatGPT stream failed ({})", event.r#type);
++                    }
++                    "response.completed" => {
++                        let response = event.response.ok_or_else(|| {
++                            anyhow::anyhow!("ChatGPT completion omitted response")
++                        })?;
++                        // The final response retains encrypted reasoning and complete
++                        // tool arguments that the streaming deltas do not preserve.
++                        self.response = Some(lingua::response_to_universal(Bytes::from(
++                            lingua_json::to_vec(&response)?,
++                        ))?);
++                    }
++                    _ => {}
++                }
++                let parsed = lingua::parse_stream_event(
++                    Bytes::from(data),
++                    ProviderFormat::Responses,
++                    ProviderFormat::Responses,
++                )?;
++                if let Some(chunk) = parsed.universal {
++                    return Ok(Some(chunk));
++                }
++                continue;
++            }
++            let Some(bytes) = self.raw.next().await.transpose()? else {
++                anyhow::bail!("ChatGPT stream closed before response.completed");
++            };
++            self.buffer.extend_from_slice(&bytes);
++        }
++    }
++
++    async fn finish(self: Box<Self>) -> Result<ModelResponse> {
++        normalize_model_response(
++            self.response
++                .ok_or_else(|| anyhow::anyhow!("ChatGPT stream has not completed"))?,
++        )
++    }
++}
++
++fn take_sse_data(buffer: &mut Vec<u8>) -> Option<Vec<u8>> {
++    loop {
++        let (end, delimiter) = buffer
++            .windows(2)
++            .position(|w| w == b"\n\n")
++            .map(|end| (end, 2))
++            .into_iter()
++            .chain(
++                buffer
++                    .windows(4)
++                    .position(|w| w == b"\r\n\r\n")
++                    .map(|end| (end, 4)),
++            )
++            .min_by_key(|(end, _)| *end)?;
++        let event = buffer.drain(..end + delimiter).collect::<Vec<_>>();
++        let lines: Vec<&[u8]> = event
++            .split(|byte| *byte == b'\n')
++            .filter_map(|line| {
++                let line = line.strip_suffix(b"\r").unwrap_or(line);
++                line.strip_prefix(b"data:")
++                    .map(|data| data.strip_prefix(b" ").unwrap_or(data))
++            })
++            .collect();
++        if !lines.is_empty() {
++            return Some(lines.join(&b'\n'));
++        }
++    }
++}
++
+ struct RouterModelResponseStream {
+     raw: RawChunkStream,
+     format: ProviderFormat,
+@@ -404,6 +610,7 @@ mod tests {
+             model: "gpt-5.4".to_string(),
+             api_key: None,
+             base_url: None,
++            chatgpt: None,
+             messages: Vec::new(),
+             tools: Vec::new(),
+             max_output_tokens: None,
+@@ -563,6 +770,128 @@ mod tests {
+         assert_eq!(tool_call_id, "call_real");
+         assert_eq!(tool_name, "shell");
+     }
++
++    #[test]
++    fn codex_adaptation_forces_subscription_flags_and_non_strict_tools() {
++        let mut request = model_request();
++        request.messages = vec![
++            Message::System {
++                content: UserContent::String("Be helpful".into()),
++            },
++            Message::User {
++                content: UserContent::String("Hello".into()),
++            },
++        ];
++        request.max_output_tokens = Some(200);
++        request.tools.push(ToolDefinition {
++            name: "shell".to_string(),
++            description: "run a command".to_string(),
++            parameters: serde_json::json!({"type": "object"}),
++        });
++        let codex = build_codex_request(&request).unwrap();
++        let body = lingua_json::to_string(&codex).unwrap();
++        assert!(!body.contains("max_output_tokens"));
++        assert!(
++            !lingua_json::to_string(&codex.input)
++                .unwrap()
++                .contains("Be helpful")
++        );
++        assert_eq!(codex.instructions.as_deref(), Some("Be helpful"));
++        assert_eq!(
++            codex.include,
++            Some(vec!["reasoning.encrypted_content".into()])
++        );
++        assert!(codex.stream);
++        assert!(!codex.store);
++        assert_eq!(codex.tools.unwrap()[0].strict, Some(false));
++    }
++
++    #[test]
++    fn sse_handles_comments_crlf_and_multiple_data_lines() {
++        let mut buffer = b": keepalive\r\n\r\ndata:one\r\ndata: two\r\n\r\n".to_vec();
++        assert_eq!(take_sse_data(&mut buffer), Some(b"one\ntwo".to_vec()));
++        assert!(buffer.is_empty());
++    }
++
++    #[tokio::test]
++    async fn codex_stream_rejects_errors_and_truncated_responses() {
++        for data in [
++            "",
++            "data: [DONE]\n\n",
++            "data: {\"type\":\"response.failed\"}\n\n",
++            "data: {\"type\":\"response.incomplete\"}\n\n",
++        ] {
++            let mut stream = ChatGptResponseStream {
++                raw: Box::pin(futures::stream::iter(vec![Ok(Bytes::from(data))])),
++                buffer: Vec::new(),
++                response: None,
++            };
++            assert!(stream.next_chunk().await.is_err());
++        }
++    }
++
++    #[test]
++    fn subscription_credentials_are_not_serialized() {
++        let mut request = model_request();
++        request.chatgpt = Some(crate::executor_types::ChatGptModelAuth {
++            access_token: "private-access".into(),
++            account_id: "private-account".into(),
++        });
++        let json = serde_json::to_string(&request).unwrap();
++        assert!(!json.contains("private-"));
++        assert!(!json.contains("chatgpt"));
++    }
++
++    #[tokio::test]
++    async fn codex_stream_preserves_completed_tools_and_text_across_fragments() {
++        let completed = serde_json::json!({
++            "type": "response.completed",
++            "response": {
++                "id": "resp_test", "object": "response", "created_at": 1,
++                "model": "gpt-5.4", "status": "completed",
++                "output": [
++                    {"id":"msg_1", "type":"message", "role":"assistant", "status":"completed", "content":[{"type":"output_text", "text":"Hello", "annotations":[]}]},
++                    {"id":"fc_1", "type":"function_call", "call_id":"call_1", "name":"shell", "arguments":"{\"command\":\"pwd\"}", "status":"completed"}
++                ],
++                "usage": {"input_tokens":10,"output_tokens":5,"total_tokens":15}
++            }
++        });
++        let wire = format!(
++            "data: {{\"type\":\"response.output_text.delta\",\"delta\":\"Hello\",\"output_index\":0}}\n\ndata: {completed}\n\n"
++        );
++        let chunks: Vec<_> = wire
++            .as_bytes()
++            .chunks(7)
++            .map(|part| Ok(Bytes::copy_from_slice(part)))
++            .collect();
++        let mut stream = ChatGptResponseStream {
++            raw: Box::pin(futures::stream::iter(chunks)),
++            buffer: Vec::new(),
++            response: None,
++        };
++        assert!(stream.next_chunk().await.unwrap().is_some());
++        while stream.next_chunk().await.unwrap().is_some() {}
++        let result = Box::new(stream).finish().await.unwrap();
++        assert_eq!(result.model.as_deref(), Some("gpt-5.4"));
++        assert_eq!(result.tool_calls.len(), 1);
++        assert_eq!(result.tool_calls[0].tool_call_id, "call_1");
++        assert_eq!(result.tool_calls[0].request.function_name, "shell");
++        assert!(
++            serde_json::to_string(&result.messages)
++                .unwrap()
++                .contains("Hello")
++        );
++        assert!(result.usage.is_some());
++    }
++
++    #[test]
++    fn extracts_text_and_tool_sse_payloads_without_parsing_json_values() {
++        let mut buffer = b"event: response.output_text.delta\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\"hi\",\"item_id\":\"msg_1\",\"output_index\":0,\"content_index\":0}\n\nevent: response.function_call_arguments.delta\ndata: {\"type\":\"response.function_call_arguments.delta\",\"delta\":\"{}\",\"item_id\":\"call_1\",\"output_index\":1}\n\n".to_vec();
++        let text = take_sse_data(&mut buffer).unwrap();
++        let tool = take_sse_data(&mut buffer).unwrap();
++        assert!(text.starts_with(b"{\"type\":\"response.output_text.delta\""));
++        assert!(tool.starts_with(b"{\"type\":\"response.function_call_arguments.delta\""));
++    }
+ }
+ 
+ fn serialize_request(format: ProviderFormat, request: &UniversalRequest) -> Result<Bytes> {
+diff --git a/crates/executor/src/lib.rs b/crates/executor/src/lib.rs
+index cdc50c0..55dc051 100644
+--- a/crates/executor/src/lib.rs
++++ b/crates/executor/src/lib.rs
+@@ -6,6 +6,7 @@ mod basic_tests;
+ mod braintrust;
+ #[cfg(test)]
+ mod braintrust_tests;
++mod chatgpt;
+ mod conversation_events;
+ mod conversation_sandbox;
+ mod conversation_wakeup;
+@@ -41,6 +42,7 @@ pub use adapter::{
+ };
+ pub use adapter::{AdapterRunOptions, run_adapters_watch};
+ pub use braintrust::{BraintrustProject, BraintrustRuntimeConfig, BraintrustTracingConfig};
++pub use chatgpt::login_chatgpt_device;
+ pub use conversation_events::{
+     HOST_EVENT_ADAPTER_RUNNER_DRAINING, HOST_EVENT_ADAPTER_RUNNER_STARTED, HOST_EVENT_REBOOT,
+     HOST_EVENT_REBUILD_AND_RESTART, RebuildUpdateRecord, complete_rebuild_and_restart_update,
+diff --git a/crates/executor/src/rlm.rs b/crates/executor/src/rlm.rs
+index 6a0fd97..aa14d0b 100644
+--- a/crates/executor/src/rlm.rs
++++ b/crates/executor/src/rlm.rs
+@@ -108,6 +108,7 @@ where
+                 model: model_binding.model.clone(),
+                 api_key: model_binding.api_key.clone(),
+                 base_url: model_binding.base_url.clone(),
++                chatgpt: model_binding.chatgpt.clone(),
+                 messages: history.clone(),
+                 tools: build_rlm_tool_definitions(),
+                 max_output_tokens: agent_config.max_output_tokens,
+@@ -387,6 +388,7 @@ where
+                 model: model_binding.model.clone(),
+                 api_key: model_binding.api_key.clone(),
+                 base_url: model_binding.base_url.clone(),
++                chatgpt: model_binding.chatgpt.clone(),
+                 messages,
+                 tools: Vec::new(),
+                 max_output_tokens: agent_config.max_output_tokens,
+diff --git a/crates/exoharness/src/basic.rs b/crates/exoharness/src/basic.rs
+index 3731f18..63a8c3f 100644
+--- a/crates/exoharness/src/basic.rs
++++ b/crates/exoharness/src/basic.rs
+@@ -654,6 +654,9 @@ impl BasicExoHarnessInner {
+             Some(Secret::Oauth { .. }) => {
+                 bail!("secret {name:?} is an OAuth secret; expected an API key")
+             }
++            Some(Secret::ChatGpt { .. }) => {
++                bail!("secret {name:?} is a ChatGPT secret; expected an API key")
++            }
+             None => Ok(None),
+         }
+     }
+@@ -665,6 +668,9 @@ impl BasicExoHarnessInner {
+             Some(Secret::Oauth { .. }) => {
+                 bail!("secret {id} is an OAuth secret; expected an API key")
+             }
++            Some(Secret::ChatGpt { .. }) => {
++                bail!("secret {id} is a ChatGPT secret; expected an API key")
++            }
+             None => Ok(None),
+         }
+     }
+@@ -1165,6 +1171,18 @@ impl ExoHarness for BasicExoHarness {
+         Ok(id)
+     }
+ 
++    async fn update_secret(&self, id: &SecretId, secret: Secret) -> Result<()> {
++        let _guard = self.inner.write_lock.lock().await;
++        update_secret_in_scopes(
++            &self.inner.storage,
++            &self.inner.secret_cipher,
++            id,
++            secret,
++            &[self.secrets_dir()],
++        )
++        .await
++    }
++
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>> {
+         let path = self.secrets_dir().join(format!("{id}.json"));
+         let Some(record) = self
+@@ -1552,6 +1570,18 @@ impl AgentHandle for BasicAgentHandle {
+         Ok(id)
+     }
+ 
++    async fn update_secret(&self, id: &SecretId, secret: Secret) -> Result<()> {
++        let _guard = self.harness.inner.write_lock.lock().await;
++        update_secret_in_scopes(
++            &self.harness.inner.storage,
++            &self.harness.inner.secret_cipher,
++            id,
++            secret,
++            &[self.secrets_dir(), self.harness.secrets_dir()],
++        )
++        .await
++    }
++
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>> {
+         let path = self.secrets_dir().join(format!("{id}.json"));
+         let Some(record) = self
+@@ -3102,6 +3132,22 @@ impl ConversationHandle for BasicConversationHandle {
+         Ok(id)
+     }
+ 
++    async fn update_secret(&self, id: &SecretId, secret: Secret) -> Result<()> {
++        let _guard = self.harness.inner.write_lock.lock().await;
++        update_secret_in_scopes(
++            &self.harness.inner.storage,
++            &self.harness.inner.secret_cipher,
++            id,
++            secret,
++            &[
++                self.secrets_dir(),
++                agent_secrets_dir(&self.harness, self.agent_id),
++                self.harness.secrets_dir(),
++            ],
++        )
++        .await
++    }
++
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>> {
+         let local_path = self.secrets_dir().join(format!("{id}.json"));
+         if let Some(record) = self
+@@ -4713,6 +4759,25 @@ async fn list_secret_metadata(
+     Ok(secrets)
+ }
+ 
++async fn update_secret_in_scopes(
++    storage: &BasicObjectStore,
++    cipher: &SecretCipher,
++    id: &SecretId,
++    secret: Secret,
++    scope_dirs: &[PathBuf],
++) -> Result<()> {
++    for scope_dir in scope_dirs {
++        let path = scope_dir.join(format!("{id}.json"));
++        if let Some(mut record) = storage.get_json_if_exists::<StoredSecret>(&path).await? {
++            record.metadata.r#type = secret_type(&secret);
++            record.secret = cipher.encrypt_secret(&secret)?;
++            storage.put_json(path, &record).await?;
++            return Ok(());
++        }
++    }
++    bail!("secret {id} does not exist")
++}
++
+ fn merge_binding_records(scopes: Vec<Vec<BindingRecord>>) -> Vec<BindingRecord> {
+     let mut effective = HashMap::<String, BindingRecord>::new();
+     for bindings in scopes {
+@@ -4759,6 +4824,7 @@ fn secret_type(secret: &Secret) -> SecretType {
+     match secret {
+         Secret::Key { .. } => SecretType::Key,
+         Secret::Oauth { .. } => SecretType::Oauth,
++        Secret::ChatGpt { .. } => SecretType::Chatgpt,
+     }
+ }
+ 
+diff --git a/crates/exoharness/src/basic_tests.rs b/crates/exoharness/src/basic_tests.rs
+index 46992b7..0f4444b 100644
+--- a/crates/exoharness/src/basic_tests.rs
++++ b/crates/exoharness/src/basic_tests.rs
+@@ -1326,6 +1326,102 @@ async fn secrets_are_encrypted_at_rest() {
+     assert!(stored_text.contains("\"algorithm\""));
+ }
+ 
++#[tokio::test(flavor = "current_thread")]
++async fn update_secret_replaces_encrypted_value_with_stable_metadata() {
++    let tempdir = TempDir::new().expect("tempdir");
++    let harness = BasicExoHarness::new(local_test_config(tempdir.path()))
++        .await
++        .expect("harness should initialize");
++    let secret_id = harness
++        .put_secret(PutSecretRequest {
++            name: "chatgpt".to_string(),
++            secret: Secret::Key {
++                value: "old-token".to_string(),
++            },
++        })
++        .await
++        .expect("secret should be stored");
++    let before = harness.list_secrets().await.expect("list secrets")[0].clone();
++    let replacement = Secret::ChatGpt {
++        access_token: "new-token".to_string(),
++        refresh_token: "refresh-token".to_string(),
++        expires_at_ms: 123,
++        account_id: "account".to_string(),
++    };
++
++    harness
++        .update_secret(&secret_id, replacement.clone())
++        .await
++        .expect("secret should update");
++
++    assert_eq!(
++        harness.get_secret(&secret_id).await.unwrap(),
++        Some(replacement)
++    );
++    let after = harness.list_secrets().await.expect("list secrets")[0].clone();
++    assert_eq!(after.id, before.id);
++    assert_eq!(after.name, before.name);
++    assert_eq!(after.created_at, before.created_at);
++    assert_eq!(after.r#type, crate::SecretType::Chatgpt);
++    let stored = fs::read_to_string(
++        tempdir
++            .path()
++            .join("secrets")
++            .join(format!("{secret_id}.json")),
++    )
++    .await
++    .expect("stored secret should exist");
++    assert!(!stored.contains("old-token"));
++    assert!(!stored.contains("new-token"));
++}
++
++#[tokio::test(flavor = "current_thread")]
++async fn conversation_update_of_inherited_secret_updates_original_scope() {
++    let tempdir = TempDir::new().expect("tempdir");
++    let harness = BasicExoHarness::new(local_test_config(tempdir.path()))
++        .await
++        .expect("harness should initialize");
++    let agent = harness
++        .new_agent(NewAgentRequest {
++            slug: "agent".to_string(),
++            name: "Agent".to_string(),
++        })
++        .await
++        .expect("agent");
++    let first = agent
++        .new_conversation(NewConversationRequest::default())
++        .await
++        .expect("first conversation");
++    let second = agent
++        .new_conversation(NewConversationRequest::default())
++        .await
++        .expect("second conversation");
++    let secret_id = agent
++        .put_secret(PutSecretRequest {
++            name: "chatgpt".to_string(),
++            secret: Secret::Key {
++                value: "old-token".to_string(),
++            },
++        })
++        .await
++        .expect("agent secret");
++    let replacement = Secret::Key {
++        value: "new-token".to_string(),
++    };
++
++    first
++        .update_secret(&secret_id, replacement.clone())
++        .await
++        .expect("inherited secret should update");
++
++    assert_eq!(
++        second.get_secret(&secret_id).await.unwrap(),
++        Some(replacement)
++    );
++    assert_eq!(first.list_secrets().await.unwrap().len(), 1);
++    assert_eq!(second.list_secrets().await.unwrap().len(), 1);
++}
++
+ #[tokio::test(flavor = "current_thread")]
+ async fn basic_backend_runs_commands_in_created_sandbox() {
+     let tempdir = TempDir::new().expect("tempdir");
+diff --git a/crates/exoharness/src/http/client.rs b/crates/exoharness/src/http/client.rs
+index 79f4594..db646a5 100644
+--- a/crates/exoharness/src/http/client.rs
++++ b/crates/exoharness/src/http/client.rs
+@@ -178,6 +178,19 @@ impl ExoHarness for HttpExoHarness {
+         }
+     }
+ 
++    async fn update_secret(&self, id: &SecretId, secret: Secret) -> Result<()> {
++        match self
++            .request(Request::UpdateSecret {
++                secret_id: *id,
++                secret,
++            })
++            .await?
++        {
++            Response::Unit => Ok(()),
++            response => unexpected_response(response, "unit"),
++        }
++    }
++
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>> {
+         match self.request(Request::GetSecret { secret_id: *id }).await? {
+             Response::Secret { secret } => Ok(secret),
+@@ -649,6 +662,21 @@ impl AgentHandle for HttpAgentHandle {
+         }
+     }
+ 
++    async fn update_secret(&self, id: &SecretId, secret: Secret) -> Result<()> {
++        match self
++            .harness
++            .request(Request::AgentUpdateSecret {
++                agent_id: self.record.id,
++                secret_id: *id,
++                secret,
++            })
++            .await?
++        {
++            Response::Unit => Ok(()),
++            response => unexpected_response(response, "unit"),
++        }
++    }
++
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>> {
+         match self
+             .harness
+@@ -1080,6 +1108,22 @@ impl ConversationHandle for HttpConversationHandle {
+         }
+     }
+ 
++    async fn update_secret(&self, id: &SecretId, secret: Secret) -> Result<()> {
++        match self
++            .harness
++            .request(Request::ConversationUpdateSecret {
++                agent_id: self.agent_id,
++                conversation_id: self.record.id,
++                secret_id: *id,
++                secret,
++            })
++            .await?
++        {
++            Response::Unit => Ok(()),
++            response => unexpected_response(response, "unit"),
++        }
++    }
++
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>> {
+         match self
+             .harness
+diff --git a/crates/exoharness/src/protocol.rs b/crates/exoharness/src/protocol.rs
+index 25691be..b624686 100644
+--- a/crates/exoharness/src/protocol.rs
++++ b/crates/exoharness/src/protocol.rs
+@@ -98,6 +98,10 @@ pub enum Request {
+     PutSecret {
+         request: PutSecretRequest,
+     },
++    UpdateSecret {
++        secret_id: SecretId,
++        secret: Secret,
++    },
+     GetSecret {
+         secret_id: SecretId,
+     },
+@@ -209,6 +213,11 @@ pub enum Request {
+         agent_id: AgentId,
+         request: PutSecretRequest,
+     },
++    AgentUpdateSecret {
++        agent_id: AgentId,
++        secret_id: SecretId,
++        secret: Secret,
++    },
+     AgentGetSecret {
+         agent_id: AgentId,
+         secret_id: SecretId,
+@@ -284,6 +293,12 @@ pub enum Request {
+         conversation_id: ConversationId,
+         request: PutSecretRequest,
+     },
++    ConversationUpdateSecret {
++        agent_id: AgentId,
++        conversation_id: ConversationId,
++        secret_id: SecretId,
++        secret: Secret,
++    },
+     ConversationGetSecret {
+         agent_id: AgentId,
+         conversation_id: ConversationId,
+@@ -323,6 +338,7 @@ impl Request {
+             Self::GetBinding { .. } => "get_binding",
+             Self::ListSecrets => "list_secrets",
+             Self::PutSecret { .. } => "put_secret",
++            Self::UpdateSecret { .. } => "update_secret",
+             Self::GetSecret { .. } => "get_secret",
+             Self::ListConversations { .. } => "list_conversations",
+             Self::GetConversation { .. } => "get_conversation",
+@@ -352,6 +368,7 @@ impl Request {
+             Self::AgentGetBinding { .. } => "agent_get_binding",
+             Self::AgentListSecrets { .. } => "agent_list_secrets",
+             Self::AgentPutSecret { .. } => "agent_put_secret",
++            Self::AgentUpdateSecret { .. } => "agent_update_secret",
+             Self::AgentGetSecret { .. } => "agent_get_secret",
+             Self::ConversationStartSession { .. } => "conversation_start_session",
+             Self::ConversationEndSession { .. } => "conversation_end_session",
+@@ -368,6 +385,7 @@ impl Request {
+             Self::ConversationGetBinding { .. } => "conversation_get_binding",
+             Self::ConversationListSecrets { .. } => "conversation_list_secrets",
+             Self::ConversationPutSecret { .. } => "conversation_put_secret",
++            Self::ConversationUpdateSecret { .. } => "conversation_update_secret",
+             Self::ConversationGetSecret { .. } => "conversation_get_secret",
+             Self::TurnAddEvents { .. } => "turn_add_events",
+             Self::TurnWriteArtifact { .. } => "turn_write_artifact",
+diff --git a/crates/exoharness/src/server.rs b/crates/exoharness/src/server.rs
+index 289a50d..28aa1f0 100644
+--- a/crates/exoharness/src/server.rs
++++ b/crates/exoharness/src/server.rs
+@@ -67,6 +67,10 @@ impl ExoHarnessServer {
+             Request::PutSecret { request } => Ok(Response::SecretId {
+                 secret_id: self.root.put_secret(request).await?,
+             }),
++            Request::UpdateSecret { secret_id, secret } => {
++                self.root.update_secret(&secret_id, secret).await?;
++                Ok(Response::Unit)
++            }
+             Request::GetSecret { secret_id } => Ok(Response::Secret {
+                 secret: self.root.get_secret(&secret_id).await?,
+             }),
+@@ -228,6 +232,15 @@ impl ExoHarnessServer {
+                     secret_id: agent.put_secret(request).await?,
+                 })
+             }
++            Request::AgentUpdateSecret {
++                agent_id,
++                secret_id,
++                secret,
++            } => {
++                let agent = self.require_agent(&agent_id).await?;
++                agent.update_secret(&secret_id, secret).await?;
++                Ok(Response::Unit)
++            }
+             Request::AgentGetSecret {
+                 agent_id,
+                 secret_id,
+@@ -393,6 +406,16 @@ impl ExoHarnessServer {
+                     secret_id: conversation.put_secret(request).await?,
+                 })
+             }
++            Request::ConversationUpdateSecret {
++                agent_id,
++                conversation_id,
++                secret_id,
++                secret,
++            } => {
++                let conversation = self.require_conversation(agent_id, conversation_id).await?;
++                conversation.update_secret(&secret_id, secret).await?;
++                Ok(Response::Unit)
++            }
+             Request::ConversationGetSecret {
+                 agent_id,
+                 conversation_id,
+diff --git a/crates/exoharness/src/types.rs b/crates/exoharness/src/types.rs
+index 8554bbb..0249add 100644
+--- a/crates/exoharness/src/types.rs
++++ b/crates/exoharness/src/types.rs
+@@ -32,6 +32,9 @@ pub trait ExoHarness: Send + Sync {
+ 
+     async fn list_secrets(&self) -> Result<Vec<SecretMetadata>>;
+     async fn put_secret(&self, request: PutSecretRequest) -> Result<SecretId>;
++    async fn update_secret(&self, _id: &SecretId, _secret: Secret) -> Result<()> {
++        anyhow::bail!("updating secrets is not supported by this harness")
++    }
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>>;
+ }
+ 
+@@ -133,6 +136,9 @@ pub trait AgentHandle: SandboxHandle {
+ 
+     async fn list_secrets(&self) -> Result<Vec<SecretMetadata>>;
+     async fn put_secret(&self, request: PutSecretRequest) -> Result<SecretId>;
++    async fn update_secret(&self, _id: &SecretId, _secret: Secret) -> Result<()> {
++        anyhow::bail!("updating secrets is not supported by this agent")
++    }
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>>;
+ 
+     async fn write_artifact(&self, request: WriteArtifactRequest) -> Result<ArtifactVersion>;
+@@ -168,6 +174,9 @@ pub trait ThreadHandle: SandboxHandle {
+ 
+     async fn list_secrets(&self) -> Result<Vec<SecretMetadata>>;
+     async fn put_secret(&self, request: PutSecretRequest) -> Result<SecretId>;
++    async fn update_secret(&self, _id: &SecretId, _secret: Secret) -> Result<()> {
++        anyhow::bail!("updating secrets is not supported by this conversation")
++    }
+     async fn get_secret(&self, id: &SecretId) -> Result<Option<Secret>>;
+ }
+ 
+@@ -988,6 +997,7 @@ pub struct PutSecretRequest {
+ pub enum SecretType {
+     Key,
+     Oauth,
++    Chatgpt,
+ }
+ 
+ #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+@@ -1149,6 +1159,14 @@ pub enum Secret {
+         access_token: String,
+         refresh_token: Option<String>,
+     },
++    /// OAuth credentials for the fixed ChatGPT Codex subscription transport.
++    /// These credentials must never be used with a caller-supplied base URL.
++    ChatGpt {
++        access_token: String,
++        refresh_token: String,
++        expires_at_ms: i64,
++        account_id: String,
++    },
+ }
+ 
+ pub type AgentId = Uuid7;
+diff --git a/exoharness/examples/typescript/rlm-harness.ts b/exoharness/examples/typescript/rlm-harness.ts
+index 35b068e..1d02de1 100644
+--- a/exoharness/examples/typescript/rlm-harness.ts
++++ b/exoharness/examples/typescript/rlm-harness.ts
+@@ -82,7 +82,7 @@ type FinalDirective =
+ 
+ export default defineHarness({
+   async runTurn(context) {
+-    const modelBinding = await resolveLlmBinding(context);
++    const modelBinding = await resolveLlmBinding(context, { chatgpt: true });
+     const runtime = ResponsesRuntime.fromModelBinding(
+       context.agentConfig,
+       modelBinding,
+diff --git a/exoharness/typescript/harness/index.ts b/exoharness/typescript/harness/index.ts
+index b3ee738..22353b6 100644
+--- a/exoharness/typescript/harness/index.ts
++++ b/exoharness/typescript/harness/index.ts
+@@ -86,11 +86,18 @@ export type Secret =
+       type: "oauth";
+       accessToken: string;
+       refreshToken?: string | null;
++    }
++  | {
++      type: "chatgpt";
++      accessToken: string;
++      refreshToken: string;
++      expiresAtMs: number;
++      accountId: string;
+     };
+ 
+ export interface SecretMetadata {
+   id: string;
+-  type: "key" | "oauth";
++  type: "key" | "oauth" | "chatgpt";
+   name: string;
+   createdAt: string;
+ }
+@@ -275,6 +282,7 @@ export interface Agent {
+   listBindings(): Promise<BindingRecord[]>;
+   getBinding(id: string): Promise<Binding | null>;
+   listSecrets(): Promise<SecretMetadata[]>;
++  updateSecret(id: string, secret: Secret): Promise<void>;
+   getSecret(id: string): Promise<Secret | null>;
+ }
+ 
+@@ -287,6 +295,7 @@ export interface ExoHarness {
+   listBindings(): Promise<BindingRecord[]>;
+   getBinding(id: string): Promise<Binding | null>;
+   listSecrets(): Promise<SecretMetadata[]>;
++  updateSecret(id: string, secret: Secret): Promise<void>;
+   getSecret(id: string): Promise<Secret | null>;
+ }
+ 
+@@ -333,6 +342,7 @@ export interface Conversation {
+   listBindings(): Promise<BindingRecord[]>;
+   getBinding(id: string): Promise<Binding | null>;
+   listSecrets(): Promise<SecretMetadata[]>;
++  updateSecret(id: string, secret: Secret): Promise<void>;
+   getSecret(id: string): Promise<Secret | null>;
+ }
+ 
+diff --git a/exoharness/typescript/harness/runner.ts b/exoharness/typescript/harness/runner.ts
+index 78fd0d4..e40487e 100644
+--- a/exoharness/typescript/harness/runner.ts
++++ b/exoharness/typescript/harness/runner.ts
+@@ -158,11 +158,18 @@ type RawSecret =
+       type: "oauth";
+       access_token: string;
+       refresh_token?: string | null;
++    }
++  | {
++      type: "chatgpt";
++      access_token: string;
++      refresh_token: string;
++      expires_at_ms: number;
++      account_id: string;
+     };
+ 
+ interface RawSecretMetadata {
+   id: string;
+-  type: "key" | "oauth";
++  type: "key" | "oauth" | "chatgpt";
+   name: string;
+   created_at: string;
+ }
+@@ -258,6 +265,7 @@ type RawExoRequest =
+   | { type: "list_bindings" }
+   | { type: "get_binding"; binding_id: string }
+   | { type: "list_secrets" }
++  | { type: "update_secret"; secret_id: string; secret: RawSecret }
+   | { type: "get_secret"; secret_id: string }
+   | { type: "list_conversations"; agent_id: string }
+   | { type: "get_conversation"; agent_id: string; conversation_id: string }
+@@ -281,6 +289,12 @@ type RawExoRequest =
+   | { type: "agent_list_bindings"; agent_id: string }
+   | { type: "agent_get_binding"; agent_id: string; binding_id: string }
+   | { type: "agent_list_secrets"; agent_id: string }
++  | {
++      type: "agent_update_secret";
++      agent_id: string;
++      secret_id: string;
++      secret: RawSecret;
++    }
+   | { type: "agent_get_secret"; agent_id: string; secret_id: string }
+   | {
+       type: "conversation_start_session";
+@@ -365,6 +379,13 @@ type RawExoRequest =
+       agent_id: string;
+       conversation_id: string;
+     }
++  | {
++      type: "conversation_update_secret";
++      agent_id: string;
++      conversation_id: string;
++      secret_id: string;
++      secret: RawSecret;
++    }
+   | {
+       type: "conversation_get_secret";
+       agent_id: string;
+@@ -979,10 +1000,37 @@ function toSecret(raw: RawSecret): Secret {
+       value: raw.value,
+     };
+   }
++  if (raw.type === "oauth") {
++    return {
++      type: "oauth",
++      accessToken: raw.access_token,
++      refreshToken: raw.refresh_token ?? null,
++    };
++  }
+   return {
+-    type: "oauth",
++    type: "chatgpt",
+     accessToken: raw.access_token,
+-    refreshToken: raw.refresh_token ?? null,
++    refreshToken: raw.refresh_token,
++    expiresAtMs: raw.expires_at_ms,
++    accountId: raw.account_id,
++  };
++}
++
++function fromSecret(secret: Secret): RawSecret {
++  if (secret.type === "key") return { type: "key", value: secret.value };
++  if (secret.type === "oauth") {
++    return {
++      type: "oauth",
++      access_token: secret.accessToken,
++      refresh_token: secret.refreshToken,
++    };
++  }
++  return {
++    type: "chatgpt",
++    access_token: secret.accessToken,
++    refresh_token: secret.refreshToken,
++    expires_at_ms: secret.expiresAtMs,
++    account_id: secret.accountId,
+   };
+ }
+ 
+@@ -1245,6 +1293,17 @@ function createAgent(client: ProtocolClient, raw: RawAgentRecord): Agent {
+       return payload.secrets.map(toSecretMetadata);
+     },
+ 
++    async updateSecret(id: string, secret: Secret): Promise<void> {
++      const payload = await client.requestExo({
++        type: "agent_update_secret",
++        agent_id: record.id,
++        secret_id: id,
++        secret: fromSecret(secret),
++      });
++      if (payload.type !== "unit")
++        throw new Error(`expected unit payload, got ${payload.type}`);
++    },
++
+     async getSecret(id: string): Promise<Secret | null> {
+       const payload = await client.requestExo({
+         type: "agent_get_secret",
+@@ -1335,6 +1394,16 @@ function createExoHarness(
+       return payload.secrets.map(toSecretMetadata);
+     },
+ 
++    async updateSecret(id: string, secret: Secret): Promise<void> {
++      const payload = await client.requestExo({
++        type: "update_secret",
++        secret_id: id,
++        secret: fromSecret(secret),
++      });
++      if (payload.type !== "unit")
++        throw new Error(`expected unit payload, got ${payload.type}`);
++    },
++
+     async getSecret(id: string): Promise<Secret | null> {
+       const payload = await client.requestExo({
+         type: "get_secret",
+@@ -1543,6 +1612,18 @@ function createConversation(
+       return payload.secrets.map(toSecretMetadata);
+     },
+ 
++    async updateSecret(id: string, secret: Secret): Promise<void> {
++      const payload = await client.requestExo({
++        type: "conversation_update_secret",
++        agent_id: raw.agent_id,
++        conversation_id: record.id,
++        secret_id: id,
++        secret: fromSecret(secret),
++      });
++      if (payload.type !== "unit")
++        throw new Error(`expected unit payload, got ${payload.type}`);
++    },
++
+     async getSecret(id: string): Promise<Secret | null> {
+       const payload = await client.requestExo({
+         type: "conversation_get_secret",
+diff --git a/exoharness/typescript/model-runtime/responses.test.ts b/exoharness/typescript/model-runtime/responses.test.ts
+index 54205ef..b21fc9a 100644
+--- a/exoharness/typescript/model-runtime/responses.test.ts
++++ b/exoharness/typescript/model-runtime/responses.test.ts
+@@ -1,8 +1,9 @@
+-import { describe, expect, it } from "vitest";
++import { afterEach, describe, expect, it, vi } from "vitest";
+ import type { Response } from "openai/resources/responses/responses";
+ 
+ import {
+   AnthropicRuntime,
++  buildChatgptBody,
+   ChatCompletionsRuntime,
+   isAnthropicModel,
+   isOpenRouterBinding,
+@@ -13,6 +14,8 @@ import {
+   ResponsesRuntime,
+ } from "./responses";
+ 
++afterEach(() => vi.unstubAllGlobals());
++
+ describe("model runtime dispatch", () => {
+   it("matches the Responses-required model families", () => {
+     for (const model of [
+@@ -79,6 +82,97 @@ describe("model runtime dispatch", () => {
+       }),
+     ).toBeInstanceOf(ChatCompletionsRuntime);
+   });
++
++  it("routes ChatGPT subscriptions only through the Responses runtime", () => {
++    expect(
++      runtimeFromModelBinding(undefined, {
++        model: "gpt-5.4",
++        apiKey: "access-token",
++        chatgpt: { accountId: "account-1" },
++      }),
++    ).toBeInstanceOf(ResponsesRuntime);
++    expect(() =>
++      runtimeFromModelBinding(undefined, {
++        model: "gpt-5.4",
++        apiKey: "access-token",
++        baseUrl: "https://example.com",
++        chatgpt: { accountId: "account-1" },
++      }),
++    ).toThrow("cannot use a custom base URL");
++  });
++
++  it("sends subscription requests to Codex with account and bearer headers", async () => {
++    const completed = {
++      type: "response.completed",
++      response: {
++        id: "resp_test",
++        object: "response",
++        status: "completed",
++        output: [],
++        model: "gpt-5.4",
++      },
++    };
++    const fetchMock = vi.fn(
++      async () =>
++        new globalThis.Response(`data: ${JSON.stringify(completed)}\n\n`, {
++          headers: { "content-type": "text/event-stream" },
++        }),
++    );
++    vi.stubGlobal("fetch", fetchMock);
++    const runtime = runtimeFromModelBinding(undefined, {
++      model: "gpt-5.4",
++      apiKey: "subscription-access",
++      chatgpt: { accountId: "account-1" },
++    });
++    await expect(
++      runtime.complete({
++        model: "gpt-5.4",
++        messages: [{ role: "user", content: "Hi" }],
++      }),
++    ).resolves.toMatchObject({ id: "resp_test" });
++    const [url, init] = fetchMock.mock.calls[0] as unknown as [
++      string,
++      RequestInit,
++    ];
++    expect(String(url)).toBe("https://chatgpt.com/backend-api/codex/responses");
++    const headers = new Headers(init.headers);
++    expect(headers.get("authorization")).toBe("Bearer subscription-access");
++    expect(headers.get("chatgpt-account-id")).toBe("account-1");
++    expect(JSON.parse(String(init.body))).toMatchObject({
++      instructions: "",
++      stream: true,
++      store: false,
++    });
++  });
++
++  it("builds the fixed ChatGPT Codex request shape", () => {
++    const body = buildChatgptBody({
++      model: "gpt-5.4",
++      messages: [
++        { role: "developer", content: "Follow instructions" },
++        { role: "user", content: "Hello" },
++      ],
++      tools: [
++        {
++          name: "shell",
++          description: "Run a command",
++          parameters: { type: "object", properties: {} },
++        },
++      ],
++      maxOutputTokens: 123,
++    });
++
++    expect(body).toMatchObject({
++      model: "gpt-5.4",
++      instructions: "Follow instructions",
++      stream: true,
++      store: false,
++      include: ["reasoning.encrypted_content"],
++      tools: [{ type: "function", name: "shell", strict: false }],
++    });
++    expect(body).not.toHaveProperty("max_output_tokens");
++    expect(JSON.stringify(body.input)).not.toContain("Follow instructions");
++  });
+ });
+ 
+ describe("response tool-call parsing", () => {
+diff --git a/exoharness/typescript/model-runtime/responses.ts b/exoharness/typescript/model-runtime/responses.ts
+index 4714b31..c837ee4 100644
+--- a/exoharness/typescript/model-runtime/responses.ts
++++ b/exoharness/typescript/model-runtime/responses.ts
+@@ -61,12 +61,14 @@ export interface ResponsesRuntimeOptions {
+   organization?: string;
+   project?: string;
+   braintrust?: NativeBraintrustOptions | null;
++  chatgpt?: { accountId: string };
+ }
+ 
+ export interface ResponsesModelBinding {
+   model?: string;
+   apiKey?: string;
+   baseUrl?: string | null;
++  chatgpt?: { accountId: string };
+ }
+ 
+ export interface NativeResponsesRequest {
+@@ -126,9 +128,16 @@ interface NativeLlmTraceOptions extends NativeTraceOptions {
+ 
+ export class ResponsesRuntime implements ResponsesRuntimeLike {
+   private readonly client: OpenAI;
++  private readonly chatgpt: boolean;
+ 
+   constructor(options: ResponsesRuntimeOptions = {}) {
+     ensureBraintrustLogger(options.braintrust ?? null);
++    this.chatgpt = options.chatgpt !== undefined;
++    if (this.chatgpt && (!options.apiKey || options.baseURL)) {
++      throw new Error(
++        "ChatGPT requires an access token and no custom base URL",
++      );
++    }
+     // wrapOpenAI auto-instruments chat.completions/responses calls with a
+     // braintrust LLM span. Also covers the OpenRouter path (same OpenAI client,
+     // just a different base URL) — braintrust's wrapOpenRouter is for their
+@@ -136,9 +145,17 @@ export class ResponsesRuntime implements ResponsesRuntimeLike {
+     this.client = wrapOpenAI(
+       new OpenAI({
+         apiKey: options.apiKey,
+-        baseURL: options.baseURL,
+-        organization: options.organization,
+-        project: options.project,
++        baseURL: this.chatgpt
++          ? "https://chatgpt.com/backend-api/codex"
++          : options.baseURL,
++        organization: this.chatgpt ? null : options.organization,
++        project: this.chatgpt ? null : options.project,
++        defaultHeaders: options.chatgpt
++          ? {
++              "ChatGPT-Account-ID": options.chatgpt.accountId,
++              originator: "exo",
++            }
++          : undefined,
+       }),
+     );
+   }
+@@ -163,6 +180,7 @@ export class ResponsesRuntime implements ResponsesRuntimeLike {
+       organization: process.env.OPENAI_ORG_ID,
+       project: process.env.OPENAI_PROJECT,
+       braintrust: braintrustOptionsFromAgentConfig(agentConfig),
++      chatgpt: binding.chatgpt,
+     });
+   }
+ 
+@@ -233,6 +251,12 @@ export class ResponsesRuntime implements ResponsesRuntimeLike {
+     request: NativeResponsesRequest,
+     options: NativeLlmTraceOptions,
+   ): Promise<Response> {
++    if (this.chatgpt) {
++      return this.completeStreamRaw(
++        buildChatgptBody(request),
++        options.handlers,
++      );
++    }
+     if (options.streamed) {
+       return this.completeStreamRaw(
+         buildStreamingBody(request),
+@@ -289,6 +313,19 @@ export function runtimeFromModelBinding(
+   binding: ResponsesModelBinding,
+ ): ResponsesRuntimeLike {
+   const model = binding.model ?? "";
++  if (binding.chatgpt) {
++    if (binding.baseUrl) {
++      throw new Error(
++        "ChatGPT subscription credentials cannot use a custom base URL",
++      );
++    }
++    if (!binding.apiKey) {
++      throw new Error(
++        "ChatGPT subscription credentials are missing an access token",
++      );
++    }
++    return ResponsesRuntime.fromModelBinding(agentConfig, binding);
++  }
+   if (isAnthropicModel(model)) {
+     return AnthropicRuntime.fromModelBinding(agentConfig, binding);
+   }
+@@ -824,6 +861,41 @@ function buildStreamingBody(
+   };
+ }
+ 
++export function buildChatgptBody(
++  request: NativeResponsesRequest,
++): ResponseCreateParamsStreaming {
++  const messages = request.messages ?? [];
++  const instructions = messages
++    .filter(
++      (message) => message.role === "system" || message.role === "developer",
++    )
++    .map((message) => messageContentText(message.content))
++    .filter(Boolean)
++    .join("\n\n");
++  const input =
++    request.input ??
++    linguaMessagesToResponsesInput(
++      messages.filter(
++        (message) => message.role !== "system" && message.role !== "developer",
++      ),
++    );
++  const tools = (
++    request.responseTools ??
++    toolDefinitionsToResponsesTools(request.tools ?? [])
++  ).map((tool) =>
++    tool.type === "function" ? { ...tool, strict: false } : tool,
++  );
++  return {
++    model: request.model as ResponseCreateParamsStreaming["model"],
++    input,
++    instructions,
++    tools,
++    stream: true,
++    store: false,
++    include: ["reasoning.encrypted_content"],
++  } as ResponseCreateParamsStreaming;
++}
++
+ function buildChatNonStreamingBody(
+   request: NativeResponsesRequest,
+ ): ChatCompletionCreateParamsNonStreaming {
+diff --git a/exoharness/typescript/model-runtime/shared.test.ts b/exoharness/typescript/model-runtime/shared.test.ts
+new file mode 100644
+index 0000000..068d8c0
+--- /dev/null
++++ b/exoharness/typescript/model-runtime/shared.test.ts
+@@ -0,0 +1,103 @@
++import { afterEach, expect, it, vi } from "vitest";
++import type { Secret, TurnContext } from "@exo/harness";
++import { resolveLlmBinding } from "./shared";
++
++afterEach(() => vi.unstubAllGlobals());
++
++function fixture(baseUrl: string | null = null) {
++  let secret: Secret = {
++    type: "chatgpt",
++    accessToken: "old",
++    refreshToken: "refresh",
++    expiresAtMs: 0,
++    accountId: "account",
++  };
++  const updateSecret = vi.fn(async (_id: string, updated: Secret) => {
++    secret = updated;
++  });
++  const context = {
++    agentConfig: { model: "subscription" },
++    exoharness: {
++      current: {
++        conversation: {
++          listBindings: async () => [
++            {
++              type: "llm",
++              name: "subscription",
++              id: "binding",
++              createdAt: "2026-01-01",
++            },
++          ],
++          getBinding: async () => ({
++            type: "llm",
++            model: "gpt-5.4",
++            secretId: "secret",
++            baseUrl,
++          }),
++          getSecret: async () => secret,
++          updateSecret,
++        },
++      },
++    },
++  } as unknown as TurnContext;
++  return { context, updateSecret };
++}
++
++it("refreshes once, persists in place, and retains an unrotated refresh token", async () => {
++  const { context, updateSecret } = fixture();
++  const fetchMock = vi.fn(
++    async () =>
++      new Response(JSON.stringify({ access_token: "new", expires_in: 3600 })),
++  );
++  vi.stubGlobal("fetch", fetchMock);
++  const bindings = await Promise.all([
++    resolveLlmBinding(context, { chatgpt: true }),
++    resolveLlmBinding(context, { chatgpt: true }),
++  ]);
++  expect(fetchMock).toHaveBeenCalledTimes(1);
++  expect(updateSecret).toHaveBeenCalledWith(
++    "secret",
++    expect.objectContaining({
++      type: "chatgpt",
++      accessToken: "new",
++      refreshToken: "refresh",
++      accountId: "account",
++    }),
++  );
++  expect(bindings[0]).toEqual(bindings[1]);
++  expect(bindings[0]).toMatchObject({
++    apiKey: "new",
++    chatgpt: { accountId: "account" },
++    baseUrl: null,
++  });
++  expect(bindings[0]).not.toHaveProperty("refreshToken");
++});
++
++it("rejects unsupported harnesses and custom endpoints before refreshing", async () => {
++  const fetchMock = vi.fn();
++  vi.stubGlobal("fetch", fetchMock);
++  await expect(resolveLlmBinding(fixture().context)).rejects.toThrow(
++    "does not support",
++  );
++  await expect(
++    resolveLlmBinding(fixture("https://example.com").context, {
++      chatgpt: true,
++    }),
++  ).rejects.toThrow("custom base URL");
++  expect(fetchMock).not.toHaveBeenCalled();
++});
++
++it("does not overwrite stored credentials on invalid refresh responses", async () => {
++  const { context, updateSecret } = fixture();
++  vi.stubGlobal(
++    "fetch",
++    vi.fn(
++      async () =>
++        new Response(JSON.stringify({ access_token: "new", expires_in: -1 })),
++    ),
++  );
++  await expect(resolveLlmBinding(context, { chatgpt: true })).rejects.toThrow(
++    "invalid response",
++  );
++  expect(updateSecret).not.toHaveBeenCalled();
++});
+diff --git a/exoharness/typescript/model-runtime/shared.ts b/exoharness/typescript/model-runtime/shared.ts
+index 6699e47..6910b71 100644
+--- a/exoharness/typescript/model-runtime/shared.ts
++++ b/exoharness/typescript/model-runtime/shared.ts
+@@ -10,6 +10,7 @@ import {
+   type Message,
+   type PendingToolCall,
+   type SandboxProcess,
++  type Secret,
+   type TurnContext,
+ } from "@exo/harness";
+ import {
+@@ -31,6 +32,78 @@ export interface ResolvedLlmBinding {
+   model: string;
+   apiKey?: string;
+   baseUrl?: string | null;
++  chatgpt?: { accountId: string };
++}
++
++const CHATGPT_TOKEN_URL = "https://auth.openai.com/oauth/token";
++const CHATGPT_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
++const chatgptRefreshes = new Map<
++  string,
++  Promise<Extract<Secret, { type: "chatgpt" }>>
++>();
++
++async function currentChatgptSecret(
++  context: TurnContext,
++  secretId: string,
++): Promise<Extract<Secret, { type: "chatgpt" }>> {
++  const existing = chatgptRefreshes.get(secretId);
++  if (existing) return existing;
++  const refresh = (async () => {
++    const secret =
++      await context.exoharness.current.conversation.getSecret(secretId);
++    if (!secret) throw new Error("model secret does not exist");
++    if (secret.type !== "chatgpt")
++      throw new Error("model secret is not a ChatGPT subscription secret");
++    if (secret.expiresAtMs > Date.now() + 60_000) return secret;
++
++    const response = await fetch(CHATGPT_TOKEN_URL, {
++      method: "POST",
++      signal: AbortSignal.timeout(30_000),
++      headers: { "content-type": "application/x-www-form-urlencoded" },
++      body: new URLSearchParams({
++        grant_type: "refresh_token",
++        client_id: CHATGPT_CLIENT_ID,
++        refresh_token: secret.refreshToken,
++      }),
++    });
++    if (!response.ok) {
++      throw new Error(`ChatGPT token refresh failed (${response.status})`);
++    }
++    const payload = (await response.json()) as {
++      access_token?: string;
++      refresh_token?: string;
++      expires_in?: number;
++    };
++    if (
++      typeof payload.access_token !== "string" ||
++      !payload.access_token.trim() ||
++      typeof payload.expires_in !== "number" ||
++      !Number.isFinite(payload.expires_in) ||
++      payload.expires_in <= 0 ||
++      (payload.refresh_token !== undefined &&
++        (typeof payload.refresh_token !== "string" ||
++          !payload.refresh_token.trim()))
++    ) {
++      throw new Error("ChatGPT token refresh returned an invalid response");
++    }
++    const updated = {
++      ...secret,
++      accessToken: payload.access_token,
++      refreshToken: payload.refresh_token ?? secret.refreshToken,
++      expiresAtMs: Date.now() + payload.expires_in * 1000,
++    };
++    await context.exoharness.current.conversation.updateSecret(
++      secretId,
++      updated,
++    );
++    return updated;
++  })();
++  chatgptRefreshes.set(secretId, refresh);
++  try {
++    return await refresh;
++  } finally {
++    chatgptRefreshes.delete(secretId);
++  }
+ }
+ 
+ export class AsyncQueue<T> {
+@@ -228,6 +301,7 @@ export class WarmJsonlSandboxWorker<TRequest, TEvent> {
+ 
+ export async function resolveLlmBinding(
+   context: TurnContext,
++  options: { chatgpt?: boolean } = {},
+ ): Promise<ResolvedLlmBinding> {
+   const name = context.agentConfig.model;
+   const metadata = (
+@@ -255,8 +329,30 @@ export async function resolveLlmBinding(
+     if (!secret) {
+       throw new Error(`model secret does not exist for ${name}`);
+     }
++    if (secret.type === "chatgpt") {
++      if (!options.chatgpt) {
++        throw new Error(
++          "This harness does not support Exo ChatGPT subscription credentials; use the built-in Responses harness",
++        );
++      }
++      if (binding.baseUrl) {
++        throw new Error(
++          `ChatGPT subscription model ${name} cannot use a custom base URL`,
++        );
++      }
++      const current = await currentChatgptSecret(context, binding.secretId);
++      return {
++        name,
++        model: binding.model,
++        apiKey: current.accessToken,
++        baseUrl: null,
++        chatgpt: { accountId: current.accountId },
++      };
++    }
+     if (secret.type !== "key") {
+-      throw new Error(`model secret must be a key secret for ${name}`);
++      throw new Error(
++        `model secret must be a key or ChatGPT subscription secret for ${name}`,
++      );
+     }
+     apiKey = secret.value;
+   }
+diff --git a/exoharness/typescript/model-runtime/turn-loop.ts b/exoharness/typescript/model-runtime/turn-loop.ts
+index 86d8eba..b3455e9 100644
+--- a/exoharness/typescript/model-runtime/turn-loop.ts
++++ b/exoharness/typescript/model-runtime/turn-loop.ts
+@@ -37,7 +37,7 @@ export async function runResponsesHarnessTurn(
+   options: ResponsesTurnLoopOptions = {},
+ ): Promise<void> {
+   await ensureTable(); // load the price table once so cost is ready when events are built
+-  const modelBinding = await resolveLlmBinding(context);
++  const modelBinding = await resolveLlmBinding(context, { chatgpt: true });
+   const runtime = runtimeFromModelBinding(context.agentConfig, modelBinding);
+   await runtime.runTurn(context, (turnParent) =>
+     runResponsesTurnLoop(
+diff --git a/website/docs-src/concepts/bindings-and-secrets.md b/website/docs-src/concepts/bindings-and-secrets.md
+index d0755e1..7a43d94 100644
+--- a/website/docs-src/concepts/bindings-and-secrets.md
++++ b/website/docs-src/concepts/bindings-and-secrets.md
+@@ -19,6 +19,39 @@ exo secret set openai --env OPENAI_API_KEY   # reads the variable name literally
+ exo secret set openai --value "$OPENAI_API_KEY"  # stores the expanded value
+ ```
+ 
++### ChatGPT subscription login
++
++Use a ChatGPT subscription instead of an OpenAI API key:
++
++```bash
++exo secret login-chatgpt
++exo model register chatgpt --model gpt-5.4 --secret chatgpt
++```
++
++The login command prints a browser URL and one-time code. Open the URL on
++any device, enter the code, and authorize with your ChatGPT account. If
++required, enable device-code authorization in your ChatGPT security settings.
++Authorization expires after 15 minutes; Ctrl-C cancels the login. An optional
++name (`exo secret login-chatgpt personal`) keeps multiple accounts separate.
++
++Select the registered `chatgpt` model for your agent or conversation. Model
++availability and usage limits depend on your subscription; the model name is
++not an API billing credential. Native basic/RLM and the built-in TypeScript
++Responses runtime support this login. External Pi, Codex, Claude Code, and
++Cursor harnesses retain their own authentication workflows.
++
++Exo stores credentials in its existing encrypted secret backend and refreshes
++expired tokens in place, preserving the secret's ID and scope. Refresh is
++serialized within each runtime process; do not concurrently use the same
++subscription secret from separate executor processes. ChatGPT secrets use
++the fixed Codex endpoint and cannot be combined with `--base-url`.
++If authorization is revoked, log in again and re-register the model with the
++new secret. Ordinary API-key bindings are unchanged.
++
++The device flow and Codex request conventions follow
++[Pi](https://github.com/badlogic/pi-mono/blob/main/packages/ai/src/auth/oauth/openai-codex.ts)
++and [OpenCode](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/plugin/openai/codex.ts).
++
+ ## Bindings
+ 
+ Bindings are **non-secret configuration that refer to secrets**:
