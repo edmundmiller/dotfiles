@@ -49,11 +49,12 @@ in
     (mkIf (cfg.bunGlobalPackages != [ ]) {
       system.activationScripts.extraActivation.text =
         let
-          packages = concatStringsSep " " cfg.bunGlobalPackages;
+          packages = escapeShellArgs cfg.bunGlobalPackages;
+          bunBin = "${config.user.home}/.bun/bin";
         in
         ''
-          echo "Ensuring bun global packages: ${packages}" >&2
-          sudo -u emiller HOME=/Users/emiller PATH=/Users/emiller/.bun/bin:$PATH ${pkgs.bun}/bin/bun install -g ${packages} || echo "Warning: bun global install failed" >&2
+          echo "Ensuring bun global packages:" ${packages} >&2
+          sudo -u ${escapeShellArg config.user.name} HOME=${escapeShellArg config.user.home} PATH=${escapeShellArg bunBin}:$PATH ${pkgs.bun}/bin/bun install -g --force ${packages}
         '';
     })
 
