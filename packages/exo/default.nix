@@ -15,7 +15,10 @@ unstable.rustPlatform.buildRustPackage {
     hash = "sha256-qgrNK614ZC1l3mo+0zfFAo704WT285KWG8sF3Tj6kzk=";
   };
 
-  patches = [ ./patches/0001-chatgpt-subscription.patch ];
+  patches = [
+    ./patches/0001-chatgpt-subscription.patch
+    ./patches/0002-harden-subscription-runtime.patch
+  ];
 
   cargoHash = "sha256-GAXfXBJ9zA+zUCZeDR7xx4gNGwlN+AITYX1WJSfHDoc=";
   cargoBuildFlags = [

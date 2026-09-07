@@ -1,7 +1,10 @@
 {
   "source": "https://github.com/exoharness/exo.git",
   "ref": "29ebbcd959c27b3cf2539ba80e8cf912f0a5d3fb",
-  "patches": ["patches/0001-chatgpt-subscription.patch"],
+  "patches": [
+    "patches/0001-chatgpt-subscription.patch",
+    "patches/0002-harden-subscription-runtime.patch"
+  ],
   "checks": [
     ["cargo", "test", "--locked", "-p", "executor", "-p", "exo", "--lib", "--bins"],
     [
@@ -25,14 +28,8 @@
       "conversation_update_of_inherited_secret"
     ],
     ["pnpm", "install", "--frozen-lockfile", "--ignore-scripts"],
+    ["pnpm", "lint"],
     ["pnpm", "typecheck"],
-    [
-      "pnpm",
-      "exec",
-      "vitest",
-      "run",
-      "exoharness/typescript/model-runtime/responses.test.ts",
-      "exoharness/typescript/model-runtime/shared.test.ts"
-    ]
+    ["pnpm", "test"]
   ]
 }
