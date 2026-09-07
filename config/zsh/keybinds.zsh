@@ -22,15 +22,6 @@ fancy-ctrl-z () {
 zle -N fancy-ctrl-z
 bindkey '^Z' fancy-ctrl-z
 
-
-# TODO Convert to zoxide
-# Doesn't use files though currently
-# Omni-Completion
-if (( $+commands[fasd] )); then
-  bindkey -M viins '^x^f' fasd-complete-f  # C-x C-f to do fasd-complete-f (only files)
-  bindkey -M viins '^x^d' fasd-complete-d  # C-x C-d to do fasd-complete-d (only directories)
-fi
-
 # Completing words in buffer in tmux
 if [ -n "$TMUX" ]; then
   _tmux_pane_words() {

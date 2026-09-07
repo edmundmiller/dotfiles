@@ -1,0 +1,32 @@
+#!/usr/bin/env zunit
+
+@setup {
+  export ORIG_PWD=$PWD
+  export ALIASES_FILE="$ORIG_PWD/config/zsh/aliases.zsh"
+  export KEYBINDS_FILE="$ORIG_PWD/config/zsh/keybinds.zsh"
+  export ZSH_BIN=$(command -v zsh)
+}
+
+@test 'interactive navigation is provided by zoxide without stale widgets' {
+  run env \
+    TERM=xterm-256color \
+    ALIASES_FILE="$ALIASES_FILE" \
+    KEYBINDS_FILE="$KEYBINDS_FILE" \
+    ZOXIDE_TEST_DIRS="$ZOXIDE_TEST_DIRS" \
+    "$ZSH_BIN" -fic '
+      autoload -Uz compinit
+      compinit -D
+      source "$ALIASES_FILE"
+      source "$KEYBINDS_FILE"
+      (( $+functions[_z] == 0 )) || exit 1
+      [[ "$(bindkey -M viins "^X^F")" == *undefined-key* ]] || exit 2
+      [[ "$(bindkey -M viins "^X^D")" == *undefined-key* ]] || exit 3
+
+      eval "$(zoxide init zsh)"
+      (( $+functions[z] == 1 && $+functions[__zoxide_z] == 1 )) || exit 4
+      z project1 || exit 5
+      [[ "$PWD" == "$ZOXIDE_TEST_DIRS/code/project1" ]]
+    '
+
+  assert $state equals 0
+}
