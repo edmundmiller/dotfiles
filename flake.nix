@@ -72,7 +72,7 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "github:edmundmiller/tnote/e6f27d4e73274a33bc7fc84a85587c180252c777";
+      url = "github:edmundmiller/tnote/02beb3eaf69335a5a3034f9f5e23ea13ef99b824";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
       inputs.llm-agents.follows = "llm-agents";
