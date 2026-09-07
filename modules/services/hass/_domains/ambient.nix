@@ -170,6 +170,27 @@ in
           }
         ];
       }
+      {
+        alias = "Dim automated wall lamp";
+        id = "dim_automated_wall_lamp";
+        description = "Set the Wall Lamp to 25% when an automation or automation-triggered scene turns it on";
+        trigger = {
+          platform = "state";
+          entity_id = "light.essentials_a19_a60_5";
+          to = "on";
+        };
+        condition = {
+          condition = "template";
+          value_template = "{{ trigger.to_state.context.parent_id is not none }}";
+        };
+        action = [
+          {
+            action = "light.turn_on";
+            target.entity_id = "light.essentials_a19_a60_5";
+            data.brightness = 64;
+          }
+        ];
+      }
 
       # --- Doors ---
       {

@@ -124,6 +124,22 @@ in
         };
         action = tvOff;
       }
+      {
+        alias = "TV on turns off wall lamp";
+        id = "tv_on_turns_off_wall_lamp";
+        description = "Turn off the Wall Lamp when the Living Room Apple TV powers on";
+        trigger = {
+          platform = "state";
+          entity_id = tvEntity;
+          from = "off";
+        };
+        action = [
+          {
+            action = "light.turn_off";
+            target.entity_id = "light.essentials_a19_a60_5";
+          }
+        ];
+      }
 
       # --- TV sleep timer ---
       {

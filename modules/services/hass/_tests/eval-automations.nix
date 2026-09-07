@@ -347,6 +347,8 @@ let
   frontDoorNightLights = findAutomation "front_door_night_lights";
   balconyOpensCouchLamp = findAutomation "balcony_opens_couch_lamp";
   arrivalFlashWallLamp = findAutomation "arrival_flash_wall_lamp";
+  dimAutomatedWallLamp = findAutomation "dim_automated_wall_lamp";
+  tvOnTurnsOffWallLamp = findAutomation "tv_on_turns_off_wall_lamp";
   legacyRoombaStart = findAutomation "roomba_start_last_person_leaves";
   robotCleaningScheduler = findAutomation "robot_cleaning_scheduler";
   robotCleaningArrivalDock = findAutomation "robot_cleaning_arrival_dock";
@@ -896,6 +898,33 @@ let
         && hasActionTarget tvOffIfOnSequence "media_player.turn_off" "media_player.living_room"
         && hasActionTarget [ (last tvOffIfOnSequence) ] "remote.turn_off" "remote.living_room";
       msg = "TV scripts must reconnect before power-on and disconnect after power-off";
+    }
+    {
+      test =
+        dimAutomatedWallLamp != null
+        && hasStateTrigger dimAutomatedWallLamp "light.essentials_a19_a60_5" "on"
+        && hasTemplateConditionContaining (toList (
+          dimAutomatedWallLamp.condition or [ ]
+        )) "context.parent_id"
+        && hasActionTarget (toList (
+          dimAutomatedWallLamp.action or [ ]
+        )) "light.turn_on" "light.essentials_a19_a60_5"
+        && hasActionDataDeep (toList (dimAutomatedWallLamp.action or [ ])) "light.turn_on" "brightness" 64;
+      msg = "automated Wall Lamp activations must dim it to 25% without changing manual turns";
+    }
+    {
+      test =
+        tvOnTurnsOffWallLamp != null
+        && any (
+          trigger:
+          (trigger.platform or null) == "state"
+          && (trigger.entity_id or null) == "media_player.living_room"
+          && (trigger.from or null) == "off"
+        ) (toList (tvOnTurnsOffWallLamp.trigger or [ ]))
+        && hasActionTarget (toList (
+          tvOnTurnsOffWallLamp.action or [ ]
+        )) "light.turn_off" "light.essentials_a19_a60_5";
+      msg = "TV power-on must turn off the Wall Lamp";
     }
     {
       test = sleepFocusOffEdmund != null;
