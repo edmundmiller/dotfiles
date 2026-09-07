@@ -5,3 +5,6 @@ exclude_untracked = false
 line_numbers = true
 wrap_lines = false
 agent_notes = true
+
+[extensions]
+paths = ["~/.config/hunk/extensions/hunk-commit-log"]

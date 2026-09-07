@@ -1112,6 +1112,22 @@
         "type": "github"
       }
     },
+    "hunk-commit-log": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788244490,
+        "narHash": "sha256-j4EPE52JPNmwYxm4DQ7n1ex5GY4h4s0BNrk9f7ktkh4=",
+        "owner": "sadick254",
+        "repo": "hunk-commit-log",
+        "rev": "6a08a018bac73924bbc6c2e29008da2160739fcf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sadick254",
+        "repo": "hunk-commit-log",
+        "type": "github"
+      }
+    },
     "kitlangton-skills": {
       "flake": false,
       "locked": {
@@ -1895,6 +1911,7 @@
         "hermes-agent": "hermes-agent",
         "home-manager": "home-manager_4",
         "hunk": "hunk",
+        "hunk-commit-log": "hunk-commit-log",
         "llm-agents": "llm-agents",
         "nix-apple-container": "nix-apple-container",
         "nix-darwin": "nix-darwin",

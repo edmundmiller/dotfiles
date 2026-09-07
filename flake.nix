@@ -97,6 +97,11 @@
       inputs.bun2nix.follows = "bun2nix";
     };
 
+    hunk-commit-log = {
+      url = "github:sadick254/hunk-commit-log";
+      flake = false;
+    };
+
     # ghui pinned to the head of PR #43 (kcosr/ghui), which adds diff hunk
     # navigation and copy. Repin to kitlangton/ghui once the PR merges.
     ghui = {
