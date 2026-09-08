@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/herdrdev/herdr.git",
-  "ref": "9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c",
+  "ref": "b99002ac99b09e00b4ca692436cb15a6b0d676f1",
   "patches": [
     "patches/0001-libghostty-bench-gated.patch",
     "patches/0006-update-cargo-hash.patch",

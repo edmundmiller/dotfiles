@@ -1,8 +1,8 @@
 diff --git a/src/ghostty/mod.rs b/src/ghostty/mod.rs
-index cea7c283..cd139a7c 100644
+index cd774c6..e8fe691 100644
 --- a/src/ghostty/mod.rs
 +++ b/src/ghostty/mod.rs
-@@ -915,6 +915,15 @@ impl Terminal {
+@@ -959,6 +959,15 @@ impl Terminal {
              cell_width: cell_width_px,
              cell_height: cell_height_px,
          };
@@ -18,10 +18,10 @@ index cea7c283..cd139a7c 100644
          // SAFETY: self.raw is valid and sizes are plain values.
          unsafe {
              ffi::ghostty_terminal_resize(
-@@ -3295,6 +3304,19 @@ mod tests {
+@@ -3352,6 +3361,19 @@ mod tests {
          out
      }
- 
+
 +    #[test]
 +    fn terminal_resize_ignores_unsafe_tiny_dimensions() {
 +        let mut terminal = Terminal::new(8, 3, 100).unwrap();
@@ -36,5 +36,5 @@ index cea7c283..cd139a7c 100644
 +    }
 +
      #[test]
-     fn kitty_image_fingerprint_covers_full_payload() {
-         let mut data = vec![1u8; 4096 * 4];
+     fn incremental_compression_preserves_cold_scrollback() {
+         let mut terminal = Terminal::new(80, 24, 20_000_000).unwrap();

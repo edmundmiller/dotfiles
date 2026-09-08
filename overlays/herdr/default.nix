@@ -7,8 +7,8 @@ let
     src = final.fetchFromGitHub {
       owner = "herdrdev";
       repo = "herdr";
-      rev = "9eb521456ac0d19d3ab3d9d7cea3cca10baa8a4c";
-      hash = "sha256-sEGIN3dLZasaHob3EHscWBCIQHflMQVchYmzgsETDk4=";
+      rev = "b99002ac99b09e00b4ca692436cb15a6b0d676f1";
+      hash = "sha256-SUYF4bbaYwNgoe498VoCUzuLPcjBLQXR0o0DWjjoSnI=";
     };
     patches = [
       ./patches/0001-libghostty-bench-gated.patch # bead: dotfiles-lq7y

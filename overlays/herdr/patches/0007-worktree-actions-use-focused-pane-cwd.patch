@@ -1,18 +1,72 @@
-diff --git a/src/app/worktrees.rs b/src/app/worktrees.rs
-index 0087c8fe..b5211294 100644
---- a/src/app/worktrees.rs
-+++ b/src/app/worktrees.rs
-@@ -37,6 +37,13 @@ impl App {
+diff --git a/src/app/api/worktrees.rs b/src/app/api/worktrees.rs
+index 71f2e03..63b37dc 100644
+--- a/src/app/api/worktrees.rs
++++ b/src/app/api/worktrees.rs
+@@ -320,11 +320,28 @@ impl App {
+             });
          }
- 
-         let git_space = ws.git_space().cloned().or_else(|| {
-+            ws.focused_pane_id()
-+                .and_then(|pane_id| ws.active_tab().and_then(|tab| {
-+                    tab.cwd_for_pane(pane_id, &self.state.terminals, &self.terminal_runtimes)
-+                }))
-+                .as_deref()
-+                .and_then(crate::workspace::git_space_metadata)
-+        }).or_else(|| {
-             ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
-                 .as_deref()
-                 .and_then(crate::workspace::git_space_metadata)
+
+-        let git_space = ws.git_space().cloned().or_else(|| {
+-            ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
+-                .as_deref()
+-                .and_then(crate::workspace::git_space_metadata)
+-        });
++        let git_space = ws
++            .git_space()
++            .cloned()
++            .or_else(|| {
++                ws.focused_pane_id()
++                    .and_then(|pane_id| {
++                        ws.active_tab().and_then(|tab| {
++                            tab.cwd_for_pane(
++                                pane_id,
++                                &self.state.terminals,
++                                &self.terminal_runtimes,
++                            )
++                        })
++                    })
++                    .as_deref()
++                    .and_then(crate::workspace::git_space_metadata)
++            })
++            .or_else(|| {
++                ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
++                    .as_deref()
++                    .and_then(crate::workspace::git_space_metadata)
++            });
+         let Some(space) = git_space else {
+             return Err(ApiFailure::new(
+                 "not_git_worktree",
+@@ -377,11 +394,28 @@ impl App {
+             });
+         }
+
+-        let git_space = ws.git_space().cloned().or_else(|| {
+-            ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
+-                .as_deref()
+-                .and_then(crate::workspace::git_space_metadata)
+-        });
++        let git_space = ws
++            .git_space()
++            .cloned()
++            .or_else(|| {
++                ws.focused_pane_id()
++                    .and_then(|pane_id| {
++                        ws.active_tab().and_then(|tab| {
++                            tab.cwd_for_pane(
++                                pane_id,
++                                &self.state.terminals,
++                                &self.terminal_runtimes,
++                            )
++                        })
++                    })
++                    .as_deref()
++                    .and_then(crate::workspace::git_space_metadata)
++            })
++            .or_else(|| {
++                ws.resolved_identity_cwd_from(&self.state.terminals, &self.terminal_runtimes)
++                    .as_deref()
++                    .and_then(crate::workspace::git_space_metadata)
++            });
+         let Some(space) = git_space else {
+             return Err(ApiFailure::new(
+                 "not_git_worktree",

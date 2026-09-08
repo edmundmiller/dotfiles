@@ -283,7 +283,7 @@
                 echo "Expected exactly one SRI source hash in $file" >&2
                 exit 1
               fi
-              hash=$(nix-prefetch-github --quiet --json --rev "$rev" ogulcancelik herdr | jq --raw-output .hash)
+              hash=$(nix-prefetch-github --quiet --json --rev "$rev" herdrdev herdr | jq --raw-output .hash)
               if [[ "$hash" != sha256-* ]]; then
                 echo "Herdr source prefetch returned an invalid hash: $hash" >&2
                 exit 1
