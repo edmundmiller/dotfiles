@@ -86,6 +86,44 @@ The test tick still requires Edmund to be home, but bypasses the normal 8 PM–m
 - **Intent:** Final asleep state
 - **Actions:** Deep sleep mode — everything quiet/off as appropriate, including the dog fountain and plant light
 
+## White noise follows bedtime playback
+
+During `input_boolean.goodnight`, five continuous minutes of playback on either
+`media_player.bathroom_nightstand_2` or `media_player.window_nightstand_2` turns on
+the white-noise outlet. These are the Music Assistant entities: recorded BookPlayer
+AirPlay sessions report `playing` here while the native HomePod entities remain
+idle/off. BookPlayer reports its content as `music`, so the rule intentionally
+recognizes bedroom audio during bedtime mode rather than matching book titles.
+
+Both speakers paused, idle, or unavailable cancels the countdown; resuming starts
+a fresh five minutes. Chapter metadata updates do not reset it. Playback already
+running when bedtime mode starts also gets a full five minutes. No bed-presence,
+heart-rate, or `sleep_done` gate is required. Good Morning cancels the countdown
+and retains its existing outlet-off action. Turning the outlet off manually does
+not restart it during uninterrupted playback, but a later playback session can.
+Home Assistant restart or automation reload discards an in-progress countdown.
+
+`../../_tests/test_bedtime_audio.py` exercises the exported Nix automation in an
+isolated Home Assistant runtime with no physical integrations. It asserts the
+five-minute setting, then accelerates the timer to one second for cancellation,
+chapter-change, either-speaker, and non-bedtime playback checks. Pass the automation
+JSON as its first argument using a Python environment with Home Assistant installed.
+
+Export only this domain's automation from the repository root (no host evaluation):
+
+```sh
+nix-instantiate --eval --strict --json --expr '
+  let
+    config = (import ./modules/services/hass/_domains/sleep/default.nix {
+      lib.mkAfter = x: x;
+      pkgs.systemd = "/unused";
+    }).services.home-assistant.config;
+  in builtins.head (builtins.filter
+    (a: a.id == "white_noise_with_bedtime_audiobook") config.automation)
+' > /tmp/bedtime-audio-automation.json
+python modules/services/hass/_tests/test_bedtime_audio.py /tmp/bedtime-audio-automation.json -v
+```
+
 ## Wake Detection (Tracking Only)
 
 Wake detection automations still update:

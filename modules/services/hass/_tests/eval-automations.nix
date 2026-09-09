@@ -86,16 +86,6 @@ let
       && (t."for" or null) == duration
     ) (toList (automation.trigger or [ ]));
 
-  hasNumericStateCondition =
-    conditions: entityId: above: below:
-    any (
-      c:
-      (c.condition or null) == "numeric_state"
-      && (c.entity_id or null) == entityId
-      && (c.above or null) == above
-      && (c.below or null) == below
-    ) conditions;
-
   hasTemplateConditionContaining =
     conditions: text:
     any (c: (c.condition or null) == "template" && hasInfix text (c.value_template or "")) conditions;
@@ -295,16 +285,6 @@ let
     any (
       c:
       (c.condition or null) == "state" && (c.entity_id or null) == entityId && (c.state or null) == state
-    ) conditions;
-
-  hasStateConditionDeep =
-    conditions: entityId: state:
-    any (
-      c:
-      (
-        (c.condition or null) == "state" && (c.entity_id or null) == entityId && (c.state or null) == state
-      )
-      || (if c ? conditions then hasStateConditionDeep (toList c.conditions) entityId state else false)
     ) conditions;
 
   toList =
@@ -826,24 +806,13 @@ let
       msg = "automation 'white_noise_with_bedtime_audiobook' missing";
     }
     {
-      test = hasStateTrigger whiteNoiseWithBedtimeAudiobook "input_boolean.sleep_done" "on";
-      msg = "white_noise_with_bedtime_audiobook must trigger when sleep_done turns on";
-    }
-    {
-      test = hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.edmund_s_eight_sleep_side_heart_rate";
-      msg = "white_noise_with_bedtime_audiobook must re-check when Edmund Eight Sleep HR updates";
-    }
-    {
-      test = hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "sensor.monica_s_eight_sleep_side_heart_rate";
-      msg = "white_noise_with_bedtime_audiobook must re-check when Monica Eight Sleep HR updates";
-    }
-    {
-      test = !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "media_player.bathroom");
-      msg = "white_noise_with_bedtime_audiobook must not trigger from bathroom shower audio";
-    }
-    {
-      test = !(hasStateTriggerAny whiteNoiseWithBedtimeAudiobook "media_player.bathroom");
-      msg = "white_noise_with_bedtime_audiobook must not trigger from bathroom shower audio";
+      test =
+        let
+          triggers = toList (whiteNoiseWithBedtimeAudiobook.trigger or [ ]);
+        in
+        length triggers == 1
+        && any (t: (t.platform or null) == "template" && (t."for" or null) == { minutes = 5; }) triggers;
+      msg = "white_noise_with_bedtime_audiobook must require five continuous minutes of its playback template";
     }
     {
       test =
@@ -851,16 +820,9 @@ let
           conditions = toList (whiteNoiseWithBedtimeAudiobook.condition or [ ]);
         in
         hasStateCondition conditions "input_boolean.goodnight" "on"
-        && hasStateCondition conditions "input_boolean.sleep_done" "on"
-        && hasNumericStateCondition conditions "sensor.edmund_s_eight_sleep_side_heart_rate" 35 130
-        && hasNumericStateCondition conditions "sensor.monica_s_eight_sleep_side_heart_rate" 35 130
-        && hasTemplateConditionContaining conditions "edmund_s_eight_sleep_side_heart_rate.last_updated"
-        && hasTemplateConditionContaining conditions "monica_s_eight_sleep_side_heart_rate.last_updated"
-        && !(hasStateConditionDeep conditions "binary_sensor.edmund_bed_presence_reliable" "on")
-        && !(hasStateConditionDeep conditions "binary_sensor.monica_bed_presence_reliable" "on")
-        && !(hasStateConditionDeep conditions "media_player.bathroom_nightstand" "playing")
-        && !(hasStateConditionDeep conditions "media_player.window_nightstand" "playing");
-      msg = "white_noise_with_bedtime_audiobook must require goodnight, sleep_done, and fresh HR without bed-presence or speaker gates";
+        && hasStateCondition conditions "switch.eve_energy_20ebu4101" "off"
+        && length conditions == 2;
+      msg = "white_noise_with_bedtime_audiobook must gate on bedtime and an off outlet, not sleep_done or bed telemetry";
     }
     {
       test =

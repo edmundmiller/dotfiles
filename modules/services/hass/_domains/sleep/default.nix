@@ -572,26 +572,23 @@ in
         ];
       }
 
-      # White noise starts after the final Sleep phase once both Eight Sleep
-      # sides report fresh human heart-rate data. Bed presence alone is dog-
-      # contaminated, and HomePod state is not a reliable audiobook signal.
+      # White noise follows five continuous minutes of bedtime audio on either
+      # bedroom HomePod. Music Assistant's _2 entities report AirPlay playback;
+      # the native entities remain idle/off. BookPlayer is reported as music,
+      # so goodnight supplies intent rather than unreliable title/type metadata.
       {
-        alias = "White noise with fresh Eight Sleep HR";
+        alias = "White noise after five minutes of bedtime audio";
         id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
           {
-            platform = "state";
-            entity_id = "input_boolean.sleep_done";
-            to = "on";
-          }
-          {
-            platform = "state";
-            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
-          }
-          {
-            platform = "state";
-            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
+            platform = "template";
+            value_template = ''
+              {{ is_state('input_boolean.goodnight', 'on')
+                 and (is_state('media_player.bathroom_nightstand_2', 'playing')
+                      or is_state('media_player.window_nightstand_2', 'playing')) }}
+            '';
+            "for".minutes = 5;
           }
         ];
         condition = [
@@ -599,30 +596,6 @@ in
             condition = "state";
             entity_id = "input_boolean.goodnight";
             state = "on";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.sleep_done";
-            state = "on";
-          }
-          {
-            condition = "numeric_state";
-            entity_id = "sensor.edmund_s_eight_sleep_side_heart_rate";
-            above = 35;
-            below = 130;
-          }
-          {
-            condition = "numeric_state";
-            entity_id = "sensor.monica_s_eight_sleep_side_heart_rate";
-            above = 35;
-            below = 130;
-          }
-          {
-            condition = "template";
-            value_template = ''
-              {{ (now() - states.sensor.edmund_s_eight_sleep_side_heart_rate.last_updated).total_seconds() < 300
-                 and (now() - states.sensor.monica_s_eight_sleep_side_heart_rate.last_updated).total_seconds() < 300 }}
-            '';
           }
           {
             condition = "state";
