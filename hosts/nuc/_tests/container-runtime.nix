@@ -4,9 +4,8 @@ let
   cfg = nixosConfig.config;
   containers = cfg.modules.services.containers;
   podman = cfg.virtualisation.podman;
-  smoke = cfg.systemd.services.hermes-runtime-smoke;
   composeEnvironment = service: service.environment.DOCKER_HOST or null;
-  inherit (builtins) elem filter length;
+  inherit (builtins) filter length;
 
   assertions = [
     {
@@ -24,10 +23,6 @@ let
     {
       test = cfg.virtualisation.oci-containers.backend == "podman";
       msg = "OCI containers must use Podman on the NUC.";
-    }
-    {
-      test = elem "podman.socket" smoke.after && !(elem "docker.service" smoke.after);
-      msg = "Hermes runtime smoke must wait for Podman, not Docker Engine.";
     }
     {
       test =

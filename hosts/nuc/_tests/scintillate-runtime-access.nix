@@ -18,7 +18,6 @@ let
   desktopDashboardService = cfg.systemd.services.hermes-scintillate-desktop-dashboard;
   cronTickService = cfg.systemd.services.hermes-scintillate-cron-tick;
   cronTickTimer = cfg.systemd.timers.hermes-scintillate-cron-tick;
-  runtimeSmokeService = cfg.systemd.services.hermes-runtime-smoke;
   slackSecret = cfg.age.secrets.slack-hermes-scintillate-agent-env;
   activation = cfg.system.activationScripts."canonical-hermes-profiles-materialize".text;
   activationFile = pkgs.writeText "canonical-hermes-profiles-materialize.sh" activation;
@@ -30,7 +29,6 @@ let
   tnotePkg = hermesAgent.providers.tnote.package;
   tnotePkgString = stripContext (toString tnotePkg);
   packageStrings = map (pkg: stripContext (toString pkg)) profile.extraPackages;
-  systemPackageStrings = map (pkg: stripContext (toString pkg)) cfg.environment.systemPackages;
   cronTickPathStrings = map (pkg: stripContext (toString pkg)) cronTickService.path;
   sharedProfileNames = [
     "amosburton"
@@ -54,7 +52,6 @@ let
   hostMounts = mapAttrsToList (source: target: { inherit source target; }) profile.hostPathMounts;
   hasMount = source: target: any (mount: mount.source == source && mount.target == target) hostMounts;
   hasPackageNamed = name: any (pkg: hasInfix name pkg) packageStrings;
-  hasSystemPackageNamed = name: any (pkg: hasInfix name pkg) systemPackageStrings;
 
   assertions = [
     {
@@ -217,22 +214,6 @@ let
     {
       test = profile.authFile == null;
       msg = "Scintillate must not seed Hermes auth from ~/.codex/auth.json.";
-    }
-    {
-      test = hasSystemPackageNamed "hermes-runtime-smoke";
-      msg = "NUC system packages must include the reusable Hermes runtime smoke tool.";
-    }
-    {
-      test = runtimeSmokeService.serviceConfig.Type == "oneshot";
-      msg = "Hermes runtime smoke must be a NixOS oneshot service.";
-    }
-    {
-      test = hasInfix "podman.socket" (concatStringsSep " " runtimeSmokeService.after);
-      msg = "Hermes runtime smoke must run after the Podman API socket is available.";
-    }
-    {
-      test = !(builtins.hasAttr "hermes-runtime-smoke" cfg.systemd.timers);
-      msg = "Hermes runtime smoke must not run on a recurring timer.";
     }
     {
       test = !(builtins.hasAttr "hermes-scintillate-codex-smoke" cfg.systemd.timers);

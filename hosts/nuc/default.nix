@@ -193,8 +193,6 @@ let
     "orchestrator"
     "scintillate"
   ];
-  hermesGatewayUnits = map (name: "hermes-gateway-${name}.service") hermesSharedProfileNames;
-  hermesRuntimeSmoke = inputs.agents-workspace.packages.${hostSystem}.hermes-runtime-smoke;
   scintillateWhisperModel = pkgs.fetchurl {
     url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin";
     hash = "sha256-oDd5yG3zMjB19eeWyyzlAp8A7Ihp7uP9+4l6/jbG0AI=";
@@ -1508,7 +1506,6 @@ in
     home-assistant-cli # hass-cli: agent-friendly HA REST API wrapper
     himalaya # IMAP/SMTP CLI for Fastmail triage by Scintillate/agents
     inputs.nix-steipete-tools.packages.${hostSystem}.sag # TTS runtime support
-    hermesRuntimeSmoke
     rtk # Hermes terminal command rewriting after login-shell snapshot
     qmd # thin wrapper around llm-agents.nix qmd forcing CPU mode on this NUC
     my.buzz
@@ -2268,18 +2265,6 @@ in
     "/var/lib/hermes-betty"
     "/home/emiller/mill-docs"
   ];
-
-  systemd.services.hermes-runtime-smoke = {
-    enable = false;
-    description = "Run read-only Hermes runtime smoke checks";
-    after = [ "podman.socket" ] ++ hermesGatewayUnits;
-    wants = [ "podman.socket" ];
-    serviceConfig = {
-      Type = "oneshot";
-      TimeoutStartSec = "15min";
-      ExecStart = "${hermesRuntimeSmoke}/bin/hermes-runtime-smoke";
-    };
-  };
 
   # Amp owns its mutable, self-updating CLI binary and login state. Nix owns
   # the boot-persistent runner process and the repository it serves.
