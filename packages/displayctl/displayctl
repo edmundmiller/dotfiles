@@ -11,17 +11,21 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
 import re
 import struct
+import subprocess
 import sys
+import tempfile
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 import zlib
+from zoneinfo import ZoneInfo
 
 
 BUSY_ALIAS = "busy-bar"
@@ -770,6 +774,149 @@ def _doctor(config: dict[str, Any]) -> int:
     return 0 if result["ok"] else 1
 
 
+def _task_time(value: str) -> datetime:
+    if not isinstance(value, str):
+        raise ValueError("timestamp must be a string")
+    result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if result.tzinfo is None:
+        raise ValueError("observation needs a timezone")
+    return result
+
+
+def _task_snapshot(value: Any, source: str) -> dict[str, Any]:
+    if not isinstance(value, dict) or value.get("sourceVault") != source:
+        raise ValueError("unexpected source vault")
+    _task_time(value["observedAt"])
+    if not isinstance(value["tasks"], list):
+        raise ValueError("tasks must be an array")
+    for task in value["tasks"]:
+        for key in ("id", "path", "title", "rawStatus"):
+            if not isinstance(task[key], str) or not task[key]:
+                raise ValueError("missing task identity or title")
+        if task["status"] not in ("pending", "completed", "cancelled"):
+            raise ValueError("unsupported task status")
+        for key in ("contexts", "projects", "tags"):
+            if not isinstance(task[key], list) or not all(isinstance(v, str) for v in task[key]):
+                raise ValueError("invalid task grouping")
+        for key in ("due", "scheduled", "completedDate"):
+            if task[key] is not None and not isinstance(task[key], str):
+                raise ValueError("invalid task date")
+    return value
+
+
+def _context_key(name: str) -> tuple[str, str]:
+    # Shared native contract: ASCII folding only; preserve distinct spellings.
+    return name.translate(str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")), name
+
+
+def _task_payload(snapshot: dict[str, Any], now: datetime, zone: ZoneInfo, max_age: int) -> dict[str, Any]:
+    observed = _task_time(snapshot["observedAt"]) if snapshot["observedAt"] else None
+    expires = observed + timedelta(seconds=max_age) if observed else None
+    stale = bool(snapshot.get("stale") or not observed or now >= expires or observed > now)
+    error = snapshot.get("error")
+    today = now.astimezone(zone).date().isoformat()
+    contexts: dict[str, list[dict[str, Any]]] = {}
+    unclassified, done = [], []
+    active_count = backlog_count = 0
+    for task in snapshot["tasks"]:
+        if task["status"] == "completed":
+            completed = task["completedDate"]
+            if completed:
+                # Date-only values are vault-local calendar dates; instants need conversion.
+                try:
+                    day = _task_time(completed).astimezone(zone).date().isoformat() if "T" in completed else completed
+                except ValueError:
+                    day = None
+                if day == today:
+                    done.append(task)
+        elif task["status"] == "pending":
+            if task["rawStatus"] in ("backlog", "none") or any(tag.removeprefix("#").lower() == "someday" for tag in task["tags"]):
+                backlog_count += 1
+                continue
+            active_count += 1
+            names = sorted({name.strip() for name in task["contexts"] if name.strip()}, key=_context_key)
+            if not names:
+                unclassified.append(task)
+            else:
+                contexts.setdefault(names[0], []).append(task)
+
+    def group(name: str, tasks: list[dict[str, Any]]) -> dict[str, Any]:
+        ordered = sorted(tasks, key=lambda task: (task["title"].casefold(), task["id"]))
+        return {"name": name, "count": len(tasks), "titles": [("[waiting] " if t["rawStatus"] == "waiting" else "") + t["title"] for t in ordered[:2]], "more": max(0, len(tasks) - 2)}
+
+    groups = [group(name, contexts[name]) for name in sorted(contexts, key=_context_key)]
+    state = "ERROR / LAST KNOWN" if error and observed else "ERROR / NO OBSERVATION" if error else "STALE / LAST KNOWN" if stale else "OBSERVED"
+    return {
+        "task_awareness": True,
+        "source": Path(snapshot["sourceVault"]).name,
+        "task_state": state,
+        "task_error": error or "",
+        "task_as_of": observed.astimezone(zone).strftime("%b %d %H:%M %Z") if observed else "Never",
+        "task_expires": expires.astimezone(zone).strftime("%b %d %H:%M %Z") if expires else "Unknown",
+        "task_groups": groups[:2],
+        "task_more_groups": max(0, len(groups) - 2),
+        "task_unclassified": group("Unclassified", unclassified),
+        "task_done": group("Done today", done),
+        "task_active_count": active_count,
+        "task_backlog_count": backlog_count,
+        "task_empty": not active_count and not stale and not error,
+        "task_day": today,
+        "stale": stale,
+    }
+
+
+def _tasks(args: argparse.Namespace) -> int:
+    now = datetime.now(timezone.utc)
+    try:
+        zone = ZoneInfo(args.timezone)
+    except (KeyError, ValueError):
+        _fail("unknown timezone; use an IANA name such as America/Chicago")
+    if args.max_age <= 0:
+        _fail("--max-age must be positive")
+    cache = Path(args.cache) if args.cache else None
+    if not args.projection and cache is None:
+        _fail("live snapshot reads require --cache for last-known state")
+    snapshot = {"sourceVault": args.source_vault, "observedAt": None, "tasks": []}
+    error = None
+    try:
+        if args.projection:
+            value = json.loads(Path(args.projection).read_text())
+        else:
+            result = subprocess.run(["tnote", "task", "snapshot", "--include-archive"], capture_output=True, text=True, timeout=30, check=True,
+                                    env={**os.environ, "TN_VAULT_PATH": args.source_vault})
+            value = json.loads(result.stdout)
+        candidate = _task_snapshot(value, args.source_vault)
+        if _task_time(candidate["observedAt"]) > now + timedelta(seconds=30):
+            raise ValueError("future observation")
+        if candidate.get("error") or candidate.get("stale"):
+            raise ValueError("source did not complete a fresh observation")
+        snapshot = candidate
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        # Never echo subprocess stderr: it can contain private paths or note contents.
+        error = "Snapshot unavailable or invalid; check tnote configuration and source access."
+        if cache and cache.exists():
+            try:
+                snapshot = _task_snapshot(json.loads(cache.read_text()), args.source_vault)
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
+    if not error and cache:
+        try:
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(mode="w", dir=cache.parent, delete=False) as handle:
+                temporary = Path(handle.name)
+                json.dump(snapshot, handle)
+            temporary.replace(cache)
+        except OSError:
+            if "temporary" in locals():
+                temporary.unlink(missing_ok=True)
+            error = "Observation read, but last-known cache could not be saved."
+    snapshot = {**snapshot, "error": error or snapshot.get("error"), "stale": bool(error or snapshot.get("stale"))}
+    payload = _task_payload(snapshot, datetime.now(timezone.utc), zone, args.max_age)
+    snapshot["stale"] = payload["stale"]
+    _emit({"operation": "tasks.preview", "applied": False, "projection": snapshot, "merge_variables": payload})
+    return 1 if snapshot["error"] else 0
+
+
 def _add_json_flag(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true", help="emit structured JSON (the default)")
 
@@ -858,6 +1005,15 @@ def _parser() -> argparse.ArgumentParser:
     _add_json_flag(doctor)
     doctor.set_defaults(handler="doctor")
 
+    tasks = commands.add_parser("tasks", help="read tnote snapshot and preview task-awareness payload; never publish")
+    tasks.set_defaults(handler="tasks")
+    tasks.add_argument("--source-vault", required=True, help="expected primary vault root; also binds the cache")
+    tasks.add_argument("--projection", help="read a snapshot fixture instead of invoking tnote")
+    tasks.add_argument("--cache", help="private local last-good snapshot cache")
+    tasks.add_argument("--timezone", default="America/Chicago")
+    tasks.add_argument("--max-age", type=int, default=900, help="source freshness budget in seconds, not delivery cadence")
+    _add_json_flag(tasks)
+
     _add_busy_parser(commands, "busy")
     _add_busy_parser(commands, "busy-bar")
     _add_trmnl_parser(commands, "trmnl")
@@ -867,6 +1023,8 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _dispatch(args: argparse.Namespace, config: dict[str, Any]) -> int:
+    if args.handler == "tasks":
+        return _tasks(args)
     if args.handler == "inventory":
         _emit(_public_inventory(config))
         return 0
@@ -905,7 +1063,7 @@ def _dispatch(args: argparse.Namespace, config: dict[str, Any]) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        config = _load_config(args.config)
+        config = {} if args.handler == "tasks" else _load_config(args.config)
         return _dispatch(args, config)
     except DisplayCtlError as exc:
         print(f"displayctl: {exc}", file=sys.stderr)

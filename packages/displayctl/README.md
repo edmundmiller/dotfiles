@@ -30,6 +30,68 @@ so an account key alone does not imply current-screen or webhook readiness.
 `capture` reads a BUSY frame and writes a local PNG; it does not change the
 device.
 
+## Read-only task awareness
+
+```sh
+displayctl tasks --source-vault /absolute/path/to/TaskNotes \
+  --cache "$HOME/.cache/displayctl/tasks.json" --timezone America/Chicago
+# Offline input uses the exact same snapshot schema:
+displayctl tasks --source-vault /example/TaskNotes --projection snapshot.json
+```
+
+Requires the `tnote task snapshot --include-archive` command on PATH. This is
+deliberately **not** `task list`: older list output is truncated, omits needed
+metadata, and can write missing IDs. The new snapshot must finish a complete,
+nonmutating read before emitting `{sourceVault, observedAt, tasks}`. Each task
+contains `id`, `path`, `title`, normalized `status` (`pending`, `completed`,
+`cancelled`), canonical `rawStatus`, `contexts`, `projects`, `tags`, `due`, `scheduled`,
+and `completedDate`. This adapter does not parse Markdown or reinterpret
+unsupported source statuses. tnote owns configuration and collection roots.
+`--source-vault` sets `TN_VAULT_PATH` for the snapshot subprocess and verifies
+the returned root. Other tnote configuration, including additional task search
+locations, remains authoritative; no configuration file is written.
+
+Output is `{operation: "tasks.preview", applied: false, projection,
+merge_variables}`. Only `merge_variables` belongs in the existing TRMNL
+agent-message plugin; never publish the full projection (private paths and
+all task metadata). The source on screen is the vault basename. There is no
+new publisher, device CLI, network service, or scheduled job. BUSY is unchanged:
+its small, transient text overlay is not a full contextual overview.
+
+The live-read mode requires a last-good cache. Snapshot command failure,
+timeout, invalid metadata, or wrong vault retains cached tasks **and their
+original observedAt**, emits an error-state payload, and exits 1. No successful
+cache means “no observation,” not “no tasks.” Cache replacement is atomic and
+mode 0600; keep it outside the vault/repository, with a private parent directory.
+Exit 2 denotes invalid CLI usage; stale-but-valid observations still exit 0.
+
+Groups and titles sort deterministically by name, not AI priority. Pending
+`backlog`/`none` tasks and Someday-tagged tasks are inventory, not commitments.
+Someday matching removes one leading `#` and lowercases, without trimming or
+matching nested tags; this follows native TaskNotes semantics exactly.
+Other pending tasks are active; those without contexts remain Unclassified.
+Waiting titles are marked. Full
+view shows two contexts, two titles per group, Unclassified and Done today,
+with explicit omitted-context/task counts. Multi-context tasks appear only in
+their first sorted nonblank context; all counts are unique. Contexts are trimmed,
+deduplicated by exact spelling, and sorted by ASCII-case-folded codepoint order
+with original spelling as tie-break. Wikilinks are not stripped; `Home` and
+`home` remain distinct. Smaller views show counts.
+Done today excludes cancelled, uses date-only calendar dates unchanged, and
+converts actual timestamps to `--timezone` (America/Chicago by default).
+The source must preserve date-only semantics, including unquoted YAML dates.
+No current/selected task is fabricated where canonical metadata does not exist.
+
+`--max-age` defaults to 900 seconds and controls **source freshness**, not
+delivery frequency. Every frame includes source, observation time, expiry,
+and the local date for Done today. An old e-ink image cannot update its own
+STALE label after rendering; “Stale after” remains explicit even if the producer
+dies. Publication time must never replace observation time. TRMNL pulls frames:
+normal-plan webhook limit is 12/hour (30/hour on TRMNL+), not guaranteed
+60-second delivery. Coalesce updates and respect device polling. Deployment,
+private-plugin target verification, publishing, and live readback remain
+separately authorized operations.
+
 When `--config` is omitted, the CLI resolves configuration in this order:
 `DISPLAYCTL_CONFIG`, an existing `~/.config/displayctl/config.json`, the
 installed `$out/share/displayctl/config.json`, then the source-tree sibling

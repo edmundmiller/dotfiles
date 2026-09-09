@@ -1247,7 +1247,7 @@
                   }
                   ''
                     cd ${./packages/displayctl}
-                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_displayctl.py
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_displayctl.py test_tasks.py
                     touch $out
                   '';
 
