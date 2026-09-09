@@ -120,9 +120,9 @@ in
           lazydiff.enable = true;
         };
         jj.enable = true;
-        # Disable tmux on this host so Pi does not inject tmux-oriented
-        # shell tools/extensions; Herdr remains the preferred pane/workspace layer.
-        tmux.enable = false;
+        # Keep tmux available for persistent agent terminals; Herdr still owns
+        # Ghostty startup and remains the preferred pane/workspace layer.
+        tmux.enable = true;
         tmux.workmux.enable = false;
         acpx.enable = true;
         cliamp.enable = true;

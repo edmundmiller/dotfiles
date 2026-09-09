@@ -29,6 +29,11 @@ set -as terminal-features ',ghostty:extkeys'
 # Allow passthrough for Kitty keyboard protocol queries
 set -g allow-passthrough on
 
+# Amp CLI: clickable links, OSC 52 clipboard, and literal CSI-u Shift+Enter.
+set -as terminal-features ',*:hyperlinks'
+set -s set-clipboard on
+bind -n S-Enter send-keys -l "\033[13;2u"
+
 # Spawn a session only when none exist (safe to re-source).
 if-shell 'tmux list-sessions >/dev/null 2>&1' '' 'new-session'
 
