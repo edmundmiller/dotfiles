@@ -4,3 +4,60 @@
 {% assign status_text = status | default: "Ready" | truncate: 18 %}
 {% assign timestamp_text = timestamp | default: "" | truncate: 28 %}
 {% assign progress_value = progress | plus: 0 | at_least: 0 | at_most: 100 %}
+{% capture task_header %}
+  <span class="label label--small">{{ task_state | escape }} · Read only</span>
+  <span class="label label--small">As of {{ task_as_of | escape }} · Stale after {{ task_expires | escape }}</span>
+{% endcapture %}
+{% capture task_footer %}
+<div class="title_bar">
+  <span class="title">{{ source | escape | truncate: 32 }} · Tasks</span>
+  <span class="instance">{{ task_day | escape }}</span>
+</div>
+{% endcapture %}
+{% capture task_full %}
+<div class="layout layout--col layout--stretch-x gap--small">
+  <span class="title">{{ task_state | escape }} · Read only</span>
+  <span class="label label--small">As of {{ task_as_of | escape }} · Stale after {{ task_expires | escape }}</span>
+  {% if task_error != blank %}<span class="label label--small" data-clamp="1">{{ task_error | escape }}</span>{% endif %}
+  {% if task_as_of == "Never" %}
+    <span class="description">Counts unknown until the first successful read.</span>
+  {% else %}
+  <span class="label">{{ task_active_count }} active · Inventory {{ task_backlog_count }} in vault</span>
+  {% if task_empty %}<span class="description">No active tasks observed. Review or capture in TaskNotes.</span>{% endif %}
+  <div class="grid grid--cols-2 gap--medium">
+    {% for group in task_groups %}
+      <div class="col gap--small">
+        <span class="label">{{ group.name | escape | truncate: 28 }} · {{ group.count }}</span>
+        {% for title in group.titles %}<span class="title" data-clamp="1">{{ title | escape | truncate: 45 }}</span>{% endfor %}
+        {% if group.more > 0 %}<span class="label label--small">+{{ group.more }} more in vault</span>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="col gap--small">
+      <span class="label">Unclassified · {{ task_unclassified.count }}</span>
+      {% for title in task_unclassified.titles %}<span class="title" data-clamp="1">{{ title | escape | truncate: 45 }}</span>{% endfor %}
+      {% if task_unclassified.more > 0 %}<span class="label label--small">+{{ task_unclassified.more }} more in vault</span>{% endif %}
+    </div>
+    <div class="col gap--small">
+      <span class="label">Done today · {{ task_done.count }}</span>
+      {% for title in task_done.titles %}<span class="title" data-clamp="1">{{ title | escape | truncate: 45 }}</span>{% endfor %}
+      {% if task_done.more > 0 %}<span class="label label--small">+{{ task_done.more }} more in vault</span>{% endif %}
+    </div>
+  </div>
+  {% if task_more_groups > 0 %}<span class="label label--small">+{{ task_more_groups }} contexts not shown · Open vault for all tasks</span>{% endif %}
+  {% endif %}
+</div>
+{{ task_footer }}
+{% endcapture %}
+{% capture task_compact %}
+<div class="layout layout--col layout--stretch-x gap--small">
+  {{ task_header }}
+  {% if task_as_of == "Never" %}
+    <span class="description">No observation. Check source access.</span>
+  {% else %}
+    <span class="label label--small">{{ task_active_count }} active · Inventory {{ task_backlog_count }}</span>
+    <span class="description">Unclassified {{ task_unclassified.count }} · Done today {{ task_done.count }}</span>
+    <span class="label label--small" data-clamp="1">{% for group in task_groups %}{{ group.name | escape | truncate: 16 }} {{ group.count }} · {% endfor %}{% if task_more_groups > 0 %}+{{ task_more_groups }} contexts{% endif %}</span>
+  {% endif %}
+</div>
+{{ task_footer }}
+{% endcapture %}

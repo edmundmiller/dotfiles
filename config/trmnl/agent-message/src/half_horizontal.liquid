@@ -1,3 +1,6 @@
+{% if task_awareness %}
+{{ task_compact }}
+{% else %}
 <div class="layout layout--col layout--center-y layout--stretch-x gap--medium portrait:gap--small">
   <span class="label label--small">{{ status_text }}</span>
   <span class="title title--large" data-clamp="1">{{ headline_text }}</span>
@@ -20,3 +23,4 @@
   <span class="title">{{ source_text }}</span>
   {% if timestamp_text != blank %}<span class="instance">{{ timestamp_text }}</span>{% endif %}
 </div>
+{% endif %}

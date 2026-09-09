@@ -1,3 +1,6 @@
+{% if task_awareness %}
+{{ task_compact }}
+{% else %}
 <div class="layout layout--col layout--center-y layout--stretch-x gap--small portrait:gap--small">
   <span class="label label--small">{{ status_text }}</span>
   <span class="title title--large" data-clamp="1">{{ headline_text }}</span>
@@ -19,3 +22,4 @@
 <div class="title_bar">
   <span class="title">{{ source_text }}</span>
 </div>
+{% endif %}
