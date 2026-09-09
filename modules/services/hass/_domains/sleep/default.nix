@@ -335,6 +335,8 @@ in
         entities = {
           "input_boolean.goodnight" = "on";
           "switch.adaptive_lighting_sleep_mode_living_space" = "on";
+          "switch.desk_monitor" = "off";
+          "switch.desk_pop" = "off";
           "cover.smartwings_window_covering" = "closed";
           "light.kitchen_trashcan" = "off";
           "light.kitchen_dishwasher" = "off";
