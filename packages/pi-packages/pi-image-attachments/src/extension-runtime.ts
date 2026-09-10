@@ -5,7 +5,6 @@ import {
   type DraftAttachment,
   type PendingSubmission,
 } from "./editor-factory.ts";
-import { PREFER_INLINE_SCREENSHOT_PROMPT } from "./prompt.ts";
 import { upgradeScreenshotToolResult } from "./tool-result-upgrader.ts";
 
 export type PiLike = {
@@ -83,12 +82,6 @@ export function registerImageAttachmentsExtension(pi: PiLike, deps: ExtensionRun
     pendingSubmission = undefined;
     ctx.ui.setWidget(EXTENSION_WIDGET_KEY, undefined);
   };
-
-  pi.on("before_agent_start", () => {
-    return {
-      systemPrompt: PREFER_INLINE_SCREENSHOT_PROMPT,
-    };
-  });
 
   pi.on("session_start", async (_event, ctx) => {
     installEditor(ctx);

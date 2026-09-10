@@ -10,7 +10,7 @@ A distributable Pi extension package that brings image attachment behavior to Pi
 - Placeholders are stripped from the submitted text; only the image content is sent.
 - Drafts containing only image placeholders are sent as image-only user messages.
 - Screenshot tool results that save to `filePath` are promoted into inline image content so the agent can inspect them agentically.
-- The extension nudges Pi to prefer inline screenshots when the agent needs to inspect the image itself.
+- The local extension does not add to or replace Pi's system prompt.
 
 ## Install
 
