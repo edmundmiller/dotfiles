@@ -220,41 +220,42 @@ let
     {
       test =
         (goodMorningScript.mode or null) == "restart"
-        && goodMorningSequence == [
-          {
-            action = "scene.turn_on";
-            target.entity_id = "scene.good_morning";
-          }
-          {
-            parallel = [
-              {
-                sequence = [
-                  {
-                    action = "shell_command.hermes_betty_good_morning_dj";
-                    continue_on_error = true;
-                  }
-                ];
-              }
-              {
-                sequence = [
-                  { delay = "00:10:00"; }
-                  {
-                    condition = "state";
-                    entity_id = "input_boolean.goodnight";
-                    state = "off";
-                  }
-                  {
-                    action = "switch.turn_on";
-                    target.entity_id = [
-                      "switch.desk_monitor"
-                      "switch.desk_pop"
-                    ];
-                  }
-                ];
-              }
-            ];
-          }
-        ];
+        &&
+          goodMorningSequence == [
+            {
+              action = "scene.turn_on";
+              target.entity_id = "scene.good_morning";
+            }
+            {
+              parallel = [
+                {
+                  sequence = [
+                    {
+                      action = "shell_command.hermes_betty_good_morning_dj";
+                      continue_on_error = true;
+                    }
+                  ];
+                }
+                {
+                  sequence = [
+                    { delay = "00:10:00"; }
+                    {
+                      condition = "state";
+                      entity_id = "input_boolean.goodnight";
+                      state = "off";
+                    }
+                    {
+                      action = "switch.turn_on";
+                      target.entity_id = [
+                        "switch.desk_monitor"
+                        "switch.desk_pop"
+                      ];
+                    }
+                  ];
+                }
+              ];
+            }
+          ];
       msg = "Good Morning script must restart its independent 10-minute desk timer while launching the DJ";
     }
 
