@@ -391,8 +391,6 @@ in
           };
           "switch.eve_energy_20ebu4101" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
-          "switch.desk_monitor" = "on";
-          "switch.desk_pop" = "on";
           "light.kitchen_trashcan" = "on";
           "light.kitchen_dishwasher" = "on";
           "light.essentials_a19_a60_5" = "on";
@@ -409,6 +407,10 @@ in
         alias = "Get Ready For Bed";
         icon = "mdi:bed-clock";
         sequence = [
+          {
+            action = "script.turn_off";
+            target.entity_id = "script.good_morning";
+          }
           {
             action = "scene.turn_on";
             target.entity_id = "scene.get_ready_for_bed";
@@ -428,6 +430,10 @@ in
         icon = "mdi:bed";
         sequence = [
           {
+            action = "script.turn_off";
+            target.entity_id = "script.good_morning";
+          }
+          {
             action = "scene.turn_on";
             target.entity_id = "scene.good_night";
           }
@@ -446,6 +452,10 @@ in
         icon = "mdi:sleep";
         sequence = [
           {
+            action = "script.turn_off";
+            target.entity_id = "script.good_morning";
+          }
+          {
             action = "scene.turn_on";
             target.entity_id = "scene.sleep";
           }
@@ -462,27 +472,40 @@ in
       good_morning = {
         alias = "Good Morning";
         icon = "mdi:weather-sunny";
+        mode = "restart";
         sequence = [
           {
             action = "scene.turn_on";
             target.entity_id = "scene.good_morning";
           }
           {
-            action = "shell_command.hermes_betty_good_morning_dj";
-          }
-          {
-            action = "input_boolean.turn_off";
-            target.entity_id = [
-              "input_boolean.winding_down_done"
-              "input_boolean.get_ready_for_bed_done"
-              "input_boolean.goodnight_done"
-              "input_boolean.sleep_done"
+            parallel = [
+              {
+                sequence = [
+                  {
+                    action = "shell_command.hermes_betty_good_morning_dj";
+                    continue_on_error = true;
+                  }
+                ];
+              }
+              {
+                sequence = [
+                  { delay = "00:10:00"; }
+                  {
+                    condition = "state";
+                    entity_id = "input_boolean.goodnight";
+                    state = "off";
+                  }
+                  {
+                    action = "switch.turn_on";
+                    target.entity_id = [
+                      "switch.desk_monitor"
+                      "switch.desk_pop"
+                    ];
+                  }
+                ];
+              }
             ];
-          }
-          {
-            action = "input_text.set_value";
-            target.entity_id = "input_text.sleep_schedule_key";
-            data.value = "";
           }
         ];
       };

@@ -427,6 +427,10 @@ let
   midMorningScene = findScene "Mid-morning";
   sundownScene = findScene "Sundown";
   livingSpaceAdaptiveLighting = findAdaptiveLighting "Living Space";
+  goodMorningScript = scripts.good_morning or null;
+  goodMorningSequence =
+    if goodMorningScript == null then [ ] else toList (goodMorningScript.sequence or [ ]);
+  goodMorningIntent = haConfig.intent_script.GoodMorning or null;
 
   assertions = initialStateAssertions ++ [
     {
@@ -1153,12 +1157,75 @@ let
       msg = "Sleep scene doesn't turn off switch.plant_glow_light";
     }
     {
-      test = (goodMorningScene.entities."switch.desk_monitor" or null) == "on";
-      msg = "Good Morning scene doesn't turn on switch.desk_monitor";
+      test = !(goodMorningScene.entities ? "switch.desk_monitor");
+      msg = "Good Morning scene must not manage switch.desk_monitor directly";
     }
     {
-      test = (goodMorningScene.entities."switch.desk_pop" or null) == "on";
-      msg = "Good Morning scene doesn't turn on switch.desk_pop";
+      test = !(goodMorningScene.entities ? "switch.desk_pop");
+      msg = "Good Morning scene must not manage switch.desk_pop directly";
+    }
+    {
+      test =
+        (goodMorningScript.mode or null) == "restart"
+        && goodMorningSequence == [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.good_morning";
+          }
+          {
+            parallel = [
+              {
+                sequence = [
+                  {
+                    action = "shell_command.hermes_betty_good_morning_dj";
+                    continue_on_error = true;
+                  }
+                ];
+              }
+              {
+                sequence = [
+                  { delay = "00:10:00"; }
+                  {
+                    condition = "state";
+                    entity_id = "input_boolean.goodnight";
+                    state = "off";
+                  }
+                  {
+                    action = "switch.turn_on";
+                    target.entity_id = [
+                      "switch.desk_monitor"
+                      "switch.desk_pop"
+                    ];
+                  }
+                ];
+              }
+            ];
+          }
+        ];
+      msg = "Good Morning script must restart its independent 10-minute desk timer while launching the DJ";
+    }
+    {
+      test = builtins.all (
+        script:
+        script != null
+        && hasActionTarget (toList (script.sequence or [ ])) "script.turn_off" "script.good_morning"
+      ) [
+        getReadyForBedScript
+        goodNightScript
+        sleepScript
+      ];
+      msg = "bedtime scripts must cancel a pending Good Morning desk timer";
+    }
+    {
+      test =
+        goodMorningIntent != null
+        && (goodMorningIntent.action or [ ]) == [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.good_morning";
+          }
+        ];
+      msg = "GoodMorning Assist intent must use script.good_morning so desk power is delayed";
     }
     {
       test =

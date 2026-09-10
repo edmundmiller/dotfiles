@@ -135,8 +135,11 @@ These booleans are tracking-only now (for observability/manual use).
 
 ## Good Morning
 
-`scene.good_morning` is intentionally **not auto-triggered** by wake detection anymore.
-Use voice/manual activation instead (e.g., Assist intent or Home app scene/script).
+Good Morning is intentionally **not auto-triggered** by wake detection anymore.
+Use `script.good_morning` through voice or manual activation; the scene is only its
+immediate-state component. The script waits ten minutes before turning on the desk
+monitor and desk POP switches to avoid the bright display at wake-up. Activating Good
+Morning again restarts the delay; a bedtime activation cancels the pending power-on.
 
 ## Apple / 8Sleep Integration
 

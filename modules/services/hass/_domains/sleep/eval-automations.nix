@@ -18,6 +18,7 @@ let
   haConfig = nixosConfig.config.services.home-assistant.config;
   automations = haConfig.automation;
   scenes = haConfig.scene;
+  scripts = haConfig.script;
 
   findAutomation =
     id:
@@ -96,6 +97,9 @@ let
   goodNightScene = findScene "Good Night";
   sleepScene = findScene "Sleep";
   goodMorningScene = findScene "Good Morning";
+  goodMorningScript = scripts.good_morning or null;
+  goodMorningSequence =
+    if goodMorningScript == null then [ ] else toList (goodMorningScript.sequence or [ ]);
 
   assertions = initialStateAssertions ++ [
     {
@@ -206,6 +210,52 @@ let
         && (coverCfg.state or null) == "open"
         && (coverCfg.current_position or null) == 20;
       msg = "Good Morning scene cover.smartwings_window_covering must use state=open + current_position=20";
+    }
+    {
+      test =
+        !(goodMorningScene.entities ? "switch.desk_monitor")
+        && !(goodMorningScene.entities ? "switch.desk_pop");
+      msg = "Good Morning scene must not manage the delayed desk switches directly";
+    }
+    {
+      test =
+        (goodMorningScript.mode or null) == "restart"
+        && goodMorningSequence == [
+          {
+            action = "scene.turn_on";
+            target.entity_id = "scene.good_morning";
+          }
+          {
+            parallel = [
+              {
+                sequence = [
+                  {
+                    action = "shell_command.hermes_betty_good_morning_dj";
+                    continue_on_error = true;
+                  }
+                ];
+              }
+              {
+                sequence = [
+                  { delay = "00:10:00"; }
+                  {
+                    condition = "state";
+                    entity_id = "input_boolean.goodnight";
+                    state = "off";
+                  }
+                  {
+                    action = "switch.turn_on";
+                    target.entity_id = [
+                      "switch.desk_monitor"
+                      "switch.desk_pop"
+                    ];
+                  }
+                ];
+              }
+            ];
+          }
+        ];
+      msg = "Good Morning script must restart its independent 10-minute desk timer while launching the DJ";
     }
 
     {

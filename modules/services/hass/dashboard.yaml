@@ -53,15 +53,15 @@ views:
             square: false
             cards:
               - type: button
-                entity: scene.good_morning
+                entity: script.good_morning
                 name: Morning
                 icon: mdi:weather-sunny
                 show_state: false
                 tap_action:
                   action: perform-action
-                  perform_action: scene.turn_on
+                  perform_action: script.turn_on
                   target:
-                    entity_id: scene.good_morning
+                    entity_id: script.good_morning
 
               - type: button
                 entity: script.everything_off

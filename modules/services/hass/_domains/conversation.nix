@@ -171,8 +171,8 @@ _: {
         speech.text = "Good morning.";
         action = [
           {
-            action = "scene.turn_on";
-            target.entity_id = "scene.good_morning";
+            action = "script.turn_on";
+            target.entity_id = "script.good_morning";
           }
         ];
       };
