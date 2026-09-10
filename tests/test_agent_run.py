@@ -81,7 +81,10 @@ class AgentRunTests(unittest.TestCase):
             flake,
         )
         self.assertIn(".#pre-commit-config", hey)
-        self.assertEqual(hey.count("--config $precommit_config"), 4)
+        prek_calls = [line for line in hey.splitlines() if "^prek " in line]
+        self.assertTrue(prek_calls)
+        for call in prek_calls:
+            self.assertIn("^prek --config $precommit_config ", call)
         self.assertIn("actionlint = {", flake)
         self.assertIn("agent-run-tests =", flake)
 
