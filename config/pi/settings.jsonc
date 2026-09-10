@@ -17,33 +17,9 @@
   "quietStartup": true,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
-  // Compaction - keep more context for complex tasks
-  "compaction": {
-    "enabled": true,
-    "reserveTokens": 16384,
-    "keepRecentTokens": 24000,
-  },
-  // Keep enough output budget for useful branch summaries.
-  "branchSummary": {
-    "reserveTokens": 16384,
-  },
-  // Retry configuration
-  "retry": {
-    "enabled": true,
-    "maxRetries": 3,
-    "baseDelayMs": 2000,
-  },
-  // Message delivery - one at a time for control
-  "steeringMode": "one-at-a-time",
-  "followUpMode": "one-at-a-time",
-  // Images
-  "images": {
-    "autoResize": true,
-    "blockImages": false,
-  },
-  // Skills as commands - also registers skills as /skill:name slash commands
-  // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/skills.md
-  "enableSkillCommands": true,
+  // Use Pi's native compaction, retry, message delivery, image, and skill defaults.
+  // Keep integrations and explicit commands; avoid automatic coaching,
+  // continuation loops, model switching, and overlapping context/tool rewriting.
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   // Host/module-specific packages are injected by modules/agents/pi/default.nix
   // (tmux/herdr, MCP, computer-use, git tooling, status UI, and context/memory).
@@ -54,50 +30,27 @@
       "extensions": [
         "clipboard.ts",
         "oracle.ts",
-        "memory-mode.ts",
-        "plan-mode.ts",
-        "handoff.ts",
-        "ultrathink.ts",
         "cost-tracker.ts",
         "speedreading.ts",
-        "loop.ts",
         "process-info.ts", // writes PID/tmux pane/session/status into session JSONL (for pi-sessions picker)
       ],
       "skills": [],
     },
-    // Legacy git-backed memory filesystem disabled in favor of pi-hermes-memory.
-    // "~/.config/dotfiles/packages/pi-packages/pi-context-repo",
-    // Dynamic context pruning - forked from https://github.com/zenobi-us/pi-dcp
-    "~/.config/dotfiles/packages/pi-packages/pi-dcp",
-    // Context pruning, usage, and cache graph tools
-    "npm:pi-context-prune",
+    // Context usage and cache inspection (no automatic pruning).
     "npm:pi-context-usage",
     "npm:pi-cache-graph",
-    // Repo-local QMD workflow (/qmd, /qp) and qmd-cli-first guidance
-    "~/.config/dotfiles/packages/pi-packages/pi-qmd",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/packages/pi-packages/pi-direnv",
     // Force non-interactive bash defaults + block interactive hang patterns
     "~/.config/dotfiles/packages/pi-packages/pi-non-interactive",
-    // Agentmap codebase tree in system prompt - https://github.com/remorses/agentmap
-    "~/.config/dotfiles/packages/pi-packages/pi-agentmap",
     // ast-grep outline/search/rewrite/scan tools - vendored from https://github.com/joelhooks/pi-ast-grep
     "~/.config/dotfiles/packages/pi-packages/pi-ast-grep",
-
-    // Prompt construction toolkit
-    "npm:pi-promptsmith",
-    // FFF package disabled: crashes/high CPU in libfff_c.dylib on large vaults
-    // "npm:@ff-labs/pi-fff",
     // Cross-agent thread reader (agents:// URIs)
     "~/.config/dotfiles/packages/pi-packages/pi-xurl",
     // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
     {
       "source": "https://github.com/qualisero/rhubarb-pi",
-      "extensions": [
-        "hooks/session-color/**",
-
-        // "extensions/pi-agent-scip/**" // SCIP for typescript/python - requires scip CLI
-      ],
+      "extensions": ["hooks/session-color/**"],
     },
     // tmustier extensions - https://github.com/tmustier/pi-extensions
     {
@@ -107,7 +60,6 @@
         "files-widget/index.ts",
         "code-actions/index.ts", // /code to pick code blocks from messages
         "raw-paste/index.ts", // /paste for raw clipboard paste
-        "agent-guidance/agent-guidance.ts", // Agent guidance/steering
       ],
       "skills": [],
     },
@@ -125,20 +77,6 @@
       "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
       "skills": ["skills/session-query"],
     },
-    // Branch-aware session context rollback + /checkpoint - https://github.com/uriafranko/pi-rollback
-    "https://github.com/uriafranko/pi-rollback",
-    // Read tool structural maps for large files - https://github.com/Whamp/pi-read-map
-    "npm:pi-read-map",
-    // Read mode for focused/large-file reading workflows
-    "npm:pi-read-mode",
-    // Self-updating markdown docs for pi - https://github.com/Michaelliv/pi-magic-docs
-    "npm:pi-magic-docs",
-    // Codex-style persistent goal tracking and continuation.
-    // Fork carries token_budget guidance until upstream release includes it.
-    "git:github.com/edmundmiller/pi-codex-goal",
-    // Legacy tasks package intentionally disabled to keep task tools out of session
-    // "~/.config/dotfiles/packages/pi-packages/pi-beads",
-
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
       "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",
@@ -154,31 +92,18 @@
     // tmux/herdr shell-integration packages are injected by modules/agents/pi.
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
-    // Dumb zone - context degradation warning (forked from @aliou/pi-extensions)
-    "~/.config/dotfiles/packages/pi-packages/pi-dumb-zone",
-    // BUG dotfiles-n579: frontmatter warnings on CHANGELOG.md/README.md
-    // "npm:visual-explainer",
     // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
     "git:github.com/FredySandoval/pi-logo",
     // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
     // pi-smart-fetch stays broad; GUI/browser computer-use tools are module-gated.
-    // Browser/web access tool - https://github.com/nicobailon/pi-web-access
-    // DISABLED: replaced by pi-smart-fetch for web_fetch
-    // "npm:pi-web-access",
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
     "npm:pi-smart-fetch",
     // Terminal-native ANSI theme (provides theme: "terminal") - https://github.com/mavam/pi-terminal-theme
     "npm:pi-terminal-theme",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
-    // Verbosity controls for concise/detailed responses - npm package
-    "npm:pi-verbosity-control",
-    // RTK token reduction via tool hooks - ~30-40% upload token savings - https://github.com/mcowger/pi-rtk
-    "npm:pi-rtk",
     // Process inspection/management tools - https://github.com/aliou/pi-processes
     "npm:@aliou/pi-processes",
-    // Web research — clean fetch, pluggable search, scout subagent - https://github.com/iaptsiauri/pi-surf
-    // "npm:pi-surf",
     // Programmatic Tool Calling (Python async orchestration) - https://github.com/cegersdoerfer/pi-ptc
     "git:github.com/cegersdoerfer/pi-ptc",
     // Interlude UI/UX enhancements - https://github.com/mjakl/pi-interlude
@@ -186,42 +111,24 @@
     // Token burden visualization/management - https://github.com/Whamp/pi-token-burden
     // Pinned before 0.6.5 until Pi's npm install cutoff allows yaml@^2.9.0.
     "git:github.com/Whamp/pi-token-burden#v0.6.4",
-    // OpenAI compaction controls - https://www.npmjs.com/package/@jordyvd/pi-openai-compaction
-    // "npm:@jordyvd/pi-openai-compaction",
     // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
     "npm:@howaboua/pi-codex-conversion",
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",
-    // Live bash output view enhancements - vendored local copy
-    // FIXME: switch back to upstream once signal typing + conflict-free tool naming fix lands in lucasmeijer/pi-bash-live-view
-    // "~/.config/dotfiles/packages/pi-packages/pi-bash-live-view",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/packages/pi-packages/pi-image-attachments",
-    // Automatic model switching workflows (e.g. Kimi ↔ Codex handoff)
-    "npm:pi-model-switch",
-    // Autonomous experiment loop (widget + /autoresearch + autoresearch-create skill)
-    // FIXME MAKE IT STOP https://github.com/davebcn87/pi-autoresearch/issues/6
-    // "https://github.com/davebcn87/pi-autoresearch",
     // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
     "npm:latchkey",
-    // Ask tool — structured clarification before acting - https://github.com/eko24ive/pi-ask
-    "npm:@eko24ive/pi-ask",
     // Ask-user-question tool variant - install equivalent: pi install npm:@juicesharp/rpiv-ask-user-question
     "npm:@juicesharp/rpiv-ask-user-question",
     // Hermes memory integration - install equivalent: pi install npm:pi-hermes-memory
     "npm:pi-hermes-memory",
-    // Markdown workflows/skills + nested AGENTS.md loader - https://github.com/IgorWarzocha/pi-markdown-workflows
+    // Retain nested AGENTS.md discovery. This package also injects workflow
+    // selection guidance when a project contains .pi/workflows (not explicit-only).
     "npm:@howaboua/pi-markdown-workflows",
-    // Dynamic multi-agent workflows: /workflows, /deep-research, /adversarial-review
-    "npm:@quintinshaw/pi-dynamic-workflows",
-    // Native diff review window with Monaco + annotations - https://github.com/badlogic/pi-diff-review
-    // "git:https://github.com/badlogic/pi-diff-review",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
     "https://github.com/denismrvoljak/pi-overwatch",
-    // Pierre-themed inline diff rendering for edit/write tool results - https://github.com/tanvesh01/pierre-diffs
-    // DISABLED: conflicts with pi-tool-display on edit/write tools
-    // "git:github.com/tanvesh01/pierre-diffs",
     // Keep the package installed; config/pi/extensions/lazy-agent-browser.ts
     // exposes its native tool immediately and imports the heavy runtime on use.
     {

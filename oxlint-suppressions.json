@@ -182,11 +182,6 @@
       "count": 1
     }
   },
-  "config/pi/extensions/you-are-right-killer.ts": {
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 1
-    }
-  },
   "config/tmux/agent-hunk-sessions.ts": {
     "anti-slop/no-known-value-widening": {
       "count": 2

@@ -54,14 +54,45 @@ class AgentResponseContractTests(unittest.TestCase):
         self.assertEqual(config["model_verbosity"], "low")
         self.assertEqual(config["model_reasoning_summary"], "concise")
 
-    def test_pi_makes_summary_budget_and_verbosity_control_explicit(self) -> None:
+    def test_pi_uses_native_defaults_without_automatic_coaching(self) -> None:
         settings = (ROOT / "config/pi/settings.jsonc").read_text()
 
-        self.assertRegex(
-            settings,
-            r'"branchSummary"\s*:\s*\{\s*"reserveTokens"\s*:\s*16384',
-        )
-        self.assertIn('"npm:pi-verbosity-control"', settings)
+        for key in (
+            "branchSummary", "compaction", "retry", "steeringMode",
+            "followUpMode", "images", "enableSkillCommands",
+        ):
+            with self.subTest(key=key):
+                self.assertNotRegex(settings, rf'"{key}"\s*:')
+        for package in (
+            "npm:pi-verbosity-control", "npm:pi-rtk", "npm:pi-model-switch",
+            "git:github.com/edmundmiller/pi-codex-goal",
+            "~/.config/dotfiles/packages/pi-packages/pi-dcp",
+            "~/.config/dotfiles/packages/pi-packages/pi-agentmap",
+        ):
+            with self.subTest(package=package):
+                self.assertNotIn(json.dumps(package), settings)
+
+    def test_pi_retains_safety_and_useful_integrations(self) -> None:
+        settings = (ROOT / "config/pi/settings.jsonc").read_text()
+        for package in (
+            "npm:@gotgenes/pi-permission-system",
+            "~/.pi/agent/packages/pi-command-policy-bridge",
+            "npm:pi-hermes-memory", "npm:pi-terminal-theme",
+            "npm:pi-agent-browser-native",
+        ):
+            with self.subTest(package=package):
+                self.assertIn(json.dumps(package), settings)
+        links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
+        self.assertIn("enforce-commit-signing.ts", links)
+        self.assertNotIn("you-are-right-killer.ts", links)
+
+    def test_goalize_does_not_require_a_goal_service(self) -> None:
+        prompt = (ROOT / "config/pi/prompts/goalize.md").read_text()
+        for field in ("`Outcome`", "`Done when`", "`Proof`", "$ARGUMENTS"):
+            self.assertIn(field, prompt)
+        self.assertNotIn("pi-codex-goal", prompt)
+        self.assertNotIn("Create exactly one active goal", prompt)
+        self.assertIn("planning does not authorize implementation", prompt)
 
     def test_typescript_any_policy_is_enforced_by_lint(self) -> None:
         lint = (ROOT / "bin/lint-ts-architecture").read_text()

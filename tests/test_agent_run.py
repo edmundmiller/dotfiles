@@ -135,10 +135,12 @@ class AgentRunTests(unittest.TestCase):
 
         for name, source in sources.items():
             with self.subTest(source=name):
-                self.assertIn("one active", source)
-                self.assertIn("parked", source.lower())
                 self.assertIn("blocked", source.lower())
                 self.assertIn("evidence", source.lower())
+                # /goalize frames a task without creating durable goal state.
+                if name != "goalize prompt":
+                    self.assertIn("one active", source)
+                    self.assertIn("parked", source.lower())
 
         for source in ("autonomous loop skill", "goalize prompt"):
             with self.subTest(contract=source):

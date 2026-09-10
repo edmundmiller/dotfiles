@@ -224,8 +224,8 @@ in
     };
     contextMemory.enable = mkOption {
       type = types.bool;
-      default = true;
-      description = "Enable Pi context and total-recall memory/search packages. Honcho has its own toggle.";
+      default = false;
+      description = "Opt into pi-context in addition to the base Hermes memory integration. Honcho has its own toggle.";
     };
     cursorSdk.enable = mkOption {
       type = types.bool;
