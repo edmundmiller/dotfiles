@@ -59,7 +59,7 @@ class CompletionHookTests(unittest.TestCase):
         self.assertEqual(hook["type"], "command")
         self.assertEqual(
             hook["command"],
-            'primary=$(git worktree list --porcelain | sed -n \'s/^worktree //p\' | head -n 1) && bash "$primary/scripts/codex-stop-dispatch" scripts/codex-validate-stop',
+            "primary=$(git worktree list --porcelain | sed -n 's/^worktree //p' | head -n 1) && bash \"$primary/scripts/codex-stop-dispatch\" scripts/codex-validate-stop",
         )
         self.assertEqual(hook["timeout"], 1200)
 
@@ -156,7 +156,9 @@ class CompletionHookTests(unittest.TestCase):
             flake_nix_commands = [line for line in nix_commands if " .#" in line]
             self.assertTrue(
                 flake_nix_commands
-                and all(line.startswith("nix authenticated ") for line in flake_nix_commands),
+                and all(
+                    line.startswith("nix authenticated ") for line in flake_nix_commands
+                ),
                 commands,
             )
             platform_nix_commands = [
@@ -209,11 +211,91 @@ class CompletionHookTests(unittest.TestCase):
 
     def test_codex_wrapper_is_inactive_outside_repository(self):
         with tempfile.TemporaryDirectory() as directory:
-            result, commands = run_hook(hey_exit=1, output="must not run", cwd=directory)
+            result, commands = run_hook(
+                hey_exit=1, output="must not run", cwd=directory
+            )
 
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
         self.assertEqual(commands, [])
+
+
+@unittest.skipUnless(shutil.which("nu"), "Nushell is required for hey check tests")
+class HeyCheckTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = pathlib.Path(self.directory.name)
+        self.bin = self.root / "bin"
+        self.bin.mkdir()
+        self.log = self.root / "commands.log"
+        (self.root / "flake.nix").write_text("{}\n")
+        subprocess.run(["git", "init", "--quiet", str(self.root)], check=True)
+        write_command(self.bin, "nix", stdout="/fake/config\n")
+        write_command(self.bin, "prek")
+        write_command(self.bin, "gh", exit_code=1)
+
+    def run_check(self, *args):
+        result = subprocess.run(
+            [
+                "nu",
+                "--no-config-file",
+                "--commands",
+                f"source {ROOT / 'bin/hey.d/flake.nu'}; main check " + " ".join(args),
+            ],
+            cwd=self.root,
+            env={
+                **os.environ,
+                "FLAKE_DIR": str(self.root),
+                "COMPLETION_TEST_LOG": str(self.log),
+                "PATH": f"{self.bin}:{os.environ['PATH']}",
+            },
+            capture_output=True,
+            text=True,
+        )
+        return result, self.log.read_text().splitlines()
+
+    def test_default_runs_scoped_hooks_once_without_broad_checks(self):
+        (self.root / "selected.md").write_text("selected\n")
+        (self.root / "unrelated.nix").write_text("{}\n")
+        result, commands = self.run_check("--worktree", "selected.md")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            [line for line in commands if line.startswith("prek ")],
+            [
+                "prek --config /fake/config run --stage pre-commit --files selected.md --no-progress"
+            ],
+        )
+        self.assertEqual(
+            [line for line in commands if line.startswith("nix ")],
+            [
+                "nix eval --raw --impure --expr builtins.currentSystem",
+                "nix eval --raw --impure --expr builtins.currentSystem",
+                "nix build .#pre-commit-config --no-link --print-out-paths",
+            ],
+        )
+
+    def test_empty_scope_does_not_build_config_or_run_hooks(self):
+        result, commands = self.run_check("--worktree", "missing.md")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(
+            any("nix build" in line or line.startswith("prek ") for line in commands)
+        )
+        self.assertFalse(any("flake check" in line for line in commands))
+
+    def test_hook_failure_blocks_completion(self):
+        write_command(self.bin, "prek", exit_code=1, stderr="lint failed\n")
+        result, _ = self.run_check("--worktree", "flake.nix")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("lint failed", result.stderr)
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux full-check path")
+    def test_full_mode_keeps_flake_check_and_propagates_failure(self):
+        write_command(self.bin, "nix", exit_code=1)
+        result, commands = self.run_check("--full", "--worktree", "missing.md")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("nix flake check", commands)
+
 
 if __name__ == "__main__":
     unittest.main()

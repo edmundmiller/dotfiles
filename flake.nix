@@ -1221,6 +1221,7 @@
                       pkgs.bash
                       pkgs.bun
                       pkgs.git
+                      pkgs.nushell
                       pkgs.python3
                     ];
                   }

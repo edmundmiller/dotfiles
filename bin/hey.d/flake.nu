@@ -85,6 +85,7 @@ def nix-precommit-config [nix_config: string] {
 }
 
 def "main check" [
+  --full # Also evaluate host configurations and run broad Nix checks (resource-intensive).
   --worktree # Include staged, unstaged, and untracked files in formatting/pre-commit checks.
   ...paths: string # Optional path scopes for formatting and pre-commit checks.
 ] {
@@ -93,7 +94,7 @@ def "main check" [
   let ctx = (context)
   cd $ctx.flake_dir
 
-  if $ctx.os_name == "macos" {
+  if $full and $ctx.os_name == "macos" {
     print "Running Darwin-compatible checks (skipping NixOS configs)..."
     mut failed = false
 
@@ -289,20 +290,8 @@ def "main check" [
     if ($check_files | is-not-empty) {
       let precommit_config = (nix-precommit-config $authenticated_nix_config)
 
-      print $"Running treefmt on ($check_files | length) changed files..."
-      let treefmt_check = (^prek --config $precommit_config run treefmt --files ...$check_files --no-progress | complete)
-      if $treefmt_check.exit_code != 0 {
-        if (($treefmt_check.stdout | str trim) | is-not-empty) {
-          print $treefmt_check.stdout
-        }
-        if (($treefmt_check.stderr | str trim) | is-not-empty) {
-          print -e $treefmt_check.stderr
-        }
-        error make {msg: "Formatting check failed"}
-      }
-
-      print $"Running pre-commit hooks on ($check_files | length) changed files..."
-      let precommit_check = (^prek --config $precommit_config run --stage pre-commit --skip treefmt --files ...$check_files --no-progress | complete)
+      print $"Running formatting and pre-commit hooks on ($check_files | length) changed files..."
+      let precommit_check = (^prek --config $precommit_config run --stage pre-commit --files ...$check_files --no-progress | complete)
       if $precommit_check.exit_code != 0 {
         if (($precommit_check.stdout | str trim) | is-not-empty) {
           print $precommit_check.stdout
@@ -312,10 +301,16 @@ def "main check" [
         }
         error make {msg: "Pre-commit check failed"}
       }
+    } else {
+      print "No changed files in scope; skipping formatting and pre-commit hooks."
     }
 
-    print "Running full flake check..."
-    with-env { NIX_CONFIG: $authenticated_nix_config } { ^nix flake check }
+    if $full {
+      print "Running full flake check..."
+      with-env { NIX_CONFIG: $authenticated_nix_config } { ^nix flake check }
+    } else {
+      print "✓ Changed-file checks passed. Host evaluation and broad Nix checks require --full."
+    }
   }
 }
 

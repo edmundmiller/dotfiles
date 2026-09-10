@@ -29,6 +29,9 @@ Preserve unrelated work in the assigned checkout.
 - Canonical docs use seven-line YAML summaries under `docs/` for discovery.
 
 `hey check --worktree` is the shared repository check, also used by completion
-hooks. Use checks relevant to the changed surface; prose-only work needs no host
-build or activation. Report the result, verification limits, and any remaining
+hooks. It runs changed-file formatting and lint hooks, not host evaluation or
+broad Nix builds. Run targeted tests relevant to the changed surface separately;
+prose-only work needs no host build or activation. Use `hey check --full --worktree`
+explicitly for broad platform validation, preferably outside a small orb. CI keeps
+its broader checks. Report the result, verification limits, and any remaining
 approval in a concise handoff.
