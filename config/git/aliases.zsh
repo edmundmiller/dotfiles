@@ -501,9 +501,14 @@ EOF
 crpr() {
 	critpr "$@"
 }
+
+# Hunk review and history
 alias hk='hunk'
 alias hkd='hunk diff'
+alias hkl='hunk log'
 alias hks='hunk show'
+alias mdr='hunk log'
+
 hkpr() {
 	hunkpr "$@"
 }

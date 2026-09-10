@@ -30,7 +30,6 @@ in
       my.jj-hunk
       my.jj-vine
       my.jw
-      my.mdr
     ];
 
     # Use home-manager's xdg.configFile with text to avoid source symlink issues
