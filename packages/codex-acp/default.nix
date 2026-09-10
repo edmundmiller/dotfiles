@@ -6,7 +6,7 @@
 
 buildNpmPackage rec {
   pname = "codex-acp";
-  version = "1.1.7";
+  version = "1.10.0";
 
   src = fetchFromGitHub {
     owner = "agentclientprotocol";

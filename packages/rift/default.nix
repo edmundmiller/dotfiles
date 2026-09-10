@@ -7,7 +7,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "rift";
-  version = "0.0.10-unstable-2026-06-03";
+  version = "v0.0.10";
 
   src = fetchFromGitHub {
     owner = "anomalyco";

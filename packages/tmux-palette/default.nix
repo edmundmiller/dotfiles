@@ -9,7 +9,7 @@
 
 stdenvNoCC.mkDerivation {
   pname = "tmux-palette";
-  version = "0-unstable-2026-06-24";
+  version = "v0.3.0";
 
   src = fetchFromGitHub {
     owner = "eduwass";
