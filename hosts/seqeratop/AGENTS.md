@@ -24,6 +24,7 @@ with `op inject`; unlock 1Password before rebuilding. The item's `username`
 field holds the ingest URL and `credential` holds the token. The tenant and
 OTLP endpoint come from its setup notes; update the template if the stack moves.
 Capture is metadata-only, with guards and local full-content storage disabled.
+The template sets `AGENTO11Y_TAGS=user=edmund` for attribution in the shared stack.
 
 Verify configuration and all three export routes with `agento11y doctor --json`.
 Then complete one turn in each client and check Grafana Agent Observability;
