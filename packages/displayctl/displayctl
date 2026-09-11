@@ -824,7 +824,7 @@ def _task_payload(snapshot: dict[str, Any], now: datetime, zone: ZoneInfo, max_a
             if completed:
                 # Date-only values are vault-local calendar dates; instants need conversion.
                 try:
-                    day = _task_time(completed).astimezone(zone).date().isoformat() if "T" in completed else completed
+                    day = completed if re.fullmatch(r"\d{4}-\d{2}-\d{2}", completed) else _task_time(completed).astimezone(zone).date().isoformat()
                 except ValueError:
                     day = None
                 if day == today:

@@ -1239,6 +1239,7 @@
                 pkgs.runCommand "displayctl-tests"
                   {
                     nativeBuildInputs = [ pkgs.python3 ];
+                    DISPLAYCTL_TEST_TNOTE = "${inputs.tnote.packages.${system}.default}/bin/tnote";
                   }
                   ''
                     cd ${./packages/displayctl}

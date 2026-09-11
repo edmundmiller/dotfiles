@@ -66,6 +66,19 @@ class TaskTests(unittest.TestCase):
         value["tasks"].reverse()
         self.assertEqual(result, self.payload(value))
 
+    def test_completion_timestamp_separators_preserve_local_day(self):
+        for separator in ("T", "t", " "):
+            with self.subTest(separator=separator):
+                value = fixture("empty")
+                value["tasks"] = [
+                    task("Today", raw="done", completed=f"2026-09-07{separator}00:30:00+00:00"),
+                    task("Tomorrow", raw="done", completed=f"2026-09-07{separator}06:00:00+00:00"),
+                    task("Calendar date", raw="done", completed="2026-09-06"),
+                ]
+                result = self.payload(value)
+                self.assertEqual(result["task_done"]["count"], 2)
+                self.assertEqual(result["task_done"]["titles"], ["Calendar date", "Today"])
+
     def test_overload_is_bounded_without_hiding_backlog_or_unclassified(self):
         result = self.payload(fixture("overloaded"))
         self.assertEqual(result["task_backlog_count"], 1842)
@@ -149,6 +162,48 @@ class TaskTests(unittest.TestCase):
                                     env={**os.environ, "PATH": f"{root}:{os.environ['PATH']}"})
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse(json.loads(result.stdout)["applied"])
+
+    @unittest.skipUnless(os.environ.get("DISPLAYCTL_TEST_TNOTE"), "requires packaged tnote (run the Nix displayctl-tests check)")
+    def test_packaged_tnote_snapshot_is_complete_and_read_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            vault = root / "vault"
+            (vault / "05_Archive").mkdir(parents=True)
+            today = datetime.now(ZoneInfo("America/Chicago")).date().isoformat()
+            (vault / "mdbase.yaml").write_text("settings:\n  exclude: ['private.md']\n")
+            (vault / "active.md").write_text(
+                "---\ntype: task\nid: active\ntitle: Review sample\nstatus: open\n"
+                "contexts: [Work]\nprojects: []\ntags: [task]\ndue: 2026-09-06\n---\nPrivate body\n"
+            )
+            (vault / "05_Archive" / "done.md").write_text(
+                "---\ntype: task\nid: finished\ntitle: Finished sample\nstatus: done\n"
+                f"completedDate: {today}\ncontexts: []\nprojects: []\ntags: []\n---\n"
+            )
+            (vault / "private.md").write_text("---\ntype: task\nstatus: invalid\n---\n")
+            before = {str(path.relative_to(vault)): path.read_bytes() for path in vault.rglob("*") if path.is_file()}
+            executable = Path(os.environ["DISPLAYCTL_TEST_TNOTE"])
+            env = {**os.environ, "PATH": f"{executable.parent}:{os.environ['PATH']}",
+                   "HOME": str(root / "home"), "XDG_CONFIG_HOME": str(root / "config"),
+                   "TN_TASK_LOCATIONS": "", "TNOTE_OBSERVABILITY_CHILD": "1"}
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "tasks", "--source-vault", str(vault), "--cache", str(root / "cache.json")],
+                capture_output=True, text=True, env=env, timeout=45,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            value = json.loads(result.stdout)
+            self.assertFalse(value["applied"])
+            self.assertEqual(value["merge_variables"]["task_state"], "OBSERVED")
+            self.assertEqual(value["merge_variables"]["task_active_count"], 1)
+            self.assertEqual(value["merge_variables"]["task_done"]["count"], 1)
+            tasks = {task["id"]: task for task in value["projection"]["tasks"]}
+            self.assertEqual(set(tasks), {"active", "finished"})
+            self.assertEqual(tasks["active"]["rawStatus"], "open")
+            self.assertEqual(tasks["active"]["status"], "pending")
+            self.assertEqual(tasks["active"]["tags"], ["task"])
+            self.assertEqual(tasks["active"]["due"], "2026-09-06")
+            self.assertEqual(tasks["finished"]["completedDate"], today)
+            after = {str(path.relative_to(vault)): path.read_bytes() for path in vault.rglob("*") if path.is_file()}
+            self.assertEqual(before, after)
 
 
 if __name__ == "__main__":
