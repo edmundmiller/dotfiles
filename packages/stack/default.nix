@@ -12,7 +12,7 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "stack";
-  version = "0.4.2";
+  version = "0.4.6";
 
   src = fetchFromGitHub {
     owner = "kitlangton";
