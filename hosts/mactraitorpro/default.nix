@@ -482,6 +482,7 @@ in
       clinWithVaultEnv
       llm-agents.qmd
       my.discrawl-backup
+      my.emeraldian
       my.hex
       my.meat
       my.openwiki
