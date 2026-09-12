@@ -16,7 +16,8 @@ let
   identifier = builtins.elemAt (builtins.elemAt manipulator.conditions 0).identifiers 0;
   dictationAsset = ".config/karabiner/assets/complex_modifications/dji-mic-raycast-dictation.json";
   muteAsset = ".config/karabiner/assets/complex_modifications/dji-mic-mini-receiver-mute.json";
-  installedSource = mac.home.file.${dictationAsset}.source or "";
+  homeFiles = mac.home-manager.users.${mac.user.name}.home.file;
+  installedSource = homeFiles.${dictationAsset}.source or "";
 
   assertions = [
     {
@@ -36,7 +37,7 @@ let
       msg = "Home Manager must install the receiver-scoped Karabiner dictation asset";
     }
     {
-      test = !(mac.home.file ? ${muteAsset});
+      test = !(homeFiles ? ${muteAsset});
       msg = "the mute Karabiner asset must not be installed while dictation owns the button";
     }
     {
