@@ -251,7 +251,7 @@ def "main check" [
     print ""
     print "==> Running DJI Mic Mini checks..."
     let dji_mic_check = (with-env { NIX_CONFIG: $authenticated_nix_config } {
-      ^nix build $".#checks.($ctx.nix_system).dji-mic-mini-receiver-mute-regressions" $".#checks.($ctx.nix_system).dji-mic-mini-platform-boundaries" --no-link | complete
+      ^nix build $".#checks.($ctx.nix_system).dji-mic-mini-receiver-mute-regressions" $".#checks.($ctx.nix_system).dji-mic-mini-platform-boundaries" $".#checks.($ctx.nix_system).dji-mic-raycast-dictation-regressions" --no-link | complete
     })
     if $dji_mic_check.exit_code == 0 {
       print "✓ DJI Mic Mini checks OK"

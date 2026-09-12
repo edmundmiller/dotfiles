@@ -16,6 +16,13 @@ in
 
   config = optionalAttrs isDarwin (
     mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = !config.modules.desktop.apps.djiMicMiniRaycastDictation.enable;
+          message = "DJI Mic Mini receiver button cannot both mute and trigger Raycast dictation";
+        }
+      ];
+
       home.file.".local/bin/dji-mic-mini-receiver-mute".source =
         lib.getExe pkgs.my.dji-mic-mini-receiver-mute;
 

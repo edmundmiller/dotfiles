@@ -1,0 +1,41 @@
+{
+  "title": "DJI Mic Mini receiver → Raycast dictation",
+  "rules": [
+    {
+      "description": "DJI Mic Mini receiver button toggles Raycast dictation (Ctrl+Option+Command+Space)",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "consumer_key_code": "volume_increment",
+            "modifiers": { "optional": ["any"] }
+          },
+          "to": [
+            {
+              "key_code": "spacebar",
+              "modifiers": [
+                "left_control",
+                "left_option",
+                "left_command"
+              ],
+              "hold_down_milliseconds": 120,
+              "repeat": false
+            }
+          ],
+          "conditions": [
+            {
+              "type": "device_if",
+              "identifiers": [
+                {
+                  "vendor_id": 11427,
+                  "product_id": 16401,
+                  "is_consumer": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

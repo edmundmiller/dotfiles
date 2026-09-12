@@ -10,7 +10,9 @@
 #
 # NOT managed (Raycast stores these in encrypted SQLite):
 #   - Extension installs/configs
-#   - Extension hotkey bindings
+#   - Extension hotkey bindings, including Dictation (Ctrl+Option+Command+Space
+#     when using modules.desktop.apps.djiMicMiniRaycastDictation; see
+#     docs/dji-mic-raycast-dictation.md)
 #   - Cloud sync settings
 #   - Raycast Beta installation (no Homebrew cask currently; keep /Applications/Raycast Beta.app installed manually)
 #

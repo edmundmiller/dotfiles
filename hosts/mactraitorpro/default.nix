@@ -288,7 +288,8 @@ in
       desktop = {
         apps.raycast.enable = true;
         apps.audioPriorityBar.enable = true;
-        apps.djiMicMiniReceiverMute.enable = true;
+        apps.djiMicMiniRaycastDictation.enable = true;
+        apps.djiMicMiniReceiverMute.enable = false;
         apps.handy.enable = true;
         apps.neovide.enable = true;
         term = {

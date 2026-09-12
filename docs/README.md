@@ -36,6 +36,11 @@ update_when: A canonical doc is added, moved, or changes ownership.
 - [tmux/managing-agents.md](./tmux/managing-agents.md) — user-first tmux agent
   launch model and architecture layering
 
+### Desktop / Darwin
+
+- [dji-mic-raycast-dictation.md](./dji-mic-raycast-dictation.md) — DJI Mic Mini
+  mobile-receiver button → Raycast dictation (Karabiner VirtualHID chord)
+
 ### Runbooks
 
 - [runbooks/README.md](./runbooks/README.md) — operational runbook index
