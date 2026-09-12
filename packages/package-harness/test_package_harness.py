@@ -47,7 +47,7 @@ class HarnessTest(unittest.TestCase):
         tracked = upstream / "value.txt"
         tracked.write_text("before\n")
         subprocess.run(["git", "-C", upstream, "add", "value.txt"], check=True)
-        subprocess.run(["git", "-C", upstream, "commit", "-qm", "initial"], check=True)
+        subprocess.run(["git", "-C", upstream, "commit", "--no-gpg-sign", "-qm", "initial"], check=True)
         ref = subprocess.run(
             ["git", "-C", upstream, "rev-parse", "HEAD"], check=True, capture_output=True, text=True
         ).stdout.strip()
