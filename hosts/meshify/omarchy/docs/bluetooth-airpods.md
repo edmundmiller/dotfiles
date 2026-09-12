@@ -93,10 +93,10 @@ A complete result has `Paired: yes`, `Bonded: yes`, `Trusted: yes`, and
 after service discovery; Omapods normalizes it back to `Edmund’s AirPods Pro`,
 so those names are the same hardware. The known meshify devices identify as:
 
-| Device | Model number | Omapods model |
-| --- | --- | --- |
-| Edmund's AirPods Pro | `A3063` | AirPods Pro 3 |
-| Edmund's AirPods Max | `A3184` | AirPods Max (USB-C) |
+| Device               | Model number | Omapods model       |
+| -------------------- | ------------ | ------------------- |
+| Edmund's AirPods Pro | `A3063`      | AirPods Pro 3       |
+| Edmund's AirPods Max | `A3184`      | AirPods Max (USB-C) |
 
 Discover Bluetooth addresses live instead of caching them here. Never commit
 the pairing keys under `~/.config/AirPodsTrayApp`; re-pairing remains the

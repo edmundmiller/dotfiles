@@ -21,30 +21,34 @@ let
     ++ optional cfg.vercelSandbox.enable pkgs.my.herdr-vercel-sandbox-plugin;
   };
   caBundle = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-  launchPath = concatStringsSep ":" [
-    "${pkgs.my.rift}/bin"
-    "${pkgs.my.tnote}/bin"
-    "/etc/profiles/per-user/${config.user.name}/bin"
-    "/run/current-system/sw/bin"
-    "${config.user.home}/.nix-profile/bin"
-    "${config.user.home}/.pi/agent/bin"
-    "${config.user.home}/.bun/bin"
-    "${config.user.home}/.local/bin"
-    "${config.user.home}/.pixi/bin"
-    "${config.user.home}/.cargo/bin"
-    "${pkgs.cargo}/bin"
-    "${pkgs.rustc}/bin"
-    # Marketplace plugins invoke Node and Bun after installation.
-    "${pkgs.nodejs}/bin"
-    "${pkgs.bun}/bin"
-    config.dotfiles.binDir
-    "/nix/var/nix/profiles/default/bin"
-    "/usr/local/bin"
-    "/usr/bin"
-    "/bin"
-    "/usr/sbin"
-    "/sbin"
-  ];
+  launchPath = concatStringsSep ":" (
+    [
+      "${pkgs.my.rift}/bin"
+    ]
+    ++ optional cfg.tnote.enable "${pkgs.my.tnote}/bin"
+    ++ [
+      "/etc/profiles/per-user/${config.user.name}/bin"
+      "/run/current-system/sw/bin"
+      "${config.user.home}/.nix-profile/bin"
+      "${config.user.home}/.pi/agent/bin"
+      "${config.user.home}/.bun/bin"
+      "${config.user.home}/.local/bin"
+      "${config.user.home}/.pixi/bin"
+      "${config.user.home}/.cargo/bin"
+      "${pkgs.cargo}/bin"
+      "${pkgs.rustc}/bin"
+      # Marketplace plugins invoke Node and Bun after installation.
+      "${pkgs.nodejs}/bin"
+      "${pkgs.bun}/bin"
+      config.dotfiles.binDir
+      "/nix/var/nix/profiles/default/bin"
+      "/usr/local/bin"
+      "/usr/bin"
+      "/bin"
+      "/usr/sbin"
+      "/sbin"
+    ]
+  );
   # Herdr inherits OMP's environment, where PI_CODING_AGENT_DIR points at OMP's
   # own agent dir; drop it so Pi panes use their own default agent dir.
   herdrPackages = optional (cfg.package != null) (
@@ -263,6 +267,7 @@ in
       "opencode"
     ]) "pi";
     vercelSandbox.enable = mkBoolOpt false;
+    tnote.enable = mkBoolOpt true;
     popupWidth = mkOpt int 90;
     popupHeight = mkOpt int 90;
     managePiTheme = mkBoolOpt true;
@@ -352,8 +357,8 @@ in
     modules.shell.herdr.package = mkDefault pkgs.my.herdr;
     modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
-    user.packages = herdrPackages ++ [ pkgs.my.tnote ];
-    environment.systemPackages = herdrPackages ++ [ pkgs.my.tnote ];
+    user.packages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
+    environment.systemPackages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
     env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
 
     home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
@@ -1060,7 +1065,9 @@ in
           install_plugin jhochenbaum herdr-hunk-diff
           install_plugin thanhdat77 herdr-navigator
           install_plugin edmundmiller herdr-which-key "" optional
-          install_plugin edmundmiller tnote packages/tn/herdr-plugin
+          ${optionalString cfg.tnote.enable ''
+            install_plugin edmundmiller tnote packages/tn/herdr-plugin
+          ''}
         '';
 
         home.activation.herdr-agent-integrations =

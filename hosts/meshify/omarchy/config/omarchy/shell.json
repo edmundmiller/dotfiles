@@ -144,10 +144,6 @@
     }
   ],
   "version": 1,
-  "disabledPlugins": [
-    "omarchy.lock"
-  ],
-  "cloneSourceRestores": [
-    "edmundmiller.lock"
-  ]
+  "disabledPlugins": ["omarchy.lock"],
+  "cloneSourceRestores": ["edmundmiller.lock"]
 }

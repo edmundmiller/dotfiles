@@ -123,14 +123,25 @@ class PackagePolicyTest(unittest.TestCase):
                 script,
                 "packages/stack/patches/fix.patch",
                 "overlays/hunk/patches/fix.patch",
+                "skills/overlays/skill-doctor/pi-support.patch",
             ],
             capture_output=True,
             text=True,
         )
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        locality_message = (
+            "Patch must live at packages/<name>/patches/*.patch, "
+            "overlays/<name>/patches/*.patch, or skills/overlays/<name>/*.patch"
+        )
         invalid_cases = [
             (["patches/fix.patch"], "patches/fix.patch"),
             (["misc/fix.patch"], "misc/fix.patch"),
+            (["skills/fix.patch"], "skills/fix.patch"),
+            (["skills/overlays/fix.patch"], "skills/overlays/fix.patch"),
+            (
+                ["skills/overlays/skill-doctor/nested/fix.patch"],
+                "skills/overlays/skill-doctor/nested/fix.patch",
+            ),
             (["packages/group/tool/patches/fix.patch"], "packages/group/tool/patches/fix.patch"),
             (
                 [
@@ -145,10 +156,7 @@ class PackagePolicyTest(unittest.TestCase):
             with self.subTest(paths=paths):
                 rejected = subprocess.run(["bash", script, *paths], capture_output=True, text=True)
                 self.assertEqual(rejected.returncode, 1)
-                self.assertIn(
-                    "Patch must live at packages/<name>/patches/*.patch or overlays/<name>/patches/*.patch",
-                    rejected.stderr,
-                )
+                self.assertIn(locality_message, rejected.stderr)
                 self.assertIn(offending_path, rejected.stderr)
 
     def test_renovate_patch_repair_uses_trusted_agent_shell(self):
@@ -372,6 +380,96 @@ class PackagePolicyTest(unittest.TestCase):
             "Package must live at packages/<name>/default.nix: packages/new-package.nix",
             rejected.stderr,
         )
+
+    def test_herdr_config_template_uses_supported_sound_format(self):
+        template = (ROOT / "config/herdr/config.toml").read_text()
+        self.assertNotIn("done_path", template)
+        self.assertIn("[ui.sound]", template)
+
+    def test_herdr_vm_test_does_not_evaluate_private_tnote(self):
+        herdr_module = (ROOT / "modules/shell/herdr/default.nix").read_text()
+        vm_test = (ROOT / "modules/shell/herdr/_tests/vm-test.nix").read_text()
+        self.assertIn("tnote.enable = mkBoolOpt true;", herdr_module)
+        self.assertIn('optional cfg.tnote.enable "${pkgs.my.tnote}/bin"', herdr_module)
+        self.assertIn(
+            "herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote",
+            herdr_module,
+        )
+        self.assertIn("modules.shell.herdr.tnote.enable = false;", vm_test)
+
+    def test_renovate_config_keeps_hash_refresh_and_reduces_noise(self):
+        config = json.loads((ROOT / "renovate.json").read_text())
+        workflow = (ROOT / ".github/workflows/renovate.yml").read_text()
+        command = "nix run --accept-flake-config .#renovate-update-nix-hashes"
+
+        self.assertIn("config:recommended", config["extends"])
+        self.assertTrue(config["nix"]["enabled"])
+        self.assertTrue(config["dependencyDashboard"])
+        self.assertTrue(config["lockFileMaintenance"]["enabled"])
+        self.assertEqual(config["minimumReleaseAge"], "3 days")
+        self.assertEqual(config["prHourlyLimit"], 2)
+        self.assertLessEqual(config["prConcurrentLimit"], 5)
+        self.assertFalse(config["automerge"])
+        self.assertFalse(config["platformAutomerge"])
+        self.assertEqual(config["postUpgradeTasks"]["commands"], [command])
+        self.assertRegex(command, config["allowedCommands"][0])
+        self.assertIn("nix run --accept-flake-config", workflow)
+        self.assertIn("renovate-update-nix-hashes", workflow)
+        self.assertIn("accept-flake-config = true", workflow)
+        hash_script = (ROOT / "flake.nix").read_text()
+        self.assertIn("nix-update --flake --version=skip", hash_script)
+        self.assertNotIn("nix-update --flake --version=skip --build", hash_script)
+
+        descriptions = {manager["description"] for manager in config["customManagers"]}
+        self.assertGreaterEqual(len(config["customManagers"]), 5)
+        self.assertTrue(any("packages/" in description for description in descriptions))
+        self.assertTrue(any("Herdr overlay" in description for description in descriptions))
+        self.assertTrue(any("Hunk's flake input" in description for description in descriptions))
+
+        grouped_without_name = [
+            rule
+            for rule in config["packageRules"]
+            if "groupSlug" in rule and "groupName" not in rule
+        ]
+        self.assertEqual(
+            grouped_without_name,
+            [],
+            "groupSlug without groupName collapses unrelated PRs onto one branch",
+        )
+
+        slugs = [rule.get("groupSlug") for rule in config["packageRules"]]
+        self.assertLess(slugs.index("javascript-package-dependencies"), slugs.index("herdr"))
+        herdr = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "herdr")
+        hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
+        self.assertEqual(config["packageRules"][-2]["groupSlug"], "herdr")
+        self.assertEqual(config["packageRules"][-1]["groupSlug"], "hunk")
+        self.assertFalse(herdr["automerge"])
+        self.assertFalse(hunk["automerge"])
+
+        digest_rule = next(
+            rule
+            for rule in config["packageRules"]
+            if rule.get("matchDatasources") == ["git-refs"]
+            and rule.get("matchUpdateTypes") == ["digest"]
+        )
+        self.assertFalse(digest_rule["enabled"])
+
+        nix_groups = [
+            rule
+            for rule in config["packageRules"]
+            if rule.get("matchManagers") == ["nix"] and "groupName" in rule
+        ]
+        self.assertTrue(nix_groups)
+        for rule in nix_groups:
+            self.assertNotIn(
+                "lockFileMaintenance",
+                rule.get("matchUpdateTypes", []),
+                "lockFileMaintenance must stay off grouped flake-input PRs",
+            )
+
+        majors = next(rule for rule in config["packageRules"] if rule.get("matchUpdateTypes") == ["major"])
+        self.assertTrue(majors["dependencyDashboardApproval"])
+        self.assertFalse(majors["automerge"])
 
 
 if __name__ == "__main__":

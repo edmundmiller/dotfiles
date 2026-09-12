@@ -13,3 +13,7 @@ declared NixOS Hermes profiles.
 use a plain login shell, not fall back to jmux/tmux and create a startup loop.
 Optional `tmux/herdr.conf` popup integration does not transfer startup ownership
 from Herdr to tmux.
+
+`modules.shell.herdr.tnote.enable` (default true) installs the packaged tnote CLI
+and its Herdr plugin. The config-check VM test disables it so CI does not
+evaluate the private `tnote` flake input.

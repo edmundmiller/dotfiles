@@ -39,6 +39,8 @@ update_when: A canonical doc is added, moved, or changes ownership.
 ### Runbooks
 
 - [runbooks/README.md](./runbooks/README.md) — operational runbook index
+- [runbooks/renovate.md](./runbooks/renovate.md) — self-hosted Renovate runner,
+  dashboard, and expected PR shape
 
 ## Conventions
 
