@@ -77,6 +77,8 @@
       "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
       "skills": ["skills/session-query"],
     },
+    // Interactive /review workflow - https://github.com/earendil-works/pi-review
+    "git:github.com/earendil-works/pi-review",
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
       "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",
