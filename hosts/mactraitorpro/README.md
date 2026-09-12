@@ -10,6 +10,12 @@ update_when: Host hardware, cabling, or a verified recovery procedure changes.
 
 Human-facing setup and troubleshooting for the personal Mac.
 
+## DJI Mic Mini
+
+The mobile USB receiver's link button is wired to Raycast dictation on this
+host. Setup, Karabiner enablement, and the manual Raycast hotkey are in
+[dji-mic-raycast-dictation.md](../../docs/dji-mic-raycast-dictation.md).
+
 ## Workload placement
 
 - [Amp Orb, Mac, NUC, and Meshify routing](workload-placement.md) — keeps

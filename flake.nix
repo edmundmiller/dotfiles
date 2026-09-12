@@ -1521,6 +1521,11 @@
                 inherit pkgs;
               };
 
+              dji-mic-raycast-dictation-regressions = import ./hosts/mactraitorpro/_tests/dji-mic-raycast-dictation.nix {
+                darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
               screentime-backup-darwin-assertions = import ./hosts/mactraitorpro/_tests/screentime-backup.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
                 inherit pkgs;
@@ -1646,7 +1651,8 @@
                   heyCheckSource = builtins.readFile ./bin/hey.d/flake.nu;
                   heyCheckSelectsDjiChecks =
                     lib.hasInfix "dji-mic-mini-receiver-mute-regressions" heyCheckSource
-                    && lib.hasInfix "dji-mic-mini-platform-boundaries" heyCheckSource;
+                    && lib.hasInfix "dji-mic-mini-platform-boundaries" heyCheckSource
+                    && lib.hasInfix "dji-mic-raycast-dictation-regressions" heyCheckSource;
                   boundariesHold =
                     !(builtins.hasAttr "dji-mic-mini-receiver-mute" self.packages.${linuxSystem})
                     && !(builtins.hasAttr "dji-mic-mini-receiver-mute-regressions" self.checks.${linuxSystem})
