@@ -481,6 +481,7 @@ in
     environment.systemPackages = with pkgs; [
       clinWithVaultEnv
       llm-agents.qmd
+      my.betteraudio
       my.discrawl-backup
       my.emeraldian
       my.hex

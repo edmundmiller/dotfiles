@@ -350,6 +350,7 @@
           in
           builtins.removeAttrs (mapModules ./packages (p: callPackageWithInputs p { })) [
             "audio-priority-bar"
+            "betteraudio"
             "dji-mic-mini-receiver-mute"
             "ergodox-firmware"
             "lgtm"

@@ -376,6 +376,7 @@
 
     environment.systemPackages = with pkgs; [
       llm-agents.qmd
+      my.betteraudio
       my.emeraldian
       my.zele
       my.quill
