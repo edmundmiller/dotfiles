@@ -112,6 +112,7 @@ in
         agentBrowser.enable = true;
         direnv.enable = true;
         mise.enable = true;
+        notion.enable = true;
         git = {
           enable = true;
           gitbutler.enable = false;
@@ -291,6 +292,7 @@ in
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
         apps.neovide.enable = true;
+        apps.notion.enable = true;
         term = {
           ghostty.enable = true;
           themeStack = {
