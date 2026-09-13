@@ -1888,22 +1888,6 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
-
-              # (VM tests are merged in below via lib.my.discoverVmTests.)
-
-              validate-claude-plugins = pkgs.runCommand "validate-claude-plugins" { } ''
-                mkdir -p $out
-
-                echo "Validating Claude Code plugin layout..."
-                for plugin in ${./config/claude/plugins}/*; do
-                  if [ -d "$plugin" ] && [ ! -f "$plugin/.claude-plugin/plugin.json" ]; then
-                    echo "Missing .claude-plugin/plugin.json in $plugin" >&2
-                    exit 1
-                  fi
-                done
-
-                echo "All plugin layout checks passed" > $out/result
-              '';
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.
             # They need QEMU, so x86_64-linux only — run on NUC or a Linux builder.

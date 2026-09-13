@@ -4,16 +4,6 @@
       "count": 1
     }
   },
-  "config/claude/plugins/json-to-toon/hooks/json-to-toon.mjs": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 2
-    }
-  },
-  "config/claude/plugins/json-to-toon/hooks/toon.mjs": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 12
-    }
-  },
   "config/omp/extensions/_lib/lazy-extension.mjs": {
     "anti-slop/no-reflect-get": {
       "count": 1

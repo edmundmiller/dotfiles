@@ -4,8 +4,8 @@
 `~/.claude/CLAUDE.md`, and shared modes as `~/.claude/agents/`.
 
 Settings are a writable bootstrap from `config/claude/settings.json`, preserving
-Herdr/runtime hooks. Plugins are user-installed; `config/claude/plugins/` holds
-sources only. WakaTime is Darwin-only and uses `wakatime-api-key`.
+Herdr/runtime hooks. Claude Code plugins, marketplaces, and their WakaTime wiring
+are retired; do not restore plugin installation during activation.
 
 Claude gets only `test-quality`, `github-cli-media`, and `lore` links into the
 canonical `~/.agents/skills` tree. Other Claude skill copies are removed because

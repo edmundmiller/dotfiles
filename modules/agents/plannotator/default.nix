@@ -56,11 +56,10 @@ let
     };
   };
   codexEnabled = config.modules.agents.codex.enable;
-  claudeEnabled = config.modules.agents.claude.enable;
   piEnabled = config.modules.agents.pi.enable;
   ompEnabled = config.modules.agents.omp.enable;
   herdrEnabled = config.modules.shell.herdr.enable;
-  supportedAgentEnabled = claudeEnabled || piEnabled || ompEnabled || herdrEnabled;
+  supportedAgentEnabled = piEnabled || ompEnabled || herdrEnabled;
   ompCommand = lib.getExe config.modules.agents.omp.package;
 in
 {
@@ -69,8 +68,7 @@ in
       type = types.bool;
       default = supportedAgentEnabled;
       defaultText = literalExpression ''
-        config.modules.agents.claude.enable
-        || config.modules.agents.pi.enable
+        config.modules.agents.pi.enable
         || config.modules.agents.omp.enable
         || config.modules.shell.herdr.enable
       '';
@@ -116,25 +114,6 @@ in
       home-manager.users.${config.user.name} =
         { lib, ... }:
         {
-          home.activation.plannotator-claude-plugin = lib.mkIf claudeEnabled (
-            lib.hm.dag.entryAfter
-              [
-                "claude-settings-bootstrap"
-                "herdr-agent-integrations"
-              ]
-              ''
-                claude_cmd=${lib.escapeShellArg "${pkgs.llm-agents.claude-code}/bin/claude"}
-                if ! "$claude_cmd" plugin list --json \
-                  | ${pkgs.gnugrep}/bin/grep -F '"id": "plannotator@plannotator"' >/dev/null; then
-                  if ! "$claude_cmd" plugin marketplace list --json \
-                    | ${pkgs.gnugrep}/bin/grep -F '"name": "plannotator"' >/dev/null; then
-                    "$claude_cmd" plugin marketplace add backnotprop/plannotator
-                  fi
-                  "$claude_cmd" plugin install --scope user plannotator@plannotator
-                fi
-              ''
-          );
-
           home.activation.omp-plannotator-plugin = lib.mkIf ompEnabled (
             lib.hm.dag.entryAfter [ "writeBoundary" ] ''
               export PI_SKIP_VERSION_CHECK=1

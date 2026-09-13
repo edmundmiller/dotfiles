@@ -23,15 +23,13 @@ modules.agents.claude.enable = true;
 - `~/.claude/CLAUDE.md` from the bounded `config/agents/core.md`
 - `~/.claude/agents/` from `config/agents/modes/`
 - `~/.claude/skills/{test-quality,github-cli-media,lore}` linked to shared catalog copies
-- Darwin-only `~/.wakatime.cfg`
 
-## Repo-local Claude plugin sources
+## Plugins are retired
 
-These stay in the repo for development/reference, but installed plugins still live in `~/.claude/plugins/`:
-
-- `config/claude/plugins/claude-lint/`
-- `config/claude/plugins/github/`
-- `config/claude/plugins/json-to-toon/`
+The repository no longer ships Claude Code plugin sources, marketplaces, enabled
+plugins, or plugin installation hooks. Existing host plugin caches are not
+deleted by this source change. The settings bootstrap drops the old plugin
+declarations on the next authorized rebuild.
 
 ## Notes
 
