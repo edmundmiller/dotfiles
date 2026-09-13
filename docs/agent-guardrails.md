@@ -53,7 +53,9 @@ regenerate pages unless direct wiki edits were explicitly requested.
 
 ## Checks and hooks
 
-`hey check --worktree` is the shared local check. Commit/push invoke configured
+`hey check` is the shared local check; [validation](validation.md) owns its
+changed/full/platform contract. Read-only tasks do not trigger checks at stop.
+Commit/push invoke configured
 hooks; use `prek` directly only for hook development/debugging or explicit
 requests. Do not bypass hooks to manufacture success. No default pull/rebase,
 push, deployment, or worklog is required for a local task.

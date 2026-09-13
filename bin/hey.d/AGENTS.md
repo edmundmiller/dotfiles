@@ -10,6 +10,6 @@ Source the affected subcommand file too when it can be loaded independently.
 For long Nix operations, `AGENT=1` selects concise progress and useful failure
 output, including `--show-trace` on failure.
 
-Completion hooks invoke this checkout's `bin/hey check --worktree`, not the
-installed generation. Darwin checks expose the `gh` credential through
-`NIX_CONFIG` only to Nix children; keep it out of output and Prek environments.
+`hey check` delegates to `scripts/validation.py`, also used by CI. Do not add
+another selector here. It runs in a disposable source snapshot. Credentials
+resolved from `gh` belong only in Nix child environments, never output or Prek.

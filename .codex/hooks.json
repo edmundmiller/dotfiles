@@ -1,15 +1,3 @@
 {
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": "primary=$(git worktree list --porcelain | sed -n 's/^worktree //p' | head -n 1) && bash \"$primary/scripts/codex-stop-dispatch\" scripts/codex-validate-stop",
-            "timeout": 1200,
-            "type": "command"
-          }
-        ]
-      }
-    ]
-  }
+  "hooks": {}
 }

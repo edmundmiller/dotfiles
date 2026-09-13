@@ -28,10 +28,10 @@ Preserve unrelated work in the assigned checkout.
 - Multi-session handoff or landing: [workflow](AGENT_WORKFLOW.md).
 - Canonical docs use seven-line YAML summaries under `docs/` for discovery.
 
-`hey check --worktree` is the shared repository check, also used by completion
-hooks. It runs changed-file formatting and lint hooks, not host evaluation or
-broad Nix builds. Run targeted tests relevant to the changed surface separately;
-prose-only work needs no host build or activation. Use `hey check --full --worktree`
-explicitly for broad platform validation, preferably outside a small orb. CI keeps
-its broader checks. Report the result, verification limits, and any remaining
-approval in a concise handoff.
+Run `hey check` for changed work; use `hey check path...` to select task-owned
+paths in a shared dirty checkout. It checks a disposable snapshot without changing
+source or staging. `hey check --plan` explains routing; `hey check --full` runs
+the portable suite. Host/VM validation is explicit: `hey check --platform <suite>`.
+See [validation](docs/validation.md) for CI parity and platform choices. Read-only
+tasks need no completion check. Repair task-caused failures, report unrelated or
+unavailable checks honestly, and rerun affected checks after changing their inputs.

@@ -34,12 +34,9 @@ TTSR alone. [ADR 0010](../../../docs/adr/0010-omp-ttsr-thin-agent-harness.md)
 owns placement. Slash templates need explicit Home Manager links; RPC
 `get_available_commands` proves discovery without a model call.
 
-The project-only `.omp/hooks/post/completion-gate.ts` is discovered from the
-repository root, not global config. `completion_check` records a one-shot
-content snapshot; the next main-session stop must match. The hook invokes this
-checkout's `bin/hey check --worktree` and requires tracked Codex hook files.
-OMP limits stop continuations to eight. Keep `unexpectedStopDetection: smart`;
-`hooks.timeoutMs` does not govern `ExtensionAPI.session_stop`.
+There is no project stop gate or `completion_check` tool. Run `hey check` for
+task-owned edits; read-only tasks and honest limitation reports may finish
+without forced continuations. Keep `unexpectedStopDetection: smart`.
 
 The permission guard protects the shared Pi/OMP policy and runtime symlink.
 Its `GUIDANCE_LINES` explains the blocked operation and the appropriate source
@@ -50,8 +47,8 @@ for OMP-only, module, or explicitly requested shared-policy changes.
 Choose the affected `test-config-yml.sh`, `test-mcp-json.sh`,
 `test-mcp-host-config.sh`, or `test-lsp-config.sh` here. Config tests use an
 isolated OMP home and reject unknown keys/warnings; host tests build resolved
-Darwin config. Hook tests: `bun test tests/omp_completion_gate.test.js` and
-`python3 -m unittest tests/test_completion_hooks.py`. TTSR tests:
+Darwin config. Validation routing tests: `python3 -m unittest tests/test_validation.py`.
+TTSR tests:
 `python3 -m unittest tests/test_omp_ttsr_rules.py` and `omp ttsr list --json`.
 
 Per-host providers/roles are declared in `hosts/*/default.nix`; shared defaults

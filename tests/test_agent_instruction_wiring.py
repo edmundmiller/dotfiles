@@ -319,7 +319,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         )
         self.assertNotIn('path.startswith("config/agents/rules/")', module)
 
-    def test_pre_commit_hooks_run_core_and_skill_checks(self) -> None:
+    def test_validation_routes_core_checks_and_hooks_validate_skills(self) -> None:
         flake = (ROOT / "flake.nix").read_text()
         start = flake.index("agent-instructions = {")
         hook = flake[start : start + 1200]
@@ -327,10 +327,12 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("skill-quality/scripts/validate.py", hook)
         self.assertIn('stages = [ "pre-commit" ]', hook)
 
-        self.assertIn("omp-thin-harness = {", flake)
+        self.assertIn("omp-thin-harness-tests =", flake)
         self.assertIn("tests/test_omp_ttsr_rules.py", flake)
         self.assertIn("tests/test_agent_instruction_wiring.py", flake)
-        self.assertIn(r"config/agents/core\\.md", flake)
+        from scripts.validation import CHECKS
+
+        self.assertIn("config/agents/core.md", CHECKS["omp-thin-harness-tests"])
 
 
 if __name__ == "__main__":

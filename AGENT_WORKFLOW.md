@@ -2,7 +2,7 @@
 purpose: Define completion and handoff for substantial agent-authored changes.
 applies_to: Multi-session, high-risk, or explicitly workflow-guided dotfiles work.
 entrypoint: Establish the intended result and the authority needed to reach it.
-verification: Focused evidence and hey check --worktree, with runtime checks where relevant.
+verification: hey check, with focused runtime checks where relevant.
 update_when: Shared completion, handoff, or approval boundaries change.
 ---
 
@@ -15,11 +15,13 @@ action, with the reviewable work and exact next action ready.
 
 ## Completion
 
-Use the affected subsystem's check, then `hey check --worktree`, the shared
-repository validation command. Behavior changes need evidence at the affected
-surface; generated configuration benefits from its native validator. Prose-only
-changes do not require host builds, activation, or live model runs. Report
-unavailable checks as limitations, not passes.
+Run `hey check`; it selects formatting, lint, and affected test suites. Use
+task-owned path arguments in a shared dirty checkout. Add behavior-level checks
+not covered by that routing; do not repeat checks already run. Read-only work
+needs no validation gate, and unchanged evidence needs no rerun merely to stop.
+After an input changes, rerun its affected checks. Report unavailable or unrelated
+failures as limitations, not passes or obligations to repair others' work.
+See [validation](docs/validation.md) for full and platform-only checks.
 
 Update documentation when its ownership, commands, or recovery contract changes.
 The [guardrails](docs/agent-guardrails.md) define source ownership and approval
@@ -27,8 +29,8 @@ boundaries. Commit, publish, deploy, or clean up only within the user's request;
 publication and host activation are not implied by completing local edits.
 
 Cross-model review is optional and runs only on explicit request. It is not a
-quality gate. Deterministic formatters/checks may repair their supported scope;
-model-driven repairs are explicit agent work, not implicit Git hooks.
+quality gate. `hey check` never applies repairs to source; use `nix fmt` for
+intentional formatting. Model-driven repairs are explicit agent work.
 
 ## Durable handoff when needed
 

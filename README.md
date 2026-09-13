@@ -70,9 +70,13 @@ And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO
 | `hey rollback`      | Roll back to previous system generation                         |
 | `hey gc`            | Runs `nix-collect-garbage -d`. Use sudo to clean system profile |
 | `hey push REMOTE`   | Deploy these dotfiles to REMOTE (over ssh)                      |
-| `hey check`         | Run tests and checks for this flake                             |
+| `hey check`         | Validate changed work without modifying source                  |
 | `hey show`          | Show flake outputs of this repo                                 |
 | `hey skillkit-sync` | Reinstall/repatch `@crafter/skillkit` with Amp + Pi support     |
+
+Use `hey check --full` for the portable suite and `hey check --platform <suite>`
+for host/VM checks. [Validation workflow](docs/validation.md) explains selection,
+prerequisites, and CI parity.
 
 On macOS, `hey re` also re-applies the Skillkit patch via Home Manager for any
 host that enables `modules.shell.skillkit`. If you manually reinstall

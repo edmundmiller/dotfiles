@@ -80,11 +80,10 @@ class AgentRunTests(unittest.TestCase):
             "--config ${config.pre-commit.settings.configFile}",
             flake,
         )
-        self.assertIn(".#pre-commit-config", hey)
-        prek_calls = [line for line in hey.splitlines() if "^prek " in line]
-        self.assertTrue(prek_calls)
-        for call in prek_calls:
-            self.assertIn("^prek --config $precommit_config ", call)
+        self.assertIn("scripts/validation.py", hey)
+        validator = (ROOT / "scripts/validation.py").read_text()
+        self.assertIn(".#pre-commit-config", validator)
+        self.assertNotIn(".pre-commit-config.yaml", validator)
         self.assertIn("actionlint = {", flake)
         self.assertIn("agent-run-tests =", flake)
 

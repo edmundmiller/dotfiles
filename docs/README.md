@@ -16,6 +16,8 @@ update_when: A canonical doc is added, moved, or changes ownership.
   packages, and deployment topology
 - [install.md](./install.md) — bootstrap notes plus upstream nix-darwin,
   Lix, and Nix command references
+- [validation.md](./validation.md) — everyday checks, comprehensive checks,
+  platform boundaries, CI parity, and failure handling
 
 ### Agent references
 

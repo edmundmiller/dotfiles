@@ -603,6 +603,48 @@
 
           # Authoritative generated hook config for checks and shared Git shims.
           packages.pre-commit-config = config.pre-commit.settings.configFile;
+          packages.validation-tools = pkgs.buildEnv {
+            name = "validation-tools";
+            paths = [
+              pkgs.python3
+              pkgs.prek
+            ];
+          };
+
+          # Realize OMP only when its configuration changes, not while building
+          # the hook config for an unrelated Markdown edit.
+          packages.validation-omp-config =
+            let
+              ompConfigCheck = pkgs.runCommand "omp-config-check" { } ''
+                mkdir -p "$out/bin" "$out/lib/omp"
+                src=${self.packages.${system}.omp}
+                cp -a "$src/lib/omp/." "$out/lib/omp/"
+                chmod -R u+w "$out/lib/omp"
+                ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
+                  /usr/bin/codesign -f -s - "$out/lib/omp/omp"
+                ''}
+                printf '%s\n' \
+                  '#!${pkgs.runtimeShell}' \
+                  'export PI_SKIP_VERSION_CHECK=1' \
+                  "exec \"$out/lib/omp/omp\" \"\$@\"" \
+                  > "$out/bin/omp"
+                chmod +x "$out/bin/omp"
+              '';
+            in
+            pkgs.writeShellApplication {
+              name = "validation-omp-config";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.git
+                pkgs.python3
+                pkgs.yq-go
+                ompConfigCheck
+              ];
+              text = ''
+                export PI_SKIP_VERSION_CHECK=1
+                bash modules/agents/omp/test-config-yml.sh
+              '';
+            };
 
           # Headless agent environment (Factory, Devin, etc.)
           # Install: nix profile install .#agent-env
@@ -714,35 +756,13 @@
                 files = "^(skills/(catalog|conditional)/|\\.agents/skills/)";
                 stages = [ "pre-commit" ];
               };
-              omp-thin-harness = {
-                enable = true;
-                name = "omp-thin-harness";
-                description = "Validate the shared thin core and local OMP TTSR scenarios";
-                entry = toString (
-                  pkgs.writeShellScript "omp-thin-harness" ''
-                    set -eu
-                    cd ${./.}
-                    OMP_BIN=${self.packages.${system}.omp}/bin/omp \
-                      ${pkgs.python3}/bin/python3 -m unittest \
-                        tests/test_agent_instruction_wiring.py \
-                        tests/test_agent_response_contract.py \
-                        tests/test_codex_model_config.py \
-                        tests/test_omp_ttsr_rules.py
-                    ${pkgs.bun}/bin/bun test ./tests/omp_lazy_extensions.test.js
-                  ''
-                );
-                language = "system";
-                pass_filenames = false;
-                files = "^(bin/bootstrap|config/agents/core\\.md|config/codex/config\\.toml|config/opencode/opencode\\.jsonc|config/omp/(config\\.yml|extensions/(lazy-|_lib/lazy-extension)|prompts/thread-introspection\\.md|rules/)|modules/agents/(claude|codex|omp|opencode|pi|plannotator)/|tests/(fixtures/omp-ttsr-rules\\.json|omp_lazy_extensions\\.test\\.js|test_agent_instruction_wiring\\.py|test_agent_response_contract\\.py|test_codex_model_config\\.py|test_omp_ttsr_rules\\.py))";
-                stages = [ "pre-commit" ];
-              };
               check-flake-portability = {
                 enable = true;
                 name = "reject absolute local flake inputs";
                 entry = "env JQ_BIN=${pkgs.jq}/bin/jq ${pkgs.bash}/bin/bash ${./bin/check-flake-portability}";
                 language = "system";
                 pass_filenames = false;
-                always_run = true;
+                files = "(^|/)(flake\\.nix|flake\\.lock)$";
                 stages = [
                   "pre-commit"
                   "pre-push"
@@ -873,14 +893,14 @@
                     set -euo pipefail
                     ${pkgs.nix}/bin/nix \
                       --extra-experimental-features "nix-command flakes" \
-                      flake lock --no-update-lock-file "$PWD/skills"
+                      flake metadata --no-update-lock-file --no-write-lock-file "$PWD/skills" >/dev/null
                     exec ${pkgs.python3}/bin/python3 \
                       ${./skills/scripts/check-lock-sync.py} "$PWD"
                   ''
                 );
                 language = "system";
                 pass_filenames = false;
-                always_run = true;
+                files = "^(flake\\.(nix|lock)|skills/(flake\\.(nix|lock)|scripts/check-lock-sync\\.py))$";
                 stages = [
                   "pre-commit"
                   "pre-push"
@@ -925,22 +945,6 @@
                 files = "\\.(ts|js|nix)$";
                 stages = [ "pre-push" ];
               };
-              pi-packages-qa-changed = {
-                enable = true;
-                name = "pi-packages-qa-changed";
-                description = "Run changed-scope packages/pi-packages typecheck/tests before push";
-                entry = toString (
-                  pkgs.writeShellScript "pi-packages-qa-changed" ''
-                    set -euo pipefail
-                    repo_root=$(git rev-parse --show-toplevel)
-                    cd "$repo_root"
-                    ./bin/qa-changed
-                  ''
-                );
-                language = "system";
-                pass_filenames = false;
-                stages = [ "pre-push" ];
-              };
               pi-settings-json = {
                 enable = true;
                 name = "pi-settings-json";
@@ -976,50 +980,6 @@
                 files = "^bin/(hey\\.d/hermes\\.nu|tests/hey-hermes-local-status\\.nu)$";
                 stages = [ "pre-commit" ];
               };
-              omp-config-yml =
-                let
-                  # Plain llm-agents omp is unsigned; Darwin kills it (SIGKILL).
-                  # Copy+codesign like modules/agents/omp isolation wrapper.
-                  ompConfigCheck = pkgs.runCommand "omp-config-check" { } ''
-                    mkdir -p "$out/bin" "$out/lib/omp"
-                    src=${self.packages.${system}.omp}
-                    cp -a "$src/lib/omp/." "$out/lib/omp/"
-                    chmod -R u+w "$out/lib/omp"
-                    ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
-                      /usr/bin/codesign -f -s - "$out/lib/omp/omp"
-                    ''}
-                    printf '%s\n' \
-                      '#!${pkgs.runtimeShell}' \
-                      'export PI_SKIP_VERSION_CHECK=1' \
-                      "exec \"$out/lib/omp/omp\" \"\$@\"" \
-                      > "$out/bin/omp"
-                    chmod +x "$out/bin/omp"
-                  '';
-                in
-                {
-                  enable = true;
-                  name = "omp-config-yml";
-                  description = "Validate OMP config.yml against omp config list registry";
-                  entry = toString (
-                    pkgs.writeShellScript "omp-config-yml" ''
-                      export PATH=${
-                        lib.makeBinPath [
-                          pkgs.coreutils
-                          pkgs.git
-                          pkgs.python3
-                          pkgs.yq-go
-                          ompConfigCheck
-                        ]
-                      }:$PATH
-                      export PI_SKIP_VERSION_CHECK=1
-                      bash modules/agents/omp/test-config-yml.sh
-                    ''
-                  );
-                  language = "system";
-                  pass_filenames = false;
-                  files = "^(config/omp/config\\.yml|modules/agents/omp/)";
-                  stages = [ "pre-commit" ];
-                };
               pi-runtime-wrapper = {
                 enable = true;
                 name = "pi-runtime-wrapper";
@@ -1214,12 +1174,11 @@
                     touch $out
                   '';
 
-              completion-hook-tests =
-                pkgs.runCommand "completion-hook-tests"
+              validation-tests =
+                pkgs.runCommand "validation-tests"
                   {
                     nativeBuildInputs = [
                       pkgs.bash
-                      pkgs.bun
                       pkgs.git
                       pkgs.nushell
                       pkgs.python3
@@ -1235,9 +1194,7 @@
                     cd "$TMPDIR/source"
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
-                      tests/test_codex_stop_hook.py \
-                      tests/test_completion_hooks.py
-                    bun test tests/omp_completion_gate.test.js
+                      tests/test_validation.py
                     touch $out
                   '';
 
@@ -1281,7 +1238,7 @@
                   ''
                     cd ${./.}
                     status=0
-                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md; do
+                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md docs/validation.md; do
                       [ -f "$doc" ] || continue
                       summary="$(head -n 7 "$doc")"
                       for key in purpose applies_to entrypoint verification update_when; do
@@ -1310,6 +1267,12 @@
                     touch $out
                   '';
 
+              omp-config = pkgs.runCommand "omp-config" { } ''
+                cd ${./.}
+                ${self.packages.${system}.validation-omp-config}/bin/validation-omp-config
+                touch "$out"
+              '';
+
               omp-thin-harness-tests =
                 pkgs.runCommand "omp-thin-harness-tests"
                   {
@@ -1325,6 +1288,8 @@
                       PYTHONDONTWRITEBYTECODE=1 \
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
+                        tests/test_agent_response_contract.py \
+                        tests/test_codex_model_config.py \
                         tests/test_omp_ttsr_rules.py
                     bun test ./tests/omp_lazy_extensions.test.js
                     touch $out
@@ -1643,7 +1608,7 @@
 
               dji-mic-mini-platform-boundaries =
                 let
-                  heyCheckSource = builtins.readFile ./bin/hey.d/flake.nu;
+                  heyCheckSource = builtins.readFile ./scripts/validation.py;
                   heyCheckSelectsDjiChecks =
                     lib.hasInfix "dji-mic-mini-receiver-mute-regressions" heyCheckSource
                     && lib.hasInfix "dji-mic-mini-platform-boundaries" heyCheckSource;
