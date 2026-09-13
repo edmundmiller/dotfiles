@@ -9,7 +9,7 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "weave";
-  version = "0.3.6";
+  version = "0.5.4";
 
   src = fetchFromGitHub {
     owner = "Ataraxy-Labs";
