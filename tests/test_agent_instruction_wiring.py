@@ -212,7 +212,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("agent-browser-after.png", github_skill)
         self.assertIn("claude-shared-skill-links", claude_module)
         self.assertIn(
-            "for skill in test-quality github-cli-media lore; do",
+            "for skill in test-quality github-cli-media lore pe-verify; do",
             claude_module,
         )
         self.assertIn('shared="$HOME/.agents/skills/$skill"', claude_module)
@@ -237,6 +237,13 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn('"agents"', github_route)
         self.assertIn('"hermes"', github_route)
         self.assertNotIn('"codex"', github_route)
+
+        pe_verify_route_start = skills_flake.index("pe-verify = {")
+        pe_verify_route = skills_flake[pe_verify_route_start : pe_verify_route_start + 420]
+        self.assertIn('from = "product-engineering";', pe_verify_route)
+        self.assertIn('path = "pe-verify";', pe_verify_route)
+        self.assertIn('"agents"', pe_verify_route)
+        self.assertIn('"hermes"', pe_verify_route)
 
     def test_skills_sync_has_no_retired_checkout_input(self) -> None:
         command = SKILLS_COMMAND.read_text()

@@ -152,6 +152,11 @@
       flake = false;
     };
 
+    product-engineering = {
+      url = "github:backnotprop/product-engineering/0642a58496d4dfa1de9688a82c29dfa34d24370a";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -450,6 +455,14 @@
                   "hermes"
                 ];
               };
+              pe-verify = {
+                from = "product-engineering";
+                path = "pe-verify";
+                meta.targets = [
+                  "agents"
+                  "hermes"
+                ];
+              };
             }
             // lib.optionalAttrs piEnabled {
               extending-pi = {
@@ -713,6 +726,15 @@
                   path = inputs.anti-slop-repo.outPath;
                   subdir = "skills";
                   filter.maxDepth = 5;
+                };
+
+                product-engineering = {
+                  path = inputs.product-engineering.outPath;
+                  subdir = "skills";
+                  filter = {
+                    maxDepth = 2;
+                    nameRegex = "^pe-verify$";
+                  };
                 };
 
                 kitlangton = {

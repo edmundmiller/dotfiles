@@ -1822,6 +1822,23 @@
         "type": "github"
       }
     },
+    "product-engineering": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788119851,
+        "narHash": "sha256-GacLe/VbwUEbmrn47CK62PqD9WUQ2vTck8lP5VIW2JA=",
+        "owner": "backnotprop",
+        "repo": "product-engineering",
+        "rev": "0642a58496d4dfa1de9688a82c29dfa34d24370a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "backnotprop",
+        "repo": "product-engineering",
+        "rev": "0642a58496d4dfa1de9688a82c29dfa34d24370a",
+        "type": "github"
+      }
+    },
     "pyproject-build-systems": {
       "inputs": {
         "nixpkgs": [
@@ -2015,6 +2032,7 @@
         "pi-extension-skills": "pi-extension-skills",
         "pi-messenger-repo": "pi-messenger-repo",
         "prek-repo": "prek-repo",
+        "product-engineering": "product-engineering",
         "qmd-repo": "qmd-repo",
         "shadcn-improve": "shadcn-improve",
         "shaping-skills": "shaping-skills",

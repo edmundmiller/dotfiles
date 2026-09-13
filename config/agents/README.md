@@ -32,10 +32,10 @@ This configuration is shared across agent runtimes with generated skill targets:
 | OMP      | `~/.agents/skills/`   | Native commands and TTSR              | `~/.omp/agent/AGENTS.md`                 |
 | Pi       | `~/.agents/skills/`   | Native prompts and agents             | `~/.pi/agent/AGENTS.md`                  |
 
-Claude receives only `~/.claude/skills/test-quality` and
-`~/.claude/skills/github-cli-media`, linked to the canonical copies under
-`~/.agents/skills`; the rest of the shared catalog stays out of Claude's
-native directory so OMP does not load duplicate copies.
+Claude receives only `test-quality`, `github-cli-media`, `lore`, and `pe-verify`
+under `~/.claude/skills`, linked to the canonical copies under
+`~/.agents/skills`; the rest of the shared catalog stays out of Claude's native
+directory so OMP does not load duplicate copies.
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
 Generated bundles exist for supported skill targets. Activation always syncs

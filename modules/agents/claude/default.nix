@@ -43,7 +43,7 @@ in
             ]
             ''
               ${pkgs.coreutils}/bin/mkdir -p "$HOME/.claude/skills"
-              for skill in test-quality github-cli-media lore; do
+              for skill in test-quality github-cli-media lore pe-verify; do
                 shared="$HOME/.agents/skills/$skill"
                 if [ ! -f "$shared/SKILL.md" ]; then
                   echo "ERROR: shared skill is missing: $shared/SKILL.md" >&2
