@@ -21,8 +21,11 @@ let
     if pkgs.stdenv.hostPlatform.isDarwin then
       hunkPackagePatched.overrideAttrs (old: {
         postInstall = (old.postInstall or "") + ''
-          chmod u+w $out/bin/hunk
-          /usr/bin/codesign -f -s - $out/bin/hunk
+          # Upstream wraps hunk during install and disables fixup. Sign the
+          # compiled payload, not the shell wrapper, after installation.
+          chmod u+w $out/bin/.hunk-wrapped
+          /usr/bin/codesign -f -s - $out/bin/.hunk-wrapped
+          /usr/bin/codesign --verify $out/bin/.hunk-wrapped
         '';
       })
     else
