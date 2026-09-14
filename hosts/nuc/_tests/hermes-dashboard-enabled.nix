@@ -2,6 +2,7 @@
 let
   cfg = nixosConfig.config;
   service = cfg.systemd.services.hermes-scintillate-desktop-dashboard;
+  tailscaleService = cfg.systemd.services.hermes-tailscale-serve;
   hermesPackage = cfg.services.hermes-agent.package;
   gatewayProfiles = [
     "amosburton"
@@ -64,6 +65,18 @@ let
     {
       test = builtins.elem "multi-user.target" service.wantedBy;
       msg = "Scintillate's Desktop dashboard must start from multi-user.target after every NUC activation.";
+    }
+    {
+      test =
+        tailscaleService.enable
+        && builtins.elem "multi-user.target" tailscaleService.wantedBy
+        && builtins.elem "hermes-scintillate-desktop-dashboard.service" tailscaleService.wants
+        && builtins.elem "tailscaled.service" tailscaleService.after;
+      msg = "The Hermes Tailscale service must start with the dashboard after Tailscale is available.";
+    }
+    {
+      test = pkgs.lib.hasInfix "serve --bg --service=svc:hermes --https=443 http://127.0.0.1:9121" tailscaleService.serviceConfig.ExecStart;
+      msg = "The Hermes HTTPS service must proxy to the Desktop dashboard on 9121, not the retired WebUI on 8787.";
     }
     {
       test = packageIdentityMatches;

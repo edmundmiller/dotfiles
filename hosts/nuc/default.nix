@@ -1907,6 +1907,25 @@ in
     };
   };
 
+  systemd.services.hermes-tailscale-serve = {
+    description = "Expose the Hermes Desktop dashboard via Tailscale Service";
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "hermes-scintillate-desktop-dashboard.service"
+      "tailscaled.service"
+    ];
+    wants = [
+      "hermes-scintillate-desktop-dashboard.service"
+      "tailscaled.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateDesktopDashboardPort} && exit 0; sleep 1; done; exit 1\"'";
+      ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${hermesScintillateTailscaleServiceName} || true'";
+    };
+  };
+
   systemd.services.hermes-scintillate-webui = {
     enable = false;
     description = "Hermes WebUI for Scintillate";
