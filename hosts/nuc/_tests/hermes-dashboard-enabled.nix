@@ -43,7 +43,32 @@ let
     && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.31";
   dashboardStart = toString service.serviceConfig.ExecStart;
   expectedDashboardExec = "${hermesPackage}/bin/hermes dashboard";
+  caduSetup = builtins.head service.serviceConfig.ExecStartPre;
+  yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
   assertions = [
+    {
+      test = builtins.all (
+        profile:
+        let
+          enabled = cfg.services.hermes-agent.profiles.${profile}.settings.plugins.enabled;
+        in
+        builtins.all (name: builtins.elem name enabled) [
+          "cadu-rich-cards"
+          "cadu-device"
+          "cadu-secrets-vault"
+          "hermes-browser-stream"
+          "hermes-push"
+          "evo"
+          "rtk-rewrite"
+          "cronalytics"
+        ]
+      ) gatewayProfiles;
+      msg = "Every rendered gateway must enable Cadu plugins without dropping required runtime plugins.";
+    }
+    {
+      test = builtins.elem "photon-platform" cfg.services.hermes-agent.profiles.betty.settings.plugins.enabled;
+      msg = "Cadu enablement must preserve Betty's canonical Photon plugin.";
+    }
     {
       test = service.enable;
       msg = "Scintillate's Desktop dashboard must remain enabled so auto-upgrades do not mask it.";
@@ -95,7 +120,7 @@ let
 in
 pkgs.runCommand "nuc-hermes-dashboard-enabled"
   {
-    inherit dashboardStart expectedDashboardExec;
+    inherit dashboardStart expectedDashboardExec caduSetup;
   }
   ''
     if [ ${toString (builtins.length failures)} -ne 0 ]; then
@@ -111,6 +136,27 @@ pkgs.runCommand "nuc-hermes-dashboard-enabled"
       echo "Scintillate's Desktop dashboard must execute the shared Hermes package." >&2
       exit 1
     fi
+
+    # Exercise the deployed merge, including repeat starts and absent plugins.
+    mkdir -p home/plugins/cadu-rich-cards
+    touch home/plugins/cadu-rich-cards/plugin.yaml
+    printf '%s\n' 'model: {default: keep-me}' 'plugins: {enabled: [existing-plugin], disabled: [blocked-plugin]}' > home/config.yaml
+    setup_script="''${caduSetup%% *}"
+    "$setup_script" "$PWD/home" cadu-rich-cards missing-plugin
+    "$setup_script" "$PWD/home" cadu-rich-cards missing-plugin
+    ${yamlPython}/bin/python3 - <<'PY'
+    from pathlib import Path
+    import yaml
+    config = yaml.safe_load(Path("home/config.yaml").read_text())
+    assert config == {
+        "model": {"default": "keep-me"},
+        "plugins": {
+            "enabled": ["existing-plugin", "cadu-rich-cards"],
+            "disabled": ["blocked-plugin"],
+        },
+    }, config
+    assert Path("home/config.yaml").stat().st_mode & 0o777 == 0o600
+    PY
 
     touch "$out"
   ''
