@@ -2382,7 +2382,6 @@ in
         agents = {
           scintillate = {
             settings = (mkBuzzNativeSettings "scintillate") // {
-              cron.gateway_ticker = false;
               stt.provider = "local_command";
               terminal.shell_init_files = [ "${scintillateTerminalInit}" ];
               slack.require_mention = true;
@@ -2402,9 +2401,7 @@ in
           };
 
           betty = {
-            settings = (mkBuzzNativeSettings "betty") // {
-              cron.gateway_ticker = false;
-            };
+            settings = mkBuzzNativeSettings "betty";
             workspaceLinks."repos/mill-docs" = "/home/emiller/mill-docs";
             workspaceLinks."repos/obsidian-vault" = "/home/emiller/obsidian-vault";
             workspaceLinks."repos/tnote" = tnoteBaseRepo;
@@ -2430,7 +2427,6 @@ in
           };
           amosburton = {
             settings = (mkBuzzNativeSettings "amosburton") // {
-              cron.gateway_ticker = false;
               terminal.shell_init_files = [ "${amosburtonTerminalInit}" ];
             };
             workspaceLinks."repos/agents-workspace" = "/home/emiller/src/personal/agents-workspace";

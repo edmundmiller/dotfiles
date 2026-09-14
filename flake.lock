@@ -922,17 +922,17 @@
     "hermes-agent": {
       "flake": false,
       "locked": {
-        "lastModified": 1788204567,
-        "narHash": "sha256-Ii9xP2fKUpvCcwWZuxJ0g3CZ+IL2UZH14pUNvBfdclc=",
+        "lastModified": 1789154408,
+        "narHash": "sha256-5cuRyXYpkZS83nhw12vq4y33RrNTP3NHDgqGllkm6bI=",
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "29112bef099274229cadff79cdff7bf7b99c4b77",
+        "rev": "939e45c91d751fadd94dcd1b873ac3cb44846213",
         "type": "github"
       },
       "original": {
         "owner": "NousResearch",
         "repo": "hermes-agent",
-        "rev": "29112bef099274229cadff79cdff7bf7b99c4b77",
+        "rev": "939e45c91d751fadd94dcd1b873ac3cb44846213",
         "type": "github"
       }
     },

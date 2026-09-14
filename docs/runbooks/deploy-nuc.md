@@ -8,6 +8,36 @@ update_when: NUC authentication, build location, commands, or verification chang
 
 # Runbook: Deploy to NUC
 
+## Hermes 2026.9.11: Cadu-focused configuration
+
+The current candidate uses Hermes 0.21.2 (2026.9.11), retaining only the Nix
+Python interpreter/thread-pool compatibility patches. The custom behavior
+patches remain in agents-workspace but are excluded from the build. Buzz and
+Slack platform plugins, native ingress, ACP fallback, and Buzz presence are
+disabled by `hosts/nuc/hermes-cadu.nix`; their credentials and state are retained.
+Other integrations, including Betty's Photon configuration, are unchanged.
+
+The six profile gateways remain enabled for upstream scheduling and their
+remaining configured platforms. The Amos, Betty, and Scintillate systemd
+cron-tick timers are disabled because the custom `cron.gateway_ticker` guard
+is no longer applied. The gateway's native scheduler now owns those profiles.
+Old `cron/executor.json` files are not current scheduler-health evidence.
+Existing jobs addressed to Buzz/Slack are not migrated to a different recipient;
+their delivery needs a separately chosen destination.
+
+Use `nuc-hermes-dashboard-enabled`, `nuc-hermes-native-vault-package`, and
+`nuc-hermes-cron-executors` on the synced NUC worktree to verify the configuration.
+After deployment, check in-container `hermes --version`, authenticated Cadu
+toolsets for every profile, native `vault.*` RPC availability, absent Buzz/Slack
+connections and presence, and native cron status. Service active state alone
+does not prove package adoption. Do not initialize or migrate a real vault to
+test availability. External 1Password/Bitwarden sources remain disabled until
+explicitly authorized; Cadu pairing and grants are unchanged.
+
+The older cron-ownership and Buzz-rollout sections below are recovery history
+for the parked patch stack, not instructions for this configuration. Do not
+run their cutover or timer-health procedures on the Cadu-focused deployment.
+
 ## Overview
 
 The NUC is a NixOS server managed from this dotfiles repo — there is no CI-driven deployment. `hey nuc` evaluates and builds on the NUC for consistent cross-platform behavior: when run off-NUC it syncs the current worktree to a task-isolated `nuc:/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot and runs `nixos-rebuild` there; when run on the NUC it runs a local `nixos-rebuild`. NUC rebuilds pass `--max-jobs 1` to keep builds stable on the small host.

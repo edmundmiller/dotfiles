@@ -101,10 +101,6 @@ CHECKS = {
     ],
     "screentime-backup-cli-tests": ["packages/screentime-backup/*"],
     "discrawl-backup-cli-tests": ["packages/discrawl-backup/*"],
-    "hermes-buzz-patch-stack": ["modules/agents/hermes/*"],
-    "hermes-buzz-final-stack-behavior": ["modules/agents/hermes/*"],
-    "hermes-cron-single-owner": ["modules/agents/hermes/*"],
-    "hermes-dashboard-profile-liveness": ["modules/agents/hermes/*"],
     "nuc-deployment-provenance": [
         "hosts/nuc/_tests/deployment-provenance.nix",
         "bin/hey.d/remote.nu",

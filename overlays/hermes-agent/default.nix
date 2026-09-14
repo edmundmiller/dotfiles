@@ -2,27 +2,33 @@
 final: prev:
 
 let
-  agentsWorkspacePatchRoot = inputs.agents-workspace + /patches/hermes-agent;
-  canonicalBuzzPatchOrder = builtins.filter (name: name != "") (
-    final.lib.splitString "\n" (builtins.readFile (agentsWorkspacePatchRoot + "/buzz-stack-order.txt"))
-  );
-  canonicalBuzzPatches = map (name: agentsWorkspacePatchRoot + "/${name}") canonicalBuzzPatchOrder;
-  auxiliaryHermesPatches = [
-    (agentsWorkspacePatchRoot + "/0002-bounded-smart-model-routing.patch")
-    (agentsWorkspacePatchRoot + "/0003-kanban-platform-toolsets.patch")
-    (agentsWorkspacePatchRoot + "/0004-kanban-fan-in-guidance.patch")
-    (agentsWorkspacePatchRoot + "/0004-kanban-bounded-intake-policy.patch")
-    (agentsWorkspacePatchRoot + "/0005-gateway-profile-identity.patch")
-    (agentsWorkspacePatchRoot + "/0007-slack-native-task-card-payload.patch")
-  ];
-  dashboardLivenessPatch = agentsWorkspacePatchRoot + "/0006-dashboard-profile-lock-liveness.patch";
+  # Match the released llm-agents dependency update; retain its Rust/Maturin
+  # packaging and Python version-metadata hook instead of relaxing Hermes' bound.
+  upstreamNemoRelay =
+    final.lib.findFirst (package: (package.pname or "") == "nemo-relay")
+      (throw "Hermes runtime is missing its nemo-relay dependency")
+      prev.llm-agents."hermes-agent".propagatedBuildInputs;
+  nemoRelay = upstreamNemoRelay.overrideAttrs (_: rec {
+    version = "0.8.4";
+    src = final.fetchFromGitHub {
+      owner = "NVIDIA";
+      repo = "NeMo-Relay";
+      tag = version;
+      hash = "sha256-5jGFu+DNb1zlCkejY9IPFXkJH1BbY48aNrQhdKisCyg=";
+    };
+    cargoDeps = final.rustPlatform.fetchCargoVendor {
+      inherit src;
+      name = "nemo-relay-${version}";
+      hash = "sha256-M8FZngHmCN7fns6yXKInAUCT21T1k2q54VChG7MUzAk=";
+    };
+  });
 
   # Hermes ships the Photon sidecar source but intentionally leaves its npm
   # dependencies to the deployment.  Keep the old NUC behavior in the shared
   # package so Photon does not regress when every profile converges here.
   hermesPhotonSidecar = final.buildNpmPackage {
     pname = "hermes-photon-sidecar";
-    version = "2026.8.31";
+    version = "2026.9.11";
     src = inputs.hermes-agent + /plugins/platforms/photon/sidecar;
     npmDepsHash = "sha256-a9IvcIEG6PbV1rH8qOUW4p68yWy8myGJaBrKMveYOwQ=";
     dontNpmBuild = true;
@@ -59,9 +65,9 @@ let
 
   hermesFrontend = final.buildNpmPackage {
     pname = "hermes-frontend";
-    version = "2026.8.31";
+    version = "2026.9.11";
     src = inputs.hermes-agent;
-    npmDepsHash = "sha256-Ej35hMbJGzixgwp5kFEw8Np/XDiYzTvLwxRigMP4a+U=";
+    npmDepsHash = "sha256-hJe0Fv8TadHoo64cmA3g3eC0fcSoX2bbb0C00QhOoCo=";
     npmFlags = [
       "--ignore-scripts"
       "--engine-strict=false"
@@ -94,7 +100,11 @@ let
   sharedHermesAgentBase = prev.llm-agents."hermes-agent".overrideAttrs (
     old:
     let
-      hermesRuntimeDeps = (old.propagatedBuildInputs or [ ]) ++ [ firecrawlAnydoc ];
+      hermesRuntimeDeps =
+        map (package: if (package.pname or "") == "nemo-relay" then nemoRelay else package) (
+          old.propagatedBuildInputs or [ ]
+        )
+        ++ [ firecrawlAnydoc ];
       hermesPythonEnv = final.python3.withPackages (_: hermesRuntimeDeps);
       useCurrentRuntime =
         arg:
@@ -105,22 +115,16 @@ let
     in
     {
       pname = "hermes-agent";
-      version = "2026.8.31";
+      version = "2026.9.11";
       src = inputs.hermes-agent;
       propagatedBuildInputs = hermesRuntimeDeps;
+      doInstallCheck = true;
       # Replace llm-agents' release-specific base patches with the same Nix
-      # runtime fixes rebased against this source revision.
-      # The canonical manifest is the production Buzz order. Auxiliary Hermes
-      # behavior patches follow it, and dashboard liveness remains an independent
-      # final patch so the two stacks cannot silently drift apart.
+      # runtime fixes rebased against this source revision. Custom behavior
+      # patches are parked in agents-workspace while Hermes focuses on Cadu.
       patches = [
         ./patches/slash-worker-hermes-python.patch
         ./patches/daemon-pool-python314.patch
-      ]
-      ++ canonicalBuzzPatches
-      ++ auxiliaryHermesPatches
-      ++ [
-        dashboardLivenessPatch
       ];
       makeWrapperArgs = map useCurrentRuntime (old.makeWrapperArgs or [ ]);
       postInstall = (old.postInstall or "") + ''
@@ -138,14 +142,14 @@ let
 
         path = Path(sys.argv[1])
         text = path.read_text()
-        needle = "    # spectrum-ts is pinned exactly in package.json/package-lock.json because" + chr(10)
+        needle = "def _install_sidecar() -> int:" + chr(10)
         replacement = (
-            chr(10).join([
-                "    if (_SIDECAR_DIR / \"node_modules\").exists():",
+            needle + chr(10).join([
+                "    if sidecar_deps_installed():",
                 "        print(\"  sidecar deps already installed\")",
                 "        return 0",
             ])
-            + chr(10) + needle
+            + chr(10)
         )
         if needle not in text:
             raise SystemExit("Photon sidecar install marker not found")
@@ -153,52 +157,8 @@ let
         PY
       '';
       postInstallCheck = (old.postInstallCheck or "") + ''
-        turn_ledger_site="$out/${final.python3.sitePackages}"
-        test -f "$turn_ledger_site/hermes_turn_ledger.py"
-        (
-          cd "$TMPDIR"
-          PYTHONNOUSERSITE=1 \
-            PYTHONPATH="$turn_ledger_site" \
-            ${final.python3}/bin/python3 - "$turn_ledger_site" <<'PY'
-        from pathlib import Path
-        import sys
-
-        import hermes_turn_ledger
-
-        site = Path(sys.argv[1])
-        expected = (site / "hermes_turn_ledger.py").resolve()
-        module = Path(hermes_turn_ledger.__file__).resolve()
-        if module != expected:
-            raise SystemExit(
-                f"turn ledger import mismatch: expected {expected}, got {module}"
-            )
-        PY
-        )
-        grep -q _should_reply_in_thread $out/share/hermes/plugins/platforms/buzz/adapter.py
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_singuloid_pilot.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_smart_model_routing.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_kanban_platform_toolset.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_gateway_profile_identity.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_turn_evidence.py}
-        BUZZ_LIVE_EVIDENCE_SCRIPT=${inputs.agents-workspace + /scripts/buzz-live-evidence.py} \
-          python3 ${inputs.agents-workspace + /tests/test_buzz_live_evidence.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${../../tests/test_hermes_cron_latest_source.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${../../tests/test_hermes_cron_failure_summary.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_buzz_thread_isolation.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_cron_external_executor.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_dashboard_profile_liveness.py}
-        HERMES_SOURCE="$PWD" \
-          python3 ${inputs.agents-workspace + /tests/test_hermes_slack_native_task_cards.py}
+        HERMES_HOME="$TMPDIR/hermes-test" HERMES_SOURCE="$PWD" \
+          python3 ${../../tests/test_hermes_native_vault_runtime.py}
         test -f ${hermesFrontend}/lib/hermes-tui/dist/entry.js
         test -f ${hermesFrontend}/share/hermes-web/index.html
         grep -Fq ${hermesFrontend} $out/bin/hermes
@@ -206,9 +166,10 @@ let
         grep -Fq 'sidecar deps already installed' $out/share/hermes/plugins/platforms/photon/cli.py
       '';
       passthru = (old.passthru or { }) // {
-        hermesVersion = "0.21.0";
-        hermesRelease = "v2026.8.31";
-        smartModelRouting = true;
+        nemo-relay = nemoRelay;
+        hermesVersion = "0.21.2";
+        hermesRelease = "v2026.9.11";
+        smartModelRouting = false;
       };
     }
   );

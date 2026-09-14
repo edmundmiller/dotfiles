@@ -154,12 +154,12 @@ let
     in
     (cronSettings.gateway_ticker or null) != false
   ) nonTimerProfiles;
-  timerProfilesDisableCron = builtins.all (
+  formerTimerProfilesUseGatewayCron = builtins.all (
     profile:
     let
       cronSettings = cfg.services.hermes-agent.profiles.${profile}.settings.cron or { };
     in
-    (cronSettings.gateway_ticker or null) == false
+    (cronSettings.gateway_ticker or null) != false
   ) timerOwnedProfiles;
   timerProfilesGatewayEnabled = builtins.all (
     profile: cfg.systemd.services."hermes-gateway-${profile}".enable
@@ -174,7 +174,7 @@ let
         ++ pkgs.lib.mapAttrsToList (name: value: "${name}=${toString value}") (service.environment or { })
       );
     in
-    timer.enable
+    !timer.enable
     && timer.wantedBy == [ "timers.target" ]
     && service.serviceConfig.Type == "oneshot"
     && service.serviceConfig.User == "emiller"
@@ -188,11 +188,11 @@ let
     && markerContractMatches
     && markerScriptMatches
     && timerOwnedServiceContracts
-    && timerProfilesDisableCron
+    && formerTimerProfilesUseGatewayCron
     && timerProfilesGatewayEnabled
     && nonTimerProfilesDoNotDisableCron
     && bettyGateway.enable
-    && ((bettyProfile.settings.cron or { }).gateway_ticker or null) == false;
+    && ((bettyProfile.settings.cron or { }).gateway_ticker or null) != false;
   amosEnvironment = concatStringsSep " " amosService.serviceConfig.Environment;
   amosUsesStableProfileAndSecret =
     hasInfix "HOME=/var/lib/hermes-amosburton" amosEnvironment
@@ -234,8 +234,8 @@ let
       msg = "Amos cron launcher must overlay host shell init onto canonical host paths.";
     }
     {
-      test = bettyGateway.enable && ((bettyProfile.settings.cron or { }).gateway_ticker or null) == false;
-      msg = "Betty's gateway must remain enabled while only its in-process cron ticker is disabled.";
+      test = bettyGateway.enable && ((bettyProfile.settings.cron or { }).gateway_ticker or null) != false;
+      msg = "Betty's gateway must remain enabled and own the native cron scheduler.";
     }
     {
       test = bettyService.serviceConfig.Type == "oneshot";
@@ -246,8 +246,8 @@ let
       msg = "Betty cron executor must use the profile owner.";
     }
     {
-      test = bettyTimer.wantedBy == [ "timers.target" ];
-      msg = "Betty cron timer must start with timers.target.";
+      test = !bettyTimer.enable;
+      msg = "Betty's retired systemd ticker must not compete with the native gateway.";
     }
     {
       test = if cronTickCadenceExpectedFailure then !cronTickCadenceMatches else cronTickCadenceMatches;
@@ -255,7 +255,7 @@ let
     }
     {
       test = if cronOwnershipExpectedFailure then !cronOwnershipMatches else cronOwnershipMatches;
-      msg = "All timer-owned Hermes profiles must disable the gateway cron ticker and publish an exact systemd executor heartbeat.";
+      msg = "Former timer-owned profiles must use gateway scheduling, retaining manual executor definitions without enabling competing timers.";
     }
     {
       test = pkgs.lib.all (

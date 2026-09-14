@@ -279,47 +279,17 @@ class HermesCronExecutorTests(unittest.TestCase):
             source,
         )
 
-    def test_final_package_does_not_reapply_the_canonical_cron_stack(self):
-        overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
-        flake = (ROOT / "flake.nix").read_text(encoding="utf-8")
-
-        self.assertNotIn("test_hermes_cron_single_owner.py", overlay)
-        self.assertIn("hermes-cron-single-owner", flake)
-        self.assertIn("test_hermes_cron_external_executor.py", overlay)
-
-    def test_overlay_keeps_nested_patch_paths_in_flake_source_context(self):
+    def test_cadu_package_excludes_parked_custom_patch_stack(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
 
-        self.assertNotRegex(overlay, r"agentsWorkspacePatchRoot\s*\+\s*/")
-        self.assertIn(
-            'agentsWorkspacePatchRoot + "/buzz-stack-order.txt"',
-            overlay,
-        )
-
-    def test_production_overlay_consumes_the_published_canonical_stack(self):
-        overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
-
-        self.assertIn("buzz-stack-order.txt", overlay)
+        self.assertNotIn("buzz-stack-order.txt", overlay)
         self.assertRegex(
             overlay,
             r"patches\s*=\s*\[\s*"
             r"\./patches/slash-worker-hermes-python\.patch\s*"
-            r"\./patches/daemon-pool-python314\.patch\s*\]\s*\+\+\s*"
-            r"canonicalBuzzPatches\s*\+\+\s*auxiliaryHermesPatches\s*\+\+\s*"
-            r"\[\s*dashboardLivenessPatch\s*\]",
+            r"\./patches/daemon-pool-python314\.patch\s*\]\s*;",
         )
-        self.assertIn("dashboardLivenessPatch", overlay)
-        self.assertNotIn("/0001-buzz-01-thread-routing.patch", overlay)
-        self.assertNotIn("/0006-gateway-cron-executor-ownership.patch", overlay)
-        for contract in (
-            "test_hermes_buzz_singuloid_pilot.py",
-            "test_hermes_gateway_profile_identity.py",
-            "test_hermes_kanban_platform_toolset.py",
-            "test_hermes_buzz_thread_isolation.py",
-            "test_hermes_cron_external_executor.py",
-            "test_hermes_dashboard_profile_liveness.py",
-        ):
-            self.assertIn(contract, overlay)
+        self.assertIn("test_hermes_native_vault_runtime.py", overlay)
 
     def test_agents_workspace_url_and_lock_revisions_match(self):
         flake = (ROOT / "flake.nix").read_text(encoding="utf-8")

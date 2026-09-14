@@ -39,13 +39,41 @@ let
     && pkgs.lib.hasInfix "/data/current-package/bin/hermes gateway run" preStart
   ) gatewayProfiles;
   packageIdentityMatches =
-    (hermesPackage.passthru.hermesVersion or null) == "0.21.0"
-    && (hermesPackage.passthru.hermesRelease or null) == "v2026.8.31";
+    (hermesPackage.passthru.hermesVersion or null) == "0.21.2"
+    && (hermesPackage.passthru.hermesRelease or null) == "v2026.9.11";
   dashboardStart = toString service.serviceConfig.ExecStart;
   expectedDashboardExec = "${hermesPackage}/bin/hermes dashboard";
   caduSetup = builtins.head service.serviceConfig.ExecStartPre;
   yamlPython = pkgs.python3.withPackages (ps: [ ps.pyyaml ]);
   assertions = [
+    {
+      test = builtins.all (
+        profile:
+        let
+          settings = cfg.services.hermes-agent.profiles.${profile}.settings;
+        in
+        !settings.gateway.platforms.buzz.enabled
+        && !settings.gateway.platforms.slack.enabled
+        && !settings.platforms.buzz.enabled
+        && !settings.platforms.slack.enabled
+        && builtins.elem "buzz-platform" settings.plugins.disabled
+        && builtins.elem "slack-platform" settings.plugins.disabled
+        && !cfg.systemd.services."buzz-presence-${profile}".enable
+        && !cfg.systemd.services."buzz-hermes-${profile}".enable
+        && !settings.vault.onepassword.enabled
+        && !settings.vault.bitwarden.enabled
+        && cfg.systemd.services."hermes-gateway-${profile}".enable
+      ) gatewayProfiles;
+      msg = "Cadu profiles must retain gateways while disabling Buzz/Slack ingress, fallback, presence, and automatic external vault access.";
+    }
+    {
+      test = builtins.all (profile: !cfg.systemd.timers."hermes-${profile}-cron-tick".enable) [
+        "amosburton"
+        "betty"
+        "scintillate"
+      ];
+      msg = "Upstream Hermes owns scheduling; legacy systemd tickers must not compete.";
+    }
     {
       test = builtins.all (
         profile:
@@ -105,7 +133,7 @@ let
     }
     {
       test = packageIdentityMatches;
-      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.0 (2026.8.31) package.";
+      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.2 (2026.9.11) package.";
     }
     {
       test = allGatewaysUseSharedPackage;
@@ -140,7 +168,7 @@ pkgs.runCommand "nuc-hermes-dashboard-enabled"
     # Exercise the deployed merge, including repeat starts and absent plugins.
     mkdir -p home/plugins/cadu-rich-cards
     touch home/plugins/cadu-rich-cards/plugin.yaml
-    printf '%s\n' 'model: {default: keep-me}' 'plugins: {enabled: [existing-plugin], disabled: [blocked-plugin]}' > home/config.yaml
+    printf '%s\n' 'model: {default: keep-me}' 'plugins: {enabled: [existing-plugin, buzz-platform, slack-platform], disabled: [blocked-plugin]}' 'platforms: {slack: {enabled: true, extra: {retained: true}}}' > home/config.yaml
     setup_script="''${caduSetup%% *}"
     "$setup_script" "$PWD/home" cadu-rich-cards missing-plugin
     "$setup_script" "$PWD/home" cadu-rich-cards missing-plugin
@@ -152,7 +180,17 @@ pkgs.runCommand "nuc-hermes-dashboard-enabled"
         "model": {"default": "keep-me"},
         "plugins": {
             "enabled": ["existing-plugin", "cadu-rich-cards"],
-            "disabled": ["blocked-plugin"],
+            "disabled": ["blocked-plugin", "buzz-platform", "slack-platform"],
+        },
+        "platforms": {
+            "buzz": {"enabled": False},
+            "slack": {"enabled": False, "extra": {"retained": True}},
+        },
+        "gateway": {"platforms": {
+            "buzz": {"enabled": False}, "slack": {"enabled": False},
+        }},
+        "vault": {
+            "onepassword": {"enabled": False}, "bitwarden": {"enabled": False},
         },
     }, config
     assert Path("home/config.yaml").stat().st_mode & 0o777 == 0o600

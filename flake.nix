@@ -121,8 +121,8 @@
 
     hermes-agent = {
       # Shared source for every Hermes gateway, cron/oneshot executor, and
-      # ACP companion. v2026.8.31 is Hermes v0.21.0.
-      url = "github:NousResearch/hermes-agent/29112bef099274229cadff79cdff7bf7b99c4b77";
+      # dashboard. v2026.9.11 is Hermes v0.21.2 with the native vault.
+      url = "github:NousResearch/hermes-agent/939e45c91d751fadd94dcd1b873ac3cb44846213";
       flake = false;
     };
 
@@ -1459,33 +1459,6 @@
                     touch "$out"
                   '';
 
-              # Source-only checks consume the published agents-workspace
-              # manifest and remain safe to evaluate on Darwin. NUC config
-              # assertions below stay Linux-only because they evaluate nuc.
-              hermes-buzz-patch-stack = import (inputs.agents-workspace + /checks/hermes-buzz-patch-stack.nix) {
-                inherit pkgs;
-                hermesSource = inputs.hermes-agent;
-              };
-
-              hermes-buzz-final-stack-behavior =
-                import (inputs.agents-workspace + /checks/hermes-buzz-final-stack-behavior.nix)
-                  {
-                    inherit pkgs;
-                    hermesSource = inputs.hermes-agent;
-                  };
-
-              hermes-cron-single-owner = import (inputs.agents-workspace + /checks/hermes-cron-single-owner.nix) {
-                inherit pkgs;
-                hermesSource = inputs.hermes-agent;
-              };
-
-              hermes-dashboard-profile-liveness =
-                import (inputs.agents-workspace + /checks/hermes-dashboard-profile-liveness.nix)
-                  {
-                    inherit pkgs;
-                    hermesSource = inputs.hermes-agent;
-                  };
-
               apple-container-pilot-assertions = import ./hosts/mactraitorpro/_tests/apple-container-pilot.nix {
                 macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
                 seqeratopConfig = self.darwinConfigurations.Seqeratop;
@@ -1704,27 +1677,6 @@
                 inherit pkgs;
               };
 
-              nuc-buzz-hermes-community-runtime = import ./hosts/nuc/_tests/buzz-hermes-community-runtime.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-                agentRegistry = import (inputs.agents-workspace + /agents/registry.nix) { inherit (pkgs) lib; };
-                bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
-                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
-                  inherit (pkgs) lib;
-                };
-                discordBindings = import (inputs.agents-workspace + /deployments/nuc/discord-bindings.nix) {
-                  inherit (pkgs) lib;
-                };
-              };
-
-              nuc-buzz-hermes-staged-runtime = import ./hosts/nuc/_tests/buzz-hermes-staged-runtime.nix {
-                nixosConfig = self.nixosConfigurations.nuc-buzz-scintillate;
-                inherit pkgs;
-                buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {
-                  inherit (pkgs) lib;
-                };
-              };
-
               nuc-betty-mcp-secret-materialization =
                 import ./hosts/nuc/_tests/betty-mcp-secret-materialization.nix
                   {
@@ -1733,10 +1685,10 @@
                     bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
                   };
 
-              nuc-hermes-v0210-package = pkgs.runCommand "nuc-hermes-v0210-package" { } ''
+              nuc-hermes-native-vault-package = pkgs.runCommand "nuc-hermes-native-vault-package" { } ''
                 package=${self.nixosConfigurations.nuc.config.services.hermes-agent.package}
                 "$package/bin/hermes" --version \
-                  | grep -F 'Hermes Agent v0.21.0 (2026.8.31)'
+                  | grep -F 'Hermes Agent v0.21.2 (2026.9.11)'
                 hermes_python_root=""
                 for candidate in "$package"/lib/python*/site-packages; do
                   [ -d "$candidate/hermes_cli" ] || continue
@@ -1744,35 +1696,14 @@
                   hermes_python_root="$candidate"
                 done
                 test -n "$hermes_python_root"
-                test -f "$hermes_python_root/hermes_turn_ledger.py"
-                (
-                  cd "$TMPDIR"
-                  PYTHONNOUSERSITE=1 \
-                    PYTHONPATH="$hermes_python_root" \
-                    ${pkgs.python3}/bin/python3 - "$hermes_python_root" <<'PY'
-                from pathlib import Path
-                import sys
-
-                import hermes_turn_ledger
-
-                site = Path(sys.argv[1])
-                expected = (site / "hermes_turn_ledger.py").resolve()
-                module = Path(hermes_turn_ledger.__file__).resolve()
-                if module != expected:
-                    raise SystemExit(
-                        f"turn ledger import mismatch: expected {expected}, got {module}"
-                    )
-                PY
-                )
-                grep -q _should_reply_in_thread \
-                  "$package/share/hermes/plugins/platforms/buzz/adapter.py"
-                grep -Fq 'gateway_ticker' \
-                  "$hermes_python_root/hermes_cli/config_defaults.py"
-                test -f "$package/share/hermes/plugins/platforms/buzz/buzz_thread_roots.py"
-                grep -Fq 'resolve_gateway_liveness' \
-                  "$hermes_python_root/hermes_cli/profiles.py"
-                grep -Fq 'def _dashboard_profile_dir' \
-                  "$hermes_python_root/hermes_cli/web_server.py"
+                HERMES_HOME="$TMPDIR/hermes-test" HERMES_SOURCE="$hermes_python_root" \
+                  ${
+                    pkgs.python3.withPackages (ps: [
+                      ps.cryptography
+                      ps.pyyaml
+                    ])
+                  }/bin/python3 \
+                  ${./tests/test_hermes_native_vault_runtime.py}
                 touch "$out"
               '';
 

@@ -1,41 +1,29 @@
 From: numtide/llm-agents.nix
-Subject: [PATCH] fix slash worker Python environment for Hermes 0.21.0
+Subject: [PATCH] fix slash worker Python environment for Hermes 0.21.2
 
-Dashboard slash workers re-exec the bare sys.executable, which can neither
-import Hermes modules nor its dependencies under Nix. Use wrapper-provided
-interpreter and source root instead.
-
+Use the Nix wrapper interpreter and source root; retain the upstream source-root fallback.
 Upstream: https://github.com/NousResearch/hermes-agent/pull/51277
-Rebased-Against: NousResearch/hermes-agent@29112bef099274229cadff79cdff7bf7b99c4b77
+Rebased-Against: NousResearch/hermes-agent@939e45c91d751fadd94dcd1b873ac3cb44846213
 ---
- tui_gateway/server.py | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
-
 diff --git a/tui_gateway/server.py b/tui_gateway/server.py
+index 2d4ceee64..43bdf80d2 100644
 --- a/tui_gateway/server.py
 +++ b/tui_gateway/server.py
-@@ -456,7 +456,7 @@ class _SlashWorker:
+@@ -233,7 +233,7 @@ class _SlashWorker:
+         self._seq = 0
+         self.stderr_tail: list[str] = []
          self.stdout_queue: queue.Queue[dict | None] = queue.Queue()
- 
-         argv = [
--            sys.executable,
-+            os.environ.get("HERMES_PYTHON", sys.executable),
-             "-m",
-             "tui_gateway.slash_worker",
-             "--session-key",
-@@ -483,6 +483,15 @@ class _SlashWorker:
-             inherit_profile_home=False,  # base already carries the HOME contract
-             extra={"HERMES_HOME": str(profile_home)} if profile_home else None,
+-        argv = [sys.executable, "-m", "tui_gateway.slash_worker", "--session-key", session_key] + (["--model", model] if model else [])
++        argv = [os.environ.get("HERMES_PYTHON", sys.executable), "-m", "tui_gateway.slash_worker", "--session-key", session_key] + (["--model", model] if model else [])
+         self._closed = False
+         from hermes_cli._subprocess_compat import windows_hide_flags
+         # slash_worker runs the Hermes agent → needs provider credentials. Tier-1 secrets
+@@ -252,7 +252,7 @@ class _SlashWorker:
+         # Internal slash workers must import the same checkout as their parent.
+         module_root = str(Path(__file__).resolve().parent.parent)
+         env["PYTHONPATH"] = os.pathsep.join(
+-            part for part in (module_root, env.get("PYTHONPATH", "")) if part
++            part for part in (os.environ.get("HERMES_PYTHON_SRC_ROOT", module_root), env.get("PYTHONPATH", "")) if part
          )
-+        if os.environ.get("HERMES_PYTHON_SRC_ROOT"):
-+            env["PYTHONPATH"] = os.pathsep.join(
-+                p
-+                for p in (
-+                    os.environ["HERMES_PYTHON_SRC_ROOT"],
-+                    env.get("PYTHONPATH"),
-+                )
-+                if p
-+            )
-         # Prepend the Hermes venv bin dir and the user-local bin dir to PATH so
-         # slash_worker child processes can resolve Hermes-managed CLIs
-         # (browser-use, uvx) even when the parent gateway was launched with a
+         # start_new_session: otherwise the worker inherits the gateway's pgid and mcp_tool's orphan
+         # sweep, racing the spawn, killpg()s the TUI parent itself. errors="replace": bytes invalid
