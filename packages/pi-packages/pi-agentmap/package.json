@@ -26,7 +26,7 @@
     "@mariozechner/pi-coding-agent": "*"
   },
   "dependencies": {
-    "agentmap": "^0.8.0"
+    "agentmap": "^0.11.0"
   },
   "pi": {
     "extensions": [
