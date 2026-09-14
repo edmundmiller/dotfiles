@@ -1921,7 +1921,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateDesktopDashboardPort} && exit 0; sleep 1; done; exit 1\"'";
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in {1..15}; do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${hermesScintillateTailscaleServiceName} --https=443 http://127.0.0.1:${toString hermesScintillateDesktopDashboardPort} && exit 0; sleep 1; done; exit 1\"'";
       ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${hermesScintillateTailscaleServiceName} || true'";
     };
   };
