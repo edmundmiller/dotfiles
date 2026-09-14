@@ -31,7 +31,7 @@ let
 
   trajectory = python312Packages.buildPythonPackage rec {
     pname = "letta-trajectory";
-    version = "0.2.0";
+    version = "0.3.0";
     pyproject = true;
     src = fetchFromGitHub {
       owner = "letta-ai";
