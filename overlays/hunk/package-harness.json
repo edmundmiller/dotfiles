@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/modem-dev/hunk.git",
-  "ref": "v0.21.0",
+  "ref": "v0.22.0",
   "patches": [
     "patches/0001-add-source-switch-menu.patch",
     "patches/0002-add-which-key.patch",
@@ -9,14 +9,22 @@
   "checks": [
     ["bun", "install", "--frozen-lockfile", "--ignore-scripts"],
     ["bun", "run", "typecheck"],
-    ["bun", "test", "./src/app/cli.test.ts"],
-    ["bun", "test", "./src/core/resumableReview.test.ts"],
-    ["bun", "test", "./src/ui/AppHost.interactions.test.tsx"],
-    ["bun", "test", "./src/ui/AppHost.reload.test.tsx"],
-    ["bun", "test", "./src/ui/AppHost.responsive.test.tsx"],
-    ["bun", "test", "./src/ui/components/ui-components.test.tsx"],
-    ["bun", "test", "./src/ui/lib/appMenus.test.ts"],
-    ["bun", "test", "./src/ui/lib/sourceSwitch.test.ts"],
-    ["bun", "test", "./src/ui/lib/ui-lib.test.ts"]
+    ["bun", "test", "./packages/hunk/src/app/cli.test.ts"],
+    ["bun", "test", "./packages/hunk/src/core/resumableReview.test.ts"],
+    ["bun", "test", "./packages/hunk/src/ui/AppHost.interactions.test.tsx"],
+    ["bun", "test", "./packages/hunk/src/ui/AppHost.reload.test.tsx"],
+    ["bun", "test", "./packages/hunk/src/ui/AppHost.responsive.test.tsx"],
+    ["bun", "test", "./packages/hunk/src/ui/components/ui-components.test.tsx"],
+    ["bun", "test", "./packages/hunk/src/ui/lib/appMenus.test.ts"],
+    ["bun", "test", "./packages/hunk/src/ui/lib/sourceSwitch.test.ts"],
+    ["bun", "test", "./packages/hunk/src/ui/lib/ui-lib.test.ts"],
+    [
+      "env",
+      "JJ_CONFIG=/dev/null",
+      "GIT_CONFIG_GLOBAL=/dev/null",
+      "bun",
+      "test",
+      "./test/cli/log.test.ts"
+    ]
   ]
 }

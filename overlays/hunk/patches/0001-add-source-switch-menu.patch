@@ -1,11 +1,11 @@
-diff --git a/src/ui/App.tsx b/src/ui/App.tsx
-index 9c5cdd1..a754053 100644
---- a/src/ui/App.tsx
-+++ b/src/ui/App.tsx
-@@ -106,6 +106,14 @@ import { setMouseCapture } from "./lib/mouseCapture";
- import { openSelectedFileInEditor } from "./lib/openInEditor";
+diff --git a/packages/hunk/src/ui/App.tsx b/packages/hunk/src/ui/App.tsx
+index 69c28404..29c6f51c 100644
+--- a/packages/hunk/src/ui/App.tsx
++++ b/packages/hunk/src/ui/App.tsx
+@@ -117,6 +117,14 @@ import { openSelectedFileInEditor } from "./lib/openInEditor";
  import { resolveResponsiveLayout } from "./lib/responsive";
  import type { WorkspaceRefreshRequest } from "./currentReviewRefresh";
+ import { ThemeController } from "./theme/controller";
 +import {
 +  buildReviewSourceItems,
 +  repoPathForInput,
@@ -17,8 +17,8 @@ index 9c5cdd1..a754053 100644
  
  type FocusArea = "files" | "filter" | "note";
  
-@@ -850,6 +858,19 @@ export function App({
-     setShowMenuBar((current) => !current);
+@@ -981,6 +989,19 @@ export function App({
+     setShowMenuBar(nextShowMenuBar);
    };
  
 +  const currentViewOptions = useMemo(
@@ -37,7 +37,7 @@ index 9c5cdd1..a754053 100644
    const { canRefreshCurrentInput, refreshCurrentInput, triggerRefreshCurrentInput } =
      useCurrentReviewRefreshController({
        input: bootstrap.input,
-@@ -858,18 +879,48 @@ export function App({
+@@ -989,18 +1010,48 @@ export function App({
        onWatchReloadPending: publishWatchReloadPending,
        reloadContext: bootstrap.reloadContext,
        sourceLabel: bootstrap.changeset.sourceLabel,
@@ -95,7 +95,7 @@ index 9c5cdd1..a754053 100644
    const {
      closeExtensionTrustPrompt,
      denyRepoExtensions,
-@@ -1091,6 +1142,8 @@ export function App({
+@@ -1259,6 +1310,8 @@ export function App({
            action: exitKeyboardMode,
          }
        : undefined,
@@ -104,7 +104,7 @@ index 9c5cdd1..a754053 100644
      copyDecorations,
      layoutMode,
      filesPaneVisible,
-@@ -1107,6 +1160,7 @@ export function App({
+@@ -1275,6 +1328,7 @@ export function App({
      activeMenuId,
      activeMenuItemIndex,
      activeMenuSpec,
@@ -112,7 +112,7 @@ index 9c5cdd1..a754053 100644
      activeMenuWidth,
      activateCurrentMenuItem,
      closeMenu,
-@@ -1119,6 +1173,7 @@ export function App({
+@@ -1287,6 +1341,7 @@ export function App({
    } = useMenuController(menus);
  
    useAppKeyboardShortcuts({
@@ -120,7 +120,7 @@ index 9c5cdd1..a754053 100644
      activeMenuId,
      activateCurrentMenuItem,
      closeAgentSkill,
-@@ -1146,6 +1201,7 @@ export function App({
+@@ -1315,6 +1370,7 @@ export function App({
      moveMenuItem,
      moveThemeSelector,
      openMenu,
@@ -128,7 +128,7 @@ index 9c5cdd1..a754053 100644
      saveConfigPromptOpen,
      saveViewPreferencesAndQuit,
      discardViewPreferencesAndQuit,
-@@ -1169,7 +1225,8 @@ export function App({
+@@ -1338,7 +1394,8 @@ export function App({
      (sum, file) => sum + file.stats.deletions,
      0,
    );
@@ -138,11 +138,11 @@ index 9c5cdd1..a754053 100644
    const diffHeaderStatsWidth = maxFileHeaderStatsWidth(filteredFiles);
    const diffHeaderLabelWidth = Math.max(0, diffContentWidth - diffHeaderStatsWidth - 1);
    const diffSeparatorWidth = Math.max(0, diffContentWidth - 2);
-diff --git a/src/ui/AppHost.interactions.test.tsx b/src/ui/AppHost.interactions.test.tsx
-index e7c7074..f53a9eb 100644
---- a/src/ui/AppHost.interactions.test.tsx
-+++ b/src/ui/AppHost.interactions.test.tsx
-@@ -789,7 +789,7 @@ describe("App interactions", () => {
+diff --git a/packages/hunk/src/ui/AppHost.interactions.test.tsx b/packages/hunk/src/ui/AppHost.interactions.test.tsx
+index 52a99000..0c48cb45 100644
+--- a/packages/hunk/src/ui/AppHost.interactions.test.tsx
++++ b/packages/hunk/src/ui/AppHost.interactions.test.tsx
+@@ -805,7 +805,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -151,7 +151,7 @@ index e7c7074..f53a9eb 100644
  
        await act(async () => {
          await setup.mockInput.pressKey("m", { shift: true });
-@@ -797,7 +797,7 @@ describe("App interactions", () => {
+@@ -813,7 +813,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        frame = setup.captureCharFrame();
@@ -160,7 +160,7 @@ index e7c7074..f53a9eb 100644
        expect(firstNonEmptyLine(frame)).not.toContain("─");
  
        await act(async () => {
-@@ -807,7 +807,7 @@ describe("App interactions", () => {
+@@ -823,7 +823,7 @@ describe("App interactions", () => {
          nextFrame.includes("Toggle files/filter focus"),
        );
        expect(frame).toContain("Toggle files/filter focus");
@@ -169,7 +169,7 @@ index e7c7074..f53a9eb 100644
      } finally {
        await act(async () => {
          setup.renderer.destroy();
-@@ -828,7 +828,7 @@ describe("App interactions", () => {
+@@ -844,7 +844,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -178,7 +178,7 @@ index e7c7074..f53a9eb 100644
        expect(firstNonEmptyLine(frame)).not.toContain("─");
  
        await act(async () => {
-@@ -838,7 +838,7 @@ describe("App interactions", () => {
+@@ -854,7 +854,7 @@ describe("App interactions", () => {
          nextFrame.includes("Toggle files/filter focus"),
        );
        expect(frame).toContain("Toggle files/filter focus");
@@ -187,7 +187,7 @@ index e7c7074..f53a9eb 100644
      } finally {
        await act(async () => {
          setup.renderer.destroy();
-@@ -1617,6 +1617,10 @@ describe("App interactions", () => {
+@@ -1641,6 +1641,10 @@ describe("App interactions", () => {
        expect(frame).toContain("Reload");
        expect(frame).toContain("Quit");
  
@@ -198,7 +198,7 @@ index e7c7074..f53a9eb 100644
        await act(async () => {
          await setup.mockInput.pressArrow("right");
        });
-@@ -1941,7 +1945,7 @@ describe("App interactions", () => {
+@@ -1961,7 +1965,7 @@ describe("App interactions", () => {
        });
        await waitForFrame(setup, (frame) => frame.includes("Toggle files/filter focus"), 12);
  
@@ -207,7 +207,7 @@ index e7c7074..f53a9eb 100644
          await act(async () => {
            await setup.mockInput.pressArrow("right");
          });
-@@ -3228,7 +3232,7 @@ describe("App interactions", () => {
+@@ -3248,7 +3252,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -216,7 +216,7 @@ index e7c7074..f53a9eb 100644
        expect((frame.match(/alpha\.ts/g) ?? []).length).toBe(1);
  
        await act(async () => {
-@@ -3237,7 +3241,7 @@ describe("App interactions", () => {
+@@ -3257,7 +3261,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        frame = setup.captureCharFrame();
@@ -225,11 +225,11 @@ index e7c7074..f53a9eb 100644
        expect((frame.match(/alpha\.ts/g) ?? []).length).toBe(2);
  
        await act(async () => {
-diff --git a/src/ui/AppHost.reload.test.tsx b/src/ui/AppHost.reload.test.tsx
-index eafe0f2..2dcba00 100644
---- a/src/ui/AppHost.reload.test.tsx
-+++ b/src/ui/AppHost.reload.test.tsx
-@@ -453,4 +453,69 @@ describe("reload agent attention marks", () => {
+diff --git a/packages/hunk/src/ui/AppHost.reload.test.tsx b/packages/hunk/src/ui/AppHost.reload.test.tsx
+index f89675f3..5b985e3c 100644
+--- a/packages/hunk/src/ui/AppHost.reload.test.tsx
++++ b/packages/hunk/src/ui/AppHost.reload.test.tsx
+@@ -563,4 +563,69 @@ describe("reload agent attention marks", () => {
        await removeTestDirectory(dir);
      }
    });
@@ -299,10 +299,10 @@ index eafe0f2..2dcba00 100644
 +    }
 +  });
  });
-diff --git a/src/ui/AppHost.responsive.test.tsx b/src/ui/AppHost.responsive.test.tsx
-index 24d688d..5be3216 100644
---- a/src/ui/AppHost.responsive.test.tsx
-+++ b/src/ui/AppHost.responsive.test.tsx
+diff --git a/packages/hunk/src/ui/AppHost.responsive.test.tsx b/packages/hunk/src/ui/AppHost.responsive.test.tsx
+index f0bfc7cc..aeaf8f34 100644
+--- a/packages/hunk/src/ui/AppHost.responsive.test.tsx
++++ b/packages/hunk/src/ui/AppHost.responsive.test.tsx
 @@ -165,6 +165,12 @@ describe("responsive app", () => {
        await act(async () => {
          await setup.renderOnce();
@@ -331,31 +331,39 @@ index 24d688d..5be3216 100644
      expect(narrow).not.toContain("F10 menu");
      expect((narrow.match(/alpha\.ts/g) ?? []).length).toBe(1);
      expect(narrow).toMatch(/▌.*▌/);
-diff --git a/src/ui/components/chrome/menu.ts b/src/ui/components/chrome/menu.ts
-index 952aff7..5a545ad 100644
---- a/src/ui/components/chrome/menu.ts
-+++ b/src/ui/components/chrome/menu.ts
-@@ -1,6 +1,6 @@
+diff --git a/packages/hunk/src/ui/components/chrome/menu.ts b/packages/hunk/src/ui/components/chrome/menu.ts
+index 3191fa42..0da21a01 100644
+--- a/packages/hunk/src/ui/components/chrome/menu.ts
++++ b/packages/hunk/src/ui/components/chrome/menu.ts
+@@ -1,6 +1,14 @@
  import { measureTextWidth } from "../../lib/text";
  
--export type MenuId = "file" | "view" | "navigate" | "agent" | "extensions" | "help";
-+export type MenuId = "file" | "source" | "view" | "navigate" | "agent" | "extensions" | "help";
+-export type MenuId = "file" | "view" | "navigate" | "commit" | "agent" | "extensions" | "help";
++export type MenuId =
++  | "file"
++  | "source"
++  | "view"
++  | "navigate"
++  | "commit"
++  | "agent"
++  | "extensions"
++  | "help";
  
  export type MenuEntry =
    | {
-@@ -34,6 +34,7 @@ export type AppMenus = Partial<Record<MenuId, MenuEntry[]>>;
+@@ -36,6 +44,7 @@ export type AppMenus = Partial<Record<MenuId, MenuEntry[]>>;
  
  const MENU_LABELS: Record<MenuId, string> = {
    file: "File",
 +  source: "Source",
    view: "View",
    navigate: "Navigate",
-   agent: "Agent",
-diff --git a/src/ui/components/ui-components.test.tsx b/src/ui/components/ui-components.test.tsx
-index 74d9acd..839ecd4 100644
---- a/src/ui/components/ui-components.test.tsx
-+++ b/src/ui/components/ui-components.test.tsx
-@@ -4537,7 +4537,7 @@ describe("UI components", () => {
+   commit: "Commit",
+diff --git a/packages/hunk/src/ui/components/ui-components.test.tsx b/packages/hunk/src/ui/components/ui-components.test.tsx
+index e7028d4f..cc5b5f89 100644
+--- a/packages/hunk/src/ui/components/ui-components.test.tsx
++++ b/packages/hunk/src/ui/components/ui-components.test.tsx
+@@ -4762,7 +4762,7 @@ describe("UI components", () => {
      const bootstrap = createBootstrap();
      const frame = await captureFrame(<AppHost bootstrap={bootstrap} />, 280, 24);
  
@@ -364,11 +372,11 @@ index 74d9acd..839ecd4 100644
      expect(frame).toContain("alpha.ts");
      expect(frame).toContain("beta.ts");
      expect(frame).toContain("@@ -1,1 +1,2 @@");
-diff --git a/src/ui/hooks/useAppKeyboardShortcuts.ts b/src/ui/hooks/useAppKeyboardShortcuts.ts
-index 23327df..4b410f1 100644
---- a/src/ui/hooks/useAppKeyboardShortcuts.ts
-+++ b/src/ui/hooks/useAppKeyboardShortcuts.ts
-@@ -23,6 +23,7 @@ type FocusArea = "files" | "filter" | "note";
+diff --git a/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts b/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
+index a6aed327..034551e0 100644
+--- a/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
++++ b/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
+@@ -24,6 +24,7 @@ type FocusArea = "files" | "filter" | "note";
  export interface UseAppKeyboardShortcutsOptions {
    activeMenuId: MenuId | null;
    activateCurrentMenuItem: () => void;
@@ -376,7 +384,7 @@ index 23327df..4b410f1 100644
    closeAgentSkill: () => void;
    closeHelp: () => void;
    closeMenu: () => void;
-@@ -63,6 +64,7 @@ export interface UseAppKeyboardShortcutsOptions {
+@@ -65,6 +66,7 @@ export interface UseAppKeyboardShortcutsOptions {
    moveMenuItem: (delta: number) => void;
    moveThemeSelector: (delta: number) => void;
    openMenu: (menuId: MenuId) => void;
@@ -384,7 +392,7 @@ index 23327df..4b410f1 100644
    saveConfigPromptOpen: boolean;
    saveViewPreferencesAndQuit: () => void;
    discardViewPreferencesAndQuit: () => void;
-@@ -96,6 +98,7 @@ export interface UseAppKeyboardShortcutsOptions {
+@@ -98,6 +100,7 @@ export interface UseAppKeyboardShortcutsOptions {
   * full contract, including why a boolean cannot express it.
   */
  export function useAppKeyboardShortcuts({
@@ -392,7 +400,7 @@ index 23327df..4b410f1 100644
    activeMenuId,
    activateCurrentMenuItem,
    closeAgentSkill,
-@@ -121,6 +124,7 @@ export function useAppKeyboardShortcuts({
+@@ -124,6 +127,7 @@ export function useAppKeyboardShortcuts({
    sendKeyboardModeKey,
    focusArea,
    moveMenuItem,
@@ -400,7 +408,7 @@ index 23327df..4b410f1 100644
    moveThemeSelector,
    openMenu,
    saveConfigPromptOpen,
-@@ -230,6 +234,14 @@ export function useAppKeyboardShortcuts({
+@@ -235,6 +239,14 @@ export function useAppKeyboardShortcuts({
      return "mine";
    };
  
@@ -415,7 +423,7 @@ index 23327df..4b410f1 100644
    /** Escape closes the topmost open overlay (agent skill, then help). */
    const handleDialogShortcut = (key: KeyEvent): KeyOwner => {
      if (!isEscapeKey(key)) {
-@@ -461,6 +473,10 @@ export function useAppKeyboardShortcuts({
+@@ -451,6 +463,10 @@ export function useAppKeyboardShortcuts({
        return "mine";
      }
  
@@ -426,7 +434,7 @@ index 23327df..4b410f1 100644
      return "notMine";
    };
  
-@@ -598,6 +614,7 @@ export function useAppKeyboardShortcuts({
+@@ -588,6 +604,7 @@ export function useAppKeyboardShortcuts({
          handleExtensionTrustPromptShortcut,
          handleSaveConfigPromptShortcut,
          handleExtensionDialogShortcut,
@@ -434,11 +442,11 @@ index 23327df..4b410f1 100644
          handleMenuToggleShortcut,
          handleDialogShortcut,
          handleThemeSelectorShortcut,
-diff --git a/src/ui/hooks/useMenuController.ts b/src/ui/hooks/useMenuController.ts
-index c1c9494..e8a7e26 100644
---- a/src/ui/hooks/useMenuController.ts
-+++ b/src/ui/hooks/useMenuController.ts
-@@ -107,6 +107,18 @@ export function useMenuController(menus: AppMenus) {
+diff --git a/packages/hunk/src/ui/hooks/useMenuController.ts b/packages/hunk/src/ui/hooks/useMenuController.ts
+index b5e874d7..5acb3cc5 100644
+--- a/packages/hunk/src/ui/hooks/useMenuController.ts
++++ b/packages/hunk/src/ui/hooks/useMenuController.ts
+@@ -125,6 +125,18 @@ export function useMenuController(menus: AppMenus) {
      closeMenu();
    };
  
@@ -457,19 +465,19 @@ index c1c9494..e8a7e26 100644
    const activeMenuSpec = menuSpecs.find((menu) => menu.id === openMenuId);
    const activeMenuWidth = menuWidth(activeMenuEntries) + 2;
  
-@@ -117,6 +129,7 @@ export function useMenuController(menus: AppMenus) {
+@@ -135,6 +147,7 @@ export function useMenuController(menus: AppMenus) {
      activeMenuSpec,
      activeMenuWidth,
      activateCurrentMenuItem,
 +    activateMenuItemByHint,
      closeMenu,
+     getActiveMenuId: () => liveMenuId.current,
      menuSpecs,
-     moveMenuItem,
-diff --git a/src/ui/lib/appCommands.test.ts b/src/ui/lib/appCommands.test.ts
-index 7e0ddd0..3873fe0 100644
---- a/src/ui/lib/appCommands.test.ts
-+++ b/src/ui/lib/appCommands.test.ts
-@@ -447,6 +447,8 @@ describe("command catalog parity", () => {
+diff --git a/packages/hunk/src/ui/lib/appCommands.test.ts b/packages/hunk/src/ui/lib/appCommands.test.ts
+index 64537af0..22117825 100644
+--- a/packages/hunk/src/ui/lib/appCommands.test.ts
++++ b/packages/hunk/src/ui/lib/appCommands.test.ts
+@@ -475,6 +475,8 @@ describe("command catalog parity", () => {
      const { commands } = createTestCommands();
      const catalogued = new Set(APP_COMMAND_CATALOG.map((entry) => entry.id));
      const menus = buildAppMenus({
@@ -478,10 +486,10 @@ index 7e0ddd0..3873fe0 100644
        commands,
        copyDecorations: false,
        cursorLine: "row",
-diff --git a/src/ui/lib/appMenus.test.ts b/src/ui/lib/appMenus.test.ts
-index a738816..b73dcdb 100644
---- a/src/ui/lib/appMenus.test.ts
-+++ b/src/ui/lib/appMenus.test.ts
+diff --git a/packages/hunk/src/ui/lib/appMenus.test.ts b/packages/hunk/src/ui/lib/appMenus.test.ts
+index 41d9c9b9..20bce741 100644
+--- a/packages/hunk/src/ui/lib/appMenus.test.ts
++++ b/packages/hunk/src/ui/lib/appMenus.test.ts
 @@ -25,6 +25,11 @@ const MENU_STATE: Omit<BuildAppMenusOptions, "commands" | "extensionCommands"> =
    showLineNumbers: true,
    showMenuBar: true,
@@ -494,7 +502,7 @@ index a738816..b73dcdb 100644
  };
  
  /** Build the built-in command table over recording callbacks, plus the log it writes. */
-@@ -340,3 +345,21 @@ describe("the Extensions menu", () => {
+@@ -344,3 +349,21 @@ describe("the Extensions menu", () => {
      expect(ran).toEqual(["notes", "blame"]);
    });
  });
@@ -516,10 +524,10 @@ index a738816..b73dcdb 100644
 +    expect(selected).toEqual(["staged"]);
 +  });
 +});
-diff --git a/src/ui/lib/appMenus.ts b/src/ui/lib/appMenus.ts
-index 0614b6c..4fa8cbf 100644
---- a/src/ui/lib/appMenus.ts
-+++ b/src/ui/lib/appMenus.ts
+diff --git a/packages/hunk/src/ui/lib/appMenus.ts b/packages/hunk/src/ui/lib/appMenus.ts
+index 93674747..2919c443 100644
+--- a/packages/hunk/src/ui/lib/appMenus.ts
++++ b/packages/hunk/src/ui/lib/appMenus.ts
 @@ -1,5 +1,6 @@
  import type { CursorLine, LayoutMode } from "../../core/run/commandInputs";
  import type { AppMenus, MenuEntry, MenuId } from "../components/chrome/menu";
@@ -549,8 +557,8 @@ index 0614b6c..4fa8cbf 100644
    showMenuBar,
    wrapLines,
  }: BuildAppMenusOptions): AppMenus {
--  const specs: Record<Exclude<MenuId, "extensions">, MenuEntrySpec[]> = {
-+  const specs: Record<Exclude<MenuId, "extensions" | "source">, MenuEntrySpec[]> = {
+-  const specs: Record<Exclude<MenuId, "extensions" | "commit">, MenuEntrySpec[]> = {
++  const specs: Record<Exclude<MenuId, "extensions" | "source" | "commit">, MenuEntrySpec[]> = {
      file: [
        { commandId: "hunk.app.toggleFocusArea", label: "Toggle files/filter focus" },
        { commandId: "hunk.review.focusFilter", label: "Focus filter" },
@@ -568,11 +576,11 @@ index 0614b6c..4fa8cbf 100644
      view: [
        ...toMenuEntries(commands, specs.view),
        ...fileViewEntries,
-diff --git a/src/ui/lib/sourceSwitch.test.ts b/src/ui/lib/sourceSwitch.test.ts
+diff --git a/packages/hunk/src/ui/lib/sourceSwitch.test.ts b/packages/hunk/src/ui/lib/sourceSwitch.test.ts
 new file mode 100644
-index 0000000..5dd08f1
+index 00000000..707d308e
 --- /dev/null
-+++ b/src/ui/lib/sourceSwitch.test.ts
++++ b/packages/hunk/src/ui/lib/sourceSwitch.test.ts
 @@ -0,0 +1,282 @@
 +import { execFileSync } from "node:child_process";
 +import {
@@ -632,7 +640,7 @@ index 0000000..5dd08f1
 +  });
 +
 +  test("resolves built-in sources to cli inputs", () => {
-+    const options = { mode: "stack" as const };
++    const options = { mode: "unified" as const };
 +
 +    expect(resolveReviewSourceInput("unstaged", "/repo", options)).toMatchObject({
 +      kind: "input",
@@ -841,11 +849,11 @@ index 0000000..5dd08f1
 +        hint: "1",
 +      });
 +
-+      const result = resolveReviewSourceInput("pr:123", repo, { mode: "stack" });
++      const result = resolveReviewSourceInput("pr:123", repo, { mode: "unified" });
 +      expect(result.kind).toBe("input");
 +      if (result.kind === "input") {
 +        expect(result).toMatchObject({ label: "PR #123", sourcePath: repo });
-+        expect(result.input).toMatchObject({ kind: "patch", options: { mode: "stack" } });
++        expect(result.input).toMatchObject({ kind: "patch", options: { mode: "unified" } });
 +        expect(sourceIndicatorLabel(result.input, "")).toBe("PR #123");
 +        expect(repoPathForInput(result.input, "")).toBe(repo);
 +      }
@@ -856,11 +864,11 @@ index 0000000..5dd08f1
 +    }
 +  });
 +});
-diff --git a/src/ui/lib/sourceSwitch.ts b/src/ui/lib/sourceSwitch.ts
+diff --git a/packages/hunk/src/ui/lib/sourceSwitch.ts b/packages/hunk/src/ui/lib/sourceSwitch.ts
 new file mode 100644
-index 0000000..c1ef257
+index 00000000..c1ef2572
 --- /dev/null
-+++ b/src/ui/lib/sourceSwitch.ts
++++ b/packages/hunk/src/ui/lib/sourceSwitch.ts
 @@ -0,0 +1,447 @@
 +import { execFileSync } from "node:child_process";
 +import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -1310,7 +1318,7 @@ index 0000000..c1ef257
 +  return { kind: "notice", message: "Unsupported source." };
 +}
 diff --git a/test/pty/chrome.test.ts b/test/pty/chrome.test.ts
-index 0eea9d9..73a7b79 100644
+index 1ec5ddd0..dda58d00 100644
 --- a/test/pty/chrome.test.ts
 +++ b/test/pty/chrome.test.ts
 @@ -174,7 +174,7 @@ describe("PTY chrome", () => {
@@ -1359,7 +1367,7 @@ index 0eea9d9..73a7b79 100644
        });
  
 diff --git a/test/pty/pager.test.ts b/test/pty/pager.test.ts
-index dab2b0d..f7efa2b 100644
+index b9f59f16..47af34d4 100644
 --- a/test/pty/pager.test.ts
 +++ b/test/pty/pager.test.ts
 @@ -48,7 +48,7 @@ describe("PTY pager", () => {
