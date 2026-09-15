@@ -11,12 +11,7 @@ with lib.my;
 let
   cfg = config.modules.shell.git;
   inherit (config.dotfiles) configDir;
-  hunkPackageBase = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  hunkMetadata = builtins.fromJSON (builtins.readFile ../../../overlays/hunk/package-harness.json);
-  hunkPatches = map (patch: ../../../overlays/hunk + "/${patch}") hunkMetadata.patches;
-  hunkPackagePatched = hunkPackageBase.overrideAttrs (old: {
-    patches = (old.patches or [ ]) ++ hunkPatches;
-  });
+  hunkPackagePatched = import ../../../overlays/hunk/package.nix { inherit inputs pkgs; };
   hunkPackage =
     if pkgs.stdenv.hostPlatform.isDarwin then
       hunkPackagePatched.overrideAttrs (old: {

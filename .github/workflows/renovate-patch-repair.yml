@@ -107,6 +107,15 @@ jobs:
           docker exec --workdir /workspace "$CONTAINER"
           nix develop /trusted#agent --command pkg-check "$TARGET"
 
+      - name: Check Hunk runtime compatibility
+        if: steps.initial-check.outcome == 'success' && steps.target.outputs.name == 'hunk'
+        env:
+          CONTAINER: ${{ steps.sandbox.outputs.name }}
+        run: >-
+          docker exec --workdir /workspace "$CONTAINER"
+          nix build --no-link --print-build-logs
+          .#checks.x86_64-linux.hunk-config-compatibility
+
       - uses: actions/setup-node@v4
         if: steps.initial-check.outcome == 'failure'
         with:
@@ -175,9 +184,14 @@ jobs:
         env:
           CONTAINER: ${{ steps.validation.outputs.name }}
           TARGET: ${{ steps.target.outputs.name }}
-        run: >-
-          docker exec --workdir /workspace "$CONTAINER"
-          nix develop /trusted#agent --command pkg-check "$TARGET"
+        run: |
+          docker exec --workdir /workspace "$CONTAINER" \
+            nix develop /trusted#agent --command bash -euo pipefail -c '
+              pkg-check "$1"
+              if [[ "$1" == hunk ]]; then
+                nix build --no-link --print-build-logs .#checks.x86_64-linux.hunk-config-compatibility
+              fi
+            ' bash "$TARGET"
 
       - name: Stop isolated validation sandbox
         if: always() && steps.validation.outputs.name != ''

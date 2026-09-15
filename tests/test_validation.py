@@ -93,6 +93,21 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(selected["files"], ["config/tmux/old", "new"])
         self.assertIn("zunit-tests", selected["checks"])
 
+    def test_hunk_changes_select_runtime_config_compatibility(self):
+        patterns = v.CHECKS["hunk-config-compatibility"]
+        for file in (
+            "config/hunk/config.toml",
+            "modules/shell/git/default.nix",
+            "overlays/hunk/package-harness.json",
+            "overlays/hunk/patches/example.patch",
+        ):
+            with self.subTest(file=file):
+                self.assertTrue(v.matches([file], patterns))
+        self.assertFalse(v.matches(["config/jj/config.toml"], patterns))
+
+        self.write("flake.lock", "changed")
+        self.assertIn("hunk-config-compatibility", self.selection()["checks"])
+
     def test_task_scopes_do_not_select_unrelated_dirt_or_prefix_siblings(self):
         self.write("owned/a.md", "yes")
         self.write("owned-other/b.nix", "no")

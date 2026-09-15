@@ -43,6 +43,11 @@ CHECKS = {
         "bin/check-patch-locality",
         "tests/test_package_policy.py",
     ],
+    "hunk-config-compatibility": [
+        "config/hunk/*",
+        "modules/shell/git/*",
+        "overlays/hunk/*",
+    ],
     "agent-run-tests": [
         "bin/agent-*",
         "bin/hey.d/agent-run.nu",
