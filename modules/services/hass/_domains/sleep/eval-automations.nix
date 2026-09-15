@@ -3,7 +3,7 @@
 # No VM needed — evaluates merged NixOS config and checks:
 #   - Every automation has initial_state = true
 #   - Wake detection automations exist and keep morning guards
-#   - Auto Good Morning automation stays removed
+#   - Auto Good Morning requires all home residents awake and Sleep Focus inactive
 #   - Core sleep + cross-domain safety automations exist
 { nixosConfig, pkgs }:
 let
@@ -14,6 +14,8 @@ let
     head
     concatStringsSep
     ;
+
+  inherit (pkgs.lib) hasInfix;
 
   haConfig = nixosConfig.config.services.home-assistant.config;
   automations = haConfig.automation;
@@ -43,6 +45,15 @@ let
       t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == toState
     ) triggers;
 
+  hasStateTriggerFrom =
+    triggers: entityId: fromState:
+    any (
+      t:
+      (t.platform or null) == "state"
+      && (t.entity_id or null) == entityId
+      && (t.from or null) == fromState
+    ) triggers;
+
   hasActionCall =
     actions: actionName:
     any (a: (a.action or null) == actionName || (a.service or null) == actionName) actions;
@@ -57,6 +68,10 @@ let
       c:
       (c.condition or null) == "state" && (c.entity_id or null) == entityId && (c.state or null) == state
     ) conditions;
+
+  hasTemplateConditionContaining =
+    conditions: text:
+    any (c: (c.condition or null) == "template" && hasInfix text (c.value_template or "")) conditions;
 
   toList =
     v:
@@ -89,7 +104,6 @@ let
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
 
-  # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
   windingDownScene = findScene "Winding Down";
@@ -111,8 +125,26 @@ let
       msg = "automation 'monica_awake_detection' missing";
     }
     {
-      test = goodMorningBothAwake == null;
-      msg = "automation 'good_morning_both_awake' should remain removed";
+      test =
+        goodMorningBothAwake != null
+        && hasStateTrigger (toList (goodMorningBothAwake.trigger or [ ])) "input_boolean.edmund_awake" "on"
+        && hasStateTrigger (toList (goodMorningBothAwake.trigger or [ ])) "input_boolean.monica_awake" "on"
+        && hasStateTriggerFrom (toList (
+          goodMorningBothAwake.trigger or [ ]
+        )) "sensor.edmunds_iphone_focus_name" "Sleep"
+        && hasTimeGuard (toList (goodMorningBothAwake.condition or [ ])) "07:00:00"
+        && hasStateCondition (toList (goodMorningBothAwake.condition or [ ])) "input_boolean.goodnight" "on"
+        && hasTemplateConditionContaining (toList (
+          goodMorningBothAwake.condition or [ ]
+        )) "focus_name not in ['Sleep', 'unknown', 'unavailable']"
+        &&
+          (goodMorningBothAwake.action or [ ]) == [
+            {
+              action = "script.turn_on";
+              target.entity_id = "script.good_morning";
+            }
+          ];
+      msg = "Good Morning must require all home residents awake and Edmund outside Sleep Focus";
     }
 
     {
@@ -147,6 +179,22 @@ let
     {
       test = sleepFocusOffMonica != null;
       msg = "automation 'sleep_focus_off_stop_monica' missing";
+    }
+    {
+      test =
+        sleepFocusOffEdmund != null
+        && hasStateTriggerFrom (toList (
+          sleepFocusOffEdmund.trigger or [ ]
+        )) "sensor.edmunds_iphone_focus_name" "Sleep";
+      msg = "sleep_focus_off_stop_edmund must trigger only when named Sleep Focus ends";
+    }
+    {
+      test =
+        edmundAwake != null
+        && hasStateTriggerFrom (toList (
+          edmundAwake.trigger or [ ]
+        )) "sensor.edmunds_iphone_focus_name" "Sleep";
+      msg = "edmund_awake_detection must use named Sleep Focus instead of generic focus-off";
     }
     {
       test =

@@ -148,15 +148,20 @@ Wake detection automations still update:
 - `input_boolean.edmund_awake`
 - `input_boolean.monica_awake`
 
-These booleans are tracking-only now (for observability/manual use).
+These booleans combine bed presence, charging, activity, explicit phone updates,
+and Focus transitions. No single signal starts Good Morning by itself.
 
 ## Good Morning
 
-Good Morning is intentionally **not auto-triggered** by wake detection anymore.
-Use `script.good_morning` through voice or manual activation; the scene is only its
-immediate-state component. The script waits ten minutes before turning on the desk
-monitor and desk POP switches to avoid the bright display at wake-up. Activating Good
-Morning again restarts the delay; a bedtime activation cancels the pending power-on.
+From 7 AM to noon, Good Morning runs when every resident who is home has been
+marked awake. Edmund's named Focus is a safety gate rather than the trigger: while
+his phone reports `Sleep`—or the Focus name is unavailable—the automatic routine
+cannot run. This prevents a noisy bed/phone signal from starting the house while
+Sleep Focus is still active. Voice and manual activation remain available, and
+the scene is only the script's immediate-state component. The script waits ten
+minutes before turning on the desk monitor and desk POP switches to avoid the
+bright display at wake-up. Activating Good Morning again restarts the delay; a
+bedtime activation cancels the pending power-on.
 
 ## Apple / 8Sleep Integration
 
@@ -172,7 +177,9 @@ Current active integrations:
 
 **Sleep Focus off → stop 8Sleep side:**
 
-- Triggers when iPhone focus turns off (6–9am)
+- Edmund triggers only when `sensor.edmunds_iphone_focus_name` leaves `Sleep`;
+  Monica retains the generic Focus-off trigger until named reporting is configured
+- Runs from 6–9am
 - Turns off the alarm switch and calls 8Sleep `side_off`
 - Separate automations for Edmund and Monica
 
@@ -190,11 +197,12 @@ Current active integrations:
 
 ### iPhone Sensors
 
-| Entity                                      | Notes                                     |
-| ------------------------------------------- | ----------------------------------------- |
-| `binary_sensor.edmunds_iphone_focus`        | Any focus active (Sleep, DND, Work)       |
-| `sensor.edmunds_iphone_battery_state`       | Charging / Not Charging                   |
-| `sensor.edmunds_iphone_activity`            | Stationary / Walking / Unknown            |
-| `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch |
+| Entity                                      | Notes                                            |
+| ------------------------------------------- | ------------------------------------------------ |
+| `sensor.edmunds_iphone_focus_name`          | Explicitly mapped Focus name (Sleep/Work)        |
+| `binary_sensor.edmunds_iphone_focus`        | Any Focus active; not used for Edmund wake logic |
+| `sensor.edmunds_iphone_battery_state`       | Charging / Not Charging                          |
+| `sensor.edmunds_iphone_activity`            | Stationary / Walking / Unknown                   |
+| `sensor.edmunds_iphone_last_update_trigger` | Launch / Siri / Manual / Background Fetch        |
 
 (Monica equivalents: replace `edmunds` with `monicas`)

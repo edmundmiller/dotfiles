@@ -15,10 +15,12 @@ scheduling. [README.md](README.md) and the
   per night. `sleep_homeostasis_test_tick` with ISO8601 `now` exercises the same
   actions, so firing it is not read-only verification.
 - iOS next-alarm sync is disabled pending a helper/Shortcut bridge. Eight Sleep
-  refreshes every two minutes from 7:30–11 PM while Edmund is home; focus off
-  dismisses its alarm from 6–9 AM. Focus sensors are generic, not mode-specific.
-- Wake detection updates booleans only. Good Morning is manual/voice; Eight Sleep
-  bed presence is too unreliable to activate it automatically.
+  refreshes every two minutes from 7:30–11 PM while Edmund is home. Edmund's
+  named Sleep Focus exit stops his Eight Sleep side from 6–9 AM; Monica retains
+  generic focus-off handling.
+- Wake signals set per-person booleans. From 7 AM–noon, Good Morning runs once
+  every resident who is home is awake, but fails closed while Edmund's named
+  Focus is `Sleep` or unavailable. Manual/voice Good Morning remains supported.
 
 Consumers include ambient presence, `modes.nix`/`everything_off`, lighting,
 climate, vacation, and the GoodMorning voice intent. Preserve their helper

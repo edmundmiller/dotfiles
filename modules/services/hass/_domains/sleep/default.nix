@@ -5,7 +5,7 @@
 #   - input_boolean.edmund_awake / monica_awake (wake detection)
 #   - Circadian phase helpers (applied once per alarm schedule)
 #   - Scenes: Winding Down → Get Ready for Bed → Good Night → Sleep → Good Morning
-#   - Automations: circadian homeostasis, 8Sleep focus-off dismissal, wake detection
+#   - Automations: circadian homeostasis, guarded wake detection, 8Sleep dismissal
 #
 # Alarm-driven flow (see modules/services/hass/docs/adr/0001-*):
 #   Winding Down      ← Sleep - 60 minutes (soft circadian cueing)
@@ -18,16 +18,16 @@
 #
 # Apple / 8Sleep integration:
 #   iOS next-alarm sensor sync is declaratively disabled; no passive iPhone alarm entity exists.
-#   Sleep Focus off 6–9am → dismiss 8Sleep alarm + side_off (manual wake = skip alarm)
+#   Edmund's named Sleep Focus exit contributes a wake signal and stops 8Sleep
 #
 # Entity name notes (verify in HA dev tools > States if IDs change):
 #   8Sleep service target: sensor.edmund_s_eight_sleep_side_sleep_stage
 #   8Sleep next alarm: sensor.edmund_s_eight_sleep_side_next_alarm (timestamp)
 #   8Sleep next alarm switch: switch.edmund_s_eight_sleep_side_next_alarm
-#   iPhone focus: binary_sensor.edmunds_iphone_focus (on = any focus active)
+#   iPhone focus name: sensor.edmunds_iphone_focus_name (Sleep / Work)
 #
-# NOTE: Wake detection is retained, but auto Good Morning is intentionally removed.
-# Good Morning remains available as a scene for manual/voice activation.
+# NOTE: Good Morning requires every resident who is home to be marked awake.
+# Edmund's named Sleep Focus prevents activation while Sleep is still active.
 { lib, pkgs, ... }:
 let
   inherit (import ../../_lib.nix) ensureEnabled;
@@ -47,10 +47,12 @@ let
     bedStateType = "sensor.edmund_s_eight_sleep_side_bed_state_type";
     heartRate = "sensor.edmund_s_eight_sleep_side_heart_rate";
 
-    # iPhone companion app entities. Focus is generic: on means any Focus mode,
-    # not specifically Sleep Focus. updateTrigger helps distinguish manual/Siri
-    # updates from background updates in wake-detection heuristics.
-    focus = "binary_sensor.edmunds_iphone_focus";
+    # Named Focus reporting distinguishes Sleep from Work. A transition away
+    # from Sleep is an explicit wake signal without treating Work changes as wake.
+    sleepFocusExit = {
+      entity_id = "sensor.edmunds_iphone_focus_name";
+      from = "Sleep";
+    };
     battery = "sensor.edmunds_iphone_battery_state";
     activity = "sensor.edmunds_iphone_activity";
     updateTrigger = "sensor.edmunds_iphone_last_update_trigger";
@@ -76,8 +78,12 @@ let
     bedStateType = "sensor.monica_s_eight_sleep_side_bed_state_type";
     heartRate = "sensor.monica_s_eight_sleep_side_heart_rate";
 
-    # iPhone companion app entities; focus is generic, not Sleep-specific.
-    focus = "binary_sensor.monicas_iphone_focus";
+    # Monica has not configured named Focus reporting yet, so retain her generic
+    # focus-off behavior until sensor.monicas_iphone_focus_name exists.
+    sleepFocusExit = {
+      entity_id = "binary_sensor.monicas_iphone_focus";
+      to = "off";
+    };
     battery = "sensor.monicas_iphone_battery_state";
     activity = "sensor.monicas_iphone_activity";
     updateTrigger = "sensor.monicas_iphone_last_update_trigger";
@@ -148,9 +154,8 @@ let
     description = "${p.name} turns off Sleep Focus 6–9am → cancel alarm, turn off bed";
     trigger = {
       platform = "state";
-      entity_id = p.focus;
-      to = "off";
-    };
+    }
+    // p.sleepFocusExit;
     condition = [
       {
         condition = "time";
@@ -198,11 +203,7 @@ let
         to = "off";
         "for".minutes = 5;
       }
-      {
-        platform = "state";
-        entity_id = p.focus;
-        to = "off";
-      }
+      ({ platform = "state"; } // p.sleepFocusExit)
       {
         platform = "state";
         entity_id = p.battery;
@@ -710,11 +711,70 @@ in
       (mkSleepFocusOff edmund)
       (mkSleepFocusOff monica)
 
-      # Wake detection retained for awake state tracking only.
+      # Wake signals nominate each person as awake; Good Morning runs only once
+      # every resident who is home is awake. Edmund's named Focus is a fail-closed
+      # safety gate, not the primary trigger: stale/unavailable data or Sleep still
+      # being active blocks the routine while Edmund is home.
+      {
+        alias = "Good Morning - Everyone Home Awake";
+        id = "good_morning_both_awake";
+        description = "All residents who are home are awake and Edmund is not in Sleep Focus → run Good Morning";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "input_boolean.edmund_awake";
+            to = "on";
+          }
+          {
+            platform = "state";
+            entity_id = "input_boolean.monica_awake";
+            to = "on";
+          }
+          {
+            # Re-evaluate after the safety gate opens in case an awake signal
+            # arrived while Sleep Focus was still active.
+            platform = "state";
+            entity_id = "sensor.edmunds_iphone_focus_name";
+            from = "Sleep";
+          }
+        ];
+        condition = [
+          {
+            condition = "time";
+            after = "07:00:00";
+            before = "12:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "on";
+          }
+          {
+            condition = "template";
+            value_template = ''
+              {% set edmund_home = is_state('person.edmund_miller', 'home') %}
+              {% set monica_home = is_state('person.moni', 'home') %}
+              {% set focus_name = states('sensor.edmunds_iphone_focus_name') %}
+              {{ (edmund_home or monica_home)
+                 and (not edmund_home or is_state('input_boolean.edmund_awake', 'on'))
+                 and (not monica_home or is_state('input_boolean.monica_awake', 'on'))
+                 and (not edmund_home or focus_name not in ['Sleep', 'unknown', 'unavailable']) }}
+            '';
+          }
+        ];
+        action = [
+          {
+            action = "script.turn_on";
+            target.entity_id = "script.good_morning";
+          }
+        ];
+      }
+
+      # Per-person wake detection supplies the guarded Good Morning inputs.
       (mkWakeDetection edmund)
       (mkWakeDetection monica)
 
-      # Auto Good Morning intentionally disabled.
+      # No raw wake signal bypasses the all-home-residents and Focus gate.
     ]);
   };
 }

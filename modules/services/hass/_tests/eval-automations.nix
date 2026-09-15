@@ -3,7 +3,7 @@
 # No VM needed — evaluates the NixOS module config and checks:
 #   - Every automation has initial_state = true (use ensureEnabled from _lib.nix)
 #   - Wake detection automations exist with guardrails
-#   - Auto Good Morning automation is absent
+#   - Auto Good Morning requires all home residents awake and Sleep Focus inactive
 #   - Required automations/scenes still exist
 #   - Key scene state guarantees remain intact
 { nixosConfig, pkgs }:
@@ -52,6 +52,12 @@ let
     automation: entityId: state:
     any (
       t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.to or null) == state
+    ) (toList (automation.trigger or [ ]));
+
+  hasStateTriggerFrom =
+    automation: entityId: state:
+    any (
+      t: (t.platform or null) == "state" && (t.entity_id or null) == entityId && (t.from or null) == state
     ) (toList (automation.trigger or [ ]));
 
   hasStateTriggerForDuration =
@@ -415,7 +421,6 @@ let
   robotCleaningArrivalActions =
     if robotCleaningArrivalDock == null then [ ] else toList (robotCleaningArrivalDock.action or [ ]);
 
-  # Must stay removed
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
   windingDownScene = findScene "Winding Down";
@@ -442,8 +447,19 @@ let
       msg = "automation 'monica_awake_detection' missing";
     }
     {
-      test = goodMorningBothAwake == null;
-      msg = "automation 'good_morning_both_awake' should be removed";
+      test =
+        goodMorningBothAwake != null
+        && hasStateTrigger goodMorningBothAwake "input_boolean.edmund_awake" "on"
+        && hasStateTrigger goodMorningBothAwake "input_boolean.monica_awake" "on"
+        && hasStateTriggerFrom goodMorningBothAwake "sensor.edmunds_iphone_focus_name" "Sleep"
+        && hasStateCondition (toList (goodMorningBothAwake.condition or [ ])) "input_boolean.goodnight" "on"
+        && hasTemplateConditionContaining (toList (
+          goodMorningBothAwake.condition or [ ]
+        )) "focus_name not in ['Sleep', 'unknown', 'unavailable']"
+        && hasActionTarget (toList (
+          goodMorningBothAwake.action or [ ]
+        )) "script.turn_on" "script.good_morning";
+      msg = "Good Morning must require all home residents awake and Edmund outside Sleep Focus";
     }
     {
       test = legacyRoombaStart == null;
@@ -967,6 +983,17 @@ let
     {
       test = sleepFocusOffMonica != null;
       msg = "automation 'sleep_focus_off_stop_monica' missing";
+    }
+    {
+      test =
+        sleepFocusOffEdmund != null
+        && hasStateTriggerFrom sleepFocusOffEdmund "sensor.edmunds_iphone_focus_name" "Sleep";
+      msg = "sleep_focus_off_stop_edmund must use named Sleep Focus";
+    }
+    {
+      test =
+        edmundAwake != null && hasStateTriggerFrom edmundAwake "sensor.edmunds_iphone_focus_name" "Sleep";
+      msg = "edmund_awake_detection must use named Sleep Focus";
     }
     {
       test =
