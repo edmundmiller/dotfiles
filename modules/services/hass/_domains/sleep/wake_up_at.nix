@@ -424,14 +424,16 @@ in
                 {
                   action = "${edmund.notify}";
                   data = {
-                    title = "🛏️ Get Ready for Bed";
+                    title = "Bedtime";
                     message = "Start bedtime prep. Good Night target is {{ goodnight_ts | timestamp_custom('%-I:%M %p', true) }}.";
                     data = {
-                      tag = "sleep_get_ready_for_bed";
-                      push = {
-                        "interruption-level" = "time-sensitive";
-                        sound = "default";
-                      };
+                      tag = "edmund-bedtime";
+                      live_update = true;
+                      critical_text = "Get Ready";
+                      progress = 1;
+                      progress_max = 3;
+                      notification_icon = "mdi:bed-clock";
+                      notification_icon_color = "#FFB000";
                     };
                   };
                 }
@@ -452,8 +454,17 @@ in
                 {
                   action = "${edmund.notify}";
                   data = {
-                    title = "🛏️ Good Night";
+                    title = "Bedtime";
                     message = "Time to get in bed. Sleep target is {{ sleep_ts | timestamp_custom('%-I:%M %p', true) }} for {{ ideal_wake_ts | timestamp_custom('%-I:%M %p', true) }}–{{ alarm_ts | timestamp_custom('%-I:%M %p', true) }} smart wake window.";
+                    data = {
+                      tag = "edmund-bedtime";
+                      live_update = true;
+                      critical_text = "Good Night";
+                      progress = 2;
+                      progress_max = 3;
+                      notification_icon = "mdi:bed";
+                      notification_icon_color = "#FFB000";
+                    };
                   };
                 }
                 # Future: also notify Monica when her alarm/presence path is added.
@@ -471,6 +482,22 @@ in
                 {
                   action = "script.turn_on";
                   target.entity_id = "script.sleep";
+                }
+                {
+                  action = edmund.notify;
+                  data = {
+                    title = "Bedtime";
+                    message = "Time to sleep. Smart wake window: {{ ideal_wake_ts | timestamp_custom('%-I:%M %p', true) }}–{{ alarm_ts | timestamp_custom('%-I:%M %p', true) }}.";
+                    data = {
+                      tag = "edmund-bedtime";
+                      live_update = true;
+                      critical_text = "Sleep";
+                      progress = 3;
+                      progress_max = 3;
+                      notification_icon = "mdi:sleep";
+                      notification_icon_color = "#4CAF50";
+                    };
+                  };
                 }
               ];
             }
@@ -492,11 +519,44 @@ in
                   action = "input_boolean.turn_on";
                   target.entity_id = "input_boolean.winding_down_done";
                 }
+                {
+                  action = edmund.notify;
+                  data = {
+                    title = "Bedtime";
+                    message = "Winding down. Start bedtime prep at {{ get_ready_ts | timestamp_custom('%-I:%M %p', true) }}.";
+                    data = {
+                      tag = "edmund-bedtime";
+                      live_update = true;
+                      critical_text = "Wind Down";
+                      progress = 0;
+                      progress_max = 3;
+                      notification_icon = "mdi:weather-night";
+                      notification_icon_color = "#FFB000";
+                    };
+                  };
+                }
               ];
             }
           ];
         }
       ];
+    }
+
+    {
+      alias = "Clear Bedtime Live Activity";
+      id = "clear_bedtime_live_activity";
+      mode = "single";
+      trigger = {
+        platform = "time";
+        at = "00:00:00";
+      };
+      action = {
+        action = edmund.notify;
+        data = {
+          message = "clear_notification";
+          data.tag = "edmund-bedtime";
+        };
+      };
     }
 
     {

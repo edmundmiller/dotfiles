@@ -34,6 +34,23 @@ Timing rules:
 - **Get Ready for Bed:** Good Night minus 10 minutes (prep buffer)
 - **Winding Down:** Sleep minus 60 minutes (circadian prelude)
 
+### iPhone bedtime Live Activity
+
+Scheduled phases update one `edmund-bedtime` Live Activity on Edmund's iPhone:
+Winding Down (0%), Get Ready for Bed (33%), Good Night (67%), and Sleep (100%).
+Progress represents scheduled phases, not verified completion of personal tasks.
+The static title is **Bedtime**; each update includes the phase instructions and
+target times. No chronometer is set because iOS replaces the message with its
+timer. Updates replace the previous banners and arrive silently on phase changes,
+not on every scheduler tick. The activity is cleared at midnight, when the
+scheduling window closes. Manual/voice scripts do not send these phase updates.
+
+Requires Home Assistant Core 2026.7+, iOS 17.2+, a Companion app supporting Live
+Activities, and Live Activities enabled for Home Assistant on the phone. The phone
+must reach HA for the token handshake. See the
+[Companion documentation](https://companion.home-assistant.io/docs/notifications/live-activities/).
+Monica's routine remains separate and is not configured here yet.
+
 ### BUSY Bar bedtime progress
 
 During the final 30 minutes before Good Night, Home Assistant draws a countdown and five six-minute checkpoints inside a framed track on the BUSY Bar through the LAN Canvas API. Completed checkpoints are cyan, the current checkpoint is amber, and upcoming checkpoints are dim gray. The drawing uses the namespaced application `home_assistant_bedtime`, priority 50, and 75-second element timeouts. BUSY/custom firmware activity at priority 90 takes precedence. The automation never calls the Matter `light.busy_bar` entity.

@@ -626,6 +626,42 @@ let
       msg = "automation 'circadian_sleep_homeostasis' missing";
     }
     {
+      test =
+        let
+          phases = (builtins.elemAt circadianSleepHomeostasis.action 1).choose;
+          notifications = map (phase: pkgs.lib.last phase.sequence) phases;
+        in
+        map (notification: notification.data.data.progress) notifications == [
+          1
+          2
+          3
+          0
+        ]
+        && builtins.all (
+          notification:
+          notification.action == "notify.mobile_app_edmunds_iphone"
+          && notification.data.title == "Bedtime"
+          && notification.data.data.tag == "edmund-bedtime"
+          && notification.data.data.live_update
+          && notification.data.data.progress_max == 3
+          && !(notification.data.data ? chronometer)
+        ) notifications;
+      msg = "Bedtime phases must update one Edmund Live Activity with ordered progress and visible instructions";
+    }
+    {
+      test =
+        let
+          clear = findAutomation "clear_bedtime_live_activity";
+        in
+        clear != null
+        && clear.trigger.platform == "time"
+        && clear.trigger.at == "00:00:00"
+        && clear.action.action == "notify.mobile_app_edmunds_iphone"
+        && clear.action.data.message == "clear_notification"
+        && clear.action.data.data.tag == "edmund-bedtime";
+      msg = "Bedtime Live Activity must be dismissed with the same tag at midnight";
+    }
+    {
       test = refreshEightSleepWakeSchedule != null;
       msg = "automation 'refresh_eight_sleep_wake_schedule' missing";
     }
