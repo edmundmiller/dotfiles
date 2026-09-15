@@ -327,7 +327,9 @@ in
             ++ [ "${configScript}" ]
             ++ optional cfg.safety.enable "${safetyCheck}";
           ExecStart = "${syncScript}";
-          Restart = "on-failure";
+          # `ob sync --continuous` can exit cleanly after a completed sync;
+          # keep the dead-man-switch target alive in that case too.
+          Restart = "always";
           RestartSec = "30s";
 
           # Load OP_SERVICE_ACCOUNT_TOKEN when tokenFile is configured
