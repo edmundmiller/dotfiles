@@ -8,6 +8,9 @@ let
     final.lib.findFirst (package: (package.pname or "") == "nemo-relay")
       (throw "Hermes runtime is missing its nemo-relay dependency")
       prev.llm-agents."hermes-agent".propagatedBuildInputs;
+  # llm-agents may pin a different Python build than this host's nixpkgs.
+  # withPackages drops modules belonging to another interpreter.
+  hermesPython = upstreamNemoRelay.pythonModule;
   nemoRelay = upstreamNemoRelay.overrideAttrs (_: rec {
     version = "0.8.4";
     src = final.fetchFromGitHub {
@@ -38,7 +41,7 @@ let
     '';
   };
 
-  firecrawlAnydoc = final.python3.pkgs.buildPythonPackage rec {
+  firecrawlAnydoc = hermesPython.pkgs.buildPythonPackage rec {
     pname = "firecrawl-anydoc";
     version = "0.2.4";
     pyproject = true;
@@ -105,7 +108,7 @@ let
           old.propagatedBuildInputs or [ ]
         )
         ++ [ firecrawlAnydoc ];
-      hermesPythonEnv = final.python3.withPackages (_: hermesRuntimeDeps);
+      hermesPythonEnv = hermesPython.withPackages (_: hermesRuntimeDeps);
       useCurrentRuntime =
         arg:
         if builtins.isString arg && final.lib.hasSuffix "/bin/python3" arg then
@@ -157,6 +160,17 @@ let
         PY
       '';
       postInstallCheck = (old.postInstallCheck or "") + ''
+        ${hermesPythonEnv}/bin/python3 -c '
+        import yaml, cryptography, openai, nemo_relay, anydoc
+        from importlib.metadata import version
+        assert version("nemo-relay") == "0.8.4"
+        '
+        (
+          cd "$TMPDIR"
+          HERMES_HOME="$TMPDIR/hermes-worker-test" \
+            PYTHONPATH="$out/${hermesPython.sitePackages}" \
+            ${hermesPythonEnv}/bin/python3 -c 'import tui_gateway.slash_worker'
+        )
         HERMES_HOME="$TMPDIR/hermes-test" HERMES_SOURCE="$PWD" \
           python3 ${../../tests/test_hermes_native_vault_runtime.py}
         test -f ${hermesFrontend}/lib/hermes-tui/dist/entry.js
@@ -174,10 +188,8 @@ let
     }
   );
 
-  # llm-agents' shared Hermes package is built with final.python3. Keep these
-  # injected modules on the same interpreter/site-packages ABI instead of
-  # assuming the historical NUC Python 3.12 path.
-  hermesPythonPackages = final.python3Packages;
+  # Keep injected modules on the same interpreter as the upstream runtime.
+  hermesPythonPackages = hermesPython.pkgs;
 
   honchoAi = hermesPythonPackages.buildPythonPackage rec {
     pname = "honcho-ai";
@@ -215,7 +227,7 @@ let
       postBuild = ''
         for exe in hermes hermes-agent hermes-acp; do
           wrapProgram "$out/bin/$exe" \
-            --prefix PYTHONPATH : "${honchoAi}/${final.python3.sitePackages}:${rtkHermes}/${final.python3.sitePackages}"
+            --prefix PYTHONPATH : "${honchoAi}/${hermesPython.sitePackages}:${rtkHermes}/${hermesPython.sitePackages}"
         done
       '';
       inherit (package) meta;
