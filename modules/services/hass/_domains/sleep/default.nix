@@ -528,6 +528,36 @@ in
 
     # ── Automations ──────────────────────────────────────────────────────
     automation = lib.mkAfter (ensureEnabled [
+      {
+        alias = "Monica Nightstand NFC - Good Night";
+        id = "monica_nightstand_nfc_goodnight";
+        mode = "single";
+        trigger = {
+          platform = "tag";
+          tag_id = "a394c0fe-467f-4a3d-8060-c1158b74d689";
+        };
+        # Ignore accidental daytime scans; deliberate voice/manual use stays unrestricted.
+        condition = [
+          {
+            condition = "time";
+            after = "20:00:00";
+            before = "04:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "script.good_morning";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "script.goodnight";
+          }
+          # Keep single mode occupied briefly to ignore duplicate scans.
+          { delay = "00:00:10"; }
+        ];
+      }
+
       # Siri Shortcut webhooks. Sleep is deliberately not voice-facing.
       {
         alias = "Voice Webhook - Get Ready for Bed";

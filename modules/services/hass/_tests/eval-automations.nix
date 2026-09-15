@@ -806,6 +806,38 @@ let
       msg = "evening sleep scripts must not control Music Assistant or media players";
     }
     {
+      test =
+        let
+          tag = findAutomation "monica_nightstand_nfc_goodnight";
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = "a394c0fe-467f-4a3d-8060-c1158b74d689";
+          }
+        &&
+          tag.condition == [
+            {
+              condition = "time";
+              after = "20:00:00";
+              before = "04:00:00";
+            }
+            {
+              condition = "state";
+              entity_id = "script.good_morning";
+              state = "off";
+            }
+          ]
+        && tag.mode == "single"
+        &&
+          tag.action == [
+            { action = "script.goodnight"; }
+            { delay = "00:00:10"; }
+          ];
+      msg = "Monica's NFC tag must guard daytime/morning scans and debounce the direct Good Night call";
+    }
+    {
       test = whiteNoiseWithBedtimeAudiobook != null;
       msg = "automation 'white_noise_with_bedtime_audiobook' missing";
     }
