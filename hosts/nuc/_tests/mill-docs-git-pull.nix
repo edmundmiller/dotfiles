@@ -30,6 +30,12 @@ let
         ;;
       pull)
         printf 'pull\n' >> "''${GIT_CALL_LOG:?}"
+        for arg in "$@"; do
+          if [ "$arg" = --autostash ]; then
+            echo "automated pull must not stash local work" >&2
+            exit 98
+          fi
+        done
         exit "''${GIT_PULL_STATUS:-99}"
         ;;
       *)
@@ -40,7 +46,7 @@ let
 in
 pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
   guard_line="$(${pkgs.gnugrep}/bin/grep -nF 'lfs fsck --pointers HEAD' ${pullScript} | ${pkgs.coreutils}/bin/head -1 | ${pkgs.coreutils}/bin/cut -d: -f1 || true)"
-  pull_line="$(${pkgs.gnugrep}/bin/grep -nF 'pull --rebase --autostash' ${pullScript} | ${pkgs.coreutils}/bin/head -1 | ${pkgs.coreutils}/bin/cut -d: -f1 || true)"
+  pull_line="$(${pkgs.gnugrep}/bin/grep -nF 'pull --rebase' ${pullScript} | ${pkgs.coreutils}/bin/head -1 | ${pkgs.coreutils}/bin/cut -d: -f1 || true)"
 
   pointer_guard_is_ordered=false
   if [ -n "$guard_line" ] && [ -n "$pull_line" ] && [ "$guard_line" -lt "$pull_line" ]; then
@@ -53,7 +59,7 @@ pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
       exit 1
     fi
   elif ! "$pointer_guard_is_ordered"; then
-    echo "mill-docs-git-pull must reject invalid HEAD pointers before autostash." >&2
+    echo "mill-docs-git-pull must reject invalid HEAD pointers before pull." >&2
     exit 1
   fi
 
@@ -239,6 +245,35 @@ pkgs.runCommand "nuc-mill-docs-git-pull" { } ''
     && ! ${pkgs.gnugrep}/bin/grep -qF '/fail' "$clean_curl_calls"; then
     clean_service_works=true
   fi
+
+  for dirt in staged unstaged untracked; do
+    dirty_repo="$TMPDIR/service-dirty-$dirt"
+    ${pkgs.git}/bin/git clone --quiet "$service_remote" "$dirty_repo"
+    dirty_file=conflict.md
+    if [ "$dirt" = untracked ]; then dirty_file=local.md; fi
+    printf 'preserve local work\n' > "$dirty_repo/$dirty_file"
+    if [ "$dirt" = staged ]; then
+      ${pkgs.git}/bin/git -C "$dirty_repo" add "$dirty_file"
+    fi
+    dirty_status_before="$(${pkgs.git}/bin/git -C "$dirty_repo" status --porcelain=v2)"
+    dirty_index_before="$(${pkgs.git}/bin/git -C "$dirty_repo" ls-files --stage)"
+    dirty_script="$TMPDIR/service-dirty-$dirt-script"
+    render_service_script "$dirty_repo" "$dirty_script"
+    dirty_git_calls="$TMPDIR/service-dirty-$dirt-git-calls"
+    dirty_curl_calls="$TMPDIR/service-dirty-$dirt-curl-calls"
+    : > "$dirty_git_calls"
+    : > "$dirty_curl_calls"
+    CURL_CALL_LOG="$dirty_curl_calls" GIT_CALL_LOG="$dirty_git_calls" "$dirty_script"
+    test ! -s "$dirty_git_calls"
+    test "$dirty_status_before" = "$(${pkgs.git}/bin/git -C "$dirty_repo" status --porcelain=v2)"
+    test "$dirty_index_before" = "$(${pkgs.git}/bin/git -C "$dirty_repo" ls-files --stage)"
+    test "preserve local work" = "$(cat "$dirty_repo/$dirty_file")"
+    test -z "$(${pkgs.git}/bin/git -C "$dirty_repo" stash list)"
+    if ${pkgs.gnugrep}/bin/grep -qF '/fail' "$dirty_curl_calls"; then
+      echo "ordinary local changes should skip pull successfully" >&2
+      exit 1
+    fi
+  done
 
   raced_repo="$TMPDIR/service-raced"
   ${pkgs.git}/bin/git clone --quiet "$service_remote" "$raced_repo"

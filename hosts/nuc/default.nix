@@ -978,7 +978,16 @@ let
       exit "$guard_status"
     }
 
+    stop_for_local_changes() {
+      local_changes="$(${pkgs.git}/bin/git status --porcelain)"
+      if [ -n "$local_changes" ]; then
+        echo "working tree has local changes; skipping git pull"
+        exit 0
+      fi
+    }
+
     stop_for_unmerged_index
+    stop_for_local_changes
 
     if ! upstream="$(${pkgs.git}/bin/git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null)"; then
       echo "current branch has no upstream; skipping git pull"
@@ -986,14 +995,15 @@ let
     fi
 
     if ! ${pkgs.git}/bin/git lfs fsck --pointers HEAD; then
-      echo "current HEAD contains files that should be Git LFS pointers; refusing to autostash" >&2
+      echo "current HEAD contains files that should be Git LFS pointers; refusing to pull" >&2
       exit 1
     fi
 
     ${pkgs.git}/bin/git fetch --quiet
     ${millDocsGitUntrackedCollisionGuardScript} '${millDocsVaultPath}' "$upstream"
     stop_for_unmerged_index
-    ${pkgs.git}/bin/git pull --rebase --autostash
+    stop_for_local_changes
+    ${pkgs.git}/bin/git pull --rebase
   '';
 
 in

@@ -681,10 +681,12 @@ hey nuc-rollback
 ### Mill Docs Git pull reports invalid LFS pointers
 
 `mill-docs-git-pull.service` validates `HEAD` with `git lfs fsck --pointers`
-before invoking Git's autostash. If this fails, pause
+before pulling. It skips staged, unstaged, or untracked local changes without
+stashing them, and retains the unmerged-index and upstream-collision guards.
+If pointer validation fails, pause
 `mill-docs-git-pull.timer`, preserve the checkout and every stash, then repair
 the invalid local history. Do not repeatedly start the service or drop the
-generated stashes.
+existing stashes.
 
 After repair, verify the checkout and resume the timer:
 
