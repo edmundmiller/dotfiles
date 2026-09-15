@@ -31,6 +31,7 @@
         "1password".enable = true;
         amoxide.enable = true;
         agentBrowser.enable = true;
+        druk.enable = true;
         skillkit.enable = true;
         direnv.enable = true;
         mise.enable = true;

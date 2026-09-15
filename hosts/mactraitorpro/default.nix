@@ -111,6 +111,7 @@ in
         amoxide.enable = true;
         agentBrowser.enable = true;
         direnv.enable = true;
+        druk.enable = true;
         mise.enable = true;
         notion.enable = true;
         git = {

@@ -176,6 +176,7 @@ Custom derivations available as `pkgs.my.*` via the default overlay. ~40 package
 
 - **zele** — CLI tool (patched upstream)
 - **dmux** — tmux session manager
+- **druk** — terminal code editor (`modules.shell.druk`)
 - **zunit** — Zsh unit test framework
 - **tmux plugins** — smart-name, smooth-scroll, opencode-integrated
 
