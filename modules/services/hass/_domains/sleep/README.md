@@ -149,16 +149,19 @@ Wake detection automations still update:
 - `input_boolean.monica_awake`
 
 These booleans combine bed presence, charging, activity, explicit phone updates,
-and Focus transitions. No single signal starts Good Morning by itself.
+and Monica's generic Focus-off signal. Edmund's Focus transitions never mark him
+awake, so leaving Sleep Focus cannot indirectly start Good Morning.
 
 ## Good Morning
 
 From 7 AM to noon, Good Morning runs when every resident who is home has been
-marked awake. Edmund's named Focus is a safety gate rather than the trigger: while
-his phone reports `Sleep`—or the Focus name is unavailable—the automatic routine
-cannot run. This prevents a noisy bed/phone signal from starting the house while
-Sleep Focus is still active. Voice and manual activation remain available, and
-the scene is only the script's immediate-state component. The script waits ten
+marked awake. Edmund's named Focus is a safety gate rather than a trigger: while
+his phone reports `Sleep`, `unknown`, or `unavailable`, the script stops before
+any actions, including for voice/manual calls and regardless of reported presence.
+Blocked calls are discarded, not queued. Leaving Sleep Focus does not run Good
+Morning or re-evaluate an earlier wake signal; a later wake-helper transition or
+manual/voice call is needed. The scene is only the script's internal, unguarded
+immediate-state component; activate the script, not the scene. The script waits ten
 minutes before turning on the desk monitor and desk POP switches to avoid the
 bright display at wake-up. Activating Good Morning again restarts the delay; a
 bedtime activation cancels the pending power-on.

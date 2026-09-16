@@ -129,9 +129,7 @@ let
         goodMorningBothAwake != null
         && hasStateTrigger (toList (goodMorningBothAwake.trigger or [ ])) "input_boolean.edmund_awake" "on"
         && hasStateTrigger (toList (goodMorningBothAwake.trigger or [ ])) "input_boolean.monica_awake" "on"
-        && hasStateTriggerFrom (toList (
-          goodMorningBothAwake.trigger or [ ]
-        )) "sensor.edmunds_iphone_focus_name" "Sleep"
+        && length (toList (goodMorningBothAwake.trigger or [ ])) == 2
         && hasTimeGuard (toList (goodMorningBothAwake.condition or [ ])) "07:00:00"
         && hasStateCondition (toList (goodMorningBothAwake.condition or [ ])) "input_boolean.goodnight" "on"
         && hasTemplateConditionContaining (toList (
@@ -191,10 +189,14 @@ let
     {
       test =
         edmundAwake != null
-        && hasStateTriggerFrom (toList (
-          edmundAwake.trigger or [ ]
-        )) "sensor.edmunds_iphone_focus_name" "Sleep";
-      msg = "edmund_awake_detection must use named Sleep Focus instead of generic focus-off";
+        && !(any (
+          t:
+          builtins.elem (t.entity_id or null) [
+            "sensor.edmunds_iphone_focus_name"
+            "binary_sensor.edmunds_iphone_focus"
+          ]
+        ) (toList (edmundAwake.trigger or [ ])));
+      msg = "Focus changes must not mark Edmund awake and indirectly trigger Good Morning";
     }
     {
       test =
@@ -270,6 +272,10 @@ let
         (goodMorningScript.mode or null) == "restart"
         &&
           goodMorningSequence == [
+            {
+              condition = "template";
+              value_template = "{{ states('sensor.edmunds_iphone_focus_name') not in ['Sleep', 'unknown', 'unavailable'] }}";
+            }
             {
               action = "scene.turn_on";
               target.entity_id = "scene.good_morning";

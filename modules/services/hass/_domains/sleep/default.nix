@@ -18,7 +18,7 @@
 #
 # Apple / 8Sleep integration:
 #   iOS next-alarm sensor sync is declaratively disabled; no passive iPhone alarm entity exists.
-#   Edmund's named Sleep Focus exit contributes a wake signal and stops 8Sleep
+#   Edmund's named Sleep Focus exit stops 8Sleep but does not signal Good Morning
 #
 # Entity name notes (verify in HA dev tools > States if IDs change):
 #   8Sleep service target: sensor.edmund_s_eight_sleep_side_sleep_stage
@@ -47,8 +47,8 @@ let
     bedStateType = "sensor.edmund_s_eight_sleep_side_bed_state_type";
     heartRate = "sensor.edmund_s_eight_sleep_side_heart_rate";
 
-    # Named Focus reporting distinguishes Sleep from Work. A transition away
-    # from Sleep is an explicit wake signal without treating Work changes as wake.
+    # Named Focus reporting distinguishes Sleep from Work for Eight Sleep shutoff.
+    # Leaving Sleep only unlocks Good Morning; it must not supply a wake signal.
     sleepFocusExit = {
       entity_id = "sensor.edmunds_iphone_focus_name";
       from = "Sleep";
@@ -183,7 +183,7 @@ let
   };
 
   # Wake detection only — mark per-person awake booleans.
-  # Good Morning is intentionally not auto-triggered from these booleans.
+  # Edmund's Focus is a gate, never a wake signal (including indirectly).
   mkWakeDetection = p: {
     alias = "${p.name} is awake";
     id = "${p.id}_awake_detection";
@@ -203,7 +203,6 @@ let
         to = "off";
         "for".minutes = 5;
       }
-      ({ platform = "state"; } // p.sleepFocusExit)
       {
         platform = "state";
         entity_id = p.battery;
@@ -219,7 +218,8 @@ let
         platform = "template";
         value_template = "{{ states('${p.updateTrigger}') in ['Launch', 'Siri', 'Manual'] }}";
       }
-    ];
+    ]
+    ++ lib.optional (p.id == "monica") ({ platform = "state"; } // p.sleepFocusExit);
     condition = [
       {
         condition = "time";
@@ -476,6 +476,12 @@ in
         mode = "restart";
         sequence = [
           {
+            # Guard every entrypoint before any scene, DJ, or delayed desk action.
+            # Do not wait: blocked requests are discarded, not deferred.
+            condition = "template";
+            value_template = "{{ states('sensor.edmunds_iphone_focus_name') not in ['Sleep', 'unknown', 'unavailable'] }}";
+          }
+          {
             action = "scene.turn_on";
             target.entity_id = "scene.good_morning";
           }
@@ -729,13 +735,6 @@ in
             platform = "state";
             entity_id = "input_boolean.monica_awake";
             to = "on";
-          }
-          {
-            # Re-evaluate after the safety gate opens in case an awake signal
-            # arrived while Sleep Focus was still active.
-            platform = "state";
-            entity_id = "sensor.edmunds_iphone_focus_name";
-            from = "Sleep";
           }
         ];
         condition = [
