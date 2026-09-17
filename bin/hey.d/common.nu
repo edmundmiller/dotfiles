@@ -206,7 +206,7 @@ export def wait-homebrew-idle [ctx: record] {
 
 
 export def moshi-client-active [] {
-  (($env.MOSHI_CLIENT? | default "") | str lowercase) in ["1" "true" "yes"]
+  (($env.MOSHI_CLIENT? | default "") | str downcase) in ["1" "true" "yes"]
 }
 
 export def fail-if-moshi-client-rebuild [ctx: record, action: string] {
