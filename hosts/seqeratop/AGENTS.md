@@ -13,10 +13,18 @@ is in `default.nix`; Homebrew inventory is in `homebrew.nix`.
 ### Agent observability
 
 `agento11y.nix` installs Grafana agento11y and the Pi package, registers the
-native Codex plugin, and merges Cursor's hooks during `hey re`. Versions are
-pinned in that file and `packages/agento11y/default.nix`. Other hosts are
-unaffected. Codex requires a one-time `/hooks` review to trust the five plugin
-hooks after installation; restart existing agent sessions after rebuilding.
+native Codex and Claude Code plugins, and merges Cursor's hooks during `hey re`.
+Versions are pinned in that file and `packages/agento11y/default.nix`. Other
+hosts are unaffected. Codex requires a one-time `/hooks` review to trust the five
+plugin hooks after installation; restart existing agent sessions after rebuilding.
+
+Claude Code is wired through `agento11y claude install --json` rather than a
+`claude plugin marketplace add --ref`, because Claude's marketplace command has
+no ref pin; the pinned agento11y binary is what the plugin's hooks invoke. That
+installer records `agento11y-claude-code@agento11y` under `enabledPlugins` and
+`extraKnownMarketplaces` in `~/.claude/settings.json`, which
+`claude-settings-bootstrap` rewrites from the repo template, so the activation
+entry must stay ordered after it.
 
 `config/agento11y/config.env.tpl` is the source for the private mode-0600
 `~/.config/agento11y/config.env`. Activation resolves its 1Password references
@@ -30,6 +38,7 @@ retains `AGENTO11Y_TAGS=user=edmund` in the shared stack.
 Verify configuration and all three export routes with `agento11y doctor --json`.
 Then complete one turn in each client and check Grafana Agent Observability;
 the doctor's empty requests prove connectivity, not delivery of client turns.
-For removal, run `agento11y cursor uninstall` and
-`codex plugin remove agento11y-codex@agento11y`, remove the host import, and
-rebuild. The private config can be deleted when no integration uses it.
+For removal, run `agento11y cursor uninstall`,
+`codex plugin remove agento11y-codex@agento11y`, and
+`claude plugin uninstall agento11y-claude-code@agento11y`, remove the host
+import, and rebuild. The private config can be deleted when no integration uses it.
