@@ -9,7 +9,7 @@
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
   ampRunnerBinary = "/home/emiller/.amp/bin/amp";
-  ampRunnerWorkingDirectory = "/home/emiller/src/fg/nascent-manuscript-main";
+  ampRunnerWorkingDirectory = "/home/emiller/src";
   ampNascentManuscriptRunner = pkgs.writeShellScript "amp-nascent-manuscript-runner" ''
     set -eu
     export PATH="/home/emiller/.local/bin:/etc/profiles/per-user/emiller/bin:/run/current-system/sw/bin:$PATH"
@@ -26,6 +26,8 @@ let
     exec ${lib.escapeShellArg ampRunnerBinary} \
       --no-tui \
       --runner-id nuc-nascent-manuscript \
+      --discover-dirs \
+      --dir /home/emiller/.config/dotfiles \
       --remote-control-terminal
   '';
   # The overlay exposes one patched Hermes v0.21.0 derivation. Every gateway,
@@ -2297,9 +2299,10 @@ in
   ];
 
   # Amp owns its mutable, self-updating CLI binary and login state. Nix owns
-  # the boot-persistent runner process and the repository it serves.
+  # the boot-persistent runner process and the directories it serves.
+  # Preserve the existing service name and runner ID when expanding its scope.
   systemd.services.amp-nascent-manuscript-runner = {
-    description = "Amp runner for the nascent manuscript";
+    description = "Amp runner for NUC repositories and dotfiles";
     wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];

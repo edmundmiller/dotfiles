@@ -354,8 +354,10 @@ hey nuc-logs home-assistant.service 30
 
 ## Amp Remote Runner
 
-The NUC serves remote Amp threads from the clean manuscript checkout at
-`/home/emiller/src/fg/nascent-manuscript-main`. Amp's official installer owns
+The NUC discovers Git checkouts up to two levels below `/home/emiller/src`,
+including `fg/nascent-manuscript-main`, and explicitly serves
+`/home/emiller/.config/dotfiles`. Both directories must exist before starting
+the service. Amp's official installer owns
 the mutable, self-updating CLI under `~/.amp/`; Nix owns the persistent
 `amp-nascent-manuscript-runner.service`. Do not replace the unrelated CLIamp
 package or copy Amp credentials from another host.
@@ -374,12 +376,19 @@ After login and `hey nuc`, verify the service, runner identity, and checkout:
 ssh nuc 'systemctl is-active amp-nascent-manuscript-runner.service'
 ssh nuc 'systemctl show amp-nascent-manuscript-runner.service -p User -p WorkingDirectory -p ExecStart -p NRestarts'
 ssh nuc '~/.amp/bin/amp version'
+ssh nuc '~/.amp/bin/amp runner dirs list --runner-id nuc-nascent-manuscript'
 ssh nuc 'git -C ~/src/fg/nascent-manuscript-main status --short --branch'
 ```
 
 The runner appears on ampcode.com as `nuc-nascent-manuscript` and allows remote
-terminal control. Amp updates itself in the background; restart the service to
-load an updated binary. If authentication expires, stop the service, run
+terminal control. Its existing name is retained even though it now serves
+multiple repositories. Discovery rescans every minute; hidden directories and
+symlinks are skipped, so dotfiles is supplied explicitly. Directories previously
+added at runtime from the old manuscript working directory must be added again
+from the new `~/src` working directory.
+
+Amp updates itself in the background and restarts into new versions when idle.
+If authentication expires, stop the service, run
 `~/.amp/bin/amp login` interactively, and start it again. The runner inherits no
 forwarded SSH agent, so GitHub fetch and push remain host-side operations until
 the NUC has its own approved GitHub credential.
