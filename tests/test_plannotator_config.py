@@ -73,7 +73,7 @@ class PlannotatorCodexCleanupTests(unittest.TestCase):
 
 
 class PlannotatorSourceContractTests(unittest.TestCase):
-    def test_claude_bootstrap_drops_plugins_and_preserves_runtime_hooks(self):
+    def test_claude_bootstrap_keeps_managed_plugin_and_runtime_hooks(self):
         module = (ROOT / "modules/agents/claude/default.nix").read_text()
         bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
         script = textwrap.dedent(
@@ -105,8 +105,16 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                     check=True,
                 )
                 settings = json.loads(target.read_text())
-                self.assertNotIn("enabledPlugins", settings)
-                self.assertNotIn("extraKnownMarketplaces", settings)
+                self.assertEqual(
+                    settings["enabledPlugins"],
+                    {"duckdb-skills@claude-plugins-official": True},
+                )
+                self.assertEqual(
+                    settings["extraKnownMarketplaces"]["claude-plugins-official"][
+                        "source"
+                    ]["repo"],
+                    "anthropics/claude-plugins-official",
+                )
                 self.assertEqual(settings["hooks"], hooks)
 
     def test_codex_integration_is_absent(self):
@@ -121,8 +129,11 @@ class PlannotatorSourceContractTests(unittest.TestCase):
         self.assertNotIn("inputs.plannotator", skills)
         self.assertNotIn('from = "plannotator"', skills)
 
-    def test_claude_plugins_are_absent_and_other_integrations_remain(self):
+    def test_only_duckdb_plugin_is_managed_and_other_integrations_remain(self):
         module = (ROOT / "modules/agents/plannotator/default.nix").read_text(
+            encoding="utf-8"
+        )
+        claude_module = (ROOT / "modules/agents/claude/default.nix").read_text(
             encoding="utf-8"
         )
         claude = json.loads(
@@ -137,8 +148,14 @@ class PlannotatorSourceContractTests(unittest.TestCase):
         self.assertNotIn("plannotator-claude-plugin", module)
         self.assertNotIn("claudeEnabled", module)
         self.assertIn("herdrEnabled = config.modules.shell.herdr.enable;", module)
-        self.assertNotIn("enabledPlugins", claude)
-        self.assertNotIn("extraKnownMarketplaces", claude)
+        self.assertEqual(
+            claude["enabledPlugins"],
+            {"duckdb-skills@claude-plugins-official": True},
+        )
+        self.assertEqual(
+            set(claude["extraKnownMarketplaces"]), {"claude-plugins-official"}
+        )
+        self.assertIn("claude-duckdb-skills-plugin", claude_module)
         self.assertFalse((ROOT / ".claude-plugin/marketplace.json").exists())
         self.assertFalse((ROOT / ".claudelint.toml").exists())
         self.assertFalse(any((ROOT / "config/claude/plugins").rglob("plugin.json")))

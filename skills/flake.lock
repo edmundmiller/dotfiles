@@ -138,6 +138,23 @@
         "type": "github"
       }
     },
+    "duckdb-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776153634,
+        "narHash": "sha256-OmsODyirf2MzmoDMRx+c8xbkJWq2qOlMhXjKDV7PUv4=",
+        "owner": "duckdb",
+        "repo": "duckdb-skills",
+        "rev": "7feda8e01e22bc0886c86123f3884947e36d8c69",
+        "type": "github"
+      },
+      "original": {
+        "owner": "duckdb",
+        "repo": "duckdb-skills",
+        "rev": "7feda8e01e22bc0886c86123f3884947e36d8c69",
+        "type": "github"
+      }
+    },
     "emilkowalski-skills": {
       "flake": false,
       "locked": {
@@ -504,6 +521,7 @@
         "browser-control-repo": "browser-control-repo",
         "common-skills": "common-skills",
         "diffity-repo": "diffity-repo",
+        "duckdb-skills": "duckdb-skills",
         "emilkowalski-skills": "emilkowalski-skills",
         "gitbutler-repo": "gitbutler-repo",
         "humanlayer-skills": "humanlayer-skills",

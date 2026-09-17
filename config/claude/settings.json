@@ -210,5 +210,16 @@
     "command": "wt list statusline --claude-code",
     "padding": 0
   },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "duckdb-skills@claude-plugins-official": true
+  },
   "alwaysThinkingEnabled": true
 }

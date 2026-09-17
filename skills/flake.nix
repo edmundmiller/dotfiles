@@ -157,6 +157,11 @@
       flake = false;
     };
 
+    duckdb-skills = {
+      url = "github:duckdb/duckdb-skills/7feda8e01e22bc0886c86123f3884947e36d8c69";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -363,6 +368,24 @@
             ))
             + mattpocockRuntimeOverlay;
         }) mattpocockSkillPaths;
+        duckdbSkillNames = [
+          "attach-db"
+          "convert-file"
+          "duckdb-docs"
+          "install-duckdb"
+          "query"
+          "read-file"
+          "read-memories"
+          "s3-explore"
+          "spatial"
+        ];
+        duckdbSkills = lib.genAttrs duckdbSkillNames (name: {
+          from = "duckdb";
+          path = name;
+          transform =
+            { original, ... }:
+            builtins.replaceStrings [ "/duckdb-skills:" ] [ "" ] original;
+        });
       in
       {
         imports = [ inputs.agent-skills.homeManagerModules.default ];
@@ -737,6 +760,12 @@
                   };
                 };
 
+                duckdb = {
+                  path = inputs.duckdb-skills.outPath;
+                  subdir = "skills";
+                  filter.maxDepth = 3;
+                };
+
                 kitlangton = {
                   path = inputs.kitlangton-skills.outPath;
                   subdir = "skills";
@@ -920,8 +949,8 @@
 
                 improve.from = "shadcn-improve";
                 improve.path = "improve";
-
               }
+              // duckdbSkills
               // lib.optionalAttrs acpxEnabled {
                 acpx.from = "acpx";
                 acpx.path = "acpx";

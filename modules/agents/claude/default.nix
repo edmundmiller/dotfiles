@@ -138,6 +138,16 @@ in
           PY
         '';
 
+        # enabledPlugins records the desired state, while local Claude Code still
+        # needs the marketplace payload installed once on each machine.
+        home.activation.claude-duckdb-skills-plugin =
+          lib.hm.dag.entryAfter [ "claude-settings-bootstrap" ]
+            ''
+              ${pkgs.llm-agents.claude-code}/bin/claude plugin install \
+                duckdb-skills@claude-plugins-official \
+                --scope user
+            '';
+
         home.activation.claude-stale-hook-cleanup = lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
           ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" <<'PY'
           import json
