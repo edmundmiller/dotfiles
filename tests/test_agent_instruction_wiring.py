@@ -62,7 +62,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
         module_targets = {
             CODEX_MODULE: '".codex/AGENTS.md".text = agentCore;',
-            CLAUDE_MODULE: '".claude/CLAUDE.md".text = agentCore;',
+            CLAUDE_MODULE: '".claude/CLAUDE.md".text = agentCore + "\\n" + claudeAgentsFileFallback;',
         }
         for module, target in module_targets.items():
             with self.subTest(module=module):
@@ -74,6 +74,11 @@ class AgentInstructionWiringTests(unittest.TestCase):
                 self.assertIn(target, source)
                 self.assertNotIn("rulesDir", source)
                 self.assertNotIn("concatenatedRules", source)
+
+        claude_module = CLAUDE_MODULE.read_text()
+        self.assertIn("If no `CLAUDE.md` file is found in the root of the repo", claude_module)
+        self.assertIn("treat it as if it were a `CLAUDE.md` file", claude_module)
+        self.assertNotIn("If no `CLAUDE.md` file is found", OMP_CORE.read_text())
 
         pi_module = PI_MODULE.read_text()
         pi_home_files = PI_HOME_FILES.read_text()

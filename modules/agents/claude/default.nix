@@ -11,6 +11,15 @@ let
   inherit (config.dotfiles) configDir;
 
   agentCore = builtins.readFile "${configDir}/agents/core.md";
+
+  # Claude only auto-loads CLAUDE.md. Tell it to fall back to a repo's
+  # AGENTS.md so repos that standardize on that file still get read.
+  claudeAgentsFileFallback = ''
+    # Agents file
+
+    If no `CLAUDE.md` file is found in the root of the repo, check if there is a root-level
+    `AGENTS.md`. If there is, read it and treat it as if it were a `CLAUDE.md` file.
+  '';
 in
 {
   options.modules.agents.claude = {
@@ -26,7 +35,7 @@ in
       # Shared agent modes come from config/agents/.
       ".claude/agents".source = "${configDir}/agents/modes";
       # Claude's global instruction file receives the same bounded semantic core.
-      ".claude/CLAUDE.md".text = agentCore;
+      ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
     };
 
     home-manager.users.${config.user.name} =
