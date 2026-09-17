@@ -1,6 +1,6 @@
 {
   "source": "https://github.com/home-assistant/core.git",
-  "ref": "2026.7.2",
+  "ref": "2026.9.2",
   "patches": ["patches/0001-skip-invalid-mcp-tool-schemas.patch"],
   "checks": [
     [

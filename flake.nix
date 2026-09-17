@@ -23,6 +23,8 @@
     nixpkgs.url = "nixpkgs/nixos-unstable"; # Using unstable for 25.05 compatibility
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
     nixpkgs-node.url = "nixpkgs/nixos-25.11"; # newer Node 24 LTS while nixos-unstable catches up
+    # Home Assistant and its Python closure can advance without upgrading the host.
+    nixpkgs-hass.url = "github:NixOS/nixpkgs/b1b875982b17dabde9b4a37f3e229e74913e6db3";
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
@@ -349,6 +351,9 @@
           # Needs `inputs`, so it cannot be auto-imported by mapModules.
           ghui = import ./overlays/ghui inputs;
           hermes-agent = import ./overlays/hermes-agent { inherit inputs; };
+          home-assistant-mcp-schema-compat = import ./overlays/home-assistant-mcp-schema-compat {
+            inherit inputs;
+          };
         };
 
         # TODO(dotfiles): Consider a small lib.my helper for package output composition if this
