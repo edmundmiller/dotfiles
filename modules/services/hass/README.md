@@ -2,6 +2,26 @@
 
 NixOS module for Home Assistant with Matter, PostgreSQL recorder, Homebridge, and Tailscale access.
 
+## Jev (TypeSafe)
+
+[HA-Jev](https://github.com/AboveColin/HA-Jev) and its `jevclient` dependency are
+Nix-managed. It requires Home Assistant 2026.9 or newer, supplied by the separate
+`nixpkgs-hass` input without upgrading the rest of the host.
+
+After an authorized deployment, go to **Settings → Devices & services → Add
+integration → Jev (TypeSafe)** and enter a [TypeSafe](https://typesafe.ai) API key.
+Keep the key in the integration's config entry, not in Nix or YAML. Do not install
+a second copy through HACS.
+
+The `jev.noul`, `jev.choice`, `jev.score`, and `jev.ask` actions then become
+available. No question contexts, polling, or automations are enabled here yet.
+Selected state is sent to TypeSafe's cloud API, and requests (including setup
+validation) are billable. Set a daily input-token budget in the integration
+options before enabling recurring questions. Persistent question contexts belong
+in Nix-managed `services.home-assistant.config.jev`; choose real entities and a
+specific use case before adding them. Do not use model decisions for
+safety-critical controls.
+
 ## Backups
 
 HA state lives in `/var/lib/hass` and is backed up nightly by restic (see `hosts/nuc/backups.nix`).

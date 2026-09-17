@@ -117,6 +117,20 @@ let
       hash = "sha256-SdYBplUgkOghXUflS5tNE4Ix8Ln5VHNKuEIxm0OlZeI=";
     };
   };
+
+  # Jev - typed cloud decisions from selected Home Assistant state (HA >= 2026.9).
+  # API credentials are configured through Home Assistant's integration flow.
+  jev = buildHassComponent {
+    owner = "AboveColin";
+    domain = "jev";
+    version = "1.3.2";
+    src = pkgs.fetchFromGitHub {
+      owner = "AboveColin";
+      repo = "HA-Jev";
+      tag = "1.3.2";
+      hash = "sha256-h1Vr3rS1csFhQxNod6gMxK3VruIXNYZ8hIzxE47PKAQ=";
+    };
+  };
 in
 {
   imports = [
@@ -274,6 +288,7 @@ in
           eight-sleep
           openclaw-integration
           pura-integration
+          jev
         ]
         ++ cfg.customComponents;
         inherit (cfg) customLovelaceModules;
@@ -285,6 +300,19 @@ in
             (pypura ps)
             ps.deepdiff
             ps.ical
+            (ps.buildPythonPackage rec {
+              pname = "jevclient";
+              version = "1.1.0";
+              format = "wheel";
+              src = pkgs.fetchPypi {
+                inherit pname version format;
+                dist = "py3";
+                python = "py3";
+                hash = "sha256-0lGHxqO+/u33q6eekus+NMg3IPG8hga/xeBIBYNtvo4=";
+              };
+              propagatedBuildInputs = [ ps.aiohttp ];
+              pythonImportsCheck = [ "jevclient" ];
+            })
             (ps.buildPythonPackage rec {
               pname = "homekit-audio-proxy";
               version = "1.2.1";
