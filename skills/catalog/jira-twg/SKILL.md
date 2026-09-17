@@ -21,10 +21,12 @@ Append `--output json --output-summary auto --agent-fields @compact`. For query 
 
 Use `stdout_inline` when present. Otherwise read `output_files.compact`; read only required paths from `output_files.stdout` when the compact file lacks a needed field.
 
-## Enforce the budget
+## Bound scope and context
 
-- Never repeat an identical command. Reuse saved output; allow one bounded shape inspection and one extraction, then stop.
-- For read-only work, allow at most three Jira commands total and at most two reads of one issue. If that cannot answer the request, report the missing fact or ask before widening scope.
+- Scope discovery to the requested project, saved filter, or explicit keys. Add relevant type/status/time constraints; never query all of Jira to answer a project question. Widen beyond the requested scope only with user authorization.
+- Use as many bounded calls as needed to finish that scope. Default to 20 summary rows per page and at most 20 known keys per detail batch; larger inventories may use up to 100 summary rows written to disk. Follow pagination within the same scope, retaining cursors and pending keys. A capped page or failed read is not complete coverage.
+- For recurring intake, compare a compact key/summary/status/updated index with the checkpoint first. Fetch descriptions, relevant comments and linked evidence only for changed reports and plausible duplicate matches. Use an overlapping time window with the Jira query timezone accounted for; checkpoint only successfully reviewed evidence.
+- Reuse saved responses. Repeat a read only for missing fields, changed state, pagination, or write verification. Inspect response shape once, then extract needed paths locally; flatten rich-text bodies and filter comments by the checkpoint before returning them to context. Aim for at most 5,000 tokens per tool result. If output truncates, narrow the local extraction instead of refetching or printing the raw response again.
 - Do not browse help first. After a rejected or genuinely unknown command, allow one `twg help describe "<exact leaf command>" | jg 'args | opts' --compact`; never list or search the full command catalog.
 - Preserve stderr and exit status. Distinguish empty data from failure; never use `2>/dev/null` or translate an error into “no results.”
 - Stop immediately on authentication or permission failure. After a contract error, use the one help allowance, make one corrected attempt, then stop and report the error.
