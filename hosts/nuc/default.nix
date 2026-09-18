@@ -25,7 +25,7 @@ let
 
     exec ${lib.escapeShellArg ampRunnerBinary} \
       --no-tui \
-      --runner-id nuc-nascent-manuscript \
+      --runner-id nuc \
       --discover-dirs \
       --dir /home/emiller/.config/dotfiles \
       --remote-control-terminal
@@ -2300,7 +2300,7 @@ in
 
   # Amp owns its mutable, self-updating CLI binary and login state. Nix owns
   # the boot-persistent runner process and the directories it serves.
-  # Preserve the existing service name and runner ID when expanding its scope.
+  # Preserve the existing systemd service name for operational continuity.
   systemd.services.amp-nascent-manuscript-runner = {
     description = "Amp runner for NUC repositories and dotfiles";
     wantedBy = [ "multi-user.target" ];

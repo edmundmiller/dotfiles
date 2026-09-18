@@ -376,13 +376,12 @@ After login and `hey nuc`, verify the service, runner identity, and checkout:
 ssh nuc 'systemctl is-active amp-nascent-manuscript-runner.service'
 ssh nuc 'systemctl show amp-nascent-manuscript-runner.service -p User -p WorkingDirectory -p ExecStart -p NRestarts'
 ssh nuc '~/.amp/bin/amp version'
-ssh nuc '~/.amp/bin/amp runner dirs list --runner-id nuc-nascent-manuscript'
+ssh nuc '~/.amp/bin/amp runner dirs list --runner-id nuc'
 ssh nuc 'git -C ~/src/fg/nascent-manuscript-main status --short --branch'
 ```
 
-The runner appears on ampcode.com as `nuc-nascent-manuscript` and allows remote
-terminal control. Its existing name is retained even though it now serves
-multiple repositories. Discovery rescans every minute; hidden directories and
+The runner appears on ampcode.com as `nuc` and allows remote terminal control.
+The systemd service retains its original name. Discovery rescans every minute; hidden directories and
 symlinks are skipped, so dotfiles is supplied explicitly. Directories previously
 added at runtime from the old manuscript working directory must be added again
 from the new `~/src` working directory.

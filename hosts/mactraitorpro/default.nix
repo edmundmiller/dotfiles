@@ -337,7 +337,7 @@ in
           "${config.user.home}/.amp/bin/amp"
           "--no-tui"
           "--runner-id"
-          "mactraitorpro"
+          "mactraitor-pro"
           "--discover-dirs"
           "--dir"
           "${config.user.home}/.config/dotfiles"
