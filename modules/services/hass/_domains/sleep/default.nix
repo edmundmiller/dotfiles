@@ -26,8 +26,9 @@
 #   8Sleep next alarm switch: switch.edmund_s_eight_sleep_side_next_alarm
 #   iPhone focus name: sensor.edmunds_iphone_focus_name (Sleep / Work)
 #
-# NOTE: Good Morning requires every resident who is home to be marked awake.
-# Edmund's named Sleep Focus prevents activation while Sleep is still active.
+# Automatic Good Morning requires every resident who is home to be marked awake
+# and Edmund's named Sleep Focus to be inactive. Explicit manual/voice calls bypass
+# those sensor gates: a stale phone report must not veto the user's request.
 { lib, pkgs, ... }:
 let
   inherit (import ../../_lib.nix) ensureEnabled;
@@ -474,13 +475,9 @@ in
         alias = "Good Morning";
         icon = "mdi:weather-sunny";
         mode = "restart";
+        # Explicit manual/voice entrypoint. Automatic callers own their safety
+        # conditions; Focus reports can remain stale across a phone Focus change.
         sequence = [
-          {
-            # Guard every entrypoint before any scene, DJ, or delayed desk action.
-            # Do not wait: blocked requests are discarded, not deferred.
-            condition = "template";
-            value_template = "{{ states('sensor.edmunds_iphone_focus_name') not in ['Sleep', 'unknown', 'unavailable'] }}";
-          }
           {
             action = "scene.turn_on";
             target.entity_id = "scene.good_morning";

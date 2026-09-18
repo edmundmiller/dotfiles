@@ -1272,10 +1272,6 @@ let
         &&
           goodMorningSequence == [
             {
-              condition = "template";
-              value_template = "{{ states('sensor.edmunds_iphone_focus_name') not in ['Sleep', 'unknown', 'unavailable'] }}";
-            }
-            {
               action = "scene.turn_on";
               target.entity_id = "scene.good_morning";
             }
@@ -1309,7 +1305,7 @@ let
               ];
             }
           ];
-      msg = "Good Morning script must restart its independent 10-minute desk timer while launching the DJ";
+      msg = "Manual Good Morning must apply the scene without a Focus gate, then launch the DJ and guarded 10-minute desk timer";
     }
     {
       test =

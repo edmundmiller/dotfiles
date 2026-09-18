@@ -154,17 +154,68 @@ awake, so leaving Sleep Focus cannot indirectly start Good Morning.
 
 ## Good Morning
 
-From 7 AM to noon, Good Morning runs when every resident who is home has been
-marked awake. Edmund's named Focus is a safety gate rather than a trigger: while
-his phone reports `Sleep`, `unknown`, or `unavailable`, the script stops before
-any actions, including for voice/manual calls and regardless of reported presence.
-Blocked calls are discarded, not queued. Leaving Sleep Focus does not run Good
-Morning or re-evaluate an earlier wake signal; a later wake-helper transition or
-manual/voice call is needed. The scene is only the script's internal, unguarded
-immediate-state component; activate the script, not the scene. The script waits ten
+Manual/voice `script.good_morning` applies the scene immediately, even if Edmund's
+Focus report is stale `Sleep`, `unknown`, unavailable, or missing. An explicit
+request takes precedence over phone telemetry. HomeKit, Assist, the dashboard,
+and the voice webhook continue to use this same script.
+
+Automatic Good Morning remains separately guarded: from 7 AM to noon, every
+resident who is home must be marked awake, goodnight must be on, and Edmund's
+Focus must not be `Sleep`, `unknown`, or `unavailable` while he is home. Blocked
+automatic calls are discarded, not queued. Leaving Sleep Focus does not run Good
+Morning or re-evaluate an earlier wake signal. Activate the script, not its
+internal immediate-state scene. The script waits ten
 minutes before turning on the desk monitor and desk POP switches to avoid the
 bright display at wake-up. Activating Good Morning again restarts the delay; a
 bedtime activation cancels the pending power-on.
+
+`../../_tests/test_good_morning.py` runs the exported sleep configuration in an
+isolated HA runtime, without physical integrations. It checks manual activation
+with Sleep, unknown, unavailable, Work, empty, and missing Focus reports, scene
+application, DJ dispatch, delayed desk power, and the goodnight re-entry guard.
+Export the domain without evaluating the NUC host:
+
+```sh
+nix-instantiate --eval --strict --json --expr '
+  let lib = {
+    mkAfter = x: x;
+    optional = b: x: if b then [x] else [];
+  }; in (import ./modules/services/hass/_domains/sleep/default.nix {
+    inherit lib;
+    pkgs.systemd = "/unused";
+  }).services.home-assistant.config
+' > /tmp/good-morning-config.json
+python modules/services/hass/_tests/test_good_morning.py /tmp/good-morning-config.json -v
+```
+
+### iPhone Focus name reporting
+
+`sensor.edmunds_iphone_focus_name` belongs to Companion's `mobile_app` integration,
+not a Nix template or a custom Shortcut. iOS exposes only whether a Focus is active;
+the name comes from a per-Focus Home Assistant **Report Focus name** filter.
+Opening Companion refreshes sensors but cannot discover an unmapped Focus name.
+
+On Edmund's iPhone:
+
+1. In Home Assistant Companion settings, open Sensors → Focus name, enable the
+   sensor, grant Focus permission, and configure names `Sleep` and `Work`.
+2. In iOS Settings → Focus → Sleep → Focus Filters, add Home Assistant's
+   **Report Focus name** filter and select `Sleep`.
+3. Repeat for Work, selecting `Work`. Each other Focus needing a name needs its
+   own mapping. Allow Focus-status sharing with Home Assistant.
+4. When safe to exercise the existing Focus-triggered bed actions, switch Sleep
+   → Work → all Focus off and inspect the HA sensor. Expect `Sleep` / `true`,
+   `Work` / `true`, then empty string / `false` for state / `Is focused`.
+
+An empty name can also mean an active but unnamed Focus; inspect `Is focused`
+rather than treating an empty string as proof that all Focus modes are off.
+Do not reset the HA sensor on a timer or replace its name with the generic Focus
+boolean: neither establishes that Sleep ended. Phone configuration/delivery must
+be verified on the phone; the server-side manual bypass does not repair it.
+
+Upstream contracts: [Focus filter intent](https://github.com/home-assistant/iOS/blob/master/Sources/App/Settings/Focus/FocusNameFocusFilterAppIntent.swift),
+[sensor state and attributes](https://github.com/home-assistant/iOS/blob/master/Sources/Shared/API/Webhook/Sensors/FocusNameSensor.swift),
+and [Focus report reconciliation](https://github.com/home-assistant/iOS/blob/master/Sources/Shared/Environment/FocusReport.swift).
 
 ## Apple / 8Sleep Integration
 
