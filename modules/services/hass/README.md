@@ -8,19 +8,19 @@ HA state lives in `/var/lib/hass` and is backed up nightly by restic (see `hosts
 
 ### What's Backed Up
 
-| Data                                           | Location                                 | Recoverable from Nix?                                                                  |
-| ---------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------- |
-| Device pairings (Zigbee, BLE, Matter, HomeKit) | `/var/lib/hass/.storage/`                | ❌ No — must restore from backup                                                       |
-| Integration configs (API keys, tokens)         | `/var/lib/hass/.storage/`                | ❌ No                                                                                  |
-| Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry` | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                       |
-| Automations (UI-created)                       | `/var/lib/hass/automations.yaml`         | ❌ No                                                                                  |
-| Automations (Nix-declared)                     | `_domains/*.nix`                         | ✅ Yes — rebuilt from Nix                                                              |
-| HA config (http, recorder, helpers)            | `default.nix`                            | ✅ Yes — rebuilt from Nix                                                              |
-| Extra components (ecobee, cast, etc.)          | `default.nix`                            | ✅ Yes — rebuilt from Nix                                                              |
-| Recorder history (energy, temps, states)       | PostgreSQL (`hass` db)                   | ❌ Not in restic — separate pg backup needed                                           |
-| HACS integrations                              | `/var/lib/hass/custom_components/`       | Partial — HACS itself is Nix-managed, but HACS-installed integrations need re-download |
-| Blueprints (Nix-managed)                       | `blueprints/`                            | ✅ Yes                                                                                 |
-| Lovelace dashboards                            | `/var/lib/hass/.storage/lovelace*`       | ❌ No                                                                                  |
+| Data                                           | Location                                                           | Recoverable from Nix?                                                                  |
+| ---------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Device pairings (Zigbee, BLE, Matter, HomeKit) | `/var/lib/hass/.storage/`                                          | ❌ No — must restore from backup                                                       |
+| Integration configs (API keys, tokens)         | `/var/lib/hass/.storage/`                                          | ❌ No                                                                                  |
+| Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry`                           | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                       |
+| Automations (UI-created)                       | `/var/lib/hass/automations.yaml`                                   | ❌ No                                                                                  |
+| Automations (Nix-declared)                     | `_domains/*.nix`                                                   | ✅ Yes — rebuilt from Nix                                                              |
+| HA config (http, recorder, helpers)            | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
+| Extra components (ecobee, cast, etc.)          | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
+| Recorder history (energy, temps, states)       | PostgreSQL (`hass` db), dumped to `/var/backup/hass/recorder.dump` | ❌ No — restore the nightly restic dump                                                |
+| HACS integrations                              | `/var/lib/hass/custom_components/`                                 | Partial — HACS itself is Nix-managed, but HACS-installed integrations need re-download |
+| Blueprints (Nix-managed)                       | `blueprints/`                                                      | ✅ Yes                                                                                 |
+| Lovelace dashboards                            | `/var/lib/hass/.storage/lovelace*`                                 | ❌ No                                                                                  |
 
 ### Backup Schedule
 
@@ -66,9 +66,24 @@ If backups are lost AND HA storage is gone, you'd need to:
 
 The Nix config rebuilds everything else: components, input helpers, scenes, scripts, blueprints, and Nix-declared automations.
 
-### ⚠️ Gap: PostgreSQL
+### PostgreSQL recorder backup
 
-The recorder database (sensor history, energy data) is in PostgreSQL, **not** in `/var/lib/hass`. It's not currently backed up by restic. This is acceptable if history is non-critical, but add a `pg_dump` pre-backup hook if you want it preserved.
+The recorder database lives in PostgreSQL, **not** in `/var/lib/hass`. Before each
+daily restic backup, `pg_dump --format=custom` takes a consistent online snapshot
+using the configured PostgreSQL package and database name. HA stays running.
+The root-only dump at `/var/backup/hass/recorder.dump` is replaced atomically only
+after the dump succeeds, then included in the same restic snapshot as HA state.
+A dump failure aborts the backup instead of reporting success with yesterday's
+dump. The dump inherits the daily backup's R2 destination and retention.
+
+For recovery, restore `/var/backup/hass/recorder.dump` from the chosen restic
+snapshot into a staging directory. With separately authorized downtime, stop HA
+and use the matching PostgreSQL `pg_restore` to load it into an empty `hass`
+database owned by the configured HA database user, then restart HA. Do not restore
+over a running recorder or overwrite an existing database without a recovery plan.
+
+This backs up retained history and statistics; it does not extend HA's recorder
+retention or recover history already purged before the snapshot.
 
 ### Native backup integration is intentionally disabled
 

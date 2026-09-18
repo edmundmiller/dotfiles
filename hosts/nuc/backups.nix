@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   restic-backup-id = "c351536f-39a4-4725-9d92-04fcb26b6306";
   hermesProfileHomes = map (
@@ -51,10 +56,24 @@ in
         "${config.users.users.emiller.home}/sync"
         "${config.users.users.emiller.home}/obsidian-vault"
         # "${config.users.users.emiller.home}/archive"
-        "/var/lib/hass" # Home Assistant config + database
+        "/var/lib/hass" # Home Assistant config and integration state
+        "/var/backup/hass/recorder.dump" # PostgreSQL recorder history
       ];
 
-      backupPrepareCommand = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backup-id}/start";
+      backupPrepareCommand = ''
+        set -eu
+        ${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backup-id}/start
+
+        # A consistent online dump; never publish a partial dump or back up a stale one.
+        umask 077
+        ${pkgs.coreutils}/bin/install -d -m 0700 /var/backup/hass
+        dump_tmp=$(${pkgs.coreutils}/bin/mktemp /var/backup/hass/recorder.dump.XXXXXX)
+        trap '${pkgs.coreutils}/bin/rm -f "$dump_tmp"' EXIT
+        ${pkgs.util-linux}/bin/runuser -u postgres -- \
+          ${config.services.postgresql.package}/bin/pg_dump \
+          --format=custom --dbname=${lib.escapeShellArg config.modules.services.hass.postgres.database} > "$dump_tmp"
+        ${pkgs.coreutils}/bin/mv "$dump_tmp" /var/backup/hass/recorder.dump
+      '';
       backupCleanupCommand = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/${restic-backup-id}/$EXIT_STATUS";
     };
 
