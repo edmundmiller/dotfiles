@@ -7,7 +7,7 @@ let
     src = final.fetchFromGitHub {
       owner = "herdrdev";
       repo = "herdr";
-      rev = "065ef9d6a531c49fb8bee7e818ef837065b21ee9"; # v0.9.1
+      rev = "065ef9d6a531c49fb8bee7e818ef837065b21ee9";
       hash = "sha256-N6+kprfWRyh0AkAiopkGsNXUGGORyPVFHEaDHCpGQs8=";
     };
     patches = [
