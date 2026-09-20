@@ -76,8 +76,8 @@ Rule numbers are stable ids that other skills cite. A removed rule leaves a gap.
 Pinned from Cursor pstack unslop at `e8d856f0273b42ebafe0ec3546bd645709e7c1b0`.
 Refresh by replacing the upstream body from the source URL, then keep this section.
 
-These rules are standing prose policy. When the root `AGENTS.md` writing route
-is already in context, do not open this file again for the same turn.
+These numbered rules are the writing policy. Load this file when drafting
+user-visible prose. Root `AGENTS.md` routes here. It does not repeat the list.
 
 Adjacent tools stay separate:
 

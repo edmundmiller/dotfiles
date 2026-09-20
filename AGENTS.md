@@ -22,9 +22,8 @@ Preserve unrelated work in the assigned checkout.
 
 - Agent configuration: [config/agents](config/agents/AGENTS.md).
 - Skills and selection: [skills](skills/AGENTS.md).
-- Writing: standing [unslop](skills/catalog/unslop/SKILL.md) policy for
-  user-visible prose. It is marked always-apply, so do not treat it as an
-  on-demand skill-read. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
+- Writing: load [unslop](skills/catalog/unslop/SKILL.md) when drafting
+  user-visible prose. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).
 - Packages/overlays: `pkg-list`, then `pkg-check <unit>` for upstream patch checks.
 - Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped

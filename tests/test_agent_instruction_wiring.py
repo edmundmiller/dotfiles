@@ -261,7 +261,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("nix flake update skills-catalog", sync)
         self.assertIn("main rebuild", sync)
 
-    def test_unslop_is_standing_catalog_policy(self) -> None:
+    def test_unslop_is_catalog_writing_route(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()
         config_agents = (ROOT / "config" / "agents" / "AGENTS.md").read_text()
         skill = (ROOT / "skills" / "catalog" / "unslop" / "SKILL.md").read_text()
@@ -279,10 +279,14 @@ class AgentInstructionWiringTests(unittest.TestCase):
         upstream_hash = hashlib.sha256(upstream_body.encode()).hexdigest()
 
         self.assertIn("skills/catalog/unslop/SKILL.md", root_agents)
-        self.assertIn("always-apply", root_agents)
-        self.assertIn("on-demand skill-read", root_agents)
+        self.assertIn("load [unslop]", root_agents)
+        self.assertNotIn("always-apply", root_agents)
+        self.assertNotIn("on-demand skill-read", root_agents)
+        self.assertNotIn("do not open this file", skill)
+        self.assertIn("Load this file when drafting", skill)
         self.assertIn("skills/catalog/unslop/", config_agents)
         self.assertIn("do not copy", config_agents)
+        self.assertIn("Load `SKILL.md`", guide)
         for neighbor in ("deslop", "anti-slop", "no-ai-slop"):
             self.assertIn(neighbor, root_agents)
             self.assertIn(neighbor, skill)

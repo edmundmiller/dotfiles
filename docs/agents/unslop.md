@@ -1,19 +1,19 @@
 ---
-purpose: Record how standing unslop writing rules are wired in this flake.
+purpose: Record how unslop writing rules are wired in this flake.
 applies_to: Agent prose, UI copy, commits, PRs, and docs.
 entrypoint: Root AGENTS.md writing route, then skills/catalog/unslop/SKILL.md.
-verification: python3 -m unittest tests.FAKESECRET_w2x3y4z5a6b7c8d9e0f1
+verification: python3 -m unittest tests.FAKESECRET_i3j4k5l6m7n8o9p0q1r2
 update_when: The pstack pin, catalog path, or adjacent slop tools change.
 ---
 
-# Unslop standing policy
+# Unslop writing route
 
 maria_rcks recommended embedding Cursor pstack unslop in `AGENTS.md` so agents
 do not re-read the skill every turn.
 
 This checkout keeps the numbered rules in the global catalog skill and adds a
-root `AGENTS.md` route. It does not paste the full list into `AGENTS.md` or
-`config/agents/core.md`.
+root `AGENTS.md` route that tells agents to load that file when writing. It
+does not paste the full list into `AGENTS.md` or `config/agents/core.md`.
 
 - [ADR 0010](../adr/0010-omp-ttsr-thin-agent-harness.md) keeps the shared
   startup core to universal invariants and a 220-word budget.
@@ -22,9 +22,11 @@ root `AGENTS.md` route. It does not paste the full list into `AGENTS.md` or
 - Catalog skills under `skills/catalog/` auto-enable globally. That is how
   flake-deployed agents receive the pinned copy.
 
-The skill keeps upstream `disable-model-invocation: true` and
-"Must always apply." Treat that metadata as the always-on contract. The root
-route tells agents not to spend a turn reading the file again.
+Catalog deployment makes the skill discoverable. It does not inject the body
+into every model turn. `core.md` stays the thin startup core. Load `SKILL.md`
+when the writing route applies. Upstream `disable-model-invocation: true` and
+"Must always apply" stay on the vendored file as source metadata, not as a
+claim that every runtime already has the rules in context.
 
 ## Adjacent tools
 
