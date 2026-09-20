@@ -29,7 +29,8 @@ nix shell .#oxlint-plugin-jev --command oxlint-jev path/to/dir
 ```
 
 The wrapper uses `--disable-nested-config` and the store config at
-`$out/share/oxlint-jev.json`. It is not a pre-commit hook.
+`$out/share/oxlint-jev.json`. Built-in Oxlint categories are off, so this
+path only asks Jev. It is not a pre-commit hook.
 
 ### English rules
 

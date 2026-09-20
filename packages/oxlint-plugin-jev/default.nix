@@ -24,6 +24,15 @@ let
   configTemplate = writeText "oxlint-jev.json" (
     builtins.toJSON {
       inherit ignorePatterns;
+      categories = {
+        correctness = "off";
+        nursery = "off";
+        pedantic = "off";
+        perf = "off";
+        restriction = "off";
+        style = "off";
+        suspicious = "off";
+      };
       jsPlugins = [
         {
           name = "jev";

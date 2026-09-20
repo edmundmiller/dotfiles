@@ -43,6 +43,7 @@ class OxlintJevTests(unittest.TestCase):
         flake = FLAKE.read_text()
 
         self.assertIn('ci = "skip"', package_nix)
+        self.assertIn("correctness = \"off\"", package_nix)
         self.assertIn('"jev/ask"', package_nix)
         self.assertNotIn("TYPESAFE_API_KEY", flake)
         self.assertNotIn("TYPESAFE_API_KEY=", package_nix)
