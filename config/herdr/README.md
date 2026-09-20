@@ -146,6 +146,14 @@ Marketplace/GitHub plugins are installed by activation when missing:
 - `alon-z/herdr-command-palette`
 - `0x5c0f/herdr-insight`
 - `coryshaw1/herdr-cliamp` when `modules.shell.cliamp` is enabled
+- `eliasstravik/herdr-projects` when `modules.shell.herdr.projects.enable` is
+  true, pinned to `a4cdb0a69713d982d96f9062548cf885f013c442` via
+  `herdr plugin install --ref`. The plugin builds itself with
+  `cargo build --release --locked` (Rust 1.89+). Upstream documents Herdr
+  0.9.1+; this flake currently packages Herdr 0.9.0, so activation treats
+  a version or access miss as optional and continues. GitHub currently
+  serves the repo as public, but the plugin README still says private
+  access may be required.
 
 Private GitHub plugins use the active `gh` login through a transient,
 `github.com`-scoped Git credential helper. Activation passes that helper only
@@ -158,6 +166,23 @@ Workspace Manager reads the Nix-managed `config/herdr/workspace-manager.yml`.
 Its path matcher covers native Herdr worktrees but not Review Boxes under
 `/.pi/worktrees/`; the Review Box launcher therefore remains the sole owner of
 its Hunk, Critique, agent, and approval tabs.
+
+MacTraitor Pro and Seqeratop also enable `eliasstravik/herdr-projects`. After
+a successful install, create the first project from Herdr's action menu
+(**Projects: new project**) or:
+
+```bash
+herdr-projects new "Billing" --repo ~/dev/app
+herdr-projects open billing
+```
+
+Check the plugin with `herdr plugin action invoke doctor --plugin herdr-projects`.
+If activation skipped install because Herdr is older than 0.9.1, bump the
+overlay and restart the running server (`herdr status` reports
+`server_binary_stale` until then). If GitHub returns 404, run
+`gh auth login --hostname github.com` so the marketplace helper can clone
+the repo, then rebuild. A host without rustup 1.89+ can still fail the
+first Cargo build; activation prefers `~/.cargo/bin` over Nix rustc.
 
 MacTraitor Pro additionally enables `vercel-labs/herdr-vercel-sandbox-plugin`.
 Its managed config selects Codex in a Node 24 Sandbox. Use `prefix+S` to start,

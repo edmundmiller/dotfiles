@@ -17,3 +17,8 @@ from Herdr to tmux.
 `modules.shell.herdr.tnote.enable` (default true) installs the packaged tnote CLI
 and its Herdr plugin. The config-check VM test disables it so CI does not
 evaluate the private `tnote` flake input.
+
+`modules.shell.herdr.projects.enable` (default false) installs the pinned
+`eliasstravik/herdr-projects` marketplace plugin. Enable it on Herdr-primary
+hosts. First install needs Herdr 0.9.1+ (client and running server), Cargo
+1.89+, and GitHub access if the upstream repo is private.

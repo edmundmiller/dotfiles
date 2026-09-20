@@ -268,6 +268,16 @@ in
     ]) "pi";
     vercelSandbox.enable = mkBoolOpt false;
     tnote.enable = mkBoolOpt true;
+    projects.enable = mkOption {
+      type = bool;
+      default = false;
+      description = ''
+        Install Elias Stråvik's herdr-projects marketplace plugin at a pinned
+        Git revision during activation. Requires Herdr 0.9.1+ on both the CLI
+        and the running server. First install runs the plugin's locked Cargo
+        release build; later activations keep the pin instead of reinstalling.
+      '';
+    };
     popupWidth = mkOpt int 90;
     popupHeight = mkOpt int 90;
     managePiTheme = mkBoolOpt true;
@@ -952,9 +962,14 @@ in
             repo="$2"
             subdir="''${3:-}"
             mode="''${4:-required}"
+            ref="''${5:-}"
             spec="$owner/$repo"
             if [ -n "$subdir" ]; then
               spec="$spec/$subdir"
+            fi
+            ref_args=()
+            if [ -n "$ref" ]; then
+              ref_args=(--ref "$ref")
             fi
 
             if [ "$runtime_deferred" -eq 1 ]; then
@@ -976,10 +991,15 @@ in
               --arg owner "$owner" \
               --arg repo "$repo" \
               --arg subdir "$subdir" \
-              'any(.result.plugins[]?; .source.kind == "github" and .source.owner == $owner and .source.repo == $repo and (.source.subdir // "") == $subdir)' >/dev/null; then
+              --arg ref "$ref" \
+              'any(.result.plugins[]?; .source.kind == "github" and .source.owner == $owner and .source.repo == $repo and (.source.subdir // "") == $subdir and ($ref == "" or (.source.resolved_commit // "") == $ref or (.source.requested_ref // "") == $ref))' >/dev/null; then
               echo "herdr: $spec plugin already installed"
             else
-              echo "herdr: installing $spec plugin"
+              if [ -n "$ref" ]; then
+                echo "herdr: installing $spec plugin at $ref"
+              else
+                echo "herdr: installing $spec plugin"
+              fi
               if ! install_output=$(
                 ${pkgs.coreutils}/bin/env \
                   GIT_CONFIG_COUNT=2 \
@@ -988,10 +1008,10 @@ in
                   GIT_CONFIG_KEY_1=credential.https://github.com.helper \
                   GIT_CONFIG_VALUE_1=${escapeShellArg "!${lib.getExe pkgs.gh} auth git-credential"} \
                   GIT_TERMINAL_PROMPT=0 \
-                  "$herdr_cmd" plugin install "$spec" --yes 2>&1
+                  "$herdr_cmd" plugin install "$spec" --yes "''${ref_args[@]}" 2>&1
               ); then
                 printf '%s\n' "$install_output" >&2
-                if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication"; then
+                if [ "$mode" = optional ] && printf '%s\n' "$install_output" | ${pkgs.gnugrep}/bin/grep -Eqi "not found|404|private|permission|could not read Username|authentication|plugin_requires_newer_herdr|min_herdr_version"; then
                   echo "herdr: warning: optional $spec plugin unavailable; continuing" >&2
                 else
                   return 1
@@ -1067,6 +1087,12 @@ in
           install_plugin edmundmiller herdr-which-key "" optional
           ${optionalString cfg.tnote.enable ''
             install_plugin edmundmiller tnote packages/tn/herdr-plugin
+          ''}
+          ${optionalString cfg.projects.enable ''
+            # herdr-projects 0.1.0 requires Herdr 0.9.1+ (this flake currently
+            # ships 0.9.0). Install is optional so a version or access miss
+            # does not fail activation. Pin: eliasstravik/herdr-projects@a4cdb0a.
+            install_plugin eliasstravik herdr-projects "" optional a4cdb0a69713d982d96f9062548cf885f013c442
           ''}
         '';
 

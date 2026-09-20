@@ -44,6 +44,7 @@
         tmux.jmux.enable = false;
         herdr.enable = true;
         herdr.mainCodingAgent = "omp";
+        herdr.projects.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
