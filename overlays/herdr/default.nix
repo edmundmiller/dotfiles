@@ -7,16 +7,13 @@ let
     src = final.fetchFromGitHub {
       owner = "herdrdev";
       repo = "herdr";
-      rev = "b99002ac99b09e00b4ca692436cb15a6b0d676f1";
-      hash = "sha256-SUYF4bbaYwNgoe498VoCUzuLPcjBLQXR0o0DWjjoSnI=";
+      rev = "065ef9d6a531c49fb8bee7e818ef837065b21ee9"; # v0.9.1
+      hash = "sha256-N6+kprfWRyh0AkAiopkGsNXUGGORyPVFHEaDHCpGQs8=";
     };
     patches = [
-      ./patches/0001-libghostty-bench-gated.patch # bead: dotfiles-lq7y
-      ./patches/0006-update-cargo-hash.patch # bead: dotfiles-og2k
       ./patches/0007-worktree-actions-use-focused-pane-cwd.patch # bead: dotfiles-y5ag
       ./patches/0008-ignore-zero-terminal-resize.patch # bead: dotfiles-1t6d
       ./patches/0009-defer-background-tab-resize.patch # bead: dotfiles-0qcg
-      ./patches/0013-hyperlink-string-chunk-ceiling.patch # herdr-2026-07-19 PageList link dupe
       ./patches/0014-macos-aiff-notification-sounds.patch
     ];
   };
