@@ -102,6 +102,8 @@ class AgentRunTests(unittest.TestCase):
             '"anti-slop/require-safety-comment-for-type-assertion" = "error";',
             flake,
         )
+        self.assertNotIn("jev/ask", flake)
+        self.assertIn("packages.oxlint-plugin-jev", flake)
 
     def test_orb_setup_limits_nix_parallelism(self) -> None:
         setup = ORB_SETUP.read_text()

@@ -42,6 +42,12 @@ CHECKS = {
         "bin/check-package-layout",
         "bin/check-patch-locality",
         "tests/test_package_policy.py",
+        "tests/test_oxlint_jev.py",
+    ],
+    "oxlint-jev": [
+        "packages/oxlint-plugin-jev/*",
+        "docs/agents/oxlint.md",
+        "tests/test_oxlint_jev.py",
     ],
     "hunk-config-compatibility": [
         "config/hunk/*",
@@ -60,6 +66,7 @@ CHECKS = {
         "docs/README.md",
         "docs/agent-guardrails.md",
         "docs/validation.md",
+        "docs/agents/oxlint.md",
     ],
     "omp-thin-harness-tests": [
         "AGENTS.md",
