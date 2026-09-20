@@ -95,6 +95,29 @@ def test_marketplace_private_plugin_auth_is_scoped_to_git_install() -> None:
     assert "githubNixToken" not in marketplace_activation
 
 
+def test_herdr_projects_plugin_is_pinned_and_host_scoped() -> None:
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    readme = (ROOT / "config" / "herdr" / "README.md").read_text()
+    mactraitorpro = (ROOT / "hosts" / "mactraitorpro" / "default.nix").read_text()
+    seqeratop = (ROOT / "hosts" / "seqeratop" / "default.nix").read_text()
+    marketplace_activation = module.split(
+        "home.activation.herdr-marketplace-plugins =", 1
+    )[1].split("home.activation.herdr-agent-integrations =", 1)[0]
+
+    assert "projects.enable" in module
+    assert "optionalString cfg.projects.enable" in marketplace_activation
+    assert (
+        "install_plugin eliasstravik herdr-projects "
+        '"" optional a4cdb0a69713d982d96f9062548cf885f013c442'
+    ) in marketplace_activation
+    assert "plugin_requires_newer_herdr" in marketplace_activation
+    assert "herdr.projects.enable = true;" in mactraitorpro
+    assert "herdr.projects.enable = true;" in seqeratop
+    assert "eliasstravik/herdr-projects" in readme
+    assert "a4cdb0a69713d982d96f9062548cf885f013c442" in readme
+    assert "herdr-projects new" in readme
+
+
 def test_tnote_today_plugin_is_installed_with_its_runtime() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
@@ -214,9 +237,13 @@ def test_marketplace_plugin_source_match_includes_exact_subdir() -> None:
     )[1].split("home.activation.herdr-agent-integrations =", 1)[0]
 
     assert '--arg subdir "$subdir"' in marketplace_activation
+    assert '--arg ref "$ref"' in marketplace_activation
     assert ".source.owner == $owner" in marketplace_activation
     assert ".source.repo == $repo" in marketplace_activation
     assert '(.source.subdir // "") == $subdir' in marketplace_activation
+    assert '(.source.resolved_commit // "") == $ref' in marketplace_activation
+    assert '(.source.requested_ref // "") == $ref' in marketplace_activation
+    assert '"$herdr_cmd" plugin install "$spec" --yes "\'\'${ref_args[@]}"' in marketplace_activation
 
 
 def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() -> None:

@@ -131,6 +131,7 @@ in
         herdr.enable = true;
         herdr.mainCodingAgent = "omp";
         herdr.vercelSandbox.enable = true;
+        herdr.projects.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
