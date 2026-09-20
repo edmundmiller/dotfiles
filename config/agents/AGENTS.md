@@ -2,6 +2,8 @@
 
 `core.md` supplies startup instructions for OMP, Codex, Claude, Pi, and OpenCode;
 its limit is 220 words. Keep task procedures in skills or scoped guides.
+Unslop writing rules live in `skills/catalog/unslop/`; do not copy them into
+`core.md`.
 `modes/` deploys to `~/.claude/agents` and the OpenCode V2 agent directory.
 
 - Global skills: `skills/catalog/`, with selection and target wiring in
