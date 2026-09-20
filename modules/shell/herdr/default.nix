@@ -1089,9 +1089,9 @@ in
             install_plugin edmundmiller tnote packages/tn/herdr-plugin
           ''}
           ${optionalString cfg.projects.enable ''
-            # herdr-projects 0.1.0 requires Herdr 0.9.1+ (this flake currently
-            # ships 0.9.0). Install is optional so a version or access miss
-            # does not fail activation. Pin: eliasstravik/herdr-projects@a4cdb0a.
+            # herdr-projects 0.1.0 requires Herdr 0.9.1+ (this flake ships
+            # 0.9.1). Install stays optional so a GitHub access miss does not
+            # fail activation. Pin: eliasstravik/herdr-projects@a4cdb0a.
             install_plugin eliasstravik herdr-projects "" optional a4cdb0a69713d982d96f9062548cf885f013c442
           ''}
         '';
