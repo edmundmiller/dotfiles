@@ -62,6 +62,10 @@ CHECKS = {
         "docs/validation.md",
     ],
     "omp-thin-harness-tests": [
+        "AGENTS.md",
+        "config/agents/AGENTS.md",
+        "docs/agents/unslop.md",
+        "skills/catalog/unslop/*",
         "bin/bootstrap",
         "config/agents/core.md",
         "config/codex/config.toml",

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import subprocess
@@ -259,6 +260,46 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertNotIn("dotfiles-repo", command)
         self.assertIn("nix flake update skills-catalog", sync)
         self.assertIn("main rebuild", sync)
+
+    def test_unslop_is_standing_catalog_policy(self) -> None:
+        root_agents = (ROOT / "AGENTS.md").read_text()
+        config_agents = (ROOT / "config" / "agents" / "AGENTS.md").read_text()
+        skill = (ROOT / "skills" / "catalog" / "unslop" / "SKILL.md").read_text()
+        provenance = (ROOT / "skills" / "catalog" / "unslop" / "AGENTS.md").read_text()
+        guide = (ROOT / "docs" / "agents" / "unslop.md").read_text()
+        pin = "e8d856f0273b42ebafe0ec3546bd645709e7c1b0"
+        source = (
+            "https://github.com/cursor/plugins/blob/"
+            f"{pin}/pstack/skills/unslop/SKILL.md"
+        )
+        vendored_body, _local = skill.split("## This checkout", 1)
+        upstream_body = (
+            "# Unslop" + vendored_body.split("# Unslop", 1)[1]
+        ).rstrip() + "\n"
+        upstream_hash = hashlib.sha256(upstream_body.encode()).hexdigest()
+
+        self.assertIn("skills/catalog/unslop/SKILL.md", root_agents)
+        self.assertIn("always-apply", root_agents)
+        self.assertIn("on-demand skill-read", root_agents)
+        self.assertIn("skills/catalog/unslop/", config_agents)
+        self.assertIn("do not copy", config_agents)
+        for neighbor in ("deslop", "anti-slop", "no-ai-slop"):
+            self.assertIn(neighbor, root_agents)
+            self.assertIn(neighbor, skill)
+
+        self.assertIn(f"pin: {pin}", skill)
+        self.assertIn(source, skill)
+        self.assertIn("disable-model-invocation: true", skill)
+        self.assertIn("Must always apply.", skill)
+        self.assertEqual(
+            upstream_hash,
+            "2e2c5ed089ae71553776f0f56dbdd0885feb7e4f3bb10fb2d33fbaf68ffe93c4",
+        )
+        self.assertIn(pin, provenance)
+        self.assertIn(source, provenance)
+        self.assertIn("purpose:", guide.splitlines()[1])
+        self.assertEqual(guide.splitlines()[6], "---")
+        self.assertNotIn("config/agents/core.md", skill)
 
     def test_agents_md_use_guarded_hey_interfaces(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()

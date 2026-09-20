@@ -9,6 +9,9 @@ description: Run a final review-readiness pass for rule conformance, type safety
 Run this only after the change is functionally correct and before `commit`.
 PR text should describe already-deslopped code.
 
+Overlaps: `unslop` is standing prose and UI-voice policy. This skill is the
+post-correct review pass. Do not substitute one for the other.
+
 ## Goals
 
 - Keep the smallest clear diff that still solves the task.
