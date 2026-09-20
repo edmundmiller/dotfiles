@@ -32,6 +32,8 @@ claim that every runtime already has the rules in context.
 
 - `deslop` reviews correct code for types, rules, and extra abstraction.
 - `anti-slop` is repository Oxlint for TypeScript.
+- `oxlint-plugin-jev` is a separate opt-in Oxlint path. See
+  [oxlint.md](./oxlint.md).
 - `no-ai-slop` remains the separate petergyang skill.
 
 ## Refresh

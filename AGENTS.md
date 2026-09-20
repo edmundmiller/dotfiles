@@ -25,6 +25,8 @@ Preserve unrelated work in the assigned checkout.
 - Writing: load [unslop](skills/catalog/unslop/SKILL.md) when drafting
   user-visible prose. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).
+- Oxlint: default hook is anti-slop. Opt-in English Jev rules:
+  [docs/agents/oxlint.md](docs/agents/oxlint.md).
 - Packages/overlays: `pkg-list`, then `pkg-check <unit>` for upstream patch checks.
 - Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped
   guide; [NUC runbook](docs/runbooks/deploy-nuc.md) for remote deployment.

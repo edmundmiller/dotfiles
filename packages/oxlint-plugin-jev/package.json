@@ -1,0 +1,11 @@
+{
+  "name": "oxlint-jev-tooling",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "Pinned oxlint-plugin-jev and a matching oxlint CLI for this flake.",
+  "dependencies": {
+    "oxlint": "1.83.0",
+    "oxlint-plugin-jev": "0.1.1"
+  }
+}

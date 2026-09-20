@@ -1,0 +1,20 @@
+[
+  {
+    "id": "no-pii-in-logs",
+    "target": "call",
+    "question": "Does this call write personal data, such as an email or phone number, to a log or console?",
+    "cutoff": 0.8
+  },
+  {
+    "id": "no-secrets-in-logs",
+    "target": "call",
+    "question": "Does this call write a secret, API key, token, or password to a log or console?",
+    "cutoff": 0.8
+  },
+  {
+    "id": "name-matches-behavior",
+    "target": "function",
+    "question": "Does this function's name imply it only reads data, while its body also writes or sends something?",
+    "cutoff": 0.6
+  }
+]

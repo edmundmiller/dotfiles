@@ -53,7 +53,9 @@
       flake = false;
     };
     # Keep the linter and plugin API on the same release until the main
-    # nixpkgs input catches up.
+    # nixpkgs input catches up. oxlint-plugin-jev needs Oxlint >= 1.83.0 and
+    # lives in a separate npm-locked package. Do not point this hook at 1.83
+    # unless anti-slop is verified on that plugin API.
     nixpkgs-anti-slop.url = "github:NixOS/nixpkgs/2a747aca22036dce3677fd41877427e3cd33e87a";
 
     # Extras
@@ -468,6 +470,10 @@
             type = "app";
             program = "${mkRenovateUpdateNixHashes pkgs}/bin/renovate-update-nix-hashes";
           };
+          oxlint-jev = {
+            type = "app";
+            program = "${self.packages.${linuxSystem}.oxlint-plugin-jev}/bin/oxlint-jev";
+          };
         };
 
         apps."${darwinSystem}" = {
@@ -478,6 +484,10 @@
           renovate-update-nix-hashes = {
             type = "app";
             program = "${mkRenovateUpdateNixHashes darwinPkgs}/bin/renovate-update-nix-hashes";
+          };
+          oxlint-jev = {
+            type = "app";
+            program = "${self.packages.${darwinSystem}.oxlint-plugin-jev}/bin/oxlint-jev";
           };
         };
 
@@ -574,6 +584,8 @@
               runHook postCheck
             '';
           });
+          # Repository hook: Oxlint 1.78.0 + anti-slop. Jev is
+          # packages.oxlint-plugin-jev (Oxlint 1.83.0) and is opt-in.
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
           antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
             builtins.toJSON {
@@ -1181,9 +1193,13 @@
                   }
                   ''
                     cd ${./.}
-                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_package_policy.py
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests.test_package_policy \
+                      tests.test_oxlint_jev
                     touch $out
                   '';
+
+              oxlint-jev = self.packages.${system}.oxlint-plugin-jev;
 
               hunk-config-compatibility = hunkConfigCompatibility;
 
@@ -1274,7 +1290,7 @@
                   ''
                     cd ${./.}
                     status=0
-                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md docs/validation.md; do
+                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md docs/validation.md docs/agents/oxlint.md; do
                       [ -f "$doc" ] || continue
                       summary="$(head -n 7 "$doc")"
                       for key in purpose applies_to entrypoint verification update_when; do
