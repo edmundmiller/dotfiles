@@ -1,8 +1,8 @@
 diff --git a/src/server/headless/client_views.rs b/src/server/headless/client_views.rs
-index 2257a05..e9468ec 100644
+index 4e0bd2e2..de7a39a2 100644
 --- a/src/server/headless/client_views.rs
 +++ b/src/server/headless/client_views.rs
-@@ -571,29 +571,14 @@ impl HeadlessServer {
+@@ -573,29 +573,14 @@ impl HeadlessServer {
              crate::kitty_graphics::HostCellSize::default()
          };
          let area = Rect::new(0, 0, cols, rows);
@@ -40,14 +40,34 @@ index 2257a05..e9468ec 100644
          if self
              .popup_owner_tab_id
              .as_deref()
+diff --git a/src/server/headless/render.rs b/src/server/headless/render.rs
+index dd2cce38..6f647469 100644
+--- a/src/server/headless/render.rs
++++ b/src/server/headless/render.rs
+@@ -441,12 +441,12 @@ impl HeadlessServer {
+                 });
+             if changed {
+                 if let Some(target) = self.shell_target_for_client(*client_id) {
+-                    crate::ui::resize_tab_surface(
++                    crate::ui::compute_tab_surface_for(
+                         &self.app.state,
+                         &self.app.terminal_runtimes,
+-                        target.workspace_index,
+-                        target.tab_index,
++                        Some(target),
+                         Rect::new(0, 0, *cols, *rows),
++                        true,
+                         if cell_size.is_known() {
+                             *cell_size
+                         } else {
 diff --git a/src/server/headless/tests/mod.rs b/src/server/headless/tests/mod.rs
-index 63f7264..ebc7dfb 100644
+index 60f89d63..cdef0e28 100644
 --- a/src/server/headless/tests/mod.rs
 +++ b/src/server/headless/tests/mod.rs
-@@ -1580,6 +1580,38 @@ async fn public_focus_moves_shell_focus_between_tabs() {
+@@ -2044,6 +2044,38 @@ async fn public_focus_moves_shell_focus_between_tabs() {
      shutdown_test_runtimes(&mut server);
  }
-
+ 
 +#[tokio::test]
 +async fn single_client_resizes_only_its_focused_tab() {
 +    let mut server = test_headless_server();
@@ -84,7 +104,7 @@ index 63f7264..ebc7dfb 100644
  async fn repeated_layout_action_reapplies_controller_geometry() {
      let mut server = test_headless_server();
 diff --git a/src/ui.rs b/src/ui.rs
-index 141e09d..a78a8a3 100644
+index 141e09d3..a78a8a30 100644
 --- a/src/ui.rs
 +++ b/src/ui.rs
 @@ -39,8 +39,8 @@ pub(crate) use self::sidebar::{
@@ -100,16 +120,16 @@ index 141e09d..a78a8a3 100644
  pub(crate) use self::widgets::{centered_popup_rect, modal_stack_areas};
 @@ -96,7 +96,6 @@ fn compute_view_internal(
          compute_tab_surface(app, terminal_runtimes, area, resize_panes, cell_size);
-
+ 
      if resize_panes {
 -        resize_background_tab_panes(app, terminal_runtimes, area, cell_size);
          resize_popup_pane(app, terminal_runtimes, area, cell_size);
      }
-
+ 
 @@ -106,29 +105,6 @@ fn compute_view_internal(
      };
  }
-
+ 
 -fn resize_background_tab_panes(
 -    app: &AppState,
 -    terminal_runtimes: &TerminalRuntimeRegistry,
@@ -137,13 +157,13 @@ index 141e09d..a78a8a3 100644
      area: Rect,
      feedback: &crate::app::state::CopyFeedback,
 diff --git a/src/ui/panes.rs b/src/ui/panes.rs
-index ab3e352..310991c 100644
+index ab3e352a..310991c5 100644
 --- a/src/ui/panes.rs
 +++ b/src/ui/panes.rs
 @@ -158,29 +158,6 @@ pub(crate) fn apply_pane_chrome(
          .collect()
  }
-
+ 
 -fn runtime_for_tab_pane<'a>(
 -    _app: &'a AppState,
 -    terminal_runtimes: &'a TerminalRuntimeRegistry,
@@ -173,7 +193,7 @@ index ab3e352..310991c 100644
 @@ -204,65 +181,6 @@ fn stable_scrollbar_gutter(
      (inner_rect, scrollbar_rect)
  }
-
+ 
 -/// Resize every visible runtime in a tab to the geometry it would receive if the tab were selected.
 -pub(super) fn resize_tab_panes(
 -    app: &AppState,
@@ -237,12 +257,12 @@ index ab3e352..310991c 100644
  pub(super) fn compute_pane_infos_for_tab(
      app: &AppState,
 diff --git a/src/ui/tab_surface.rs b/src/ui/tab_surface.rs
-index d7b80bf..4c4ae86 100644
+index d7b80bff..4c4ae86a 100644
 --- a/src/ui/tab_surface.rs
 +++ b/src/ui/tab_surface.rs
 @@ -1,6 +1,6 @@
  use ratatui::{layout::Rect, Frame};
-
+ 
 -use super::panes::{compute_pane_infos_for_tab, render_panes, resize_tab_panes};
 +use super::panes::{compute_pane_infos_for_tab, render_panes};
  use crate::app::AppState;
@@ -251,7 +271,7 @@ index d7b80bf..4c4ae86 100644
 @@ -91,31 +91,6 @@ pub(crate) fn compute_tab_surface_for(
      }
  }
-
+ 
 -pub(crate) fn resize_tab_surface(
 -    app: &AppState,
 -    terminal_runtimes: &TerminalRuntimeRegistry,
