@@ -168,6 +168,7 @@ let
       extraPackages = [
         pkgs.my.buzz
         pkgs.my.displayctl
+        pkgs.himalaya
       ]
       ++ (profile.extraPackages or [ ]);
       environmentFiles = [ hermesDisplayctlEnvironment ] ++ (profile.environmentFiles or [ ]);
@@ -1668,7 +1669,6 @@ in
           openssh
           pnpm
           prek
-          himalaya
           whisper-cpp
           rtk
         ];

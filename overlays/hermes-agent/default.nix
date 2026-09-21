@@ -31,7 +31,7 @@ let
   # package so Photon does not regress when every profile converges here.
   hermesPhotonSidecar = final.buildNpmPackage {
     pname = "hermes-photon-sidecar";
-    version = "2026.9.11";
+    version = "2026.9.14";
     src = inputs.hermes-agent + /plugins/platforms/photon/sidecar;
     npmDepsHash = "sha256-a9IvcIEG6PbV1rH8qOUW4p68yWy8myGJaBrKMveYOwQ=";
     dontNpmBuild = true;
@@ -68,7 +68,7 @@ let
 
   hermesFrontend = final.buildNpmPackage {
     pname = "hermes-frontend";
-    version = "2026.9.11";
+    version = "2026.9.14";
     src = inputs.hermes-agent;
     npmDepsHash = "sha256-hJe0Fv8TadHoo64cmA3g3eC0fcSoX2bbb0C00QhOoCo=";
     npmFlags = [
@@ -118,7 +118,7 @@ let
     in
     {
       pname = "hermes-agent";
-      version = "2026.9.11";
+      version = "2026.9.14";
       src = inputs.hermes-agent;
       propagatedBuildInputs = hermesRuntimeDeps;
       doInstallCheck = true;
@@ -181,8 +181,8 @@ let
       '';
       passthru = (old.passthru or { }) // {
         nemo-relay = nemoRelay;
-        hermesVersion = "0.21.2";
-        hermesRelease = "v2026.9.11";
+        hermesVersion = "0.21.3";
+        hermesRelease = "v2026.9.14";
         smartModelRouting = false;
       };
     }

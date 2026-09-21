@@ -10,6 +10,7 @@ let
   caduPlugins = [
     "cadu-rich-cards"
     "cadu-device"
+    "cadu-mail"
     "cadu-secrets-vault"
     "hermes-browser-stream"
     "hermes-push"

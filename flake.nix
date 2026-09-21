@@ -123,8 +123,8 @@
 
     hermes-agent = {
       # Shared source for every Hermes gateway, cron/oneshot executor, and
-      # dashboard. v2026.9.11 is Hermes v0.21.2 with the native vault.
-      url = "github:NousResearch/hermes-agent/939e45c91d751fadd94dcd1b873ac3cb44846213";
+      # dashboard. Cadu Mail requires Hermes v0.21.3 or newer.
+      url = "github:NousResearch/hermes-agent/345cd2b057a452236de401d3534b8502a7465e8d";
       flake = false;
     };
 
@@ -1713,7 +1713,7 @@
               nuc-hermes-native-vault-package = pkgs.runCommand "nuc-hermes-native-vault-package" { } ''
                 package=${self.nixosConfigurations.nuc.config.services.hermes-agent.package}
                 "$package/bin/hermes" --version \
-                  | grep -F 'Hermes Agent v0.21.2 (2026.9.11)'
+                  | grep -F 'Hermes Agent v0.21.3 (2026.9.14)'
                 hermes_python_root=""
                 for candidate in "$package"/lib/python*/site-packages; do
                   [ -d "$candidate/hermes_cli" ] || continue

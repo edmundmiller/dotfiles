@@ -8,14 +8,16 @@ update_when: NUC authentication, build location, commands, or verification chang
 
 # Runbook: Deploy to NUC
 
-## Hermes 2026.9.11: Cadu-focused configuration
+## Hermes 2026.9.14: Cadu-focused configuration
 
-The current candidate uses Hermes 0.21.2 (2026.9.11), retaining only the Nix
+The current candidate uses Hermes 0.21.3 (2026.9.14), retaining only the Nix
 Python interpreter/thread-pool compatibility patches. The custom behavior
 patches remain in agents-workspace but are excluded from the build. Buzz and
 Slack platform plugins, native ingress, ACP fallback, and Buzz presence are
 disabled by `hosts/nuc/hermes-cadu.nix`; their credentials and state are retained.
 Other integrations, including Betty's Photon configuration, are unchanged.
+Cadu Mail is explicitly enabled for all profiles, and its `himalaya` runtime
+dependency is available in every gateway container.
 
 The six profile gateways remain enabled for upstream scheduling and their
 remaining configured platforms. The Amos, Betty, and Scintillate systemd

@@ -39,8 +39,8 @@ let
     && pkgs.lib.hasInfix "/data/current-package/bin/hermes gateway run" preStart
   ) gatewayProfiles;
   packageIdentityMatches =
-    (hermesPackage.passthru.hermesVersion or null) == "0.21.2"
-    && (hermesPackage.passthru.hermesRelease or null) == "v2026.9.11";
+    (hermesPackage.passthru.hermesVersion or null) == "0.21.3"
+    && (hermesPackage.passthru.hermesRelease or null) == "v2026.9.14";
   dashboardStart = toString service.serviceConfig.ExecStart;
   expectedDashboardExec = "${hermesPackage}/bin/hermes dashboard";
   caduSetup = builtins.head service.serviceConfig.ExecStartPre;
@@ -83,6 +83,7 @@ let
         builtins.all (name: builtins.elem name enabled) [
           "cadu-rich-cards"
           "cadu-device"
+          "cadu-mail"
           "cadu-secrets-vault"
           "hermes-browser-stream"
           "hermes-push"
@@ -92,6 +93,12 @@ let
         ]
       ) gatewayProfiles;
       msg = "Every rendered gateway must enable Cadu plugins without dropping required runtime plugins.";
+    }
+    {
+      test = builtins.all (
+        profile: builtins.elem pkgs.himalaya cfg.services.hermes-agent.profiles.${profile}.extraPackages
+      ) gatewayProfiles;
+      msg = "Every Cadu Mail-enabled gateway must include the Himalaya runtime dependency.";
     }
     {
       test = builtins.elem "photon-platform" cfg.services.hermes-agent.profiles.betty.settings.plugins.enabled;
@@ -133,7 +140,7 @@ let
     }
     {
       test = packageIdentityMatches;
-      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.2 (2026.9.11) package.";
+      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.3 (2026.9.14) package.";
     }
     {
       test = allGatewaysUseSharedPackage;
