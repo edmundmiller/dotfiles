@@ -15,9 +15,10 @@ Python interpreter/thread-pool compatibility patches. The custom behavior
 patches remain in agents-workspace but are excluded from the build. Buzz and
 Slack platform plugins, native ingress, ACP fallback, and Buzz presence are
 disabled by `hosts/nuc/hermes-cadu.nix`; their credentials and state are retained.
-Other integrations, including Betty's Photon configuration, are unchanged.
-Cadu Mail is explicitly enabled for all profiles, and its `himalaya` runtime
-dependency is available in every gateway container.
+The same host module allowlists `cadu-mail` and asserts Hermes >=0.21.3 before
+the system can evaluate. Its `himalaya` runtime dependency is available in
+every gateway container. Other integrations, including Betty's Photon
+configuration, are unchanged.
 
 The six profile gateways remain enabled for upstream scheduling and their
 remaining configured platforms. The Amos, Betty, and Scintillate systemd
@@ -35,6 +36,17 @@ connections and presence, and native cron status. Service active state alone
 does not prove package adoption. Do not initialize or migrate a real vault to
 test availability. External 1Password/Bitwarden sources remain disabled until
 explicitly authorized; Cadu pairing and grants are unchanged.
+
+Gateway unit changes use `ExecReload` with SIGUSR1, which asks Hermes to stop
+accepting new turns and drain active work before its supervisor launches the
+new process. Before any separate manual restart, query
+`/api/status?profile=<profile>` on the authenticated dashboard and require
+`gateway_busy=false` and `active_agents=0`. Prefer
+`systemctl reload hermes-gateway-<profile>` or
+`hermes --profile <profile> gateway restart --system`; raw `systemctl restart`
+uses SIGTERM and may interrupt a turn. Afterward, confirm the PID changed and
+run `hermes --version` inside that process's container. The dashboard process
+has separate sessions; check `session.active_list` before restarting it.
 
 The older cron-ownership and Buzz-rollout sections below are recovery history
 for the parked patch stack, not instructions for this configuration. Do not

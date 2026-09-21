@@ -118,7 +118,9 @@ let
     in
     {
       pname = "hermes-agent";
-      version = "2026.9.14";
+      # Keep Python distribution metadata on Hermes' semantic version. The
+      # plugin loader reads it for requires_hermes compatibility checks.
+      version = "0.21.3";
       src = inputs.hermes-agent;
       propagatedBuildInputs = hermesRuntimeDeps;
       doInstallCheck = true;
@@ -163,7 +165,11 @@ let
         ${hermesPythonEnv}/bin/python3 -c '
         import yaml, cryptography, openai, nemo_relay, anydoc
         from importlib.metadata import version
+        from hermes_cli.plugins_manifest import running_hermes_version, version_satisfies
         assert version("nemo-relay") == "0.8.4"
+        assert running_hermes_version() == "0.21.3"
+        assert version_satisfies(">=0.21.3", "0.21.3")
+        assert not version_satisfies(">=0.21.3", "0.21.2")
         '
         (
           cd "$TMPDIR"

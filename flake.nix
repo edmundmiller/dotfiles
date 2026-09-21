@@ -123,7 +123,8 @@
 
     hermes-agent = {
       # Shared source for every Hermes gateway, cron/oneshot executor, and
-      # dashboard. Cadu Mail requires Hermes v0.21.3 or newer.
+      # dashboard. v2026.9.14 is Hermes v0.21.3, the minimum supported by
+      # the NUC's cadu-mail plugin.
       url = "github:NousResearch/hermes-agent/345cd2b057a452236de401d3534b8502a7465e8d";
       flake = false;
     };

@@ -1,9 +1,9 @@
 From: numtide/llm-agents.nix
-Subject: [PATCH] fix slash worker Python environment for Hermes 0.21.2
+Subject: [PATCH] fix slash worker Python environment for Hermes 0.21.3
 
 Use the Nix wrapper interpreter and source root; retain the upstream source-root fallback.
 Upstream: https://github.com/NousResearch/hermes-agent/pull/51277
-Rebased-Against: NousResearch/hermes-agent@939e45c91d751fadd94dcd1b873ac3cb44846213
+Rebased-Against: NousResearch/hermes-agent@345cd2b057a452236de401d3534b8502a7465e8d
 ---
 diff --git a/tui_gateway/server.py b/tui_gateway/server.py
 index 2d4ceee64..43bdf80d2 100644
