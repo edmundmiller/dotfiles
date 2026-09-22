@@ -8,3 +8,7 @@ The module overrides upstream Kestrel localhost binding to `0.0.0.0` for
 Tailscale access. Dashboard credentials use `HOMEPAGE_VAR_LUBELOGGER_*` in
 `homepage-env.age`. Service registry entries own monitoring/dashboard integration;
 `hollowpnt92/lubelogger-ha` provides optional HACS vehicle sensors.
+
+Run `hey check modules/services/lubelogger` for option, secret-owner, or registry
+changes. After deployment, verify the unit and private endpoint without printing
+the environment file or dashboard credentials.

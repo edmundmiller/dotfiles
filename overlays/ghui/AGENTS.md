@@ -12,3 +12,7 @@ Review Box command/palette/`b` binding patch.
 `bun.nix` is generated from the pinned checkout using `bun2nix`; regenerate it
 when `bun.lock` changes. It must be copied into the source tree for relative
 `@ghui/keymap` workspace paths to resolve.
+
+Do not edit `bun.nix` by hand. Run `pkg-check ghui` after source, lock, patch, or
+generated dependency changes; `hey check overlays/ghui` covers repository wiring
+but not the fresh-upstream contract.

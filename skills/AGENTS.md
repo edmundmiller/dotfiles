@@ -36,3 +36,8 @@ or symlinks preserve the overwrite guard rather than replacing local edits.
 Marimo selection is intentionally curated: core authoring/conversion, widgets,
 WASM validation, interactive paper implementation, and pairing, not every
 publishing/batch/no-feedback variant. Metadata cleanup does not expand selection.
+
+Use the narrowest check: validate a local skill directory with the quality
+script, run `hey check skills` for selection or deployment wiring, and use
+`hey skills-update` only for an intended remote-pin update. `hey skills-sync`
+also rebuilds the host and requires activation authority.

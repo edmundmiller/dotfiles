@@ -13,3 +13,7 @@ State lives under `/var/lib/audiobookshelf`; SQLite is
 `config/absdatabase.sqlite`. API automation needs valid auth (otherwise 401).
 Service checks on NUC: `systemctl is-active audiobookshelf.service` and
 `curl -fsS -I http://localhost:13378/` (expected active and HTTP 200).
+
+Run `hey check modules/services/audiobookshelf` before an authorized NUC build.
+The unit and HTTP checks prove service availability only; file uploads also need
+the ownership and readability checks above.

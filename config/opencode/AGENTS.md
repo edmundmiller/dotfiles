@@ -11,3 +11,6 @@ the incompatible V1 plugin tree is not an installation path.
 
 Activation removes the V1 config directory and establishes the V2 compatibility
 alias, preserving plugin caches and user-managed content.
+
+Run `hey check config/opencode modules/agents/opencode` for source and deployment
+changes. Cache deletion and activation are live repairs, not config validation.

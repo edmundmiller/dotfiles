@@ -12,3 +12,7 @@ the user environment.
 The wrapper runs `src/cli.tsx` on Bun with production dependencies. `public/`
 font assets are runtime inputs for PDF/image generation, not disposable build
 artifacts. Pin/patch updates follow `nix-package-patching`.
+
+Build the package for pin, lock, patch, or wrapper changes, then run `hey check`
+on `packages/critique`. Include a PDF/image smoke check when fonts or the
+production dependency closure changes.

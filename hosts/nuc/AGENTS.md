@@ -18,6 +18,10 @@ to an exact commit through `nix-private-github`, failing before activation if
 resolution fails. Its opnix token is root-only. There is no persistent
 `~/dotfiles-deploy` clone to repair or recreate.
 
+Use `hey check hosts/nuc` for portable routing, `hey check --platform nixos` for
+full Linux evaluation, and `hey nuc-wt build` for an isolated snapshot build.
+Only the last of those contacts the NUC; none deploys or activates it.
+
 ## Runtime ownership
 
 - Hermes uses `pkgs.llm-agents."hermes-agent"` plus `overlays/hermes-agent/`,

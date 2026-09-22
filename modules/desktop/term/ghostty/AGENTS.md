@@ -13,3 +13,7 @@ option details.
 Startup has exactly one workspace owner: Herdr when enabled, otherwise jmux,
 otherwise tmux. `~/.config/tmux/open-herdr.sh` launches Herdr, not tmux. No
 fallback between owners: it recreates the Ghostty → Herdr → tmux → Herdr loop.
+
+Run `hey check modules/desktop/term/ghostty config/ghostty` for generated config
+and launcher wiring. After authorized activation, restart Ghostty for keybinding
+or startup changes; a config reload covers only reloadable settings.

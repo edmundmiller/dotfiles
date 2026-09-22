@@ -8,3 +8,7 @@ matching welcome/help text.
 The wrapper supplies tmux/git PATH. `modules.shell.tmux.jmux.package` selects
 `pkgs.my.jmux` for Ghostty and generated launchers; changing a package alone
 does not activate it on a host.
+
+Run `hey check packages/jmux modules/shell/tmux` and build the package after
+patch or wrapper changes. Exercise prefix batching and the new-session binding
+in a disposable tmux server; help text alone does not prove interception.

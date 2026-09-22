@@ -13,3 +13,7 @@ direct ChangeId methods.
 
 Bookmark auto-tracking uses `remotes.origin.auto-track-bookmarks`, not the
 deprecated `git.auto-local-bookmark`.
+
+Run `hey check modules/shell/jj config/jj` for templates and module wiring.
+Exercise aliases that rewrite revisions or bookmarks in a disposable jj
+repository, not this checkout.

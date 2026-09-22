@@ -56,3 +56,8 @@ are in `config/omp/config.yml`. Smol precedence is `--smol` > `PI_SMOL_MODEL` >
 rendered config; explicit commit role wins over smol. Provider IDs must exist
 in `omp models <provider>` on that host. Use `omp-model-config` for role changes
 and [docs](docs/README.md) for detailed runtime investigations.
+
+Run only the focused config scripts for the surfaces changed, then
+`hey check modules/agents/omp config/omp` for dependency and repository routing.
+`omp ttsr list --json` inspects the installed runtime, so pair it with the Python
+fixture test rather than treating installed state as source validation.

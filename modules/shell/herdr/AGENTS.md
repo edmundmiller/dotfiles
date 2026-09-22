@@ -23,3 +23,7 @@ evaluate the private `tnote` flake input.
 hosts. This flake packages Herdr 0.9.1. First install still needs a running
 0.9.1+ server, Cargo 1.89+, and GitHub access if the upstream repo is
 private.
+
+Run `hey check modules/shell/herdr config/herdr` for launcher, bootstrap, or
+integration changes. Marketplace installation and live config reconciliation
+need activation authority; the config-check VM deliberately omits private tnote.

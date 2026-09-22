@@ -20,3 +20,7 @@ Unslop writing rules live in `skills/catalog/unslop/`; do not copy them into
 
 Package and runtime deployment belong to the matching `modules/agents/` module;
 Plannotator integration belongs to `modules/agents/plannotator/`.
+
+Run both `tests.test_agent_instruction_wiring` and
+`tests.test_agent_response_contract` with `python3 -m unittest` for shared
+instruction or deployment changes, then `hey check` on the task-owned paths.

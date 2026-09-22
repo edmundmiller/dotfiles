@@ -51,3 +51,6 @@ close reapplies policy. Vacation end replaces its raw hold with the active profi
 that snapshot's `.#checks.x86_64-linux.ha-automation-assertions`. Deployment and
 live device actions need authorization and are separate from eval checks. The
 `hass-declarative` skill covers manifests, entity identity, and orphan cleanup.
+Run `hey check modules/services/hass/_domains` first for local routing. Use the
+snapshot assertion when merged automation order, helper identity, or cross-domain
+contracts need Linux evaluation; do not fire test events as a read-only check.

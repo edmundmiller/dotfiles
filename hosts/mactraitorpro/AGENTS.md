@@ -17,3 +17,6 @@ Personal nix-darwin host, user `emiller`. `default.nix` owns enabled modules;
   if `hey` is missing after activation.
 
 Workload routing: [workload-placement.md](workload-placement.md).
+Use `hey check hosts/mactraitorpro` for portable routing and
+`hey check --platform darwin` for host evaluation. `hey re` remains a separate,
+authorized activation step.

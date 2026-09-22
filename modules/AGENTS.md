@@ -12,3 +12,7 @@ The `nix-platform-specific-options` skill explains platform evaluation pitfalls.
 `options.nix` owns `user`, `dotfiles`, `home`, and `env`; `darwin-base.nix` and
 `nixos-base.nix` own platform defaults. Agent runtimes live under `agents/`,
 CLI tools under `shell/`, and hosted services under `services/`.
+
+Run `hey check modules/<category>` for the changed scope. Add
+`hey check --platform darwin` or `--platform nixos` when option existence,
+imports, or generated host configuration depends on that platform.

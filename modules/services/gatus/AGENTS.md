@@ -19,3 +19,7 @@ does not block the health command. The two-minute timer plus randomized delay
 detects Gatus, host, or timer failure. `curl -fsS http://localhost:8084/health`
 checks Gatus; starting the ping service also writes to Healthchecks and is not
 a read-only diagnostic.
+
+Run `hey check modules/services/gatus` for template, registry, or timer changes.
+After deployment, use the local `/health` read first; invoke the ping unit only
+when an external Healthchecks write is authorized and part of the test.

@@ -16,3 +16,6 @@ audit permits changes only under `00_Inbox/`, without stopping sync.
 NixOS runs as the configured user with `ProtectHome=read-only`. Darwin has a
 Desktop safety guard, not a headless launchd service. Focused check:
 `nix build .#checks.aarch64-darwin.obsidian-sync-safety-assertions` on Darwin.
+Use that check for mode/path guard changes and run `hey check` on
+`modules/services/obsidian-sync` for repository routing. Do not run sync or
+`mirror-remote` as a config test; both can change vault data.

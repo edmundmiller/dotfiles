@@ -29,3 +29,6 @@ Marketplace installation belongs to the shell module; patched plugins belong
 under `packages/`. `overlays/herdr/` owns packaging/build fixes, not dotfiles
 helper behavior. Herdr Browser needs `experimental.kitty_graphics`; cliamp needs
 `experimental.allow_nested` and `modules.shell.cliamp`.
+
+Run `hey check config/herdr modules/shell/herdr` for template and bootstrap
+changes. A server reload mutates live state and does not replace source checks.

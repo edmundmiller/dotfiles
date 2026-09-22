@@ -40,3 +40,6 @@ Model defaults and delegation policy live in `config/codex/config.toml` and
 Focused checks: `python3 -m unittest tests.test_codex_model_config` and
 `bash modules/agents/codex/test-seqera-mcp.sh`. Remote-control bootstrap, pairing,
 and recovery: [NUC runbook](../../../docs/runbooks/deploy-nuc.md#codex-remote-control).
+Use the unit test for model/profile/config contracts and the shell test for
+Seqera registration. Live OAuth, HA reads, pairing, and repair commands verify
+separate runtime paths and must not be substituted for either source check.

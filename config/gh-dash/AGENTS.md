@@ -10,3 +10,5 @@ quoted URL, for example `open 'https://github.com/{{.RepoName}}/pull/{{.PrNumber
 Issue URLs use `/issues/{{.IssueNumber}}`.
 
 [Keybinding reference](https://gh-dash.dev/configuration/keybindings).
+Run `hey check config/gh-dash modules/shell/git` after changing templates or
+their deployment wiring; opening a URL is a live side effect, not a config check.

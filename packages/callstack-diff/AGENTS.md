@@ -26,3 +26,7 @@ plus a package-owned tool executing the case's fixed command, not shell/edit/wri
 Raw reports remain ignored/private. Promote only minimized public fixtures and
 specific reproducible evidence to deterministic regressions; live complaints
 supplement rather than replace those tests.
+
+After the deterministic checks, run `hey check packages/callstack-diff` for
+package and consumer routing. Run live evals only when explicitly requested; a
+skipped live case is not passing evidence.

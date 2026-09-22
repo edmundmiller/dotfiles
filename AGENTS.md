@@ -5,6 +5,12 @@ including resolving failures caused by the change. Make routine decisions
 autonomously; ask when an unresolved choice changes the outcome or authority.
 Preserve unrelated work in the assigned checkout.
 
+Apply explicit user instructions first, then the nearest scoped `AGENTS.md`,
+then its parents. Scope follows the behavior's owner, not only the edited path:
+read an owner's guide when changing its callers or deployment wiring. Keep
+changing facts in their source files; this guide should route to them, not copy
+their inventories.
+
 ## Boundaries
 
 - Host activation, deployment, publication, secret rotation, and destructive
@@ -25,16 +31,21 @@ Preserve unrelated work in the assigned checkout.
 - Writing: load [unslop](skills/catalog/unslop/SKILL.md) when drafting
   user-visible prose. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).
-- Packages/overlays: `pkg-list`, then `pkg-check <unit>` for upstream patch checks.
+- Packages/overlays: use their scoped guides; `pkg-list` shows harnessed units.
 - Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped
   guide; [NUC runbook](docs/runbooks/deploy-nuc.md) for remote deployment.
 - Multi-session handoff or landing: [workflow](AGENT_WORKFLOW.md).
 - Canonical docs use seven-line YAML summaries under `docs/` for discovery.
 
-Run `hey check` for changed work; use `hey check path...` to select task-owned
-paths in a shared dirty checkout. It checks a disposable snapshot without changing
-source or staging. `hey check --plan` explains routing; `hey check --full` runs
-the portable suite. Host/VM validation is explicit: `hey check --platform <suite>`.
-See [validation](docs/validation.md) for CI parity and platform choices. Read-only
-tasks need no completion check. Repair task-caused failures, report unrelated or
-unavailable checks honestly, and rerun affected checks after changing their inputs.
+Use the narrowest check that covers the change:
+
+- `hey check path...` checks task-owned paths in a shared dirty checkout.
+- `hey check` checks every changed path; `hey check --full` runs the portable suite.
+- `hey check --platform <suite>` adds explicit host or VM validation.
+- `pkg-check <unit>` checks a carried upstream package or patch against fresh source.
+
+All `hey check` modes use a disposable snapshot without changing source or
+staging. `hey check --plan` shows routing. See [validation](docs/validation.md)
+for CI parity, setup, and exclusions. Read-only tasks need no completion check.
+Repair task-caused failures, report unrelated or unavailable checks honestly,
+and rerun checks after changing their inputs.

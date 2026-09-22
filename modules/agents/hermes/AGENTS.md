@@ -12,3 +12,7 @@ MCP servers use environment interpolation. Host `secretReferences` maps names
 to 1Password paths; plaintext credentials belong neither in config nor Nix.
 `hermes-runtime-drift` only reports drift. `hermes doctor` checks providers and
 API connectivity; package/host build checks establish deployment validity.
+
+Run `hey check modules/agents/hermes config/hermes` for package, merge, or unit
+wiring. Use `hermes doctor` only after authorized activation; it does not prove
+that the target host evaluated or adopted the repository source.

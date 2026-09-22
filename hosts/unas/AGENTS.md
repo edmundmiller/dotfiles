@@ -9,3 +9,7 @@ consistent. Deploy with `hey unas` when authorized.
 
 Port 22 refusing connections usually requires console recovery of sshd:
 `sudo systemctl enable --now sshd`, then `systemctl status sshd`.
+
+Run `hey check hosts/unas bin/hey.d/remote.nu` after changing address wiring.
+DNS/DHCP inspection is read-only; console repair and `hey unas` deployment need
+explicit authorization.

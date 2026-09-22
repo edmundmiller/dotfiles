@@ -24,3 +24,8 @@ routine edits. Custom-component pins/hashes are in `default.nix`.
 
 NUC `hass-cli -o json` supports filtered entity/device/area reads. `hass-cli info`
 uses a deprecated endpoint; do not treat that failure as an HA outage.
+
+Run `hey check modules/services/hass` for infrastructure or custom-component
+changes. Domain edits follow the nested guide and HA assertion check; live API
+reads supplement evaluation, while service calls and config-entry writes need
+explicit authorization.

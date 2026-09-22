@@ -10,3 +10,7 @@ is project → active profiles (last wins) → global config.
 
 `config/amoxide/` owns config/profile/session templates. `security.toml` contains
 machine-local trust decisions and remains Amoxide-managed, not declarative.
+
+Run `hey check modules/shell/amoxide config/amoxide` for integration changes.
+Test project aliases in a trusted disposable directory; do not copy or overwrite
+the user's machine-local `security.toml` during verification.

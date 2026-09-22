@@ -42,3 +42,7 @@ For removal, run `agento11y cursor uninstall`,
 `codex plugin remove agento11y-codex@agento11y`, and
 `claude plugin uninstall agento11y-claude-code@agento11y`, remove the host
 import, and rebuild. The private config can be deleted when no integration uses it.
+
+Before an authorized rebuild, run `hey check hosts/seqeratop` and
+`hey check --platform darwin`. Treat the doctor and client-turn checks as
+post-activation evidence, not substitutes for source evaluation.

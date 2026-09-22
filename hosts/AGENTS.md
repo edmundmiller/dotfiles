@@ -11,3 +11,7 @@ Activation/deployment requires authorization, not merely a configuration edit.
 Secret recipients live in `hosts/<host>/secrets/secrets.nix` and
 `hosts/shared/secrets/`. A changed encrypted file is not reflected in decrypted
 runtime state until the target rebuilds. Recipient changes also require re-keying.
+
+Run `hey check hosts/<host>` before requesting activation. Use the matching
+`hey check --platform <suite>` when the change depends on host evaluation; neither
+command activates or deploys the host.

@@ -11,7 +11,11 @@ only on deterministic failure. PR code runs in no-secret containers; the agent
 can change only patches. The trusted importer regenerates manifests, not agent
 source pins. Required GitHub checks remain merge authority.
 
-Use `pkg-check herdr` and the `nix-package-patching` skill for source validation.
+Use the `nix-package-patching` skill for source updates.
 Outside Nix on macOS, vendored libghostty-vt's Zig SDK link can fail before Cargo
 tests run; use the Nix build environment for runtime test evidence. Successful
 patch application alone does not establish that the patched binary works.
+
+Run `pkg-check herdr` for every pin or patch change and run `hey check` on
+`overlays/herdr` for repository consumers. The repair workflow is not a local
+substitute; its trusted/no-secret boundaries are part of CI authority.

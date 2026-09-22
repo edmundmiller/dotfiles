@@ -11,3 +11,7 @@ alias. Plugin caches under `~/.cache/opencode` remain runtime-owned.
 For confirmed plugin-cache corruption, the guarded repair is
 `hey opencode-update`, followed by restart. A tarball 404 can instead indicate
 registry propagation; check availability before clearing caches.
+
+Run `hey check modules/agents/opencode config/opencode` for managed V2 wiring.
+Cache repair and restart change live state and require a confirmed runtime fault;
+they are not routine verification steps.
