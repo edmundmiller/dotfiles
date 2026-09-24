@@ -189,6 +189,40 @@ voxtype setup gpu --status
 The final command must report `GPU (Vulkan)`. Verify the remaining setup with
 `voxtype setup check` and `systemctl --user is-active voxtype.service`.
 
+## Amp runner
+
+`config/systemd/user/amp-runner.service` serves meshify's repositories through
+one personal runner named `meshify`. It discovers Git checkouts two levels below
+`~/src` and explicitly serves `~/.config/dotfiles`. New repositories and linked
+worktrees appear automatically. New folders created through Amp go in `~/src`.
+In Amp's directory picker, select a main checkout and press Tab to create a
+sibling worktree; no separate runner or worktree flag is needed.
+
+The service enables remote terminals, but not workspace sharing or cloud-secret
+injection. Amp's native auto-update remains enabled by default. Install Amp at
+`~/.amp/bin/amp`, sign in with `amp login`, and create `~/src` before restoring
+on a fresh host. Credentials are runtime state and are not stored here.
+
+To install only this service without restoring unrelated Omarchy state:
+
+```bash
+install -Dm644 config/systemd/user/amp-runner.service ~/.config/systemd/user/amp-runner.service
+systemctl --user daemon-reload
+systemctl --user enable --now amp-runner.service
+```
+
+After changing an already-running service, install it again, reload the user
+manager, and restart it when its threads are idle. Verify with:
+
+```bash
+systemctl --user status amp-runner.service
+amp runner dirs list --runner-id meshify
+journalctl --user -u amp-runner.service -n 30
+```
+
+The service starts with the user session. It is unavailable while meshify sleeps;
+user lingering is not enabled by this configuration.
+
 ## Rocket League autostart
 
 `local/bin/rocket-league-autostart` starts Rocket League at login. Steam can

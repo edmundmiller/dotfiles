@@ -81,6 +81,12 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/systemd/user/amp-runner.service",
+      "target": ".config/systemd/user/amp-runner.service",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/systemd/user/omarchy-plugin-watch.service",
       "target": ".config/systemd/user/omarchy-plugin-watch.service",
       "mode": "0644",
@@ -248,6 +254,11 @@
     {
       "name": "voxtype.service",
       "setup": "voxtype"
+    },
+    {
+      "name": "amp-runner.service",
+      "setup": "none",
+      "commands": ["amp"]
     },
     {
       "name": "omarchy-plugin-watch.timer",
