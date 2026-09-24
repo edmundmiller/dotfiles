@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import shutil
@@ -72,6 +73,144 @@ class ManageCliTest(unittest.TestCase):
             text=True,
             env=env,
         )
+
+    def locked_install_environment(self) -> dict[str, str]:
+        fake_bin = self.root / "bin"
+        fake_bin.mkdir()
+        scripts = {
+            "fixture-command": "exit 0",
+            "omarchy": (
+                "if [[ $1 == version ]]; then echo 4.0.0-1; fi\n"
+                'if [[ $1 == plugin && $2 == list ]]; then echo "[]"; fi'
+            ),
+            "omarchy-shell": "exit 0",
+            "hyprctl": "exit 0",
+            "curl": 'echo download >> "$ACTION_LOG"; cp "$DOWNLOAD" "${@: -1}"',
+            "pkexec": 'exec "$@"',
+            "sudo": 'exec "$@"',
+            "pacman": (
+                'case "$1" in\n'
+                '  -Q) cat "$PACKAGE_STATE" ;;\n'
+                '  -Qp) echo "${ARCHIVE_ID:-fixture-package 2.0-1}" ;;\n'
+                '  -U) echo install >> "$ACTION_LOG"; echo "fixture-package 2.0-1" > "$PACKAGE_STATE" ;;\n'
+                "  *) exit 1 ;;\nesac"
+            ),
+        }
+        for name, body in scripts.items():
+            path = fake_bin / name
+            path.write_text(f"#!/usr/bin/env bash\nset -e\n{body}\n")
+            path.chmod(0o755)
+        env = os.environ.copy()
+        env.update(
+            HOME=str(self.home),
+            PATH=f"{fake_bin}:{env['PATH']}",
+            ACTION_LOG=str(self.root / "actions.log"),
+            PACKAGE_STATE=str(self.root / "package.state"),
+            DOWNLOAD=str(self.root / "download"),
+        )
+        return env
+
+    def test_archive_restore_checks_drift_and_is_idempotent(self) -> None:
+        self.write_minimal_module()
+        env = self.locked_install_environment()
+        payload = b"locked package fixture"
+        Path(env["DOWNLOAD"]).write_bytes(payload)
+        Path(env["PACKAGE_STATE"]).write_text("fixture-package 1.0-1\n")
+        manifest = json.loads((self.module / "manifest.json").read_text())
+        manifest["packages"] = [
+            {
+                "name": "fixture-package",
+                "command": "fixture-command",
+                "manager": "archive",
+                "version": "2.0-1",
+                "url": "https://example.invalid/fixture.pkg.tar.zst",
+                "sha256": hashlib.sha256(payload).hexdigest(),
+            }
+        ]
+        self.write_json("manifest.json", manifest)
+        drift = self.run_manage("check", "--no-secrets", env=env)
+        self.assertIn("package version drift", drift.stdout + drift.stderr)
+        for _ in range(2):
+            result = self.run_manage("restore", "--no-secrets", env=env)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(Path(env["ACTION_LOG"]).read_text(), "download\ninstall\n")
+
+        # The right checksum alone must not permit installing the wrong package.
+        Path(env["PACKAGE_STATE"]).unlink()
+        env["ARCHIVE_ID"] = "wrong-package 2.0-1"
+        result = self.run_manage("restore", "--no-secrets", env=env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("identity mismatch", result.stderr)
+        self.assertFalse(Path(env["PACKAGE_STATE"]).exists())
+
+        # Corrupted bytes must fail before privilege escalation/installation.
+        Path(env["DOWNLOAD"]).write_bytes(b"tampered")
+        result = self.run_manage("restore", "--no-secrets", env=env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("checksum mismatch", result.stderr)
+        self.assertFalse(Path(env["PACKAGE_STATE"]).exists())
+
+    def test_hermes_bootstrap_is_pinned_and_preserves_existing_work(self) -> None:
+        self.write_minimal_module()
+        env = self.locked_install_environment()
+        remote, revision, _ = self.create_plugin_remote()
+        env["FIXTURE_REMOTE"] = str(remote)
+        installer = (
+            b"#!/usr/bin/env bash\nset -eu\n"
+            b'echo "$*" >> "$ACTION_LOG"\n'
+            b"[[ $1 == --commit && $3 == --force-commit ]]\n"
+            b'git clone "$FIXTURE_REMOTE" "$HERMES_INSTALL_DIR"\n'
+            b'git -C "$HERMES_INSTALL_DIR" checkout --detach "$2"\n'
+            b'for path in "$HERMES_INSTALL_DIR/venv/bin/hermes" '
+            b'"$HOME/.local/bin/hermes" '
+            b'"$HERMES_INSTALL_DIR/apps/desktop/release/linux-unpacked/Hermes"; do\n'
+            b'  mkdir -p "$(dirname "$path")"\n'
+            b'  printf "#!/bin/sh\\nexit 0\\n" > "$path"; chmod +x "$path"\n'
+            b"done\n"
+            b'printf "venv/\\napps/\\n" >> "$HERMES_INSTALL_DIR/.git/info/exclude"\n'
+        )
+        Path(env["DOWNLOAD"]).write_bytes(installer)
+        manifest = json.loads((self.module / "manifest.json").read_text())
+        manifest["hermesAgent"] = {
+            "revision": revision,
+            "installerSha256": hashlib.sha256(installer).hexdigest(),
+        }
+        self.write_json("manifest.json", manifest)
+        skipped = self.run_manage("restore", "--no-system", "--no-secrets", env=env)
+        self.assertEqual(skipped.returncode, 0, skipped.stdout + skipped.stderr)
+        self.assertFalse(Path(env["ACTION_LOG"]).exists())
+
+        Path(env["DOWNLOAD"]).write_bytes(b"untrusted installer")
+        rejected = self.run_manage("restore", "--no-secrets", env=env)
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("Hermes installer checksum mismatch", rejected.stderr)
+        self.assertFalse((self.home / ".hermes/hermes-agent").exists())
+        Path(env["ACTION_LOG"]).unlink()
+        Path(env["DOWNLOAD"]).write_bytes(installer)
+        for _ in range(2):
+            result = self.run_manage("restore", "--no-secrets", env=env)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        actions = Path(env["ACTION_LOG"]).read_text()
+        self.assertEqual(actions.count("download\n"), 1)
+        self.assertIn(f"--commit {revision} --force-commit", actions)
+        self.assertIn("--include-desktop", actions)
+        checkout = self.home / ".hermes/hermes-agent"
+        self.assertEqual(self.git(checkout, "rev-parse", "HEAD"), revision)
+
+        manifest["hermesAgent"]["revision"] = "0" * 40
+        self.write_json("manifest.json", manifest)
+        result = self.run_manage("restore", "--no-secrets", env=env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Hermes Agent revision drift", result.stdout + result.stderr)
+        self.assertEqual(self.git(checkout, "rev-parse", "HEAD"), revision)
+        manifest["hermesAgent"]["revision"] = revision
+        self.write_json("manifest.json", manifest)
+        (checkout / "manifest.json").write_text("local work\n")
+        result = self.run_manage("restore", "--no-secrets", env=env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("preserving existing Hermes", result.stderr)
+        self.assertEqual((checkout / "manifest.json").read_text(), "local work\n")
+        self.assertEqual(Path(env["ACTION_LOG"]).read_text(), actions)
 
     def git(self, cwd: Path, *arguments: str) -> str:
         result = subprocess.run(
@@ -331,7 +470,9 @@ class ManageCliTest(unittest.TestCase):
         fake_bin = self.root / "bin"
         fake_bin.mkdir()
         op = fake_bin / "op"
-        op.write_text("#!/usr/bin/env bash\nprintf '%s' '{\"value\":\"REPLACEMENT-CANARY\"}'\n")
+        op.write_text(
+            "#!/usr/bin/env bash\nprintf '%s' '{\"value\":\"REPLACEMENT-CANARY\"}'\n"
+        )
         op.chmod(0o755)
         env = os.environ.copy()
         env["PATH"] = f"{fake_bin}:{env['PATH']}"
@@ -391,8 +532,8 @@ class ManageCliTest(unittest.TestCase):
         op.write_text(
             "#!/usr/bin/env bash\n"
             'case "${!#}" in\n'
-            "  */omamail-accounts) printf '%s' '{\"version\":1,\"activeId\":\"imap:fast@example.invalid\",\"accounts\":[{\"id\":\"imap:fast@example.invalid\",\"email\":\"fast@example.invalid\",\"provider\":\"imap\",\"imap\":{\"imapHost\":\"imap.fastmail.com\"}},{\"id\":\"gmail@example.invalid\",\"email\":\"gmail@example.invalid\",\"provider\":\"gmail\"}]}' ;;\n"
-            "  */omamail-credentials) printf '%s' '{\"installed\":{\"client_id\":\"CLIENT-CANARY\"}}' ;;\n"
+            '  */omamail-accounts) printf \'%s\' \'{"version":1,"activeId":"imap:fast@example.invalid","accounts":[{"id":"imap:fast@example.invalid","email":"fast@example.invalid","provider":"imap","imap":{"imapHost":"imap.fastmail.com"}},{"id":"gmail@example.invalid","email":"gmail@example.invalid","provider":"gmail"}]}\' ;;\n'
+            '  */omamail-credentials) printf \'%s\' \'{"installed":{"client_id":"CLIENT-CANARY"}}\' ;;\n'
             "  */gmail-token) printf '%s' 'GMAIL-TOKEN-CANARY' ;;\n"
             "  */fastmail-password) printf '%s' 'FASTMAIL-PASSWORD-CANARY' ;;\n"
             "  *) exit 1 ;;\n"
@@ -405,7 +546,7 @@ class ManageCliTest(unittest.TestCase):
             "if [[ $1 == lookup ]]; then cat >/dev/null; exit 0; fi\n"
             'printf \'%s\\n\' "$*" >>"$SECRET_ARGV_CAPTURE"\n'
             'cat >>"$SECRET_STDIN_CAPTURE"\n'
-            'printf \'\\n\' >>"$SECRET_STDIN_CAPTURE"\n'
+            "printf '\\n' >>\"$SECRET_STDIN_CAPTURE\"\n"
         )
         secret_tool.chmod(0o755)
         env = os.environ.copy()

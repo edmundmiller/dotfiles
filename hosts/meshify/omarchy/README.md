@@ -64,6 +64,40 @@ Plugin repositories, build output, logs, backups, lock files, and session state
 are generated and intentionally excluded from Git. AirPods hardware pairing is
 a documented human recovery gate rather than exported secret material.
 
+## Herdr and Hermes version locks
+
+`manifest.json` owns these exceptions to Omarchy stable:
+
+- Herdr and Hermes Desktop use `manager: archive` entries with exact package
+  versions, edge download URLs, and SHA-256 checksums. Restore verifies both
+  bytes and package identity before `pacman -U`; check detects version drift.
+  Neither operation changes `/etc/pacman.conf` or opts other packages into edge.
+- `hermesAgent` pins the Git revision and the checksum of that revision's
+  upstream installer. On a fresh home, restore runs that installer with the
+  exact commit, builds the local Desktop app, and skips interactive account
+  setup, browser installation, and Computer Use installation. Configure those
+  optional features and credentials separately with Hermes.
+- An existing Hermes checkout must match the revision, be clean, and have its
+  CLI and local Desktop build present. Restore refuses to overwrite a divergent,
+  dirty, or incomplete installation; reconcile it deliberately before retrying.
+  The Desktop launcher prefers this local build over the packaged fallback.
+
+Run `./manage restore --no-secrets` to apply these locks and
+`./manage check --no-secrets` to check them. `--no-system` skips both package
+and Hermes installation/checks. Restore never restarts Herdr sessions.
+
+These are version/source locks, not a bit-for-bit offline build guarantee:
+downloads must remain available, and the upstream Hermes installer manages its
+own dependency resolution and toolchain. Keep the package archives in a backup
+if long-term recovery must survive upstream removal.
+
+Updates are intentional, not automatic edge tracking. After updating a package,
+record its version, URL, and checksum together. After `hermes update`, record
+`git -C ~/.hermes/hermes-agent rev-parse HEAD` and
+`sha256sum ~/.hermes/hermes-agent/scripts/install.sh` in `hermesAgent`, then run
+check. Normal system upgrades or Hermes self-updates can cause reported drift;
+`./manage update` only advances plugin locks, not these application locks.
+
 ## Focused recovery guides
 
 - [Bluetooth and AirPods](docs/bluetooth-airpods.md): read when the adapter or

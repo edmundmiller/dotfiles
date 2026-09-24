@@ -4,6 +4,10 @@
   "omarchy": {
     "version": "4.0.0-1"
   },
+  "hermesAgent": {
+    "revision": "a8a549ebb43a61b2b400b992e956b7304b8fe41a",
+    "installerSha256": "2017ddf0cc7bc6cfb70d40dc9fba1d916f47dbcccf5fe73bdee2cf93a11262af"
+  },
   "files": [
     {
       "source": "config/hypr/autostart.lua",
@@ -152,8 +156,19 @@
     },
     {
       "name": "herdr",
-      "manager": "repo",
-      "command": "herdr"
+      "manager": "archive",
+      "command": "herdr",
+      "version": "0.9.1-1",
+      "url": "https://pkgs.omarchy.org/edge/x86_64/herdr-0.9.1-1-x86_64.pkg.tar.zst",
+      "sha256": "390128e5562569fd9295fb62198de6c39b984dd0f0c06ee87a6bd1db0a0e0715"
+    },
+    {
+      "name": "hermes-desktop",
+      "manager": "archive",
+      "command": "hermes-desktop",
+      "version": "2026.9.7-1",
+      "url": "https://pkgs.omarchy.org/edge/x86_64/hermes-desktop-2026.9.7-1-x86_64.pkg.tar.zst",
+      "sha256": "98492c0fa5964549792b05141d84e0e960cd4c46ac4a68f978ec77df17b67157"
     },
     {
       "name": "hypridle",
