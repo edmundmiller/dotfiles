@@ -1032,7 +1032,6 @@ in
           install_plugin wyattjoh herdr-plugin-gh-pr
           install_plugin kkckkc herdr-plugin-gh-workflow
           install_plugin alon-z herdr-command-palette
-          install_plugin eliasstravik herdr-projects
           install_plugin 0x5c0f herdr-insight
           ${optionalString config.modules.shell.cliamp.enable ''
             install_plugin coryshaw1 herdr-cliamp
@@ -1138,21 +1137,23 @@ in
               "claude-shared-skill-links"
               "dotfiles-agent-skills"
             ]
-            ''
-              export PATH=$PATH:${escapeShellArg launchPath}
-              export HERDR_BIN_PATH=${escapeShellArg cfg.command}
-              if plugins_json=$("$HERDR_BIN_PATH" plugin list --json 2>/dev/null); then
-                projects_root=$(printf '%s\n' "$plugins_json" | ${pkgs.jq}/bin/jq -r \
-                  '.result.plugins[] | select(.plugin_id == "herdr-projects") | .plugin_root')
-                if [ -n "$projects_root" ]; then
-                  ${pkgs.coreutils}/bin/mkdir -p "$HOME/.local/bin"
-                  ${pkgs.coreutils}/bin/ln -sfn "$projects_root/target/release/herdr-projects" "$HOME/.local/bin/herdr-projects"
-                  "$HOME/.local/bin/herdr-projects" configure
+            (
+              optionalString cfg.projects.enable ''
+                export PATH=$PATH:${escapeShellArg launchPath}
+                export HERDR_BIN_PATH=${escapeShellArg cfg.command}
+                if plugins_json=$("$HERDR_BIN_PATH" plugin list --json 2>/dev/null); then
+                  projects_root=$(printf '%s\n' "$plugins_json" | ${pkgs.jq}/bin/jq -r \
+                    '.result.plugins[] | select(.plugin_id == "herdr-projects") | .plugin_root')
+                  if [ -n "$projects_root" ]; then
+                    ${pkgs.coreutils}/bin/mkdir -p "$HOME/.local/bin"
+                    ${pkgs.coreutils}/bin/ln -sfn "$projects_root/target/release/herdr-projects" "$HOME/.local/bin/herdr-projects"
+                    "$HOME/.local/bin/herdr-projects" configure
+                  fi
+                else
+                  echo "herdr: runtime unavailable; deferring Projects configuration" >&2
                 fi
-              else
-                echo "herdr: runtime unavailable; deferring Projects configuration" >&2
-              fi
-            '';
+              ''
+            );
       };
 
     modules.shell.tmux.rcFiles = mkIf tmuxEnabled (mkAfter [
