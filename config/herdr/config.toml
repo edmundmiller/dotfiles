@@ -116,6 +116,11 @@ type = "plugin_action"
 command = "nathanflurry.jj-workspace.new"
 description = "new jj workspace"
 
+[[keys.command]]
+key = "prefix+shift+y"
+type = "plugin_action"
+command = "herdr-projects.open-popup"
+description = "open Projects"
 
 [[keys.command]]
 key = "prefix+d"
