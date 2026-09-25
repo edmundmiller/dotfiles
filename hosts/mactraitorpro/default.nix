@@ -331,33 +331,7 @@ in
       enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
-    # Amp owns its mutable CLI and login state; launchd owns the runner process.
-    launchd.user.agents.amp-runner = {
-      serviceConfig = {
-        ProgramArguments = [
-          "${config.user.home}/.amp/bin/amp"
-          "--no-tui"
-          "--runner-id"
-          "mactraitor-pro"
-          "--discover-dirs"
-          "--dir"
-          "${config.user.home}/.config/dotfiles"
-          "--remote-control-terminal"
-        ];
-        WorkingDirectory = "${config.user.home}/src";
-        RunAtLoad = true;
-        KeepAlive = true;
-        ThrottleInterval = 10;
-        StandardOutPath = "${config.user.home}/Library/Logs/amp-runner.log";
-        StandardErrorPath = "${config.user.home}/Library/Logs/amp-runner.err";
-        EnvironmentVariables = {
-          HOME = config.user.home;
-          XDG_CONFIG_HOME = "${config.user.home}/.config";
-          XDG_CACHE_HOME = "${config.user.home}/.cache";
-          PATH = "${config.user.home}/.amp/bin:${config.user.home}/.local/bin:/etc/profiles/per-user/emiller/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-        };
-      };
-    };
+    # The Amp Mac app owns the runner. See workload-placement.md for setup.
 
     # Mirror LookAway's meeting detection to the USB busylight. LookAway's built-in
     # automations only cover break start/end, so this tails its debug log for

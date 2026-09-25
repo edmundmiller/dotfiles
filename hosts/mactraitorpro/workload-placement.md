@@ -12,6 +12,33 @@ MacTraitor-Pro is the interaction, review, and Apple-platform acceptance
 machine. Prefer Amp Orbs for repository-contained development so agent
 worktrees, dependencies, and build artifacts do not accumulate on this host.
 
+## Mac runner setup
+
+The [Amp Mac app](https://ampcode.com/docs/macos-and-ios/runner) owns this
+host's runner. Nix no longer starts a separate `amp-runner` launchd agent.
+The CLI and its sign-in remain mutable, managed by Amp.
+
+After an authorized `hey re` removes the old launchd service, configure the
+app once:
+
+1. Install or update [Amp for macOS](https://ampcode.com/app), which requires
+   macOS 26 or later.
+2. Open **App Settings… → Runner** and enable **Use This Mac as a Runner**.
+3. Set **Runner Name** to `mactraitor-pro` to retain the existing runner ID.
+4. Add the repositories needed from `~/src` and `~/.config/dotfiles` through
+   **+ → Add Folder…**. The app serves explicitly added folders rather than
+   the old service's `--discover-dirs` setup. Leave **Home Folder** off.
+5. Leave **Keep This Mac Awake** on for availability while plugged in.
+
+The app finds the CLI through the login shell's `PATH`. Resolve any missing,
+outdated, or unsigned-in CLI warning in the Runner tab before testing a thread.
+Confirm that the runner is **Running**, that the picker marks it **This Mac**,
+and that **Also Running on This Mac** does not show the retired service.
+
+Keep the app open while using the runner. Quitting stops it. Battery power,
+closing the lid, or choosing Sleep can still suspend the Mac. The app does
+not promise the old service's `--remote-control-terminal` behavior.
+
 ## Amp Orb eligibility rule
 
 Use an Amp Orb when the task can:
