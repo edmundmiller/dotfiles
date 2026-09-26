@@ -6,7 +6,7 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "amoxide";
-  version = "0.10.2";
+  version = "0.10.7";
 
   outputs = [
     "out"

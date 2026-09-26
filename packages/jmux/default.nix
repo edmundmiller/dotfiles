@@ -10,7 +10,7 @@
 
 stdenv.mkDerivation {
   pname = "jmux";
-  version = "0.21.1";
+  version = "0.29.0";
 
   src = fetchFromGitHub {
     owner = "jarredkenny";
