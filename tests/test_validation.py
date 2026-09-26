@@ -279,7 +279,9 @@ class ValidationTests(unittest.TestCase):
 
     def test_snapshot_is_unsigned_preserves_source_index_and_internal_links(self):
         self.write("ignored/node_modules/state", "keep")
-        self.write(".gitignore", "ignored/\n")
+        self.write("tracked-ignored.toml", "keep\n")
+        v.git(self.root, "add", "tracked-ignored.toml")
+        self.write(".gitignore", "ignored/\ntracked-ignored.toml\n")
         self.write("tracked.md", "staged")
         v.git(self.root, "add", "tracked.md")
         self.write("tracked.md", "unstaged")
@@ -300,6 +302,11 @@ class ValidationTests(unittest.TestCase):
             v.snapshot(self.root, target)
         self.assertEqual(index, (self.root / ".git/index").read_bytes())
         self.assertEqual((target / "tracked.md").read_text(), "unstaged")
+        self.assertEqual((target / "tracked-ignored.toml").read_text(), "keep\n")
+        self.assertIn(
+            b"tracked-ignored.toml",
+            v.git(target, "ls-files", "-z").stdout.split(b"\0"),
+        )
         self.assertFalse((target / "ignored").exists())
         self.assertEqual(os.readlink(target / "link"), "tracked.md")
         self.assertEqual(

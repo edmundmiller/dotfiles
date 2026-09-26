@@ -348,7 +348,10 @@ def snapshot(root, target):
     git(target, "init", "--quiet")
     git(target, "config", "core.hooksPath", "/dev/null")
     git(target, "config", "commit.gpgsign", "false")
-    git(target, "add", "--all")
+    # source_files already excludes untracked ignored state. Force-add its
+    # copies so files tracked by the source repo remain tracked even when a
+    # source .gitignore pattern also matches them.
+    git(target, "add", "--all", "--force")
     git(
         target,
         "-c",
