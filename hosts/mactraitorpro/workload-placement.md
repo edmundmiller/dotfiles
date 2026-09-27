@@ -24,11 +24,25 @@ app once:
 1. Install or update [Amp for macOS](https://ampcode.com/app), which requires
    macOS 26 or later.
 2. Open **App Settings… → Runner** and enable **Use This Mac as a Runner**.
-3. Set **Runner Name** to `mactraitor-pro` to retain the existing runner ID.
-4. Add the repositories needed from `~/src` and `~/.config/dotfiles` through
-   **+ → Add Folder…**. The app serves explicitly added folders rather than
-   the old service's `--discover-dirs` setup. Leave **Home Folder** off.
+3. Keep **Runner Name** set to `mactraitor-pro-amp-app`, matching the runner ID
+   in `config/amp/mactraitor-pro-runner.json`.
+4. Run `amp-runner-sync` to preview missing registrations, then
+   `amp-runner-sync --apply` to add them. The command lives in the dotfiles
+   `bin/` directory and requires the app's runner to be running.
 5. Leave **Keep This Mac Awake** on for availability while plugged in.
+
+`config/amp/mactraitor-pro-runner.json` records the 125 folders restored from
+the old Mac runner on 2026-09-25. Edit this list when adding repositories or
+retiring worktrees. The sync command adds existing folders through
+`amp runner dirs add`, skips missing paths with a warning, and preserves
+registrations outside the list. Removing a list entry does not unregister it.
+The command does not clone repositories, create Amp cloud projects, start a
+service, or run during Nix activation. No rebuild is needed to apply the list.
+
+The home folder is deliberately absent from the manifest. The existing app
+registration is preserved, but a fresh setup will not enable **Home Folder**.
+Folders added through the CLI persist across app restarts. This is an explicit
+folder list, not the old service's automatic `--discover-dirs` scan.
 
 The app finds the CLI through the login shell's `PATH`. Resolve any missing,
 outdated, or unsigned-in CLI warning in the Runner tab before testing a thread.

@@ -1,0 +1,86 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = []
+# ///
+"""Add configured Amp runner folders; never remove registrations or start services."""
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+def sync_runner_directories():
+    """Preview by default; applying requires the configured runner to be running."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path(__file__).resolve().parents[1]
+        / "config/amp/mactraitor-pro-runner.json",
+    )
+    parser.add_argument(
+        "--apply", action="store_true", help="add missing registrations"
+    )
+    args = parser.parse_args()
+    config = json.loads(args.config.read_text())
+    runner_id = config["runnerId"]
+    directories = sorted({Path(p).expanduser() for p in config["directories"]})
+    if any(not p.is_absolute() for p in directories):
+        parser.error("Amp runner directories must be absolute or start with ~/.")
+
+    command = ["amp", "runner", "dirs"]
+    result = subprocess.run(
+        [*command, "list", "--runner-id", runner_id],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    # Strip only trailing Git remote annotations, not names like "demo (archive)".
+    # Remotes can be URLs, SCP-style addresses, or local filesystem paths.
+    registered = {
+        Path(
+            re.sub(
+                r" \((?:[A-Za-z][A-Za-z0-9+.-]*://|[^\s/():]+:|/|~/|\.\.?/).*\)$",
+                "",
+                line[2:],
+            )
+        ).expanduser()
+        for line in result.stdout.splitlines()
+        if line.startswith("  ")
+    }
+    pending = []
+    missing = []
+    for directory in directories:
+        if not directory.is_dir():
+            missing.append(directory)
+            print(f"Skip missing directory: {directory}", file=sys.stderr)
+        elif directory not in registered:
+            pending.append(directory)
+
+    for directory in pending:
+        if args.apply:
+            subprocess.run(
+                [*command, "add", "--runner-id", runner_id, str(directory)],
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+        print(f"{'Added' if args.apply else 'Would add'}: {directory}")
+    print(
+        f"Runner {runner_id}: {len(directories)} configured, "
+        f"{len(directories) - len(pending) - len(missing)} already registered, "
+        f"{len(pending)} {'added' if args.apply else 'to add'}, "
+        f"{len(missing)} missing. Existing registrations preserved."
+    )
+
+
+if __name__ == "__main__":
+    try:
+        sync_runner_directories()
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        print(f"Amp runner sync failed: {error}", file=sys.stderr)
+        if isinstance(error, subprocess.CalledProcessError) and error.stderr:
+            print(error.stderr, file=sys.stderr, end="")
+        sys.exit(1)
