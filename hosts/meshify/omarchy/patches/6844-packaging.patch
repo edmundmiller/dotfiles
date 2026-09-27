@@ -1,0 +1,42 @@
+--- a/pkgbuilds/omarchy/PKGBUILD
++++ b/pkgbuilds/omarchy/PKGBUILD
+@@ -13,7 +13,7 @@
+ _tag=''
+ _commit='f0020448ca87329199de7cb12f2015ebc4a3e5e7'
+ pkgver=4.0.0
+-pkgrel=1
++pkgrel=1.2
+ pkgdesc='Beautiful, modern, and opinionated Arch Linux by DHH'
+ arch=('any')
+ url='https://github.com/basecamp/omarchy'
+--- a/pkgbuilds/omarchy-settings/PKGBUILD
++++ b/pkgbuilds/omarchy-settings/PKGBUILD
+@@ -13,7 +13,7 @@
+ _tag=''
+ _commit='f0020448ca87329199de7cb12f2015ebc4a3e5e7'
+ pkgver=4.0.0
+-pkgrel=1
++pkgrel=1.2
+ pkgdesc='Omarchy user defaults, /etc/skel content, fonts, plymouth theme, and support helpers'
+ arch=('any')
+ url='https://github.com/basecamp/omarchy'
+@@ -90,7 +90,8 @@
+   'snapper: Used with the shipped /etc/snapper/config-templates/omarchy template'
+ )
+ 
+-install='omarchy-settings.install'
++# Amp-only backport: do not reset unrelated /etc overrides on upgrade.
++install=''
+ 
+ # Live config files the package can't own outright (the path is owned by an
+ # upstream Arch package): ship them at /usr/share/omarchy/etc-overrides/ and
+@@ -342,4 +343,9 @@
+   install -Dm755 bin/omarchy-upload-log "$pkgdir/usr/bin/omarchy-upload-log"
+   install -Dm755 bin/omarchy-debug      "$pkgdir/usr/bin/omarchy-debug"
+   install -Dm755 bin/omarchy-debug-idle "$pkgdir/usr/bin/omarchy-debug-idle"
++
++  # Preserve release-generated icons byte-for-byte across ImageMagick versions.
++  local release=/var/cache/pacman/pkg/omarchy-settings-4.0.0-1-any.pkg.tar.zst
++  printf '%s  %s\n' ec7d24d9b628936876aa6d4a01b8abb60770673cf98534e817d66b497f5e5713 "$release" | sha256sum -c -
++  bsdtar -xf "$release" -C "$pkgdir" usr/share/icons/
+ }

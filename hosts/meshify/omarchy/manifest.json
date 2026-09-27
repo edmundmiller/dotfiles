@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "host": "meshify",
   "omarchy": {
-    "version": "4.0.0-1"
+    "version": "4.0.0-1.2"
   },
   "hermesAgent": {
     "revision": "a8a549ebb43a61b2b400b992e956b7304b8fe41a",
