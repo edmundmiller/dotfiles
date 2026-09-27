@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Blip
+Comment=iMessage through your Mac
+Exec=qs -p /usr/share/omarchy/shell ipc call nixfred.blip app
+Icon=chat-message-new-symbolic
+Terminal=false
+StartupNotify=false
+Categories=Network;Chat;
+Keywords=iMessage;Messages;SMS;

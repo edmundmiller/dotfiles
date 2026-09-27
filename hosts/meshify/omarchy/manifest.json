@@ -131,6 +131,12 @@
       "target": ".local/bin/omarchy-plugin-watch",
       "mode": "0755",
       "sourceMode": "0755"
+    },
+    {
+      "source": "local/share/applications/Blip.desktop",
+      "target": ".local/share/applications/Blip.desktop",
+      "mode": "0644",
+      "sourceMode": "0644"
     }
   ],
   "packages": [
