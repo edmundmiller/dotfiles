@@ -19,3 +19,4 @@ Operational runbooks for the dotfiles infrastructure.
 | [renovate.md](renovate.md)                                         | Renovate is quiet, noisy, or its Action is failing                |
 | [secret-rotation.md](secret-rotation.md)                           | Rotating secrets managed by agenix                                |
 | [remove-installer-nix-profile.md](remove-installer-nix-profile.md) | `nix` resolves to a stale installer profile instead of system nix |
+| [raycast-auto-update.md](raycast-auto-update.md)                   | Raycast updates fail or repeatedly offer Install Manually         |
