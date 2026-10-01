@@ -474,6 +474,11 @@ in
           # MAS installs are unreliable during headless activation. Keep the apps
           # declared for inventory, but do not install them during routine rebuilds.
           HOMEBREW_BUNDLE_MAS_SKIP = "Xcode Keynote Numbers";
+
+          # Rooms' postflight uses writable_paths/must_succeed, unsupported by
+          # our pinned Homebrew. Keep it declared and preserve any installed app.
+          # Remove this skip when the cask and pinned Homebrew are compatible.
+          HOMEBREW_BUNDLE_CASK_SKIP = "rooms";
         };
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
