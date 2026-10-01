@@ -278,7 +278,7 @@ class ValidationTests(unittest.TestCase):
         )
         self.assertIn(
             ".#checks.aarch64-darwin.herdr-app-launch-config",
-            [command[-1] for command in commands if "build" in command],
+            [command[-1] for command in commands if "run" in command],
         )
 
     def test_snapshot_is_unsigned_preserves_source_index_and_internal_links(self):

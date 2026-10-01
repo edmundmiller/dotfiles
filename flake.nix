@@ -1608,13 +1608,19 @@
                     )
                   );
                 in
-                pkgs.runCommand "herdr-app-launch-config" { } ''
-                  ${pkgs.bash}/bin/bash ${./packages/herdr-app/test-launch-config.sh} \
-                    ${self.packages.${system}.herdr-app}/Applications/Herdr.app \
-                    ${generatedConfig} \
-                    ${pkgs.ghostty-bin}/Applications/Ghostty.app
-                  touch "$out"
-                '';
+                pkgs.writeShellApplication {
+                  name = "herdr-app-launch-config";
+                  runtimeInputs = [
+                    pkgs.coreutils
+                    pkgs.gnugrep
+                  ];
+                  text = ''
+                    exec ${pkgs.bash}/bin/bash ${./packages/herdr-app/test-launch-config.sh} \
+                      ${self.packages.${system}.herdr-app}/Applications/Herdr.app \
+                      ${generatedConfig} \
+                      ${pkgs.ghostty-bin}/Applications/Ghostty.app
+                  '';
+                };
 
               hermes-local-libffi-regression =
                 let

@@ -472,7 +472,17 @@ def execute(root, selection):
             )
         if system:
             for name in DARWIN_CHECKS:
-                run(name, build + [f".#checks.{system}.{name}"], env=env)
+                installable = f".#checks.{system}.{name}"
+                if name == "herdr-app-launch-config":
+                    # Ghostty's real loader needs host Apple APIs that are
+                    # unavailable inside a Nix build sandbox.
+                    run(
+                        name,
+                        nix + ["run", "--no-write-lock-file", installable],
+                        env=env,
+                    )
+                else:
+                    run(name, build + [installable], env=env)
     elif target == "nixos":
         run(
             "full NixOS flake (including deployment and VM checks)",
