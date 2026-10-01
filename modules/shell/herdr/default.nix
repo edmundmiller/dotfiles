@@ -1147,7 +1147,6 @@ in
                   if [ -n "$projects_root" ]; then
                     ${pkgs.coreutils}/bin/mkdir -p "$HOME/.local/bin"
                     ${pkgs.coreutils}/bin/ln -sfn "$projects_root/target/release/herdr-projects" "$HOME/.local/bin/herdr-projects"
-                    "$HOME/.local/bin/herdr-projects" configure
                   fi
                 else
                   echo "herdr: runtime unavailable; deferring Projects configuration" >&2
