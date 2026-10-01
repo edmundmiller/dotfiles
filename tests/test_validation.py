@@ -276,6 +276,10 @@ class ValidationTests(unittest.TestCase):
             ".#checks.aarch64-darwin.dji-mic-mini-receiver-mute-regressions",
             [command[-1] for command in commands if "build" in command],
         )
+        self.assertIn(
+            ".#checks.aarch64-darwin.herdr-app-launch-config",
+            [command[-1] for command in commands if "build" in command],
+        )
 
     def test_snapshot_is_unsigned_preserves_source_index_and_internal_links(self):
         self.write("ignored/node_modules/state", "keep")

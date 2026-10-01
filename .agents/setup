@@ -20,6 +20,10 @@ fi
 # shellcheck disable=SC1090
 source "$nix_env"
 
+step "Expose Nix to non-login agent commands"
+mkdir -p "$HOME/.local/bin"
+ln -sfn "$nix_profile/bin/nix" "$HOME/.local/bin/nix"
+
 step "Configure Nix for the orb"
 nix_custom_conf="/etc/nix/nix.custom.conf"
 nix_config_changed=0

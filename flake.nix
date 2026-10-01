@@ -686,34 +686,39 @@
           # Shell:   nix develop .#agent
           packages.agent-env = pkgs.buildEnv {
             name = "dotfiles-agent-env";
-            paths = with pkgs; [
-              # VCS
-              git
-              jujutsu
-              gh
-              inputs.llm-agents.packages.${system}.beads-rust
+            paths =
+              (with pkgs; [
+                # VCS
+                git
+                jujutsu
+                gh
+                inputs.llm-agents.packages.${system}.beads-rust
 
-              # Shell essentials
-              zsh
-              tmux
-              direnv
-              nix-direnv
-              starship
+                # Shell essentials
+                zsh
+                tmux
+                direnv
+                nix-direnv
+                starship
 
-              # Search & navigation
-              ripgrep
-              fd
-              fzf
-              bat
-              eza
-              zoxide
-              jq
-              delta
+                # Search & navigation
+                ripgrep
+                fd
+                fzf
+                bat
+                eza
+                zoxide
+                jq
+                delta
 
-              # Build tools
-              gnumake
-              just
-            ];
+                # Build tools
+                gnumake
+                just
+              ])
+              ++ [
+                self.packages.${system}.hey
+                self.packages.${system}.validation-tools
+              ];
           };
 
           treefmt = {
@@ -1573,6 +1578,44 @@
               };
             }
             // lib.optionalAttrs (system == darwinSystem) {
+              herdr-app-launch-config =
+                let
+                  host = self.darwinConfigurations."MacTraitor-Pro";
+                  home = host.config.home-manager.users.emiller;
+                  generatedConfig = pkgs.linkFarm "ghostty-launch-test-config" (
+                    (map
+                      (name: {
+                        inherit name;
+                        path = home.xdg.configFile."ghostty/${name}".source;
+                      })
+                      [
+                        "config"
+                        "behavior.conf"
+                        "keybindings.conf"
+                        "herdr.conf"
+                        "herdr-overrides.conf"
+                      ]
+                    )
+                    ++ (map
+                      (name: {
+                        inherit name;
+                        path = ./. + "/config/ghostty/${name}";
+                      })
+                      [
+                        "ui.conf"
+                        "macos.conf"
+                      ]
+                    )
+                  );
+                in
+                pkgs.runCommand "herdr-app-launch-config" { } ''
+                  ${pkgs.bash}/bin/bash ${./packages/herdr-app/test-launch-config.sh} \
+                    ${self.packages.${system}.herdr-app}/Applications/Herdr.app \
+                    ${generatedConfig} \
+                    ${pkgs.ghostty-bin}/Applications/Ghostty.app
+                  touch "$out"
+                '';
+
               hermes-local-libffi-regression =
                 let
                   hermesPackage = import ./modules/agents/hermes-local/_package.nix {

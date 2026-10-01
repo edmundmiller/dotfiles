@@ -124,6 +124,7 @@ CHECKS = {
 DARWIN_CHECKS = [
     "apple-container-pilot-assertions",
     "audio-priority-bar-regressions",
+    "herdr-app-launch-config",
     "screentime-backup-darwin-assertions",
     "discrawl-backup-darwin-assertions",
     "darwin-tailscaled-owner-assertions",
