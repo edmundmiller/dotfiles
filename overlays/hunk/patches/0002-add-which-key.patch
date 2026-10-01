@@ -1,16 +1,16 @@
 diff --git a/packages/hunk/src/ui/App.tsx b/packages/hunk/src/ui/App.tsx
-index 29c6f51c..2ce51d4b 100644
+index 6ccd043c..1a6c2b73 100644
 --- a/packages/hunk/src/ui/App.tsx
 +++ b/packages/hunk/src/ui/App.tsx
-@@ -48,6 +48,7 @@ import { ExtensionDialog } from "./components/chrome/ExtensionDialog";
+@@ -49,6 +49,7 @@ import { ConfirmDialog, confirmDialogHeight } from "./components/chrome/ConfirmD
+ import { ExtensionDialog } from "./components/chrome/ExtensionDialog";
  import { ViewPreferenceQuitDialog } from "./components/chrome/ViewPreferenceQuitDialog";
  import { ExtensionToast } from "./components/chrome/ExtensionToast";
- import { StatusBar } from "./components/chrome/StatusBar";
 +import { WhichKeyDock } from "./components/chrome/WhichKeyDock";
  import { DiffPane, type ReviewSelectionActionsHandle } from "./components/panes/DiffPane";
  import { ExtensionPaneHost } from "./components/panes/ExtensionPane";
  import { PaneDivider } from "./components/panes/PaneDivider";
-@@ -1340,7 +1341,7 @@ export function App({
+@@ -1451,7 +1452,7 @@ export function App({
      toggleMenu,
    } = useMenuController(menus);
  
@@ -19,7 +19,7 @@ index 29c6f51c..2ce51d4b 100644
      activateMenuItemByHint,
      activeMenuId,
      activateCurrentMenuItem,
-@@ -1371,6 +1372,8 @@ export function App({
+@@ -1483,6 +1484,8 @@ export function App({
      moveThemeSelector,
      openMenu,
      openSourceSelector: () => openMenu("source"),
@@ -28,7 +28,7 @@ index 29c6f51c..2ce51d4b 100644
      saveConfigPromptOpen,
      saveViewPreferencesAndQuit,
      discardViewPreferencesAndQuit,
-@@ -1704,6 +1707,10 @@ export function App({
+@@ -1812,6 +1815,10 @@ export function App({
          </Suspense>
        ) : null}
  
@@ -37,13 +37,13 @@ index 29c6f51c..2ce51d4b 100644
 +      ) : null}
 +
        {showHelp ? (
-         <Suspense fallback={null}>
-           <LazyHelpDialog
+         <HelpDialog
+           commands={appCommands}
 diff --git a/packages/hunk/src/ui/AppHost.interactions.test.tsx b/packages/hunk/src/ui/AppHost.interactions.test.tsx
-index 0c48cb45..8091c72a 100644
+index 2818f3b0..a1384889 100644
 --- a/packages/hunk/src/ui/AppHost.interactions.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.interactions.test.tsx
-@@ -2356,7 +2356,7 @@ describe("App interactions", () => {
+@@ -2370,7 +2370,7 @@ describe("App interactions", () => {
      }
    });
  
@@ -52,7 +52,7 @@ index 0c48cb45..8091c72a 100644
      // Create a file with many lines so Space has room to scroll
      const before =
        Array.from(
-@@ -2397,6 +2397,12 @@ describe("App interactions", () => {
+@@ -2411,6 +2411,12 @@ describe("App interactions", () => {
        await flush(setup);
        setup.captureCharFrame();
  
@@ -65,7 +65,7 @@ index 0c48cb45..8091c72a 100644
        await act(async () => {
          await setup.mockInput.pressKey(" ");
        });
-@@ -2404,6 +2410,107 @@ describe("App interactions", () => {
+@@ -2418,6 +2424,107 @@ describe("App interactions", () => {
  
        const frame = setup.captureCharFrame();
        expect(frame).toContain("export const line");
@@ -174,7 +174,7 @@ index 0c48cb45..8091c72a 100644
        await act(async () => {
          setup.renderer.destroy();
 diff --git a/packages/hunk/src/ui/AppHost.reload.test.tsx b/packages/hunk/src/ui/AppHost.reload.test.tsx
-index 5b985e3c..8616c3b2 100644
+index 2b3769ba..360cca4d 100644
 --- a/packages/hunk/src/ui/AppHost.reload.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.reload.test.tsx
 @@ -1,5 +1,5 @@
@@ -184,7 +184,7 @@ index 5b985e3c..8616c3b2 100644
  import { tmpdir } from "node:os";
  import { join } from "node:path";
  import { describe, expect, test } from "bun:test";
-@@ -628,4 +628,94 @@ describe("reload agent attention marks", () => {
+@@ -629,4 +629,94 @@ describe("reload agent attention marks", () => {
        await removeTestDirectory(dir);
      }
    });
@@ -384,7 +384,7 @@ index 00000000..178b748c
 +  );
 +}
 diff --git a/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts b/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
-index 034551e0..f637b66f 100644
+index 0c19f405..d3b2bb20 100644
 --- a/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
 +++ b/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
 @@ -1,24 +1,56 @@
@@ -455,7 +455,7 @@ index 034551e0..f637b66f 100644
    /** Leave the active session keyboard mode. */
    exitKeyboardMode: () => void;
    /** Offer one key to the active session keyboard mode. */
-@@ -101,6 +135,8 @@ export interface UseAppKeyboardShortcutsOptions {
+@@ -103,6 +137,8 @@ export interface UseAppKeyboardShortcutsOptions {
   */
  export function useAppKeyboardShortcuts({
    activateMenuItemByHint,
@@ -464,7 +464,7 @@ index 034551e0..f637b66f 100644
    activeMenuId,
    activateCurrentMenuItem,
    closeAgentSkill,
-@@ -199,6 +235,204 @@ export function useAppKeyboardShortcuts({
+@@ -204,6 +240,205 @@ export function useAppKeyboardShortcuts({
      key.preventDefault();
      key.stopPropagation();
    };
@@ -652,6 +652,7 @@ index 034551e0..f637b66f 100644
 +  const handleLeaderStartShortcut = (key: KeyEvent): KeyOwner => {
 +    if (
 +      !isPlainSpaceKey(key) ||
++      promptActiveRef.current ||
 +      focusAreaRef.current !== "files" ||
 +      activeMenuIdRef.current ||
 +      showAgentSkillRef.current ||
@@ -669,7 +670,7 @@ index 034551e0..f637b66f 100644
  
    /**
     * Move an ordered modal surface through the active review keymap.
-@@ -584,21 +818,19 @@ export function useAppKeyboardShortcuts({
+@@ -594,21 +829,19 @@ export function useAppKeyboardShortcuts({
      return "mine";
    };
  
@@ -698,7 +699,7 @@ index 034551e0..f637b66f 100644
      const surfaceOwned = routeKeyOwnership(
        [
          handleExtensionTrustPromptShortcut,
-@@ -615,6 +847,13 @@ export function useAppKeyboardShortcuts({
+@@ -625,6 +858,13 @@ export function useAppKeyboardShortcuts({
      );
      if (surfaceOwned) return;
  
@@ -712,7 +713,7 @@ index 034551e0..f637b66f 100644
      if (activeMenuIdRef.current && dispatchCommandShortcut(key)) return;
  
      // Without an open-menu command match, focused inputs and extension modes
-@@ -634,4 +873,6 @@ export function useAppKeyboardShortcuts({
+@@ -644,4 +884,6 @@ export function useAppKeyboardShortcuts({
      }
      dispatchCommandShortcut(key);
    });

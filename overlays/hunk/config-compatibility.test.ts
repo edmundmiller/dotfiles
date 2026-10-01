@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import { resolveConfiguredCliInput } from "./packages/hunk/src/core/run/config";
 import { resolveExtensionCommands } from "./packages/hunk/src/extensions/apply";
+import { getBundledUIRegistry } from "./packages/hunk/src/extensions/default/ui";
 import { loadStartupExtensions } from "./packages/hunk/src/extensions/startup";
 import {
   builtinCommandKeyDefaults,
@@ -27,7 +28,9 @@ test("deployed config loads every extension command without key collisions", asy
   expect(loaded.issues).toEqual([]);
   expect(loaded.loaded.map(({ id }) => id)).toContain("hunk-commit-log");
 
-  const registered = resolveExtensionCommands(loaded.registry);
+  const registered = resolveExtensionCommands({
+    commands: [...getBundledUIRegistry().commands, ...loaded.registry.commands],
+  });
   expect(registered.issues).toEqual([]);
 
   const keymap = resolveCommandKeys({
@@ -44,6 +47,7 @@ test("deployed config loads every extension command without key collisions", asy
   });
   expect(resolved.conflicts).toEqual([]);
 
-  expect(keymap.keys.get("hunk.review.nextNote")).toEqual(["n"]);
+  expect(keymap.keys.get("hunk.review.nextNote")).toEqual([]);
+  expect(keymap.keys.get("hunk.search.next")).toEqual(["n"]);
   expect(keymap.keys.get("hunk-commit-log.next")).toEqual(["ctrl+n"]);
 });

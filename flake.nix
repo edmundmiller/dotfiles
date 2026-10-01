@@ -94,7 +94,7 @@
     llm-agents.inputs.systems.follows = "systems";
 
     hunk = {
-      url = "github:modem-dev/hunk/v0.22.0";
+      url = "github:modem-dev/hunk/v0.23.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
     };
