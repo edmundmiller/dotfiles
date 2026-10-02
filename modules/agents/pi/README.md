@@ -1,3 +1,11 @@
+---
+purpose: Configure and verify the Nix-managed Pi daily-driver environment.
+applies_to: Pi upgrades, native MCP, codemode, and shell helpers.
+entrypoint: Edit config/pi/settings.jsonc and overlays/pi/default.nix.
+verification: Build .#pi, run Pi settings checks, and inspect pi mcp list.
+update_when: Pi packaging, MCP ownership, or Herdr integration changes.
+---
+
 # Pi Module
 
 Pi coding agent configuration plus shell helpers for common local workflows.
@@ -24,6 +32,36 @@ Use `modules.agents.pi.extraPackages` for deliberately opted-in packages rather
 than growing the shared defaults. Local package sources remain available for
 that purpose. Existing sessions retain their earlier context; test in a fresh
 session after an authorized `hey re` applies the managed settings and links.
+
+## Pi 1.0 and native MCP
+
+`overlays/pi/default.nix` selects an independently pinned upstream Pi package.
+This includes the codemode worker and native platform assets without upgrading
+the other agents in the shared `llm-agents` input. Check the effective version
+with `nix eval --raw .#pi.version`, then build with `nix build .#pi`.
+
+`config/pi/settings.jsonc` enables codemode alongside the ordinary tools.
+`config/pi/mcp.json` supplies GitHub and Linear through native MCP, with tools
+available through codemode rather than loading every tool into each prompt.
+GitHub uses the current `gh auth token` at runtime. Linear needs a one-time
+`pi mcp login linear`; its credentials stay in writable `~/.pi/agent/mcp-auth.json`.
+Use `pi mcp list` and `/mcp` to check connections.
+
+The MCP configuration is Nix-managed. Edit its repo source rather than running
+`pi mcp add` against the read-only global file. Project-specific servers can
+live in `.pi/mcp.json` after project trust. `modules.agents.pi.mcp.enable = false`
+omits the managed global server file; it does not disable project MCP servers.
+Do not reinstall `pi-mcp-adapter`: its `/mcp` command replaces native MCP.
+
+Hosts with Herdr 0.7.5+ use `@ogulcancelik/pi-herdr@0.4.0` for pane/layout/agent
+tools and the activation-installed lifecycle extension. Herdr 0.9.1 and 0.9.3 ship
+the same Pi integration version 9. Check the installed marker with
+`rg HERDR_INTEGRATION_VERSION ~/.pi/agent/extensions/herdr-agent-state.ts`.
+Hosts below Herdr 0.7.5 retain plugin 0.2.5 as a compatibility fallback.
+
+The repository's `pi-herdr` package supplies only `/review-box` and
+`herdr_pr_review_workspace`. General layout, pane, and agent tools come from
+the official plugin; Review Box persistence and approval behavior stay local.
 
 ## Shell Helpers
 
