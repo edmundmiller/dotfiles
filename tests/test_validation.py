@@ -450,6 +450,32 @@ class ValidationTests(unittest.TestCase):
             else:
                 self.assertNotIn("fixture-secret", (env or {}).get("NIX_CONFIG", ""))
 
+    def test_explicit_nix_token_is_removed_from_ambient_environment(self):
+        observed_tokens = []
+
+        def planned(*_args):
+            observed_tokens.append(os.environ.get("NIX_GITHUB_TOKEN"))
+            return {
+                "files": [],
+                "hooks": False,
+                "checks": [],
+                "packages": [],
+                "integration": False,
+                "platform": None,
+            }
+
+        with (
+            patch.dict(os.environ, {"NIX_GITHUB_TOKEN": "fixture-secret"}),
+            patch.object(v, "plan", side_effect=planned),
+        ):
+            code, _, error = self.invoke("--plan")
+        self.assertEqual(code, 0, error)
+        self.assertEqual(observed_tokens, [None])
+
+        env = v.nix_env("fixture-secret")
+        self.assertNotIn("NIX_GITHUB_TOKEN", env)
+        self.assertIn("access-tokens = github.com=fixture-secret", env["NIX_CONFIG"])
+
     def test_missing_checker_is_failure_with_actionable_diagnostic(self):
         self.write("owned.md", "edit")
         with (
@@ -503,6 +529,8 @@ class ValidationTests(unittest.TestCase):
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
         self.assertIn("runs-on: macos-15", darwin)
         self.assertNotIn("if:", darwin)
+        self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
+        self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
 
 
 subprocess_run = subprocess.run

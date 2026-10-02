@@ -66,7 +66,14 @@ jobs:
         with:
           extra-conf: accept-flake-config = true
       - name: Validate affected Darwin configuration
-        run: python3 scripts/validation.py --ci --platform darwin
+        env:
+          NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
+        run: |
+          if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
+            echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
+            exit 1
+          fi
+          python3 scripts/validation.py --ci --platform darwin
 
   vm-services:
     name: Service VM Tests (Linux)

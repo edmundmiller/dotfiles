@@ -87,8 +87,9 @@ fi
 grep -F 'repository must target the dedicated private screentime-backups R2 bucket' \
   "$fixture/wrong-account.err" >/dev/null
 
-cat >"$fixture/fake-bin/security" <<'SH'
-#!/usr/bin/env bash
+{
+  printf '#!%s\n' "$(command -v bash)"
+  cat <<'SH'
 set -euo pipefail
 printf '%s\n' "$*" >>"$SECURITY_CALLS"
 service=""
@@ -106,9 +107,11 @@ case "$service" in
   *) printf 'unexpected Keychain service: %s\n' "$service" >&2; exit 1 ;;
 esac
 SH
+} >"$fixture/fake-bin/security"
 
-cat >"$fixture/fake-bin/restic" <<'SH'
-#!/usr/bin/env bash
+{
+  printf '#!%s\n' "$(command -v bash)"
+  cat <<'SH'
 set -euo pipefail
 [[ "${RESTIC_REPOSITORY:-}" == 's3:https://57398029d3d0add95bdad89deaa41864.r2.cloudflarestorage.com/screentime-backups' ]]
 [[ "${AWS_ACCESS_KEY_ID:-}" == 'fake-access-key' ]]
@@ -126,6 +129,7 @@ case "$1" in
   *) printf 'unexpected restic command: %s\n' "$1" >&2; exit 1 ;;
 esac
 SH
+} >"$fixture/fake-bin/restic"
 chmod +x "$fixture/fake-bin/security" "$fixture/fake-bin/restic"
 
 run_output="$(

@@ -371,22 +371,22 @@ def snapshot(root, target):
     )
 
 
-def nix_env():
+def nix_env(token=""):
     env = os.environ.copy()
-    if shutil.which("gh"):
-        token = subprocess.run(
+    if not token and shutil.which("gh"):
+        token_result = subprocess.run(
             ["gh", "auth", "token"], capture_output=True, text=True, check=False
         )
-        if token.returncode == 0 and token.stdout.strip():
-            env["NIX_CONFIG"] = (
-                env.get("NIX_CONFIG", "")
-                + "\naccess-tokens = github.com="
-                + token.stdout.strip()
-            )
+        if token_result.returncode == 0:
+            token = token_result.stdout.strip()
+    if token:
+        env["NIX_CONFIG"] = (
+            env.get("NIX_CONFIG", "") + "\naccess-tokens = github.com=" + token
+        )
     return env
 
 
-def execute(root, selection):
+def execute(root, selection, github_token=""):
     failures = []
 
     def run(label, command, cwd=root, env=None, capture=False):
@@ -418,7 +418,7 @@ def execute(root, selection):
 
     env = None
     if selection["hooks"] or selection["checks"] or selection["platform"]:
-        env = nix_env()
+        env = nix_env(github_token)
     nix = ["nix", "--accept-flake-config"]
     build = nix + ["build", "--no-link", "--no-write-lock-file", "--print-build-logs"]
     if selection["hooks"]:
@@ -604,6 +604,7 @@ def main(argv=None):
         help="Repository-relative changed-file scopes (task-owned paths)",
     )
     args = parser.parse_args(argv)
+    github_token = os.environ.pop("NIX_GITHUB_TOKEN", "").strip()
     if args.ci:
         base = args.base_ref or os.environ.get("VALIDATION_BASE", "")
         if base and set(base) != {"0"}:
@@ -656,7 +657,7 @@ def main(argv=None):
             snapshot(ROOT, target)
             if fingerprint(ROOT) != before:
                 raise ValueError("Source changed while copying; rerun hey check.")
-            result = execute(target, selection)
+            result = execute(target, selection, github_token)
             if fingerprint(ROOT) != before:
                 raise ValueError(
                     "Source changed during validation; results are stale. Rerun hey check."
