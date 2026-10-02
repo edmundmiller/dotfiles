@@ -497,11 +497,45 @@
             // mattpocockSkills;
 
             home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
-              if [ -L "$HOME/.claude/skills" ]; then
-                rm -f "$HOME/.claude/skills"
-              elif [ -e "$HOME/.claude/skills" ]; then
-                chmod -R u+w "$HOME/.claude/skills" 2>/dev/null || true
-                rm -rf "$HOME/.claude/skills"
+              legacy_skills="$HOME/.claude/skills"
+              legacy_backup="$HOME/.claude/skills.pre-dotfiles-agent-skills"
+
+              if [ -L "$legacy_skills" ]; then
+                legacy_target=$(readlink "$legacy_skills")
+                case "$legacy_target" in
+                  /nix/store/*-dotfiles-agent-skills-claude)
+                    rm -f "$legacy_skills"
+                    ;;
+                  *)
+                    if [ -e "$legacy_backup" ] || [ -L "$legacy_backup" ]; then
+                      echo "Cannot preserve $legacy_skills: backup already exists at $legacy_backup" >&2
+                      exit 1
+                    fi
+                    mkdir "$legacy_backup"
+                    if ! mv "$legacy_skills" "$legacy_backup/skills"; then
+                      rmdir "$legacy_backup" 2>/dev/null || true
+                      echo "Failed to preserve $legacy_skills; it was not removed" >&2
+                      exit 1
+                    fi
+                    echo "Preserved existing Claude skills at $legacy_backup/skills"
+                    ;;
+                esac
+              elif [ -e "$legacy_skills" ]; then
+                if [ ! -d "$legacy_skills" ] && [ ! -f "$legacy_skills" ]; then
+                  echo "Refusing to move unusual file type at $legacy_skills" >&2
+                  exit 1
+                fi
+                if [ -e "$legacy_backup" ] || [ -L "$legacy_backup" ]; then
+                  echo "Cannot preserve $legacy_skills: backup already exists at $legacy_backup" >&2
+                  exit 1
+                fi
+                mkdir "$legacy_backup"
+                if ! mv "$legacy_skills" "$legacy_backup/skills"; then
+                  rmdir "$legacy_backup" 2>/dev/null || true
+                  echo "Failed to preserve $legacy_skills; it was not removed" >&2
+                  exit 1
+                fi
+                echo "Preserved existing Claude skills at $legacy_backup/skills"
               fi
             '';
             home.activation.dotfiles-agent-skills = lib.hm.dag.entryAfter [ "agent-skills" ] (

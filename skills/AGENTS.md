@@ -13,6 +13,10 @@ shared copies; copying the full catalog there duplicates OMP discovery.
 `meta.targets` accepts canonical names and `dot-*` aliases. Hermes additionally
 needs its configured `skills.external_dirs` wiring.
 
+Legacy Claude skills migration preserves unmanaged content at
+`~/.claude/skills.pre-dotfiles-agent-skills/skills` instead of deleting it.
+An existing backup causes migration to fail rather than overwrite that backup.
+
 Marker-aware activation adopts old markerless Nix trees only when managed
 entries retain epoch timestamps. Mutable `.system` is ignored; newer entries
 or symlinks preserve the overwrite guard rather than replacing local edits.
