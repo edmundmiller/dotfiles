@@ -1,5 +1,39 @@
 # jw remove command
 
+_canonical_directory() {
+    (cd -P -- "$1" 2>/dev/null && pwd -P)
+}
+
+# Resolve a workspace through jj's registry, then prove that the directory still
+# identifies that workspace in the same repository as the caller.
+_verified_workspace_root() {
+    local name="$1"
+    local source_root source_repo registered_root target_root target_repo
+
+    source_root=$(jj workspace root 2>/dev/null) || return 1
+    source_root=$(_canonical_directory "$source_root") || return 1
+    source_repo=$(jj --repository "$source_root" config path --repo 2>/dev/null) || return 1
+    registered_root=$(jj --repository "$source_root" workspace root --name "$name" 2>/dev/null) || return 1
+    [[ ! -L "$registered_root" ]] || return 1
+    registered_root=$(_canonical_directory "$registered_root") || return 1
+
+    target_root=$(jj --repository "$registered_root" workspace root 2>/dev/null) || return 1
+    target_root=$(_canonical_directory "$target_root") || return 1
+    target_repo=$(jj --repository "$registered_root" config path --repo 2>/dev/null) || return 1
+
+    [[ "$registered_root" == "$target_root" && "$source_repo" == "$target_repo" ]] || return 1
+    # jj resolves registered paths through symlinks. A replaced path must not
+    # redirect removal into another workspace in the same repository.
+    local roots other_name other_root
+    roots=$(jj --repository "$source_root" workspace list -T 'name ++ "\t" ++ root ++ "\n"' 2>/dev/null) || return 1
+    while IFS=$'\t' read -r other_name other_root; do
+        if [[ "$other_name" != "$name" && "$other_root" == "$registered_root" ]]; then
+            return 1
+        fi
+    done <<< "$roots"
+    printf '%s\n' "$registered_root"
+}
+
 cmd_remove() {
     local name=""
     local force=false
@@ -63,16 +97,21 @@ cmd_remove() {
     fi
 
     local workspace_dir
-    workspace_dir="$(_workspace_dir "$name")"
+    if ! workspace_dir=$(_verified_workspace_root "$name"); then
+        _error "Cannot safely inspect workspace '$name'; nothing was removed"
+        return 1
+    fi
 
     # Check for uncommitted changes (unless --force)
     local has_changes=false
-    if ! $force && [[ -d "$workspace_dir" ]]; then
+    if ! $force; then
         local diff_output
-        if diff_output=$(jj diff --summary -r "@" --repository "$workspace_dir" 2>/dev/null); then
-            if [[ -n "$diff_output" ]]; then
-                has_changes=true
-            fi
+        if ! diff_output=$(jj diff --summary -r "@" --repository "$workspace_dir" 2>/dev/null); then
+            _error "Cannot inspect changes in workspace '$name'; nothing was removed"
+            return 1
+        fi
+        if [[ -n "$diff_output" ]]; then
+            has_changes=true
         fi
     fi
 
@@ -102,23 +141,64 @@ cmd_remove() {
     fi
 
     # If we're in the workspace, cd to default first
-    if [[ "$(pwd)" == "$workspace_dir" ]]; then
+    local current_root
+    current_root=$(jj workspace root 2>/dev/null) || {
+        _error "Cannot inspect the current workspace; nothing was removed"
+        return 1
+    }
+    current_root=$(_canonical_directory "$current_root") || {
+        _error "Cannot inspect the current workspace; nothing was removed"
+        return 1
+    }
+    if [[ "$current_root" == "$workspace_dir" ]]; then
         local main_dir
-        main_dir="$(_workspace_dir "default")"
-        cd "$main_dir" || cd "$(_repo_root)" || return 1
+        main_dir=$(jj workspace root --name "default" 2>/dev/null) || {
+            _error "Cannot locate the default workspace; nothing was removed"
+            return 1
+        }
+        cd "$main_dir" || return 1
         _info "Switched to default workspace"
     fi
 
     # Remove with spinner
-    gum spin --spinner dot --title "Removing workspace..." -- \
-        sh -c "jj workspace forget '$name' 2>/dev/null"
+    if ! gum spin --spinner dot --title "Removing workspace..." -- \
+        jj workspace forget "$name"; then
+        _error "Failed to forget workspace '$name'; its directory was preserved"
+        return 1
+    fi
+
+    # Recheck the on-disk repository after forgetting to narrow the window in
+    # which the path could be replaced before recursive deletion.
+    local verified_after_forget
+    if ! verified_after_forget=$(_verified_workspace_root_after_forget "$workspace_dir"); then
+        _error "Workspace path changed during removal; directory was preserved"
+        return 1
+    fi
 
     # Clean up the directory
-    if [[ -d "$workspace_dir" ]]; then
-        rm -rf "$workspace_dir"
+    if [[ -d "$verified_after_forget" ]]; then
+        rm -rf -- "$verified_after_forget"
     fi
 
     _success "Removed workspace '$name'"
+}
+
+_verified_workspace_root_after_forget() {
+    local expected_root="$1"
+    local target_root
+
+    [[ ! -L "$expected_root" ]] || return 1
+    target_root=$(jj --repository "$expected_root" workspace root 2>/dev/null) || return 1
+    target_root=$(_canonical_directory "$target_root") || return 1
+    [[ "$target_root" == "$expected_root" ]] || return 1
+
+    # The invoking workspace and forgotten workspace must still resolve to the
+    # same repository. This remains queryable until the directory is deleted.
+    local source_repo target_repo
+    source_repo=$(jj config path --repo 2>/dev/null) || return 1
+    target_repo=$(jj --repository "$expected_root" config path --repo 2>/dev/null) || return 1
+    [[ "$source_repo" == "$target_repo" ]] || return 1
+    printf '%s\n' "$target_root"
 }
 
 cmd_remove_help() {

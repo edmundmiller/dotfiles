@@ -1,3 +1,11 @@
+---
+purpose: Explain installation and use of the jj workspace CLI.
+applies_to: Creating, inspecting, and removing jj workspaces.
+entrypoint: Run jw help.
+verification: Exercise commands in a disposable jj repository.
+update_when: Command behavior or workspace safety checks change.
+---
+
 # jw - JJ Workspace Management
 
 A CLI tool for managing Jujutsu (jj) workspaces.
@@ -88,6 +96,13 @@ export JW_WORKSPACE_PATH='.jj-workspaces/{name}'
 ```
 
 Supports placeholders: `{repo}`, `{name}`
+
+The path pattern controls where `jw` creates workspaces. Removal does not guess
+from this pattern: it asks jj for the workspace's registered root and verifies
+that the directory belongs to the same repository before forgetting or deleting
+it. If the root cannot be inspected, `jw remove` fails without deleting files.
+`--force` skips the confirmation and dirty-change warning, but never skips these
+ownership checks.
 
 ## Architecture
 

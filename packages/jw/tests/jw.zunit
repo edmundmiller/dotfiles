@@ -190,6 +190,124 @@
   assert "$list_out" does_not_contain '"name": "to-remove"'
 }
 
+@test 'jw remove -f removes a dirty workspace after ownership checks' {
+  bash "$JW" create "dirty-force" >/dev/null 2>&1
+  local workspace_dir="$TEST_DIR/test-repo--dirty-force"
+  echo "uncommitted" > "$workspace_dir/dirty.txt"
+
+  local out
+  out=$(bash "$JW" remove -f "dirty-force" 2>&1)
+
+  assert "$out" contains "removed"
+  assert "$workspace_dir" not_dir
+}
+
+@test 'jw remove preserves an unrelated directory at the old conventional path' {
+  bash "$JW" create "wrong-path" >/dev/null 2>&1
+  local workspace_dir="$TEST_DIR/test-repo--wrong-path"
+  rm -rf "$workspace_dir"
+  mkdir -p "$workspace_dir"
+  echo "keep me" > "$workspace_dir/unrelated.txt"
+
+  local out ret
+  out=$(bash "$JW" remove -f "wrong-path" 2>&1) && ret=0 || ret=$?
+
+  assert $ret equals 1
+  assert "$out" contains "inspect"
+  assert "$workspace_dir/unrelated.txt" is_file
+  assert "$(jj workspace list -T 'name ++ "\n"')" contains "wrong-path"
+}
+
+@test 'jw remove refuses a workspace path replaced by a sibling symlink' {
+  local target_dir="$TEST_DIR/replaced"
+  local sibling_dir="$TEST_DIR/preserved"
+  jj workspace add --name "replaced" "$target_dir" >/dev/null 2>&1
+  jj workspace add --name "preserved" "$sibling_dir" >/dev/null 2>&1
+  rm -rf "$target_dir"
+  ln -s "$sibling_dir" "$target_dir"
+  echo "keep me" > "$sibling_dir/unrelated.txt"
+
+  local ret
+  bash "$JW" remove -f "replaced" >/dev/null 2>&1 && ret=0 || ret=$?
+  assert $ret equals 1
+  assert "$sibling_dir/unrelated.txt" is_file
+  assert "$(jj workspace list -T 'name ++ "\n"')" contains "replaced"
+}
+
+@test 'jw remove uses the registered root for a custom workspace location' {
+  local workspace_dir="$TEST_DIR/custom/location"
+  mkdir -p "${workspace_dir:h}"
+  jj workspace add --name "custom-location" "$workspace_dir" >/dev/null 2>&1
+
+  local out
+  out=$(bash "$JW" remove -f "custom-location" 2>&1)
+
+  assert "$out" contains "removed"
+  assert "$workspace_dir" not_dir
+  assert "$(jj workspace list -T 'name ++ "\n"')" does_not_contain "custom-location"
+}
+
+@test 'jw remove works from a sibling workspace' {
+  local sibling_dir="$TEST_DIR/sibling-location"
+  local target_dir="$TEST_DIR/target-location"
+  jj workspace add --name "sibling" "$sibling_dir" >/dev/null 2>&1
+  jj workspace add --name "sibling-target" "$target_dir" >/dev/null 2>&1
+
+  local out
+  out=$(cd "$sibling_dir" && bash "$JW" remove -f "sibling-target" 2>&1)
+
+  assert "$out" contains "removed"
+  assert "$target_dir" not_dir
+  assert "$(jj workspace list -T 'name ++ "\n"')" does_not_contain "sibling-target"
+}
+
+@test 'jw remove preserves workspace directory when forget fails' {
+  bash "$JW" create "forget-fails" >/dev/null 2>&1
+  local workspace_dir="$TEST_DIR/test-repo--forget-fails"
+  local real_jj="$(command -v jj)"
+  local fake_bin="$TEST_DIR/fake-bin"
+  mkdir "$fake_bin"
+  cat > "$fake_bin/jj" <<EOF
+#!/usr/bin/env bash
+if [[ "\$1 \$2" == "workspace forget" ]]; then
+  exit 1
+fi
+exec "$real_jj" "\$@"
+EOF
+  chmod +x "$fake_bin/jj"
+
+  local out ret
+  out=$(PATH="$fake_bin:$PATH" bash "$JW" remove -f "forget-fails" 2>&1) && ret=0 || ret=$?
+
+  assert $ret equals 1
+  assert "$workspace_dir" is_dir
+  assert "$(jj workspace list -T 'name ++ "\n"')" contains "forget-fails"
+}
+
+@test 'jw remove fails closed when dirty-state inspection fails' {
+  bash "$JW" create "diff-fails" >/dev/null 2>&1
+  local workspace_dir="$TEST_DIR/test-repo--diff-fails"
+  local real_jj="$(command -v jj)"
+  local fake_bin="$TEST_DIR/fake-diff-bin"
+  mkdir "$fake_bin"
+  cat > "$fake_bin/jj" <<EOF
+#!/usr/bin/env bash
+if [[ "\$1" == "diff" ]]; then
+  exit 1
+fi
+exec "$real_jj" "\$@"
+EOF
+  chmod +x "$fake_bin/jj"
+
+  local out ret
+  out=$(PATH="$fake_bin:$PATH" bash "$JW" remove "diff-fails" 2>&1) && ret=0 || ret=$?
+
+  assert $ret equals 1
+  assert "$out" contains "Cannot inspect changes"
+  assert "$workspace_dir" is_dir
+  assert "$(jj workspace list -T 'name ++ "\n"')" contains "diff-fails"
+}
+
 # =============================================================================
 # merge command tests
 # =============================================================================
