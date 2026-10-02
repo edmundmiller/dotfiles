@@ -8,20 +8,16 @@ update_when: Review Box tabs, persistence, commands, or runtime package wiring c
 
 # pi-herdr
 
-Pi package that adds Herdr tools for inspecting and controlling a running Herdr server from Pi.
+Pi package for the repository-specific Review Box workflow. General Herdr
+layout, pane, and agent control comes from the official
+`@ogulcancelik/pi-herdr` package, installed alongside this one by the Pi module.
 
 ## Tools
 
-- `herdr_status` — check Herdr client/server/socket status.
-- `herdr_list` — list workspaces, tabs, or panes.
-- `herdr_read_pane` — read visible or recent pane output.
-- `herdr_run_in_pane` — send a command to a pane and press Enter.
-- `herdr_wait` — wait for output match or agent status transition.
 - `herdr_pr_review_workspace` — create or resume an isolated Review Box for a GitHub PR.
 
 ## Command
 
-- `/herdr ...` — run a Herdr CLI command, for example `/herdr pane list`.
 - `/review-box <pr>` — create or resume one PR-keyed Herdr workspace.
 - `/review-box <pr> --agent pi` — use Pi instead of the default OMP review tab.
 

@@ -177,6 +177,7 @@ let
       piHerdrPackage
       piSettingsParsed
       ;
+    herdrVersion = pkgs.my.herdr.version;
   };
 in
 {

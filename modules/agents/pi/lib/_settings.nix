@@ -3,6 +3,7 @@
   cfg,
   lib,
   piHerdrPackage,
+  herdrVersion,
   piSettingsParsed,
 }:
 let
@@ -20,7 +21,16 @@ let
   # that do not run that shell integration, and avoids redundant interactive
   # shell prompts when tmux/herdr are the preferred persistent workspace layer.
   moduleManagedPackageGroups = {
-    herdr = [ (toString piHerdrPackage) ];
+    # Native agent tools require Herdr 0.7.5+; retain the older plugin below it.
+    herdr = [
+      (toString piHerdrPackage)
+      (
+        if lib.versionAtLeast herdrVersion "0.7.5" then
+          "npm:@ogulcancelik/pi-herdr@0.4.0"
+        else
+          "npm:@ogulcancelik/pi-herdr@0.2.5"
+      )
+    ];
     tmux = [
       "npm:pi-tmux-window-name"
       "git:github.com/ogulcancelik/pi-extensions"
