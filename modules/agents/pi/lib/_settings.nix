@@ -27,7 +27,9 @@ let
       "https://github.com/pasky/pi-side-agents"
     ];
     interactiveShell = [ "npm:pi-interactive-shell" ];
-    mcp = [
+    # Legacy adapters must be filtered from base settings. pi-mcp-adapter
+    # registers /mcp and disables Pi 1.0's native MCP implementation.
+    legacyMcp = [
       "npm:pi-mcp-adapter"
       "npm:pi-mcporter"
     ];
@@ -87,7 +89,6 @@ let
     ++ lib.optionals (
       !(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)
     ) moduleManagedPackageGroups.interactiveShell
-    ++ lib.optionals cfg.mcp.enable moduleManagedPackageGroups.mcp
     ++ lib.optionals cfg.computerUse.enable moduleManagedPackageGroups.computerUse
     ++ lib.optionals cfg.gitTools.enable moduleManagedPackageGroups.gitTools
     ++ lib.optionals cfg.statusUi.enable moduleManagedPackageGroups.statusUi

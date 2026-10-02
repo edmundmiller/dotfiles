@@ -20,6 +20,19 @@
       "type": "string",
       "description": "Default model ID"
     },
+    "defaultTools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Default tools; +name adds to the built-in defaults"
+    },
+    "codemode": {
+      "type": "object",
+      "properties": {
+        "mode": { "enum": ["on", "only"] },
+        "inlineBudget": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
     "defaultThinkingLevel": {
       "type": "string",
       "enum": ["off", "minimal", "low", "medium", "high", "xhigh"],

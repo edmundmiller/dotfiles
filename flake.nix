@@ -386,7 +386,7 @@
               rtk
               workmux
               ;
-            inherit (pkgs.llm-agents) herdr omp;
+            inherit (pkgs.llm-agents) herdr omp pi;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -407,7 +407,12 @@
               rtk
               workmux
               ;
-            inherit (darwinPkgs.llm-agents) gitbutler herdr omp;
+            inherit (darwinPkgs.llm-agents)
+              gitbutler
+              herdr
+              omp
+              pi
+              ;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
           };
 

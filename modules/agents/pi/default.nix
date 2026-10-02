@@ -205,7 +205,7 @@ in
     mcp.enable = mkOption {
       type = types.bool;
       default = true;
-      description = "Enable Pi MCP adapter and MCPorter packages.";
+      description = "Configure Pi's native MCP servers from config/pi/mcp.json.";
     };
     computerUse.enable = mkOption {
       type = types.bool;
@@ -358,6 +358,7 @@ in
             isDarwin
             ;
           inherit (settings) piSettingsValidated;
+          mcpEnabled = cfg.mcp.enable;
         };
 
         home.activation = import ./lib/_activation.nix {

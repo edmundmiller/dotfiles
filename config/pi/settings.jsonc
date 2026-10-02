@@ -5,6 +5,9 @@
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.6-sol",
   "defaultThinkingLevel": "medium",
+  // Pi 1.0 native orchestration, alongside the selected model's ordinary tools.
+  "defaultTools": ["+codemode"],
+  "codemode": { "mode": "on", "inlineBudget": 3000 },
   // Model cycling - Ctrl+P to toggle between these
   "enabledModels": [
     "openai-codex/gpt-5.6-sol",

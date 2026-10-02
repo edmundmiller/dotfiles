@@ -1,0 +1,16 @@
+{
+  "autoEnableCodemode": true,
+  "mcpServers": {
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "!printf 'Bearer %s' \"$(gh auth token)\""
+      },
+      "exposure": "codemode"
+    },
+    "linear": {
+      "url": "https://mcp.linear.app/mcp",
+      "exposure": "codemode"
+    }
+  }
+}

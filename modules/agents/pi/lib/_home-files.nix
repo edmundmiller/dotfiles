@@ -5,6 +5,7 @@
   piPkgDeps,
   piCommandPolicyBridge,
   piSettingsValidated,
+  mcpEnabled,
   promptLinks,
   agentLinks,
   sessionSearchFiles,
@@ -21,6 +22,14 @@ promptLinks
     "${configDir}/pi/pi-permission-system.jsonc";
   ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
 }
+// (
+  if mcpEnabled then
+    {
+      ".pi/agent/mcp.json".source = "${configDir}/pi/mcp.json";
+    }
+  else
+    { }
+)
 // sessionSearchFiles
 // (
   if isDarwin then
