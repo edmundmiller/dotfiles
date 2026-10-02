@@ -596,18 +596,6 @@
     }
   },
   "packages/pi-packages/pi-herdr/extensions/herdr.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 1
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 1
-    },
-    "anti-slop/no-unknown-returns": {
-      "count": 1
-    },
     "anti-slop/no-unsafe-dictionary-type": {
       "count": 1
     }

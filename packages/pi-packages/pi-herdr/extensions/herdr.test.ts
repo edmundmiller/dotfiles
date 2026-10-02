@@ -16,10 +16,11 @@ describe("pi-herdr review workspace helpers", () => {
   test("registers only Review Box tools and commands", () => {
     const tools: string[] = [];
     const commands: string[] = [];
+    // SAFETY: startup only registers handlers; this test never invokes them.
     herdrExtension({
       registerTool: (tool) => tools.push(tool.name),
       registerCommand: (name) => commands.push(name),
-    } as Pick<ExtensionAPI, "registerTool" | "registerCommand"> as ExtensionAPI);
+    } as ExtensionAPI);
     expect(tools).toEqual(["herdr_pr_review_workspace"]);
     expect(commands).toEqual(["review-box"]);
   });

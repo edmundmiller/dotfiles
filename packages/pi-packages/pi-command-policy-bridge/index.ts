@@ -80,9 +80,13 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }
 
-function stringField(record: Record<string, unknown>, key: string): string | null {
+function stringField(
+  record: Record<string, unknown>,
+  key: string,
+  allowBlank = false
+): string | null {
   const value = record[key];
-  return typeof value === "string" && value.trim() ? value : null;
+  return typeof value === "string" && (allowBlank || value.trim()) ? value : null;
 }
 
 function eventWorkingDirectory(event: ToolCallEventLike): string {
@@ -182,9 +186,10 @@ export function evaluateToolGuard(event: ToolCallEventLike): ToolGuardDecision {
   const cwd = eventWorkingDirectory(event);
   const input = asRecord(event.input);
 
+  // Whitespace stdin can execute a pending command, so retain blank strings.
   if (
     toolName === "apply_patch" ||
-    (toolName === "write_stdin" && typeof input.chars === "string" && input.chars.length > 0)
+    (toolName === "write_stdin" && (stringField(input, "chars", true)?.length ?? 0) > 0)
   ) {
     return {
       kind: "deny",
