@@ -113,8 +113,7 @@
     // Token burden visualization/management - https://github.com/Whamp/pi-token-burden
     // Pinned before 0.6.5 until Pi's npm install cutoff allows yaml@^2.9.0.
     "git:github.com/Whamp/pi-token-burden#v0.6.4",
-    // Codex conversion helper - https://www.npmjs.com/package/@howaboua/pi-codex-conversion
-    "npm:@howaboua/pi-codex-conversion",
+    // Keep native tools: Codex conversion's apply_patch/write_stdin bypass permission hooks.
     // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
     // Enables provider id: kilo (e.g., model: kilocode/auto)
     "git:github.com/mrexodia/kilo-pi-provider",

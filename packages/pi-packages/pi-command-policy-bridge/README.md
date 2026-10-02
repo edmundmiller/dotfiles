@@ -12,7 +12,9 @@ Deterministic Pi guard for command-bearing tools and jj-aware VCS mutations.
 
 ## Command policy
 
-The bridge extracts commands from `bash`, `process.start`, `interactive_shell`, and `herdr_run_in_pane`. It applies `permission.bash` rules from `PI_PERMISSION_SYSTEM_CONFIG_PATH` with last-match-wins wildcard ordering.
+The bridge extracts commands from `bash`, `exec_command`, `process.start`, `interactive_shell`, `herdr_run_in_pane`, and `herdr_pane.run`. It applies `permission.bash` rules from `PI_PERMISSION_SYSTEM_CONFIG_PATH` with last-match-wins wildcard ordering. `exec_command.workdir` participates in jj repository detection.
+
+`apply_patch` and nonempty `write_stdin` are blocked because they bypass path or command checks. Empty stdin polling remains available. The default package list omits Codex conversion so standard Pi edit/write tools remain available with their path hooks.
 
 - `deny` blocks.
 - `ask`, `allow`, and no match run without prompting.

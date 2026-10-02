@@ -91,7 +91,10 @@ function eventWorkingDirectory(event: ToolCallEventLike): string {
   }
   const input = asRecord(event.input);
   return resolve(
-    stringField(input, "workingDirectory") ?? stringField(input, "cwd") ?? process.cwd()
+    stringField(input, "workdir") ??
+      stringField(input, "workingDirectory") ??
+      stringField(input, "cwd") ??
+      process.cwd()
   );
 }
 
@@ -136,6 +139,16 @@ function jjReplacement(operation: string): string {
 export function extractCommand(toolName: string, input: unknown): CommandExtraction {
   const record = asRecord(input);
 
+  if (toolName === "exec_command") {
+    const command = stringField(record, "cmd");
+    return command ? { command, label: "exec_command" } : null;
+  }
+
+  if (toolName === "herdr_pane" && record.action === "run") {
+    const command = stringField(record, "command");
+    return command ? { command, label: "herdr_pane.run" } : null;
+  }
+
   if (toolName === "process") {
     const action = stringField(record, "action");
     const command = stringField(record, "command");
@@ -168,6 +181,16 @@ export function evaluateToolGuard(event: ToolCallEventLike): ToolGuardDecision {
   const toolName = typeof event.toolName === "string" ? event.toolName : "";
   const cwd = eventWorkingDirectory(event);
   const input = asRecord(event.input);
+
+  if (
+    toolName === "apply_patch" ||
+    (toolName === "write_stdin" && typeof input.chars === "string" && input.chars.length > 0)
+  ) {
+    return {
+      kind: "deny",
+      reason: `${toolName} bypasses path or command policy; use the standard edit/write or guarded command tools.`,
+    };
+  }
 
   if (toolName === "jj_vcs" && stringField(input, "action") === "align_push") {
     return {
