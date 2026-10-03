@@ -15,6 +15,15 @@ def "main gc" [] {
   ^nix-collect-garbage -d
 }
 
+# Preview-first Xcode cleanup and checksum-verified FG offload removal.
+def --wrapped "main reclaim-mac-development" [...args: string] {
+  let ctx = (context)
+  ^python3 ($ctx.flake_dir | path join "scripts/reclaim-mac-development.py") ...$args
+  if $env.LAST_EXIT_CODE != 0 {
+    error make {msg: "Mac development cleanup failed; inspect the output before retrying"}
+  }
+}
+
 def "main repl" [] {
   let ctx = (context)
   cd $ctx.flake_dir
