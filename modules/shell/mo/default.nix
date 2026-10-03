@@ -47,8 +47,9 @@ in
       ]
       ++ optionals isDarwin [
         {
-          # Mole (mo) is distributed via Homebrew only.
-          homebrew.brews = [ "mole" ];
+          # Own Mole here, using Homebrew core rather than the legacy tw93 tap.
+          # Hosts disable activation-time upgrades; update explicitly with hey mole-upgrade.
+          homebrew.brews = [ "homebrew/core/mole" ];
           user.packages = optionals cfg.diskReport.enable [ diskReport ];
           launchd.user.agents = optionalAttrs cfg.diskReport.enable {
             mole-disk-report = {

@@ -23,6 +23,23 @@ def "main gc" [--keep-generations] {
   ^nix-collect-garbage -d
 }
 
+# Upgrade only Mole, without global Homebrew updates or automatic cleanup.
+def "main mole-upgrade" [] {
+  if not (is-darwin) {
+    error make {msg: "Mole upgrade is only supported on macOS"}
+  }
+  with-env {
+    HOMEBREW_NO_AUTO_UPDATE: "1"
+    HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+  } {
+    ^/opt/homebrew/bin/brew upgrade homebrew/core/mole
+    if $env.LAST_EXIT_CODE != 0 {
+      error make {msg: "Mole upgrade failed; inspect Homebrew output before retrying"}
+    }
+  }
+}
+
 # Preview-first Xcode cleanup and checksum-verified FG offload removal.
 def --wrapped "main reclaim-mac-development" [...args: string] {
   let ctx = (context)
