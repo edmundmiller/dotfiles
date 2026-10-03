@@ -86,7 +86,7 @@ have changed.
 | Dotfiles editing and host-independent checks                                                                    | Amp Orb             | Source work is not inherently laptop-only.                                                                                     |
 | nix-darwin activation, Homebrew, 1Password-backed interaction, and macOS application state                      | MacTraitor-Pro      | Run the final host check and `hey re` here.                                                                                    |
 | NUC NixOS builds, deployment, persistent services, ZFS, Home Assistant, and home-LAN integration                | NUC                 | Use the repository's `hey nuc-wt` or `hey nuc` path; verify on the NUC.                                                        |
-| Nascent manuscript prose and lightweight checks that do not hydrate DVC data                                    | Amp Orb             | Keep the Orb checkout data-light.                                                                                              |
+| All `~/src/fg` work, including manuscript prose, workflow code, and lightweight checks                          | NUC                 | Use the `nuc` Amp runner and `/home/emiller/src/fg`; these repositories no longer live on the Mac.                             |
 | Nascent manuscript DVC data, full analyses, and data-derived outputs                                            | NUC                 | The local checkout was about 40 GB in August 2026, including about 39 GB of DVC cache, leaving unsafe headroom on a 60 GB Orb. |
 | GPU inference or compute, Vulkan, Linux desktop, Wayland, Bluetooth, and audio integration                      | Meshify             | Verification requires Meshify's GPU, desktop session, or attached hardware.                                                    |
 | Trace archives, databases of record, large durable datasets, and always-on services                             | NUC                 | Do not use a per-thread Orb as permanent storage or service infrastructure.                                                    |
@@ -98,9 +98,13 @@ editing, unit tests, and review in the Orb whenever possible. Transfer the
 branch or diff to the required host only for the smallest final acceptance
 step. Dotfiles and TaskNotes Native both follow this model.
 
-Full genomics repositories follow the same split: use Orbs for workflow code,
-manuscript text, and small fixtures; use the NUC or another data-capable compute
-environment for full datasets and executions.
+The `fg` repositories are an explicit exception to the Orb default: all work
+stays on the NUC. The Mac's 2026-10-03 working copies, including dirty files and
+DVC data, are preserved separately at `/home/emiller/src/fg-mactraitor-20261003`.
+Use the existing `/home/emiller/src/fg` checkouts for Linux execution. The
+preserved Mac copies contain macOS environments and absolute symlinks; they are
+recovery copies, not verified Linux environments. Do not overwrite newer NUC
+work with them when recovering a Mac-only change.
 
 ## Data and access boundaries
 
