@@ -6,7 +6,15 @@ substituters = https://cache.nixos.org https://nix-community.cachix.org https://
 trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0H4HLrtLxA0fK5nQ1rG6Rt4p6MxY5U= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
 # END dotfiles binary caches'
 
-def "main gc" [] {
+def "main gc" [--keep-generations] {
+  if $keep_generations {
+    ^nix-store --gc
+    if $env.LAST_EXIT_CODE != 0 {
+      error make {msg: "Nix garbage collection failed"}
+    }
+    return
+  }
+
   if (is-darwin) {
     ^sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations old
     ^sudo nix-collect-garbage -d
