@@ -152,6 +152,7 @@ in
           '';
         };
         mo.enable = true;
+        mo.diskReport.enable = true;
         # Scan roots for `mo purge` (rebuildable project artifacts). This list
         # replaces Mole's defaults. Missing future roots are harmless no-ops.
         # Keep cloud-synced directories omitted so purges stay local.
