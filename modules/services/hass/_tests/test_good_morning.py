@@ -12,7 +12,6 @@ import unittest
 
 from homeassistant import bootstrap, loader
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.template import Template
 
 
 with open(sys.argv.pop(1)) as config_file:
@@ -104,29 +103,6 @@ class GoodMorningTest(unittest.IsolatedAsyncioTestCase):
         await task
         self.assertFalse(any(domain == "switch" for domain, _, _ in self.calls))
         self.assertTrue(any(domain == "shell_command" for domain, _, _ in self.calls))
-
-    async def test_automatic_focus_and_resident_gate_remains_separate(self):
-        automatic = next(
-            a for a in CONFIG["automation"] if a["id"] == "good_morning_both_awake"
-        )
-        gate = Template(automatic["condition"][-1]["value_template"], self.hass)
-        for entity in ("person.edmund_miller", "person.moni"):
-            self.hass.states.async_set(entity, "home")
-        for entity in ("input_boolean.edmund_awake", "input_boolean.monica_awake"):
-            self.hass.states.async_set(entity, "on")
-        for focus, expected in (
-            ("Sleep", False),
-            ("unknown", False),
-            ("unavailable", False),
-            ("Work", True),
-        ):
-            with self.subTest(focus=focus):
-                self.hass.states.async_set("sensor.edmunds_iphone_focus_name", focus)
-                self.assertIs(gate.async_render(), expected)
-        self.hass.states.async_set("input_boolean.monica_awake", "off")
-        self.assertIs(gate.async_render(), False)
-        self.hass.states.async_set("person.moni", "not_home")
-        self.assertIs(gate.async_render(), True)
 
 
 if __name__ == "__main__":

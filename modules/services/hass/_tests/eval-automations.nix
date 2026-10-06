@@ -3,7 +3,7 @@
 # No VM needed — evaluates the NixOS module config and checks:
 #   - Every automation has initial_state = true (use ensureEnabled from _lib.nix)
 #   - Wake detection automations exist with guardrails
-#   - Auto Good Morning requires all home residents awake and Sleep Focus inactive
+#   - Good Morning requires a manual/voice request
 #   - Required automations/scenes still exist
 #   - Key scene state guarantees remain intact
 { nixosConfig, pkgs }:
@@ -423,6 +423,34 @@ let
 
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
+  # Inspect nested action branches too, while allowing script.turn_off cancellation.
+  activatesGoodMorning =
+    entityId: value:
+    if builtins.isList value then
+      any (activatesGoodMorning entityId) value
+    else if builtins.isAttrs value then
+      let
+        service = value.action or (value.service or null);
+        targets = pkgs.lib.toList (value.target.entity_id or (value.data.entity_id or [ ]));
+      in
+      (entityId == "script.good_morning" && service == entityId)
+      || (
+        builtins.elem service [
+          "script.turn_on"
+          "script.toggle"
+          "scene.turn_on"
+          "homeassistant.turn_on"
+          "homeassistant.toggle"
+        ]
+        && builtins.elem entityId targets
+      )
+      || any (activatesGoodMorning entityId) (builtins.attrValues value)
+    else
+      false;
+  goodMorningAutomationCallers = filter (
+    a: activatesGoodMorning "script.good_morning" (a.actions or (a.action or [ ]))
+  ) automations;
+
   windingDownScene = findScene "Winding Down";
   getReadyForBedScene = findScene "Get Ready for Bed";
   goodNightScene = findScene "Good Night";
@@ -447,19 +475,25 @@ let
       msg = "automation 'monica_awake_detection' missing";
     }
     {
+      test = goodMorningBothAwake == null;
+      msg = "Wake heuristics must not automatically activate Good Morning";
+    }
+    {
       test =
-        goodMorningBothAwake != null
-        && hasStateTrigger goodMorningBothAwake "input_boolean.edmund_awake" "on"
-        && hasStateTrigger goodMorningBothAwake "input_boolean.monica_awake" "on"
-        && length (toList (goodMorningBothAwake.trigger or [ ])) == 2
-        && hasStateCondition (toList (goodMorningBothAwake.condition or [ ])) "input_boolean.goodnight" "on"
-        && hasTemplateConditionContaining (toList (
-          goodMorningBothAwake.condition or [ ]
-        )) "focus_name not in ['Sleep', 'unknown', 'unavailable']"
-        && hasActionTarget (toList (
-          goodMorningBothAwake.action or [ ]
-        )) "script.turn_on" "script.good_morning";
-      msg = "Good Morning must require all home residents awake and Edmund outside Sleep Focus";
+        map (a: a.id or null) goodMorningAutomationCallers == [ "voice_webhook_good_morning" ]
+        && builtins.all (
+          a:
+          let
+            triggers = toList (a.triggers or (a.trigger or [ ]));
+          in
+          triggers != [ ] && builtins.all (t: (t.trigger or (t.platform or null)) == "webhook") triggers
+        ) goodMorningAutomationCallers;
+      msg = "Only the webhook-only voice automation may activate script.good_morning";
+    }
+    {
+      test =
+        !any (a: activatesGoodMorning "scene.good_morning" (a.actions or (a.action or [ ]))) automations;
+      msg = "Automations must not activate scene.good_morning directly";
     }
     {
       test = legacyRoombaStart == null;

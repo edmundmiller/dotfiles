@@ -18,9 +18,8 @@ scheduling. [README.md](README.md) and the
   refreshes every two minutes from 7:30 to 11 PM while Edmund is home. Edmund's
   named Sleep Focus exit stops his Eight Sleep side from 6 to 9 AM; Monica retains
   generic focus-off handling.
-- Wake signals set per-person booleans. From 7 AM to noon, Good Morning runs once
-  every resident who is home is awake, but fails closed while Edmund's named
-  Focus is `Sleep` or unavailable. Manual/voice Good Morning remains supported.
+- Wake signals set per-person booleans for other consumers. Good Morning is
+  manual/voice only so inferred wake signals cannot interrupt someone sleeping in.
 
 Consumers include ambient presence, `modes.nix`/`everything_off`, lighting,
 climate, vacation, and the GoodMorning voice intent. Preserve their helper

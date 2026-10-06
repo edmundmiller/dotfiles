@@ -26,9 +26,8 @@
 #   8Sleep next alarm switch: switch.edmund_s_eight_sleep_side_next_alarm
 #   iPhone focus name: sensor.edmunds_iphone_focus_name (Sleep / Work)
 #
-# Automatic Good Morning requires every resident who is home to be marked awake
-# and Edmund's named Sleep Focus to be inactive. Explicit manual/voice calls bypass
-# those sensor gates: a stale phone report must not veto the user's request.
+# Good Morning is manual/voice only. Wake heuristics cannot tell whether someone
+# intends to sleep in, so they must not open the shade or power on the desk.
 { lib, pkgs, ... }:
 let
   inherit (import ../../_lib.nix) ensureEnabled;
@@ -49,7 +48,7 @@ let
     heartRate = "sensor.edmund_s_eight_sleep_side_heart_rate";
 
     # Named Focus reporting distinguishes Sleep from Work for Eight Sleep shutoff.
-    # Leaving Sleep only unlocks Good Morning; it must not supply a wake signal.
+    # Leaving Sleep must not supply a wake signal.
     sleepFocusExit = {
       entity_id = "sensor.edmunds_iphone_focus_name";
       from = "Sleep";
@@ -714,63 +713,9 @@ in
       (mkSleepFocusOff edmund)
       (mkSleepFocusOff monica)
 
-      # Wake signals nominate each person as awake; Good Morning runs only once
-      # every resident who is home is awake. Edmund's named Focus is a fail-closed
-      # safety gate, not the primary trigger: stale/unavailable data or Sleep still
-      # being active blocks the routine while Edmund is home.
-      {
-        alias = "Good Morning - Everyone Home Awake";
-        id = "good_morning_both_awake";
-        description = "All residents who are home are awake and Edmund is not in Sleep Focus → run Good Morning";
-        trigger = [
-          {
-            platform = "state";
-            entity_id = "input_boolean.edmund_awake";
-            to = "on";
-          }
-          {
-            platform = "state";
-            entity_id = "input_boolean.monica_awake";
-            to = "on";
-          }
-        ];
-        condition = [
-          {
-            condition = "time";
-            after = "07:00:00";
-            before = "12:00:00";
-          }
-          {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "on";
-          }
-          {
-            condition = "template";
-            value_template = ''
-              {% set edmund_home = is_state('person.edmund_miller', 'home') %}
-              {% set monica_home = is_state('person.moni', 'home') %}
-              {% set focus_name = states('sensor.edmunds_iphone_focus_name') %}
-              {{ (edmund_home or monica_home)
-                 and (not edmund_home or is_state('input_boolean.edmund_awake', 'on'))
-                 and (not monica_home or is_state('input_boolean.monica_awake', 'on'))
-                 and (not edmund_home or focus_name not in ['Sleep', 'unknown', 'unavailable']) }}
-            '';
-          }
-        ];
-        action = [
-          {
-            action = "script.turn_on";
-            target.entity_id = "script.good_morning";
-          }
-        ];
-      }
-
-      # Per-person wake detection supplies the guarded Good Morning inputs.
+      # Keep wake tracking for other consumers, without activating Good Morning.
       (mkWakeDetection edmund)
       (mkWakeDetection monica)
-
-      # No raw wake signal bypasses the all-home-residents and Focus gate.
     ]);
   };
 }

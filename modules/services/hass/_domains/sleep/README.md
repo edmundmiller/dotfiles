@@ -159,12 +159,18 @@ Focus report is stale `Sleep`, `unknown`, unavailable, or missing. An explicit
 request takes precedence over phone telemetry. HomeKit, Assist, the dashboard,
 and the voice webhook continue to use this same script.
 
-Automatic Good Morning remains separately guarded: from 7 AM to noon, every
-resident who is home must be marked awake, goodnight must be on, and Edmund's
-Focus must not be `Sleep`, `unknown`, or `unavailable` while he is home. Blocked
-automatic calls are discarded, not queued. Leaving Sleep Focus does not run Good
-Morning or re-evaluate an earlier wake signal. Activate the script, not its
-internal immediate-state scene. The script waits ten
+Good Morning is manual/voice only. Wake signals do not establish that everyone
+is ready to wake up, especially when someone plans to sleep in. Neither awake
+booleans nor Focus changes activate the routine.
+
+Until someone runs Good Morning or otherwise clears `input_boolean.goodnight`,
+night mode remains active. Scheduled cleaning stays blocked, mid-morning lighting
+skips its scheduled action, and climate stays in Sleep when no higher-priority
+mode applies. Phoebe Cam privacy also stays off under the goodnight exception,
+leaving recording available. Run Good Morning when everyone is ready to end
+night mode; simply waking up no longer clears it.
+
+Activate the script, not its internal immediate-state scene. The script waits ten
 minutes before turning on the desk monitor and desk POP switches to avoid the
 bright display at wake-up. Activating Good Morning again restarts the delay; a
 bedtime activation cancels the pending power-on.
