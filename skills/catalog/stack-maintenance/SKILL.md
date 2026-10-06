@@ -46,6 +46,8 @@ Classify PRs into four buckets:
 3. **Stack repair**: wrong base, conflicted, stale parent, or child branch blocked by a parent merge.
 4. **Leave alone**: draft, changes requested, branch owned by someone else, or unclear intent.
 
+A PR can retain native GitHub stack membership after its base changes to `main`. Inspect that membership separately from `baseRefName`, and verify the identity and state of every open downstack PR. A stacked merge can include those PRs, so each must fall within the user's authorized merge scope.
+
 For a focused PR, inspect the exact relationship:
 
 ```sh
