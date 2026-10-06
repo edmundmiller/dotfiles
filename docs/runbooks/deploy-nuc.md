@@ -406,6 +406,45 @@ If authentication expires, stop the service, run
 forwarded SSH agent, so GitHub fetch and push remain host-side operations until
 the NUC has its own approved GitHub credential.
 
+### Shared workspace runner
+
+`amp-shared-runner.service` runs as the dedicated `amp` system user and appears
+as `nuc-shared`. The personal `nuc` runner above remains private and unchanged.
+The shared runner discovers separate checkouts under `/var/lib/amp/workspaces`.
+Its home, CLI installation, and login state live under `/var/lib/amp`, with mode 0700. It has no supplementary groups or sudo access. The service hides `/home`,
+`/root`, and `/run/user`, makes the rest of the filesystem read-only except its
+state directory and private temporary directories, and blocks privilege escalation.
+
+After an authorized `hey nuc` deployment creates the account, bootstrap it
+interactively. The service skips startup until its CLI exists. Do not copy
+`emiller`'s credentials or checkouts. Run these commands on the NUC only when
+authorized to install, authenticate, and enable workspace access:
+
+```bash
+sudo systemctl stop amp-shared-runner.service
+sudo -u amp -H bash -c 'set -euo pipefail; cd "$HOME"; curl -fsSL https://ampcode.com/install.sh | bash; "$HOME/.amp/bin/amp" login'
+# Complete the browser login with the account belonging to the Miller's workspace.
+sudo systemctl start amp-shared-runner.service
+systemctl is-active amp-shared-runner.service
+systemctl show amp-shared-runner.service -p User -p Group -p WorkingDirectory -p ExecStart -p NRestarts
+sudo -u amp -H bash -c 'cd /var/lib/amp/workspaces; "$HOME/.amp/bin/amp" runner dirs list --runner-id nuc-shared'
+```
+
+In the workspace settings, enable **Allow Members to Share Runners** and set
+default thread visibility to the workspace. Confirm `nuc-shared` appears under
+**Shared Runners** from another member's account. Clone only approved repositories
+as `amp` into `/var/lib/amp/workspaces`, with separately provisioned, narrowly scoped
+Git credentials. The service starts in that directory, which is also served when
+there are no checkouts yet.
+
+`--amp-env` supplies workspace and project secrets, not personal Amp secrets.
+Every member using this runner can read or modify the `amp` user's files and use
+its credentials. Members are not isolated from one another. The service sandbox
+does not isolate the host network or hide world-readable data elsewhere on the
+NUC. Use a VM for untrusted workloads. To stop access immediately, stop
+`amp-shared-runner.service`; remove `--share` from its declaration and deploy to
+keep it private across restarts.
+
 ## Codex Remote Control
 
 Codex remote control deliberately splits ownership. The foreground `codex` command remains

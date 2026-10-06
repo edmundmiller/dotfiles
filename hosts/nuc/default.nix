@@ -2324,6 +2324,57 @@ in
     };
   };
 
+  # Shared threads use their own account, credentials, and checkouts. Never add
+  # this user to wheel or reuse emiller's Amp installation or repository trees.
+  users.groups.amp = { };
+  users.users.amp = {
+    isSystemUser = true;
+    group = "amp";
+    home = "/var/lib/amp";
+    createHome = true;
+    homeMode = "0700";
+    shell = pkgs.bashInteractive;
+  };
+  systemd.services.amp-shared-runner = {
+    description = "Amp shared workspace runner for NUC";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    # Bootstrap with the official installer and an independent Amp login first.
+    unitConfig.ConditionPathIsExecutable = "/var/lib/amp/.amp/bin/amp";
+    path = [
+      "/run/current-system/sw"
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.curl
+      pkgs.git
+      pkgs.openssh
+      pkgs.unstable.pixi
+    ];
+    environment = {
+      HOME = "/var/lib/amp";
+      XDG_CACHE_HOME = "/var/lib/amp/.cache";
+      XDG_CONFIG_HOME = "/var/lib/amp/.config";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "amp";
+      Group = "amp";
+      StateDirectory = "amp";
+      StateDirectoryMode = "0700";
+      WorkingDirectory = "/var/lib/amp/workspaces";
+      ExecStart = "/var/lib/amp/.amp/bin/amp --no-tui --runner-id nuc-shared --share --amp-env --discover-dirs --remote-control-terminal";
+      Restart = "always";
+      RestartSec = "10s";
+      UMask = "0077";
+      ProtectHome = true;
+      ProtectSystem = "strict";
+      PrivateTmp = true;
+      NoNewPrivileges = true;
+      CapabilityBoundingSet = "";
+    };
+  };
+
   # Keep NUC on an LTS kernel for ZFS. nixos-unstable's default
   # linuxPackages currently tracks 7.0.x, where zfs-kernel-2.4.1 is marked
   # broken and blocks evaluation before deploy activation.
@@ -2593,6 +2644,7 @@ in
     "--ssh"
   ];
   systemd.tmpfiles.rules = [
+    "d /var/lib/amp/workspaces 0700 amp amp -"
     "d ${millDocsVaultPath} 0755 emiller users -"
     "d ${millDocsCodingAgentAcpxDir} 0700 emiller users -"
     "d ${factoryProductPassStateDir} 0700 emiller users -"
