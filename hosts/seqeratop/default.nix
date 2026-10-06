@@ -115,19 +115,10 @@
       agents = {
         pi = {
           enable = true;
-          # Seqera Enterprise OpenAI is back. Default follows shared
-          # settings.jsonc (openai-codex gpt-5.6-sol). Sol/Terra/Luna stay on
-          # the cycling list; Cursor Grok is the cross-provider fallback.
-          # Composer and Kimi K3 stay off this host's automatic lists.
-          # No opencode-go on this host.
+          # Work host cycles only Sol 6.1 and Luna 6; shared defaults add Astra.
           enabledModels = [
-            "openai-codex/gpt-5.6-sol"
-            "openai-codex/gpt-5.6-terra"
-            "openai-codex/gpt-5.6-luna"
-            "cursor/cursor-grok-4.6-medium"
-            "cursor/cursor-grok-4.6-high"
-            "cursor/cursor-grok-4.6-xhigh"
-            "cursor/cursor-grok-4.6-low-fast"
+            "openai-codex/gpt-6.1-sol"
+            "openai-codex/gpt-6-luna"
           ];
           cursorSdk.enable = true;
           secretReferences = {
@@ -428,9 +419,9 @@
 
           # Sol for coding, Terra for intent, Luna for done. Cursor stays on
           # Pi's cycling list as the fallback when Codex is down.
-          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.6-terra";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
-          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.6-luna";
+          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-6.1-sol";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-6.1-sol";
+          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-6-luna";
         };
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =

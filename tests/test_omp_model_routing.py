@@ -339,10 +339,10 @@ class OmpModelRoutingTests(unittest.TestCase):
                     self.assertIn(level, supported_levels)
                 self.assertIn(model, declared)
 
-    def test_seqeratop_pi_prefers_openai_then_cursor(self) -> None:
+    def test_seqeratop_pi_cycles_sol_and_luna_only(self) -> None:
         models_result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 ".#darwinConfigurations.Seqeratop.config.modules.agents.pi.enabledModels",
@@ -356,23 +356,10 @@ class OmpModelRoutingTests(unittest.TestCase):
         self.assertEqual(models_result.returncode, 0, models_result.stderr)
         models = json.loads(models_result.stdout)
         self.assertEqual(
-            models[:3],
-            [
-                "openai-codex/gpt-5.6-sol",
-                "openai-codex/gpt-5.6-terra",
-                "openai-codex/gpt-5.6-luna",
-            ],
-        )
-        self.assertEqual(
             models,
             [
-                "openai-codex/gpt-5.6-sol",
-                "openai-codex/gpt-5.6-terra",
-                "openai-codex/gpt-5.6-luna",
-                "cursor/cursor-grok-4.6-medium",
-                "cursor/cursor-grok-4.6-high",
-                "cursor/cursor-grok-4.6-xhigh",
-                "cursor/cursor-grok-4.6-low-fast",
+                "openai-codex/gpt-6.1-sol",
+                "openai-codex/gpt-6-luna",
             ],
         )
         self.assertNotIn("cursor/composer-2.5", models)
@@ -381,7 +368,7 @@ class OmpModelRoutingTests(unittest.TestCase):
 
         vars_result = subprocess.run(
             [
-                "nix",
+                nix_path(),
                 "eval",
                 "--json",
                 ".#darwinConfigurations.Seqeratop.config.home-manager.users.edmundmiller.home.sessionVariables",
@@ -396,15 +383,15 @@ class OmpModelRoutingTests(unittest.TestCase):
         session_vars = json.loads(vars_result.stdout)
         self.assertEqual(
             session_vars["PI_MODEL_SWITCH_INTENT"],
-            "openai-codex/gpt-5.6-terra",
+            "openai-codex/gpt-6.1-sol",
         )
         self.assertEqual(
             session_vars["PI_MODEL_SWITCH_CODING"],
-            "openai-codex/gpt-5.6-sol",
+            "openai-codex/gpt-6.1-sol",
         )
         self.assertEqual(
             session_vars["PI_MODEL_SWITCH_DONE"],
-            "openai-codex/gpt-5.6-luna",
+            "openai-codex/gpt-6-luna",
         )
 
     def test_seqeratop_watchdog_uses_one_role_resolved_advisor(self) -> None:

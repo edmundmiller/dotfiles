@@ -516,9 +516,9 @@ in
         };
 
         home.sessionVariables = {
-          PI_MODEL_SWITCH_INTENT = "opencode-go/kimi-2.5";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
-          PI_MODEL_SWITCH_DONE = "opencode-go/kimi-2.5";
+          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-6-astra";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-6.1-sol";
+          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-6-luna";
         };
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
