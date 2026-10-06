@@ -423,33 +423,158 @@ let
 
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
-  # Inspect nested action branches too, while allowing script.turn_off cancellation.
-  activatesGoodMorning =
-    entityId: value:
+  # Follow literal script calls through nested branches, without following
+  # cancellation or revisiting scripts in a cycle. Dynamic/UI calls are out of scope.
+  scriptReachesGoodMorning =
+    scriptDefinitions: entityId: visited: value:
     if builtins.isList value then
-      any (activatesGoodMorning entityId) value
+      any (scriptReachesGoodMorning scriptDefinitions entityId visited) value
     else if builtins.isAttrs value then
       let
         service = value.action or (value.service or null);
         targets = pkgs.lib.toList (value.target.entity_id or (value.data.entity_id or [ ]));
-      in
-      (entityId == "script.good_morning" && service == entityId)
-      || (
-        builtins.elem service [
+        targetActivation = builtins.elem service [
           "script.turn_on"
           "script.toggle"
           "scene.turn_on"
           "homeassistant.turn_on"
           "homeassistant.toggle"
-        ]
-        && builtins.elem entityId targets
+        ];
+        calls =
+          if targetActivation then
+            targets
+          else if builtins.isString service && pkgs.lib.hasPrefix "script." service then
+            [ service ]
+          else
+            [ ];
+        followsScript =
+          calledEntity:
+          let
+            name = pkgs.lib.removePrefix "script." calledEntity;
+          in
+          builtins.isString calledEntity
+          && pkgs.lib.hasPrefix "script." calledEntity
+          # The approved entry point applies the scene itself. Its callers are
+          # checked separately, so do not classify them as scene bypasses.
+          && calledEntity != "script.good_morning"
+          && !(builtins.elem calledEntity visited)
+          && builtins.hasAttr name scriptDefinitions
+          && scriptReachesGoodMorning scriptDefinitions entityId (visited ++ [ calledEntity ]) (
+            scriptDefinitions.${name}.sequence or [ ]
+          );
+      in
+      (entityId == "script.good_morning" && service == entityId)
+      || (targetActivation && builtins.elem entityId targets)
+      || any followsScript (
+        filter (
+          call:
+          !(builtins.elem call [
+            "script.turn_off"
+            "script.reload"
+          ])
+        ) calls
       )
-      || any (activatesGoodMorning entityId) (builtins.attrValues value)
+      || any (scriptReachesGoodMorning scriptDefinitions entityId visited) (builtins.attrValues value)
     else
       false;
+  activatesGoodMorning = scriptReachesGoodMorning scripts;
   goodMorningAutomationCallers = filter (
-    a: activatesGoodMorning "script.good_morning" (a.actions or (a.action or [ ]))
+    a: activatesGoodMorning "script.good_morning" [ ] (a.actions or (a.action or [ ]))
   ) automations;
+
+  # Independent call graphs exercise both activation and cancellation paths.
+  goodMorningCallFixtures = {
+    helper.sequence = [ { action = "script.cycle"; } ];
+    cycle.sequence = [
+      { service = "script.helper"; }
+      {
+        choose = [
+          {
+            conditions = [ ];
+            sequence = [
+              {
+                action = "script.turn_on";
+                target.entity_id = [
+                  "script.unrelated"
+                  "script.good_morning"
+                ];
+              }
+            ];
+          }
+        ];
+      }
+    ];
+    harmless.sequence = [ { action = "script.harmless"; } ];
+    scene_helper.sequence = [
+      {
+        action = "scene.turn_on";
+        data.entity_id = "scene.good_morning";
+      }
+    ];
+    good_morning.sequence = [
+      {
+        action = "scene.turn_on";
+        target.entity_id = "scene.good_morning";
+      }
+    ];
+  };
+  goodMorningCallChecks =
+    map
+      (case: {
+        test =
+          scriptReachesGoodMorning goodMorningCallFixtures case.entity [ ] case.action == case.expected;
+        msg = "Good Morning call tracing: ${case.name}";
+      })
+      [
+        {
+          name = "nested indirect call after a cycle";
+          entity = "script.good_morning";
+          action.action = "script.helper";
+          expected = true;
+        }
+        {
+          name = "targeted helper call";
+          entity = "script.good_morning";
+          action = {
+            service = "script.turn_on";
+            data.entity_id = "script.helper";
+          };
+          expected = true;
+        }
+        {
+          name = "helper cancellation is not activation";
+          entity = "script.good_morning";
+          action = {
+            action = "script.turn_off";
+            target.entity_id = "script.helper";
+          };
+          expected = false;
+        }
+        {
+          name = "cycle without activation terminates";
+          entity = "script.good_morning";
+          action.action = "script.harmless";
+          expected = false;
+        }
+        {
+          name = "missing script is not activation";
+          entity = "script.good_morning";
+          action.action = "script.missing";
+          expected = false;
+        }
+        {
+          name = "indirect scene bypass";
+          entity = "scene.good_morning";
+          action.action = "script.scene_helper";
+          expected = true;
+        }
+        {
+          name = "approved script is not a scene bypass";
+          entity = "scene.good_morning";
+          action.action = "script.good_morning";
+          expected = false;
+        }
+      ];
 
   windingDownScene = findScene "Winding Down";
   getReadyForBedScene = findScene "Get Ready for Bed";
@@ -465,7 +590,7 @@ let
     if goodMorningScript == null then [ ] else toList (goodMorningScript.sequence or [ ]);
   goodMorningIntent = haConfig.intent_script.GoodMorning or null;
 
-  assertions = initialStateAssertions ++ [
+  assertions = (initialStateAssertions ++ goodMorningCallChecks) ++ [
     {
       test = edmundAwake != null;
       msg = "automation 'edmund_awake_detection' missing";
@@ -492,8 +617,10 @@ let
     }
     {
       test =
-        !any (a: activatesGoodMorning "scene.good_morning" (a.actions or (a.action or [ ]))) automations;
-      msg = "Automations must not activate scene.good_morning directly";
+        !any (
+          a: activatesGoodMorning "scene.good_morning" [ ] (a.actions or (a.action or [ ]))
+        ) automations;
+      msg = "Automations must not bypass script.good_morning to activate scene.good_morning";
     }
     {
       test = legacyRoombaStart == null;
