@@ -820,6 +820,21 @@
               skills.explicit = {
                 gh-fix-ci.from = "openai";
                 gh-fix-ci.path = "gh-fix-ci";
+                gh-fix-ci.transform =
+                  { original, ... }:
+                  let
+                    anchor = "3. Inspect failing checks (GitHub Actions only).";
+                  in
+                  assert lib.hasInfix anchor original;
+                  builtins.replaceStrings
+                    [ anchor ]
+                    [
+                      (
+                        anchor
+                        + "\n   - Trace the earliest failure that explains later errors using full logs or artifacts when snippets are ambiguous. Treat cancellation errors as consequences when the timeline supports that diagnosis; preserve checks that correctly fail after cancellation."
+                      )
+                    ]
+                    original;
 
                 define-goal.from = "openai";
                 define-goal.path = "define-goal";
