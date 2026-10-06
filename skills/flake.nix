@@ -838,23 +838,14 @@
                   { original, ... }:
                   let
                     anchor = "3. Inspect failing checks (GitHub Actions only).";
-                    retryAnchor = "7. Implement after approval.";
                   in
                   assert lib.hasInfix anchor original;
-                  assert lib.hasInfix retryAnchor original;
                   builtins.replaceStrings
-                    [
-                      anchor
-                      retryAnchor
-                    ]
+                    [ anchor ]
                     [
                       (
                         anchor
                         + "\n   - Trace the earliest failure that explains later errors using full logs or artifacts when snippets are ambiguous. Treat cancellation errors as consequences when the timeline supports that diagnosis; preserve checks that correctly fail after cancellation."
-                      )
-                      (
-                        "   - When retained evidence supports a transient executor failure, reuse existing retry authorization or obtain it, rerun the failed jobs once, and read the result. A repeated failure requires investigation rather than another blind rerun.\n"
-                        + retryAnchor
                       )
                     ]
                     original;
