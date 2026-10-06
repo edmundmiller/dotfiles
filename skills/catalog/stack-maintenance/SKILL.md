@@ -142,6 +142,14 @@ Run the relevant check. Push back with a lease:
 git push --force-with-lease origin "fix-pr${pr}:$head_branch"
 ```
 
+If an SSH agent fails but existing GitHub CLI authentication works, an authorized push can use HTTPS for that command without changing repository configuration:
+
+```sh
+git -c remote.origin.pushurl=https://github.com/<owner>/<repo>.git -c credential.helper='!gh auth git-credential' push <existing push arguments>
+```
+
+Preserve the branch destination and exact-head lease when changing only the authentication transport.
+
 Re-read the PR. Merge only when it returns to `MERGEABLE` and `CLEAN`.
 
 Clean temporary worktrees after use:
