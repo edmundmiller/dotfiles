@@ -126,6 +126,8 @@ cd "$tmp"
 git rebase "origin/$base_branch"
 ```
 
+When the parent was squash-merged and stack tooling retains its obsolete ancestry, preserve the old parent tip and replay only the child's delta with `git rebase --onto <new-base> <old-parent-tip> <child>`. Compare the old and replayed child ranges with `git range-diff` before pushing. Retargeting the PR alone does not repair ancestry.
+
 Resolve conflicts, choosing the final intended content rather than mechanically taking either side:
 
 ```sh
