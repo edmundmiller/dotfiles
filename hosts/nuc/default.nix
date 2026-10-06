@@ -2341,7 +2341,7 @@ in
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     # Bootstrap with the official installer and an independent Amp login first.
-    unitConfig.ConditionPathIsExecutable = "/var/lib/amp/.amp/bin/amp";
+    unitConfig.ConditionFileIsExecutable = "/var/lib/amp/.amp/bin/amp";
     path = [
       "/run/current-system/sw"
       pkgs.bashInteractive
