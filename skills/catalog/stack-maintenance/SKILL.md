@@ -78,6 +78,14 @@ gh pr view <n> --json number,state,mergedAt,mergedBy,mergeCommit,mergeStateStatu
 
 If the command reports an error that implies a race, stale base, or already-merged PR, re-read the PR before retrying. GitHub may have completed the merge while the CLI reported a confusing GraphQL error.
 
+### Native stacked merge fallback
+
+If `gh pr merge` rejects native stack membership and the installed stack CLI cannot merge, use [GitHub's asynchronous merge API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request-asynchronously). Check its current contract before submitting; the request includes all open downstack PRs.
+
+Submit `PUT /repos/{owner}/{repo}/pulls/{number}/merge-async` with `sha` set to the reviewed GitHub head. Use `merge_action=default` to follow the repository's queue policy. Set `merge_action=direct_merge` and `bypass_rules=true` only with explicit authorization to bypass that policy; retain the repository's required merge method.
+
+Poll `GET /repos/{owner}/{repo}/pulls/{number}/merge-async/{uuid}` when the response is `pending`. Stop on `failed` and report its reason. `enqueued` means queued, not merged; verify eventual completion through fresh PR state. For `merged`, confirm `state: MERGED`, `mergedAt`, and `mergeCommit` before reporting success. If the head changes, review it before submitting a new guarded request.
+
 ## Review Before Approval
 
 For a clean but unapproved PR:
