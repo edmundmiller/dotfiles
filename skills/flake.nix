@@ -353,17 +353,31 @@
             where the runtime supports it, and keep concurrent writers on disjoint files or
             in isolated worktrees.
         '';
-        mattpocockSkills = lib.mapAttrs (_: path: {
+        mattpocockSkills = lib.mapAttrs (name: path: {
           from = "mattpocock";
           inherit path;
           meta.targets = [ "agents" ];
           transform =
             { original, ... }:
+            let
+              checkOrder = "4. Discover the project's **automated checks** and run them, typically typecheck, then tests, then format. Fix anything the merge broke.";
+              skillBody =
+                if name == "resolving-merge-conflicts" then
+                  assert lib.hasInfix checkOrder original;
+                  builtins.replaceStrings
+                    [ checkOrder ]
+                    [
+                      "4. Discover the project's **automated checks**. Run mutating formatters before typechecks and relevant tests so validation covers the resulting files. After later mutations, rerun affected checks with scope appropriate to the diff. Fix anything the merge broke."
+                    ]
+                    original
+                else
+                  original;
+            in
             (builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
               lib.concatStringsSep "\n" (
                 lib.filter (
                   line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
-                ) (lib.splitString "\n" original)
+                ) (lib.splitString "\n" skillBody)
               )
             ))
             + mattpocockRuntimeOverlay;
