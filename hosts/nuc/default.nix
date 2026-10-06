@@ -2421,7 +2421,7 @@ in
     };
     agents = {
       codex.enable = true;
-      omp.enable = true;
+      omp.enable = false;
       opencode.enable = true;
       pi.enable = true;
     };

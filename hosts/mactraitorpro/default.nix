@@ -129,7 +129,7 @@ in
         acpx.enable = true;
         cliamp.enable = true;
         herdr.enable = true;
-        herdr.mainCodingAgent = "omp";
+        herdr.mainCodingAgent = "pi";
         herdr.vercelSandbox.enable = true;
         herdr.projects.enable = true;
         herald.enable = true;
@@ -196,7 +196,7 @@ in
           ];
         };
         omp = {
-          enable = true;
+          enable = false;
           # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
           # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
           # Roles: Sol default/smol/advisor/slow/plan; Luna xhigh task; K3 designer; Luna commit/tiny; Gemini vision.
