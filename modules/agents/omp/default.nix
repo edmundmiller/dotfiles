@@ -623,7 +623,6 @@ in
     {
       user.packages = [
         (lib.hiPrio ompPackage)
-        agentRun
         hassMcpServer
       ]
       ++ lib.optional cfg.dailyIntrospection.enable threadIntrospection
