@@ -353,17 +353,31 @@
             where the runtime supports it, and keep concurrent writers on disjoint files or
             in isolated worktrees.
         '';
-        mattpocockSkills = lib.mapAttrs (_: path: {
+        mattpocockSkills = lib.mapAttrs (name: path: {
           from = "mattpocock";
           inherit path;
           meta.targets = [ "agents" ];
           transform =
             { original, ... }:
+            let
+              checkOrder = "4. Discover the project's **automated checks** and run them, typically typecheck, then tests, then format. Fix anything the merge broke.";
+              skillBody =
+                if name == "resolving-merge-conflicts" then
+                  assert lib.hasInfix checkOrder original;
+                  builtins.replaceStrings
+                    [ checkOrder ]
+                    [
+                      "4. Discover the project's **automated checks**. Run mutating formatters before typechecks and relevant tests so validation covers the resulting files. After later mutations, rerun affected checks with scope appropriate to the diff. Fix anything the merge broke."
+                    ]
+                    original
+                else
+                  original;
+            in
             (builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
               lib.concatStringsSep "\n" (
                 lib.filter (
                   line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
-                ) (lib.splitString "\n" original)
+                ) (lib.splitString "\n" skillBody)
               )
             ))
             + mattpocockRuntimeOverlay;
@@ -820,6 +834,21 @@
               skills.explicit = {
                 gh-fix-ci.from = "openai";
                 gh-fix-ci.path = "gh-fix-ci";
+                gh-fix-ci.transform =
+                  { original, ... }:
+                  let
+                    anchor = "3. Inspect failing checks (GitHub Actions only).";
+                  in
+                  assert lib.hasInfix anchor original;
+                  builtins.replaceStrings
+                    [ anchor ]
+                    [
+                      (
+                        anchor
+                        + "\n   - Trace the earliest failure that explains later errors using full logs or artifacts when snippets are ambiguous. Treat cancellation errors as consequences when the timeline supports that diagnosis; preserve checks that correctly fail after cancellation."
+                      )
+                    ]
+                    original;
 
                 define-goal.from = "openai";
                 define-goal.path = "define-goal";
