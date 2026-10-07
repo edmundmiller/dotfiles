@@ -98,6 +98,12 @@
     // tmux/herdr shell-integration packages are injected by modules/agents/pi.
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
+    // Research tools and native research workflows, prompts, and agents.
+    "npm:@companion-ai/feynman",
+    // Confluence tools and the package-native usage skill. Writes remain opt-in.
+    "npm:confluence-cli",
+    // Verified local archives of Pi sessions and referenced output sidecars.
+    "npm:@moyai/pi-session-hoarder",
     // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
     "git:github.com/FredySandoval/pi-logo",
     // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
@@ -127,8 +133,8 @@
     "npm:latchkey",
     // Ask-user-question tool variant - install equivalent: pi install npm:@juicesharp/rpiv-ask-user-question
     "npm:@juicesharp/rpiv-ask-user-question",
-    // Hermes memory integration - install equivalent: pi install npm:pi-hermes-memory
-    "npm:pi-hermes-memory",
+    // Markdown memory with optional QMD search; replaces pi-hermes-memory.
+    "npm:pi-memory",
     // Retain nested AGENTS.md discovery. This package also injects workflow
     // selection guidance when a project contains .pi/workflows (not explicit-only).
     "npm:@howaboua/pi-markdown-workflows",

@@ -77,11 +77,14 @@ class AgentResponseContractTests(unittest.TestCase):
         for package in (
             "npm:@gotgenes/pi-permission-system",
             "~/.pi/agent/packages/pi-command-policy-bridge",
-            "npm:pi-hermes-memory", "npm:pi-terminal-theme",
+            "npm:pi-memory", "npm:pi-terminal-theme",
+            "npm:@companion-ai/feynman", "npm:confluence-cli",
+            "npm:@moyai/pi-session-hoarder", "npm:pi-btw",
             "npm:pi-agent-browser-native",
         ):
             with self.subTest(package=package):
                 self.assertIn(json.dumps(package), settings)
+        self.assertNotIn(json.dumps("npm:pi-hermes-memory"), settings)
         links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
         self.assertIn("enforce-commit-signing.ts", links)
         self.assertNotIn("you-are-right-killer.ts", links)

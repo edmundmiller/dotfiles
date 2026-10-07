@@ -58,8 +58,8 @@ let
     contextMemory = [
       "npm:pi-context"
       # pi-total-recall bundles @samfp/pi-memory and pi-session-search, which
-      # register memory_search/session_search. pi-hermes-memory is the
-      # authoritative provider for those tools in config/pi/settings.jsonc.
+      # register memory_search/session_search. pi-memory is the
+      # authoritative memory_search provider in config/pi/settings.jsonc.
       # Loading both causes Pi startup extension conflicts.
       # "npm:pi-total-recall"
     ];

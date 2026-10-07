@@ -226,7 +226,7 @@ in
     contextMemory.enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Opt into pi-context in addition to the base Hermes memory integration. Honcho has its own toggle.";
+      description = "Opt into pi-context in addition to the base pi-memory integration. Honcho has its own toggle.";
     };
     cursorSdk.enable = mkOption {
       type = types.bool;

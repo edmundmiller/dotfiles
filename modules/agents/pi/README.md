@@ -22,9 +22,14 @@ Use `/goal-pause` to stop and `/goal-settings` to configure its behavior.
 
 Other default packages exclude automatic loop continuation, model switching,
 response coaching, Agentmap/QMD prompt injection, and DCP/RTK/read rewriting.
-Permissions, command policy, signing protection, Hermes memory, host integrations,
+Permissions, command policy, signing protection, `pi-memory`, host integrations,
 and explicit review/handoff commands remain available. `contextMemory.enable`
-defaults to false; it opts into the additional `pi-context` package, not Hermes.
+defaults to false; it opts into the additional `pi-context` package, not `pi-memory`.
+
+Feynman's research workflows and Confluence CLI's usage skill are intentional
+package-native resources. Session Hoarder archives sessions locally by default.
+Plannotator comes from its owning module, and `pi-btw` remains a shared package.
+Existing Hermes memory files are retained, but `pi-memory` does not read them.
 
 This is not a hook-free setup. `pi-markdown-workflows` retains nested AGENTS.md
 discovery and also injects automatic workflow-selection guidance in projects
