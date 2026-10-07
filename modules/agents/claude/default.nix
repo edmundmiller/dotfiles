@@ -143,6 +143,10 @@ in
         home.activation.claude-duckdb-skills-plugin =
           lib.hm.dag.entryAfter [ "claude-settings-bootstrap" ]
             ''
+              ${pkgs.llm-agents.claude-code}/bin/claude plugin marketplace update \
+                claude-plugins-official \
+                || ${pkgs.llm-agents.claude-code}/bin/claude plugin marketplace add \
+                  https://github.com/anthropics/claude-plugins-official.git
               ${pkgs.llm-agents.claude-code}/bin/claude plugin install \
                 duckdb-skills@claude-plugins-official \
                 --scope user

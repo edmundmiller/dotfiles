@@ -213,8 +213,8 @@
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
       "source": {
-        "source": "github",
-        "repo": "anthropics/claude-plugins-official"
+        "source": "git",
+        "url": "https://github.com/anthropics/claude-plugins-official.git"
       }
     }
   },

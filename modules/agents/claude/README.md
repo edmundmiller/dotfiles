@@ -28,7 +28,8 @@ modules.agents.claude.enable = true;
 ## Plugin policy
 
 The repository manages only the official DuckDB skills plugin. Its marketplace
-and enablement live in `config/claude/settings.json`; activation installs the
+and enablement live in `config/claude/settings.json`; activation refreshes the
+marketplace, adds it over HTTPS if missing, and installs the
 payload because local Claude Code does not install a plugin merely because user
 settings enable it. Other retired plugins remain unmanaged.
 

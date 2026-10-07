@@ -73,6 +73,38 @@ class PlannotatorCodexCleanupTests(unittest.TestCase):
 
 
 class PlannotatorSourceContractTests(unittest.TestCase):
+    def test_duckdb_install_refreshes_or_adds_marketplace_before_install(self):
+        module = (ROOT / "modules/agents/claude/default.nix").read_text()
+        script = module.split("home.activation.claude-duckdb-skills-plugin =", 1)[1]
+        script = script.split("''", 2)[1]
+        script = script.replace("${pkgs.llm-agents.claude-code}/bin/claude", "claude")
+        update = "plugin marketplace update claude-plugins-official"
+        add = "plugin marketplace add https://github.com/anthropics/claude-plugins-official.git"
+        install = "plugin install duckdb-skills@claude-plugins-official --scope user"
+        for update_status, add_status, expected in (
+            (0, 0, [update, install]),
+            (1, 0, [update, add, install]),
+            (1, 1, [update, add]),
+        ):
+            with self.subTest(update_status=update_status, add_status=add_status):
+                cli = f'''
+                  claude() {{
+                    printf '%s\\n' "$*"
+                    case "$*" in
+                      "{update}") return {update_status} ;;
+                      "{add}") return {add_status} ;;
+                    esac
+                  }}
+                '''
+                result = subprocess.run(
+                    ["bash", "-e", "-c", cli + script],
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.stdout.splitlines(), expected)
+                self.assertEqual(result.returncode, add_status if update_status else 0)
+
     def test_claude_bootstrap_keeps_managed_plugin_and_runtime_hooks(self):
         module = (ROOT / "modules/agents/claude/default.nix").read_text()
         bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
@@ -112,8 +144,8 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                 self.assertEqual(
                     settings["extraKnownMarketplaces"]["claude-plugins-official"][
                         "source"
-                    ]["repo"],
-                    "anthropics/claude-plugins-official",
+                    ]["url"],
+                    "https://github.com/anthropics/claude-plugins-official.git",
                 )
                 self.assertEqual(settings["hooks"], hooks)
 
