@@ -16,7 +16,11 @@ Pi coding agent configuration plus shell helpers for common local workflows.
 leaving compaction, retries, message delivery, images, and skills at Pi defaults.
 The shared core remains the only global instruction file.
 
-Default packages exclude automatic goal/loop continuation, model switching,
+`pi-goal-x` owns `/goal`, `/sisyphus`, persistent progress, and optional completion
+auditing on every Pi-enabled host. It continues confirmed active goals automatically.
+Use `/goal-pause` to stop and `/goal-settings` to configure its behavior.
+
+Other default packages exclude automatic loop continuation, model switching,
 response coaching, Agentmap/QMD prompt injection, and DCP/RTK/read rewriting.
 Permissions, command policy, signing protection, Hermes memory, host integrations,
 and explicit review/handoff commands remain available. `contextMemory.enable`

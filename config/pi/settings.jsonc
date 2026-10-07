@@ -20,8 +20,8 @@
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
   // Use Pi's native compaction, retry, message delivery, image, and skill defaults.
-  // Keep integrations and explicit commands; avoid automatic coaching,
-  // continuation loops, model switching, and overlapping context/tool rewriting.
+  // Keep integrations and explicit commands; pi-goal-x owns goal continuation.
+  // Avoid automatic coaching, model switching, and overlapping context/tool rewriting.
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   // Host/module-specific packages are injected by modules/agents/pi/default.nix
   // (tmux/herdr, MCP, computer-use, git tooling, status UI, and context/memory).
@@ -81,6 +81,8 @@
     },
     // Interactive /review workflow - https://github.com/earendil-works/pi-review
     "git:github.com/earendil-works/pi-review",
+    // Shared /goal and /sisyphus workflow with persistent progress and optional auditing.
+    "npm:pi-goal-x",
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
       "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",
