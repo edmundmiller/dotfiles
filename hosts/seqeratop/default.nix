@@ -361,6 +361,7 @@
       enable = true;
 
       onActivation = {
+        extraEnv.HOMEBREW_BUNDLE_CASK_SKIP = "rooms"; # Unsupported postflight keywords in pinned Homebrew.
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
     }
