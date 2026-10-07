@@ -2894,7 +2894,7 @@ in
     enable = true;
     secrets = {
       githubNixToken = {
-        reference = "op://Agents/GH PA dotfiles flake/credential";
+        reference = "op://Agents/dl3jytukonjoafedy7rqxisiue/token";
       };
       amosburtonLinearApiKey = {
         reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;

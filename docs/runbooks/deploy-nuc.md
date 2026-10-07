@@ -767,7 +767,7 @@ ssh nuc "sudo test -s /var/lib/opnix/secrets/githubNixToken"
 ssh nuc "sudo systemctl restart opnix-secrets.service"
 ```
 
-The source reference is `op://Agents/GH PA dotfiles flake/credential`. Never
+The source reference is `op://Agents/dl3jytukonjoafedy7rqxisiue/token`. Never
 print the materialized value. Verify access through the wrapper:
 
 ```bash
