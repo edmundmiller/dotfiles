@@ -34,6 +34,18 @@ claim that every runtime already has the rules in context.
 - `anti-slop` is repository Oxlint for TypeScript.
 - `no-ai-slop` remains the separate petergyang skill.
 
+## Suppressions
+
+`oxlint-suppressions.json` at the repo root holds per-file, per-rule counts for
+anti-slop findings that predate the rule. Oxlint auto-discovers it from the
+working directory; nothing in `flake.nix` points at it.
+
+Do not run `oxlint --prune-suppressions` over a subset of files. It rewrites
+the whole file from only the files it linted, so every entry for an unlinted
+file is silently dropped. When a count goes stale ("There are suppressions that
+do not occur anymore"), edit that one count by hand, or prune across the full
+lint set the pre-commit hook uses.
+
 ## Refresh
 
 Follow `skills/catalog/unslop/AGENTS.md`. Host deploy of the catalog still
