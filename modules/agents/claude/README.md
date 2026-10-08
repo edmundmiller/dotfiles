@@ -23,15 +23,11 @@ modules.agents.claude.enable = true;
 - `~/.claude/CLAUDE.md` from the bounded `config/agents/core.md`
 - `~/.claude/agents/` from `config/agents/modes/`
 - `~/.claude/skills/{test-quality,github-cli-media,lore,pe-verify}` linked to shared catalog copies
-- `duckdb-skills@claude-plugins-official`, installed at user scope
 
 ## Plugin policy
 
-The repository manages only the official DuckDB skills plugin. Its marketplace
-and enablement live in `config/claude/settings.json`; activation refreshes the
-marketplace, adds it over HTTPS if missing, and installs the
-payload because local Claude Code does not install a plugin merely because user
-settings enable it. Other retired plugins remain unmanaged.
+Plugin marketplaces and installations are managed by Claude Code itself. This
+module does not configure or install plugins.
 
 ## Notes
 
