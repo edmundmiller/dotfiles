@@ -98,8 +98,6 @@
     // tmux/herdr shell-integration packages are injected by modules/agents/pi.
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
-    // Research tools and native research workflows, prompts, and agents.
-    "npm:@companion-ai/feynman",
     // Confluence tools and the package-native usage skill. Writes remain opt-in.
     "npm:confluence-cli",
     // Verified local archives of Pi sessions and referenced output sidecars.
@@ -140,11 +138,5 @@
     "npm:@howaboua/pi-markdown-workflows",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
     "https://github.com/denismrvoljak/pi-overwatch",
-    // Keep the package installed; config/pi/extensions/lazy-agent-browser.ts
-    // exposes its native tool immediately and imports the heavy runtime on use.
-    {
-      "source": "npm:pi-agent-browser-native",
-      "extensions": [],
-    },
   ],
 }

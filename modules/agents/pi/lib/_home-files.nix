@@ -47,8 +47,6 @@ promptLinks
   ".pi/agent/extensions/review.ts".source = "${configDir}/pi/extensions/review.ts";
   ".pi/agent/extensions/lazy-plannotator.ts".source =
     "${configDir}/pi/extensions/lazy-plannotator.ts";
-  ".pi/agent/extensions/lazy-agent-browser.ts".source =
-    "${configDir}/pi/extensions/lazy-agent-browser.ts";
   ".pi/agent/extensions/lib/lazy-extension.ts".source =
     "${configDir}/pi/extensions/lib/lazy-extension.ts";
   ".pi/agent/extensions/lib/commit-review-logic.ts".source =

@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { createLazyAgentBrowser } from "./lazy-agent-browser";
 import { createLazyPlannotator } from "./lazy-plannotator";
 
 function createExtensionApi() {
@@ -128,74 +127,5 @@ describe("plain Pi lazy Plannotator", () => {
     );
 
     expect(imports).toBe(1);
-  });
-});
-
-describe("plain Pi lazy agent browser", () => {
-  test("loads on browser intent, forwards lifecycle, and delegates the native tool", async () => {
-    const extension = createExtensionApi();
-    const calls: unknown[][] = [];
-    let imports = 0;
-    const factory = createLazyAgentBrowser({
-      async importExtension() {
-        imports += 1;
-        return {
-          default(pi: typeof extension.api) {
-            pi.on("session_start", async (event: unknown, ctx: { cwd: string }) => {
-              calls.push(["session_start", event, ctx.cwd]);
-            });
-            pi.on("before_agent_start", async (event: { systemPrompt: string }) => ({
-              systemPrompt: `${event.systemPrompt}\nreal browser guidance`,
-            }));
-            pi.registerTool({
-              name: "agent_browser",
-              async execute(_toolCallId: unknown, params: { args: string[] }) {
-                calls.push(["execute", params.args]);
-                return { content: [{ type: "text", text: "browser ok" }] };
-              },
-            });
-          },
-        };
-      },
-      async loadSurface() {
-        return {
-          parameters: { type: "object" },
-          promptGuidelines: ["browser guideline"],
-          shouldActivateForPrompt(prompt: string) {
-            return prompt.includes("browser");
-          },
-        };
-      },
-    });
-
-    await factory(extension.api);
-
-    expect(imports).toBe(0);
-    expect(extension.tools.has("agent_browser")).toBe(true);
-
-    const beforeAgentStart = extension.handlers.get("before_agent_start")?.[0];
-    const context = { cwd: "/tmp/project" };
-    expect(
-      await beforeAgentStart?.({ prompt: "read the code", systemPrompt: "base" }, context)
-    ).toBeUndefined();
-    expect(imports).toBe(0);
-
-    expect(
-      await beforeAgentStart?.(
-        { prompt: "open this in the browser", systemPrompt: "base" },
-        context
-      )
-    ).toEqual({ systemPrompt: "base\nreal browser guidance" });
-
-    const result = await extension.tools
-      .get("agent_browser")
-      ?.execute("tool-1", { args: ["open", "https://example.com"] });
-
-    expect(imports).toBe(1);
-    expect(calls).toEqual([
-      ["session_start", { type: "session_start", reason: "reload" }, "/tmp/project"],
-      ["execute", ["open", "https://example.com"]],
-    ]);
-    expect(result?.content[0]?.text).toBe("browser ok");
   });
 });

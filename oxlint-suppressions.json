@@ -71,20 +71,9 @@
       "count": 1
     }
   },
-  "config/pi/extensions/lazy-agent-browser.ts": {
-    "anti-slop/no-reflect-get": {
-      "count": 4
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 21
-    },
-    "anti-slop/no-unknown-returns": {
-      "count": 1
-    }
-  },
   "config/pi/extensions/lazy-extensions.test.ts": {
     "anti-slop/no-unknown-parameters": {
-      "count": 7
+      "count": 5
     },
     "anti-slop/no-unknown-returns": {
       "count": 10
