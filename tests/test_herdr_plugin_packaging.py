@@ -283,6 +283,19 @@ def test_hunk_bindings_reference_installed_plugin_actions() -> None:
     }
 
 
+def test_legacy_hunk_command_ids_are_pruned_on_activation() -> None:
+    """Stale hunk.diff.* blocks keep prefix+] / } / { and make Herdr disable
+    the canonical jhochenbaum.hunkdiff.review* bindings."""
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    for legacy in (
+        "hunk.diff.worktree-split",
+        "hunk.diff.staged-split",
+        "hunk.diff.branch-split",
+    ):
+        assert f'"{legacy}",' in module
+
+
 def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())

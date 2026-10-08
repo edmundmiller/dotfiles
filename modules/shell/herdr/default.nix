@@ -508,6 +508,12 @@ in
               "herdr worktree layout",
               "dotfiles.dev-layout.hunk-split",
               "dotfiles.dev-layout.hunk-tab",
+              # Legacy herdr-hunk-diff action ids. Left in place they keep
+              # prefix+] / prefix+} / prefix+{ and make Herdr disable the
+              # canonical jhochenbaum.hunkdiff.review* bindings appended below.
+              "hunk.diff.worktree-split",
+              "hunk.diff.staged-split",
+              "hunk.diff.branch-split",
               "nathanflurry.jj-workspace.new-tab",
               "vercel.sandbox.start-agent",
               "vercel.sandbox.start-codex",
