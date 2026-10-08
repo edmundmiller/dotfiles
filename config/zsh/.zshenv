@@ -46,20 +46,5 @@ unset _terminfo_candidates _terminfo_dirs _terminfo_dir
 # Source nix-darwin generated environment (envFiles from modules).
 [[ -f "$ZDOTDIR/extra.zshenv" ]] && source "$ZDOTDIR/extra.zshenv"
 
-# Canonical PATH order: managed Nix profiles first, then user/tool bins.
-# This prevents stale self-installed tools in ~/.local/bin, ~/.bun/bin, etc.
-# from shadowing declarative packages such as Herdr.
-typeset -U path PATH
-path=(
-  /etc/profiles/per-user/$USER/bin
-  /run/wrappers/bin
-  /run/current-system/sw/bin
-  $HOME/.nix-profile/bin
-  $XDG_CONFIG_HOME/dotfiles/bin
-  $HOME/.pi/agent/bin
-  ${BUN_INSTALL:-$HOME/.bun}/bin
-  $HOME/.local/bin
-  $HOME/.pixi/bin
-  $HOME/.cargo/bin
-  $path
-)
+# Apply the same PATH policy to noninteractive and interactive shells.
+source "$ZDOTDIR/path.zsh"
