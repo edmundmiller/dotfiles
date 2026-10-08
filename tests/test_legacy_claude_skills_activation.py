@@ -139,6 +139,47 @@ class LegacyClaudeSkillsActivationTest(unittest.TestCase):
             )
             self.assertIn("unusual file type", result.stderr)
 
+    def test_module_managed_symlink_dir_survives_an_existing_backup(self) -> None:
+        """claude-shared-skill-links recreates ~/.claude/skills as a directory
+        of symlinks into ~/.agents/skills. Every activation after the first
+        real migration saw that directory, tried to preserve it again, and
+        aborted the whole Home Manager run on the existing backup."""
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            shared = home / ".agents" / "skills" / "lore"
+            shared.mkdir(parents=True)
+            (shared / "SKILL.md").write_text("shared skill\n")
+            skills = home / ".claude" / "skills"
+            skills.mkdir(parents=True)
+            (skills / "lore").symlink_to(shared)
+            backup = home / ".claude" / "skills.pre-dotfiles-agent-skills"
+            backup.mkdir()
+            (backup / "old.txt").write_text("old\n")
+
+            result = self.run_activation(home)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((skills / "lore").is_symlink())
+            self.assertEqual((backup / "old.txt").read_text(), "old\n")
+
+    def test_foreign_symlink_in_skills_dir_still_gets_preserved(self) -> None:
+        """Only links into ~/.agents/skills count as module output."""
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            elsewhere = home / "elsewhere"
+            elsewhere.mkdir()
+            (elsewhere / "SKILL.md").write_text("user skill\n")
+            skills = home / ".claude" / "skills"
+            skills.mkdir(parents=True)
+            (skills / "mine").symlink_to(elsewhere)
+
+            result = self.run_activation(home)
+
+            backup = home / ".claude" / "skills.pre-dotfiles-agent-skills" / "skills"
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(skills.exists())
+            self.assertTrue((backup / "mine").is_symlink())
+
     def test_repeated_activation_keeps_backup_unchanged(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)

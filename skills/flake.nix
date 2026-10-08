@@ -539,17 +539,46 @@
                   echo "Refusing to move unusual file type at $legacy_skills" >&2
                   exit 1
                 fi
-                if [ -e "$legacy_backup" ] || [ -L "$legacy_backup" ]; then
-                  echo "Cannot preserve $legacy_skills: backup already exists at $legacy_backup" >&2
-                  exit 1
+                # claude-shared-skill-links turns this path into a real
+                # directory of symlinks into ~/.agents/skills. That is this
+                # module's own output, not legacy content. Without this check
+                # every activation after the first tries to preserve it again
+                # and aborts on the backup the one real migration left behind.
+                module_managed=0
+                if [ -d "$legacy_skills" ]; then
+                  module_managed=1
                 fi
-                mkdir "$legacy_backup"
-                if ! mv "$legacy_skills" "$legacy_backup/skills"; then
-                  rmdir "$legacy_backup" 2>/dev/null || true
-                  echo "Failed to preserve $legacy_skills; it was not removed" >&2
-                  exit 1
+                for entry in "$legacy_skills"/* "$legacy_skills"/.[!.]*; do
+                  [ "$module_managed" = 1 ] || break
+                  if [ ! -e "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
+                  if [ ! -L "$entry" ]; then
+                    module_managed=0
+                    break
+                  fi
+                  case "$(readlink "$entry")" in
+                    "$HOME/.agents/skills/"*) ;;
+                    *)
+                      module_managed=0
+                      break
+                      ;;
+                  esac
+                done
+
+                if [ "$module_managed" != 1 ]; then
+                  if [ -e "$legacy_backup" ] || [ -L "$legacy_backup" ]; then
+                    echo "Cannot preserve $legacy_skills: backup already exists at $legacy_backup" >&2
+                    exit 1
+                  fi
+                  mkdir "$legacy_backup"
+                  if ! mv "$legacy_skills" "$legacy_backup/skills"; then
+                    rmdir "$legacy_backup" 2>/dev/null || true
+                    echo "Failed to preserve $legacy_skills; it was not removed" >&2
+                    exit 1
+                  fi
+                  echo "Preserved existing Claude skills at $legacy_backup/skills"
                 fi
-                echo "Preserved existing Claude skills at $legacy_backup/skills"
               fi
             '';
             home.activation.dotfiles-agent-skills = lib.hm.dag.entryAfter [ "agent-skills" ] (
