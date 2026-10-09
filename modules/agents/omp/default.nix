@@ -12,6 +12,12 @@ let
   inherit (config.dotfiles) configDir;
   ompConfigDir = "${config.user.home}/.omp";
   ompAgentDir = "${ompConfigDir}/agent";
+  ompPermissionParsedResult = readJsonc "${configDir}/pi/pi-permission-system.jsonc";
+  ompPermissionSystemConfig =
+    if !ompPermissionParsedResult.success then
+      builtins.throw "pi pi-permission-system.jsonc produced invalid JSON after stripping comments/trailing commas."
+    else
+      builtins.toJSON ompPermissionParsedResult.value;
   lsp = import ./_lsp.nix { inherit pkgs; };
   mcpServerType = types.submodule {
     options = {
@@ -708,8 +714,14 @@ in
         "${lazyExtensionBundle}/lazy-agent-browser.mjs";
       home.file.".omp/agent/extensions/lazy-plannotator.mjs".source =
         "${lazyExtensionBundle}/lazy-plannotator.mjs";
-      home.file.".omp/agent/extensions/pi-permission-system/config.json".source =
-        "${configDir}/pi/pi-permission-system.jsonc";
+      # Same JSONC-vs-JSON.parse trap as the Pi copy: the extension strips
+      # comments but not trailing commas, so the raw file fails closed to {}.
+      home.file.".omp/agent/extensions/pi-permission-system/config.json" = {
+        text = ompPermissionSystemConfig;
+        # See the Pi copy: save() replaces the symlink, and an un-forced backup
+        # collides with itself on the following activation.
+        force = true;
+      };
 
       home-manager.users.${config.user.name} =
         { lib, ... }:

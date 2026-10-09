@@ -168,6 +168,19 @@ let
     else
       piSettingsParsedResult.value;
 
+  # The permission policy is authored as JSONC but @gotgenes/pi-permission-system
+  # reads it with JSON.parse(stripJsonComments(raw)): comments go, trailing
+  # commas do not. Linking the raw file made every load fail closed to {}, so no
+  # rule was ever in effect, and the extension's save() then wrote
+  # `{...existing.config, debugLog, permissionReviewLog, yoloMode}` -- a
+  # four-key stub -- over the link. Materialize parsed JSON instead.
+  piPermissionParsedResult = readJsonc "${configDir}/pi/pi-permission-system.jsonc";
+  piPermissionSystemConfig =
+    if !piPermissionParsedResult.success then
+      builtins.throw "pi pi-permission-system.jsonc produced invalid JSON after stripping comments/trailing commas."
+    else
+      builtins.toJSON piPermissionParsedResult.value;
+
   desktopPiHost = ghosttyCfg.enable || config.modules.desktop.macos.enable || isDarwin;
   settings = import ./lib/_settings.nix {
     inherit
@@ -357,6 +370,7 @@ in
             agentLinks
             sessionSearchFiles
             isDarwin
+            piPermissionSystemConfig
             ;
           inherit (settings) piSettingsValidated;
           mcpEnabled = cfg.mcp.enable;
