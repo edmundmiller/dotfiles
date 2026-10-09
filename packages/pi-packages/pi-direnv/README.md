@@ -1,6 +1,6 @@
 # pi-direnv
 
-Auto-load [direnv](https://direnv.net/) environment at session start. Ensures bash commands have project-specific env vars from `.envrc` files.
+Auto-load [direnv](https://direnv.net/) environment at session start and when switching sessions. Ensures bash commands have project-specific env vars from `.envrc` files.
 
 ## Install
 
@@ -10,10 +10,10 @@ pi install npm:pi-direnv
 
 ## What it does
 
-On `session_start`:
+On `session_start` and `session_switch`, including switches requested by the RPC `switch_session` command:
 
 1. Checks if `direnv` is installed (skips silently if not)
-2. Searches for `.envrc` from cwd up to the git root
+2. Searches for `.envrc` from `ctx.sessionManager.getCwd()` up to that project's git root, regardless of where Pi was launched
 3. Runs `direnv export json` and applies variables to `process.env`
 4. Shows a notification with the count of loaded vars
 5. Warns if `.envrc` is blocked (needs `direnv allow`)
