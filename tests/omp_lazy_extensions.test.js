@@ -29,6 +29,46 @@ function createExtensionApi() {
 }
 
 describe("lazy Plannotator", () => {
+  test("registers Inbox before first use and preserves session lifecycle", async () => {
+    const previous = process.env.PLANNOTATOR_INBOX_TOOL;
+    process.env.PLANNOTATOR_INBOX_TOOL = "1";
+    try {
+      const extension = createExtensionApi();
+      const sessions = [];
+      let stopped = false;
+      const factory = createLazyPlannotator(async () => ({
+        default(api) {
+          api.registerTool({
+            name: "plannotator_inbox",
+            async execute() {
+              return { content: [{ type: "text", text: "Inbox connected" }] };
+            },
+          });
+          api.on("session_start", (event) => {
+            sessions.push(event);
+          });
+          api.on("session_shutdown", () => {
+            stopped = true;
+          });
+        },
+      }));
+      await factory(extension.api);
+      const start = extension.handlers.get("session_start")[0];
+      await start({ type: "session_start" }, { cwd: "/tmp/project" });
+      expect(extension.tools.has("plannotator_inbox")).toBe(true);
+      await start({ type: "session_start", reason: "resume" }, { cwd: "/tmp/project" });
+      expect(sessions).toEqual([
+        { type: "session_start", reason: "reload" },
+        { type: "session_start", reason: "resume" },
+      ]);
+      await extension.handlers.get("session_shutdown")[0]({});
+      expect(stopped).toBe(true);
+    } finally {
+      if (previous === undefined) delete process.env.PLANNOTATOR_INBOX_TOOL;
+      else process.env.PLANNOTATOR_INBOX_TOOL = previous;
+    }
+  });
+
   test("loads once on the first existing command and replays session start", async () => {
     const extension = createExtensionApi();
     const calls = [];

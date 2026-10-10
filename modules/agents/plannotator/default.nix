@@ -8,25 +8,25 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.agents.plannotator;
-  version = "0.27.0";
-  piExtensionVersion = "0.26.4";
+  version = "0.28.10";
+  piExtensionVersion = version;
   system = pkgs.stdenv.hostPlatform.system;
   releases = {
     aarch64-darwin = {
       asset = "plannotator-darwin-arm64";
-      hash = "sha256-Y2cSP6gyWR4tVQmTBiFMoB/h/SHP30ZCuqcxkUdvZww=";
+      hash = "sha256-G2qOU+WHqKqOeyZbi0DFDVhFoUhyyI43O/T0OZddORQ=";
     };
     x86_64-darwin = {
       asset = "plannotator-darwin-x64";
-      hash = "sha256-2XfVQD3ceaXrerA6wqrC95VCCI99ypvfeOH8wYQY/8Q=";
+      hash = "sha256-q23UxhcwjtoqaTW8zw7DC7DNx2r/M5zYDjbZ5Y7CyTg=";
     };
     aarch64-linux = {
       asset = "plannotator-linux-arm64";
-      hash = "sha256-WctH6i+BiYQLZSF/BMI/sMhB7YfvJYajMjKab6qJSx4=";
+      hash = "sha256-OAz9zN/Rq9FfeXumslm6bzvP11Xbl0FHC/9Jhie0wMM=";
     };
     x86_64-linux = {
       asset = "plannotator-linux-x64";
-      hash = "sha256-0xUH2JXzox3vYG2qJ9ac196Q1WI55Efw0/SLx9FJPw8=";
+      hash = "sha256-2EpKOhZe+CqDF2X+pmwsjErVs7ys75hsgHM4uoDS8Ls=";
     };
   };
   release = releases.${system} or (throw "Plannotator does not publish a binary for ${system}");
@@ -102,11 +102,14 @@ in
     (mkIf cfg.enable {
       user.packages = [ cfg.package ];
 
+      # Upstream registers the Inbox tool and reply wake only when opted in.
+      env.PLANNOTATOR_INBOX_TOOL = "1";
+
       modules.agents.pi.extraPackages = mkIf piEnabled [
         {
           source = "npm:@plannotator/pi-extension@${piExtensionVersion}";
-          # The local thin registrar keeps commands, --plan, shortcut, and tool
-          # available while deferring the package entrypoint until first use.
+          # The thin registrar loads at session start when Inbox is enabled;
+          # otherwise it defers the package entrypoint until first use.
           extensions = [ ];
         }
       ];

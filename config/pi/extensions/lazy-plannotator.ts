@@ -8,6 +8,7 @@ import { createLazyActivation } from "./lib/lazy-extension";
 
 const COMMANDS = new Map([
   ["plannotator", "Toggle plannotator planning mode"],
+  ["plannotator-plan-mode", "Toggle plannotator planning mode"],
   [
     "plannotator-review",
     "Open interactive code review for current changes or a PR URL; pass --git or --gitbutler to force that provider",
@@ -114,7 +115,9 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
         description,
         async handler(args: unknown, context: unknown) {
           await lazy.activate(context);
-          const command = lazy.commands.get(name);
+          const command = lazy.commands.get(
+            name === "plannotator" ? "plannotator-plan-mode" : name
+          );
           if (!command) throw new Error(`Plannotator did not register /${name}`);
           return command.handler(args, context);
         },
@@ -163,7 +166,11 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
     });
 
     api.on("session_start", async (event: unknown, context: unknown) => {
-      if (!lazy.isActivated() && Reflect.get(api, "getFlag")?.call(api, "plan") === true) {
+      if (
+        !lazy.isActivated() &&
+        (process.env.PLANNOTATOR_INBOX_TOOL === "1" ||
+          Reflect.get(api, "getFlag")?.call(api, "plan") === true)
+      ) {
         await lazy.activate(context);
         return;
       }

@@ -49,6 +49,15 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
       replayEvents: ["session_start"],
     });
 
+    // Inbox must register its tool and reply wake before the first agent turn.
+    api.on("session_start", async (event, context) => {
+      if (!lazy.isActivated() && process.env.PLANNOTATOR_INBOX_TOOL === "1") {
+        await lazy.activate(context);
+        return;
+      }
+      if (lazy.isActivated()) return lazy.emit("session_start", event, context);
+    });
+
     for (const [name, description] of COMMANDS) {
       api.registerCommand(name, {
         description,

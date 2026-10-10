@@ -141,8 +141,9 @@ class PlannotatorSourceContractTests(unittest.TestCase):
             (ROOT / "config/claude/settings.json").read_text(encoding="utf-8")
         )
 
-        self.assertIn('version = "0.27.0"', module)
-        self.assertIn('piExtensionVersion = "0.26.4"', module)
+        self.assertIn('version = "0.28.10"', module)
+        self.assertIn("piExtensionVersion = version;", module)
+        self.assertIn('env.PLANNOTATOR_INBOX_TOOL = "1";', module)
         self.assertIn("npm:@plannotator/pi-extension@${piExtensionVersion}", module)
         self.assertIn("extensions = [ ];", module)
         self.assertIn("omp-plannotator-plugin", module)
