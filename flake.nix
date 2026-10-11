@@ -1242,6 +1242,7 @@
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
+                      tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py
                     touch $out
                   '';

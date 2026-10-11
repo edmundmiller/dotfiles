@@ -23,6 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKS = {
     "validation-tests": [
         "scripts/validation.py",
+        "scripts/beads_filter.py",
+        "tests/test_beads_filter.py",
         "bin/amp-runner-sync",
         "config/amp/*",
         "tests/test_amp_runner_sync.py",
