@@ -26,6 +26,13 @@ final: prev: {
             mesonFlags = (opusOld.mesonFlags or [ ]) ++ [ "-Ddefault_library=both" ];
           }))
         ];
+        # v18.0.3 validates a compiled version-sentinel export, not the
+        # post-link stamp introduced by the newer inherited package.
+        buildPhase =
+          final.lib.replaceStrings
+            [ "bun scripts/stamp-native-version.ts" ]
+            [ "test ! -f scripts/stamp-native-version.ts || bun scripts/stamp-native-version.ts" ]
+            old.buildPhase;
         cargoDeps = final.rustPlatform.fetchCargoVendor {
           name = "omp-${version}-cargo-vendor";
           inherit src;
