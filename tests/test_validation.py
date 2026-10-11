@@ -524,6 +524,9 @@ class ValidationTests(unittest.TestCase):
         self.assertNotIn(".#checks.", workflow)
         self.assertNotIn("qa-changed", workflow)
         self.assertNotIn("--platform darwin", workflow.split("  herdr-vm-test:")[0])
+        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
+        self.assertIn("NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", linux)
+        self.assertNotIn("secrets.RENOVATE_TOKEN", linux)
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]

@@ -39,6 +39,8 @@ jobs:
         with:
           extra-conf: accept-flake-config = true
       - name: Validate (same runner as hey check)
+        env:
+          NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
         run: |
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
 
