@@ -7,6 +7,7 @@ import { buildTaskWorkPrompt, serializeTask } from "./lib/task-serialization.ts"
 import { showTaskList } from "./ui/pages/list.ts";
 import { showTaskForm } from "./ui/pages/show.ts";
 import type { TaskUpdate, TaskAdapter } from "./backend/api.ts";
+import type { FormDraft } from "./controllers/show.ts";
 
 const CTRL_X = "\x18";
 
@@ -137,16 +138,7 @@ interface EditTaskResult {
   closeList: boolean;
 }
 
-function buildTaskUpdate(
-  previous: Task,
-  next: {
-    title: string;
-    description: string;
-    status: TaskStatus;
-    priority: string | undefined;
-    taskType: string | undefined;
-  }
-): TaskUpdate {
+function buildTaskUpdate(previous: Task, next: FormDraft): TaskUpdate {
   const update: TaskUpdate = {};
 
   const nextTitle = next.title.trim();
@@ -177,16 +169,7 @@ function hasTaskUpdate(update: TaskUpdate): boolean {
   return Object.keys(update).length > 0;
 }
 
-function applyDraftToTask(
-  task: Task,
-  draft: {
-    title: string;
-    description: string;
-    status: TaskStatus;
-    priority: string | undefined;
-    taskType: string | undefined;
-  }
-): Task {
+function applyDraftToTask(task: Task, draft: FormDraft): Task {
   const nextTask: Task = {
     ...task,
     title: draft.title.trim(),
@@ -222,21 +205,8 @@ export default function registerExtension(pi: ExtensionAPI, deps: ExtensionDeps 
   const nextPriorityFromKey = (data: string): string | null =>
     parsePriorityKey(data, backend.priorities, backend.priorityHotkeys);
 
-  async function listTasks(): Promise<Task[]> {
-    return backend.list();
-  }
-
-  async function showTask(ref: string): Promise<Task> {
-    return backend.show(ref);
-  }
-
-  function needsTaskDetailsForEdit(task: Task): boolean {
-    return task.description === undefined;
-  }
-
   async function getTaskForEdit(ref: string, fromList?: Task): Promise<Task> {
-    if (!fromList) return showTask(ref);
-    if (needsTaskDetailsForEdit(fromList)) return showTask(ref);
+    if (!fromList || fromList.description === undefined) return backend.show(ref);
     return { ...fromList };
   }
 
@@ -262,24 +232,12 @@ export default function registerExtension(pi: ExtensionAPI, deps: ExtensionDeps 
       priorities: backend.priorities,
       priorityHotkeys: backend.priorityHotkeys,
       onSave: async (draft) => {
-        const update = buildTaskUpdate(task, {
-          title: draft.title,
-          description: draft.description,
-          status: draft.status,
-          priority: draft.priority,
-          taskType: draft.taskType,
-        });
+        const update = buildTaskUpdate(task, draft);
 
         if (!hasTaskUpdate(update)) return false;
 
         await updateTask(ref, update);
-        task = applyDraftToTask(task, {
-          title: draft.title,
-          description: draft.description,
-          status: draft.status,
-          priority: draft.priority,
-          taskType: draft.taskType,
-        });
+        task = applyDraftToTask(task, draft);
         return true;
       },
     });
@@ -327,24 +285,12 @@ export default function registerExtension(pi: ExtensionAPI, deps: ExtensionDeps 
           return true;
         }
 
-        const update = buildTaskUpdate(createdTask, {
-          title,
-          description: draft.description,
-          status: draft.status,
-          priority: draft.priority,
-          taskType: draft.taskType,
-        });
+        const update = buildTaskUpdate(createdTask, draft);
 
         if (!hasTaskUpdate(update)) return false;
 
         await updateTask(createdTask.ref, update);
-        createdTask = applyDraftToTask(createdTask, {
-          title,
-          description: draft.description,
-          status: draft.status,
-          priority: draft.priority,
-          taskType: draft.taskType,
-        });
+        createdTask = applyDraftToTask(createdTask, draft);
         return true;
       },
     });
@@ -359,7 +305,7 @@ export default function registerExtension(pi: ExtensionAPI, deps: ExtensionDeps 
     try {
       backend.invalidateCache?.();
       ctx.ui.setStatus("tasks", "Loading…");
-      const tasks = await listTasks();
+      const tasks = await backend.list();
       ctx.ui.setStatus("tasks", undefined);
 
       // Bead 42zj: if the clipboard holds a bead ref that exists in the list,

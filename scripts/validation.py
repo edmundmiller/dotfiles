@@ -244,10 +244,9 @@ def package_plan(root, files, full=False, packages=()):
         ],
     )
     selected = set(packages)
-    if selected - available.keys():
-        raise ValueError(
-            "Unknown packages: " + ", ".join(sorted(selected - available.keys()))
-        )
+    unknown = selected - available.keys()
+    if unknown:
+        raise ValueError("Unknown packages: " + ", ".join(sorted(unknown)))
     changed_packages = {
         f.split("/")[2]
         for f in files
@@ -285,14 +284,6 @@ def package_plan(root, files, full=False, packages=()):
 def plan(root, args):
     files = selected_files(root, args.base_ref, args.head_ref, args.full, args.paths)
     packages, integration = package_plan(root, files, args.full, args.package)
-    checks = [
-        name
-        for name, patterns in CHECKS.items()
-        if args.full
-        or matches(files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"])
-    ]
-    if args.packages_only:
-        checks = []
     if args.platform:
         # Explicit platform runs are independent of the portable suite.
         target = args.platform
@@ -321,6 +312,14 @@ def plan(root, args):
             "integration": False,
             "platform": target,
         }
+    checks = []
+    if not args.packages_only:
+        checks = [
+            name
+            for name, patterns in CHECKS.items()
+            if args.full
+            or matches(files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"])
+        ]
     return {
         "files": files,
         "hooks": bool(files) and not args.packages_only,
