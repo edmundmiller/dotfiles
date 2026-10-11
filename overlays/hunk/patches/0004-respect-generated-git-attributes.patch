@@ -48,21 +48,49 @@ index b790a04..9f1117f 100644
        .split("\n")[0]
 diff --git a/packages/hunk-git/src/generated.ts b/packages/hunk-git/src/generated.ts
 new file mode 100644
-index 0000000..8761e11
+index 0000000..9545e1e
 --- /dev/null
 +++ b/packages/hunk-git/src/generated.ts
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,228 @@
 +import { runGitTextAsync, type GitBackedInput, type GitDiffEndpoints } from "./commands";
 +import { HunkExtensionUserError } from "hunkdiff/extension";
 +
 +/** Add literal, repository-root exclusions without changing caller pathspecs. */
-+export function excludeGeneratedPaths(args: string[], paths: ReadonlySet<string>) {
++function excludeGeneratedPaths(args: string[], paths: ReadonlySet<string>) {
 +  if (paths.size === 0) return args;
 +  return [
 +    ...args,
 +    ...(args.includes("--") ? [] : ["--"]),
 +    ...[...paths].map((path) => `:(top,literal,exclude)${path}`),
 +  ];
++}
++
++/** Spell a Git header path in either supported core.quotePath mode. */
++function quoteGitPath(path: string, quoteHighBytes: boolean) {
++  let quoted = "";
++  let needsQuotes = false;
++  const escapes: Record<number, string> = {
++    7: "\\a",
++    8: "\\b",
++    9: "\\t",
++    10: "\\n",
++    11: "\\v",
++    12: "\\f",
++    13: "\\r",
++    34: '\\"',
++    92: "\\\\",
++  };
++  for (const byte of Buffer.from(path)) {
++    const escape = escapes[byte];
++    if (escape || byte < 32 || byte === 127 || (quoteHighBytes && byte >= 128)) {
++      needsQuotes = true;
++      quoted += escape ?? `\\${byte.toString(8).padStart(3, "0")}`;
++    } else {
++      quoted += String.fromCharCode(byte);
++    }
++  }
++  const text = Buffer.from(quoted, "latin1").toString("utf8");
++  return needsQuotes ? `"${text}"` : text;
 +}
 +
 +/** Let Git resolve attributes in the same snapshots and paths as the review. */
@@ -79,8 +107,12 @@ index 0000000..8761e11
 +    preventOptionalLocks?: boolean;
 +  },
 +  warn: (message: string) => void,
-+): Promise<{ paths: Set<string>; filterPatch: (patch: string) => string }> {
-+  const visible = { paths: new Set<string>(), filterPatch: (patch: string) => patch };
++) {
++  const visible = {
++    paths: new Set<string>(),
++    untrackedPaths: new Set<string>(),
++    loadPatch: (args: string[]) => runGitTextAsync({ input, args, ...context }),
++  };
 +  if (input.options.includeGenerated) return visible;
 +  try {
 +    const endpoints = await resolveEndpoints();
@@ -98,7 +130,13 @@ index 0000000..8761e11
 +    const status = await runGitTextAsync({ input, args, ...context });
 +    const tokens = status.split("\0");
 +    if (tokens.pop() !== "") throw new Error("incomplete Git name-status response");
-+    const entries: { path: string; previousPath?: string; deleted: boolean }[] = [];
++    const entries: {
++      path: string;
++      previousPath?: string;
++      deleted: boolean;
++      code: string;
++      untracked?: boolean;
++    }[] = [];
 +    for (let i = 0; i < tokens.length; ) {
 +      const code = tokens[i++]!;
 +      const first = tokens[i++];
@@ -110,13 +148,17 @@ index 0000000..8761e11
 +      if (path === undefined) throw new Error("incomplete Git rename response");
 +      entries.push({
 +        path,
-+        previousPath: code.startsWith("R") ? first : undefined,
++        previousPath: renamed ? first : undefined,
 +        deleted: code === "D",
++        code,
 +      });
 +    }
 +    const trackedEntries = [...entries];
-+    entries.push(...untrackedPaths.map((path) => ({ path, deleted: false })));
++    entries.push(
++      ...untrackedPaths.map((path) => ({ path, deleted: false, code: "?", untracked: true })),
++    );
 +    const hidden = new Set<string>();
++    const hiddenUntracked = new Set<string>();
 +    for (const deleted of [false, true]) {
 +      const selected = entries.filter((entry) => entry.deleted === deleted);
 +      if (selected.length === 0) continue;
@@ -155,27 +197,73 @@ index 0000000..8761e11
 +            throw new Error("unexpected Git check-attr response");
 +          }
 +          if (value === "set" || value === "true") {
-+            hidden.add(entry.path);
-+            // Excluding both sides prevents a hidden rename turning into a deletion.
-+            if (entry.previousPath) hidden.add(entry.previousPath);
++            if (entry.untracked) {
++              hiddenUntracked.add(entry.path);
++            } else {
++              hidden.add(entry.path);
++              // Only tracked rename exclusions include the old side. A new
++              // untracked replacement at that name has its own attributes.
++              if (entry.code.startsWith("R") && entry.previousPath) hidden.add(entry.previousPath);
++            }
 +          }
 +        }
 +      }
 +    }
++    const failOpen = (detail: string) => {
++      hidden.clear();
++      hiddenUntracked.clear();
++      warn(`Hunk: generated-file filtering failed; keeping files visible. ${detail}`);
++    };
 +    return {
 +      paths: hidden,
-+      filterPatch: (patch) => {
-+        if (hidden.size === 0) return patch;
-+        // Git emits name-status and patch records in the same order. Do not
-+        // decode quoted patch headers, or split a rename into separate changes.
++      untrackedPaths: hiddenUntracked,
++      loadPatch: async (args: string[]) => {
++        if (hidden.size === 0) return visible.loadPatch(args);
++        if (input.kind !== "stash-show") {
++          const excludedArgs = excludeGeneratedPaths(args, hidden);
++          // Leave room for the environment and platform argv bookkeeping.
++          if (
++            excludedArgs.reduce((bytes, arg) => bytes + Buffer.byteLength(arg) + 16, 0) > 32_000
++          ) {
++            failOpen("Generated exclusions exceed the command argument budget.");
++            return visible.loadPatch(args);
++          }
++          try {
++            return await visible.loadPatch(excludedArgs);
++          } catch (error) {
++            context.signal?.throwIfAborted();
++            failOpen("Git could not run with generated exclusions; retrying without them.");
++            return visible.loadPatch(args);
++          }
++        }
++        const patch = await visible.loadPatch([...args, "--no-relative"]);
++        // Match complete Git records by their exact header spelling, not
++        // position. A type change has two blocks; unsupported summaries must
++        // be detected before removing any blocks, even when counts coincide.
++        const headers = new Map<string, (typeof trackedEntries)[number]>();
++        for (const entry of trackedEntries) {
++          for (const quoteHighBytes of [false, true]) {
++            const old = quoteGitPath(`a/${entry.previousPath ?? entry.path}`, quoteHighBytes);
++            const next = quoteGitPath(`b/${entry.path}`, quoteHighBytes);
++            headers.set(`diff --git ${old} ${next}`, entry);
++          }
++        }
 +        const blocks = patch.split(/(?=^(?:\x1b\[[0-9;]*m)*diff --git )/m).filter(Boolean);
-+        if (blocks.length !== trackedEntries.length) {
-+          warn(
-+            "Hunk: generated-file lookup could not match Git patch records; keeping files visible.",
-+          );
++        const counts = new Map<(typeof trackedEntries)[number], number>();
++        const records = blocks.map((block) => {
++          const header = block.split("\n", 1)[0]!.replace(/\x1b\[[0-9;]*m/g, "");
++          const entry = headers.get(header);
++          if (entry) counts.set(entry, (counts.get(entry) ?? 0) + 1);
++          return entry;
++        });
++        if (
++          records.some((entry) => !entry) ||
++          trackedEntries.some((entry) => counts.get(entry) !== (entry.code === "T" ? 2 : 1))
++        ) {
++          failOpen("Could not match complete Git patch records.");
 +          return patch;
 +        }
-+        return blocks.filter((_, index) => !hidden.has(trackedEntries[index]!.path)).join("");
++        return blocks.filter((_, index) => !hidden.has(records[index]!.path)).join("");
 +      },
 +    };
 +  } catch (error) {
@@ -193,10 +281,25 @@ index 0000000..8761e11
 +  }
 +}
 diff --git a/packages/hunk-git/src/index.test.ts b/packages/hunk-git/src/index.test.ts
-index 1bb9292..5db33a4 100644
+index 1bb9292..b9ada58 100644
 --- a/packages/hunk-git/src/index.test.ts
 +++ b/packages/hunk-git/src/index.test.ts
-@@ -508,14 +508,13 @@ describe("GitVcsAdapter", () => {
+@@ -1,5 +1,13 @@
+ import { afterEach, describe, expect, setDefaultTimeout, spyOn, test } from "bun:test";
+-import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
++import {
++  chmodSync,
++  mkdirSync,
++  mkdtempSync,
++  realpathSync,
++  rmSync,
++  symlinkSync,
++  writeFileSync,
++} from "node:fs";
+ import { platform, tmpdir } from "node:os";
+ import { isAbsolute, join, resolve } from "node:path";
+ import { createGitVcsAdapter, describeGitDiffTitleRange, GitVcsAdapter, statSignature } from ".";
+@@ -508,14 +516,13 @@ describe("GitVcsAdapter", () => {
      try {
        for (const probe of probes) await probe();
        expect(syncSpawn).not.toHaveBeenCalled();
@@ -213,11 +316,153 @@ index 1bb9292..5db33a4 100644
      } finally {
        syncSpawn.mockRestore();
        asyncSpawn.mockRestore();
-@@ -555,6 +554,287 @@ describe("GitVcsAdapter", () => {
+@@ -555,6 +562,440 @@ describe("GitVcsAdapter", () => {
    });
  });
  
 +describe("Git generated attributes", () => {
++  test("keeps an ordinary untracked replacement of a generated rename source", async () => {
++    const repo = createTempRepo("hunk-generated-replacement-");
++    writeFileSync(join(repo, ".gitattributes"), "generated.json linguist-generated\n");
++    writeFileSync(join(repo, "src.txt"), "tracked original\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    git(repo, "mv", "src.txt", "generated.json");
++    writeFileSync(join(repo, "src.txt"), "ordinary replacement\n");
++    const result = await gitOperations["working-tree-diff"]!.load(
++      { kind: "vcs", range: "HEAD", staged: false, options: {} },
++      { cwd: repo },
++    );
++    expect(result.patchText).not.toContain("generated.json");
++    expect(result.untrackedPaths).toEqual(["src.txt"]);
++  });
++
++  test("keeps both sides of stash type changes and fails open for ambiguous submodule logs", async () => {
++    for (const withSubmodule of [true, false]) {
++      const repo = createTempRepo("hunk-generated-types-");
++      let nextSubmodule: string | undefined;
++      if (withSubmodule) {
++        const submodule = createTempRepo("hunk-generated-submodule-");
++        writeFileSync(join(submodule, "file.txt"), "old\n");
++        git(submodule, "add", ".");
++        git(submodule, "commit", "-m", "old module");
++        const old = git(submodule, "rev-parse", "HEAD").trim();
++        writeFileSync(join(submodule, "file.txt"), "new\n");
++        git(submodule, "commit", "-am", "new module");
++        nextSubmodule = git(submodule, "rev-parse", "HEAD").trim();
++        git(repo, "-c", "protocol.file.allow=always", "submodule", "add", submodule, "b-module");
++        git(join(repo, "b-module"), "checkout", old);
++      }
++      writeFileSync(
++        join(repo, ".gitattributes"),
++        "b-module linguist-generated\nd.json linguist-generated\n",
++      );
++      for (const path of ["a.txt", "c.txt", "d.json"]) writeFileSync(join(repo, path), "old\n");
++      git(repo, "add", ".");
++      git(repo, "commit", "-m", "base");
++      rmSync(join(repo, "a.txt"));
++      symlinkSync("target", join(repo, "a.txt"));
++      for (const path of ["c.txt", "d.json"]) writeFileSync(join(repo, path), "new\n");
++      if (nextSubmodule) git(join(repo, "b-module"), "checkout", nextSubmodule);
++      git(repo, "add", ".");
++      git(repo, "stash", "push", "-m", "type changes");
++      for (const format of ["log", "short"]) {
++        git(repo, "config", "diff.submodule", format);
++        const warn = spyOn(console, "warn").mockImplementation(() => {});
++        try {
++          const adapter = createGitVcsAdapter();
++          const input = { kind: "stash-show", options: {} } satisfies ExtensionVcsStashShowInput;
++          const result = await adapter.operations["stash-show"].load(input, { cwd: repo });
++          expect(result.patchText).toContain("deleted file mode 100644");
++          expect(result.patchText).toContain("new file mode 120000");
++          expect(result.patchText).toContain("+target");
++          expect(result.patchText).toContain("b/c.txt");
++          if (withSubmodule && format === "log") {
++            expect(result.patchText).toBe(git(repo, "stash", "show", "-p", "--no-color"));
++            expect(warn).toHaveBeenCalledTimes(1);
++          } else {
++            expect(result.patchText).not.toContain("b/d.json");
++            expect(result.patchText).not.toContain("b/b-module");
++            expect(warn).not.toHaveBeenCalled();
++          }
++          const included = await adapter.operations["stash-show"].load(
++            { ...input, options: { includeGenerated: true } },
++            { cwd: repo },
++          );
++          expect(included.patchText).toContain("b/d.json");
++          expect(included.patchText).toContain("new file mode 120000");
++        } finally {
++          warn.mockRestore();
++        }
++      }
++    }
++  });
++
++  test("bounds generated exclusions and keeps reviews visible when their argument budget is exceeded", async () => {
++    const repo = createTempRepo("hunk-generated-budget-");
++    const paths = Array.from({ length: 400 }, (_, i) => `generated-${i}-${"x".repeat(90)}.json`);
++    writeFileSync(join(repo, ".gitattributes"), "*.json linguist-generated\n");
++    for (const path of [...paths, "plain.txt"]) writeFileSync(join(repo, path), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    for (const path of [...paths, "plain.txt"]) writeFileSync(join(repo, path), "new\n");
++    const warn = spyOn(console, "warn").mockImplementation(() => {});
++    try {
++      const adapter = createGitVcsAdapter();
++      const result = await adapter.operations["working-tree-diff"].load(
++        { kind: "vcs", staged: false, options: {} },
++        { cwd: repo },
++      );
++      expect(result.patchText).toContain("b/plain.txt");
++      expect(result.patchText).toContain(`b/${paths[0]}`);
++      expect(warn).toHaveBeenCalledTimes(1);
++      expect(String(warn.mock.calls[0]![0])).toContain("argument budget");
++    } finally {
++      warn.mockRestore();
++    }
++  });
++
++  test("retries rejected generated exclusions without hiding untracked files or large-file placeholders", async () => {
++    const repo = createTempRepo("hunk-generated-retry-");
++    writeFileSync(join(repo, ".gitattributes"), "*.json linguist-generated\n");
++    for (const path of ["generated.json", "large.json", "plain.txt"])
++      writeFileSync(join(repo, path), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "new\n");
++    writeFileSync(join(repo, "large.json"), "line\n".repeat(100_000));
++    writeFileSync(join(repo, "untracked.json"), "new\n");
++    const wrapper = join(createTempDir("hunk-generated-wrapper-"), "git-wrapper");
++    writeFileSync(
++      wrapper,
++      `#!/bin/sh\nfor arg in "$@"; do\ncase "$arg" in ':(top,literal,exclude)'*) echo 'argument list too long' >&2; exit 1;; esac\ndone\nexec ${JSON.stringify(Bun.which("git")!)} "$@"\n`,
++    );
++    chmodSync(wrapper, 0o755);
++    const adapter = createGitVcsAdapter({ gitExecutable: wrapper });
++    const warn = spyOn(console, "warn").mockImplementation(() => {});
++    try {
++      const input = { kind: "vcs", staged: false, options: {} } satisfies ExtensionVcsDiffInput;
++      for (let attempt = 0; attempt < 2; attempt++) {
++        const result = await adapter.operations["working-tree-diff"].load(input, { cwd: repo });
++        expect(result.patchText).toContain("b/plain.txt");
++        expect(result.patchText).toContain("b/generated.json");
++        expect(result.untrackedPaths).toEqual(["untracked.json"]);
++        expect(result.extraFiles?.map((file) => file.path)).toEqual(["large.json"]);
++      }
++      expect(warn).toHaveBeenCalledTimes(1);
++      expect(String(warn.mock.calls[0]![0])).toContain("retrying without them");
++      warn.mockClear();
++      const result = await adapter.operations["working-tree-diff"].load(
++        { ...input, options: { includeGenerated: true } },
++        { cwd: repo },
++      );
++      expect(result.patchText).toContain("b/generated.json");
++      expect(warn).not.toHaveBeenCalled();
++    } finally {
++      warn.mockRestore();
++    }
++  });
++
 +  test("honors Git precedence and explicit false/unset values for tracked, untracked and large files", async () => {
 +    const repo = createTempRepo("hunk-generated-values-");
 +    mkdirSync(join(repo, "nested"));
@@ -452,6 +697,17 @@ index 1bb9292..5db33a4 100644
 +      expect(filtered.result.patchText).not.toContain("b/generated.json");
 +      expect(included.result.patchText).toContain("b/generated.json");
 +    }
++    writeFileSync(join(repo, "untracked.json"), "ordinary until marked\n");
++    const input = { kind: "vcs", staged: false, options: {} } satisfies ExtensionVcsDiffInput;
++    const before = await gitOperations["working-tree-diff"]!.watchSignature!(input, { cwd: repo });
++    writeFileSync(
++      join(repo, ".git", "info", "attributes"),
++      "generated.json linguist-generated\nuntracked.json linguist-generated\n",
++    );
++    const after = await gitOperations["working-tree-diff"]!.watchSignature!(input, { cwd: repo });
++    expect(after).not.toBe(before);
++    const result = await gitOperations["working-tree-diff"]!.load(input, { cwd: repo });
++    expect(result.untrackedPaths).not.toContain("untracked.json");
 +  });
 +
 +  test("attribute errors and truncated responses fail open once, while the override avoids lookup", async () => {
@@ -502,14 +758,14 @@ index 1bb9292..5db33a4 100644
    test("statSignature distinguishes present from missing paths", () => {
      const repo = createTempDir("hunk-git-statsig-");
 diff --git a/packages/hunk-git/src/index.ts b/packages/hunk-git/src/index.ts
-index e70e8da..568b6d9 100644
+index e70e8da..dec902f 100644
 --- a/packages/hunk-git/src/index.ts
 +++ b/packages/hunk-git/src/index.ts
 @@ -28,6 +28,7 @@ import {
    planGitHistoryRangeReview,
  } from "./history";
  import { gitEndpointSourceSpec, readGitFileSource } from "./source";
-+import { excludeGeneratedPaths, generatedPaths } from "./generated";
++import { generatedPaths } from "./generated";
  import { commitReviewInfo, comparisonReviewInfo } from "@hunk/vcs/review-info";
  import {
    HUNK_VCS_DETECTION_BASELINE_PRIORITY,
@@ -562,12 +818,10 @@ index e70e8da..568b6d9 100644
    return {
      id: "git",
      name: "Git",
-@@ -433,8 +469,17 @@ export function createGitVcsAdapter({
+@@ -433,41 +469,49 @@ export function createGitVcsAdapter({
              gitExecutable,
              signal,
            });
--          const largeTrackedFiles = parseGitNumstat(numstat).filter((file) =>
--            shouldSkipLargeTrackedDiff(file, repoRoot),
 +          const hidden = await generatedPaths(
 +            patchInput,
 +            buildGitDiffArgs(patchInput),
@@ -577,39 +831,65 @@ index e70e8da..568b6d9 100644
 +            { cwd, repoRoot, gitExecutable, signal },
 +            warnFor(repoRoot),
 +          );
-+          const largeTrackedFiles = parseGitNumstat(numstat).filter(
-+            (file) => !hidden.paths.has(file.path) && shouldSkipLargeTrackedDiff(file, repoRoot),
+           const largeTrackedFiles = parseGitNumstat(numstat).filter((file) =>
+             shouldSkipLargeTrackedDiff(file, repoRoot),
            );
++          const patchText = await hidden.loadPatch(
++            buildGitDiffArgs(
++              patchInput,
++              largeTrackedFiles.map((file) => file.path),
++              colorMoved,
++            ),
++          );
  
            return {
-@@ -443,10 +488,13 @@ export function createGitVcsAdapter({
+             repoRoot,
+             sourceLabel: repoRoot,
              title,
-             patchText: await runGitTextAsync({
-               input,
+-            patchText: await runGitTextAsync({
+-              input,
 -              args: buildGitDiffArgs(
 -                patchInput,
 -                largeTrackedFiles.map((file) => file.path),
 -                colorMoved,
-+              args: excludeGeneratedPaths(
-+                buildGitDiffArgs(
-+                  patchInput,
-+                  largeTrackedFiles.map((file) => file.path),
-+                  colorMoved,
-+                ),
-+                hidden.paths,
-               ),
-               cwd,
-               gitExecutable,
-@@ -467,7 +515,7 @@ export function createGitVcsAdapter({
+-              ),
+-              cwd,
+-              gitExecutable,
+-              signal,
+-            }),
++            patchText,
+             review: comparison?.review,
+             ...sourceCapability,
+-            extraFiles: largeTrackedFiles.map(
+-              (file): ExtensionVcsExtraFile => ({
+-                kind: "skipped",
+-                path: file.path,
+-                reason: "too-large",
+-                changeType: "change",
+-                stats: { additions: file.additions, deletions: file.deletions },
+-              }),
+-            ),
++            extraFiles: largeTrackedFiles
++              .filter((file) => !hidden.paths.has(file.path))
++              .map(
++                (file): ExtensionVcsExtraFile => ({
++                  kind: "skipped",
++                  path: file.path,
++                  reason: "too-large",
++                  changeType: "change",
++                  stats: { additions: file.additions, deletions: file.deletions },
++                }),
++              ),
+             // One `git status` lists the paths; Hunk synthesizes each added-file
              // diff in-process. Rendering them through `git diff --no-index`
              // instead costs one subprocess per file, which made working-tree
              // review scale with the untracked file count.
 -            untrackedPaths,
-+            untrackedPaths: untrackedPaths.filter((path) => !hidden.paths.has(path)),
++            untrackedPaths: untrackedPaths.filter((path) => !hidden.untrackedPaths.has(path)),
            };
          },
          watchPlan(input, { cwd }) {
-@@ -498,7 +546,24 @@ export function createGitVcsAdapter({
+@@ -498,7 +542,26 @@ export function createGitVcsAdapter({
            const untrackedSignatures = untrackedPaths.map(
              (filePath) => `untracked:${statSignature(join(repoRoot, filePath))}`,
            );
@@ -629,13 +909,15 @@ index e70e8da..568b6d9 100644
 +            { cwd, repoRoot, gitExecutable, signal, preventOptionalLocks: true },
 +            warnFor(repoRoot),
 +          );
-+          return [trackedPatch, ...untrackedSignatures, JSON.stringify([...hidden.paths])].join(
-+            "\n---\n",
-+          );
++          return [
++            trackedPatch,
++            ...untrackedSignatures,
++            JSON.stringify([[...hidden.paths], [...hidden.untrackedPaths]]),
++          ].join("\n---\n");
          },
        },
        "revision-show": {
-@@ -524,6 +589,21 @@ export function createGitVcsAdapter({
+@@ -524,21 +587,27 @@ export function createGitVcsAdapter({
              )
            )[0];
            const patchInput: ExtensionVcsShowInput = { ...input, ref: revisionId };
@@ -657,19 +939,23 @@ index e70e8da..568b6d9 100644
  
            return {
              repoRoot,
-@@ -531,10 +611,7 @@ export function createGitVcsAdapter({
+             sourceLabel: repoRoot,
              title: input.ref ? `${repoName} show ${input.ref}` : `${repoName} show HEAD`,
-             patchText: await runGitTextAsync({
-               input,
+-            patchText: await runGitTextAsync({
+-              input,
 -              args: buildGitShowArgs(
 -                patchInput,
 -                await resolveGitColorMovedOptionsAsync(input, { cwd, gitExecutable, signal }),
 -              ),
-+              args: excludeGeneratedPaths(patchArgs, hidden.paths),
-               cwd,
-               gitExecutable,
-               signal,
-@@ -547,43 +624,44 @@ export function createGitVcsAdapter({
+-              cwd,
+-              gitExecutable,
+-              signal,
+-            }),
++            patchText: await hidden.loadPatch(patchArgs),
+             ...(commit ? { review: commitReviewInfo("Git", commit) } : {}),
+             ...sourceCapability,
+           };
+@@ -547,43 +616,42 @@ export function createGitVcsAdapter({
            return buildGitWatchPlan(input, cwd, gitExecutable);
          },
          watchSignature(input, { cwd, signal }) {
@@ -734,13 +1020,11 @@ index e70e8da..568b6d9 100644
 -              gitExecutable,
 -              signal,
 -            }),
-+            patchText: hidden.filterPatch(
-+              await runGitTextAsync({ input, args: patchArgs, cwd, gitExecutable, signal }),
-+            ),
++            patchText: await hidden.loadPatch(patchArgs),
              ...sourceCapability,
            };
          },
-@@ -591,14 +669,7 @@ export function createGitVcsAdapter({
+@@ -591,14 +659,7 @@ export function createGitVcsAdapter({
            return buildGitWatchPlan(input, cwd, gitExecutable);
          },
          watchSignature(input, { cwd, signal }) {
@@ -1130,10 +1414,10 @@ index 07ff30f..b6a8e9d 100644
  | `--fast`                       | experimentally offload eligible syntax highlighting             |
  | `--line-numbers`               | show line numbers                                               |
 diff --git a/website/src/content/docs/docs/workflows/working-trees-and-commits.md b/website/src/content/docs/docs/workflows/working-trees-and-commits.md
-index 55523f5..28b86b8 100644
+index 55523f5..a1ba146 100644
 --- a/website/src/content/docs/docs/workflows/working-trees-and-commits.md
 +++ b/website/src/content/docs/docs/workflows/working-trees-and-commits.md
-@@ -24,6 +24,36 @@ hunk diff --staged
+@@ -24,6 +24,38 @@ hunk diff --staged
  hunk diff --cached
  ```
  
@@ -1161,7 +1445,9 @@ index 55523f5..28b86b8 100644
 +
 +The choice survives reload, `hunk resume`, and watch refreshes. A new review
 +command defaults to hiding generated paths unless it includes the flag.
-+Attribute lookup failures keep files visible and report one bounded warning.
++Attribute lookup or filtering failures keep files visible and report one bounded
++warning. Oversized exclusion commands and unsupported stash patch formats fail
++open rather than hiding incomplete records or preventing a review from opening.
 +Git versions without `check-attr --source` fail open for revision attributes;
 +upgrade Git or use `--include-generated` to skip the lookup.
 +
