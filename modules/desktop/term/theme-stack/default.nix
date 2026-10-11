@@ -31,8 +31,10 @@ let
     seqera = {
       description = "Seqera Ghostty palette inherited by Herdr, with a matching Pi adapter.";
       ghosttyConfig = ''
-        # Terminal theme stack: Seqera substrate for Ghostty; child TUIs are pinned below.
-        theme = light:SeqeraLight,dark:SeqeraDark
+        # Use source paths rather than named themes: Herdr starts Ghostty with a
+        # private XDG config directory, where named-theme lookup cannot see the
+        # user's ~/.config/ghostty/themes links.
+        theme = light:${configDir}/ghostty/themes/SeqeraLight,dark:${configDir}/ghostty/themes/SeqeraDark
       '';
       ghosttyThemeFiles = {
         SeqeraDark = "${configDir}/ghostty/themes/SeqeraDark";
