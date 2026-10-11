@@ -1,0 +1,1172 @@
+diff --git a/packages/hunk-git/src/commands.ts b/packages/hunk-git/src/commands.ts
+index b790a04..9f1117f 100644
+--- a/packages/hunk-git/src/commands.ts
++++ b/packages/hunk-git/src/commands.ts
+@@ -1114,12 +1114,18 @@ export async function resolveGitDiffEndpointsAsync(
+     gitExecutable = "git",
+     repoRoot,
+     signal,
++    preventOptionalLocks = false,
+   }: Omit<RunGitTextOptions, "input" | "args"> & { repoRoot?: string } = {},
+ ): Promise<GitDiffEndpoints | null> {
+   const range = requireGitDiffRangeArg(input);
+   const commandCwd = repoRoot ?? cwd;
+   const resolveRef = (ref: string) =>
+-    resolveGitTreeRefAsync(input, ref, { cwd: commandCwd, gitExecutable, signal });
++    resolveGitTreeRefAsync(input, ref, {
++      cwd: commandCwd,
++      gitExecutable,
++      signal,
++      preventOptionalLocks,
++    });
+   const resolveRevisions = async (value: string) => {
+     const revs = (
+       await runGitTextAsync({
+@@ -1128,6 +1134,7 @@ export async function resolveGitDiffEndpointsAsync(
+         cwd: commandCwd,
+         gitExecutable,
+         signal,
++        preventOptionalLocks,
+       })
+     )
+       .split("\n")
+@@ -1147,6 +1154,7 @@ export async function resolveGitDiffEndpointsAsync(
+         cwd: commandCwd,
+         gitExecutable,
+         signal,
++        preventOptionalLocks,
+         acceptedExitCodes: [0, 1, 128],
+       });
+       const headRef = result.exitCode === 0 ? result.stdout.split("\n")[0]!.trim() : null;
+@@ -1176,6 +1184,7 @@ export async function resolveGitDiffEndpointsAsync(
+         cwd: commandCwd,
+         gitExecutable,
+         signal,
++        preventOptionalLocks,
+       })
+     )
+       .split("\n")[0]
+diff --git a/packages/hunk-git/src/generated.ts b/packages/hunk-git/src/generated.ts
+new file mode 100644
+index 0000000..8761e11
+--- /dev/null
++++ b/packages/hunk-git/src/generated.ts
+@@ -0,0 +1,140 @@
++import { runGitTextAsync, type GitBackedInput, type GitDiffEndpoints } from "./commands";
++import { HunkExtensionUserError } from "hunkdiff/extension";
++
++/** Add literal, repository-root exclusions without changing caller pathspecs. */
++export function excludeGeneratedPaths(args: string[], paths: ReadonlySet<string>) {
++  if (paths.size === 0) return args;
++  return [
++    ...args,
++    ...(args.includes("--") ? [] : ["--"]),
++    ...[...paths].map((path) => `:(top,literal,exclude)${path}`),
++  ];
++}
++
++/** Let Git resolve attributes in the same snapshots and paths as the review. */
++export async function generatedPaths(
++  input: GitBackedInput,
++  patchArgs: string[],
++  resolveEndpoints: () => Promise<GitDiffEndpoints | null>,
++  untrackedPaths: string[],
++  context: {
++    cwd: string;
++    repoRoot: string;
++    gitExecutable: string;
++    signal?: AbortSignal;
++    preventOptionalLocks?: boolean;
++  },
++  warn: (message: string) => void,
++): Promise<{ paths: Set<string>; filterPatch: (patch: string) => string }> {
++  const visible = { paths: new Set<string>(), filterPatch: (patch: string) => patch };
++  if (input.options.includeGenerated) return visible;
++  try {
++    const endpoints = await resolveEndpoints();
++    if (!endpoints) throw new Error("the review has no single old/new attribute context");
++    const separator = patchArgs.indexOf("--");
++    const boundary = separator < 0 ? patchArgs.length : separator;
++    const args = [
++      ...patchArgs.slice(0, boundary).filter((arg) => arg !== "-p"),
++      "--name-status",
++      "--no-color",
++      "--no-relative",
++      "-z",
++      ...patchArgs.slice(boundary),
++    ];
++    const status = await runGitTextAsync({ input, args, ...context });
++    const tokens = status.split("\0");
++    if (tokens.pop() !== "") throw new Error("incomplete Git name-status response");
++    const entries: { path: string; previousPath?: string; deleted: boolean }[] = [];
++    for (let i = 0; i < tokens.length; ) {
++      const code = tokens[i++]!;
++      const first = tokens[i++];
++      if (!/^[ACDMRTUXB][0-9]*$/.test(code) || first === undefined) {
++        throw new Error("unexpected Git name-status response");
++      }
++      const renamed = code.startsWith("R") || code.startsWith("C");
++      const path = renamed ? tokens[i++] : first;
++      if (path === undefined) throw new Error("incomplete Git rename response");
++      entries.push({
++        path,
++        previousPath: code.startsWith("R") ? first : undefined,
++        deleted: code === "D",
++      });
++    }
++    const trackedEntries = [...entries];
++    entries.push(...untrackedPaths.map((path) => ({ path, deleted: false })));
++    const hidden = new Set<string>();
++    for (const deleted of [false, true]) {
++      const selected = entries.filter((entry) => entry.deleted === deleted);
++      if (selected.length === 0) continue;
++      const endpoint = deleted ? endpoints.old : endpoints.new;
++      if (endpoint.kind === "none") continue;
++      const source =
++        endpoint.kind === "git-ref"
++          ? [`--source=${endpoint.ref}`]
++          : endpoint.kind === "index"
++            ? ["--cached"]
++            : [];
++      // Bound argv size, including repositories with long or unusual path names.
++      for (let start = 0; start < selected.length; start += 64) {
++        const batch = selected.slice(start, start + 64);
++        const output = await runGitTextAsync({
++          input,
++          args: [
++            "check-attr",
++            "-z",
++            ...source,
++            "linguist-generated",
++            "--",
++            ...batch.map((e) => e.path),
++          ],
++          ...context,
++          cwd: context.repoRoot,
++        });
++        const attributes = output.split("\0");
++        if (attributes.pop() !== "" || attributes.length !== batch.length * 3) {
++          throw new Error("incomplete Git check-attr response");
++        }
++        for (let i = 0; i < batch.length; i++) {
++          const entry = batch[i]!;
++          const [path, attribute, value] = attributes.slice(i * 3, i * 3 + 3);
++          if (path !== entry.path || attribute !== "linguist-generated") {
++            throw new Error("unexpected Git check-attr response");
++          }
++          if (value === "set" || value === "true") {
++            hidden.add(entry.path);
++            // Excluding both sides prevents a hidden rename turning into a deletion.
++            if (entry.previousPath) hidden.add(entry.previousPath);
++          }
++        }
++      }
++    }
++    return {
++      paths: hidden,
++      filterPatch: (patch) => {
++        if (hidden.size === 0) return patch;
++        // Git emits name-status and patch records in the same order. Do not
++        // decode quoted patch headers, or split a rename into separate changes.
++        const blocks = patch.split(/(?=^(?:\x1b\[[0-9;]*m)*diff --git )/m).filter(Boolean);
++        if (blocks.length !== trackedEntries.length) {
++          warn(
++            "Hunk: generated-file lookup could not match Git patch records; keeping files visible.",
++          );
++          return patch;
++        }
++        return blocks.filter((_, index) => !hidden.has(trackedEntries[index]!.path)).join("");
++      },
++    };
++  } catch (error) {
++    context.signal?.throwIfAborted();
++    const detail =
++      error instanceof HunkExtensionUserError
++        ? [error.message, ...error.suggestions].join(" ")
++        : error instanceof Error
++          ? error.message
++          : String(error);
++    warn(
++      `Hunk: generated-file lookup failed; keeping files visible. ${detail.replace(/[\r\n\x00-\x1f]+/g, " ").slice(0, 200)} Use --include-generated to skip attribute lookup.`,
++    );
++    return visible;
++  }
++}
+diff --git a/packages/hunk-git/src/index.test.ts b/packages/hunk-git/src/index.test.ts
+index 1bb9292..5db33a4 100644
+--- a/packages/hunk-git/src/index.test.ts
++++ b/packages/hunk-git/src/index.test.ts
+@@ -508,14 +508,13 @@ describe("GitVcsAdapter", () => {
+     try {
+       for (const probe of probes) await probe();
+       expect(syncSpawn).not.toHaveBeenCalled();
+-      // Diff, root, range classification, status, show, and stash show all suppress index writes.
+-      expect(asyncSpawn.mock.calls).toHaveLength(6);
++      const callsBeforeAbort = asyncSpawn.mock.calls.length;
+       for (const call of asyncSpawn.mock.calls) {
+         expect(call[1]?.env?.GIT_OPTIONAL_LOCKS).toBe("0");
+       }
+       abort.abort(new Error("watch closed"));
+       for (const probe of probes) await expect(probe()).rejects.toThrow("watch closed");
+-      expect(asyncSpawn.mock.calls).toHaveLength(6);
++      expect(asyncSpawn.mock.calls).toHaveLength(callsBeforeAbort);
+     } finally {
+       syncSpawn.mockRestore();
+       asyncSpawn.mockRestore();
+@@ -555,6 +554,287 @@ describe("GitVcsAdapter", () => {
+   });
+ });
+ 
++describe("Git generated attributes", () => {
++  test("honors Git precedence and explicit false/unset values for tracked, untracked and large files", async () => {
++    const repo = createTempRepo("hunk-generated-values-");
++    mkdirSync(join(repo, "nested"));
++    writeFileSync(
++      join(repo, ".gitattributes"),
++      "*.json linguist-generated\nfalse.json linguist-generated=false\nunset.json -linguist-generated\ntrue.txt linguist-generated=true\nlarge.txt linguist-generated\n",
++    );
++    writeFileSync(join(repo, "nested", ".gitattributes"), "visible.json -linguist-generated\n");
++    const paths = [
++      "generated.json",
++      "false.json",
++      "unset.json",
++      "plain.txt",
++      "true.txt",
++      "large.txt",
++      "nested/visible.json",
++    ];
++    for (const path of paths) writeFileSync(join(repo, path), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    for (const path of paths)
++      writeFileSync(join(repo, path), path === "large.txt" ? "line\n".repeat(100_000) : "new\n");
++    writeFileSync(join(repo, "untracked.json"), "generated\n");
++    writeFileSync(join(repo, "untracked.txt"), "ordinary\n");
++    const input = { kind: "vcs", staged: false, options: {} } satisfies ExtensionVcsDiffInput;
++    const result = await gitOperations["working-tree-diff"]!.load(input, { cwd: repo });
++    for (const path of ["false.json", "unset.json", "plain.txt", "nested/visible.json"])
++      expect(result.patchText).toContain(`b/${path}`);
++    for (const path of ["generated.json", "true.txt", "large.txt"])
++      expect(result.patchText).not.toContain(`b/${path}`);
++    expect(result.extraFiles).toEqual([]);
++    expect(result.untrackedPaths).toEqual(["untracked.txt"]);
++    const included = await gitOperations["working-tree-diff"]!.load(
++      { ...input, options: { includeGenerated: true } },
++      { cwd: repo },
++    );
++    expect(included.patchText).toContain("b/generated.json");
++    expect(included.extraFiles?.map((file) => file.path)).toContain("large.txt");
++    expect(included.untrackedPaths).toContain("untracked.json");
++    const nested = await gitOperations["working-tree-diff"]!.load(
++      { ...input, pathspecs: ["."] },
++      { cwd: join(repo, "nested") },
++    );
++    expect(nested.patchText).toContain("b/nested/visible.json");
++    expect(nested.patchText).not.toContain("b/plain.txt");
++  });
++
++  test("uses the index for staged attributes and the old index for working-tree deletions", async () => {
++    const repo = createTempRepo("hunk-generated-index-");
++    writeFileSync(join(repo, ".gitattributes"), "deleted.json linguist-generated\n");
++    writeFileSync(join(repo, "deleted.json"), "old\n");
++    writeFileSync(join(repo, "plain.txt"), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    writeFileSync(
++      join(repo, ".gitattributes"),
++      "deleted.json linguist-generated\nnew.json linguist-generated\n",
++    );
++    writeFileSync(join(repo, "new.json"), "added\n");
++    writeFileSync(join(repo, "plain.txt"), "new\n");
++    git(repo, "add", ".");
++    writeFileSync(join(repo, ".gitattributes"), "*.json -linguist-generated\n");
++    rmSync(join(repo, "deleted.json"));
++    const staged = await gitOperations["working-tree-diff"]!.load(
++      { kind: "vcs", staged: true, options: {} },
++      { cwd: repo },
++    );
++    expect(staged.patchText).not.toContain("b/new.json");
++    expect(staged.patchText).toContain("b/plain.txt");
++    const worktree = await gitOperations["working-tree-diff"]!.load(
++      { kind: "vcs", staged: false, options: {} },
++      { cwd: repo },
++    );
++    expect(worktree.patchText).not.toContain("a/deleted.json");
++  });
++
++  test("uses new revision attributes for additions and rename destinations, old attributes for deletions", async () => {
++    const repo = createTempRepo("hunk-generated-revisions-");
++    writeFileSync(
++      join(repo, ".gitattributes"),
++      "deleted.json linguist-generated\nold.json linguist-generated\n",
++    );
++    for (const [path, contents] of [
++      ["deleted.json", "deleted\n"],
++      ["old.json", "rename visible\n"],
++      ["old.txt", "rename hidden\n"],
++      ["plain.txt", "before\n"],
++    ])
++      writeFileSync(join(repo, path!), contents!);
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "old");
++    const old = git(repo, "rev-parse", "HEAD").trim();
++    git(repo, "mv", "old.json", "visible.txt");
++    git(repo, "mv", "old.txt", "renamed.json");
++    git(repo, "rm", "deleted.json");
++    writeFileSync(
++      join(repo, ".gitattributes"),
++      "renamed.json linguist-generated\nadded.json linguist-generated\n",
++    );
++    writeFileSync(join(repo, "added.json"), "added\n");
++    writeFileSync(join(repo, "plain.txt"), "after\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "new");
++    const head = git(repo, "rev-parse", "HEAD").trim();
++    writeFileSync(
++      join(repo, ".gitattributes"),
++      "*.json -linguist-generated\nvisible.txt linguist-generated\n",
++    );
++    const inputs: ExtensionVcsDiffInput[] = [
++      { kind: "vcs", staged: false, range: `${old}..${head}`, options: {} },
++      { kind: "vcs", staged: false, range: `${old}...${head}`, options: {} },
++      { kind: "vcs", staged: false, rangeEndpoints: { from: old, to: head }, options: {} },
++    ];
++    for (const input of inputs) {
++      const result = await gitOperations["working-tree-diff"]!.load(input, { cwd: repo });
++      expect(result.patchText).toContain("rename to visible.txt");
++      expect(result.patchText).toContain("b/plain.txt");
++      for (const path of ["deleted.json", "renamed.json", "added.json"])
++        expect(result.patchText).not.toContain(`b/${path}`);
++      const included = await gitOperations["working-tree-diff"]!.load(
++        { ...input, options: { includeGenerated: true } },
++        { cwd: repo },
++      );
++      expect(included.patchText).toContain("a/deleted.json");
++      expect(included.patchText).toContain("rename to renamed.json");
++    }
++    const shown = await gitOperations["revision-show"]!.load(
++      { kind: "show", ref: head, options: {} },
++      { cwd: repo },
++    );
++    expect(shown.patchText).toContain("rename to visible.txt");
++    expect(shown.patchText).not.toContain("a/deleted.json");
++    expect(shown.patchText).not.toContain("b/added.json");
++    const included = await gitOperations["revision-show"]!.load(
++      { kind: "show", ref: head, options: { includeGenerated: true } },
++      { cwd: repo },
++    );
++    expect(included.patchText).toContain("b/added.json");
++  });
++
++  test("filters root commits and stash snapshots, including unusual literal paths", async () => {
++    const repo = createTempRepo("hunk-generated-stash-");
++    const paths = [
++      "space name.json",
++      "[glob].json",
++      "tab\tname.json",
++      "line\nname.json",
++      "unicode-λ.json",
++    ];
++    writeFileSync(join(repo, ".gitattributes"), "*.json linguist-generated\n");
++    for (const path of [...paths, "plain.txt"]) writeFileSync(join(repo, path), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "root");
++    const root = await gitOperations["revision-show"]!.load(
++      { kind: "show", options: {} },
++      { cwd: repo },
++    );
++    expect(root.patchText).toContain("b/plain.txt");
++    expect((root.patchText.match(/^diff --git /gm) ?? []).length).toBe(2);
++    for (const path of [...paths, "plain.txt"]) writeFileSync(join(repo, path), "new\n");
++    git(repo, "stash", "push", "-m", "snapshot");
++    writeFileSync(join(repo, ".gitattributes"), "*.json -linguist-generated\n");
++    const stashed = await gitOperations["stash-show"]!.load(
++      { kind: "stash-show", options: {} },
++      { cwd: repo },
++    );
++    expect(stashed.patchText).toContain("b/plain.txt");
++    expect((stashed.patchText.match(/^diff --git /gm) ?? []).length).toBe(1);
++    const colored = await gitOperations["stash-show"]!.load(
++      { kind: "stash-show", options: { colorMoved: true } },
++      { cwd: repo },
++    );
++    expect(colored.patchText).toContain("b/plain.txt");
++    expect(colored.patchText).not.toContain("b/[glob].json");
++    const included = await gitOperations["stash-show"]!.load(
++      { kind: "stash-show", options: { includeGenerated: true } },
++      { cwd: repo },
++    );
++    expect((included.patchText.match(/^diff --git /gm) ?? []).length).toBe(6);
++  });
++
++  test("watch signatures detect info attribute changes and preserve the override", async () => {
++    const repo = createTempRepo("hunk-generated-watch-");
++    for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "new\n");
++    git(repo, "stash", "push", "-m", "stash");
++    git(repo, "stash", "apply");
++    for (const kind of ["vcs", "show", "stash-show"] as const) {
++      const probe = async (includeGenerated: boolean) => {
++        const context = { cwd: repo };
++        const options = { includeGenerated };
++        switch (kind) {
++          case "vcs": {
++            const operation = gitOperations["working-tree-diff"]!;
++            const input = { kind, staged: false, options };
++            return {
++              signature: await operation.watchSignature!(input, context),
++              result: await operation.load(input, context),
++            };
++          }
++          case "show": {
++            const operation = gitOperations["revision-show"]!;
++            const input = { kind, options };
++            return {
++              signature: await operation.watchSignature!(input, context),
++              result: await operation.load(input, context),
++            };
++          }
++          case "stash-show": {
++            const operation = gitOperations["stash-show"]!;
++            const input = { kind, options };
++            return {
++              signature: await operation.watchSignature!(input, context),
++              result: await operation.load(input, context),
++            };
++          }
++        }
++      };
++      rmSync(join(repo, ".git", "info", "attributes"), { force: true });
++      const before = await probe(false);
++      const includedBefore = await probe(true);
++      writeFileSync(
++        join(repo, ".git", "info", "attributes"),
++        "generated.json linguist-generated\n",
++      );
++      const filtered = await probe(false);
++      const included = await probe(true);
++      expect(filtered.signature).not.toBe(before.signature);
++      expect(included.signature).toBe(includedBefore.signature);
++      expect(filtered.result.patchText).not.toContain("b/generated.json");
++      expect(included.result.patchText).toContain("b/generated.json");
++    }
++  });
++
++  test("attribute errors and truncated responses fail open once, while the override avoids lookup", async () => {
++    const repo = createTempRepo("hunk-generated-failure-");
++    writeFileSync(join(repo, ".gitattributes"), "*.json linguist-generated\n");
++    for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "old\n");
++    git(repo, "add", ".");
++    git(repo, "commit", "-m", "base");
++    for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "new\n");
++    const realGit = Bun.which("git")!;
++    for (const failure of ["echo unsupported >&2; exit 1", "printf 'truncated'; exit 0"]) {
++      const wrapper = join(repo, "git-wrapper");
++      writeFileSync(
++        wrapper,
++        `#!/bin/sh\nif [ "$1" = check-attr ]; then ${failure}; fi\nexec ${JSON.stringify(realGit)} "$@"\n`,
++      );
++      chmodSync(wrapper, 0o755);
++      const adapter = createGitVcsAdapter({ gitExecutable: wrapper });
++      const warn = spyOn(console, "warn").mockImplementation(() => {});
++      try {
++        const input = { kind: "vcs", staged: false, options: {} } satisfies ExtensionVcsDiffInput;
++        for (let i = 0; i < 2; i++) {
++          const result = await adapter.operations["working-tree-diff"].load(input, { cwd: repo });
++          expect(result.patchText).toContain("b/generated.json");
++          expect(result.patchText).toContain("b/plain.txt");
++        }
++        expect(warn).toHaveBeenCalledTimes(1);
++        expect(warn.mock.calls[0]![0]).toContain("keeping files visible");
++        expect(warn.mock.calls[0]![0]).toContain(
++          failure.includes("unsupported") ? "unsupported" : "incomplete",
++        );
++        expect(String(warn.mock.calls[0]![0]).length).toBeLessThan(400);
++        warn.mockClear();
++        const result = await adapter.operations["working-tree-diff"].load(
++          { ...input, options: { includeGenerated: true } },
++          { cwd: repo },
++        );
++        expect(result.patchText).toContain("b/generated.json");
++        expect(warn).not.toHaveBeenCalled();
++      } finally {
++        warn.mockRestore();
++      }
++    }
++  });
++});
++
+ describe("bundled Git adapter helpers", () => {
+   test("statSignature distinguishes present from missing paths", () => {
+     const repo = createTempDir("hunk-git-statsig-");
+diff --git a/packages/hunk-git/src/index.ts b/packages/hunk-git/src/index.ts
+index e70e8da..568b6d9 100644
+--- a/packages/hunk-git/src/index.ts
++++ b/packages/hunk-git/src/index.ts
+@@ -28,6 +28,7 @@ import {
+   planGitHistoryRangeReview,
+ } from "./history";
+ import { gitEndpointSourceSpec, readGitFileSource } from "./source";
++import { excludeGeneratedPaths, generatedPaths } from "./generated";
+ import { commitReviewInfo, comparisonReviewInfo } from "@hunk/vcs/review-info";
+ import {
+   HUNK_VCS_DETECTION_BASELINE_PRIORITY,
+@@ -37,6 +38,7 @@ import {
+   type ExtensionVcsExtraFile,
+   type ExtensionVcsFileSourceReader,
+   type ExtensionVcsShowInput,
++  type ExtensionVcsStashShowInput,
+   type ExtensionVcsWatchPlan,
+   type HunkExtensionAPI,
+ } from "hunkdiff/extension";
+@@ -347,6 +349,40 @@ export interface GitVcsAdapterOptions {
+ export function createGitVcsAdapter({
+   gitExecutable = "git",
+ }: Readonly<GitVcsAdapterOptions> = {}) {
++  const warnedRepos = new Set<string>();
++  const warnFor = (repoRoot: string) => (message: string) => {
++    if (warnedRepos.has(repoRoot)) return;
++    warnedRepos.add(repoRoot);
++    console.warn(message);
++  };
++  const revisionWatchSignature = async (
++    input: ExtensionVcsShowInput | ExtensionVcsStashShowInput,
++    cwd: string,
++    signal?: AbortSignal,
++  ) => {
++    const context = { cwd, gitExecutable, signal, preventOptionalLocks: true };
++    const ref = await resolveGitCommitRefAsync(
++      input,
++      input.ref ?? (input.kind === "show" ? "HEAD" : "stash@{0}"),
++      context,
++    );
++    const pinnedInput = { ...input, ref };
++    const args =
++      pinnedInput.kind === "show"
++        ? buildGitShowArgs(pinnedInput)
++        : buildGitStashShowArgs(pinnedInput);
++    const patch = await runGitTextAsync({ input, args, ...context });
++    const repoRoot = await resolveGitRepoRootAsync(input, context);
++    const hidden = await generatedPaths(
++      pinnedInput,
++      args,
++      async () => ({ old: { kind: "git-ref", ref: `${ref}^` }, new: { kind: "git-ref", ref } }),
++      [],
++      { ...context, repoRoot },
++      warnFor(repoRoot),
++    );
++    return [patch, JSON.stringify([...hidden.paths])].join("\n---\n");
++  };
+   return {
+     id: "git",
+     name: "Git",
+@@ -433,8 +469,17 @@ export function createGitVcsAdapter({
+             gitExecutable,
+             signal,
+           });
+-          const largeTrackedFiles = parseGitNumstat(numstat).filter((file) =>
+-            shouldSkipLargeTrackedDiff(file, repoRoot),
++          const hidden = await generatedPaths(
++            patchInput,
++            buildGitDiffArgs(patchInput),
++            () =>
++              resolveGitDiffEndpointsAsync(patchInput, { cwd, repoRoot, gitExecutable, signal }),
++            untrackedPaths,
++            { cwd, repoRoot, gitExecutable, signal },
++            warnFor(repoRoot),
++          );
++          const largeTrackedFiles = parseGitNumstat(numstat).filter(
++            (file) => !hidden.paths.has(file.path) && shouldSkipLargeTrackedDiff(file, repoRoot),
+           );
+ 
+           return {
+@@ -443,10 +488,13 @@ export function createGitVcsAdapter({
+             title,
+             patchText: await runGitTextAsync({
+               input,
+-              args: buildGitDiffArgs(
+-                patchInput,
+-                largeTrackedFiles.map((file) => file.path),
+-                colorMoved,
++              args: excludeGeneratedPaths(
++                buildGitDiffArgs(
++                  patchInput,
++                  largeTrackedFiles.map((file) => file.path),
++                  colorMoved,
++                ),
++                hidden.paths,
+               ),
+               cwd,
+               gitExecutable,
+@@ -467,7 +515,7 @@ export function createGitVcsAdapter({
+             // diff in-process. Rendering them through `git diff --no-index`
+             // instead costs one subprocess per file, which made working-tree
+             // review scale with the untracked file count.
+-            untrackedPaths,
++            untrackedPaths: untrackedPaths.filter((path) => !hidden.paths.has(path)),
+           };
+         },
+         watchPlan(input, { cwd }) {
+@@ -498,7 +546,24 @@ export function createGitVcsAdapter({
+           const untrackedSignatures = untrackedPaths.map(
+             (filePath) => `untracked:${statSignature(join(repoRoot, filePath))}`,
+           );
+-          return [trackedPatch, ...untrackedSignatures].join("\n---\n");
++          const hidden = await generatedPaths(
++            input,
++            buildGitDiffArgs(input),
++            () =>
++              resolveGitDiffEndpointsAsync(input, {
++                cwd,
++                repoRoot,
++                gitExecutable,
++                signal,
++                preventOptionalLocks: true,
++              }),
++            untrackedPaths,
++            { cwd, repoRoot, gitExecutable, signal, preventOptionalLocks: true },
++            warnFor(repoRoot),
++          );
++          return [trackedPatch, ...untrackedSignatures, JSON.stringify([...hidden.paths])].join(
++            "\n---\n",
++          );
+         },
+       },
+       "revision-show": {
+@@ -524,6 +589,21 @@ export function createGitVcsAdapter({
+             )
+           )[0];
+           const patchInput: ExtensionVcsShowInput = { ...input, ref: revisionId };
++          const patchArgs = buildGitShowArgs(
++            patchInput,
++            await resolveGitColorMovedOptionsAsync(input, { cwd, gitExecutable, signal }),
++          );
++          const hidden = await generatedPaths(
++            patchInput,
++            patchArgs,
++            async () => ({
++              old: { kind: "git-ref", ref: `${revisionId}^` },
++              new: { kind: "git-ref", ref: revisionId },
++            }),
++            [],
++            { cwd, repoRoot, gitExecutable, signal },
++            warnFor(repoRoot),
++          );
+ 
+           return {
+             repoRoot,
+@@ -531,10 +611,7 @@ export function createGitVcsAdapter({
+             title: input.ref ? `${repoName} show ${input.ref}` : `${repoName} show HEAD`,
+             patchText: await runGitTextAsync({
+               input,
+-              args: buildGitShowArgs(
+-                patchInput,
+-                await resolveGitColorMovedOptionsAsync(input, { cwd, gitExecutable, signal }),
+-              ),
++              args: excludeGeneratedPaths(patchArgs, hidden.paths),
+               cwd,
+               gitExecutable,
+               signal,
+@@ -547,43 +624,44 @@ export function createGitVcsAdapter({
+           return buildGitWatchPlan(input, cwd, gitExecutable);
+         },
+         watchSignature(input, { cwd, signal }) {
+-          return runGitTextAsync({
+-            input,
+-            args: buildGitShowArgs(input),
+-            cwd,
+-            gitExecutable,
+-            preventOptionalLocks: true,
+-            signal,
+-          });
++          return revisionWatchSignature(input, cwd, signal);
+         },
+       },
+       "stash-show": {
+         async load(input, { cwd, signal }) {
+           const repoRoot = await resolveGitRepoRootAsync(input, { cwd, gitExecutable, signal });
+           const repoName = basename(repoRoot);
+-          const { revisionId: _revisionId, ...sourceCapability } =
+-            await createGitRevisionSourceCapabilityAsync(
+-              input,
+-              input.ref ?? "stash@{0}",
+-              repoRoot,
+-              gitExecutable,
+-              signal,
+-            );
++          const { revisionId, ...sourceCapability } = await createGitRevisionSourceCapabilityAsync(
++            input,
++            input.ref ?? "stash@{0}",
++            repoRoot,
++            gitExecutable,
++            signal,
++          );
++          const patchInput = { ...input, ref: revisionId };
++          const patchArgs = buildGitStashShowArgs(
++            patchInput,
++            await resolveGitColorMovedOptionsAsync(input, { cwd, gitExecutable, signal }),
++          );
++          const hidden = await generatedPaths(
++            patchInput,
++            patchArgs,
++            async () => ({
++              old: { kind: "git-ref", ref: `${revisionId}^` },
++              new: { kind: "git-ref", ref: revisionId },
++            }),
++            [],
++            { cwd, repoRoot, gitExecutable, signal },
++            warnFor(repoRoot),
++          );
+ 
+           return {
+             repoRoot,
+             sourceLabel: repoRoot,
+             title: input.ref ? `${repoName} stash ${input.ref}` : `${repoName} stash`,
+-            patchText: await runGitTextAsync({
+-              input,
+-              args: buildGitStashShowArgs(
+-                input,
+-                await resolveGitColorMovedOptionsAsync(input, { cwd, gitExecutable, signal }),
+-              ),
+-              cwd,
+-              gitExecutable,
+-              signal,
+-            }),
++            patchText: hidden.filterPatch(
++              await runGitTextAsync({ input, args: patchArgs, cwd, gitExecutable, signal }),
++            ),
+             ...sourceCapability,
+           };
+         },
+@@ -591,14 +669,7 @@ export function createGitVcsAdapter({
+           return buildGitWatchPlan(input, cwd, gitExecutable);
+         },
+         watchSignature(input, { cwd, signal }) {
+-          return runGitTextAsync({
+-            input,
+-            args: buildGitStashShowArgs(input),
+-            cwd,
+-            gitExecutable,
+-            preventOptionalLocks: true,
+-            signal,
+-          });
++          return revisionWatchSignature(input, cwd, signal);
+         },
+       },
+     },
+diff --git a/packages/hunk/src/app/cli.test.ts b/packages/hunk/src/app/cli.test.ts
+index e2fd57d..9c85d29 100644
+--- a/packages/hunk/src/app/cli.test.ts
++++ b/packages/hunk/src/app/cli.test.ts
+@@ -14,6 +14,36 @@ import { persistResumableReview } from "../core/resumableReview";
+ 
+ const tempDirs: string[] = [];
+ 
++test("include-generated is carried by Git commands and session reload requests", async () => {
++  for (const command of [
++    ["diff", "--watch"],
++    ["diff", "--staged"],
++    ["show", "HEAD"],
++    ["stash", "show"],
++  ]) {
++    const parsed = await parseCli(["bun", "hunk", ...command, "--include-generated"]);
++    if (parsed.kind !== "vcs" && parsed.kind !== "show" && parsed.kind !== "stash-show")
++      throw new Error("expected review");
++    expect(parsed.options.includeGenerated).toBe(true);
++    const help = await parseCli(["bun", "hunk", ...command, "--help"]);
++    expect(help.kind === "help" && help.text).toContain("--include-generated");
++  }
++  const parsed = await parseCli([
++    "bun",
++    "hunk",
++    "session",
++    "reload",
++    "review",
++    "--",
++    "diff",
++    "--include-generated",
++  ]);
++  expect(parsed).toMatchObject({
++    kind: "session",
++    nextInput: { options: { includeGenerated: true } },
++  });
++});
++
+ function createTempDir(prefix: string) {
+   const dir = mkdtempSync(join(tmpdir(), prefix));
+   tempDirs.push(dir);
+diff --git a/packages/hunk/src/app/cli.ts b/packages/hunk/src/app/cli.ts
+index 8121d1a..dac1deb 100644
+--- a/packages/hunk/src/app/cli.ts
++++ b/packages/hunk/src/app/cli.ts
+@@ -122,6 +122,10 @@ export const COMMON_REVIEW_OPTIONS = [
+   },
+   AUXILIARY_AGENT_OPTIONS.agentContext,
+   { flag: "--pager", description: "use pager-style chrome" },
++  {
++    flag: "--include-generated",
++    description: "include Git paths hidden by linguist-generated attributes",
++  },
+   AUXILIARY_AGENT_OPTIONS.experimental,
+   {
+     flag: "--fast",
+@@ -531,6 +535,7 @@ function buildCommonOptions(
+         ? true
+         : undefined,
+     fast: options.fast || hasPrefixedReviewFlag(argv, "--fast") ? true : undefined,
++    includeGenerated: resolveBooleanFlag(argv, "--include-generated", "--no-include-generated"),
+     excludeUntracked: resolveBooleanFlag(
+       argv,
+       AUXILIARY_AGENT_OPTIONS.excludeUntracked.flag,
+diff --git a/packages/hunk/src/core/changeset/loaders.test.ts b/packages/hunk/src/core/changeset/loaders.test.ts
+index b326e32..37afe0f 100644
+--- a/packages/hunk/src/core/changeset/loaders.test.ts
++++ b/packages/hunk/src/core/changeset/loaders.test.ts
+@@ -24,6 +24,36 @@ import { computeWatchSignature } from "../watch/signature";
+ 
+ const tempDirs: string[] = [];
+ 
++test("generated Git attributes do not filter patch, concrete-file or difftool inputs", async () => {
++  const repo = createTempRepo("hunk-generated-nongit-");
++  writeFileSync(join(repo, ".gitattributes"), "*.json linguist-generated\n");
++  writeFileSync(join(repo, "generated.json"), "old\n");
++  git(repo, "add", ".");
++  git(repo, "commit", "-m", "base");
++  writeFileSync(join(repo, "generated.json"), "new\n");
++  writeFileSync(join(repo, "before.json"), "old\n");
++  const text = git(repo, "diff", "--", "generated.json");
++  for (const includeGenerated of [false, true]) {
++    const options = { includeGenerated };
++    const inputs: CliInput[] = [
++      { kind: "patch", text, options },
++      { kind: "diff", left: "before.json", right: "generated.json", options },
++      {
++        kind: "difftool",
++        left: "before.json",
++        right: "generated.json",
++        path: "generated.json",
++        options,
++      },
++    ];
++    for (const input of inputs) {
++      const result = await loadAppBootstrap(input, { cwd: repo });
++      expect(result.changeset.files.map((file) => file.path)).toEqual(["generated.json"]);
++      expect(result.changeset.files[0]!.patch).toContain("+new");
++    }
++  }
++});
++
+ // This integration-like suite starts many real VCS processes. Hosted Windows runners can spend
+ // more than Bun's default five seconds on one test while the suite remains bounded overall.
+ setDefaultTimeout(30_000);
+@@ -154,6 +184,38 @@ const jjTest = Bun.which("jj") ? test : test.skip;
+ // Keep sl-backed loader coverage opt-in on machines that have the external CLI installed.
+ const slTest = Bun.which("sl") ? test : test.skip;
+ 
++for (const vcs of ["jj", "sl"] as const) {
++  const vcsTest = vcs === "jj" ? jjTest : slTest;
++  vcsTest(
++    `${vcs} reviews ignore generated Git attributes with either override choice`,
++    async () => {
++      const repo =
++        vcs === "jj"
++          ? createTempJjRepo("hunk-generated-jj-")
++          : createTempSlRepo("hunk-generated-sl-");
++      writeFileSync(join(repo, ".gitattributes"), "*.json linguist-generated\n");
++      for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "old\n");
++      if (vcs === "jj") jj(repo, "commit", "-m", "base");
++      else {
++        sl(repo, "add", ".gitattributes", "generated.json", "plain.txt");
++        sl(repo, "commit", "-m", "base");
++      }
++      for (const path of ["generated.json", "plain.txt"]) writeFileSync(join(repo, path), "new\n");
++      for (const includeGenerated of [false, true]) {
++        const result = await loadAppBootstrap(
++          { kind: "vcs", staged: false, options: { vcs, includeGenerated } },
++          { cwd: repo },
++        );
++        expect(result.changeset.files.map((file) => file.path)).toEqual([
++          "generated.json",
++          "plain.txt",
++        ]);
++        expect(result.changeset.files[0]!.patch).toContain("+new");
++      }
++    },
++  );
++}
++
+ async function runWithHome<T>(home: string, task: () => Promise<T>) {
+   const previousHome = process.env.HOME;
+   process.env.HOME = home;
+diff --git a/packages/hunk/src/core/resumableReview.test.ts b/packages/hunk/src/core/resumableReview.test.ts
+index 5248262..f48ba4e 100644
+--- a/packages/hunk/src/core/resumableReview.test.ts
++++ b/packages/hunk/src/core/resumableReview.test.ts
+@@ -58,6 +58,7 @@ describe("resumable review markers", () => {
+           copyDecorations: true,
+           cursorLine: "number",
+           excludeUntracked: true,
++          includeGenerated: true,
+           experimental: true,
+           extensionPaths: ["extension.ts"],
+           extensions: false,
+@@ -79,6 +80,12 @@ describe("resumable review markers", () => {
+           wrapLines: true,
+         },
+       },
++      {
++        kind: "vcs",
++        rangeEndpoints: { from: "HEAD~2", to: "HEAD~1" },
++        staged: false,
++        options: { includeGenerated: false, watch: true },
++      },
+       {
+         kind: "show",
+         ref: "HEAD",
+diff --git a/packages/hunk/src/core/resumableReview.ts b/packages/hunk/src/core/resumableReview.ts
+index 8471bd8..c2ac13f 100644
+--- a/packages/hunk/src/core/resumableReview.ts
++++ b/packages/hunk/src/core/resumableReview.ts
+@@ -43,6 +43,7 @@ function readCommonOptions(value: unknown): CommonOptions | null {
+     "experimental",
+     "fast",
+     "excludeUntracked",
++    "includeGenerated",
+     "lineNumbers",
+     "wrapLines",
+     "hunkHeaders",
+@@ -97,13 +98,26 @@ function readCliInput(value: unknown): CliInput | null {
+       const range = readOptionalString(value.range);
+       const pathspecs = readOptionalStrings(value.pathspecs);
+       if (typeof value.staged !== "boolean" || range === null || pathspecs === null) return null;
+-      return {
+-        kind: "vcs",
+-        ...(range === undefined ? {} : { range }),
++      const common = {
++        kind: "vcs" as const,
+         staged: value.staged,
+         ...(pathspecs === undefined ? {} : { pathspecs }),
+         options,
+       };
++      if (value.rangeEndpoints !== undefined) {
++        const endpoints = value.rangeEndpoints;
++        if (
++          range !== undefined ||
++          !isRecord(endpoints) ||
++          typeof endpoints.from !== "string" ||
++          !endpoints.from ||
++          typeof endpoints.to !== "string" ||
++          !endpoints.to
++        )
++          return null;
++        return { ...common, rangeEndpoints: { from: endpoints.from, to: endpoints.to } };
++      }
++      return { ...common, ...(range === undefined ? {} : { range }) };
+     }
+     case "show": {
+       const ref = readOptionalString(value.ref);
+diff --git a/packages/hunk/src/core/run/commandInputs.ts b/packages/hunk/src/core/run/commandInputs.ts
+index 9eb4528..cf68541 100644
+--- a/packages/hunk/src/core/run/commandInputs.ts
++++ b/packages/hunk/src/core/run/commandInputs.ts
+@@ -47,6 +47,7 @@ export interface CommonOptions {
+   /** Offload eligible syntax highlighting for this launch. */
+   fast?: boolean;
+   excludeUntracked?: boolean;
++  includeGenerated?: boolean;
+   lineNumbers?: boolean;
+   tabWidth?: number;
+   /** Blank rows between files in the review stream, including the `─` rule. */
+diff --git a/packages/hunk/src/core/run/config.ts b/packages/hunk/src/core/run/config.ts
+index 71d1c68..86007c9 100644
+--- a/packages/hunk/src/core/run/config.ts
++++ b/packages/hunk/src/core/run/config.ts
+@@ -1102,6 +1102,7 @@ function mergeOptions(base: CommonOptions, overrides: CommonOptions): CommonOpti
+     experimental: overrides.experimental ?? base.experimental,
+     fast: overrides.fast ?? base.fast,
+     excludeUntracked: overrides.excludeUntracked ?? base.excludeUntracked,
++    includeGenerated: overrides.includeGenerated ?? base.includeGenerated,
+     lineNumbers: overrides.lineNumbers ?? base.lineNumbers,
+     tabWidth: overrides.tabWidth ?? base.tabWidth,
+     fileGap: overrides.fileGap ?? base.fileGap,
+diff --git a/packages/hunk/src/extension-api/types.ts b/packages/hunk/src/extension-api/types.ts
+index fe9d46e..ee650c9 100644
+--- a/packages/hunk/src/extension-api/types.ts
++++ b/packages/hunk/src/extension-api/types.ts
+@@ -728,6 +728,8 @@ export interface ExtensionVcsLoadContext {
+ export interface ExtensionVcsReviewOptions {
+   /** True when the user asked for tracked changes only (`--exclude-untracked`). */
+   excludeUntracked?: boolean;
++  /** Include Git paths marked linguist-generated (`--include-generated`). */
++  includeGenerated?: boolean;
+   /**
+    * True when the user asked for moved lines to be detected (`--color-moved`).
+    *
+diff --git a/packages/hunk/src/session/protocolSchemas.test.ts b/packages/hunk/src/session/protocolSchemas.test.ts
+index c2994f9..567082b 100644
+--- a/packages/hunk/src/session/protocolSchemas.test.ts
++++ b/packages/hunk/src/session/protocolSchemas.test.ts
+@@ -45,6 +45,16 @@ const _dualSelectorIsNotCliInput: CliInput = {
+   options: {},
+ };
+ void _dualSelectorIsNotCliInput;
++
++test("session review inputs retain include-generated through wire validation", () => {
++  const input = {
++    kind: "vcs",
++    staged: false,
++    options: { includeGenerated: true, watch: true },
++  } as const;
++  expect(cliInputSchema.parse(input)).toEqual(input);
++});
++
+ // @ts-expect-error Comment creation requires either a root anchor or a reply parent.
+ const _targetlessCommentIsNotACommand: SessionCommentAddCommandInput = {
+   kind: "session",
+diff --git a/packages/hunk/src/session/protocolSchemas.ts b/packages/hunk/src/session/protocolSchemas.ts
+index e359808..0580ed0 100644
+--- a/packages/hunk/src/session/protocolSchemas.ts
++++ b/packages/hunk/src/session/protocolSchemas.ts
+@@ -73,6 +73,7 @@ const commonOptionsSchema = z.strictObject({
+   experimental: z.boolean().optional(),
+   fast: z.boolean().optional(),
+   excludeUntracked: z.boolean().optional(),
++  includeGenerated: z.boolean().optional(),
+   lineNumbers: z.boolean().optional(),
+   tabWidth: z.int().positive().optional(),
+   fileGap: z.int().nonnegative().optional(),
+diff --git a/packages/hunk/src/ui/AppHost.reload.test.tsx b/packages/hunk/src/ui/AppHost.reload.test.tsx
+index 07811d9..bd256e4 100644
+--- a/packages/hunk/src/ui/AppHost.reload.test.tsx
++++ b/packages/hunk/src/ui/AppHost.reload.test.tsx
+@@ -14,6 +14,7 @@ import type {
+   HunkSessionSnapshot,
+ } from "../session/types";
+ import { ThemeController } from "./theme/controller";
++import { loadResumableReview, persistResumableReview } from "../core/resumableReview";
+ 
+ const { getBundledVcsCatalog } = await import("../app/vcsCatalog");
+ const { loadAppBootstrap } = await import("../core/changeset/loaders");
+@@ -127,6 +128,67 @@ function createReloadThemeRepository() {
+   return { configPath, dir };
+ }
+ 
++describe("generated review reloads", () => {
++  test("keeps the resumed include-generated choice during manual and watched reloads", async () => {
++    for (const includeGenerated of [false, true]) {
++      const { dir } = createReloadThemeRepository();
++      writeFileSync(join(dir, ".gitattributes"), "generated.json linguist-generated\n");
++      writeFileSync(join(dir, "generated.json"), "base generated\n");
++      execSync("git add . && git commit -m generated", { cwd: dir, stdio: "ignore" });
++      writeFileSync(join(dir, "generated.json"), "GENERATED_CONTENT\n");
++      writeFileSync(join(dir, "test.txt"), "PLAIN_INITIAL\n");
++      persistResumableReview(
++        {
++          kind: "vcs",
++          staged: false,
++          options: { mode: "unified", includeGenerated, watch: true, excludeUntracked: true },
++        },
++        dir,
++      );
++      const resumed = loadResumableReview(dir);
++      if (!resumed) throw new Error("expected resumable review");
++      const bootstrap = await loadAppBootstrap(resumed, {
++        cwd: dir,
++        vcsCatalog: getBundledVcsCatalog(),
++      });
++      expect(bootstrap.changeset.files.map((file) => file.path)).toEqual(
++        includeGenerated ? ["generated.json", "test.txt"] : ["test.txt"],
++      );
++      const setup = await testRender(<AppHost bootstrap={bootstrap} />, { width: 120, height: 40 });
++      try {
++        await flush(setup);
++        expect(setup.captureCharFrame().includes("GENERATED_CONTENT")).toBe(includeGenerated);
++        await act(async () => {
++          await setup.mockInput.typeText("r");
++        });
++        for (let attempt = 0; attempt < 10; attempt++) {
++          await flush(setup);
++          await Bun.sleep(30);
++        }
++        expect(setup.captureCharFrame().includes("GENERATED_CONTENT")).toBe(includeGenerated);
++        writeFileSync(join(dir, "test.txt"), "PLAIN_WATCHED\n");
++        let refreshed = false;
++        for (let attempt = 0; attempt < 60; attempt++) {
++          await flush(setup);
++          if (setup.captureCharFrame().includes("PLAIN_WATCHED")) {
++            refreshed = true;
++            break;
++          }
++          await Bun.sleep(50);
++        }
++        expect(refreshed).toBe(true);
++        expect(setup.captureCharFrame().includes("GENERATED_CONTENT")).toBe(includeGenerated);
++        expect(loadResumableReview(dir)?.options.includeGenerated).toBe(includeGenerated);
++      } finally {
++        await act(async () => {
++          setup.renderer.destroy();
++        });
++        await removeTestDirectory(dir);
++      }
++    }
++  }, 15_000);
++});
++
+ describe("reload theme catalog", () => {
+   test("adopts reloaded custom themes without replacing the committed theme", async () => {
+     const { configPath, dir } = createReloadThemeRepository();
+diff --git a/website/src/content/docs/docs/reference/cli.md b/website/src/content/docs/docs/reference/cli.md
+index 07ff30f..b6a8e9d 100644
+--- a/website/src/content/docs/docs/reference/cli.md
++++ b/website/src/content/docs/docs/reference/cli.md
+@@ -23,6 +23,7 @@ This reference is generated from the command metadata used by Hunk itself. Run `
+ | `--theme <theme>`              | named theme override                                            |
+ | `--agent-context <path>`       | JSON sidecar with agent rationale                               |
+ | `--pager`                      | use pager-style chrome                                          |
++| `--include-generated`          | include Git paths hidden by linguist-generated attributes       |
+ | `--experimental`               | enable experimental features (currently STML agent-note markup) |
+ | `--fast`                       | experimentally offload eligible syntax highlighting             |
+ | `--line-numbers`               | show line numbers                                               |
+diff --git a/website/src/content/docs/docs/workflows/working-trees-and-commits.md b/website/src/content/docs/docs/workflows/working-trees-and-commits.md
+index 55523f5..28b86b8 100644
+--- a/website/src/content/docs/docs/workflows/working-trees-and-commits.md
++++ b/website/src/content/docs/docs/workflows/working-trees-and-commits.md
+@@ -24,6 +24,36 @@ hunk diff --staged
+ hunk diff --cached
+ ```
+ 
++## Generated Git files
++
++Git-backed reviews hide paths when Git resolves `linguist-generated` as `set`
++or `true`. Explicit `false`, unset attributes, and unspecified paths stay visible.
++Git resolves nested `.gitattributes` rules and its normal attribute precedence;
++Hunk does not maintain a separate ignore file.
++
++Use `--include-generated` when those paths need review:
++
++```bash
++hunk diff --include-generated
++hunk diff --staged --include-generated
++hunk show HEAD --include-generated
++hunk stash show --include-generated
++```
++
++Working-tree reviews use working-tree attributes with Git's index fallback.
++Staged reviews use index attributes. Commit and range reviews use the right/new
++revision, including the destination path for renames. Deleted paths use the
++old revision or index. Stash reviews use the stash snapshot and its first parent.
++Git's local and global attribute overrides still apply.
++
++The choice survives reload, `hunk resume`, and watch refreshes. A new review
++command defaults to hiding generated paths unless it includes the flag.
++Attribute lookup failures keep files visible and report one bounded warning.
++Git versions without `check-attr --source` fail open for revision attributes;
++upgrade Git or use `--include-generated` to skip the lookup.
++
++Patch, concrete-file, difftool, Jujutsu, and Sapling inputs do not use this filter.
++
+ ## Compare against a target
+ 
+ ```bash
