@@ -553,6 +553,10 @@
                   if [ ! -e "$entry" ] && [ ! -L "$entry" ]; then
                     continue
                   fi
+                  # Claude Code keeps its own claude.ai skill sync in synced/.
+                  if [ "''${entry##*/}" = synced ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
                   if [ ! -L "$entry" ]; then
                     module_managed=0
                     break
