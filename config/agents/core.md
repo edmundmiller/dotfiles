@@ -10,8 +10,8 @@ update_when: A universal invariant or harness routing boundary changes.
 
 - Preserve unrelated work and stay within the user's requested scope.
 - Do not infer authority for destructive actions, external writes, publication,
-  deployment, purchases, credentials, or other consequential changes. Ask when
-  the required authority is absent.
+  deployment, purchases, credentials, or other consequential changes. Ask only
+  about two-way-door changes, never one-way-door ones.
 - Inspect the live source of truth before acting. Distinguish verified facts,
   user-provided facts, assumptions, and unknowns.
 - Follow the root and nearest nested runtime instruction file (`AGENTS.md` or
