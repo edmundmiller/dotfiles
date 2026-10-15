@@ -179,6 +179,16 @@ in
       };
 
       agents = {
+        mcp = {
+          enable = true;
+          agents.amp = true;
+          servers = {
+            github.enable = true;
+            linear.enable = true;
+            fff.enable = true;
+            openaiDeveloperDocs.enable = true;
+          };
+        };
         pi = {
           enable = true;
           secretReferences = {

@@ -19,72 +19,6 @@ let
     else
       builtins.toJSON ompPermissionParsedResult.value;
   lsp = import ./_lsp.nix { inherit pkgs; };
-  mcpServerType = types.submodule {
-    options = {
-      type = mkOption {
-        type = types.enum [
-          "stdio"
-          "http"
-          "sse"
-        ];
-        default = "stdio";
-      };
-      command = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-      };
-      args = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-      };
-      env = mkOption {
-        type = types.attrsOf types.str;
-        default = { };
-      };
-      cwd = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-      };
-      url = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-      };
-      headers = mkOption {
-        type = types.attrsOf types.str;
-        default = { };
-      };
-      enabled = mkOption {
-        type = types.nullOr types.bool;
-        default = null;
-      };
-      timeout = mkOption {
-        type = types.nullOr types.int;
-        default = null;
-      };
-    };
-  };
-  renderMcpServer =
-    server:
-    filterAttrs
-      (
-        _: value:
-        value != null
-        && (!builtins.isList value || value != [ ])
-        && (!builtins.isAttrs value || value != { })
-      )
-      {
-        inherit (server)
-          type
-          command
-          args
-          env
-          cwd
-          url
-          headers
-          enabled
-          timeout
-          ;
-      };
   hassMcpServer = pkgs.writeShellScriptBin "omp-ha-mcp-server" ''
     set -euo pipefail
 
@@ -261,10 +195,6 @@ let
   # build-time overlays so Seqeratop and MacTraitorPro can diverge without
   # copying the whole config.
   baseConfig = ../../../config/omp/config.yml;
-  baseMcpConfig = builtins.fromJSON (builtins.readFile ../../../config/omp/mcp.json);
-  fffMcpServer = baseMcpConfig.mcpServers.fff // {
-    command = "${pkgs.my.fff-mcp}/bin/fff-mcp";
-  };
   configOverrides = [
     ".internalUrls.herdr = ${if config.modules.shell.herdr.enable then "true" else "false"}"
     ".internalUrls.hunk = ${if config.modules.shell.git.hunk.enable then "true" else "false"}"
@@ -290,17 +220,6 @@ let
       pkgs.runCommand "omp-config.yml" { nativeBuildInputs = [ pkgs.yq-go ]; } ''
         yq eval ${lib.escapeShellArg (concatStringsSep " | " configOverrides)} ${baseConfig} > "$out"
       '';
-  ompMcpConfigFile = pkgs.writeText "omp-mcp.json" (
-    builtins.toJSON (
-      baseMcpConfig
-      // {
-        mcpServers =
-          (baseMcpConfig.mcpServers // { fff = fffMcpServer; })
-          // mapAttrs (_: renderMcpServer) cfg.mcpServers;
-        disabledServers = unique (baseMcpConfig.disabledServers ++ cfg.disabledMcpServers);
-      }
-    )
-  );
   threadIntrospectionPrompt = "${config.user.home}/.config/dotfiles/config/omp/prompts/thread-introspection.md";
   threadIntrospection = pkgs.writeShellScriptBin "omp-thread-introspection" ''
     set -euo pipefail
@@ -545,28 +464,6 @@ in
       example.default = "cursor/composer-2.5";
       description = "Per-host modelRoles overrides overlaid onto config/omp/config.yml.";
     };
-    mcpServers = mkOption {
-      type = types.attrsOf mcpServerType;
-      default = { };
-      apply = mapAttrs (
-        name: server:
-        if server.type == "stdio" then
-          if server.command != null && server.url == null then
-            server
-          else
-            throw "modules.agents.omp.mcpServers.${name}: stdio servers require command and forbid url"
-        else if server.command == null && server.url != null then
-          server
-        else
-          throw "modules.agents.omp.mcpServers.${name}: ${server.type} servers require url and forbid command"
-      );
-      description = "Host-specific MCP server definitions merged over config/omp/mcp.json.";
-    };
-    disabledMcpServers = mkOption {
-      type = types.listOf types.str;
-      default = [ ];
-      description = "Additional inherited MCP server names to disable on this host.";
-    };
     retry = {
       modelFallback = mkOption {
         type = types.nullOr types.bool;
@@ -641,11 +538,6 @@ in
         source = ompConfigFile;
         force = true;
       };
-      home.file.".omp/agent/mcp.json" = {
-        source = ompMcpConfigFile;
-        force = true;
-      };
-
       home.file.".omp/agent/commands/go.md" = {
         source = "${configDir}/omp/commands/go.md";
         force = true;

@@ -216,11 +216,6 @@ in
       default = null;
       description = "Optional override for Pi settings defaultModel. Null keeps config/pi/settings.jsonc.";
     };
-    mcp.enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Configure Pi's native MCP servers from config/pi/mcp.json.";
-    };
     computerUse.enable = mkOption {
       type = types.bool;
       default = desktopPiHost;
@@ -373,7 +368,6 @@ in
             piPermissionSystemConfig
             ;
           inherit (settings) piSettingsValidated;
-          mcpEnabled = cfg.mcp.enable;
         };
 
         home.activation = import ./lib/_activation.nix {

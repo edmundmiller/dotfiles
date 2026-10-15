@@ -50,16 +50,19 @@ the other agents in the shared `llm-agents` input. Check the effective version
 with `nix eval --raw .#pi.version`, then build with `nix build .#pi`.
 
 `config/pi/settings.jsonc` enables codemode alongside the ordinary tools.
-`config/pi/mcp.json` supplies GitHub and Linear through native MCP, with tools
-available through codemode rather than loading every tool into each prompt.
-GitHub uses the current `gh auth token` at runtime. Linear needs a one-time
+The host catalog in `modules.agents.mcp` supplies native MCP registrations in
+writable `~/.pi/agent/mcp.json`, with tools available through codemode rather
+than loading every tool into each prompt. GitHub's stdio launcher reads
+`gh auth token` at process start. Linear needs a one-time
 `pi mcp login linear`; its credentials stay in writable `~/.pi/agent/mcp-auth.json`.
 Use `pi mcp list` and `/mcp` to check connections.
 
-The MCP configuration is Nix-managed. Edit its repo source rather than running
-`pi mcp add` against the read-only global file. Project-specific servers can
-live in `.pi/mcp.json` after project trust. `modules.agents.pi.mcp.enable = false`
-omits the managed global server file; it does not disable project MCP servers.
+Edit catalog-owned registrations in the host configuration. Reconciliation
+preserves unrelated servers and settings; matching catalog names are host-owned.
+Project-specific servers can live in `.pi/mcp.json` after project trust.
+`modules.agents.mcp.agents.pi = false` removes host-managed Pi registrations;
+it does not disable project MCP servers. See [ADR 0013](../../../docs/adr/0013-host-owned-agent-mcp.md)
+for ownership and the focused adapter test.
 Do not reinstall `pi-mcp-adapter`: its `/mcp` command replaces native MCP.
 
 Hosts with Herdr 0.7.5+ use `@ogulcancelik/pi-herdr@0.4.0` for pane/layout/agent

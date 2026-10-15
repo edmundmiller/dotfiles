@@ -66,6 +66,13 @@ CHECKS = {
         "docs/agent-guardrails.md",
         "docs/validation.md",
     ],
+    "agent-mcp-tests": [
+        "config/agents/mcp.nix",
+        "config/agents/reconcile_mcp.py",
+        "modules/agents/mcp/*",
+        "tests/test_agent_mcp.py",
+        "hosts/*/default.nix",
+    ],
     "omp-thin-harness-tests": [
         "AGENTS.md",
         "config/agents/AGENTS.md",

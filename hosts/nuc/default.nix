@@ -2420,6 +2420,16 @@ in
       herdr.enable = true;
     };
     agents = {
+      mcp = {
+        enable = true;
+        agents.amp = true;
+        servers = {
+          github.enable = true;
+          linear.enable = true;
+          fff.enable = true;
+          openaiDeveloperDocs.enable = true;
+        };
+      };
       codex.enable = true;
       omp.enable = false;
       opencode.enable = true;

@@ -1323,6 +1323,25 @@
                 touch "$out"
               '';
 
+              agent-mcp-tests =
+                pkgs.runCommand "agent-mcp-tests"
+                  {
+                    MCP_NIX_FIXTURE = pkgs.writeText "mcp-migration-fixture.json" ''
+                      {"custom":"preserved","mcpServers":{}}
+                    '';
+                    nativeBuildInputs = [
+                      (pkgs.python3.withPackages (p: [
+                        p.json5
+                        p.tomlkit
+                      ]))
+                    ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_agent_mcp
+                    touch "$out"
+                  '';
+
               omp-thin-harness-tests =
                 pkgs.runCommand "omp-thin-harness-tests"
                   {

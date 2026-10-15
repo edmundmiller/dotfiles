@@ -113,6 +113,17 @@
       };
 
       agents = {
+        mcp = {
+          enable = true;
+          agents.amp = true;
+          servers = {
+            github.enable = true;
+            seqera.enable = true;
+            linear.enable = false;
+            fff.enable = true;
+            openaiDeveloperDocs.enable = true;
+          };
+        };
         pi = {
           enable = true;
           # Work host cycles only Sol 6.1 and Luna 6; shared defaults add Astra.
@@ -130,7 +141,6 @@
         claude.enable = true;
         codex = {
           enable = true;
-          seqeraMcp.enable = true;
         };
         omp = {
           enable = false;
@@ -255,10 +265,6 @@
           # active Ghostty SeqeraDark/Light palette directly.
           themeDark = "dark-seqera";
           themeLight = "light-seqera";
-          mcpServers.seqera = {
-            type = "http";
-            url = "https://mcp.seqera.io/mcp";
-          };
           # Wire omp to the VibeProxy menu-bar app (installed via the vibeproxy
           # homebrew cask). Exposes Claude/GPT subscription models on :8317 as
           # vibeproxy/* selectors; see config/omp/models.yml.
