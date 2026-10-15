@@ -13,11 +13,39 @@ Intelligently prunes conversation context to optimize token usage while preservi
 
 ## Installation
 
-Clone the repository into your pi agent extensions directory:
+The published package can be managed by Pi:
 
 ```bash
-git clone https://github.com/zenobi-us/pi-dcp.git ~/.pi/agent/extensions/pi-dcp
+pi install npm:@edmundmiller/pi-dcp
 ```
+
+Or add `"npm:@edmundmiller/pi-dcp"` to `packages` in Pi's `settings.json`.
+The published package is currently `@edmundmiller/pi-dcp@0.1.1`; this repository
+contains `pi-dcp@0.2.0`. Repository changes do not update the npm release.
+
+To use this checkout, run `npm ci --workspaces=false` in
+`packages/pi-packages/pi-dcp`, then register that directory with
+`pi install /absolute/path/to/dotfiles/packages/pi-packages/pi-dcp`.
+Pi loads local packages in place and does not install their dependencies.
+
+### npm lifecycle regression
+
+[Issue #15](https://github.com/edmundmiller/dotfiles/issues/15) came from
+`bunfig@0.15.6` pulling in `@stacksjs/clapp@0.2.0` and
+`@stacksjs/clarity@0.3.24`. Their postinstall scripts ran `bunx git-hooks` and
+failed. The repository now requires `bunfig >=0.15.19 <0.16.0`, which no longer
+depends on clapp, and locks clarity to `0.3.33`, which has no postinstall script.
+
+Fresh installs of the published `0.1.1` also resolved to those working versions
+when checked on 2026-10-12. Existing consumer lockfiles can still retain the
+broken versions and need a targeted dependency update. No replacement scoped
+npm release was published with this repository fix.
+
+Run `bun test tests/install.test.ts` from this directory to check locked
+`npm ci` and local/global-prefix installations of an `npm pack` tarball. The
+test uses disposable homes, caches and prefixes, runs normal lifecycle scripts,
+and loads the installed extension. It requires registry access, Node, npm and
+Bun. Do not use `--ignore-scripts` as evidence that npm installation works.
 
 ## Usage
 
