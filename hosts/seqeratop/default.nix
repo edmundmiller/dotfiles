@@ -23,6 +23,7 @@
         nextflow.enable = true;
         node.enable = true;
         node.useFnm = true;
+        node.bunGlobalPackages = [ "@excalidraw/cli@0.2.0" ];
         python.enable = true;
         python.conda.enable = true;
       };

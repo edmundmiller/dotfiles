@@ -98,6 +98,7 @@ in
         node.useFnm = true;
         node.bunGlobalPackages = [
           "critique@0.1.139"
+          "@excalidraw/cli@0.2.0"
           "vercel@58.9.0"
         ];
         # FIXME: Python disabled - bundled whisper currently includes Python 3.13
