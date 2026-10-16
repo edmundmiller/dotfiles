@@ -19,8 +19,7 @@ rex.bind("ctrl+c>b", "client.sidebar.toggle")
 -- vary by client; block_id must be explicit even though session_id is inferred.
 local directions = { h = "left", j = "down", k = "up", l = "right" }
 for key, direction in pairs(directions) do
-  -- Leave bare Ctrl+H/J/K/L to the shell, editors, and coding agents.
-  rex.unbind("ctrl+" .. key)
+  -- Bare Ctrl+H/J/K/L are unbound by default and pass through to applications.
   rex.bind("ctrl+c>" .. key, function(ctx)
     local _, err = rex.session.focus_direction({
       block_id = ctx.block_id,
