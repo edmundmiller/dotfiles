@@ -43,6 +43,9 @@
     "npm:pi-cache-graph",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/packages/pi-packages/pi-direnv",
+    // Rex location, installed guide, pane captures, and native task status.
+    // Automatic integration stays dormant outside Rex terminals.
+    "~/.config/dotfiles/packages/pi-packages/pi-rex",
     // Force non-interactive bash defaults + block interactive hang patterns
     "~/.config/dotfiles/packages/pi-packages/pi-non-interactive",
     // ast-grep outline/search/rewrite/scan tools - vendored from https://github.com/joelhooks/pi-ast-grep
