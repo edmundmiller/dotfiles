@@ -990,6 +990,36 @@
                 files = "\\.(ts|js|nix)$";
                 stages = [ "pre-push" ];
               };
+              rex-config = {
+                enable = pkgs.stdenv.hostPlatform.isDarwin;
+                name = "rex-config";
+                description = "Validate Rex Lua configuration with the installed CLI";
+                entry = toString (
+                  pkgs.writeShellScript "rex-config" ''
+                    set -euo pipefail
+                    rex_bin=$(command -v rex || true)
+                    if [ -z "$rex_bin" ]; then
+                      for app in "/Applications/Rex Beta.app" "/Applications/Rex.app" \
+                        "$HOME/Applications/Rex Beta.app" "$HOME/Applications/Rex.app"; do
+                        candidate="$app/Contents/Helpers/Rex Server.app/Contents/MacOS/rex"
+                        if [ -x "$candidate" ]; then
+                          rex_bin="$candidate"
+                          break
+                        fi
+                      done
+                    fi
+                    if [ -z "$rex_bin" ]; then
+                      echo "rex-config: install Rex or put its CLI on PATH to validate config/rex/init.lua" >&2
+                      exit 1
+                    fi
+                    exec "$rex_bin" config check config/rex/init.lua
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "^config/rex/init\\.lua$";
+                stages = [ "pre-commit" ];
+              };
               pi-settings-json = {
                 enable = true;
                 name = "pi-settings-json";

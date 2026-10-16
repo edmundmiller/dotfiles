@@ -26,6 +26,15 @@ Validate a draft on a Mac with Rex installed:
 rex config check config/rex/init.lua
 ```
 
+The macOS `rex-config` pre-commit hook runs this check whenever `init.lua`
+changes. `hey check config/rex` runs it too. It finds the CLI on `PATH` or in
+Rex's app bundle under `/Applications` or `~/Applications`. Missing Rex fails
+with an installation hint. Linux omits this hook. Re-enter the dev shell to
+refresh installed hooks after changing `flake.nix`.
+
+This checks Lua loading against the installed CLI without contacting a server.
+It does not check client actions, ineffective unbinds, or focus callbacks.
+
 After an authorized `hey re`, run these on the machine running the Rex server:
 
 ```sh
@@ -34,9 +43,11 @@ rex config reload
 rex keymap
 ```
 
-Rex does not watch the file. `rex keymap` checks the merged bindings against
-the connected client's actions, which `rex config check` alone cannot verify.
-Shortcuts set in the app override this file.
+Rex does not watch the file. `rex keymap` reports server-side binding warnings,
+including ineffective unbinds. To also validate client actions and merged
+shortcuts, pass the client's keymap request with `rex keymap --request FILE`.
+Without that request, it only checks the config's bindings. Shortcuts set in
+the app override this file.
 
 Neither command exercises the focus callbacks. Inspect the installed server's
 arguments with `rex api describe session.focus_direction`, then test all four
