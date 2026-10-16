@@ -4,18 +4,18 @@
 `modules.shell.rex.enable` deploys it to `~/.config/rex/init.lua` on both Macs.
 Install the Rex beta app separately. Ghostty startup is unchanged.
 
-| Keys                                   | Action                            |
-| -------------------------------------- | --------------------------------- |
-| `Ctrl+C`, then `Ctrl+C`                | Send an interrupt to the terminal |
-| Prefix + `c`, `n`, `p`                 | New, next, previous tab           |
-| Prefix + `s`, `v`                      | Split below, right                |
-| Prefix + `h/j/k/l`                     | Focus left/down/up/right          |
-| Prefix + `x`, `z`                      | Close pane, toggle zoom           |
-| Prefix + `w`, `b`                      | Switch session, toggle sidebar    |
-| `Ctrl+Shift+H/J/K/L`                   | Resize by 10                      |
-| Prefix + `r`                           | Enter resize mode                 |
-| Resize mode `h/j/k/l`, `Shift+H/J/K/L` | Resize, resize by 15              |
-| Resize mode `=`, `Enter` or `Escape`   | Balance panes, leave mode         |
+| Keys                                   | Action                             |
+| -------------------------------------- | ---------------------------------- |
+| `Ctrl+C`, then `Ctrl+C`                | Send an interrupt to the terminal  |
+| Prefix + `c`, `n`, `p`                 | New, next, previous tab            |
+| Prefix + `s`, `v`                      | Split below, right                 |
+| Prefix + `h/j/k/l`                     | Focus left/down/up/right           |
+| Prefix + `x`, `z`                      | Close pane/tab/window, toggle zoom |
+| Prefix + `w`, `b`                      | Switch session, toggle sidebar     |
+| `Ctrl+Shift+H/J/K/L`                   | Resize by 10                       |
+| Prefix + `r`                           | Enter resize mode                  |
+| Resize mode `h/j/k/l`, `Shift+H/J/K/L` | Resize, resize by 15               |
+| Resize mode `=`, `Enter` or `Escape`   | Balance panes, leave mode          |
 
 Bare `Ctrl+H/J/K/L` pass through to terminal applications. Other Rex shortcuts
 keep their client defaults, including the `Cmd+Shift+P` command palette.
