@@ -46,7 +46,7 @@
         herdr.enable = true;
         herdr.mainCodingAgent = "pi";
         herdr.projects.enable = true;
-        rex.enable = true;
+        desktop.term.rex.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
