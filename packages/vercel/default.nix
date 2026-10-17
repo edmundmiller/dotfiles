@@ -3,6 +3,7 @@
   buildNpmPackage,
   fetchurl,
   nodejs,
+  go,
 }:
 
 buildNpmPackage {
@@ -26,10 +27,29 @@ buildNpmPackage {
   dontNpmBuild = true;
   npmPackFlags = [ "--ignore-scripts" ];
 
+  nativeBuildInputs = [ go ];
+  # The Go builder otherwise compiles this helper beside its own JS on first
+  # use, which cannot work once node_modules is in the read-only Nix store.
+  postInstall = ''
+    goBuilder="$out/lib/node_modules/vercel/node_modules/@vercel/go"
+    GOCACHE="$TMPDIR/go-cache" GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 \
+      go build -trimpath -o "$goBuilder/dist/analyze" "$goBuilder/analyze.go"
+  '';
+
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
     VERCEL_TELEMETRY_DISABLED=1 "$out/bin/vercel" --version | grep -F '58.9.0'
+    mkdir -p "$TMPDIR/go-analyzer-test"
+    cat > "$TMPDIR/go-analyzer-test/handler.go" <<'GO'
+    package handler
+    import "net/http"
+    func NotAHandler() {}
+    func ServeHTTP(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) }
+    GO
+    test "$("$out/lib/node_modules/vercel/node_modules/@vercel/go/dist/analyze" \
+      "-modpath=$TMPDIR/go-analyzer-test" "$TMPDIR/go-analyzer-test/handler.go")" \
+      = '{"packageName":"handler","functionName":"ServeHTTP","watch":null}'
     runHook postInstallCheck
   '';
 
