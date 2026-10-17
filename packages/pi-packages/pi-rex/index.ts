@@ -1,4 +1,5 @@
 import {
+  SessionManager,
   truncateTail,
   type ExtensionAPI,
   type ExtensionContext,
@@ -157,10 +158,80 @@ ${guide ? `Installed Rex guide:\n${guide}` : "The installed guide could not be l
     }
   });
 
+  async function forkSession(target: string, ctx: ExtensionContext) {
+    const signal = sessionAbort.signal;
+    try {
+      if (target && target !== "split" && target !== "tab") {
+        throw new Error("Usage: /rex fork [split | tab]");
+      }
+      const session = process.env.REX_SESSION;
+      const block = process.env.REX_BLOCK;
+      if (!session || !block || process.env.TMUX || process.env.STY) {
+        throw new Error("Run /rex fork directly inside a Rex terminal.");
+      }
+      if (!ctx.hasUI || ctx.mode !== "tui") {
+        throw new Error("/rex fork requires an interactive Pi session.");
+      }
+      if (!ctx.isIdle()) throw new Error("Wait for Pi to finish before forking.");
+      const placement =
+        target || (await ctx.ui.select("Fork Pi session", ["split", "tab"], { signal }));
+      signal.throwIfAborted();
+      if (!placement) return;
+      if (!ctx.isIdle()) throw new Error("Wait for Pi to finish before forking.");
+      const source = ctx.sessionManager.getSessionFile();
+      const leaf = ctx.sessionManager.getLeafId();
+      if (
+        !source ||
+        !leaf ||
+        !ctx.sessionManager
+          .getBranch()
+          .some(
+            (entry) =>
+              entry.type === "message" &&
+              (entry.message.role === "user" || entry.message.role === "assistant")
+          )
+      ) {
+        throw new Error("Send a message in a saved Pi session before forking.");
+      }
+      // The live leaf can differ from the last entry on disk after /tree navigation.
+      // Branch a detached manager so the original Pi session stays unchanged.
+      const directory = ctx.sessionManager.getSessionDir();
+      const fork = SessionManager.open(source, directory).createBranchedSession(leaf);
+      if (!fork) throw new Error("Could not save the forked Pi session.");
+      const command = ["run", "-s", session, "--cwd", ctx.cwd, "--keep-open", "--json"];
+      if (placement === "split") command.push("-b", block, "--split=right");
+      command.push("--", "pi", "--session", fork, "--session-dir", directory);
+      try {
+        await readRex(command, ctx);
+      } catch (error) {
+        throw new Error(
+          `Fork saved at ${fork}, but Rex could not confirm opening it. Check Rex before retrying. ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+      ctx.ui.notify(
+        `Opened a fork in a new Rex ${placement === "split" ? "split pane" : "tab"}.`,
+        "info"
+      );
+    } catch (error) {
+      if (!signal.aborted && ctx.hasUI)
+        ctx.ui.notify(error instanceof Error ? error.message : String(error), "error");
+    }
+  }
+
+  // Rex sends these keys rather than typing a command over the editor's draft.
+  pi.registerShortcut("ctrl+alt+f", {
+    description: "Fork Pi into a Rex split",
+    handler: (ctx) => forkSession("split", ctx),
+  });
+  pi.registerShortcut("ctrl+alt+t", {
+    description: "Fork Pi into a Rex tab",
+    handler: (ctx) => forkSession("tab", ctx),
+  });
+
   pi.registerCommand("rex", {
-    description: "Rex context: status, refresh, capture <pane ID or label>",
+    description: "Rex: status, refresh, capture <pane>, fork [split | tab]",
     getArgumentCompletions: (prefix) => {
-      const items = ["status", "refresh", "capture "]
+      const items = ["status", "refresh", "capture ", "fork", "fork split", "fork tab"]
         .filter((value) => value.startsWith(prefix))
         .map((value) => ({ value, label: value.trim() }));
       return items.length ? items : null;
@@ -169,6 +240,7 @@ ${guide ? `Installed Rex guide:\n${guide}` : "The installed guide could not be l
       const signal = sessionAbort.signal;
       const [action = "status"] = args.trim().split(/\s+/).filter(Boolean);
       const target = args.trim().slice(action.length).trim();
+      if (action === "fork") return forkSession(target, ctx);
       try {
         if (action === "capture") {
           if (!target || target.startsWith("-")) {
@@ -199,7 +271,9 @@ ${guide ? `Installed Rex guide:\n${guide}` : "The installed guide could not be l
           return;
         }
         if (target || (action !== "status" && action !== "refresh")) {
-          throw new Error("Usage: /rex [status | refresh | capture <pane ID or label>]");
+          throw new Error(
+            "Usage: /rex [status | refresh | capture <pane ID or label> | fork [split | tab]]"
+          );
         }
         if (action === "refresh") {
           enabled = true;
@@ -210,6 +284,7 @@ ${guide ? `Installed Rex guide:\n${guide}` : "The installed guide could not be l
           `Pi pane: ${process.env.REX_BLOCK ?? "none"}`,
           `Guide: ${guide ? "loaded from installed Rex" : guideError || "not loaded; use /rex refresh"}`,
           "Capture a pane with /rex capture <ID or label>, then ask Pi about it.",
+          "Fork this conversation into a split or tab with /rex fork.",
         ].join("\n");
         if (ctx.hasUI) ctx.ui.notify(summary, guideError ? "warning" : "info");
       } catch (error) {

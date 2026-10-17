@@ -42,9 +42,30 @@ run, including after compaction. The guide is cached until session start or
 
 Outside Rex, there is no automatic CLI call or prompt injection. `/rex refresh`
 opts the current Pi session in. Pi must discover and choose targets explicitly.
-The extension does not rename sessions or move focus. It instructs Pi to save
+Only an explicit fork moves focus. The extension does not rename sessions. It instructs Pi to save
 full IDs for created panes and close only its own panes when asked. These are
 agent instructions, not an ownership-enforcement mechanism.
+
+## Fork into a split or tab
+
+While Pi is idle inside Rex, press `Ctrl+C`, then `f` for a right split, or
+`Ctrl+C`, then `Shift+F` for a new tab. These bindings in `config/rex/init.lua`
+send `Ctrl+Alt+F` and `Ctrl+Alt+T` to this extension. Your editor draft stays
+in the original Pi session and is not submitted or copied to the fork.
+
+Alternatively, run `/rex fork` and choose `split` or `tab`.
+Use `/rex fork split` to open a pane on the right or `/rex fork tab` to open
+a new tab without the picker. Rex focuses the new terminal.
+
+The fork copies the currently selected conversation branch into a new session,
+including your selection after `/tree` navigation. The original session stays
+open and unchanged. Both sessions use the same working directory and files;
+this does not create a Git worktree. Avoid concurrent edits to the same files.
+
+Forking requires a saved conversation and refuses to run during an active
+turn. It is unavailable inside nested tmux or screen sessions. If Rex
+cannot confirm launch, the error includes the saved fork path. Check Rex before
+retrying, or resume that copy with `pi --session <path>`.
 
 ## Bring a pane into the conversation
 
@@ -97,7 +118,8 @@ bun run --cwd pi-rex test
 ```
 
 Tests cover lifecycle reports, quiet non-TUI modes, guidance injection, capture
-targeting, truncation, failures, and cancellation during session replacement.
+targeting, truncation, failures, cancellation during session replacement, and
+forking the selected branch without changing the source session.
 Native Rex indicators still need a Mac smoke test. Run Pi in an unfocused Rex
 tab, start a task, exercise a permission prompt, finish a response, and interrupt
 a second task. Confirm working, blocked, done, and idle states in Rex.

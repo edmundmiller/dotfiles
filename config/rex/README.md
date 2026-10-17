@@ -6,21 +6,29 @@ Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them
 (including Pi's Rex extension) can run `rex`. Ghostty startup is unchanged.
 
-| Keys                                   | Action                             |
-| -------------------------------------- | ---------------------------------- |
-| `Ctrl+C`, then `Ctrl+C`                | Send an interrupt to the terminal  |
-| Prefix + `c`, `n`, `p`                 | New, next, previous tab            |
-| Prefix + `s`, `v`                      | Split below, right                 |
-| Prefix + `h/j/k/l`                     | Focus left/down/up/right           |
-| Prefix + `x`, `z`                      | Close pane/tab/window, toggle zoom |
-| Prefix + `w`, `b`                      | Switch session, toggle sidebar     |
-| `Ctrl+Shift+H/J/K/L`                   | Resize by 10                       |
-| Prefix + `r`                           | Enter resize mode                  |
-| Resize mode `h/j/k/l`, `Shift+H/J/K/L` | Resize, resize by 15               |
-| Resize mode `=`, `Enter` or `Escape`   | Balance panes, leave mode          |
+| Keys                                   | Action                              |
+| -------------------------------------- | ----------------------------------- |
+| `Ctrl+C`, then `Ctrl+C`                | Send an interrupt to the terminal   |
+| Prefix + `c`, `n`, `p`                 | New, next, previous tab             |
+| Prefix + `s`, `v`                      | Split below, right                  |
+| Prefix + `f`, `Shift+F`                | Fork Pi into a right split, new tab |
+| Prefix + `h/j/k/l`                     | Focus left/down/up/right            |
+| Prefix + `x`, `z`                      | Close pane/tab/window, toggle zoom  |
+| Prefix + `w`, `b`                      | Switch session, toggle sidebar      |
+| `Ctrl+Shift+H/J/K/L`                   | Resize by 10                        |
+| Prefix + `r`                           | Enter resize mode                   |
+| Resize mode `h/j/k/l`, `Shift+H/J/K/L` | Resize, resize by 15                |
+| Resize mode `=`, `Enter` or `Escape`   | Balance panes, leave mode           |
 
 Bare `Ctrl+H/J/K/L` pass through to terminal applications. Other Rex shortcuts
 keep their client defaults, including the `Cmd+Shift+P` command palette.
+
+The fork bindings require the `pi-rex` extension in the focused Pi session.
+They send `Ctrl+Alt+F` and `Ctrl+Alt+T` to Pi without replacing its editor draft.
+The fork contains the selected conversation branch, opens in the same working
+directory, and gets focus. Wait for Pi to finish its current turn first.
+These keys are not shell commands; use them only while Pi is in the foreground.
+See [pi-rex](../../packages/pi-packages/pi-rex/README.md#fork-into-a-split-or-tab).
 
 Validate a draft on a Mac with Rex installed:
 
