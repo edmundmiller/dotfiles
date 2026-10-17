@@ -121,6 +121,16 @@
       "default": false,
       "description": "Hide thinking blocks in output"
     },
+    "showCacheMissNotices": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show cache miss, cache warming, compaction usage, and provider recovery notices"
+    },
+    "enableInstallTelemetry": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable anonymous install/update reporting and selected provider attribution headers"
+    },
     "shellPath": {
       "type": "string",
       "description": "Custom shell path (e.g., for Cygwin on Windows)"
@@ -216,6 +226,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show images in terminal (if supported)"
+        },
+        "showTerminalProgress": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show OSC 9;4 progress in the terminal tab"
         },
         "clearOnShrink": {
           "type": "boolean",

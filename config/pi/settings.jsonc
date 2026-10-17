@@ -1,10 +1,12 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
-  "$schema": "./settings-schema.json",
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
   // Model configuration
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
+  "showCacheMissNotices": true,
+  "enableInstallTelemetry": false,
   // Pi 1.0 native orchestration, alongside the selected model's ordinary tools.
   "defaultTools": ["+codemode"],
   "codemode": { "mode": "on", "inlineBudget": 3000 },
@@ -19,6 +21,7 @@
   "quietStartup": true,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
+  "terminal": { "showTerminalProgress": true },
   // Use Pi's native compaction, retry, message delivery, image, and skill defaults.
   // Keep integrations and explicit commands; pi-goal-x owns goal continuation.
   // Avoid automatic coaching, model switching, and overlapping context/tool rewriting.
