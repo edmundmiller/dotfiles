@@ -147,7 +147,6 @@
       "Bash(hey:*)",
       "Bash(nix:*)",
       "Bash(nix-store:*)",
-      "Bash(wt:*)",
       "Bash(br close * --reason *:*)",
       "Bash(br close * --reason=*:*)",
       "Bash(br:*)",
@@ -205,11 +204,6 @@
       "Bash(git commit * --no-verify *:*)",
       "Bash(git rebase --continue:*)"
     ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "wt list statusline --claude-code",
-    "padding": 0
   },
   "alwaysThinkingEnabled": true
 }
