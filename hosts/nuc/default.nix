@@ -1011,6 +1011,10 @@ let
 
 in
 {
+  # Rex server (Linux): uncomment the flake input/module, then enable here before other hosts.
+  # services.rex.enable = true;
+  # user.extraGroups = [ "rex" ];
+
   assertions = telegramBindings.assertions ++ [
     {
       assertion = hermesTelegramBotTokenOwners == [ ];

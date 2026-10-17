@@ -6,6 +6,10 @@
     ./hardware-configuration.nix
   ];
 
+  # Rex server (Linux): enable after the NUC passes a client-session check.
+  # services.rex.enable = true;
+  # user.extraGroups = [ "rex" ];
+
   modules = {
     desktop = {
       gnome.enable = true;

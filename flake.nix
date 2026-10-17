@@ -59,6 +59,10 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     ghostty.url = "github:ghostty-org/ghostty";
+    # Rex server (Linux), separate from the currently macOS-only Rex app.
+    # Once released, uncomment with the import in lib/nixos.nix, then lock the input.
+    # https://www.superlogical.com/rex/docs/linux/installation#nix-and-nixos
+    # rex-server.url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
