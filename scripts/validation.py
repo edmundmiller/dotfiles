@@ -73,7 +73,7 @@ CHECKS = {
         "tests/test_agent_mcp.py",
         "hosts/*/default.nix",
     ],
-    "omp-thin-harness-tests": [
+    "agent-instruction-tests": [
         "AGENTS.md",
         "config/agents/AGENTS.md",
         "docs/agents/unslop.md",
@@ -92,11 +92,7 @@ CHECKS = {
         "tests/test_agent_instruction_wiring.py",
         "tests/test_agent_response_contract.py",
         "tests/test_codex_model_config.py",
-        "tests/test_omp_ttsr_rules.py",
-        "tests/omp_lazy_extensions.test.js",
-        "tests/fixtures/omp-ttsr-rules.json",
     ],
-    "omp-config": ["config/omp/config.yml", "modules/agents/omp/*"],
     "agent-skills-marker-migration-tests": [
         "modules/agents/skills/*",
         "tests/test_agent_skills_marker_migration.py",

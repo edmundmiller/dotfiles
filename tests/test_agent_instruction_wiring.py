@@ -20,7 +20,6 @@ OPENCODE_MODULE = ROOT / "modules" / "agents" / "opencode" / "default.nix"
 OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
 BOOTSTRAP = ROOT / "bin" / "bootstrap"
 OMP_CORE = ROOT / "config" / "agents" / "core.md"
-OMP_CONFIG = ROOT / "config" / "omp" / "config.yml"
 LEGACY_RULES = ROOT / "config" / "agents" / "rules"
 FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
@@ -349,15 +348,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
             module,
         )
 
-    def test_omp_config_uses_the_deployed_omp_18_registry(self) -> None:
-        config = OMP_CONFIG.read_text()
-        flake = (ROOT / "flake.nix").read_text()
-
-        self.assertIn("methodOrder: [remote, soft]", config)
-        self.assertIn("unexpectedStopDetection: smart", config)
-        self.assertNotIn("strategy: context-full", config)
-        self.assertIn("src=${self.packages.${system}.omp}", flake)
-
     def test_pi_settings_hook_executes_a_real_python_file(self) -> None:
         shell = PI_SETTINGS_CHECK.read_text()
 
@@ -384,12 +374,11 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("skill-quality/scripts/validate.py", hook)
         self.assertIn('stages = [ "pre-commit" ]', hook)
 
-        self.assertIn("omp-thin-harness-tests =", flake)
-        self.assertIn("tests/test_omp_ttsr_rules.py", flake)
+        self.assertIn("agent-instruction-tests =", flake)
         self.assertIn("tests/test_agent_instruction_wiring.py", flake)
         from scripts.validation import CHECKS
 
-        self.assertIn("config/agents/core.md", CHECKS["omp-thin-harness-tests"])
+        self.assertIn("config/agents/core.md", CHECKS["agent-instruction-tests"])
 
 
 if __name__ == "__main__":
