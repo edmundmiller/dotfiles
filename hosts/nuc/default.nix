@@ -2430,6 +2430,7 @@ in
         servers = {
           github.enable = true;
           linear.enable = true;
+          notion.enable = true;
           fff.enable = true;
           openaiDeveloperDocs.enable = true;
         };

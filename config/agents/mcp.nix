@@ -13,6 +13,7 @@ in
     command = lib.mkDefault (toString github);
   };
   linear.url = lib.mkDefault "https://mcp.linear.app/mcp";
+  notion.url = lib.mkDefault "https://mcp.notion.com/mcp";
   seqera.url = lib.mkDefault "https://mcp.seqera.io/mcp";
   superlogical.url = lib.mkDefault "https://www.superlogical.com/rex/community-mcp";
   fff = {
