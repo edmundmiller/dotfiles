@@ -64,17 +64,19 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 Mise discovers this checkout's executable tasks in `mise-tasks/`. `hey` is a
 small compatibility spelling for `mise run`, so `hey re` still works inside the
 repo. Run `mise tasks` to list commands and `mise run <task> --help` for arguments.
+Related tasks use subdirectories and namespaces, such as `nuc:status` and
+`ergodox:build`. Old hyphenated names remain aliases for muscle memory.
 
-| Command                 | Description                                                      |
-| ----------------------- | ---------------------------------------------------------------- |
-| `mise run rebuild`      | Rebuild this host, also available as `mise run re`               |
-| `mise run upgrade`      | Update flake inputs and activate the host                        |
-| `mise run rollback`     | Roll back the system generation                                  |
-| `mise run gc`           | Collect Nix garbage                                              |
-| `mise run nuc-wt build` | Build an isolated snapshot on the NUC                            |
-| `mise run check`        | Validate changed work without modifying source                   |
-| `mise run show`         | Show flake outputs                                               |
-| `mise run dev`          | Enter the Nix development shell; use `dev full` for deploy tools |
+| Command                       | Description                                                      |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `mise run rebuild`            | Rebuild this host, also available as `mise run re`               |
+| `mise run upgrade`            | Update flake inputs and activate the host                        |
+| `mise run rollback`           | Roll back the system generation                                  |
+| `mise run gc`                 | Collect Nix garbage                                              |
+| `mise run nuc:worktree build` | Build an isolated snapshot on the NUC                            |
+| `mise run check`              | Validate changed work without modifying source                   |
+| `mise run show`               | Show flake outputs                                               |
+| `mise run dev`                | Enter the Nix development shell; use `dev full` for deploy tools |
 
 Tasks are project-local. From elsewhere, use
 `mise --cd "$DOTFILES" run re`, not a global host-discovery command.

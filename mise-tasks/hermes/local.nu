@@ -1,0 +1,81 @@
+#!/usr/bin/env -S nu --no-config-file
+#MISE description="Rebuild and check local Hermes on Darwin"
+#MISE alias="hermes-local"
+#MISE raw=true
+#MISE raw_args=true
+use ../../scripts/nu/common.nu *
+use ../../scripts/nu/hermes.nu *
+
+def main [--smoke-only] {
+  if not (is-darwin) {
+    error make {msg: "hey hermes-local is Darwin-only"}
+  }
+
+  if not $smoke_only {
+    ^mise run rebuild
+  }
+
+  let manifest_path = ($env.HOME | path join ".config" "hermes-local" "manifest.json")
+  if not ($manifest_path | path exists) {
+    error make {msg: $"Hermes apply manifest missing: ($manifest_path)"}
+  }
+  let manifest = (open $manifest_path)
+
+  let hermes_path = (^which hermes | str trim)
+  let hermes_real = (^realpath $hermes_path | str trim)
+  if $hermes_real != $manifest.hermes {
+    error make {msg: $"Hermes binary drift: active=($hermes_real) expected=($manifest.hermes)"}
+  }
+
+  for profile in $manifest.profiles {
+    let launcher = $"($profile)-hermes"
+    let launcher_path = (^which $launcher | str trim)
+    let launcher_real = (^realpath $launcher_path | str trim)
+    let expected_launcher = ($manifest.launchers | get $profile)
+    if $launcher_real != $expected_launcher {
+      error make {msg: $"Hermes launcher drift for ($profile): active=($launcher_real) expected=($expected_launcher)"}
+    }
+
+    let rendered = (run-external $launcher "config" "check" | complete)
+    require-success $"render and validate ($profile)" $rendered
+    let marker = ($env.HOME | path join ".hermes" "profiles" $profile ".agents-workspace-revision")
+    $manifest.agentsWorkspaceRevision | save --force $marker
+    require-text $"profile revision ($profile)" (open --raw $marker) $manifest.agentsWorkspaceRevision
+  }
+
+  let profiles = (^hermes profile list | complete)
+  require-success "Hermes profile inventory" $profiles
+  for profile in $manifest.profiles {
+    require-text "Hermes profile inventory" $profiles.stdout $profile
+  }
+
+  let codex = (^codex login status | complete)
+  require-success "Codex login" $codex
+  require-text "Codex login" ([$codex.stdout $codex.stderr] | str join "\n") "Logged in using ChatGPT"
+
+  let install = (^orchestrator-hermes gateway install | complete)
+  require-success "Orchestrator gateway install" $install
+  let start = (^orchestrator-hermes gateway start | complete)
+  require-success "Orchestrator gateway start" $start
+  mut gateway = (^orchestrator-hermes gateway status | complete)
+  mut gateway_pid = []
+  for _ in 1..10 {
+    if $gateway.exit_code == 0 {
+      $gateway_pid = (gateway-status-pids $gateway.stdout)
+      if not ($gateway_pid | is-empty) {
+        break
+      }
+    }
+    sleep 1sec
+    $gateway = (^orchestrator-hermes gateway status | complete)
+  }
+  require-success "Orchestrator gateway status" $gateway
+  if ($gateway_pid | is-empty) {
+    error make {msg: "Orchestrator gateway status missing a live PID after 10 seconds"}
+  }
+
+  let dispatcher = (^orchestrator-hermes kanban dispatch --dry-run --json | complete)
+  require-success "Kanban dispatcher" $dispatcher
+
+  print $"PASS hermes-local\n  binary: ($hermes_real)\n  agents-workspace: ($manifest.agentsWorkspaceRevision)\n  profiles: ($manifest.profiles | str join ', ')\n  Codex: ChatGPT login active\n  gateway: running\n  Kanban dispatcher: healthy"
+}

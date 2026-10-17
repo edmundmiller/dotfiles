@@ -30,7 +30,7 @@ GITHUB_CLI_MEDIA_SKILL = (
 )
 PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
-SKILLS_COMMAND = ROOT / "mise-tasks" / "skills-sync.nu"
+SKILLS_COMMAND = ROOT / "mise-tasks" / "skills" / "sync.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):

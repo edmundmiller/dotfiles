@@ -58,7 +58,7 @@ CHECKS = {
     ],
     "agent-run-tests": [
         "bin/agent-*",
-        "mise-tasks/agent-*.nu",
+        "mise-tasks/agent/*.nu",
         "tests/test_agent_run.py",
         "tests/test_skill_quality_validator.py",
         "skills/catalog/skill-quality/*",
@@ -128,7 +128,7 @@ CHECKS = {
     "nuc-deployment-provenance": [
         "hosts/nuc/_tests/deployment-provenance.nix",
         "scripts/nu/remote.nu",
-        "mise-tasks/nuc*.nu",
+        "mise-tasks/nuc/*.nu",
     ],
     "nuc-hermes-displayctl-wiring": ["hosts/nuc/*", "packages/displayctl/*"],
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],

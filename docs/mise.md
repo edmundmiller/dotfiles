@@ -14,11 +14,34 @@ Each Nu script owns its command's typed `main` and `#MISE` metadata.
 `scripts/nu/` contains shared deployment, rebuild, and benchmark logic.
 There is no global task catalog or second dispatcher.
 
+Related tasks live in subdirectories. Mise turns the path into a colon-separated
+name: `nuc/status.nu` is `nuc:status`. A directory's `_default.nu` keeps its short
+entrypoint: `nuc/_default.nu` is `nuc`. Common commands such as `check`, `dev`,
+and `rebuild` stay at the root. For example:
+
+```text
+mise-tasks/
+  check
+  dev
+  rebuild.nu
+  ergodox/
+    build.nu
+    flash.nu
+  nuc/
+    _default.nu
+    status.nu
+    worktree.nu
+  skills/
+    sync.nu
+    update.nu
+```
+
 ```sh
 mise trust                    # after reviewing this checkout's config and tasks
-mise tasks
+mise tasks --extended         # names, aliases, and source paths
 mise run check --plan
 mise run re --help
+mise run nuc:worktree --help
 hey check --plan              # same task, compatibility spelling
 mise run dev                  # enter the default Nix shell explicitly
 mise run dev full             # include deployment tools
@@ -26,8 +49,10 @@ mise run dev default nu --version
 ```
 
 The `hey` executable only forwards to mise. It works with any project's tasks,
-not only dotfiles. With no arguments it lists tasks. `re`, `u`, and `nuc-wt` are
-mise aliases. From outside dotfiles use `mise --cd "$DOTFILES" run <task>`.
+not only dotfiles. With no arguments it lists tasks. Existing hyphenated names
+remain aliases, so `hey nuc-status` and `mise run nuc:status` run the same file.
+`re`, `u`, and `nuc-wt` also remain aliases. From outside dotfiles use
+`mise --cd "$DOTFILES" run <task>`.
 An inherited `FLAKE_DIR` no longer redirects a task into another checkout.
 The packaged shim contains no deployment implementation, so task edits do not
 require reinstalling it.

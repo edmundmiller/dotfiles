@@ -1020,7 +1020,7 @@
                 entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
                 language = "system";
                 pass_filenames = false;
-                files = "^(scripts/nu/hermes\\.nu|mise-tasks/hermes-local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
+                files = "^(scripts/nu/hermes\\.nu|mise-tasks/hermes/local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
                 stages = [ "pre-commit" ];
               };
               pi-runtime-wrapper = {

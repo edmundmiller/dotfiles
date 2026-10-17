@@ -64,7 +64,7 @@ class AgentRunTests(unittest.TestCase):
     def test_hey_uses_the_packaged_agent_run_command(self) -> None:
         for command in ("start", "adopt", "checkpoint", "complete", "sweep"):
             with self.subTest(command=command):
-                wrapper = (TASKS / f"agent-{command}.nu").read_text()
+                wrapper = (TASKS / "agent" / f"{command}.nu").read_text()
                 self.assertIn(f"^agent-run {command} ...$args", wrapper)
                 self.assertNotIn("python3 bin/agent-run", wrapper)
 
@@ -115,7 +115,7 @@ class AgentRunTests(unittest.TestCase):
         self.assertIn('sudo /usr/sbin/swapon "$swapfile"', setup)
 
     def test_packaged_agent_run_is_receipt_only_and_repo_explicit(self) -> None:
-        wrapper = "\n".join(path.read_text() for path in TASKS.glob("agent-*.nu"))
+        wrapper = "\n".join(path.read_text() for path in TASKS.glob("agent/*.nu"))
         module = OMP_MODULE.read_text()
 
         self.assertNotIn("context", wrapper)

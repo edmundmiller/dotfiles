@@ -104,11 +104,23 @@ class MiseTasksTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(json.loads(result.stdout), expected)
 
-    def test_legacy_aliases_reach_the_operation_parser_without_running_operations(self):
+    def test_task_names_and_aliases_reach_the_parser_without_running_operations(self):
         self.copy_project()
         for task, parameter in [
             ("re", "action"),
+            ("nuc", "worktree_mode"),
+            ("deploy", "host"),
+            ("nuc:worktree", "configuration"),
+            ("nuc-worktree", "configuration"),
             ("nuc-wt", "dry-activate"),
+            ("nuc:logs", "unit"),
+            ("nuc-logs", "unit"),
+            ("ergodox:flash", "hex"),
+            ("ergodox-flash", "hex"),
+            ("deploy:agents", "dotfiles_msg"),
+            ("agents-rollout", "dotfiles_msg"),
+            ("zbench", "args"),
+            ("zbench:save", "args"),
             ("u", "inputs"),
         ]:
             with self.subTest(task=task):
