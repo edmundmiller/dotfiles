@@ -99,8 +99,16 @@ class NodeConfigTests(unittest.TestCase):
             buffer = io.BytesIO()
             with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
                 files = {
-                    "package.json": json.dumps({"name": name, "version": version, "bin": "cli.js"}),
+                    "package.json": json.dumps({
+                        "name": name, "version": version, "bin": "cli.js",
+                        "scripts": {"postinstall": "bun postinstall.js"},
+                    }),
                     "cli.js": f'#!/usr/bin/env bun\nconsole.log("{version}");\n',
+                    "postinstall.js": (
+                        'import {appendFileSync, existsSync} from "node:fs";\n'
+                        'appendFileSync(process.env.INSTALL_LOG, "attempt\\n");\n'
+                        'if (existsSync(process.env.FAIL_INSTALL)) process.exit(1);\n'
+                    ),
                 }
                 for path, contents in files.items():
                     data = contents.encode()
@@ -122,6 +130,7 @@ class NodeConfigTests(unittest.TestCase):
                     base = f"http://127.0.0.1:{self.server.server_port}"
                     body = json.dumps({"name": name, "versions": {
                         version: {"name": name, "version": version, "bin": "cli.js",
+                                  "scripts": {"postinstall": "bun postinstall.js"},
                                   "dist": {"tarball": f"{base}/{version}.tgz"}}
                         for version in archives
                     }}).encode()
@@ -138,31 +147,57 @@ class NodeConfigTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp = Path(temp_dir)
+            install_log = temp / "installs.log"
+            fail_install = temp / "fail-install"
             env = {
                 "HOME": str(temp / "home"),
                 "BUN_INSTALL": str(temp / "bun"),
                 "PATH": os.environ["PATH"],
                 "npm_config_registry": f"http://127.0.0.1:{server.server_port}",
+                "INSTALL_LOG": str(install_log),
+                "FAIL_INSTALL": str(fail_install),
             }
             (temp / "home").mkdir()
+            global_dir = temp / "bun/install/global"
+            global_dir.mkdir(parents=True)
+            (global_dir / "package.json").write_text(json.dumps({"trustedDependencies": [name]}))
             command = [bun, str(ROOT / "config/bun/ensure-globals.js")]
             binary = temp / "bun/bin/cli"
 
-            def ensure(version):
+            def ensure(version, succeeds=True):
                 result = subprocess.run(command + [f"{name}@{version}"], capture_output=True,
                                         text=True, env=env, timeout=30, check=False)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                output = subprocess.check_output([str(binary)], env=env, text=True)
-                self.assertEqual(output.strip(), version)
+                if succeeds:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    output = subprocess.check_output([str(binary)], env=env, text=True)
+                    self.assertEqual(output.strip(), version)
+                else:
+                    self.assertNotEqual(result.returncode, 0, "incomplete install was accepted")
 
             ensure("1.0.0")
+            self.assertEqual(install_log.read_text(), "attempt\n")
             request_count = len(requests)
             self.assertGreater(request_count, 0)
             modified = binary.stat().st_mtime_ns
             ensure("1.0.0")
             self.assertEqual(len(requests), request_count, "unchanged install accessed registry")
             self.assertEqual(binary.stat().st_mtime_ns, modified)
+            self.assertEqual(install_log.read_text(), "attempt\n")
+
+            # Bun leaves both the new manifest and executable behind on failure.
+            fail_install.touch()
+            ensure("1.0.1", succeeds=False)
+            self.assertTrue(binary.exists())
+            ensure("1.0.1", succeeds=False)
+            self.assertEqual(install_log.read_text(), "attempt\n" * 3)
+            fail_install.unlink()
             ensure("1.0.1")
+            self.assertEqual(install_log.read_text(), "attempt\n" * 4)
+            request_count = len(requests)
+            ensure("1.0.1")
+            self.assertEqual(len(requests), request_count)
+            self.assertEqual(install_log.read_text(), "attempt\n" * 4)
+
             binary.unlink()
             ensure("1.0.1")
             binary.unlink()

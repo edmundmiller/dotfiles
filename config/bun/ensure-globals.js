@@ -1,8 +1,19 @@
-import { accessSync, constants, readFileSync, realpathSync } from "node:fs";
+import {
+  accessSync,
+  constants,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 // Activation sets BUN_INSTALL explicitly so inspection and installation agree.
 const root = process.env.BUN_INSTALL;
+const globalDir = join(root, "install/global");
+const marker = join(globalDir, ".activation-incomplete");
 
 function installed(spec) {
   const match = spec.match(/^(@[^/]+\/[^@]+|[^@/]+)@(\d+\.\d+\.\d+(?:-[\w.-]+)?(?:\+[\w.-]+)?)$/);
@@ -31,8 +42,14 @@ function installed(spec) {
   }
 }
 
-const pending = process.argv.slice(2).filter((spec) => !installed(spec));
+const incomplete = existsSync(marker);
+const pending = process.argv.slice(2).filter((spec) => incomplete || !installed(spec));
 if (pending.length) {
+  // Bun links binaries before postinstall. Keep failed/interrupted attempts
+  // dirty even when versions and executables look correct. The marker covers
+  // the whole global directory because --force reinstalls all its dependencies.
+  mkdirSync(globalDir, { recursive: true });
+  writeFileSync(marker, "");
   console.error(`Installing bun global packages: ${pending.join(" ")}`);
   const install = (force) => {
     const result = Bun.spawnSync(
@@ -43,10 +60,12 @@ if (pending.length) {
     process.stderr.write(result.stderr);
     return result;
   };
-  let result = install(false);
+  // A normal cached install may skip the failed lifecycle script.
+  let result = install(incomplete);
   // Repair the historical existing-link failure, not network or script failures.
-  if (result.exitCode !== 0 && /\bEEXIST\b/.test(result.stderr.toString())) {
+  if (!incomplete && result.exitCode !== 0 && /\bEEXIST\b/.test(result.stderr.toString())) {
     result = install(true);
   }
-  process.exit(result.exitCode);
+  if (result.exitCode !== 0) process.exit(result.exitCode);
+  unlinkSync(marker);
 }
