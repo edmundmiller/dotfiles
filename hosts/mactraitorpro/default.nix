@@ -133,7 +133,7 @@ in
         herdr.mainCodingAgent = "pi";
         herdr.vercelSandbox.enable = true;
         herdr.projects.enable = true;
-        desktop.term.rex.enable = true;
+        rex.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;

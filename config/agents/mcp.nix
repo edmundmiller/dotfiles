@@ -14,6 +14,7 @@ in
   };
   linear.url = lib.mkDefault "https://mcp.linear.app/mcp";
   seqera.url = lib.mkDefault "https://mcp.seqera.io/mcp";
+  superlogical.url = lib.mkDefault "https://www.superlogical.com/rex/community-mcp";
   fff = {
     transport = lib.mkDefault "stdio";
     command = lib.mkDefault "${pkgs.my.fff-mcp}/bin/fff-mcp";
