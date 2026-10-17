@@ -104,6 +104,12 @@ let
         ./patches/slash-worker-hermes-python.patch
         ./patches/daemon-pool-python314.patch
       ];
+      # The local patch already fixes the slash-worker interpreter and source root.
+      # Retain the other upstream fix without applying the interpreter fix twice.
+      postPatch = ''
+        substituteInPlace tools/lazy_deps.py \
+          --replace-fail 'Version(installed) in SpecifierSet(spec_tail)' 'True'
+      '';
       makeWrapperArgs = map useCurrentRuntime (old.makeWrapperArgs or [ ]);
       postInstall = (old.postInstall or "") + ''
         chmod -R u+w $out/share/hermes
