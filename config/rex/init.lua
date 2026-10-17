@@ -15,6 +15,10 @@ rex.bind("ctrl+c>z", "pane.zoom")
 rex.bind("ctrl+c>w", "session.switch")
 rex.bind("ctrl+c>b", "client.sidebar.toggle")
 
+-- pi-rex handles these keys without replacing the Pi editor's draft.
+rex.bind("ctrl+c>f", "pane.send_key", { key = "ctrl+alt+f" })
+rex.bind("ctrl+c>shift+f", "pane.send_key", { key = "ctrl+alt+t" })
+
 -- Use the documented server API for directional focus. Client action names
 -- vary by client; block_id must be explicit even though session_id is inferred.
 local directions = { h = "left", j = "down", k = "up", l = "right" }
