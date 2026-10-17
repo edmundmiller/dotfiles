@@ -1846,11 +1846,6 @@
                 touch "$out"
               '';
 
-              nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
-
               nuc-openssh-pq-kex = import ./hosts/nuc/_tests/openssh-pq-kex.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
