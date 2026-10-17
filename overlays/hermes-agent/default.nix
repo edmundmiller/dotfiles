@@ -41,31 +41,6 @@ let
     '';
   };
 
-  firecrawlAnydoc = hermesPython.pkgs.buildPythonPackage rec {
-    pname = "firecrawl-anydoc";
-    version = "0.2.4";
-    pyproject = true;
-
-    src = final.fetchPypi {
-      pname = "firecrawl_anydoc";
-      inherit version;
-      hash = "sha256-PilGAnL+qBzeCP1a8R9rDx/wWRkhTdyTmGf3I2LIMDI=";
-    };
-
-    cargoDeps = final.rustPlatform.fetchCargoVendor {
-      inherit src;
-      name = "firecrawl-anydoc-${version}";
-      hash = "sha256-yhW5HSzVrZCms4x36J2NGIn1e5YLIgjuNKXM9EJ9J8c=";
-    };
-
-    nativeBuildInputs = with final.rustPlatform; [
-      cargoSetupHook
-      maturinBuildHook
-    ];
-
-    pythonImportsCheck = [ "anydoc" ];
-  };
-
   hermesFrontend = final.buildNpmPackage {
     pname = "hermes-frontend";
     version = "2026.9.14";
@@ -103,11 +78,9 @@ let
   sharedHermesAgentBase = prev.llm-agents."hermes-agent".overrideAttrs (
     old:
     let
-      hermesRuntimeDeps =
-        map (package: if (package.pname or "") == "nemo-relay" then nemoRelay else package) (
-          old.propagatedBuildInputs or [ ]
-        )
-        ++ [ firecrawlAnydoc ];
+      hermesRuntimeDeps = map (
+        package: if (package.pname or "") == "nemo-relay" then nemoRelay else package
+      ) (old.propagatedBuildInputs or [ ]);
       hermesPythonEnv = hermesPython.withPackages (_: hermesRuntimeDeps);
       useCurrentRuntime =
         arg:
