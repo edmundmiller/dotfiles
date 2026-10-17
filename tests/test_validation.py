@@ -540,11 +540,16 @@ class ValidationTests(unittest.TestCase):
         self.assertNotIn("--platform darwin", workflow.split("  herdr-vm-test:")[0])
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)
+        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
         self.assertIn("runs-on: macos-15", darwin)
         self.assertNotIn("if:", darwin)
-        self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
-        self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
+        for job in (linux, darwin):
+            self.assertIn(
+                "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", job
+            )
+            self.assertIn('if [[ -z "$NIX_GITHUB_TOKEN" ]]', job)
+            self.assertNotIn("secrets.RENOVATE_TOKEN", job)
 
 
 subprocess_run = subprocess.run
