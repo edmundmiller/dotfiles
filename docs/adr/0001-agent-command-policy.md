@@ -14,6 +14,12 @@ Those commands bypass repo-specific checks, rollback semantics, host-awareness r
 
 `hey` is the supported interface for routine agent-initiated repo operations that mutate or deploy system state.
 
+The implementation now uses native Nushell file tasks in `mise-tasks/`, with
+shared guards in `scripts/nu/`. `hey` is a compatibility spelling for `mise run`;
+either spelling invokes the same guarded operation. Tasks are project-local,
+so callers outside the checkout must use `mise --cd <checkout> run <task>`.
+This migration does not authorize activation or relax the command policy below.
+
 Agents must use or improve `hey` instead of invoking lower-level tools directly for:
 
 - Darwin rebuilds: use `hey re` / `hey rebuild`.

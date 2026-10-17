@@ -20,7 +20,6 @@ OPENCODE_MODULE = ROOT / "modules" / "agents" / "opencode" / "default.nix"
 OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
 BOOTSTRAP = ROOT / "bin" / "bootstrap"
 OMP_CORE = ROOT / "config" / "agents" / "core.md"
-OMP_CONFIG = ROOT / "config" / "omp" / "config.yml"
 LEGACY_RULES = ROOT / "config" / "agents" / "rules"
 FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
@@ -31,7 +30,7 @@ GITHUB_CLI_MEDIA_SKILL = (
 )
 PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
-SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
+SKILLS_COMMAND = ROOT / "mise-tasks" / "skills" / "sync.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
@@ -253,13 +252,10 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
     def test_skills_sync_has_no_retired_checkout_input(self) -> None:
         command = SKILLS_COMMAND.read_text()
-        sync_start = command.index('def "main skills-sync"')
-        bump_start = command.index('def "main skills-bump"')
-        sync = command[sync_start:bump_start]
 
         self.assertNotIn("dotfiles-repo", command)
-        self.assertIn("nix flake update skills-catalog", sync)
-        self.assertIn("main rebuild", sync)
+        self.assertIn("nix flake update skills-catalog", command)
+        self.assertIn("^mise run rebuild", command)
 
     def test_unslop_is_catalog_writing_route(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()
@@ -349,15 +345,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
             module,
         )
 
-    def test_omp_config_uses_the_deployed_omp_18_registry(self) -> None:
-        config = OMP_CONFIG.read_text()
-        flake = (ROOT / "flake.nix").read_text()
-
-        self.assertIn("methodOrder: [remote, soft]", config)
-        self.assertIn("unexpectedStopDetection: smart", config)
-        self.assertNotIn("strategy: context-full", config)
-        self.assertIn("src=${self.packages.${system}.omp}", flake)
-
     def test_pi_settings_hook_executes_a_real_python_file(self) -> None:
         shell = PI_SETTINGS_CHECK.read_text()
 
@@ -384,12 +371,11 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("skill-quality/scripts/validate.py", hook)
         self.assertIn('stages = [ "pre-commit" ]', hook)
 
-        self.assertIn("omp-thin-harness-tests =", flake)
-        self.assertIn("tests/test_omp_ttsr_rules.py", flake)
+        self.assertIn("agent-instruction-tests =", flake)
         self.assertIn("tests/test_agent_instruction_wiring.py", flake)
         from scripts.validation import CHECKS
 
-        self.assertIn("config/agents/core.md", CHECKS["omp-thin-harness-tests"])
+        self.assertIn("config/agents/core.md", CHECKS["agent-instruction-tests"])
 
 
 if __name__ == "__main__":

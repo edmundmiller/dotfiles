@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
 use std/assert
-source ../hey.d/common.nu
-source ../hey.d/remote.nu
+use ../../scripts/nu/common.nu *
+use ../../scripts/nu/remote.nu *
 
 assert equal (nuc-deploy-mode "nuc") "local"
 assert equal (nuc-deploy-mode "mactraitorpro") "worktree-remote"

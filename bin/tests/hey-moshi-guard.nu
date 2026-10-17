@@ -1,7 +1,7 @@
 #!/usr/bin/env nu
 
 use std/assert
-source ../hey.d/common.nu
+use ../../scripts/nu/common.nu *
 
 let macos_ctx = { os_name: "macos" }
 let linux_ctx = { os_name: "linux" }

@@ -11,8 +11,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "agent-run"
-HEY_WRAPPER = ROOT / "bin" / "hey.d" / "agent-run.nu"
-HEY_FLAKE = ROOT / "bin" / "hey.d" / "flake.nu"
+TASKS = ROOT / "mise-tasks"
 FLAKE = ROOT / "flake.nix"
 ORB_SETUP = ROOT / ".agents" / "setup"
 AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
@@ -63,13 +62,15 @@ class AgentRunTests(unittest.TestCase):
         )
 
     def test_hey_uses_the_packaged_agent_run_command(self) -> None:
-        wrapper = HEY_WRAPPER.read_text()
-        self.assertIn("^agent-run ...$args", wrapper)
-        self.assertNotIn("python3 bin/agent-run", wrapper)
+        for command in ("start", "adopt", "checkpoint", "complete", "sweep"):
+            with self.subTest(command=command):
+                wrapper = (TASKS / "agent" / f"{command}.nu").read_text()
+                self.assertIn(f"^agent-run {command} ...$args", wrapper)
+                self.assertNotIn("python3 bin/agent-run", wrapper)
 
     def test_hey_and_git_hooks_use_the_nix_owned_prek_config(self) -> None:
         flake = FLAKE.read_text()
-        hey = HEY_FLAKE.read_text()
+        hey = (TASKS / "check").read_text()
 
         self.assertIn(
             "packages.pre-commit-config = config.pre-commit.settings.configFile;",
@@ -114,7 +115,7 @@ class AgentRunTests(unittest.TestCase):
         self.assertIn('sudo /usr/sbin/swapon "$swapfile"', setup)
 
     def test_packaged_agent_run_is_receipt_only_and_repo_explicit(self) -> None:
-        wrapper = HEY_WRAPPER.read_text()
+        wrapper = "\n".join(path.read_text() for path in TASKS.glob("agent/*.nu"))
         module = OMP_MODULE.read_text()
 
         self.assertNotIn("context", wrapper)
