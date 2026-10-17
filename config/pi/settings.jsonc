@@ -17,7 +17,8 @@
     "openai-codex/gpt-6-astra",
   ],
   // UI preferences
-  "theme": "terminal",
+  "theme": "light/dotfiles-herdr-seqera",
+  "themes": ["~/.pi/agent/themes/dotfiles-herdr-seqera.json"],
   "quietStartup": true,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
@@ -150,5 +151,9 @@
     "npm:@howaboua/pi-markdown-workflows",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
     "https://github.com/denismrvoljak/pi-overwatch",
+    // Match broad local runtime extras; module-managed packages stay host-gated.
+    "npm:@grafana/agento11y-pi@0.25.0",
+    { "source": "npm:@plannotator/pi-extension@0.28.10", "extensions": [] },
+    "npm:pi-wakatime",
   ],
 }
