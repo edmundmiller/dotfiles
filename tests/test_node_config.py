@@ -27,7 +27,7 @@ def nix_path() -> str:
 
 
 class NodeConfigTests(unittest.TestCase):
-    def test_bun_global_install_is_idempotent_and_failure_is_fatal(self) -> None:
+    def test_darwin_skips_bun_activation_and_removes_legacy_links(self) -> None:
         result = subprocess.run(
             [
                 nix_path(),
@@ -37,9 +37,12 @@ class NodeConfigTests(unittest.TestCase):
                 "--no-write-lock-file",
                 "--apply",
                 """
-                configs: builtins.mapAttrs (_: cfg:
-                  cfg.config.system.activationScripts.extraActivation.text or ""
-                ) configs
+                configs: builtins.mapAttrs (_: cfg: {
+                  activation = cfg.config.system.activationScripts.extraActivation.text or "";
+                  globals = cfg.config.modules.dev.node.bunGlobalPackages;
+                  cleanup = cfg.config.home-manager.users.${cfg.config.user.name}
+                    .home.activation.removeLegacyBunClis.data;
+                }) configs
                 """,
             ],
             capture_output=True,
@@ -48,20 +51,41 @@ class NodeConfigTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-        activations = json.loads(result.stdout)
-        bun_activations = {
-            host: text
-            for host, text in activations.items()
-            if "Ensuring bun global packages:" in text
-        }
-        self.assertTrue(bun_activations)
-
-        for host, activation in bun_activations.items():
+        for host, config in json.loads(result.stdout).items():
             with self.subTest(host=host):
-                self.assertIn("BUN_INSTALL=/Users/", activation)
-                self.assertIn("ensure-globals.js", activation)
-                self.assertNotIn("bun global install failed", activation)
-                self.assertNotIn("||", activation)
+                self.assertEqual(config["globals"], [])
+                self.assertNotIn("ensure-globals.js", config["activation"])
+                commands = ["excalidraw"]
+                if host == "MacTraitor-Pro":
+                    commands += ["critique", "vercel", "vc"]
+
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    home = Path(temp_dir)
+                    bins = home / ".bun/bin"
+                    bins.mkdir(parents=True)
+                    env = {**os.environ, "HOME": str(home)}
+
+                    def cleanup():
+                        subprocess.run(["bash", "-eu", "-c", config["cleanup"]], env=env, check=True)
+
+                    for prefix in ("../install/global/node_modules", str(home / ".bun/install/global/node_modules")):
+                        for command in commands:
+                            (bins / command).symlink_to(f"{prefix}/{command}/cli.js")
+                        cleanup()
+                        for command in commands:
+                            self.assertFalse((bins / command).is_symlink())
+                    cleanup()  # Repeated activation is harmless.
+
+                    for command in commands:
+                        (bins / command).write_text("user script")
+                    cleanup()
+                    for command in commands:
+                        self.assertEqual((bins / command).read_text(), "user script")
+                        (bins / command).unlink()
+                        (bins / command).symlink_to("/custom/cli")
+                    cleanup()
+                    for command in commands:
+                        self.assertEqual(os.readlink(bins / command), "/custom/cli")
 
     def test_bun_global_install_skips_unchanged_and_repairs_drift(self) -> None:
         bun = shutil.which("bun")

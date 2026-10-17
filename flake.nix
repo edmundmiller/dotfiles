@@ -737,6 +737,9 @@
               nixfmt.enable = true;
               oxfmt = {
                 enable = true;
+                # Oxfmt already ignores npm lockfiles. Do not invoke it with a
+                # lockfile-only batch, which it rejects as having no targets.
+                excludes = [ "**/package-lock.json" ];
                 includes = [
                   "*.cjs"
                   "*.cts"

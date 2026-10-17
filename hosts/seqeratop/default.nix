@@ -23,7 +23,6 @@
         nextflow.enable = true;
         node.enable = true;
         node.useFnm = true;
-        node.bunGlobalPackages = [ "@excalidraw/cli@0.2.0" ];
         python.enable = true;
         python.conda.enable = true;
       };
@@ -379,6 +378,7 @@
       llm-agents.qmd
       my.betteraudio
       my.emeraldian
+      my.excalidraw-cli
       my.zele
       my.quill
       my.work-calendar-busy
@@ -438,6 +438,17 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+
+        home.activation.removeLegacyBunClis = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          legacy="$HOME/.bun/bin/excalidraw"
+          if [ -L "$legacy" ]; then
+            case "$(readlink "$legacy")" in
+              ../install/global/node_modules/*|"$HOME"/.bun/install/global/node_modules/*)
+                rm "$legacy"
+                ;;
+            esac
+          fi
         '';
       };
 
