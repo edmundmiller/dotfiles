@@ -30,7 +30,7 @@ GITHUB_CLI_MEDIA_SKILL = (
 )
 PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
-SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
+SKILLS_COMMAND = ROOT / "mise-tasks" / "skills-sync.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
@@ -252,13 +252,10 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
     def test_skills_sync_has_no_retired_checkout_input(self) -> None:
         command = SKILLS_COMMAND.read_text()
-        sync_start = command.index('def "main skills-sync"')
-        bump_start = command.index('def "main skills-bump"')
-        sync = command[sync_start:bump_start]
 
         self.assertNotIn("dotfiles-repo", command)
-        self.assertIn("nix flake update skills-catalog", sync)
-        self.assertIn("main rebuild", sync)
+        self.assertIn("nix flake update skills-catalog", command)
+        self.assertIn("^mise run rebuild", command)
 
     def test_unslop_is_catalog_writing_route(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()

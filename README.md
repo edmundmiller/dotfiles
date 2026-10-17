@@ -54,25 +54,32 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
    Why this installer? It handles macOS quirks, enables flakes by default, and won't leave you troubleshooting for hours.
 2. `git clone https://github.com/edmundmiller/dotfiles ~/.config/dotfiles`
 3. `cd ~/.config/dotfiles`
-4. `./bin/hey re` (or if `hey` isn't in your PATH yet: `nix run .#darwinConfigurations.HOSTNAME.system.build.darwin-rebuild -- switch --flake .`)
-   - Use `MacTraitor-Pro` or `Seqeratop` for HOSTNAME, or check `flake.nix` for available configs
+4. `nix develop --command bash -c 'mise trust && mise run re'`
+   - The task selects the current hostname. Set `FLAKE_HOST=MacTraitor-Pro` or
+     `FLAKE_HOST=Seqeratop` before the command to choose explicitly.
 5. Grab a coffee while Nix downloads the internet
-6. `sudo ./result/sw/bin/darwin-rebuild --flake .#HOSTNAME switch` when prompted
 
 ## Management
 
-And I say, `bin/hey`. [What's going on?](https://www.youtube.com/watch?v=ZZ5LpwO-An4)
+Mise discovers this checkout's executable tasks in `mise-tasks/`. `hey` is a
+small compatibility spelling for `mise run`, so `hey re` still works inside the
+repo. Run `mise tasks` to list commands and `mise run <task> --help` for arguments.
 
-| Command             | Description                                                     |
-| ------------------- | --------------------------------------------------------------- |
-| `hey rebuild`       | Rebuild this flake (shortcut: `hey re`)                         |
-| `hey upgrade`       | Update flake lockfile and switch to it (shortcut: `hey up`)     |
-| `hey rollback`      | Roll back to previous system generation                         |
-| `hey gc`            | Runs `nix-collect-garbage -d`. Use sudo to clean system profile |
-| `hey push REMOTE`   | Deploy these dotfiles to REMOTE (over ssh)                      |
-| `hey check`         | Validate changed work without modifying source                  |
-| `hey show`          | Show flake outputs of this repo                                 |
-| `hey skillkit-sync` | Reinstall/repatch `@crafter/skillkit` with Amp + Pi support     |
+| Command                 | Description                                                      |
+| ----------------------- | ---------------------------------------------------------------- |
+| `mise run rebuild`      | Rebuild this host, also available as `mise run re`               |
+| `mise run upgrade`      | Update flake inputs and activate the host                        |
+| `mise run rollback`     | Roll back the system generation                                  |
+| `mise run gc`           | Collect Nix garbage                                              |
+| `mise run nuc-wt build` | Build an isolated snapshot on the NUC                            |
+| `mise run check`        | Validate changed work without modifying source                   |
+| `mise run show`         | Show flake outputs                                               |
+| `mise run dev`          | Enter the Nix development shell; use `dev full` for deploy tools |
+
+Tasks are project-local. From elsewhere, use
+`mise --cd "$DOTFILES" run re`, not a global host-discovery command.
+See [mise setup and migration](docs/mise.md) for direnv migration, local overrides,
+and optional project-scoped MCP access.
 
 Use `hey check --full` for the portable suite and `hey check --platform <suite>`
 for host/VM checks. [Validation workflow](docs/validation.md) explains selection,

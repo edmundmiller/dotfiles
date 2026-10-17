@@ -471,7 +471,7 @@
         apps."${linuxSystem}" = {
           default = {
             type = "app";
-            program = "${./bin/hey}";
+            program = "${pkgs.my.hey}/bin/hey";
           };
           renovate-update-nix-hashes = {
             type = "app";
@@ -482,7 +482,7 @@
         apps."${darwinSystem}" = {
           default = {
             type = "app";
-            program = "${./bin/hey}";
+            program = "${darwinPkgs.my.hey}/bin/hey";
           };
           renovate-update-nix-hashes = {
             type = "app";
@@ -670,8 +670,8 @@
                 # Shell essentials
                 zsh
                 tmux
-                direnv
-                nix-direnv
+                mise
+                nushell
                 starship
 
                 # Search & navigation
@@ -1010,7 +1010,7 @@
                 entry = "${pkgs.bash}/bin/bash ${./bin/tests/hey-active-nix.bash}";
                 language = "system";
                 pass_filenames = false;
-                files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix)$";
+                files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix|scripts/nu/common\\.nu|mise-tasks/.*)$";
                 stages = [ "pre-push" ];
               };
               hey-hermes-local-status = {
@@ -1020,7 +1020,7 @@
                 entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
                 language = "system";
                 pass_filenames = false;
-                files = "^bin/(hey\\.d/hermes\\.nu|tests/hey-hermes-local-status\\.nu)$";
+                files = "^(scripts/nu/hermes\\.nu|mise-tasks/hermes-local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
                 stages = [ "pre-commit" ];
               };
               pi-runtime-wrapper = {
@@ -1114,7 +1114,7 @@
               '';
             };
 
-            # Lightweight default shell for direnv and routine agent work.
+            # Explicit dev shell, entered with `mise run dev`.
             # Refresh shared Git hooks against the immutable generated config.
             # Use `nix develop .#full` when you need deploy tooling.
             default = pkgs.mkShellNoCC {
@@ -1142,6 +1142,8 @@
               packages =
                 with pkgs;
                 [
+                  mise
+                  self.packages.${system}.hey
                   nixfmt
                   deadnix
                   statix
@@ -1225,6 +1227,7 @@
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.git
+                      pkgs.mise
                       pkgs.nushell
                       pkgs.python3
                     ];
@@ -1237,9 +1240,11 @@
                     cp -R ${./.} "$TMPDIR/source"
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
+                    patchShebangs bin/hey mise-tasks
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
+                      tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py
                     touch $out

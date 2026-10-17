@@ -18,6 +18,7 @@ update_when: A canonical doc is added, moved, or changes ownership.
   Lix, and Nix command references
 - [validation.md](./validation.md) — everyday checks, comprehensive checks,
   platform boundaries, CI parity, and failure handling
+- [mise.md](./mise.md) — project tasks, direnv migration, and optional MCP access
 
 ### Agent references
 

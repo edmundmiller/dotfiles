@@ -6,7 +6,7 @@ metadata (`keymap.yaml`) and generated `layout.svg`.
 Do not edit `layout.svg` by hand; change `keymap.yaml`, run `hey ergodox-draw`,
 and review the regenerated SVG.
 
-Commands are in `bin/hey.d/ergodox.nu`: `hey ergodox-build`, `hey ergodox-draw`,
+Commands are in `mise-tasks/ergodox-*.nu`: `hey ergodox-build`, `hey ergodox-draw`,
 `hey ergodox-info`, and `hey ergodox-edit`. Flashing uses `hey ergodox-flash`
 (Keymapp GUI); the macOS CLI has a USB driver conflict. Build uses Nix's AVR
 cross-toolchain, without a `~/qmk_firmware` checkout, tested on aarch64-darwin.

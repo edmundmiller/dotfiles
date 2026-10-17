@@ -7,6 +7,10 @@ todotxtfmt/todotxtfmt
 # Per-worktree direnv overrides
 .envrc.local
 
+# Per-checkout mise overrides can contain private environment values.
+mise.local.toml
+mise.*.local.toml
+
 # Amp portal runtime files
 .amp/portals/*
 

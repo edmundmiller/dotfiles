@@ -509,20 +509,19 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("missing nix", error)
         self.assertIn("dev shell", error)
 
-    @unittest.skipUnless(shutil.which("nu"), "Nushell required for hey parity")
-    def test_hey_and_direct_ci_entry_select_identical_work(self):
+    def test_check_file_task_and_direct_ci_entry_select_identical_work(self):
         (self.root / "scripts").mkdir()
         shutil.copy2(
             v.ROOT / "scripts/validation.py", self.root / "scripts/validation.py"
         )
         self.write("owned space.md", "edit")
-        env = os.environ | {"FLAKE_DIR": str(self.root)}
+        env = os.environ | {"MISE_PROJECT_ROOT": str(self.root)}
         result = subprocess.run(
             [
-                "nu",
-                "--no-config-file",
-                "--commands",
-                f"source '{v.ROOT}/bin/hey.d/flake.nu'; main check --plan 'owned space.md'",
+                "bash",
+                str(v.ROOT / "mise-tasks/check"),
+                "--plan",
+                "owned space.md",
             ],
             cwd=self.root,
             env=env,
