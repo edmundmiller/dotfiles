@@ -1,5 +1,6 @@
 {
   lib,
+  inputs,
   coreutils,
   root ? ../.,
 }:
@@ -28,7 +29,7 @@ let
     let
       result =
         (import (root + "/modules/agents/${name}/default.nix") {
-          inherit config;
+          inherit config inputs;
           lib = moduleLib;
           pkgs.coreutils = coreutils;
           isDarwin = false;

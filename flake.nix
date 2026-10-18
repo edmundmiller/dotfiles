@@ -1394,7 +1394,7 @@
                       pkgs.writeText "agent-instruction-config.json" (
                         builtins.toJSON (
                           import ./tests/agent-instruction-config.nix {
-                            inherit lib;
+                            inherit lib inputs;
                             inherit (pkgs) coreutils;
                           }
                         )

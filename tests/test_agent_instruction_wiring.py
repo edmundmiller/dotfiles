@@ -42,8 +42,9 @@ class AgentInstructionWiringTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     "nix", "eval", "--json", "--impure", "--expr",
-                    f'import {ROOT / "tests/agent-instruction-config.nix"} '
-                    f'{{ lib = (builtins.getFlake {json.dumps(str(ROOT))}).inputs.nixpkgs.lib; '
+                    f'let flake = builtins.getFlake {json.dumps(str(ROOT))}; '
+                    f'in import {ROOT / "tests/agent-instruction-config.nix"} '
+                    '{ inherit (flake) inputs; lib = flake.inputs.nixpkgs.lib; '
                     f'coreutils = {json.dumps(coreutils)}; }}',
                 ],
                 capture_output=True, text=True, check=False,
