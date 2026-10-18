@@ -65,8 +65,8 @@ deployment, cleanup and publication still require authorization under
 # Replacing direnv
 
 This repo's `mise.toml` replaces `.envrc`. Entering the directory sets the
-worktree and Beads variables and adds `bin` to PATH. It does not evaluate the
-flake or install Git hooks. Enter `mise run dev` when you need the Nix shell and
+Beads variable and adds `bin` to PATH. It does not evaluate the flake or install
+Git hooks. Enter `mise run dev` when you need the Nix shell and
 its hook setup. `dev` resolves GitHub credentials for Nix, then restores the
 caller's `NIX_CONFIG` before entering the shell or running the requested command.
 

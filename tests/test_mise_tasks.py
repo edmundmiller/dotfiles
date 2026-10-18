@@ -131,25 +131,39 @@ class MiseTasksTests(unittest.TestCase):
 
     def test_environment_and_dev_credentials_stay_scoped(self):
         self.copy_project()
+        self.env.pop("WORKTRUNK_WORKTREE_PATH", None)
         result = self.run_command(
             "mise",
             "exec",
             "--",
-            "printenv",
-            "WORKTRUNK_WORKTREE_PATH",
-            "BEADS_NO_DAEMON",
+            "bash",
+            "-c",
+            'test -z "${WORKTRUNK_WORKTREE_PATH+x}" && printenv BEADS_NO_DAEMON',
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "../{{ repo }}.{{ branch | sanitize }}\n1\n")
+        self.assertEqual(result.stdout, "1\n")
 
         # Stand in for Nix's process boundary, without evaluating or activating hosts.
         tools = self.root / "fake-tools"
         tools.mkdir()
         for name, body in {
-            "gh": 'printf "fixture-token\\n"',
+            "gh": """
+[[ "$*" == 'auth token --hostname github.com' ]] || exit 93
+case "$TEST_AUTH" in
+  available) printf 'fixture-token\\n' ;;
+  empty) : ;;
+  missing) exit 127 ;;
+  failure) printf 'fixture-token\\n'; exit 1 ;;
+esac
+""",
             "nix": """
-[[ "$NIX_CONFIG" == *"github.com=fixture-token"* ]] || exit 90
-[[ "$1" == develop && "$2" == "$MISE_PROJECT_ROOT#full" ]] || exit 91
+expected_config="$TEST_CALLER_CONFIG"
+if [[ "$TEST_AUTH" == available ]]; then
+  expected_config+=$'\\nextra-access-tokens = github.com=fixture-token'
+fi
+[[ "${NIX_CONFIG:-}" == "$expected_config" ]] || exit 90
+[[ "$1" == develop && "$2" == "$MISE_PROJECT_ROOT#$TEST_SHELL" ]] || exit 91
+[[ "$3" == --no-update-lock-file ]] || exit 94
 while [[ "$1" != --command ]]; do
   if [[ "$1" == --unset ]]; then shift; unset "$1"; fi
   shift
@@ -166,19 +180,37 @@ exec "$@"
             )
             script.chmod(0o755)
         self.env["PATH"] = f"{tools}:{self.env['PATH']}"
-        self.env["NIX_CONFIG"] = "keep-going = true"
-        result = self.run_command(
-            "mise",
-            "run",
-            "dev",
-            "full",
-            "bash",
-            "-c",
-            'printf "%s\\n" "$NIX_CONFIG"; test -z "${DOTFILES_DEV_NIX_CONFIG+x}"',
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "keep-going = true\n")
-        self.assertNotIn("fixture-token", result.stdout + result.stderr)
+        for auth in ("available", "empty", "missing", "failure"):
+            for configured in (False, True):
+                for shell in ("default", "full"):
+                    with self.subTest(auth=auth, configured=configured, shell=shell):
+                        caller_config = (
+                            "keep-going = true\naccess-tokens = git.example.com=existing-token"
+                            if configured
+                            else ""
+                        )
+                        self.env.pop("NIX_CONFIG", None)
+                        if configured:
+                            self.env["NIX_CONFIG"] = caller_config
+                        self.env.update(
+                            TEST_AUTH=auth,
+                            TEST_CALLER_CONFIG=caller_config,
+                            TEST_SHELL=shell,
+                        )
+                        result = self.run_command(
+                            "mise",
+                            "run",
+                            "dev",
+                            shell,
+                            "bash",
+                            "-c",
+                            'test "$NIX_CONFIG" = "$TEST_CALLER_CONFIG" && '
+                            'test -z "${DOTFILES_DEV_NIX_CONFIG+x}" && '
+                            'printf "%s\\n" "$NIX_CONFIG"',
+                        )
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(result.stdout, caller_config + "\n")
+                        self.assertNotIn("fixture-token", result.stdout + result.stderr)
         invalid = self.run_command("mise", "run", "dev", "unknown")
         self.assertEqual(invalid.returncode, 2, invalid.stderr)
 

@@ -2,6 +2,5 @@
 min_version = "2026.7.5"
 
 [env]
-WORKTRUNK_WORKTREE_PATH = "{% raw %}../{{ repo }}.{{ branch | sanitize }}{% endraw %}"
 BEADS_NO_DAEMON = "1"
 _.path = ["bin"]
