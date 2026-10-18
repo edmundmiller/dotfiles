@@ -13,7 +13,9 @@ in
     enable = mkBoolOpt false;
   };
 
-  config = mkIf cfg.enable {
+  # Mise and direnv shell hooks must not both manage directory environments.
+  # Keep this module for hosts that have not enabled mise.
+  config = mkIf (cfg.enable && !config.modules.shell.mise.enable) {
     modules.shell.zsh.rcInit = "_cache direnv hook zsh";
 
     # Use home-manager's native direnv + nix-direnv for cached flake evaluation

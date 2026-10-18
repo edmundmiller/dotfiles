@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -15,6 +16,11 @@ in
   };
 
   config = mkIf cfg.enable {
+    user.packages = with pkgs; [
+      mise
+      nushell
+    ];
+
     modules.shell.zsh = {
       rcInit = ''
         eval "$(mise activate zsh)"

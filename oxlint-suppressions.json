@@ -486,22 +486,8 @@
     }
   },
   "packages/pi-packages/pi-direnv/index.test.ts": {
-    "anti-slop/no-chained-type-assertions": {
-      "count": 1
-    },
     "anti-slop/no-unknown-parameters": {
       "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/pi-packages/pi-direnv/index.ts": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
     }
   },
   "packages/pi-packages/pi-dumb-zone/src/checks.ts": {

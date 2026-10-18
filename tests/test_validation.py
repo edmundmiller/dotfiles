@@ -198,6 +198,9 @@ class ValidationTests(unittest.TestCase):
         selected = self.selection("--full")
         self.assertIn("tracked.md", selected["files"])
         self.assertIn("validation-tests", selected["checks"])
+        self.assertIn("agent-instruction-tests", selected["checks"])
+        self.assertNotIn("omp-thin-harness-tests", selected["checks"])
+        self.assertNotIn("omp-config", selected["checks"])
         self.assertIn("omp-example", selected["packages"])
         self.assertIsNone(selected["platform"])
         self.assertNotIn("trmnl-agent-message-render", selected["checks"])
@@ -506,20 +509,19 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("missing nix", error)
         self.assertIn("dev shell", error)
 
-    @unittest.skipUnless(shutil.which("nu"), "Nushell required for hey parity")
-    def test_hey_and_direct_ci_entry_select_identical_work(self):
+    def test_check_file_task_and_direct_ci_entry_select_identical_work(self):
         (self.root / "scripts").mkdir()
         shutil.copy2(
             v.ROOT / "scripts/validation.py", self.root / "scripts/validation.py"
         )
         self.write("owned space.md", "edit")
-        env = os.environ | {"FLAKE_DIR": str(self.root)}
+        env = os.environ | {"MISE_PROJECT_ROOT": str(self.root)}
         result = subprocess.run(
             [
-                "nu",
-                "--no-config-file",
-                "--commands",
-                f"source '{v.ROOT}/bin/hey.d/flake.nu'; main check --plan 'owned space.md'",
+                "bash",
+                str(v.ROOT / "mise-tasks/check"),
+                "--plan",
+                "owned space.md",
             ],
             cwd=self.root,
             env=env,
@@ -538,11 +540,16 @@ class ValidationTests(unittest.TestCase):
         self.assertNotIn("--platform darwin", workflow.split("  herdr-vm-test:")[0])
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)
+        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
         self.assertIn("runs-on: macos-15", darwin)
         self.assertNotIn("if:", darwin)
-        self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
-        self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
+        for job in (linux, darwin):
+            self.assertIn(
+                "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", job
+            )
+            self.assertIn('if [[ -z "$NIX_GITHUB_TOKEN" ]]', job)
+            self.assertNotIn("secrets.RENOVATE_TOKEN", job)
 
 
 subprocess_run = subprocess.run

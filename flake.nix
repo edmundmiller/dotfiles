@@ -390,7 +390,7 @@
               rtk
               workmux
               ;
-            inherit (pkgs.llm-agents) herdr omp pi;
+            inherit (pkgs.llm-agents) herdr pi;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -414,7 +414,6 @@
             inherit (darwinPkgs.llm-agents)
               gitbutler
               herdr
-              omp
               pi
               ;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
@@ -472,7 +471,7 @@
         apps."${linuxSystem}" = {
           default = {
             type = "app";
-            program = "${./bin/hey}";
+            program = "${pkgs.my.hey}/bin/hey";
           };
           renovate-update-nix-hashes = {
             type = "app";
@@ -483,7 +482,7 @@
         apps."${darwinSystem}" = {
           default = {
             type = "app";
-            program = "${./bin/hey}";
+            program = "${darwinPkgs.my.hey}/bin/hey";
           };
           renovate-update-nix-hashes = {
             type = "app";
@@ -655,41 +654,6 @@
             ];
           };
 
-          # Realize OMP only when its configuration changes, not while building
-          # the hook config for an unrelated Markdown edit.
-          packages.validation-omp-config =
-            let
-              ompConfigCheck = pkgs.runCommand "omp-config-check" { } ''
-                mkdir -p "$out/bin" "$out/lib/omp"
-                src=${self.packages.${system}.omp}
-                cp -a "$src/lib/omp/." "$out/lib/omp/"
-                chmod -R u+w "$out/lib/omp"
-                ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
-                  /usr/bin/codesign -f -s - "$out/lib/omp/omp"
-                ''}
-                printf '%s\n' \
-                  '#!${pkgs.runtimeShell}' \
-                  'export PI_SKIP_VERSION_CHECK=1' \
-                  "exec \"$out/lib/omp/omp\" \"\$@\"" \
-                  > "$out/bin/omp"
-                chmod +x "$out/bin/omp"
-              '';
-            in
-            pkgs.writeShellApplication {
-              name = "validation-omp-config";
-              runtimeInputs = [
-                pkgs.coreutils
-                pkgs.git
-                pkgs.python3
-                pkgs.yq-go
-                ompConfigCheck
-              ];
-              text = ''
-                export PI_SKIP_VERSION_CHECK=1
-                bash modules/agents/omp/test-config-yml.sh
-              '';
-            };
-
           # Headless agent environment (Factory, Devin, etc.)
           # Install: nix profile install .#agent-env
           # Shell:   nix develop .#agent
@@ -706,8 +670,8 @@
                 # Shell essentials
                 zsh
                 tmux
-                direnv
-                nix-direnv
+                mise
+                nushell
                 starship
 
                 # Search & navigation
@@ -1049,7 +1013,7 @@
                 entry = "${pkgs.bash}/bin/bash ${./bin/tests/hey-active-nix.bash}";
                 language = "system";
                 pass_filenames = false;
-                files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix)$";
+                files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix|scripts/nu/common\\.nu|mise-tasks/.*)$";
                 stages = [ "pre-push" ];
               };
               hey-hermes-local-status = {
@@ -1059,7 +1023,7 @@
                 entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
                 language = "system";
                 pass_filenames = false;
-                files = "^bin/(hey\\.d/hermes\\.nu|tests/hey-hermes-local-status\\.nu)$";
+                files = "^(scripts/nu/hermes\\.nu|mise-tasks/hermes/local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
                 stages = [ "pre-commit" ];
               };
               pi-runtime-wrapper = {
@@ -1153,7 +1117,7 @@
               '';
             };
 
-            # Lightweight default shell for direnv and routine agent work.
+            # Explicit dev shell, entered with `mise run dev`.
             # Refresh shared Git hooks against the immutable generated config.
             # Use `nix develop .#full` when you need deploy tooling.
             default = pkgs.mkShellNoCC {
@@ -1181,6 +1145,8 @@
               packages =
                 with pkgs;
                 [
+                  mise
+                  self.packages.${system}.hey
                   nixfmt
                   deadnix
                   statix
@@ -1264,6 +1230,7 @@
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.git
+                      pkgs.mise
                       pkgs.nushell
                       pkgs.python3
                     ];
@@ -1276,9 +1243,11 @@
                     cp -R ${./.} "$TMPDIR/source"
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
+                    patchShebangs bin/hey mise-tasks
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
+                      tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py
                     touch $out
@@ -1354,12 +1323,6 @@
                     touch $out
                   '';
 
-              omp-config = pkgs.runCommand "omp-config" { } ''
-                cd ${./.}
-                ${self.packages.${system}.validation-omp-config}/bin/validation-omp-config
-                touch "$out"
-              '';
-
               agent-mcp-tests =
                 pkgs.runCommand "agent-mcp-tests"
                   {
@@ -1379,14 +1342,10 @@
                     touch "$out"
                   '';
 
-              omp-thin-harness-tests =
-                pkgs.runCommand "omp-thin-harness-tests"
+              agent-instruction-tests =
+                pkgs.runCommand "agent-instruction-tests"
                   {
-                    nativeBuildInputs = [
-                      pkgs.bun
-                      pkgs.python3
-                      self.packages.${system}.omp
-                    ];
+                    nativeBuildInputs = [ pkgs.python3 ];
                   }
                   ''
                     cd ${./.}
@@ -1400,14 +1359,10 @@
                         )
                       )
                     }
-                    OMP_BIN=${self.packages.${system}.omp}/bin/omp \
-                      PYTHONDONTWRITEBYTECODE=1 \
-                      python3 -m unittest \
-                        tests/test_agent_instruction_wiring.py \
-                        tests/test_agent_response_contract.py \
-                        tests/test_codex_model_config.py \
-                        tests/test_omp_ttsr_rules.py
-                    bun test ./tests/omp_lazy_extensions.test.js
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests/test_agent_instruction_wiring.py \
+                      tests/test_agent_response_contract.py \
+                      tests/test_codex_model_config.py
                     touch $out
                   '';
 

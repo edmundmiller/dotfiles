@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
 use std/assert
-source ../hey.d/common.nu
-source ../hey.d/remote.nu
+use ../../scripts/nu/common.nu *
+use ../../scripts/nu/remote.nu *
 
 assert equal (nuc-deploy-mode "nuc") "local"
 assert equal (nuc-deploy-mode "mactraitorpro") "worktree-remote"
@@ -566,6 +566,7 @@ assert not ($orphan_snapshot | path exists) "a stale validation lease must be pr
 assert not ($mismatched_snapshot | path exists) "a marker must not borrow another snapshot's live validation service"
 
 # Exercise the public revision command with a disposable host transport.
+let nuc_task = ($repo_root | path join "mise-tasks/nuc/_default.nu")
 let revision_repo = ($temp_dir | path join "revision-repo")
 let revision_bin = ($temp_dir | path join "revision-bin")
 let revision_marker = ($temp_dir | path join "revision-activated")
@@ -600,14 +601,14 @@ for case in [
   rm -f $revision_marker
   let succeeded = (with-env {
     PATH: ([$revision_bin] ++ $env.PATH)
-    FLAKE_DIR: $revision_repo
+    MISE_PROJECT_ROOT: $revision_repo
     NUC_TEST_HOST: $case.host
     NUC_TEST_PROVENANCE: $case.actual
     NUC_TEST_ACTIVATION: $revision_marker
     NUC_TEST_REBUILD_STATUS: $case.rebuild
     NUC_TEST_TIMER_STATUS: $case.timer
     NUC_TEST_SSH_STATUS: ($case.ssh? | default "0")
-  } { try { main nuc revision $deploy_revision; true } catch { false } })
+  } { (^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision | complete).exit_code == 0 })
   assert equal $succeeded $case.success
   assert equal ($revision_marker | path exists) $case.activated
   if $case.success {
@@ -616,7 +617,7 @@ for case in [
     assert ($activation | str contains $"--flake github:edmundmiller/dotfiles/($deploy_revision)#nuc")
   }
 }
-let invalid_revision_blocked = (try { main nuc revision "main; exit 0"; false } catch { true })
+let invalid_revision_blocked = ((^$nu.current-exe --no-config-file $nuc_task revision "main; exit 0" | complete).exit_code != 0)
 assert $invalid_revision_blocked
 rm -rf $temp_dir
 

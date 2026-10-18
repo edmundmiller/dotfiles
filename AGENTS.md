@@ -18,6 +18,8 @@ their inventories.
 - Use `hey` for guarded system operations: `hey re` / `hey rebuild` for Darwin,
   `hey nuc` for NUC deployment, and `hey skills-update` / `hey skills-sync` for
   catalog updates. Details: [command policy](docs/adr/0001-agent-command-policy.md).
+  `hey` forwards to project-local `mise run`; equivalent mise tasks are supported.
+  Run from this checkout or use `mise --cd <checkout> run <task>`.
 - Edit repository sources, not generated files or deployed Nix store symlinks.
   Some agent configs are intentionally writable; their scoped guides identify them.
 - Keep decrypted secrets out of Git, logs, command arguments, and Nix output.

@@ -10,7 +10,7 @@ type CommandExtraction = {
   label: string;
 } | null;
 
-type ToolGuardDecision = { kind: "allow" } | { kind: "deny"; reason: string };
+type ToolGuardDecision = { kind: "allow" } | { kind: "ask" | "deny"; reason: string };
 
 type ToolCallEventLike = {
   toolName?: unknown;
@@ -59,21 +59,24 @@ function loadBashPolicy(): BashPolicy {
 
 function wildcardToRegExp(pattern: string): RegExp {
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
-  return new RegExp(`^${escaped}$`);
+  return new RegExp(`^${escaped}$`, "s");
 }
 
 function checkBashPolicy(command: string): { state: PermissionState | null; pattern?: string } {
   const policy = loadBashPolicy();
   let result: { state: PermissionState; pattern: string } | null = null;
+  let approval: { state: PermissionState; pattern: string } | null = null;
 
-  // pi-permission-system/OpenCode-compatible wildcard ordering is last match wins.
+  // Keep allow/deny exceptions, but a later allow must not erase an approval
+  // requirement on another command in the same shell string.
   for (const [pattern, state] of Object.entries(policy)) {
     if (wildcardToRegExp(pattern).test(command)) {
       result = { state, pattern };
+      if (state === "ask") approval = result;
     }
   }
 
-  return result ?? { state: null };
+  return result?.state === "deny" ? result : (approval ?? result ?? { state: null });
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -217,10 +220,10 @@ export function evaluateToolGuard(event: ToolCallEventLike): ToolGuardDecision {
       }
     }
     const check = checkBashPolicy(extracted.command);
-    if (check.state === "deny") {
+    if (check.state === "deny" || check.state === "ask") {
       return {
-        kind: "deny",
-        reason: `${extracted.label} command denied by bash policy${check.pattern ? ` (${check.pattern})` : ""}: ${extracted.command}`,
+        kind: check.state,
+        reason: `${extracted.label} command ${check.state === "deny" ? "denied" : "requires approval"} by bash policy${check.pattern ? ` (${check.pattern})` : ""}: ${extracted.command}`,
       };
     }
     return { kind: "allow" };
@@ -230,9 +233,19 @@ export function evaluateToolGuard(event: ToolCallEventLike): ToolGuardDecision {
 }
 
 export default function commandPolicyBridge(pi: ExtensionAPI) {
-  pi.on("tool_call", async (event) => {
+  pi.on("tool_call", async (event, ctx) => {
     const decision = evaluateToolGuard(event);
     if (decision.kind === "deny") {
+      return { block: true, reason: decision.reason };
+    }
+    if (decision.kind === "ask") {
+      // Upstream yoloMode turns ask into allow. This bridge still requires an
+      // explicit answer and fails closed in headless sessions.
+      try {
+        if (ctx.hasUI && (await ctx.ui.confirm("Approve command?", decision.reason))) return;
+      } catch {
+        // A failed dialog is not approval.
+      }
       return { block: true, reason: decision.reason };
     }
     return undefined;

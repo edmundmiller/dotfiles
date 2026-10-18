@@ -55,8 +55,8 @@ jobs:
         run: |
           set -euo pipefail
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
-          nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" --command \
-            nu bin/hey nuc revision "$DEPLOY_SHA"
+          nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
+            env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$DEPLOY_SHA"
       - name: Record deployed revision
         run: |
           printf 'Deployed dotfiles [%s](https://github.com/edmundmiller/dotfiles/commit/%s) to NUC.\n' \
