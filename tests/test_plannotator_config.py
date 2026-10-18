@@ -117,6 +117,8 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                         script,
                         str(target),
                         str(ROOT / "config/claude/settings.json"),
+                        "true",
+                        "true",
                     ],
                     check=True,
                 )
@@ -130,6 +132,55 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                     settings["extraKnownMarketplaces"], template["extraKnownMarketplaces"]
                 )
                 self.assertEqual(settings["hooks"], hooks)
+
+    def test_pstack_only_bootstrap_preserves_all_other_settings(self):
+        module = (ROOT / "modules/agents/claude/default.nix").read_text()
+        bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
+        script = textwrap.dedent(
+            bootstrap.split("<<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+        )
+        existing = {
+            "permissions": {"defaultMode": "plan", "deny": ["Bash(*)"]},
+            "env": {"LOCAL_SETTING": "keep"},
+            "alwaysThinkingEnabled": False,
+            "effortLevel": "low",
+            "hooks": {
+                "Stop": [{"hooks": [{"type": "command", "command": "local hook"}]}]
+            },
+            "enabledPlugins": {"local@private": False},
+            "extraKnownMarketplaces": {"private": {"autoUpdate": True}},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            target = pathlib.Path(directory) / "settings.json"
+            target.write_text(json.dumps(existing))
+            expected = {
+                **existing,
+                "enabledPlugins": {"local@private": False, "pstack@cursor-plugins": True},
+                "extraKnownMarketplaces": {
+                    "private": {"autoUpdate": True},
+                    "cursor-plugins": {
+                        "source": {
+                            "source": "directory",
+                            "path": str(target.parent / "pstack-marketplace"),
+                        },
+                        "autoUpdate": False,
+                    },
+                },
+            }
+            for _ in range(2):
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        script,
+                        str(target),
+                        str(ROOT / "config/claude/settings.json"),
+                        "false",
+                        "true",
+                    ],
+                    check=True,
+                )
+                self.assertEqual(json.loads(target.read_text()), expected)
 
     def test_codex_integration_is_absent(self):
         module = (ROOT / "modules/agents/plannotator/default.nix").read_text(

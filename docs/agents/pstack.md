@@ -18,6 +18,13 @@ Pi's extension loads at startup; invoking a skill is not an activation gate.
 
 ## Claude Code
 
+Pstack defaults on when `modules.agents.claude.enable` is enabled. The NUC
+enables only `modules.agents.claude.pstack.enable` because it already installs
+Claude as an agent backend. This mode merges only the pstack plugin and
+marketplace entries into existing settings. It preserves permissions, hooks,
+environment, other plugins, and all other settings without taking over
+Claude's instructions, skills, or MCP configuration.
+
 Nix links the pinned upstream repository at `~/.claude/pstack-marketplace`.
 The settings bootstrap registers its absolute path as the `cursor-plugins`
 marketplace, disables marketplace auto-updates, and enables
@@ -114,11 +121,13 @@ package before an authorized rebuild. After activation, restart Pi or run
 the expected store path from `nix build --no-link --print-out-paths .#pstack-pi`.
 No `pi update` or Git cache reconciliation is needed for this local package.
 
-To roll back, restore the previous source and both lockfiles, then use the
-guarded rebuild command with authorization. Removing this integration disables
-the Claude plugin, removes the Codex entry point, and stops loading Pi's
-package on activation. It does not delete runtime-owned plugin caches or
-Pi's model-role config. For a Pi package rollback, restore its Nix pin, hash,
+To roll back, disable the Claude plugin with `claude plugin disable pstack@cursor-plugins`,
+restore the previous source and both lockfiles, then use the guarded rebuild
+command with authorization. Plugin-only hosts retain their writable Claude
+settings when the Nix marketplace link is removed. Removing the integration
+removes the Codex entry point and stops loading Pi's package on activation.
+It does not delete runtime-owned plugin caches or Pi's model-role config.
+For a Pi package rollback, restore its Nix pin, hash,
 patches, and harness ref, rebuild with authorization, verify the package symlink,
 and restart Pi or run `/reload`. Old cached Git checkouts may remain on disk but
 are not loaded.

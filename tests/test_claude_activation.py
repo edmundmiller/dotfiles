@@ -10,7 +10,8 @@ class ClaudeActivationTests(unittest.TestCase):
     def test_mcp_cleanup_uses_static_script_instead_of_heredoc(self) -> None:
         module = CLAUDE_MODULE.read_text()
         start = module.index("home.activation.claude-mcp-cleanup")
-        block = module[start : module.index("'';", start)]
+        opening = module.index("''", start)
+        block = module[start : module.index("''", opening + 2)]
 
         self.assertIn(
             "${pkgs.python3}/bin/python3 ${./claude-mcp-cleanup.py}",

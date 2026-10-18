@@ -16,9 +16,16 @@ let
       home = "/tmp/agent-instruction-test";
     };
     modules = {
-      agents = lib.genAttrs [ "omp" "codex" "claude" "pi" "opencode" ] (_: {
-        enable = true;
-      });
+      agents =
+        lib.genAttrs [ "omp" "codex" "claude" "pi" "opencode" ] (_: {
+          enable = true;
+        })
+        // {
+          claude = {
+            enable = true;
+            pstack.enable = true;
+          };
+        };
       desktop.term.ghostty.enable = false;
     };
   };

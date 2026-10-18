@@ -35,20 +35,24 @@ in
 {
   options.modules.agents.claude = {
     enable = mkBoolOpt false;
+    pstack.enable = mkBoolOpt cfg.enable;
   };
 
-  config = mkIf cfg.enable {
-    user.packages = [
+  config = mkIf (cfg.enable || cfg.pstack.enable) {
+    user.packages = mkIf cfg.enable [
       pkgs.llm-agents.claude-code
     ];
 
-    home.file = {
-      # Shared agent modes come from config/agents/.
-      ".claude/agents".source = "${configDir}/agents/modes";
-      ".claude/pstack-marketplace".source = inputs.skills-catalog.inputs.pstack.outPath;
-      # Claude's global instruction file receives the same bounded semantic core.
-      ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
-    };
+    home.file =
+      optionalAttrs cfg.enable {
+        # Shared agent modes come from config/agents/.
+        ".claude/agents".source = "${configDir}/agents/modes";
+        # Claude's global instruction file receives the same bounded semantic core.
+        ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
+      }
+      // optionalAttrs cfg.pstack.enable {
+        ".claude/pstack-marketplace".source = inputs.skills-catalog.inputs.pstack.outPath;
+      };
 
     home-manager.users.${config.user.name} =
       { lib, ... }:
@@ -56,7 +60,7 @@ in
         # Claude does not discover ~/.agents/skills natively. Expose the shared
         # skills it needs through Claude's own directory. OMP may scan both
         # providers, but name-based discovery keeps one canonical entry.
-        home.activation.claude-shared-skill-links =
+        home.activation.claude-shared-skill-links = mkIf cfg.enable (
           lib.hm.dag.entryAfter
             [
               "remove-legacy-claude-skills"
@@ -78,10 +82,12 @@ in
                   exit 1
                 fi
               done
-            '';
+            ''
+        );
 
         home.activation.claude-settings-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" "${configDir}/claude/settings.json" <<'PY'
+          ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" "${configDir}/claude/settings.json" "${boolToString cfg.enable}" "${boolToString cfg.pstack.enable}" <<'PY'
+          import copy
           import json
           import os
           import pathlib
@@ -89,6 +95,8 @@ in
 
           target = pathlib.Path(sys.argv[1])
           template = pathlib.Path(sys.argv[2])
+          managed_settings = sys.argv[3] == "true"
+          pstack_enabled = sys.argv[4] == "true"
           target.parent.mkdir(parents=True, exist_ok=True)
 
           try:
@@ -96,14 +104,30 @@ in
           except Exception:
               data = {}
 
-          data["extraKnownMarketplaces"]["cursor-plugins"]["source"]["path"] = str(
-              target.parent / "pstack-marketplace"
-          )
-
           try:
               existing = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}
           except Exception:
+              if not managed_settings:
+                  raise
               existing = {}
+
+          if not managed_settings:
+              # Plugin-only hosts retain their existing permissions and settings.
+              template_data = data
+              data = copy.deepcopy(existing)
+              for key, name in (
+                  ("extraKnownMarketplaces", "cursor-plugins"),
+                  ("enabledPlugins", "pstack@cursor-plugins"),
+              ):
+                  data.setdefault(key, {})[name] = template_data[key][name]
+
+          if pstack_enabled:
+              data["extraKnownMarketplaces"]["cursor-plugins"]["source"]["path"] = str(
+                  target.parent / "pstack-marketplace"
+              )
+          else:
+              data["extraKnownMarketplaces"].pop("cursor-plugins", None)
+              data["enabledPlugins"].pop("pstack@cursor-plugins", None)
 
           # Herdr's Claude installer mutates settings.json to register hooks.
           # Keep those runtime hooks while refreshing the rest from the repo
@@ -112,7 +136,7 @@ in
               data["hooks"] = existing["hooks"]
 
           stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
-          hooks = data.get("hooks")
+          hooks = data.get("hooks") if managed_settings else None
           if isinstance(hooks, dict):
               for event, entries in list(hooks.items()):
                   if not isinstance(entries, list):
@@ -154,62 +178,66 @@ in
           PY
         '';
 
-        home.activation.claude-stale-hook-cleanup = lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
-          ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" <<'PY'
-          import json
-          import pathlib
-          import sys
+        home.activation.claude-stale-hook-cleanup = mkIf cfg.enable (
+          lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
+            ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" <<'PY'
+            import json
+            import pathlib
+            import sys
 
-          path = pathlib.Path(sys.argv[1])
-          try:
-              data = json.loads(path.read_text(encoding="utf-8"))
-          except Exception:
-              raise SystemExit(0)
+            path = pathlib.Path(sys.argv[1])
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                raise SystemExit(0)
 
-          stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
-          hooks = data.get("hooks")
-          changed = False
-          if isinstance(hooks, dict):
-              for event, entries in list(hooks.items()):
-                  if not isinstance(entries, list):
-                      continue
-                  next_entries = []
-                  for entry in entries:
-                      if not isinstance(entry, dict):
-                          next_entries.append(entry)
-                          continue
-                      hook_list = entry.get("hooks")
-                      if not isinstance(hook_list, list):
-                          next_entries.append(entry)
-                          continue
-                      filtered_hooks = [
-                          hook
-                          for hook in hook_list
-                          if not (
-                              isinstance(hook, dict)
-                              and hook.get("command") == stale_git_ai
-                          )
-                      ]
-                      if filtered_hooks != hook_list:
-                          changed = True
-                      if filtered_hooks:
-                          entry = dict(entry)
-                          entry["hooks"] = filtered_hooks
-                          next_entries.append(entry)
-                  if next_entries:
-                      hooks[event] = next_entries
-                  else:
-                      hooks.pop(event, None)
-                      changed = True
+            stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
+            hooks = data.get("hooks")
+            changed = False
+            if isinstance(hooks, dict):
+                for event, entries in list(hooks.items()):
+                    if not isinstance(entries, list):
+                        continue
+                    next_entries = []
+                    for entry in entries:
+                        if not isinstance(entry, dict):
+                            next_entries.append(entry)
+                            continue
+                        hook_list = entry.get("hooks")
+                        if not isinstance(hook_list, list):
+                            next_entries.append(entry)
+                            continue
+                        filtered_hooks = [
+                            hook
+                            for hook in hook_list
+                            if not (
+                                isinstance(hook, dict)
+                                and hook.get("command") == stale_git_ai
+                            )
+                        ]
+                        if filtered_hooks != hook_list:
+                            changed = True
+                        if filtered_hooks:
+                            entry = dict(entry)
+                            entry["hooks"] = filtered_hooks
+                            next_entries.append(entry)
+                    if next_entries:
+                        hooks[event] = next_entries
+                    else:
+                        hooks.pop(event, None)
+                        changed = True
 
-          if changed:
-              path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-          PY
-        '';
+            if changed:
+                path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            PY
+          ''
+        );
 
-        home.activation.claude-mcp-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${pkgs.python3}/bin/python3 ${./claude-mcp-cleanup.py} "$HOME/.claude.json"
-        '';
+        home.activation.claude-mcp-cleanup = mkIf cfg.enable (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${pkgs.python3}/bin/python3 ${./claude-mcp-cleanup.py} "$HOME/.claude.json"
+          ''
+        );
       };
   };
 }
