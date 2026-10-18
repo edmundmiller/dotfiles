@@ -4,8 +4,9 @@
 `~/.claude/CLAUDE.md`, and shared modes as `~/.claude/agents/`.
 
 Settings are a writable bootstrap from `config/claude/settings.json`, preserving
-Herdr/runtime hooks. The DuckDB plugin is the only generally managed Claude Code
-plugin; other retired plugins and their WakaTime wiring must not be restored.
+Herdr/runtime hooks. Pstack uses the child flake's pinned input as a local
+`cursor-plugins` marketplace. Do not restore retired DuckDB, Plannotator, or WakaTime plugins.
+See [pstack integration](../../../docs/agents/pstack.md) for usage and pin updates.
 
 Claude gets only `test-quality`, `github-cli-media`, `lore`, and `pe-verify`
 links into the canonical `~/.agents/skills` tree. Other Claude skill copies are

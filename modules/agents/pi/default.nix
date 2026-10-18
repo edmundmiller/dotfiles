@@ -367,6 +367,7 @@ in
             isDarwin
             piPermissionSystemConfig
             ;
+          piPstack = pkgs.my.pstack-pi;
           inherit (settings) piSettingsValidated;
         };
 

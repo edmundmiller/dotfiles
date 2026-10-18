@@ -73,16 +73,23 @@ class PlannotatorCodexCleanupTests(unittest.TestCase):
 
 
 class PlannotatorSourceContractTests(unittest.TestCase):
-    def test_claude_plugin_installation_is_not_managed_by_activation(self):
+    def test_claude_only_declares_the_pstack_plugin(self):
         module = (ROOT / "modules/agents/claude/default.nix").read_text()
         settings = json.loads(
             (ROOT / "config/claude/settings.json").read_text(encoding="utf-8")
         )
         self.assertNotIn("claude-duckdb-skills-plugin", module)
         self.assertNotIn("duckdb-skills@claude-plugins-official", json.dumps(settings))
-        self.assertNotIn("extraKnownMarketplaces", settings)
+        self.assertEqual(settings["enabledPlugins"], {"pstack@cursor-plugins": True})
+        marketplace = settings["extraKnownMarketplaces"]
+        self.assertEqual(set(marketplace), {"cursor-plugins"})
+        self.assertEqual(
+            marketplace["cursor-plugins"]["source"],
+            {"source": "directory", "path": "~/.claude/pstack-marketplace"},
+        )
+        self.assertFalse(marketplace["cursor-plugins"]["autoUpdate"])
 
-    def test_claude_bootstrap_keeps_runtime_hooks_without_managing_plugins(self):
+    def test_claude_bootstrap_keeps_runtime_hooks_and_replaces_retired_plugins(self):
         module = (ROOT / "modules/agents/claude/default.nix").read_text()
         bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
         script = textwrap.dedent(
@@ -114,8 +121,14 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                     check=True,
                 )
                 settings = json.loads(target.read_text())
-                self.assertNotIn("enabledPlugins", settings)
-                self.assertNotIn("extraKnownMarketplaces", settings)
+                template = json.loads((ROOT / "config/claude/settings.json").read_text())
+                template["extraKnownMarketplaces"]["cursor-plugins"]["source"]["path"] = str(
+                    target.parent / "pstack-marketplace"
+                )
+                self.assertEqual(settings["enabledPlugins"], template["enabledPlugins"])
+                self.assertEqual(
+                    settings["extraKnownMarketplaces"], template["extraKnownMarketplaces"]
+                )
                 self.assertEqual(settings["hooks"], hooks)
 
     def test_codex_integration_is_absent(self):
@@ -150,8 +163,8 @@ class PlannotatorSourceContractTests(unittest.TestCase):
         self.assertNotIn("plannotator-claude-plugin", module)
         self.assertNotIn("claudeEnabled", module)
         self.assertIn("herdrEnabled = config.modules.shell.herdr.enable;", module)
-        self.assertNotIn("enabledPlugins", claude)
-        self.assertNotIn("extraKnownMarketplaces", claude)
+        self.assertNotIn("plannotator@plannotator", claude["enabledPlugins"])
+        self.assertNotIn("plannotator", claude["extraKnownMarketplaces"])
         self.assertNotIn("claude-duckdb-skills-plugin", claude_module)
         self.assertFalse((ROOT / ".claude-plugin/marketplace.json").exists())
         self.assertFalse((ROOT / ".claudelint.toml").exists())
