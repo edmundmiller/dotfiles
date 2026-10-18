@@ -1,6 +1,7 @@
 # pi-direnv
 
-Auto-load [direnv](https://direnv.net/) environment at session start and when switching sessions. Ensures bash commands have project-specific env vars from `.envrc` files.
+Load trusted mise environments at session start and when switching sessions,
+with [direnv](https://direnv.net/) fallback for projects using `.envrc`.
 
 ## Install
 
@@ -12,14 +13,28 @@ pi install npm:pi-direnv
 
 On `session_start` and `session_switch`, including switches requested by the RPC `switch_session` command:
 
-1. Checks if `direnv` is installed (skips silently if not)
-2. Searches for `.envrc` from `ctx.sessionManager.getCwd()` up to that project's git root, regardless of where Pi was launched
-3. Runs `direnv export json` and applies variables to `process.env`
-4. Shows a notification with the count of loaded vars
-5. Warns if `.envrc` is blocked (needs `direnv allow`)
+1. Restores variables changed by the previous load, including PATH.
+2. Searches from `ctx.sessionManager.getCwd()` up to the git root for mise
+   configuration, regardless of where Pi was launched. Falls back to `.envrc`
+   only when no project mise configuration exists.
+3. Uses `mise exec` to read a child environment as JSON, without running tasks,
+   installing tools, or entering a Nix shell. Trust remains required even in CI
+   or when the parent sets `MISE_YES`. Otherwise uses `direnv export json`.
+4. Applies the environment only after a successful command and valid JSON.
+   Direnv null values remove variables. Failed loads retain the restored baseline.
+5. Warns on failure without displaying environment values or subprocess output.
+
+Review and explicitly trust project configuration yourself. Mise uses paranoid
+trust checks; edits may require running `mise trust` again. Trusted mise env
+templates and direnv scripts still execute their configured code. This extension
+does not sandbox them. Mise 2026.7.5 does not apply `[env] KEY=false` in `exec`;
+the loader follows that upstream limitation, but always removes its own prior
+project exports on session switches.
 
 ## Why
 
-Nix flakes + direnv is a common pattern. Without this extension, `pi exec` commands miss project-specific PATH entries, env vars, and tool versions defined in your flake's `devShell`.
+Pi launched outside a project still needs that session's PATH and environment.
+Loading dotfiles' mise configuration stays lightweight; run `mise run dev`
+explicitly when a Nix shell is needed.
 
 Inspired by [simonwjackson/opencode-direnv](https://github.com/simonwjackson/opencode-direnv).

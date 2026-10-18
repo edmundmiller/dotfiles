@@ -1,9 +1,4 @@
 {
-  ".omp/hooks/post/completion-gate.ts": {
-    "anti-slop/no-conditional-empty-object-spread": {
-      "count": 1
-    }
-  },
   "config/omp/extensions/_lib/lazy-extension.mjs": {
     "anti-slop/no-reflect-get": {
       "count": 1
@@ -497,22 +492,8 @@
     }
   },
   "packages/pi-packages/pi-direnv/index.test.ts": {
-    "anti-slop/no-chained-type-assertions": {
-      "count": 1
-    },
     "anti-slop/no-unknown-parameters": {
       "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/pi-packages/pi-direnv/index.ts": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
     }
   },
   "packages/pi-packages/pi-dumb-zone/src/checks.ts": {
@@ -838,11 +819,6 @@
   "packages/tmux-smart-name/src/status.ts": {
     "anti-slop/no-known-value-widening": {
       "count": 4
-    }
-  },
-  "tests/omp_completion_gate.test.js": {
-    "anti-slop/no-shape-in-symbol-names": {
-      "count": 3
     }
   },
   "tests/skill-evals/done-skill-scorer.ts": {

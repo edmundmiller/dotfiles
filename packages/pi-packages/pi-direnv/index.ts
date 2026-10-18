@@ -1,88 +1,127 @@
-/**
- * pi-direnv Extension
- *
- * Automatically loads direnv environment variables at session start and switch.
- * Ensures bash commands have access to project-specific env vars
- * defined in .envrc files (commonly used with Nix flakes).
- *
- * Behavior:
- * - Searches for .envrc from the session cwd up to its git root
- * - Runs `direnv export json` and applies vars to process.env
- * - Shows notification if .envrc is blocked or env loaded
- * - Silently skips if direnv missing or no .envrc exists
- *
- * Inspired by https://github.com/simonwjackson/opencode-direnv
- */
-
 import type {
   ExtensionAPI,
   ExtensionContext,
   SessionStartEvent,
   SessionSwitchEvent,
 } from "@mariozechner/pi-coding-agent";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export default function (pi: ExtensionAPI) {
-  async function loadDirenv(_event: SessionStartEvent | SessionSwitchEvent, ctx: ExtensionContext) {
-    const cwd = ctx.sessionManager.getCwd();
+  const previous = new Map<string, string | undefined>();
 
-    // Check direnv is available
-    const hasDirenvCmd = await pi.exec("which", ["direnv"]);
-    if (hasDirenvCmd.code !== 0) return;
-
-    // Find .envrc searching upward to git root
-    const gitRoot = await findGitRoot(pi, cwd);
-    const envrcPath = findEnvrc(cwd, gitRoot);
-    if (!envrcPath) return;
-
-    const envrcDir = dirname(envrcPath);
+  async function loadEnvironment(ctx: ExtensionContext, cwd: string) {
+    // Undo only this extension's changes, including PATH, before resolving the
+    // next project. An empty, unavailable, or untrusted project must not retain them.
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    previous.clear();
 
     try {
-      const result = await pi.exec("direnv", ["export", "json"], { cwd: envrcDir });
-      const output = result.stdout?.trim();
-      if (!output) return;
-
-      const envVars = JSON.parse(output) as Record<string, string>;
-      const count = Object.keys(envVars).length;
-
-      // Apply to process.env so child processes inherit them
-      Object.assign(process.env, envVars);
-
-      ctx.ui.notify(`direnv: loaded ${count} env vars`, "info");
-    } catch (err: unknown) {
-      const stderr =
-        err && typeof err === "object" && "stderr" in err
-          ? String((err as { stderr: unknown }).stderr)
-          : "";
-
-      if (stderr.includes("is blocked")) {
-        ctx.ui.notify("direnv: .envrc is blocked. Run `direnv allow` to enable.", "warning");
+      const gitRoot = await findGitRoot(pi, cwd);
+      const provider = findEnvironment(cwd, gitRoot);
+      if (!provider) return;
+      // exec honors the no-install settings even on mise 2026.7.5. A JSON dump
+      // avoids evaluating shell output. Never run project tasks or a Nix shell.
+      const result =
+        provider === "mise"
+          ? await pi.exec(
+              "env",
+              [
+                "MISE_YES=0",
+                "MISE_PARANOID=1",
+                "MISE_AUTO_INSTALL=0",
+                "MISE_EXEC_AUTO_INSTALL=0",
+                "MISE_NO_HOOKS=1",
+                "mise",
+                "exec",
+                "--",
+                "node",
+                "-e",
+                "process.stdout.write(JSON.stringify(process.env))",
+              ],
+              { cwd, timeout: 15000 }
+            )
+          : await pi.exec("direnv", ["export", "json"], { cwd, timeout: 15000 });
+      if (result.code !== 0 || result.killed) {
+        ctx.ui.notify(
+          `${provider}: environment not loaded. Check ${provider === "mise" ? "mise trust" : "direnv allow"} in the session project.`,
+          "warning"
+        );
+        return;
       }
-      // Other errors (parse failures, etc.) — skip silently
+      if (!result.stdout.trim()) return;
+      const values: unknown = JSON.parse(result.stdout);
+      // This is the subprocess JSON boundary: accept only a flat string/null record.
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof
+      if (!values || typeof values !== "object" || Array.isArray(values)) return;
+      const entries = Object.entries(values);
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof
+      if (entries.some(([, value]) => typeof value !== "string" && value !== null)) return;
+      // mise returns a complete child environment; direnv returns a delta.
+      const changes = new Map<string, string | null>(entries);
+      if (provider === "mise") {
+        for (const key of Object.keys(process.env)) {
+          if (!changes.has(key)) changes.set(key, null);
+        }
+        // These controls belong to the loader, not the interactive environment.
+        for (const key of [
+          "MISE_YES",
+          "MISE_PARANOID",
+          "MISE_AUTO_INSTALL",
+          "MISE_EXEC_AUTO_INSTALL",
+          "MISE_NO_HOOKS",
+        ])
+          changes.delete(key);
+      }
+      for (const [key, value] of changes) {
+        if (process.env[key] === (value ?? undefined)) continue;
+        previous.set(key, process.env[key]);
+        if (value === null) delete process.env[key];
+        else process.env[key] = value;
+      }
+      ctx.ui.notify(`${provider}: loaded project environment`, "info");
+    } catch {
+      // Missing tools and malformed output must not leave partial exports or
+      // print environment values, which can contain secrets.
+      ctx.ui.notify("Project environment unavailable", "warning");
     }
   }
 
-  pi.on("session_start", loadDirenv);
-  pi.on("session_switch", loadDirenv);
+  let pending = Promise.resolve();
+  function load(_event: SessionStartEvent | SessionSwitchEvent, ctx: ExtensionContext) {
+    const cwd = ctx.sessionManager.getCwd();
+    pending = pending.then(() => loadEnvironment(ctx, cwd));
+    return pending;
+  }
+  pi.on("session_start", load);
+  pi.on("session_switch", load);
 }
 
 async function findGitRoot(pi: ExtensionAPI, cwd: string): Promise<string | null> {
   try {
     const result = await pi.exec("git", ["rev-parse", "--show-toplevel"], { cwd });
-    return result.stdout?.trim() || null;
+    return result.code === 0 ? result.stdout?.trim() || null : null;
   } catch {
     return null;
   }
 }
 
-function findEnvrc(startDir: string, stopAt: string | null): string | null {
+function findEnvironment(startDir: string, stopAt: string | null): "mise" | "direnv" | null {
   const boundary = stopAt || "/";
   let current = startDir;
+  let direnv = false;
 
   while (true) {
-    const envrcPath = join(current, ".envrc");
-    if (existsSync(envrcPath)) return envrcPath;
+    if (
+      readdirSync(current).some((name) => /^\.?mise(?:\..+)?\.toml$/.test(name)) ||
+      existsSync(join(current, ".config/mise")) ||
+      existsSync(join(current, ".mise"))
+    )
+      return "mise";
+    direnv ||= existsSync(join(current, ".envrc"));
 
     if (current === boundary || current === "/") break;
 
@@ -91,5 +130,5 @@ function findEnvrc(startDir: string, stopAt: string | null): string | null {
     current = parent;
   }
 
-  return null;
+  return direnv ? "direnv" : null;
 }

@@ -2,7 +2,7 @@
   "name": "pi-direnv",
   "version": "0.1.0",
   "type": "module",
-  "description": "Auto-load direnv environment at session start — ensures bash commands have project-specific env vars from .envrc",
+  "description": "Load trusted mise or direnv environments for the current Pi session project.",
   "main": "./index.ts",
   "keywords": [
     "pi",
