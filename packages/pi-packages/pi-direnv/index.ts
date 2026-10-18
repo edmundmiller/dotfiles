@@ -5,6 +5,7 @@ import type {
   SessionSwitchEvent,
 } from "@mariozechner/pi-coding-agent";
 import { existsSync, readdirSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 export default function (pi: ExtensionAPI) {
@@ -115,6 +116,8 @@ function findEnvironment(startDir: string, stopAt: string | null): "mise" | "dir
   let direnv = false;
 
   while (true) {
+    // Without a Git boundary, home-level configuration is global, not a project.
+    if (!stopAt && current === (process.env.HOME || homedir())) break;
     if (
       readdirSync(current).some((name) => /^\.?mise(?:\..+)?\.toml$/.test(name)) ||
       existsSync(join(current, ".config/mise")) ||

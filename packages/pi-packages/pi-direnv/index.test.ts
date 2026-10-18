@@ -211,3 +211,28 @@ test("direnv fallback removes null exports and restores values before failed or 
     expect(loader.notices.join("\n")).not.toContain("secret");
   }
 });
+
+test("global mise config does not select a provider for a non-Git session", async () => {
+  const home = join(temp, "home");
+  const scratch = join(home, "scratch");
+  const empty = join(home, "empty");
+  mkdirSync(join(home, ".config/mise"), { recursive: true });
+  mkdirSync(scratch);
+  mkdirSync(empty);
+  writeFileSync(join(home, ".config/mise/config.toml"), '[env]\nPI_ENV_SHARED="global"\n');
+  writeFileSync(join(scratch, ".envrc"), "");
+  process.env.HOME = home;
+  process.env.PI_ENV_SHARED = "baseline";
+  const loader = session(async (command, args, options) => {
+    if (command === "git") return exec(command, args, options);
+    const values =
+      command === "direnv"
+        ? { PI_ENV_SHARED: "direnv" }
+        : { ...process.env, PI_ENV_SHARED: "global" };
+    return { stdout: JSON.stringify(values), stderr: "", code: 0, killed: false };
+  });
+  await loader.open(scratch, "session_start");
+  expect(process.env.PI_ENV_SHARED).toBe("direnv");
+  await loader.open(empty);
+  expect(process.env.PI_ENV_SHARED).toBe("baseline");
+});

@@ -15,8 +15,9 @@ On `session_start` and `session_switch`, including switches requested by the RPC
 
 1. Restores variables changed by the previous load, including PATH.
 2. Searches from `ctx.sessionManager.getCwd()` up to the git root for mise
-   configuration, regardless of where Pi was launched. Falls back to `.envrc`
-   only when no project mise configuration exists.
+   configuration, regardless of where Pi was launched. Without a Git root,
+   the search stops before the home directory. Falls back to `.envrc` only
+   when no project mise configuration exists.
 3. Uses `mise exec` to read a child environment as JSON, without running tasks,
    installing tools, or entering a Nix shell. Trust remains required even in CI
    or when the parent sets `MISE_YES`. Otherwise uses `direnv export json`.
