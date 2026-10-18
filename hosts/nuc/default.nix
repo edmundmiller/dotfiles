@@ -2435,6 +2435,8 @@ in
           openaiDeveloperDocs.enable = true;
         };
       };
+      # Claude's CLI is a backend here; keep its existing permissions/settings.
+      claude.pstack.enable = true;
       codex.enable = true;
       omp.enable = false;
       opencode.enable = true;

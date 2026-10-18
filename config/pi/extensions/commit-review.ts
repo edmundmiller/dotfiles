@@ -18,23 +18,13 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { loadCommitConfig, type CommitConfig } from "./lib/commit-config";
+import { getModelCost, normalizeMode, pickCheapestModel, type ModelInfo } from "./lib/commit-model";
 import {
   buildCommitDraftPrompt,
   chooseCommitEditor,
   sanitizeCommitMessage,
   truncateForPrompt,
 } from "./lib/commit-review-logic";
-
-interface ModelInfo {
-  id: string;
-  provider: string;
-  cost: {
-    input: number;
-    output: number;
-    cacheRead: number;
-    cacheWrite: number;
-  };
-}
 
 interface ModelSelection {
   model: string;
@@ -47,119 +37,9 @@ const DEFAULT_CONFIG: CommitConfig = {
   mode: "anthropic/claude-haiku-4-5",
   maxOutputCost: DEFAULT_MAX_OUTPUT_COST,
 };
-const HARD_FALLBACK_MODEL = "github-copilot/gpt-4o-mini";
 const MAX_DIFF_CHARS = 32_000;
 const MAX_STAT_CHARS = 4_000;
 const COMMIT_SHORTCUT = "ctrl+shift+g";
-
-function normalizeMode(mode?: string): string | undefined {
-  if (!mode) return undefined;
-  const trimmed = mode.trim();
-  if (!trimmed) return undefined;
-  return /^[^/\s]+\/[^\s]+$/.test(trimmed) ? trimmed : undefined;
-}
-
-function calculateCostScore(model: ModelInfo): number {
-  const { input, output } = model.cost;
-  if (input === 0 && output === 0) return Number.MAX_SAFE_INTEGER;
-  return input + output * 2;
-}
-
-function isCheapModelName(id: string): boolean {
-  return /(mini|flash|nano|haiku|lite|micro|free)/i.test(id);
-}
-
-function isModelInfo(value: unknown): value is ModelInfo {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-
-  const id = Reflect.get(value, "id");
-  const provider = Reflect.get(value, "provider");
-  const cost = Reflect.get(value, "cost");
-  if (typeof id !== "string" || typeof provider !== "string") return false;
-  if (typeof cost !== "object" || cost === null || Array.isArray(cost)) return false;
-
-  return (
-    typeof Reflect.get(cost, "input") === "number" &&
-    typeof Reflect.get(cost, "output") === "number" &&
-    typeof Reflect.get(cost, "cacheRead") === "number" &&
-    typeof Reflect.get(cost, "cacheWrite") === "number"
-  );
-}
-
-async function getAvailableModels(ctx: ExtensionContext): Promise<ModelInfo[]> {
-  const available = await ctx.modelRegistry.getAvailable();
-  if (!Array.isArray(available)) return [];
-  return available.filter(isModelInfo);
-}
-
-async function pickCheapestModel(
-  ctx: ExtensionContext,
-  maxOutputCost: number
-): Promise<ModelSelection> {
-  const available = await getAvailableModels(ctx);
-  if (available.length === 0) {
-    return { model: HARD_FALLBACK_MODEL, source: "auto", cost: null };
-  }
-
-  const tokenBased = available.filter(
-    (model) => !(model.cost.input === 0 && model.cost.output === 0)
-  );
-
-  const cheapModels = tokenBased
-    .filter((model) => model.cost.output <= maxOutputCost)
-    .sort((left, right) => calculateCostScore(left) - calculateCostScore(right));
-  const cheapestUnderCap = cheapModels[0];
-  if (cheapestUnderCap) {
-    return {
-      model: `${cheapestUnderCap.provider}/${cheapestUnderCap.id}`,
-      source: "auto",
-      cost: cheapestUnderCap.cost,
-    };
-  }
-
-  const cheapNamed = tokenBased
-    .filter((model) => isCheapModelName(model.id))
-    .sort((left, right) => calculateCostScore(left) - calculateCostScore(right));
-  const cheapestNamed = cheapNamed[0];
-  if (cheapestNamed) {
-    return {
-      model: `${cheapestNamed.provider}/${cheapestNamed.id}`,
-      source: "auto",
-      cost: cheapestNamed.cost,
-    };
-  }
-
-  const cheapestTokenBased = [...tokenBased].sort(
-    (left, right) => calculateCostScore(left) - calculateCostScore(right)
-  )[0];
-  if (cheapestTokenBased) {
-    return {
-      model: `${cheapestTokenBased.provider}/${cheapestTokenBased.id}`,
-      source: "auto",
-      cost: cheapestTokenBased.cost,
-    };
-  }
-
-  const cheapestAvailable = [...available].sort(
-    (left, right) => calculateCostScore(left) - calculateCostScore(right)
-  )[0];
-  return {
-    model: `${cheapestAvailable.provider}/${cheapestAvailable.id}`,
-    source: "auto",
-    cost: cheapestAvailable.cost,
-  };
-}
-
-async function getModelCost(
-  ctx: ExtensionContext,
-  modelString: string
-): Promise<ModelInfo["cost"] | null> {
-  const [provider, ...idParts] = modelString.split("/");
-  const modelId = idParts.join("/");
-  const available = await getAvailableModels(ctx);
-  const found = available.find((model) => model.provider === provider && model.id === modelId);
-  return found ? found.cost : null;
-}
 
 function formatCost(cost: ModelInfo["cost"] | null): string {
   if (!cost) return "cost unknown";

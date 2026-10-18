@@ -1349,6 +1349,16 @@
                   }
                   ''
                     cd ${./.}
+                    export AGENT_INSTRUCTION_CONFIG=${
+                      pkgs.writeText "agent-instruction-config.json" (
+                        builtins.toJSON (
+                          import ./tests/agent-instruction-config.nix {
+                            inherit lib inputs;
+                            inherit (pkgs) coreutils;
+                          }
+                        )
+                      )
+                    }
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_agent_instruction_wiring.py \
                       tests/test_agent_response_contract.py \

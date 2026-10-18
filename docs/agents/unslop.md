@@ -2,7 +2,7 @@
 purpose: Record how unslop writing rules are wired in this flake.
 applies_to: Agent prose, UI copy, commits, PRs, and docs.
 entrypoint: Root AGENTS.md writing route, then skills/catalog/unslop/SKILL.md.
-verification: python3 -m unittest tests.FAKESECRET_i3j4k5l6m7n8o9p0q1r2
+verification: python3 -m unittest tests.test_agent_instruction_wiring
 update_when: The pstack pin, catalog path, or adjacent slop tools change.
 ---
 

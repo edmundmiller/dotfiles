@@ -55,6 +55,8 @@ promptLinks
     "${configDir}/pi/extensions/lib/commit-review-logic.ts";
   ".pi/agent/extensions/lib/commit-config.ts".source =
     "${configDir}/pi/extensions/lib/commit-config.ts";
+  ".pi/agent/extensions/lib/commit-model.ts".source =
+    "${configDir}/pi/extensions/lib/commit-model.ts";
   ".pi/agent/extensions/lib/review-git.ts".source = "${configDir}/pi/extensions/lib/review-git.ts";
   ".pi/agent/extensions/lib/review-screen.ts".source =
     "${configDir}/pi/extensions/lib/review-screen.ts";

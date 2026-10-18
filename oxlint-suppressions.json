@@ -16,14 +16,8 @@
     "anti-slop/no-known-value-widening": {
       "count": 3
     },
-    "anti-slop/no-reflect-get": {
-      "count": 7
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 8
-    },
     "anti-slop/no-unknown-parameters": {
-      "count": 3
+      "count": 2
     }
   },
   "config/pi/extensions/context.ts": {
@@ -48,17 +42,6 @@
     },
     "anti-slop/require-safety-comment-for-type-assertion": {
       "count": 2
-    }
-  },
-  "config/pi/extensions/generate-commit-message.ts": {
-    "anti-slop/no-reflect-get": {
-      "count": 7
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 8
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 1
     }
   },
   "config/pi/extensions/gitbutler-guard-logic.ts": {
@@ -91,6 +74,17 @@
     },
     "anti-slop/no-unknown-parameters": {
       "count": 2
+    }
+  },
+  "config/pi/extensions/lib/commit-model.ts": {
+    "anti-slop/no-reflect-get": {
+      "count": 7
+    },
+    "anti-slop/no-runtime-typeof": {
+      "count": 8
+    },
+    "anti-slop/no-unknown-parameters": {
+      "count": 1
     }
   },
   "config/pi/extensions/lib/lazy-extension.ts": {
