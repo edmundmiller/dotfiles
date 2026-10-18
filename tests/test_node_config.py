@@ -1,8 +1,13 @@
+import io
 import json
+import os
 import shutil
 import subprocess
+import tarfile
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
@@ -22,7 +27,7 @@ def nix_path() -> str:
 
 
 class NodeConfigTests(unittest.TestCase):
-    def test_bun_global_install_is_idempotent_and_failure_is_fatal(self) -> None:
+    def test_darwin_skips_bun_activation_and_removes_legacy_links(self) -> None:
         result = subprocess.run(
             [
                 nix_path(),
@@ -32,9 +37,12 @@ class NodeConfigTests(unittest.TestCase):
                 "--no-write-lock-file",
                 "--apply",
                 """
-                configs: builtins.mapAttrs (_: cfg:
-                  cfg.config.system.activationScripts.extraActivation.text or ""
-                ) configs
+                configs: builtins.mapAttrs (_: cfg: {
+                  activation = cfg.config.system.activationScripts.extraActivation.text or "";
+                  globals = cfg.config.modules.dev.node.bunGlobalPackages;
+                  cleanup = cfg.config.home-manager.users.${cfg.config.user.name}
+                    .home.activation.removeLegacyBunClis.data;
+                }) configs
                 """,
             ],
             capture_output=True,
@@ -43,57 +51,163 @@ class NodeConfigTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-        activations = json.loads(result.stdout)
-        bun_activations = {
-            host: text
-            for host, text in activations.items()
-            if "Ensuring bun global packages:" in text
-        }
-        self.assertTrue(bun_activations)
-
-        for host, activation in bun_activations.items():
+        for host, config in json.loads(result.stdout).items():
             with self.subTest(host=host):
-                self.assertIn("PATH=/Users/emiller/.bun/bin:", activation)
-                self.assertIn("bun install -g --force", activation)
-                self.assertNotIn("bun global install failed", activation)
-                self.assertNotIn("||", activation)
+                self.assertEqual(config["globals"], [])
+                self.assertNotIn("ensure-globals.js", config["activation"])
+                commands = ["excalidraw"]
+                if host == "MacTraitor-Pro":
+                    commands += ["critique", "vercel", "vc"]
 
-    def test_bun_force_global_install_succeeds_when_repeated(self) -> None:
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    home = Path(temp_dir)
+                    bins = home / ".bun/bin"
+                    bins.mkdir(parents=True)
+                    env = {**os.environ, "HOME": str(home)}
+
+                    def cleanup():
+                        subprocess.run(["bash", "-eu", "-c", config["cleanup"]], env=env, check=True)
+
+                    for prefix in ("../install/global/node_modules", str(home / ".bun/install/global/node_modules")):
+                        for command in commands:
+                            (bins / command).symlink_to(f"{prefix}/{command}/cli.js")
+                        cleanup()
+                        for command in commands:
+                            self.assertFalse((bins / command).is_symlink())
+                    cleanup()  # Repeated activation is harmless.
+
+                    for command in commands:
+                        (bins / command).write_text("user script")
+                    cleanup()
+                    for command in commands:
+                        self.assertEqual((bins / command).read_text(), "user script")
+                        (bins / command).unlink()
+                        (bins / command).symlink_to("/custom/cli")
+                    cleanup()
+                    for command in commands:
+                        self.assertEqual(os.readlink(bins / command), "/custom/cli")
+
+    def test_bun_global_install_skips_unchanged_and_repairs_drift(self) -> None:
         bun = shutil.which("bun")
         if bun is None:
             self.skipTest("bun is not available")
 
+        requests = []
+        name = "@activation-test/cli"
+        archives = {}
+        for version in ("1.0.0", "1.0.1"):
+            buffer = io.BytesIO()
+            with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+                files = {
+                    "package.json": json.dumps({
+                        "name": name, "version": version, "bin": "cli.js",
+                        "scripts": {"postinstall": "bun postinstall.js"},
+                    }),
+                    "cli.js": f'#!/usr/bin/env bun\nconsole.log("{version}");\n',
+                    "postinstall.js": (
+                        'import {appendFileSync, existsSync} from "node:fs";\n'
+                        'appendFileSync(process.env.INSTALL_LOG, "attempt\\n");\n'
+                        'if (existsSync(process.env.FAIL_INSTALL)) process.exit(1);\n'
+                    ),
+                }
+                for path, contents in files.items():
+                    data = contents.encode()
+                    info = tarfile.TarInfo(f"package/{path}")
+                    info.size = len(data)
+                    info.mode = 0o755
+                    archive.addfile(info, io.BytesIO(data))
+            archives[version] = buffer.getvalue()
+
+        class Registry(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_GET(self):
+                requests.append(self.path)
+                if self.path.endswith(".tgz"):
+                    body = archives[self.path.removeprefix("/").removesuffix(".tgz")]
+                else:
+                    base = f"http://127.0.0.1:{self.server.server_port}"
+                    body = json.dumps({"name": name, "versions": {
+                        version: {"name": name, "version": version, "bin": "cli.js",
+                                  "scripts": {"postinstall": "bun postinstall.js"},
+                                  "dist": {"tarball": f"{base}/{version}.tgz"}}
+                        for version in archives
+                    }}).encode()
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Registry)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp = Path(temp_dir)
-            package = temp / "package"
-            package.mkdir()
-            (package / "package.json").write_text(
-                json.dumps(
-                    {
-                        "name": "activation-idempotency-test",
-                        "version": "1.0.0",
-                        "bin": {"activation-idempotency-test": "cli.js"},
-                    }
-                )
-            )
-            (package / "cli.js").write_text("#!/usr/bin/env bun\n")
-
+            install_log = temp / "installs.log"
+            fail_install = temp / "fail-install"
             env = {
                 "HOME": str(temp / "home"),
                 "BUN_INSTALL": str(temp / "bun"),
-                "PATH": str(temp / "bun" / "bin"),
+                "PATH": os.environ["PATH"],
+                "npm_config_registry": f"http://127.0.0.1:{server.server_port}",
+                "INSTALL_LOG": str(install_log),
+                "FAIL_INSTALL": str(fail_install),
             }
             (temp / "home").mkdir()
-            command = [bun, "install", "-g", "--force", str(package)]
+            global_dir = temp / "bun/install/global"
+            global_dir.mkdir(parents=True)
+            (global_dir / "package.json").write_text(json.dumps({"trustedDependencies": [name]}))
+            command = [bun, str(ROOT / "config/bun/ensure-globals.js")]
+            binary = temp / "bun/bin/cli"
 
-            first = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
-            repeated = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
+            def ensure(version, succeeds=True):
+                result = subprocess.run(command + [f"{name}@{version}"], capture_output=True,
+                                        text=True, env=env, timeout=30, check=False)
+                if succeeds:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    output = subprocess.check_output([str(binary)], env=env, text=True)
+                    self.assertEqual(output.strip(), version)
+                else:
+                    self.assertNotEqual(result.returncode, 0, "incomplete install was accepted")
 
-            self.assertEqual(first.returncode, 0, first.stderr)
-            self.assertEqual(repeated.returncode, 0, repeated.stderr)
-            self.assertTrue((temp / "bun" / "bin" / "activation-idempotency-test").exists())
+            ensure("1.0.0")
+            self.assertEqual(install_log.read_text(), "attempt\n")
+            request_count = len(requests)
+            self.assertGreater(request_count, 0)
+            modified = binary.stat().st_mtime_ns
+            ensure("1.0.0")
+            self.assertEqual(len(requests), request_count, "unchanged install accessed registry")
+            self.assertEqual(binary.stat().st_mtime_ns, modified)
+            self.assertEqual(install_log.read_text(), "attempt\n")
 
-    def test_bun_force_global_install_reports_real_failure(self) -> None:
+            # Bun leaves both the new manifest and executable behind on failure.
+            fail_install.touch()
+            ensure("1.0.1", succeeds=False)
+            self.assertTrue(binary.exists())
+            ensure("1.0.1", succeeds=False)
+            self.assertEqual(install_log.read_text(), "attempt\n" * 3)
+            fail_install.unlink()
+            ensure("1.0.1")
+            self.assertEqual(install_log.read_text(), "attempt\n" * 4)
+            request_count = len(requests)
+            ensure("1.0.1")
+            self.assertEqual(len(requests), request_count)
+            self.assertEqual(install_log.read_text(), "attempt\n" * 4)
+
+            binary.unlink()
+            ensure("1.0.1")
+            binary.unlink()
+            wrong = temp / "wrong.js"
+            wrong.write_text('#!/usr/bin/env bun\nconsole.log("wrong");\n')
+            wrong.chmod(0o755)
+            binary.symlink_to(wrong)
+            ensure("1.0.1")
+
+    def test_bun_global_install_reports_real_failure(self) -> None:
         bun = shutil.which("bun")
         if bun is None:
             self.skipTest("bun is not available")
@@ -107,7 +221,7 @@ class NodeConfigTests(unittest.TestCase):
             }
             (temp / "home").mkdir()
             result = subprocess.run(
-                [bun, "install", "-g", "--force", str(temp / "missing-package")],
+                [bun, str(ROOT / "config/bun/ensure-globals.js"), str(temp / "missing-package")],
                 capture_output=True,
                 text=True,
                 env=env,

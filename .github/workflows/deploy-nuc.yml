@@ -1,0 +1,63 @@
+name: Deploy NUC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-nuc
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'edmundmiller/dotfiles' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: nuc
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      DEPLOY_SHA: ${{ github.sha }}
+    steps:
+      - name: Require successful main CI for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          main=$(gh api repos/edmundmiller/dotfiles/git/ref/heads/main --jq .object.sha)
+          test "$main" = "$DEPLOY_SHA"
+          # Do not filter for success: a failed/in-progress rerun must block deployment.
+          gh api "repos/edmundmiller/dotfiles/actions/workflows/ci.yml/runs?branch=main&event=push&head_sha=$DEPLOY_SHA&per_page=1" |
+            jq -e --arg sha "$DEPLOY_SHA" '
+              .workflow_runs[0] |
+              .head_sha == $sha and .head_branch == "main" and
+              .event == "push" and .status == "completed" and .conclusion == "success"
+            '
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@2cb76beab460be7e44442c7ebdcbc30b638416df
+      - name: Join tailnet with short-lived GitHub identity
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4
+        with:
+          oauth-client-id: ${{ vars.TS_CLIENT_ID }}
+          audience: ${{ vars.TS_AUDIENCE }}
+          tags: tag:github-nuc-deploy
+          ping: nuc.cinnamon-rooster.ts.net
+      - name: Fetch, build, activate and verify on the NUC
+        shell: bash
+        run: |
+          set -euo pipefail
+          nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
+          nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
+            env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$DEPLOY_SHA"
+      - name: Record deployed revision
+        run: |
+          printf 'Deployed dotfiles [%s](https://github.com/edmundmiller/dotfiles/commit/%s) to NUC.\n' \
+            "$DEPLOY_SHA" "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"

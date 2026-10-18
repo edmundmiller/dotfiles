@@ -564,6 +564,61 @@ assert ($live_snapshot | path exists) "a stale validation lease must survive whi
 assert ($live_snapshot | path join ".nuc-deploy-active" | path exists) "pruning must retain a live service-owned lease"
 assert not ($orphan_snapshot | path exists) "a stale validation lease must be pruned after its service disappears"
 assert not ($mismatched_snapshot | path exists) "a marker must not borrow another snapshot's live validation service"
+
+# Exercise the public revision command with a disposable host transport.
+let nuc_task = ($repo_root | path join "mise-tasks/nuc/_default.nu")
+let revision_repo = ($temp_dir | path join "revision-repo")
+let revision_bin = ($temp_dir | path join "revision-bin")
+let revision_marker = ($temp_dir | path join "revision-activated")
+mkdir $revision_repo $revision_bin
+"{}" | save ($revision_repo | path join "flake.nix")
+{root: "root", nodes: {root: {inputs: {agents-workspace: "agents-pin"}}, agents-pin: {locked: {rev: $new_agents_revision}}}} | to json | save ($revision_repo | path join "flake.lock")
+^git -C $revision_repo init --quiet --initial-branch main
+^git -C $revision_repo add flake.nix flake.lock
+^git -C $revision_repo -c user.name=Test -c user.email=test@example.invalid commit --quiet -m fixture
+let deploy_revision = (^git -C $revision_repo rev-parse HEAD | str trim)
+let deployed_provenance = $"dotfiles=($deploy_revision);agents-workspace=($new_agents_revision)"
+let host_commands = {
+  tailscale: 'test "$1" = ssh && test "$2" = emiller@nuc.cinnamon-rooster.ts.net || exit 2; exec bash -c "$3"'
+  hostname: 'printf "%s\n" "$NUC_TEST_HOST"'
+  nix: 'echo x86_64-linux'
+  sudo: 'printf "%s\n" "$*" > "$NUC_TEST_ACTIVATION"; exit "$NUC_TEST_REBUILD_STATUS"'
+  nixos-version: 'printf "%s\n" "$NUC_TEST_PROVENANCE"'
+  systemctl: 'if [[ "$*" == *nixos-upgrade.timer* ]]; then exit "$NUC_TEST_TIMER_STATUS"; fi; if [[ "$*" == "is-active sshd.service" ]]; then exit "$NUC_TEST_SSH_STATUS"; fi; exit 0'
+}
+for command in ($host_commands | transpose name body) {
+  $"#!($bash_path)\nset -eu\n($command.body)\n" | save ($revision_bin | path join $command.name)
+  ^chmod +x ($revision_bin | path join $command.name)
+}
+for case in [
+  {host: "nuc", actual: $deployed_provenance, rebuild: "0", timer: "4", success: true, activated: true}
+  {host: "wrong-host", actual: $deployed_provenance, rebuild: "0", timer: "4", success: false, activated: false}
+  {host: "nuc", actual: $deployed_provenance, rebuild: "1", timer: "4", success: false, activated: true}
+  {host: "nuc", actual: "old-generation", rebuild: "0", timer: "4", success: false, activated: true}
+  {host: "nuc", actual: $deployed_provenance, rebuild: "0", timer: "0", success: false, activated: true}
+  {host: "nuc", actual: $deployed_provenance, rebuild: "0", timer: "4", ssh: "3", success: false, activated: true}
+] {
+  rm -f $revision_marker
+  let succeeded = (with-env {
+    PATH: ([$revision_bin] ++ $env.PATH)
+    MISE_PROJECT_ROOT: $revision_repo
+    NUC_TEST_HOST: $case.host
+    NUC_TEST_PROVENANCE: $case.actual
+    NUC_TEST_ACTIVATION: $revision_marker
+    NUC_TEST_REBUILD_STATUS: $case.rebuild
+    NUC_TEST_TIMER_STATUS: $case.timer
+    NUC_TEST_SSH_STATUS: ($case.ssh? | default "0")
+  } { (^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision | complete).exit_code == 0 })
+  assert equal $succeeded $case.success
+  assert equal ($revision_marker | path exists) $case.activated
+  if $case.success {
+    let activation = (open --raw $revision_marker)
+    assert ($activation | str contains $"--nuc-deploy-expected-main=($deploy_revision)")
+    assert ($activation | str contains $"--flake github:edmundmiller/dotfiles/($deploy_revision)#nuc")
+  }
+}
+let invalid_revision_blocked = ((^$nu.current-exe --no-config-file $nuc_task revision "main; exit 0" | complete).exit_code != 0)
+assert $invalid_revision_blocked
 rm -rf $temp_dir
 
 print "hey nuc deploy mode tests passed"

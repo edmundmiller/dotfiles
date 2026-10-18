@@ -4,6 +4,18 @@
     "JJ_EDITOR": "echo",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "extraKnownMarketplaces": {
+    "cursor-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "~/.claude/pstack-marketplace"
+      },
+      "autoUpdate": false
+    }
+  },
+  "enabledPlugins": {
+    "pstack@cursor-plugins": true
+  },
   "permissions": {
     "defaultMode": "auto",
     "allow": [
@@ -147,7 +159,6 @@
       "Bash(hey:*)",
       "Bash(nix:*)",
       "Bash(nix-store:*)",
-      "Bash(wt:*)",
       "Bash(br close * --reason *:*)",
       "Bash(br close * --reason=*:*)",
       "Bash(br:*)",
@@ -205,11 +216,6 @@
       "Bash(git commit * --no-verify *:*)",
       "Bash(git rebase --continue:*)"
     ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "wt list statusline --claude-code",
-    "padding": 0
   },
   "alwaysThinkingEnabled": true
 }

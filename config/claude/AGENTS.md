@@ -2,8 +2,9 @@
 
 `settings.json` is a bootstrap template for writable `~/.claude/settings.json`.
 `modules/agents/claude/default.nix` preserves runtime-managed hooks such as
-Herdr's integration. It also installs the enabled official DuckDB plugin after
-bootstrapping settings; do not restore other retired plugin declarations.
+Herdr's integration. Pstack uses the Nix-pinned local `cursor-plugins` marketplace and
+native plugin loading. Do not restore retired plugin declarations. See
+[pstack integration](../../docs/agents/pstack.md).
 
 Shared instructions and modes come from `config/agents/`; global skills come
 from `skills/catalog/`. Claude loads the core as `~/.claude/CLAUDE.md` while

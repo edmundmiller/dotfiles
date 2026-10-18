@@ -54,7 +54,15 @@ run their cutover or timer-health procedures on the Cadu-focused deployment.
 
 ## Overview
 
-The NUC is a NixOS server managed from this dotfiles repo — there is no CI-driven deployment. `hey nuc` evaluates and builds on the NUC for consistent cross-platform behavior: when run off-NUC it syncs the current worktree to a task-isolated `nuc:/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot and runs `nixos-rebuild` there; when run on the NUC it runs a local `nixos-rebuild`. NUC rebuilds pass `--max-jobs 1` to keep builds stable on the small host.
+The NUC evaluates and builds its own NixOS configuration. The manual
+`Deploy NUC` GitHub workflow uses `hey nuc revision <SHA>` to fetch an exact,
+CI-tested commit on the host. Scheduled auto-upgrades are disabled so they
+cannot activate unapproved main commits.
+
+For operator deployments, `hey nuc` still syncs the current worktree to an
+isolated `nuc:/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot
+when called off-host. On the NUC it rebuilds the local checkout. Both paths
+use `--max-jobs 1` to limit concurrent builds.
 
 The canonical host source of truth is
 `/Users/emiller/.config/dotfiles/hosts/nuc/default.nix` (tracked as
@@ -75,7 +83,7 @@ landed.
 
 Private `github:` flake inputs use `nix-private-github`. It reads the root-only
 opnix credential and supplies Nix `access-tokens` without logging the token.
-`hey nuc`, local NUC `hey re`, and `nixos-upgrade.service` use this wrapper.
+`hey nuc`, including revision deployment, and local NUC `hey re` use this wrapper.
 Darwin `hey re` obtains the same narrow credential from the local `gh` keyring.
 For a mutating remote dotfiles rebuild, the wrapper resolves `origin/main` over
 Git transport and replaces the mutable `github:edmundmiller/dotfiles#...`
@@ -159,15 +167,106 @@ hey agents-rollout --deploy-mode build         # ship, pin, and remote-build
 hey agents-rollout --deploy-mode dry-activate  # build, then preview activation
 ```
 
-Production deployment remains intentionally operator-triggered rather than a
-GitHub Actions job. The agents-workspace Amp project can join the tailnet with
+Production deployment remains operator-triggered, either through `hey` or the
+manual GitHub workflow below. The agents-workspace Amp project can join the tailnet with
 Amp OIDC as an ephemeral `tag:amp-agents-workspace` node; the tailnet grants
-that project tag Tailscale SSH access only as `emiller` on `tag:server` hosts.
+that project tag Tailscale SSH access only as `emiller` on `tag:nuc` hosts.
 From that project's orb, use its `scripts/deploy-nuc` wrapper. It passes the
 orb checkout through `--workspace`, while this command remains the owner of
 pinning, pushing, building, and activation. Keep broader CI on ship-only mode
 unless it receives an equally narrow workload identity and an explicit
 deployment approval boundary.
+
+## Manual GitHub deployment
+
+In Actions, select **Deploy NUC**, choose `main`, then approve the `nuc`
+environment deployment. The workflow deploys the commit captured at dispatch,
+not whatever main points to later. It requires the latest main-push CI run for
+that exact commit to have completed successfully. Missing, failed, or running
+CI blocks deployment. If main moves before the NUC acquires its deployment
+lock, dispatch again for the new commit after its CI succeeds.
+
+Tailscale trusts only this repository's `deploy-nuc.yml` workflow on main,
+running through `workflow_dispatch` in the `nuc` environment on GitHub-hosted
+runners. The tailnet stack owns that OIDC trust and the `tag:github-nuc-deploy`
+policy. It permits only TCP 22 to `tag:nuc` and Tailscale SSH as `emiller`.
+No Tailscale secret or SSH private key is stored in GitHub. `emiller` has sudo
+deployment authority, so this is privileged host access despite the non-root
+SSH login. Existing member, server, and Amp network access remains unchanged.
+
+The workflow calls `hey nuc revision <SHA>`. That command checks the remote
+hostname, requests a pinned GitHub flake build through `nix-private-github`,
+then verifies both deployed repository revisions, SSH/Tailscale service state,
+and the absence of an active or enabled auto-upgrade timer. It prints failed
+systemd units for follow-up; it does not prove every application is healthy.
+The workflow serializes deployments without cancelling an active run. The
+host lock also excludes concurrent operator deployments. Interrupted builds
+can fail the job; inspect the live generation before retrying.
+
+### Enable deployment
+
+These are live operations and require rollout authorization:
+
+1. Create the dotfiles `nuc` GitHub environment before publishing the workflow
+   or issuing its identity. Require `edmundmiller` review,
+   allow self-review for this single-operator repository, disallow admin bypass,
+   and restrict deployment branches to `main` with no deployment tags.
+2. Publish the tailnet and dotfiles changes and wait for exact-head CI. Bootstrap
+   the installed deployment wrapper and disabled upgrade timer with an
+   authorized `hey nuc` from that clean, published dotfiles revision. Older
+   installed wrappers reject `--nuc-deploy-expected-main`, so the new Actions
+   path fails closed until this bootstrap completes.
+3. In tailnet, review the plan and apply the ACL and `GithubNucDeployIdentity`
+   in Alchemy `TailnetAccess/prod`. Follow its private creation-journal and
+   recovery requirements. Never import or reactivate the retired OpenTofu owner.
+4. Set environment variables `TS_CLIENT_ID` and `TS_AUDIENCE` from the tailnet
+   outputs `github_nuc_deploy_tailscale_client_id` and
+   `github_nuc_deploy_tailscale_audience`. Neither value is a secret.
+5. Recheck the environment protections, dispatch **Deploy NUC** on `main`, and
+   approve the environment as Edmund. The workflow checks exact-head CI again.
+   Inspect the job's provenance and service output before calling rollout done.
+
+Preparation on 2026-10-17 passed the selected `hey check` suites, nine simulated
+workflow-gate cases and the gate against current-main CI. NUC provenance
+integration passed in a disposable snapshot using local Git transport for the
+two private inputs, with their original revisions and NAR hashes verified.
+The evaluated candidate has `system.autoUpgrade.enable = false`.
+
+### Completed rollout, 2026-10-18
+
+The [rollout thread](https://ampcode.com/threads/T-01a14b43-6b29-72ad-835b-c035c28e18a4)
+published the deployment code and applied access through Alchemy. The protected
+`nuc` environment requires Edmund's review, allows self-review, forbids admin
+bypass, and accepts only the `main` branch with no deployment tags.
+
+[Dotfiles 9d2be19](https://github.com/edmundmiller/dotfiles/commit/9d2be198757b314185ed57c9da79af967ceae121)
+passed [exact-head CI](https://github.com/edmundmiller/dotfiles/actions/runs/39078566020)
+and a full NUC system build before the authorized `hey nuc` bootstrap installed
+generation 1499. The build required static Opus for the pinned OMP version and
+removal of duplicate Hermes dependency/patch handling. Linux CI now uses the
+same existing private-input credential as Darwin. No tests or deployment guards
+were bypassed. Publication used the repository's existing admin exception for
+obsolete required check names; deployment still required successful `ci.yml`.
+
+After Edmund's environment approval, the first
+[Deploy NUC run](https://github.com/edmundmiller/dotfiles/actions/runs/39081819217)
+succeeded on attempt 1. Its logs verify fresh GitHub OIDC enrollment, Tailscale
+SSH to `nuc`, and host-side fetch, build and activation of that exact revision.
+The deployed agents-workspace revision was
+`18ff9a586a01dd4f8b3276729a6cf273ac509cf5`. The guarded wrapper was installed,
+SSH and Tailscale were active, the automatic-upgrade timer was absent, and the
+workflow reported no failed system units. Tailscale logout also succeeded.
+These checks establish the deployment path, not every application's functionality.
+
+To revoke CI access, remove its SSH/network grants through the tailnet stack.
+The federation is retained on declaration removal, so deleting its declaration
+alone does not revoke access. Identity deletion needs a separately reviewed
+lifecycle change. Existing ephemeral sessions lose policy access when the
+grants are removed. Keep operator access available. Recover a bad NixOS
+generation through the existing authorized `hey nuc-rollback` procedure;
+`hey nuc revision` deliberately refuses older main commits. A rollback to an
+older generation may restore its upgrade timer, which must be checked before
+leaving the host unattended. Do not restore the wildcard source grant to fix CI.
 
 ## Cron trigger ownership
 

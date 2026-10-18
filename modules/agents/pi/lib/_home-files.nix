@@ -3,6 +3,7 @@
   configDir,
   agentCore,
   piPkgDeps,
+  piPstack,
   piCommandPolicyBridge,
   piSettingsValidated,
   piPermissionSystemConfig,
@@ -29,6 +30,7 @@ promptLinks
     force = true;
   };
   ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
+  ".pi/agent/packages/pstack-pi".source = piPstack;
 }
 // sessionSearchFiles
 // (

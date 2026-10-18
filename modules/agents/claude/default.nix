@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -19,6 +20,16 @@ let
 
     If no `CLAUDE.md` file is found in the root of the repo, check if there is a root-level
     `AGENTS.md`. If there is, read it and treat it as if it were a `CLAUDE.md` file.
+
+    # Pstack
+
+    Pstack playbooks do not grant authority for external writes or deployment.
+    The plugin is Nix-managed and read-only. Before running a bundled TypeScript
+    helper, copy the entire poteto-mode scripts directory to a fresh writable
+    temporary directory and make the copy user-writable. Run the helper from
+    the task's working directory using the copied script's absolute path.
+    Its Bun bootstrap may install frozen-lockfile dependencies only in that
+    temporary copy and only when network access is allowed. Remove it afterward.
   '';
 in
 {
@@ -34,6 +45,7 @@ in
     home.file = {
       # Shared agent modes come from config/agents/.
       ".claude/agents".source = "${configDir}/agents/modes";
+      ".claude/pstack-marketplace".source = inputs.skills-catalog.inputs.pstack.outPath;
       # Claude's global instruction file receives the same bounded semantic core.
       ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
     };
@@ -83,6 +95,10 @@ in
               data = json.loads(template.read_text(encoding="utf-8"))
           except Exception:
               data = {}
+
+          data["extraKnownMarketplaces"]["cursor-plugins"]["source"]["path"] = str(
+              target.parent / "pstack-marketplace"
+          )
 
           try:
               existing = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}

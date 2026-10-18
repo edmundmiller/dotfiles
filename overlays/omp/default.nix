@@ -27,6 +27,14 @@ final: prev: {
         bunDeps = final.bun2nix.fetchBunDeps {
           bunNix = ./bun.nix;
         };
+        # 18.0.3's audiopus_sys requests static Opus; newer OMP uses opusic-sys.
+        buildInputs =
+          (old.buildInputs or [ ])
+          ++ final.lib.optionals final.stdenv.hostPlatform.isLinux [
+            (final.libopus.overrideAttrs (opusOld: {
+              mesonFlags = (opusOld.mesonFlags or [ ]) ++ [ "-Ddefault_library=both" ];
+            }))
+          ];
         # 18.0.3 validates the Rust-exported version sentinel, not the
         # post-link stamp introduced by the newer llm-agents build recipe.
         # Keep stamping mandatory whenever the source ships that script.

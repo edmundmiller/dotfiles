@@ -50,11 +50,12 @@ in
       system.activationScripts.extraActivation.text =
         let
           packages = escapeShellArgs cfg.bunGlobalPackages;
+          bunInstall = "${config.user.home}/.bun";
           bunBin = "${config.user.home}/.bun/bin";
         in
         ''
           echo "Ensuring bun global packages:" ${packages} >&2
-          sudo -u ${escapeShellArg config.user.name} HOME=${escapeShellArg config.user.home} PATH=${escapeShellArg bunBin}:$PATH ${pkgs.bun}/bin/bun install -g --force ${packages}
+          sudo -u ${escapeShellArg config.user.name} HOME=${escapeShellArg config.user.home} BUN_INSTALL=${escapeShellArg bunInstall} PATH=${escapeShellArg bunBin}:$PATH ${pkgs.bun}/bin/bun ${../../config/bun/ensure-globals.js} ${packages}
         '';
     })
 

@@ -78,6 +78,42 @@ export def nuc-local-rebuild [] {
   nuc-post-deploy-check true
 }
 
+export def nuc-revision-deploy [revision: string] {
+  if not ($revision =~ '^[0-9a-f]{40}$') {
+    error make {msg: "NUC revision deployment requires an exact 40-character lowercase Git SHA"}
+  }
+  let ctx = (context)
+  let lock = (^git -C $ctx.flake_dir show $"($revision):flake.lock" | complete)
+  if $lock.exit_code != 0 {
+    error make {msg: "could not read the approved revision's flake.lock"}
+  }
+  let locked = ($lock.stdout | from json)
+  let agents_input = ($locked.nodes | get $locked.root | get inputs.agents-workspace)
+  let agents_revision = ($locked.nodes | get $agents_input | get locked.rev)
+  if not ($agents_revision =~ '^[0-9a-f]{40}$') {
+    error make {msg: "approved revision lacks an exact agents-workspace pin"}
+  }
+  let expected = $"dotfiles=($revision);agents-workspace=($agents_revision)"
+  let script = ([
+    'set -eu'
+    'export PATH="/run/wrappers/bin:$PATH"'
+    'printf "hostname=%s\n" "$(hostname)"; uname -a'
+    'test "$(hostname)" = nuc'
+    $"sudo -n nix-private-github --nuc-deploy-expected-main=($revision) --nuc-deploy-source-head=($revision) --nuc-deploy-source-base=($revision) --nuc-deploy-source-owner=github-nuc-deploy nixos-rebuild switch --flake github:edmundmiller/dotfiles/($revision)#nuc --show-trace --accept-flake-config --max-jobs 1"
+    'actual="$(nixos-version --configuration-revision)"'
+    'printf "configurationRevision=%s\n" "$actual"'
+    $"test \"$actual\" = '($expected)'"
+    'systemctl is-active tailscaled.service'
+    'systemctl is-active sshd.service'
+    'if systemctl is-active --quiet nixos-upgrade.timer || systemctl is-enabled --quiet nixos-upgrade.timer; then echo "unexpected automatic upgrade timer" >&2; exit 1; fi'
+    'systemctl --failed --no-pager'
+  ] | str join "\n")
+  ^tailscale ssh emiller@nuc.cinnamon-rooster.ts.net $script
+  if $env.LAST_EXIT_CODE != 0 {
+    error make {msg: "NUC revision deployment or verification failed"}
+  }
+}
+
 export def validate-nuc-worktree-mode [mode: string] {
   if not ($mode in $NUC_WORKTREE_MODES) {
     print -e $"error: mode must be one of: ($NUC_WORKTREE_MODES | str join ', ')"

@@ -701,6 +701,9 @@
               nixfmt.enable = true;
               oxfmt = {
                 enable = true;
+                # Oxfmt already ignores npm lockfiles. Do not invoke it with a
+                # lockfile-only batch, which it rejects as having no targets.
+                excludes = [ "**/package-lock.json" ];
                 includes = [
                   "*.cjs"
                   "*.cts"
@@ -1797,11 +1800,6 @@
                   ${./tests/test_hermes_native_vault_runtime.py}
                 touch "$out"
               '';
-
-              nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
 
               nuc-openssh-pq-kex = import ./hosts/nuc/_tests/openssh-pq-kex.nix {
                 nixosConfig = self.nixosConfigurations.nuc;

@@ -162,6 +162,11 @@
       flake = false;
     };
 
+    pstack = {
+      url = "github:cursor/plugins/101b274dd991f694e1f7024be2157e5f3adf07de";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -324,6 +329,13 @@
           src = inputs.common-skills.outPath + "/.agents/skills/skill-doctor";
           patches = [ ./overlays/skill-doctor/pi-support.patch ];
         };
+        # Keep sibling links, playbooks, agents, and docs intact without
+        # shadowing shared skills such as tdd, teach, and unslop.
+        pstackPortable = pkgs.runCommand "pstack-portable" { } ''
+          mkdir -p "$out/poteto-mode"
+          cp ${./overlays/pstack/poteto-mode/SKILL.md} "$out/poteto-mode/SKILL.md"
+          cp -R ${inputs.pstack.outPath}/pstack "$out/poteto-mode/.upstream"
+        '';
         mattpocockSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-skills.json);
         mattpocockRuntimeOverlay = ''
 
@@ -471,6 +483,11 @@
               walking-mode = {
                 from = "codex-local";
                 path = "walking-mode";
+                meta.targets = [ "codex" ];
+              };
+              poteto-mode = {
+                from = "pstack";
+                path = "poteto-mode";
                 meta.targets = [ "codex" ];
               };
               # All coding runtimes consume the shared copy. Hermes also gets
@@ -845,6 +862,12 @@
                   path = inputs.duckdb-skills.outPath;
                   subdir = "skills";
                   filter.maxDepth = 3;
+                };
+
+                pstack = {
+                  path = pstackPortable;
+                  subdir = ".";
+                  filter.maxDepth = 1;
                 };
 
                 kitlangton = {

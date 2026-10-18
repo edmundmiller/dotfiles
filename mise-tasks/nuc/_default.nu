@@ -6,6 +6,10 @@ use ../../scripts/nu/common.nu *
 use ../../scripts/nu/remote.nu *
 
 def main [mode: string = "auto", worktree_mode: string = "switch"] {
+  if $mode == "revision" {
+    nuc-revision-deploy $worktree_mode
+    return
+  }
   let ctx = (context)
   cd $ctx.flake_dir
 
@@ -31,7 +35,7 @@ def main [mode: string = "auto", worktree_mode: string = "switch"] {
   }
 
   if $mode != "auto" {
-    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm, validate"
+    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm, validate, revision <SHA>"
     error make {msg: "invalid hey nuc mode"}
   }
 

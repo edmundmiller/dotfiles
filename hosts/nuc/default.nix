@@ -2923,15 +2923,9 @@ in
     };
   };
 
-  systemd.services.nixos-upgrade = {
-    after = [ "opnix-secrets.service" ];
-    requires = [ "opnix-secrets.service" ];
-    script = lib.mkForce ''
-      exec ${nixPrivateGithub}/bin/nix-private-github \
-        ${config.system.build.nixos-rebuild}/bin/nixos-rebuild \
-        ${config.system.autoUpgrade.operation} ${toString config.system.autoUpgrade.flags}
-    '';
-  };
+  # Deploy only through the manual, CI-gated workflow or an authorized hey nuc.
+  # Inherited periodic upgrades would activate main without that approval gate.
+  system.autoUpgrade.enable = lib.mkForce false;
 
   age = {
     secrets = {
