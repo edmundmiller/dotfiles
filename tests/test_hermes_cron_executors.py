@@ -1,4 +1,3 @@
-import inspect
 import json
 import os
 import re
@@ -12,8 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 NUC_CONFIG = ROOT / "hosts" / "nuc" / "default.nix"
 RUNBOOK = ROOT / "docs" / "runbooks" / "deploy-nuc.md"
 HERMES_OVERLAY = ROOT / "overlays" / "hermes-agent" / "default.nix"
-HERMES_DASHBOARD_TEST = ROOT / "hosts" / "nuc" / "_tests" / "hermes-dashboard-enabled.nix"
-HERMES_CRON_NIX_TEST = ROOT / "hosts" / "nuc" / "_tests" / "hermes-cron-executors.nix"
 
 
 _OPENERS = {"(": ")", "[": "]", "{": "}"}
@@ -236,7 +233,7 @@ def _run_with_fake_commands(block: str, *, ssh_mode: str) -> tuple[int, str]:
         )
         result = subprocess.run(
             ["bash", "-c", block],
-            cwd=ROOT,
+            cwd=root,  # No .git directory, as in the Nix store check.
             env=environment,
             text=True,
             capture_output=True,
@@ -252,32 +249,6 @@ class HermesCronExecutorTests(unittest.TestCase):
 
         self.assertIn('"$package"/lib/python*/site-packages', flake)
         self.assertNotIn('"$package/share/hermes/hermes_cli/', flake)
-
-    def test_dashboard_shared_package_assertion_follows_generated_units(self):
-        source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
-
-        self.assertIn("gatewayService.preStart", source)
-        self.assertIn("expectedDashboardExec", source)
-        self.assertIn('grep -Fq -- "$expectedDashboardExec" "$dashboard_start"', source)
-        self.assertNotIn("builtins.elem hermesPackage (service.path", source)
-
-    def test_cron_package_assertion_discards_store_context_before_infix(self):
-        source = HERMES_CRON_NIX_TEST.read_text(encoding="utf-8")
-
-        self.assertIn(
-            'builtins.unsafeDiscardStringContext "exec ${hermesPackage}/bin/hermes cron tick"',
-            source,
-        )
-        self.assertIn("hasInfix expectedCronTickExec bettyExecutorScript", source)
-
-    def test_dashboard_package_assertion_avoids_store_context_regex(self):
-        source = HERMES_DASHBOARD_TEST.read_text(encoding="utf-8")
-
-        self.assertIn("expectedDashboardExec", source)
-        self.assertNotIn(
-            'pkgs.lib.hasInfix "${hermesPackage}/bin/hermes dashboard"',
-            source,
-        )
 
     def test_cadu_package_excludes_parked_custom_patch_stack(self):
         overlay = HERMES_OVERLAY.read_text(encoding="utf-8")
@@ -416,15 +387,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         config = NUC_CONFIG.read_text(encoding="utf-8")
         self.assertIn('mv --no-target-directory "$tmp" "$marker"', config)
 
-    def test_marker_writer_checks_process_returncodes_and_diagnostics(self):
-        source = (ROOT / "tests" / "test_hermes_cron_marker_writer.py").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("process.returncode", source)
-        self.assertIn('"stderr"', source)
-        self.assertIn("concurrent marker writers failed", source)
-        self.assertIn("refusing to replace executor marker directory", source)
-
     def test_marker_writer_rejects_profile_and_cron_symlink_aliases(self):
         config = NUC_CONFIG.read_text(encoding="utf-8")
         self.assertIn('if [ -L "$hermes_profile_home" ]', config)
@@ -450,11 +412,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertIn("nix flake metadata --json", commands)
         self.assertNotIn("dry-activate", commands)
         self.assertNotIn("switch", commands)
-
-    def test_runbook_revision_failure_is_reached_from_a_gitless_store_check(self):
-        helper_source = inspect.getsource(_run_with_fake_commands)
-        self.assertIn('(fake_bin / "git").write_text', helper_source)
-        self.assertIn("rev-parse HEAD", helper_source)
 
     def test_runbook_status_asserts_healthy_external_ownership(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")

@@ -1390,6 +1390,16 @@
                   }
                   ''
                     cd ${./.}
+                    export AGENT_INSTRUCTION_CONFIG=${
+                      pkgs.writeText "agent-instruction-config.json" (
+                        builtins.toJSON (
+                          import ./tests/agent-instruction-config.nix {
+                            inherit lib;
+                            inherit (pkgs) coreutils;
+                          }
+                        )
+                      )
+                    }
                     OMP_BIN=${self.packages.${system}.omp}/bin/omp \
                       PYTHONDONTWRITEBYTECODE=1 \
                       python3 -m unittest \

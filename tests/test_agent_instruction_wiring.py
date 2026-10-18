@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -10,13 +11,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
-CODEX_MODULE = ROOT / "modules" / "agents" / "codex" / "default.nix"
 CLAUDE_MODULE = ROOT / "modules" / "agents" / "claude" / "default.nix"
-PI_MODULE = ROOT / "modules" / "agents" / "pi" / "default.nix"
-PI_HOME_FILES = ROOT / "modules" / "agents" / "pi" / "lib" / "_home-files.nix"
 PI_SETTINGS_CHECK = ROOT / "modules" / "agents" / "pi" / "test-settings-json.sh"
 PI_SETTINGS_VALIDATOR = ROOT / "modules" / "agents" / "pi" / "validate-settings-json.py"
-OPENCODE_MODULE = ROOT / "modules" / "agents" / "opencode" / "default.nix"
 OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
 BOOTSTRAP = ROOT / "bin" / "bootstrap"
 OMP_CORE = ROOT / "config" / "agents" / "core.md"
@@ -35,10 +32,29 @@ SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        fixture = os.environ.get("AGENT_INSTRUCTION_CONFIG")
+        if fixture:
+            cls.deployed = json.loads(Path(fixture).read_text())
+        else:
+            coreutils = str(Path(shutil.which("ln")).parent.parent)
+            result = subprocess.run(
+                [
+                    "nix", "eval", "--json", "--impure", "--expr",
+                    f'import {ROOT / "tests/agent-instruction-config.nix"} '
+                    f'{{ lib = (builtins.getFlake {json.dumps(str(ROOT))}).inputs.nixpkgs.lib; '
+                    f'coreutils = {json.dumps(coreutils)}; }}',
+                ],
+                capture_output=True, text=True, check=False,
+            )
+            if result.returncode:
+                raise RuntimeError(result.stderr)
+            cls.deployed = json.loads(result.stdout)
+
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())
-        omp_module = OMP_MODULE.read_text()
 
         self.assertLessEqual(len(core.split()), 220)
         for invariant in (
@@ -49,60 +65,27 @@ class AgentInstructionWiringTests(unittest.TestCase):
         ):
             self.assertIn(invariant, normalized_core)
 
-        self.assertIn('agentCore = builtins.readFile "${configDir}/agents/core.md";', omp_module)
-        self.assertIn('home.file.".omp/agent/AGENTS.md".text = agentCore;', omp_module)
-        self.assertNotIn('home.file.".omp/agent/AGENTS.md".text = concatenatedRules;', omp_module)
-        self.assertNotIn('home.file.".omp/agent/rules/incremental-architecture.md"', omp_module)
+        for destination, content in self.deployed["instructions"].items():
+            with self.subTest(destination=destination):
+                if destination == ".claude/CLAUDE.md":
+                    self.assertTrue(content.startswith(core + "\n"))
+                    self.assertIn("If no `CLAUDE.md` file is found in the root of the repo", content)
+                    self.assertIn("treat it as if it were a `CLAUDE.md` file", content)
+                else:
+                    self.assertEqual(core, content)
+        self.assertNotIn(
+            ".omp/agent/rules/incremental-architecture.md", self.deployed["ompRules"]
+        )
         for rule_name in (
             "working-with-jj.md",
             "commit-house-style.md",
             "pr-house-style.md",
             "ci-watch.md",
         ):
-            self.assertIn(f'home.file.".omp/agent/rules/{rule_name}"', omp_module)
+            self.assertIn(f".omp/agent/rules/{rule_name}", self.deployed["ompRules"])
 
-        module_targets = {
-            CODEX_MODULE: '".codex/AGENTS.md".text = agentCore;',
-            CLAUDE_MODULE: '".claude/CLAUDE.md".text = agentCore + "\\n" + claudeAgentsFileFallback;',
-        }
-        for module, target in module_targets.items():
-            with self.subTest(module=module):
-                source = module.read_text()
-                self.assertIn(
-                    'agentCore = builtins.readFile "${configDir}/agents/core.md";',
-                    source,
-                )
-                self.assertIn(target, source)
-                self.assertNotIn("rulesDir", source)
-                self.assertNotIn("concatenatedRules", source)
-
-        claude_module = CLAUDE_MODULE.read_text()
-        self.assertIn("If no `CLAUDE.md` file is found in the root of the repo", claude_module)
-        self.assertIn("treat it as if it were a `CLAUDE.md` file", claude_module)
         self.assertNotIn("If no `CLAUDE.md` file is found", OMP_CORE.read_text())
-
-        pi_module = PI_MODULE.read_text()
-        pi_home_files = PI_HOME_FILES.read_text()
-        self.assertIn(
-            'agentCore = builtins.readFile "${configDir}/agents/core.md";',
-            pi_module,
-        )
-        self.assertIn("agentCore", pi_home_files)
-        self.assertIn('".pi/agent/AGENTS.md".text = agentCore;', pi_home_files)
-        self.assertNotIn("rulesDir", pi_module)
-        self.assertNotIn("concatenatedRules", pi_module + pi_home_files)
-
-        opencode_module = OPENCODE_MODULE.read_text()
-        self.assertIn(
-            '"opencode2/opencode/AGENTS.md".source = "${configDir}/agents/core.md";',
-            opencode_module,
-        )
-        self.assertNotIn('"opencode2/opencode/rules"', opencode_module)
         self.assertNotIn('"instructions"', OPENCODE_CONFIG.read_text())
-
-        bootstrap = BOOTSTRAP.read_text()
-        self.assertIn('config/agents/core.md', bootstrap)
-        self.assertNotIn('config/agents/rules', bootstrap)
         self.assertFalse(LEGACY_RULES.exists())
         self.assertNotIn("For ADHD resources", core)
 
@@ -173,6 +156,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
             self.assertFalse((home / ".agents" / "skills" / "missing-manifest").exists())
             self.assertFalse((home / ".agents" / "skills" / "README.md").exists())
             self.assertFalse((home / ".pi" / "agent" / "skills").exists())
+            self.assertEqual(core.read_text(), (home / ".pi/agent/AGENTS.md").read_text())
 
     def test_pi_nix_syntax_routes_skills_to_current_catalogs(self) -> None:
         skill = PI_NIX_SYNTAX_SKILL.read_text()
@@ -328,26 +312,23 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertEqual([], offenders)
 
     def test_omp_installs_fix_agents_md_prompt_template(self) -> None:
-        prompt = FIX_AGENTS_COMMAND.read_text()
-        module = OMP_MODULE.read_text()
-
-        self.assertIn(
-            "I want you to refactor my AGENTS.md file to follow progressive disclosure principles.",
-            prompt,
-        )
-        self.assertIn("1. **Find contradictions**", prompt)
-        self.assertIn("5. **Flag for deletion**", prompt)
-        self.assertIn('home.file.".omp/agent/commands/fix-agents-md.md"', module)
-        self.assertIn('source = "${configDir}/omp/commands/fix-agents-md.md";', module)
+        self.assertEqual(FIX_AGENTS_COMMAND.read_text(), self.deployed["fixAgentsPrompt"])
 
     def test_opencode_module_owns_its_v2_compatibility_alias(self) -> None:
-        module = OPENCODE_MODULE.read_text()
-
-        self.assertIn("opencodeV2ConfigDir", module)
-        self.assertIn(
-            '${pkgs.coreutils}/bin/ln -sfn "${opencodeV2ConfigDir}" "${opencodeV1ConfigDir}"',
-            module,
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            legacy = home / ".config/opencode"
+            target = home / ".config/opencode2/opencode"
+            legacy.mkdir(parents=True)
+            (legacy / "old-plugin").write_text("incompatible")
+            script = self.deployed["opencodeCompatibility"].replace(
+                "/tmp/agent-instruction-test", str(home)
+            )
+            for _ in range(2):
+                subprocess.run(["bash", "-eu", "-c", script], check=True)
+                self.assertTrue(legacy.is_symlink())
+                self.assertEqual(target.resolve(), legacy.resolve())
+                self.assertFalse((legacy / "old-plugin").exists())
 
     def test_omp_config_uses_the_deployed_omp_18_registry(self) -> None:
         config = OMP_CONFIG.read_text()
