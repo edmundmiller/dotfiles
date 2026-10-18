@@ -232,11 +232,31 @@ integration passed in a disposable snapshot using local Git transport for the
 two private inputs, with their original revisions and NAR hashes verified.
 The evaluated candidate has `system.autoUpgrade.enable = false`.
 
-Live preflight still found the old wrapper without `--nuc-deploy-expected-main`
-and an active, enabled `nixos-upgrade.timer`. Both SSH and Tailscale services
-were active. GitHub returned an empty environment list. No publication,
-environment creation, host bootstrap or workflow dispatch has run for this
-change. Local checks are not evidence of a successful GitHub-to-NUC deployment.
+### Completed rollout, 2026-10-18
+
+The [rollout thread](https://ampcode.com/threads/T-01a14b43-6b29-72ad-835b-c035c28e18a4)
+published the deployment code and applied access through Alchemy. The protected
+`nuc` environment requires Edmund's review, allows self-review, forbids admin
+bypass, and accepts only the `main` branch with no deployment tags.
+
+[Dotfiles 9d2be19](https://github.com/edmundmiller/dotfiles/commit/9d2be198757b314185ed57c9da79af967ceae121)
+passed [exact-head CI](https://github.com/edmundmiller/dotfiles/actions/runs/39078566020)
+and a full NUC system build before the authorized `hey nuc` bootstrap installed
+generation 1499. The build required static Opus for the pinned OMP version and
+removal of duplicate Hermes dependency/patch handling. Linux CI now uses the
+same existing private-input credential as Darwin. No tests or deployment guards
+were bypassed. Publication used the repository's existing admin exception for
+obsolete required check names; deployment still required successful `ci.yml`.
+
+After Edmund's environment approval, the first
+[Deploy NUC run](https://github.com/edmundmiller/dotfiles/actions/runs/39081819217)
+succeeded on attempt 1. Its logs verify fresh GitHub OIDC enrollment, Tailscale
+SSH to `nuc`, and host-side fetch, build and activation of that exact revision.
+The deployed agents-workspace revision was
+`18ff9a586a01dd4f8b3276729a6cf273ac509cf5`. The guarded wrapper was installed,
+SSH and Tailscale were active, the automatic-upgrade timer was absent, and the
+workflow reported no failed system units. Tailscale logout also succeeded.
+These checks establish the deployment path, not every application's functionality.
 
 To revoke CI access, remove its SSH/network grants through the tailnet stack.
 The federation is retained on declaration removal, so deleting its declaration
