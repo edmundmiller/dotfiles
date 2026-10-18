@@ -1,10 +1,41 @@
 # Rex
 
 `init.lua` uses the tmux/Herdr `Ctrl+C` prefix and Ghostty resize shortcuts.
-`modules.desktop.term.rex.enable` deploys it to `~/.config/rex/init.lua` on both Macs.
+`modules.shell.rex.enable` deploys it to `~/.config/rex/init.lua` on both Macs.
 Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them
 (including Pi's Rex extension) can run `rex`. Ghostty startup is unchanged.
+
+## Appearance
+
+The Rex module pins vertical tabs on both Macs and selects themes using the
+host's existing `modules.desktop.term.themeStack.variant`:
+
+| Host           | Variant      | Light            | Dark             |
+| -------------- | ------------ | ---------------- | ---------------- |
+| MacTraitor Pro | `catppuccin` | Catppuccin Latte | Catppuccin Mocha |
+| Seqeratop      | `seqera`     | SeqeraLight      | SeqeraDark       |
+
+`themes-catppuccin.json` preserves the exact palettes imported from Ghostty on
+MacTraitor Pro, including their custom IDs. `themes-seqera.json` maps the colors
+from `config/ghostty/themes/SeqeraLight` and `SeqeraDark` into the same Rex JSON
+format. These are palette snapshots, not live links to Ghostty's theme files.
+The module derives the selected light/dark IDs from the chosen snapshot.
+
+Rex stores these app preferences separately from `init.lua`. Nix sets the tab
+style and selected theme IDs through macOS defaults. Home Manager writes the
+theme JSON as NSData, the format Rex expects. It replaces the custom-theme list
+on each activation; additional imports must be captured here to keep them.
+Other Rex preferences and the appearance-mode selection are left alone.
+
+Apply with an authorized `hey re`, with Rex quit, then reopen Rex. A Lua config
+reload does not apply these preferences. To change the pinned themes, import
+them in Rex, export only `Workspace.customThemes` from `com.superlogical.rex`
+into the appropriate `themes-<variant>.json`, keeping one light and one dark
+theme. Do not commit the whole preferences domain; it contains unrelated app
+state.
+
+## Shortcuts
 
 | Keys                                   | Action                             |
 | -------------------------------------- | ---------------------------------- |
