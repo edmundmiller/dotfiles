@@ -772,6 +772,8 @@
               "packages/*/dist/**"
               "packages/*/node_modules/**"
               ".beads/backup/**"
+              # Rex compares its stub byte for byte; formatting makes it "outdated".
+              "skills/conditional/rex/rex/SKILL.md"
             ];
           };
 
