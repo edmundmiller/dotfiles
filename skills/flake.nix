@@ -574,6 +574,10 @@
                   if [ "''${entry##*/}" = synced ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
                     continue
                   fi
+                  # Rex installs its own stub skill here via "rex skill setup".
+                  if [ "''${entry##*/}" = rex ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
                   if [ ! -L "$entry" ]; then
                     module_managed=0
                     break
