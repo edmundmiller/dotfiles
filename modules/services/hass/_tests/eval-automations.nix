@@ -1061,8 +1061,8 @@ let
           triggers = toList (whiteNoiseWithBedtimeAudiobook.trigger or [ ]);
         in
         length triggers == 1
-        && any (t: (t.platform or null) == "template" && (t."for" or null) == { minutes = 5; }) triggers;
-      msg = "white_noise_with_bedtime_audiobook must require five continuous minutes of its playback template";
+        && any (t: (t.platform or null) == "template" && (t."for" or null) == { minutes = 1; }) triggers;
+      msg = "white_noise_with_bedtime_audiobook must require one continuous minute of its playback template";
     }
     {
       test =
