@@ -41,7 +41,6 @@ in
           "light.essentials_a19_a60_5" = "on"; # Wall Lamp
           "light.living_room_couch_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
-          "light.smart_night_light_w" = "on";
           "cover.smartwings_window_covering" = "closed";
         };
       }
@@ -59,7 +58,6 @@ in
           "light.essentials_a19_a60_5" = "on"; # Wall Lamp
           "light.living_room_couch_lamp" = "on";
           "light.nanoleaf_multicolor_hd_ls" = "on";
-          "light.smart_night_light_w" = "on";
         };
       }
       # Away — most things off, indicators stay on
@@ -196,7 +194,7 @@ in
       {
         alias = "Front door opened after dark";
         id = "front_door_night_lights";
-        description = "Light the entrance and living room when the front door opens after dark";
+        description = "Light the couch lamp when the front door opens after dark and Goodnight is off";
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.eve_door_20ebn9901_door";
@@ -217,10 +215,7 @@ in
         action = [
           {
             action = "light.turn_on";
-            target.entity_id = [
-              "light.smart_night_light_w"
-              "light.living_room_couch_lamp"
-            ];
+            target.entity_id = "light.living_room_couch_lamp";
           }
         ];
       }
@@ -290,27 +285,19 @@ in
       {
         alias = "Entrance occupancy";
         id = "entrance_occupancy_night_light";
-        description = "Night light on when motion detected, off after 5 min clear";
+        description = "Turn on the entrance night light when motion is detected";
         trigger = {
           platform = "state";
           entity_id = "binary_sensor.smart_night_light_w_occupancy";
           to = "on";
         };
-        condition = [
-          {
-            condition = "state";
-            entity_id = "light.smart_night_light_w";
-            state = "off";
-          }
-        ];
         action = [
           {
             action = "light.turn_on";
             target.entity_id = "light.smart_night_light_w";
           }
           {
-            # Re-apply AL immediately so daytime color/brightness overrides
-            # any stale sleep-mode orange left on the light.
+            # Apply the current AL mode, including sleep mode during Goodnight.
             action = "adaptive_lighting.apply";
             data = {
               entity_id = "switch.adaptive_lighting_living_space";
@@ -319,16 +306,36 @@ in
               adapt_brightness = true;
             };
           }
+        ];
+      }
+      {
+        alias = "Entrance night light off when clear";
+        id = "entrance_night_light_off_when_clear";
+        description = "Turn off after two minutes without motion, including after reconnects or HA restarts";
+        mode = "restart";
+        trigger = [
           {
-            wait_for_trigger = [
-              {
-                platform = "state";
-                entity_id = "binary_sensor.smart_night_light_w_occupancy";
-                to = "off";
-                "for".minutes = 5;
-              }
-            ];
-            timeout.minutes = 30;
+            platform = "state";
+            entity_id = "binary_sensor.smart_night_light_w_occupancy";
+            to = "off";
+          }
+          {
+            platform = "state";
+            entity_id = "light.smart_night_light_w";
+            to = "on";
+          }
+          {
+            platform = "homeassistant";
+            event = "start";
+          }
+        ];
+        action = [
+          { delay.minutes = 2; }
+          {
+            condition = "state";
+            entity_id = "binary_sensor.smart_night_light_w_occupancy";
+            state = "off";
+            "for".minutes = 2;
           }
           {
             action = "light.turn_off";

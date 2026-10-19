@@ -120,11 +120,6 @@ let
       color_temp_kelvin = 2700;
     }; # Couch Lamp
     "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
-    "light.smart_night_light_w" = {
-      state = "on";
-      brightness = 80;
-      color_temp_kelvin = 2700;
-    }; # Night light: navigate to bed
   };
 
   # Reliable bed presence: bed_state_type active OR (raw presence ON AND HR available)

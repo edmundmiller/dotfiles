@@ -5,7 +5,8 @@
 #
 # Sleep mode lifecycle:
 #   ON:  Good Night/Sleep scenes
-#   OFF: 7:00 AM (hard cutoff) + Good Morning scene + Arrive Home scene
+#   OFF: Good Morning scene + Arrive Home scene
+#   7:00 AM cleanup only when goodnight is off
 #   SAFETY: startup + hourly daytime check — if sleep mode on but goodnight off, correct it
 #
 # One switch: "Living Space" — all color-temp-capable lights.
@@ -54,15 +55,19 @@ in
     ];
 
     automation = lib.mkAfter (ensureEnabled [
-      # AL sleep mode off: 7:00 AM hard cutoff
-      # Goodnight path handled by Good Morning scene
+      # Sleeping in keeps AL sleep mode until Good Morning.
       {
         alias = "Adaptive Lighting: sleep mode off";
         id = "al_sleep_mode_off";
-        description = "Disable AL sleep mode at 7 AM hard cutoff";
+        description = "Disable AL sleep mode at 7 AM only when Goodnight is off";
         trigger = {
           platform = "time";
           at = "07:00:00";
+        };
+        condition = {
+          condition = "state";
+          entity_id = "input_boolean.goodnight";
+          state = "off";
         };
         action = [
           {
@@ -72,7 +77,7 @@ in
         ];
       }
       # Safety net: sleep mode on during daytime without goodnight = stale state.
-      # Catches cases where sleep mode was re-enabled after the 7 AM cutoff
+      # Catches cases where sleep mode was re-enabled after the 7 AM cleanup
       # (e.g., by a scene or manual toggle) without the full bedtime flow.
       {
         alias = "Adaptive Lighting: daytime sleep mode correction";

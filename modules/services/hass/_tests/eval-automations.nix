@@ -328,6 +328,7 @@ let
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
+  alSleepModeOff = findAutomation "al_sleep_mode_off";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   frontDoorNightLights = findAutomation "front_door_night_lights";
@@ -1180,8 +1181,25 @@ let
       msg = "automation 'al_daytime_sleep_correction' missing";
     }
     {
+      test =
+        alSleepModeOff != null
+        && hasStateCondition (toList (alSleepModeOff.condition or [ ])) "input_boolean.goodnight" "off";
+      msg = "The 7 AM Adaptive Lighting cleanup must preserve sleep mode while Goodnight is on";
+    }
+    {
       test = entranceOccupancyNightLight != null;
       msg = "automation 'entrance_occupancy_night_light' missing";
+    }
+    {
+      test =
+        !(any (
+          scene:
+          let
+            light = scene.entities."light.smart_night_light_w" or null;
+          in
+          light == "on" || (builtins.isAttrs light && (light.state or null) == "on")
+        ) scenes);
+      msg = "Scenes must leave entrance night-light activation to occupancy";
     }
     {
       test = frontDoorNightLights != null;
@@ -1202,11 +1220,10 @@ let
       msg = "front_door_night_lights must not wake the house after Good Night";
     }
     {
-      test = hasActionTarget (toList (frontDoorNightLights.action or [ ])) "light.turn_on" [
-        "light.smart_night_light_w"
-        "light.living_room_couch_lamp"
-      ];
-      msg = "front_door_night_lights must turn on the entrance and couch lights";
+      test = hasActionTarget (toList (
+        frontDoorNightLights.action or [ ]
+      )) "light.turn_on" "light.living_room_couch_lamp";
+      msg = "front_door_night_lights must turn on the couch lamp; entrance lighting belongs to occupancy";
     }
     {
       test = balconyOpensCouchLamp != null;
