@@ -17,8 +17,7 @@
     "openai-codex/gpt-6-astra",
   ],
   // UI preferences
-  "theme": "light/dotfiles-herdr-seqera",
-  "themes": ["~/.pi/agent/themes/dotfiles-herdr-seqera.json"],
+  "theme": "terminal",
   "quietStartup": true,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
