@@ -35,6 +35,19 @@ into the appropriate `themes-<variant>.json`, keeping one light and one dark
 theme. Do not commit the whole preferences domain; it contains unrelated app
 state.
 
+## Agent status
+
+Claude Code and Codex report state to Rex through the
+[Program Status Protocol](https://www.superlogical.com/rex/docs/build/program-status)
+(OSC 7501). `hooks/agent-status.sh` finds the pane's tty (hooks have no
+controlling terminal) and emits `working`, `blocked`, `done`, or `clear`. It is
+a no-op outside Rex. Activation (`rexAgentStatusHooks`) merges the hooks into
+`~/.claude/settings.json` and `~/.codex/hooks.json`, keeping existing hooks.
+`env.zsh` sets `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1` inside Rex so tabs show
+Rex's own names instead of Claude's long title. Restart agent sessions after
+activation. Check with `rex api call --session "$REX_SESSION"
+com.superlogical.terminal.program_status`.
+
 ## Shortcuts
 
 | Keys                                   | Action                              |

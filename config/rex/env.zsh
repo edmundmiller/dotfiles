@@ -7,3 +7,7 @@ for rex_cli_dir in \
   [[ -x "$rex_cli_dir/rex" ]] && path=("$rex_cli_dir" $path)
 done
 unset rex_cli_dir
+
+# Rex tabs are narrow; show Rex's own tab name instead of Claude Code's long
+# terminal title. Status comes from OSC 7501 hooks (see README).
+[[ -n "$REX_SESSION" ]] && export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
