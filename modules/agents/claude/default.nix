@@ -132,6 +132,32 @@ in
               ):
                   data.setdefault(key, {})[name] = template_data[key][name]
 
+          # Host installers record plugins outside the template. Keep those
+          # entries. Keys declared in the template win, and retired plugin ids
+          # stay removed so an old settings file cannot bring them back.
+          retired_plugins = {
+              "claude-code-wakatime@wakatime",
+              "duckdb-skills@claude-plugins-official",
+              "plannotator@plannotator",
+          }
+          retired_marketplaces = {"plannotator", "wakatime"}
+          if managed_settings and isinstance(existing, dict):
+              for section, retired in (
+                  ("enabledPlugins", retired_plugins),
+                  ("extraKnownMarketplaces", retired_marketplaces),
+              ):
+                  current = data.get(section)
+                  if not isinstance(current, dict):
+                      current = {}
+                      data[section] = current
+                  previous = existing.get(section)
+                  if not isinstance(previous, dict):
+                      continue
+                  for key, value in previous.items():
+                      if key in current or key in retired:
+                          continue
+                      current[key] = value
+
           if pstack_enabled:
               data["extraKnownMarketplaces"]["cursor-plugins"]["source"]["path"] = str(
                   target.parent / "pstack-marketplace"

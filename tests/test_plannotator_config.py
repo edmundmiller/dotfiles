@@ -103,8 +103,20 @@ class PlannotatorSourceContractTests(unittest.TestCase):
             target.write_text(
                 json.dumps(
                     {
-                        "enabledPlugins": {"plannotator@plannotator": True},
-                        "extraKnownMarketplaces": {"plannotator": {}},
+                        "enabledPlugins": {
+                            "plannotator@plannotator": True,
+                            "claude-code-wakatime@wakatime": True,
+                            "duckdb-skills@claude-plugins-official": True,
+                        },
+                        "extraKnownMarketplaces": {
+                            "plannotator": {},
+                            "wakatime": {
+                                "source": {
+                                    "source": "github",
+                                    "repo": "wakatime/claude-code-wakatime",
+                                }
+                            },
+                        },
                         "hooks": hooks,
                     }
                 )
@@ -181,6 +193,74 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                     check=True,
                 )
                 self.assertEqual(json.loads(target.read_text()), expected)
+
+    def test_claude_bootstrap_keeps_enabled_agento11y_plugin_and_pstack(self):
+        module = (ROOT / "modules/agents/claude/default.nix").read_text()
+        bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
+        script = textwrap.dedent(
+            bootstrap.split("<<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+        )
+        hooks = {
+            "SessionStart": [{"hooks": [{"type": "command", "command": "herdr hook"}]}]
+        }
+        agento11y_marketplace = {
+            "source": {"source": "github", "repo": "grafana/agento11y"}
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            target = pathlib.Path(directory) / "settings.json"
+            target.write_text(
+                json.dumps(
+                    {
+                        "enabledPlugins": {
+                            "agento11y-claude-code@agento11y": True,
+                            "pstack@cursor-plugins": False,
+                        },
+                        "extraKnownMarketplaces": {
+                            "agento11y": agento11y_marketplace,
+                            "cursor-plugins": {
+                                "source": {
+                                    "source": "directory",
+                                    "path": "/stale/pstack",
+                                },
+                                "autoUpdate": True,
+                            },
+                        },
+                        "hooks": hooks,
+                    }
+                )
+            )
+            for _ in range(2):
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        script,
+                        str(target),
+                        str(ROOT / "config/claude/settings.json"),
+                        "true",
+                        "true",
+                    ],
+                    check=True,
+                )
+                settings = json.loads(target.read_text())
+                self.assertEqual(
+                    settings["enabledPlugins"],
+                    {
+                        "pstack@cursor-plugins": True,
+                        "agento11y-claude-code@agento11y": True,
+                    },
+                )
+                cursor_plugins = settings["extraKnownMarketplaces"]["cursor-plugins"]
+                self.assertEqual(
+                    cursor_plugins["source"]["path"],
+                    str(target.parent / "pstack-marketplace"),
+                )
+                self.assertFalse(cursor_plugins["autoUpdate"])
+                self.assertEqual(
+                    settings["extraKnownMarketplaces"]["agento11y"],
+                    agento11y_marketplace,
+                )
+                self.assertEqual(settings["hooks"], hooks)
 
     def test_codex_integration_is_absent(self):
         module = (ROOT / "modules/agents/plannotator/default.nix").read_text(

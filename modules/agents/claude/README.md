@@ -26,8 +26,11 @@ modules.agents.claude.enable = true;
 
 ## Plugin policy
 
-Plugin marketplaces and installations are managed by Claude Code itself. This
-module does not configure or install plugins.
+The template enables `pstack@cursor-plugins` and points `cursor-plugins` at the
+Nix-pinned marketplace. The settings bootstrap keeps other plugin and marketplace
+entries already in `~/.claude/settings.json`. Template keys win. Retired DuckDB,
+Plannotator, and WakaTime entries are removed on each bootstrap. This module
+does not install any marketplace other than that pstack link.
 
 ## Notes
 
