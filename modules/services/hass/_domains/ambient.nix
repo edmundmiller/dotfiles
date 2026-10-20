@@ -291,6 +291,11 @@ in
           entity_id = "binary_sensor.smart_night_light_w_occupancy";
           to = "on";
         };
+        condition = {
+          condition = "state";
+          entity_id = "light.smart_night_light_w";
+          state = "off";
+        };
         action = [
           {
             action = "light.turn_on";

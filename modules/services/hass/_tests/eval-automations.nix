@@ -1372,6 +1372,12 @@ let
       test = hasActionCall (toList (entranceOccupancyNightLight.action or [ ])) "adaptive_lighting.apply";
       msg = "entrance_occupancy_night_light missing adaptive_lighting.apply action";
     }
+    {
+      test = hasStateCondition (toList (
+        entranceOccupancyNightLight.condition or [ ]
+      )) "light.smart_night_light_w" "off";
+      msg = "entrance_occupancy_night_light must require the light to be off so returning motion preserves manual adjustments";
+    }
 
     {
       test =
