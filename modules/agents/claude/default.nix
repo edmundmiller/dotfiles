@@ -11,6 +11,16 @@ let
   cfg = config.modules.agents.claude;
   inherit (config.dotfiles) configDir;
 
+  statusline = pkgs.writeShellApplication {
+    name = "claude-statusline";
+    runtimeInputs = with pkgs; [
+      coreutils
+      git
+      jq
+    ];
+    text = builtins.readFile "${configDir}/claude/statusline.sh";
+  };
+
   agentCore = builtins.readFile "${configDir}/agents/core.md";
 
   # Claude only auto-loads CLAUDE.md. Tell it to fall back to a repo's
@@ -49,6 +59,7 @@ in
         ".claude/agents".source = "${configDir}/agents/modes";
         # Claude's global instruction file receives the same bounded semantic core.
         ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
+        ".claude/statusline.sh".source = "${statusline}/bin/claude-statusline";
       }
       // optionalAttrs cfg.pstack.enable {
         ".claude/pstack-marketplace".source = inputs.skills-catalog.inputs.pstack.outPath;
