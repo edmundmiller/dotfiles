@@ -1,8 +1,22 @@
 {
   "private": true,
   "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "observe": "tsx observability-cli.ts",
+    "check": "npm run typecheck && npm test && npm run observe -- map && npm run observe -- doctor"
+  },
   "devDependencies": {
+    "@evlog/cli": "0.11.0",
     "@flue/cli": "1.0.0-beta.9",
-    "@flue/runtime": "1.0.0-beta.9"
+    "@flue/runtime": "1.0.0-beta.9",
+    "@types/node": "22.20.5",
+    "evlog": "2.33.1",
+    "flue-evlog": "file:../packages/flue-evlog",
+    "hono": "4.13.13",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "zod": "4.6.7"
   }
 }

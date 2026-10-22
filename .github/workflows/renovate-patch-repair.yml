@@ -23,6 +23,7 @@ jobs:
       (github.event.pull_request.head.ref == 'renovate/herdr' ||
        github.event.pull_request.head.ref == 'renovate/hunk')
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Select patch stack
         id: target
@@ -125,25 +126,59 @@ jobs:
 
       - name: Install pinned Flue runtime
         if: steps.initial-check.outcome == 'failure'
-        run: npm ci --prefix .flue --ignore-scripts
+        env:
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
+        run: |
+          npm ci --prefix "$TRUSTED_WORKSPACE/packages/flue-evlog" --ignore-scripts
+          npm run --prefix "$TRUSTED_WORKSPACE/packages/flue-evlog" build
+          npm ci --prefix "$TRUSTED_WORKSPACE/.flue" --ignore-scripts
+
+      - name: Diagnose telemetry before spending tokens
+        if: steps.initial-check.outcome == 'failure'
+        env:
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
+          FLUE_LOG_DIR: ${{ runner.temp }}/flue-observability/logs
+        run: npm run --prefix "$TRUSTED_WORKSPACE/.flue" observe -- doctor
 
       - name: Repair patch stack with Flue
+        id: repair
         if: steps.initial-check.outcome == 'failure'
+        timeout-minutes: 15
         env:
           FLUE_MODEL: ${{ vars.FLUE_MODEL }}
           FLUE_SANDBOX_CONTAINER: ${{ steps.sandbox.outputs.name }}
+          FLUE_LOG_DIR: ${{ runner.temp }}/flue-observability/logs
+          FLUE_COMMIT: ${{ github.event.pull_request.head.sha }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           TARGET: ${{ steps.target.outputs.name }}
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
         run: |
           set -euo pipefail
           test -n "$OPENROUTER_API_KEY" || {
             echo "OPENROUTER_API_KEY repository secret is required" >&2
             exit 1
           }
-          npm exec --prefix .flue -- flue run renovate-patch-repair --root .flue --target node \
+          "$TRUSTED_WORKSPACE/.flue/node_modules/.bin/flue" run renovate-patch-repair \
+            --root "$TRUSTED_WORKSPACE/.flue" --target node \
             --id "renovate-$PR_NUMBER-$TARGET" \
             --input "{\"message\":\"Repair the $TARGET patch stack for Renovate PR #$PR_NUMBER. Its fresh-source pkg-check failed in this runner.\"}"
+
+      - name: Verify token accounting and report failures
+        if: always() && steps.repair.outcome != 'skipped' && steps.repair.outcome != ''
+        env:
+          TRUSTED_WORKSPACE: ${{ steps.trusted.outputs.workspace }}
+          FLUE_LOG_DIR: ${{ runner.temp }}/flue-observability/logs
+        run: npm run --prefix "$TRUSTED_WORKSPACE/.flue" observe -- summary
+
+      - name: Preserve Flue accounting even after failure
+        if: always() && steps.repair.outcome != 'skipped' && steps.repair.outcome != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: flue-observability-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/flue-observability/logs/*.jsonl
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Stop isolated agent sandbox
         if: always() && steps.sandbox.outputs.name != ''
