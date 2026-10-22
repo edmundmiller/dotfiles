@@ -34,7 +34,6 @@ in
       {
         # V2 gets an isolated XDG root so incompatible V1 plugins are never loaded.
         xdg.configFile = {
-          "opencode2/opencode/opencode.jsonc".source = "${configDir}/opencode/opencode.jsonc";
           "opencode2/opencode/AGENTS.md".source = "${configDir}/agents/core.md";
 
           # TODO(opencode-v2): Restore DCP after its plugin supports the V2 API.
@@ -49,6 +48,13 @@ in
             recursive = true;
           };
         };
+
+        home.activation.opencode-config-bootstrap = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+          target="${opencodeV2ConfigDir}/opencode.jsonc"
+          if [ ! -e "$target" ]; then
+            ${pkgs.coreutils}/bin/install -D -m 0600 ${configDir}/opencode/opencode.jsonc "$target"
+          fi
+        '';
 
         home.activation.opencode-v1-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           if [ -d "${opencodeV1ConfigDir}" ] && [ ! -L "${opencodeV1ConfigDir}" ]; then

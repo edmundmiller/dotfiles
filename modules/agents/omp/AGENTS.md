@@ -8,8 +8,11 @@ PI_CODING_AGENT_DIR=$HOME/.omp/agent
 PI_PERMISSION_SYSTEM_CONFIG_PATH=$HOME/.omp/agent/extensions/pi-permission-system/config.json
 ```
 
-`config/omp/` owns config/commands/rules; the module renders MCP and LSP config
-with host overrides. Other runtime state remains OMP-owned. Activation clears
+`config/omp/` owns config/commands/rules; the module renders LSP config with
+host overrides. The host catalog `modules.agents.mcp` reconciles registrations
+into writable `~/.omp/agent/mcp.json`, preserving unrelated config and auth.
+See [ADR 0013](../../../docs/adr/0013-host-owned-agent-mcp.md) for adapter ownership.
+Other runtime state remains OMP-owned. Activation clears
 cached MCP metadata so removed servers cannot reappear from `agent.db`.
 
 ## Integration contracts
@@ -44,10 +47,11 @@ for OMP-only, module, or explicitly requested shared-policy changes.
 
 ## Checks and model routing
 
-Choose the affected `test-config-yml.sh`, `test-mcp-json.sh`,
-`test-mcp-host-config.sh`, or `test-lsp-config.sh` here. Config tests use an
-isolated OMP home and reject unknown keys/warnings; host tests build resolved
-Darwin config. Validation routing tests: `python3 -m unittest tests/test_validation.py`.
+Choose the affected `test-config-yml.sh` or `test-lsp-config.sh` here.
+Config tests use an isolated OMP home and reject unknown keys/warnings.
+Host MCP adapter checks:
+`uv run --with json5 --with tomlkit python -m unittest tests.test_agent_mcp`.
+Validation routing tests: `python3 -m unittest tests/test_validation.py`.
 TTSR tests:
 `python3 -m unittest tests/test_omp_ttsr_rules.py` and `omp ttsr list --json`.
 

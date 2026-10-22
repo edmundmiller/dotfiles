@@ -3,10 +3,10 @@
   configDir,
   agentCore,
   piPkgDeps,
+  piPstack,
   piCommandPolicyBridge,
   piSettingsValidated,
   piPermissionSystemConfig,
-  mcpEnabled,
   promptLinks,
   agentLinks,
   sessionSearchFiles,
@@ -30,15 +30,8 @@ promptLinks
     force = true;
   };
   ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
+  ".pi/agent/packages/pstack-pi".source = piPstack;
 }
-// (
-  if mcpEnabled then
-    {
-      ".pi/agent/mcp.json".source = "${configDir}/pi/mcp.json";
-    }
-  else
-    { }
-)
 // sessionSearchFiles
 // (
   if isDarwin then
@@ -62,6 +55,8 @@ promptLinks
     "${configDir}/pi/extensions/lib/commit-review-logic.ts";
   ".pi/agent/extensions/lib/commit-config.ts".source =
     "${configDir}/pi/extensions/lib/commit-config.ts";
+  ".pi/agent/extensions/lib/commit-model.ts".source =
+    "${configDir}/pi/extensions/lib/commit-model.ts";
   ".pi/agent/extensions/lib/review-git.ts".source = "${configDir}/pi/extensions/lib/review-git.ts";
   ".pi/agent/extensions/lib/review-screen.ts".source =
     "${configDir}/pi/extensions/lib/review-screen.ts";

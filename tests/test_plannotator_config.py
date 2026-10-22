@@ -73,16 +73,23 @@ class PlannotatorCodexCleanupTests(unittest.TestCase):
 
 
 class PlannotatorSourceContractTests(unittest.TestCase):
-    def test_claude_plugin_installation_is_not_managed_by_activation(self):
+    def test_claude_only_declares_the_pstack_plugin(self):
         module = (ROOT / "modules/agents/claude/default.nix").read_text()
         settings = json.loads(
             (ROOT / "config/claude/settings.json").read_text(encoding="utf-8")
         )
         self.assertNotIn("claude-duckdb-skills-plugin", module)
         self.assertNotIn("duckdb-skills@claude-plugins-official", json.dumps(settings))
-        self.assertNotIn("extraKnownMarketplaces", settings)
+        self.assertEqual(settings["enabledPlugins"], {"pstack@cursor-plugins": True})
+        marketplace = settings["extraKnownMarketplaces"]
+        self.assertEqual(set(marketplace), {"cursor-plugins"})
+        self.assertEqual(
+            marketplace["cursor-plugins"]["source"],
+            {"source": "directory", "path": "~/.claude/pstack-marketplace"},
+        )
+        self.assertFalse(marketplace["cursor-plugins"]["autoUpdate"])
 
-    def test_claude_bootstrap_keeps_runtime_hooks_without_managing_plugins(self):
+    def test_claude_bootstrap_keeps_runtime_hooks_and_replaces_retired_plugins(self):
         module = (ROOT / "modules/agents/claude/default.nix").read_text()
         bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
         script = textwrap.dedent(
@@ -110,13 +117,70 @@ class PlannotatorSourceContractTests(unittest.TestCase):
                         script,
                         str(target),
                         str(ROOT / "config/claude/settings.json"),
+                        "true",
+                        "true",
                     ],
                     check=True,
                 )
                 settings = json.loads(target.read_text())
-                self.assertNotIn("enabledPlugins", settings)
-                self.assertNotIn("extraKnownMarketplaces", settings)
+                template = json.loads((ROOT / "config/claude/settings.json").read_text())
+                template["extraKnownMarketplaces"]["cursor-plugins"]["source"]["path"] = str(
+                    target.parent / "pstack-marketplace"
+                )
+                self.assertEqual(settings["enabledPlugins"], template["enabledPlugins"])
+                self.assertEqual(
+                    settings["extraKnownMarketplaces"], template["extraKnownMarketplaces"]
+                )
                 self.assertEqual(settings["hooks"], hooks)
+
+    def test_pstack_only_bootstrap_preserves_all_other_settings(self):
+        module = (ROOT / "modules/agents/claude/default.nix").read_text()
+        bootstrap = module.split("home.activation.claude-settings-bootstrap", 1)[1]
+        script = textwrap.dedent(
+            bootstrap.split("<<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+        )
+        existing = {
+            "permissions": {"defaultMode": "plan", "deny": ["Bash(*)"]},
+            "env": {"LOCAL_SETTING": "keep"},
+            "alwaysThinkingEnabled": False,
+            "effortLevel": "low",
+            "hooks": {
+                "Stop": [{"hooks": [{"type": "command", "command": "local hook"}]}]
+            },
+            "enabledPlugins": {"local@private": False},
+            "extraKnownMarketplaces": {"private": {"autoUpdate": True}},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            target = pathlib.Path(directory) / "settings.json"
+            target.write_text(json.dumps(existing))
+            expected = {
+                **existing,
+                "enabledPlugins": {"local@private": False, "pstack@cursor-plugins": True},
+                "extraKnownMarketplaces": {
+                    "private": {"autoUpdate": True},
+                    "cursor-plugins": {
+                        "source": {
+                            "source": "directory",
+                            "path": str(target.parent / "pstack-marketplace"),
+                        },
+                        "autoUpdate": False,
+                    },
+                },
+            }
+            for _ in range(2):
+                subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        script,
+                        str(target),
+                        str(ROOT / "config/claude/settings.json"),
+                        "false",
+                        "true",
+                    ],
+                    check=True,
+                )
+                self.assertEqual(json.loads(target.read_text()), expected)
 
     def test_codex_integration_is_absent(self):
         module = (ROOT / "modules/agents/plannotator/default.nix").read_text(
@@ -141,16 +205,17 @@ class PlannotatorSourceContractTests(unittest.TestCase):
             (ROOT / "config/claude/settings.json").read_text(encoding="utf-8")
         )
 
-        self.assertIn('version = "0.27.0"', module)
-        self.assertIn('piExtensionVersion = "0.26.4"', module)
+        self.assertIn('version = "0.28.10"', module)
+        self.assertIn("piExtensionVersion = version;", module)
+        self.assertIn('env.PLANNOTATOR_INBOX_TOOL = "1";', module)
         self.assertIn("npm:@plannotator/pi-extension@${piExtensionVersion}", module)
         self.assertIn("extensions = [ ];", module)
         self.assertIn("omp-plannotator-plugin", module)
         self.assertNotIn("plannotator-claude-plugin", module)
         self.assertNotIn("claudeEnabled", module)
         self.assertIn("herdrEnabled = config.modules.shell.herdr.enable;", module)
-        self.assertNotIn("enabledPlugins", claude)
-        self.assertNotIn("extraKnownMarketplaces", claude)
+        self.assertNotIn("plannotator@plannotator", claude["enabledPlugins"])
+        self.assertNotIn("plannotator", claude["extraKnownMarketplaces"])
         self.assertNotIn("claude-duckdb-skills-plugin", claude_module)
         self.assertFalse((ROOT / ".claude-plugin/marketplace.json").exists())
         self.assertFalse((ROOT / ".claudelint.toml").exists())

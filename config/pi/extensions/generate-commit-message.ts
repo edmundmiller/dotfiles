@@ -4,23 +4,19 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { homedir } from "node:os";
 import * as path from "node:path";
 import { loadCommitConfig, saveCommitConfig } from "./lib/commit-config";
+import {
+  getAvailableModels,
+  getModelCost,
+  normalizeMode,
+  pickCheapestModel,
+  type ModelInfo,
+} from "./lib/commit-model";
 
 interface GenerateCommitMessageConfig {
   mode?: string;
   prompt?: string;
   /** Maximum output cost per million tokens (default: 1.0) */
   maxOutputCost?: number;
-}
-
-interface ModelInfo {
-  id: string;
-  provider: string;
-  cost: {
-    input: number;
-    output: number;
-    cacheRead: number;
-    cacheWrite: number;
-  };
 }
 
 const USER_AGENTS_DIR = path.join(homedir(), ".pi", "agent", "agents");
@@ -31,9 +27,6 @@ const DEFAULT_AGENT_CANDIDATES = ["general", "worker", "default", "scout"] as co
 
 /** Maximum output cost per million tokens for "cheap" models */
 const DEFAULT_MAX_OUTPUT_COST = 1.0;
-
-/** Hard fallback if no models are available at all */
-const HARD_FALLBACK_MODEL = "github-copilot/gpt-4o-mini";
 
 const FALLBACK_AGENT_NAME = "commit-writer";
 
@@ -55,152 +48,10 @@ const DEFAULT_CONFIG: GenerateCommitMessageConfig = {
   maxOutputCost: DEFAULT_MAX_OUTPUT_COST,
 };
 
-function normalizeMode(mode?: string): string | undefined {
-  if (!mode) return undefined;
-  const trimmed = mode.trim();
-  if (!trimmed) return undefined;
-  return /^[^/\s]+\/[^\s]+$/.test(trimmed) ? trimmed : undefined;
-}
-
-/**
- * Calculate a combined cost score for a model.
- * Weights output cost more heavily since commit messages have short input but longer output.
- */
-/**
- * Calculate cost score for model comparison.
- * Higher score = more expensive.
- * Models with $0/$0 pricing (GitHub Copilot, request-based) get penalized
- * to deprioritize them in favor of token-based models where costs are clear.
- */
-function calculateCostScore(model: ModelInfo): number {
-  const { input, output } = model.cost;
-
-  // Deprioritize request-based pricing models (GitHub Copilot shows $0/$0)
-  // These don't fit the token-cost model and should only be selected if
-  // no token-based options exist
-  if (input === 0 && output === 0) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  return input + output * 2;
-}
-
-/**
- * Check if a model name suggests it's a cheap/lite variant.
- */
-function isCheapModelName(id: string): boolean {
-  return /(mini|flash|nano|haiku|lite|micro|free)/i.test(id);
-}
-
-function isModelInfo(value: unknown): value is ModelInfo {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-
-  const id = Reflect.get(value, "id");
-  const provider = Reflect.get(value, "provider");
-  const cost = Reflect.get(value, "cost");
-  if (typeof id !== "string" || typeof provider !== "string") return false;
-  if (typeof cost !== "object" || cost === null || Array.isArray(cost)) return false;
-
-  return (
-    typeof Reflect.get(cost, "input") === "number" &&
-    typeof Reflect.get(cost, "output") === "number" &&
-    typeof Reflect.get(cost, "cacheRead") === "number" &&
-    typeof Reflect.get(cost, "cacheWrite") === "number"
-  );
-}
-
-async function getAvailableModels(ctx: ExtensionContext): Promise<ModelInfo[]> {
-  const available = await ctx.modelRegistry.getAvailable();
-  if (!Array.isArray(available)) return [];
-  return available.filter(isModelInfo);
-}
-
 interface ModelSelection {
   model: string;
   source: "config" | "auto";
   cost: ModelInfo["cost"] | null;
-}
-
-/**
- * Pick the cheapest available model based on actual pricing data.
- * Falls back to name-based heuristics if cost data is unavailable.
- *
- * Note: Request-based pricing models (GitHub Copilot: $0/$0) are deprioritized
- * in favor of token-based models where costs are transparent and comparable.
- */
-async function pickCheapestModel(
-  ctx: ExtensionContext,
-  maxOutputCost: number = DEFAULT_MAX_OUTPUT_COST
-): Promise<ModelSelection> {
-  const available = await getAvailableModels(ctx);
-
-  if (available.length === 0) {
-    return { model: HARD_FALLBACK_MODEL, source: "auto", cost: null };
-  }
-
-  // First, try to find token-based models (not $0/$0) under the cost threshold
-  const tokenBased = available.filter((m) => !(m.cost.input === 0 && m.cost.output === 0));
-
-  const cheapModels = tokenBased
-    .filter((m) => m.cost.output <= maxOutputCost)
-    .sort((a, b) => calculateCostScore(a) - calculateCostScore(b));
-
-  if (cheapModels.length > 0) {
-    const best = cheapModels[0];
-    return {
-      model: `${best.provider}/${best.id}`,
-      source: "auto",
-      cost: best.cost,
-    };
-  }
-
-  // If no token-based models under threshold, look for "cheap-sounding" names
-  const cheapNamed = tokenBased
-    .filter((m) => isCheapModelName(m.id))
-    .sort((a, b) => calculateCostScore(a) - calculateCostScore(b));
-
-  if (cheapNamed.length > 0) {
-    const best = cheapNamed[0];
-    return {
-      model: `${best.provider}/${best.id}`,
-      source: "auto",
-      cost: best.cost,
-    };
-  }
-
-  // If no token-based models at all, use the cheapest token-based overall
-  if (tokenBased.length > 0) {
-    const sorted = [...tokenBased].sort((a, b) => calculateCostScore(a) - calculateCostScore(b));
-    const best = sorted[0];
-    return {
-      model: `${best.provider}/${best.id}`,
-      source: "auto",
-      cost: best.cost,
-    };
-  }
-
-  // Last resort: use request-based models (GitHub Copilot, etc.)
-  const sorted = [...available].sort((a, b) => calculateCostScore(a) - calculateCostScore(b));
-  const best = sorted[0];
-  return {
-    model: `${best.provider}/${best.id}`,
-    source: "auto",
-    cost: best.cost,
-  };
-}
-
-/**
- * Look up cost info for a configured model.
- */
-async function getModelCost(
-  ctx: ExtensionContext,
-  modelString: string
-): Promise<ModelInfo["cost"] | null> {
-  const [provider, ...idParts] = modelString.split("/");
-  const modelId = idParts.join("/");
-  const available = await getAvailableModels(ctx);
-  const found = available.find((m) => m.provider === provider && m.id === modelId);
-  return found?.cost ?? null;
 }
 
 /**

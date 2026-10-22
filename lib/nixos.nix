@@ -32,6 +32,8 @@ in
         (import path)
         # opnix: 1Password secrets injection for NixOS hosts
         inputs.opnix.nixosModules.default
+        # Rex server: uncomment with the rex-server input once the Linux server is released.
+        # inputs.rex-server.nixosModules.default
       ]
       ++ optionals (inputs ? agents-workspace) [
         inputs.agents-workspace.nixosModules.hermes

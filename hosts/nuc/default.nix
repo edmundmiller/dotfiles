@@ -1011,6 +1011,10 @@ let
 
 in
 {
+  # Rex server (Linux): uncomment the flake input/module, then enable here before other hosts.
+  # services.rex.enable = true;
+  # user.extraGroups = [ "rex" ];
+
   assertions = telegramBindings.assertions ++ [
     {
       assertion = hermesTelegramBotTokenOwners == [ ];
@@ -2420,6 +2424,19 @@ in
       herdr.enable = true;
     };
     agents = {
+      mcp = {
+        enable = true;
+        agents.amp = true;
+        servers = {
+          github.enable = true;
+          linear.enable = true;
+          notion.enable = true;
+          fff.enable = true;
+          openaiDeveloperDocs.enable = true;
+        };
+      };
+      # Claude's CLI is a backend here; keep its existing permissions/settings.
+      claude.pstack.enable = true;
       codex.enable = true;
       omp.enable = false;
       opencode.enable = true;
@@ -2908,15 +2925,9 @@ in
     };
   };
 
-  systemd.services.nixos-upgrade = {
-    after = [ "opnix-secrets.service" ];
-    requires = [ "opnix-secrets.service" ];
-    script = lib.mkForce ''
-      exec ${nixPrivateGithub}/bin/nix-private-github \
-        ${config.system.build.nixos-rebuild}/bin/nixos-rebuild \
-        ${config.system.autoUpgrade.operation} ${toString config.system.autoUpgrade.flags}
-    '';
-  };
+  # Deploy only through the manual, CI-gated workflow or an authorized hey nuc.
+  # Inherited periodic upgrades would activate main without that approval gate.
+  system.autoUpgrade.enable = lib.mkForce false;
 
   age = {
     secrets = {

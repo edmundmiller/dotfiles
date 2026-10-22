@@ -1,10 +1,12 @@
 {
   // Docs: https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/settings.md
-  "$schema": "./settings-schema.json",
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
   // Model configuration
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
+  "showCacheMissNotices": true,
+  "enableInstallTelemetry": false,
   // Pi 1.0 native orchestration, alongside the selected model's ordinary tools.
   "defaultTools": ["+codemode"],
   "codemode": { "mode": "on", "inlineBudget": 3000 },
@@ -19,6 +21,7 @@
   "quietStartup": true,
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
+  "terminal": { "showTerminalProgress": true },
   // Use Pi's native compaction, retry, message delivery, image, and skill defaults.
   // Keep integrations and explicit commands; pi-goal-x owns goal continuation.
   // Avoid automatic coaching, model switching, and overlapping context/tool rewriting.
@@ -43,6 +46,9 @@
     "npm:pi-cache-graph",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/packages/pi-packages/pi-direnv",
+    // Rex location, installed guide, pane captures, and native task status.
+    // Automatic integration stays dormant outside Rex terminals.
+    "~/.config/dotfiles/packages/pi-packages/pi-rex",
     // Force non-interactive bash defaults + block interactive hang patterns
     "~/.config/dotfiles/packages/pi-packages/pi-non-interactive",
     // ast-grep outline/search/rewrite/scan tools - vendored from https://github.com/joelhooks/pi-ast-grep
@@ -83,6 +89,12 @@
     "git:github.com/earendil-works/pi-review",
     // Shared /goal and /sisyphus workflow with persistent progress and optional auditing.
     "npm:pi-goal-x",
+    // Nix-pinned and patched pstack. Keep canonical shared skills.
+    {
+      "source": "~/.pi/agent/packages/pstack-pi",
+      "extensions": ["extensions/pstack/index.ts"],
+      "skills": ["skills/*", "!skills/tdd", "!skills/teach", "!skills/unslop"],
+    },
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
       "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",
@@ -138,5 +150,9 @@
     "npm:@howaboua/pi-markdown-workflows",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
     "https://github.com/denismrvoljak/pi-overwatch",
+    // Match broad local runtime extras; module-managed packages stay host-gated.
+    "npm:@grafana/agento11y-pi@0.25.0",
+    { "source": "npm:@plannotator/pi-extension@0.28.10", "extensions": [] },
+    "npm:pi-wakatime",
   ],
 }

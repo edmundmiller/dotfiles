@@ -13,10 +13,11 @@ the agent-skills platform mismatch requires Linux/NUC evaluation.
 clean commit. Use the printed `NUC_WORKTREE_REMOTE_DIR` for checks on that exact
 snapshot. Active leases protect builds; pruning retains five recent snapshots.
 
-`hey nuc` is the deployment interface. Daily auto-upgrade resolves current main
-to an exact commit through `nix-private-github`, failing before activation if
-resolution fails. Its opnix token is root-only. There is no persistent
-`~/dotfiles-deploy` clone to repair or recreate.
+`hey nuc` is the deployment interface. Manual GitHub deployments use
+`hey nuc revision <SHA>` after CI and environment approval. The host wrapper
+rechecks live main under its deployment lock; scheduled auto-upgrades are
+disabled. Its opnix token stays root-only. See the deployment runbook for
+bootstrap and rollback. There is no persistent `~/dotfiles-deploy` clone.
 
 Use `hey check hosts/nuc` for portable routing, `hey check --platform nixos` for
 full Linux evaluation, and `hey nuc-wt build` for an isolated snapshot build.

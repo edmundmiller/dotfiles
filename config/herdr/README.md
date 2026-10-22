@@ -210,6 +210,25 @@ in their official interactive flows and are never copied from host credentials.
 
 The smart-rename worker starts idempotently during activation and on `workspace.created` or `tab.created`. `prefix+t` remains the explicit current-tab override.
 
+## Seqera Studios as machines
+
+`herdr-studios sync` lists your SSH-enabled Studios across every Seqera Platform
+workspace, writes a `seqera-studio-a<sessionId>` Host alias for each to
+`~/.ssh/seqera-studios.conf` (included from `~/.ssh/config`), and runs
+`herdr machine add` for running ones. Because `machine add` only installs the
+remote server after an interactive approval, sync first downloads the matching
+Herdr release binary to `~/.local/bin/herdr` on the Studio, and it retries the
+add, which intermittently fails with ssh exit 255 over the Connect proxy. On later runs it enables saved Studios that
+are running again, disables stopped ones, and removes deleted ones. It only
+touches machines whose target starts with `seqera-studio-`.
+
+`herdr-studios list [--include-stopped]` shows what it would manage. Pass
+`--all-users` to include Studios owned by others, and `--dry-run` to sync without
+writing anything. The token comes from `TOWER_ACCESS_TOKEN` or
+`SEQERA_ACCESS_TOKEN`, falling back to 1Password. Herdr's background connections
+cannot answer prompts, so approve the 1Password SSH key with a plain
+`ssh seqera-studio-a<id> true` if `machine add` reports an auth failure.
+
 ## Reloading after edits
 
 After editing the live config or applying a rebuild, reload the running Herdr server:

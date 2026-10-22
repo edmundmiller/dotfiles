@@ -1,7 +1,7 @@
 """Exercise the Nix-exported automation in an isolated Home Assistant runtime.
 
 Pass the exported automation JSON as argv[1]; requires Home Assistant installed.
-Only the timer duration is accelerated, after asserting the five-minute contract.
+Only the timer duration is accelerated, after asserting the one-minute contract.
 No network integrations or physical devices are loaded.
 """
 
@@ -42,7 +42,7 @@ class BedtimeAudioTest(unittest.IsolatedAsyncioTestCase):
             self.hass.states.async_set(entity, state)
 
         automation = copy.deepcopy(AUTOMATION)
-        self.assertEqual(automation["trigger"][0]["for"], {"minutes": 5})
+        self.assertEqual(automation["trigger"][0]["for"], {"minutes": 1})
         automation["trigger"][0]["for"] = {"seconds": 1}
         self.assertIs(
             await bootstrap.async_from_config_dict(

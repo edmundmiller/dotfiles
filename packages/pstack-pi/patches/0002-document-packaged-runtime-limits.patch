@@ -1,0 +1,19 @@
+diff --git a/skills/poteto-mode/SKILL.md b/skills/poteto-mode/SKILL.md
+index 1f8af11..24e5ad0 100644
+--- a/skills/poteto-mode/SKILL.md
++++ b/skills/poteto-mode/SKILL.md
+@@ -83,6 +83,14 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
+ 
+ **No is an acceptable answer.** Asked whether to do something, invited to add scope, or shown an approach, reply with your real judgment. Decline, push back, or say "this doesn't earn its place" when true. A recommendation is a judgment, not a validation. Agreement is not the default, candor over sycophancy.
+ 
++## Packaged runtime limits
++
++Repository rules and the user's authorization override these playbooks. They do not grant authority for external writes or deployment.
++
++For `tasks[]` and `chain[]`, set `readonly` on each item. Top-level `readonly` is single-mode only. Children reload global Pi resources but do not inherit parent CLI tool restrictions or `--no-mcp`. Read-only ordinary tools do not sandbox extensions or MCP.
++
++The installed package may be read-only. Before running a TypeScript helper that bootstraps dependencies, copy the entire `scripts/` directory beside this skill to a fresh writable temporary directory. Run the copied helper by absolute path from the task's working directory. Allow frozen-lockfile dependency installation only there and only when network access is permitted. Remove the copy afterward.
++
+ ## Subagents
+ 
+ Use `pstack_task` for every pstack delegation. Use `agent: "poteto-agent"` for code-writing delegates and ad-hoc helpers inside playbook steps. Routed skills such as `how`, `why`, `interrogate`, `reflect`, `swarm`, `arena`, and `architect` name their own exact roles. Do not replace those roles with a generic one.

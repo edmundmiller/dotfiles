@@ -1,0 +1,348 @@
+[
+  {
+    "name": "Catppuccin Latte",
+    "appearance": "light",
+    "palette": {
+      "cursorText": {
+        "green": 0.9450980392156862,
+        "alpha": 1,
+        "red": 0.9372549019607843,
+        "blue": 0.9607843137254902,
+        "colorSpace": "display-p3"
+      },
+      "paletteBase": {},
+      "paletteOverrides": {},
+      "background": {
+        "green": 0.9450980392156862,
+        "alpha": 1,
+        "red": 0.9372549019607843,
+        "blue": 0.9607843137254902,
+        "colorSpace": "display-p3"
+      },
+      "ansi": [
+        {
+          "green": 0.37254901960784315,
+          "alpha": 1,
+          "red": 0.3607843137254902,
+          "blue": 0.4666666666666667,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.058823529411764705,
+          "alpha": 1,
+          "red": 0.8235294117647058,
+          "blue": 0.2235294117647059,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6274509803921569,
+          "alpha": 1,
+          "red": 0.25098039215686274,
+          "blue": 0.16862745098039217,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.5568627450980392,
+          "alpha": 1,
+          "red": 0.8745098039215686,
+          "blue": 0.11372549019607843,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.4,
+          "alpha": 1,
+          "red": 0.11764705882352941,
+          "blue": 0.9607843137254902,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.4627450980392157,
+          "alpha": 1,
+          "red": 0.9176470588235294,
+          "blue": 0.796078431372549,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.5725490196078431,
+          "alpha": 1,
+          "red": 0.09019607843137255,
+          "blue": 0.6,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6901960784313725,
+          "alpha": 1,
+          "red": 0.6745098039215687,
+          "blue": 0.7450980392156863,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.43529411764705883,
+          "alpha": 1,
+          "red": 0.4235294117647059,
+          "blue": 0.5215686274509804,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.1607843137254902,
+          "alpha": 1,
+          "red": 0.8705882352941177,
+          "blue": 0.24313725490196078,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6862745098039216,
+          "alpha": 1,
+          "red": 0.28627450980392155,
+          "blue": 0.23921568627450981,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6274509803921569,
+          "alpha": 1,
+          "red": 0.9333333333333333,
+          "blue": 0.17647058823529413,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.43137254901960786,
+          "alpha": 1,
+          "red": 0.27058823529411763,
+          "blue": 1,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.5215686274509804,
+          "alpha": 1,
+          "red": 0.996078431372549,
+          "blue": 0.8470588235294118,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6235294117647059,
+          "alpha": 1,
+          "red": 0.17647058823529413,
+          "blue": 0.6588235294117647,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.7529411764705882,
+          "alpha": 1,
+          "red": 0.7372549019607844,
+          "blue": 0.8,
+          "colorSpace": "display-p3"
+        }
+      ],
+      "paletteHarmonious": true,
+      "cursor": {
+        "green": 0.5411764705882353,
+        "alpha": 1,
+        "red": 0.8627450980392157,
+        "blue": 0.47058823529411764,
+        "colorSpace": "display-p3"
+      },
+      "foreground": {
+        "green": 0.30980392156862746,
+        "alpha": 1,
+        "red": 0.2980392156862745,
+        "blue": 0.4117647058823529,
+        "colorSpace": "display-p3"
+      },
+      "paletteGenerate": true,
+      "selectionBackground": {
+        "green": 0.6901960784313725,
+        "alpha": 1,
+        "red": 0.6745098039215687,
+        "blue": 0.7450980392156863,
+        "colorSpace": "display-p3"
+      },
+      "selectionForeground": {
+        "green": 0.30980392156862746,
+        "alpha": 1,
+        "red": 0.2980392156862745,
+        "blue": 0.4117647058823529,
+        "colorSpace": "display-p3"
+      }
+    },
+    "source": {
+      "ghosttyMigration": {
+        "themeName": "Catppuccin Latte"
+      }
+    },
+    "createdAt": 814050182.412294,
+    "id": "custom-0B4B4D26-BF5A-47B6-A91D-692113BCE813"
+  },
+  {
+    "name": "Catppuccin Mocha",
+    "appearance": "dark",
+    "palette": {
+      "cursorText": {
+        "green": 0.11764705882352941,
+        "alpha": 1,
+        "red": 0.11764705882352941,
+        "blue": 0.1803921568627451,
+        "colorSpace": "display-p3"
+      },
+      "paletteBase": {},
+      "paletteOverrides": {},
+      "background": {
+        "green": 0.11764705882352941,
+        "alpha": 1,
+        "red": 0.11764705882352941,
+        "blue": 0.1803921568627451,
+        "colorSpace": "display-p3"
+      },
+      "ansi": [
+        {
+          "green": 0.2784313725490196,
+          "alpha": 1,
+          "red": 0.27058823529411763,
+          "blue": 0.35294117647058826,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.5450980392156862,
+          "alpha": 1,
+          "red": 0.9529411764705882,
+          "blue": 0.6588235294117647,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.8901960784313725,
+          "alpha": 1,
+          "red": 0.6509803921568628,
+          "blue": 0.6313725490196078,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.8862745098039215,
+          "alpha": 1,
+          "red": 0.9764705882352941,
+          "blue": 0.6862745098039216,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.7058823529411765,
+          "alpha": 1,
+          "red": 0.5372549019607843,
+          "blue": 0.9803921568627451,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.7607843137254902,
+          "alpha": 1,
+          "red": 0.9607843137254902,
+          "blue": 0.9058823529411765,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.8862745098039215,
+          "alpha": 1,
+          "red": 0.5803921568627451,
+          "blue": 0.8352941176470589,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6784313725490196,
+          "alpha": 1,
+          "red": 0.6509803921568628,
+          "blue": 0.7843137254901961,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.3568627450980392,
+          "alpha": 1,
+          "red": 0.34509803921568627,
+          "blue": 0.4392156862745098,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.4666666666666667,
+          "alpha": 1,
+          "red": 0.9529411764705882,
+          "blue": 0.6,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.8470588235294118,
+          "alpha": 1,
+          "red": 0.5372549019607843,
+          "blue": 0.5450980392156862,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.8274509803921568,
+          "alpha": 1,
+          "red": 0.9215686274509803,
+          "blue": 0.5686274509803921,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6588235294117647,
+          "alpha": 1,
+          "red": 0.4549019607843137,
+          "blue": 0.9882352941176471,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.6823529411764706,
+          "alpha": 1,
+          "red": 0.9490196078431372,
+          "blue": 0.8705882352941177,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.8431372549019608,
+          "alpha": 1,
+          "red": 0.4196078431372549,
+          "blue": 0.792156862745098,
+          "colorSpace": "display-p3"
+        },
+        {
+          "green": 0.7607843137254902,
+          "alpha": 1,
+          "red": 0.7294117647058823,
+          "blue": 0.8705882352941177,
+          "colorSpace": "display-p3"
+        }
+      ],
+      "paletteHarmonious": true,
+      "cursor": {
+        "green": 0.8784313725490196,
+        "alpha": 1,
+        "red": 0.9607843137254902,
+        "blue": 0.8627450980392157,
+        "colorSpace": "display-p3"
+      },
+      "foreground": {
+        "green": 0.8392156862745098,
+        "alpha": 1,
+        "red": 0.803921568627451,
+        "blue": 0.9568627450980393,
+        "colorSpace": "display-p3"
+      },
+      "paletteGenerate": true,
+      "selectionBackground": {
+        "green": 0.3568627450980392,
+        "alpha": 1,
+        "red": 0.34509803921568627,
+        "blue": 0.4392156862745098,
+        "colorSpace": "display-p3"
+      },
+      "selectionForeground": {
+        "green": 0.8392156862745098,
+        "alpha": 1,
+        "red": 0.803921568627451,
+        "blue": 0.9568627450980393,
+        "colorSpace": "display-p3"
+      }
+    },
+    "source": {
+      "ghosttyMigration": {
+        "themeName": "Catppuccin Mocha"
+      }
+    },
+    "createdAt": 814050182.41536,
+    "id": "custom-CA3BFF17-200E-4635-8ADD-6EDA38D4B16B"
+  }
+]

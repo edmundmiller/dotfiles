@@ -40,12 +40,8 @@ class CodexModelConfigTests(unittest.TestCase):
         self.assertIn("smallest useful set", guidance)
         self.assertIn("Do not delegate recursively", guidance)
 
-    def test_runtime_guidance_and_docs_connector_remain_top_level(self):
+    def test_runtime_guidance_remains_top_level(self):
         self.assertTrue(self.config["developer_instructions"].startswith("Runtime defaults:"))
-        self.assertEqual(
-            self.config["mcp_servers"]["openaiDeveloperDocs"]["url"],
-            "https://developers.openai.com/mcp",
-        )
 
     def test_custom_agent_lanes_pin_models_and_are_deployed(self):
         expected = {

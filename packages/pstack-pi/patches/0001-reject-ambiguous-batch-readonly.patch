@@ -1,0 +1,70 @@
+diff --git a/extensions/pstack/index.ts b/extensions/pstack/index.ts
+index bbce0b1..eab0d44 100644
+--- a/extensions/pstack/index.ts
++++ b/extensions/pstack/index.ts
+@@ -580,6 +580,18 @@ export default function (pi: ExtensionAPI) {
+ 
+ 		async execute(_toolCallId, params, signal, onUpdate, ctx) {
+ 			const agentScope: AgentScope = params.agentScope ?? "user";
++			if (params.readonly !== undefined && (params.tasks || params.chain)) {
++				return {
++					content: [{ type: "text", text: "For tasks[] or chain[], set readonly on each task. Top-level readonly is supported only in single mode." }],
++					details: {
++						mode: params.tasks ? "parallel" : "chain",
++						agentScope,
++						projectAgentsDir: null,
++						results: [],
++					},
++					isError: true,
++				};
++			}
+ 			const dispatchDefaults: DispatchDefaults = {
+ 				model: ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : undefined,
+ 				thinkingLevel: ctx.thinkingLevel,
+diff --git a/extensions/pstack/readonly.test.ts b/extensions/pstack/readonly.test.ts
+new file mode 100644
+index 0000000..726d493
+--- /dev/null
++++ b/extensions/pstack/readonly.test.ts
+@@ -0,0 +1,41 @@
++import assert from "node:assert/strict";
++import test from "node:test";
++import type { ExtensionAPI, ExtensionToolContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
++import pstack from "./index.ts";
++
++let tool: ToolDefinition;
++pstack({
++	registerCommand() {},
++	registerTool(definition: ToolDefinition) {
++		tool = definition;
++	},
++} as unknown as ExtensionAPI);
++
++for (const mode of ["tasks", "chain"] as const) {
++	for (const readonly of [true, false]) {
++		test(`${mode} rejects ignored top-level readonly=${readonly}`, async () => {
++			const result = await tool.execute(
++				"readonly-check",
++				{
++					readonly,
++					[mode]: [{ agent: "unavailable-agent", task: "Review the change", readonly: false }],
++				},
++				undefined,
++				undefined,
++				{ cwd: process.cwd(), modelRegistry: { getAvailable: () => [] } } as unknown as ExtensionToolContext,
++			);
++			assert.equal(result.isError, true);
++			assert.match(JSON.stringify(result.content), /set readonly on each task/i);
++		});
++	}
++	test(`${mode} accepts per-task readonly`, async () => {
++		const result = await tool.execute(
++			"per-task-check",
++			{ [mode]: [{ agent: "unavailable-agent", task: "Review the change", readonly: true }] },
++			undefined,
++			undefined,
++			{ cwd: process.cwd(), modelRegistry: { getAvailable: () => [] } } as unknown as ExtensionToolContext,
++		);
++		assert.match(JSON.stringify(result.content), /Unknown agent/);
++	});
++}

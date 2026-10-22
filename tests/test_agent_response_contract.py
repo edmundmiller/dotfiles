@@ -38,14 +38,20 @@ class AgentResponseContractTests(unittest.TestCase):
 
     def test_thin_core_requires_scope_authority_and_live_evidence(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()
+        normalized = " ".join(core.split())
 
         for expected in (
             "Preserve unrelated work",
+            "make reversible decisions and show the result",
+            "Stop at one-way doors",
+            "Carry explicit approval through that work, quoting it to subagents",
+            "Ask again only if stakes, failed checks, or new facts change what was approved",
             "Do not infer authority",
             "Inspect the live source of truth before acting",
             "Do not claim completion without fresh evidence",
         ):
-            self.assertIn(expected, core)
+            self.assertIn(expected, normalized)
+        self.assertNotIn("Ask only about two-way-door changes", normalized)
 
     def test_codex_defaults_keep_responses_and_reasoning_summaries_concise(self) -> None:
         config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())

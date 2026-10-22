@@ -17,9 +17,6 @@ let
     executable = true;
     text = "#!${pkgs.python3}/bin/python3\n${builtins.readFile "${configDir}/codex/hooks/vault_restore_guard.py"}";
   };
-  codexMcpReconciler = pkgs.writeText "codex-mcp-reconciler.py" (
-    builtins.readFile "${configDir}/codex/reconcile_mcp.py"
-  );
   codexHomeAssistantLauncher = pkgs.writeShellScriptBin "codex-ha" ''
     CODEX_HOME_ASSISTANT_SECRET_REFERENCE=${escapeShellArg cfg.homeAssistantMcp.secretReference}
     OP_BIN=${escapeShellArg (lib.getExe pkgs._1password-cli)}
@@ -31,15 +28,12 @@ in
   options.modules.agents.codex = {
     enable = mkBoolOpt false;
     homeAssistantMcp.enable = mkBoolOpt false // {
-      description = "Ensure Home Assistant MCP is registered in Codex's writable configuration.";
+      description = "Install the codex-ha credential launcher; select the server separately in modules.agents.mcp.";
     };
     homeAssistantMcp.secretReference = mkOption {
       type = types.str;
       default = "";
       description = "1Password reference exposed to token-backed Codex sessions by codex-ha.";
-    };
-    seqeraMcp.enable = mkBoolOpt false // {
-      description = "Ensure Seqera MCP is registered in Codex's writable configuration.";
     };
   };
 
@@ -111,12 +105,6 @@ in
           fi
 
           ${pkgs.coreutils}/bin/chmod u+w "$target" 2>/dev/null || true
-
-          # Reconcile only the host-scoped MCP integrations. This source can
-          # also be run directly for a Codex-config-only recovery.
-          ${pkgs.python3}/bin/python3 ${codexMcpReconciler} --legacy-cleanup "$target" ${
-            if cfg.seqeraMcp.enable then "1" else "0"
-          } ${if cfg.homeAssistantMcp.enable then "1" else "0"}
         '';
 
         home.activation.codex-vault-restore-guard-install =

@@ -120,11 +120,6 @@ let
       color_temp_kelvin = 2700;
     }; # Couch Lamp
     "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
-    "light.smart_night_light_w" = {
-      state = "on";
-      brightness = 80;
-      color_temp_kelvin = 2700;
-    }; # Night light: navigate to bed
   };
 
   # Reliable bed presence: bed_state_type active OR (raw presence ON AND HR available)
@@ -628,12 +623,12 @@ in
         ];
       }
 
-      # White noise follows five continuous minutes of bedtime audio on either
+      # White noise follows one continuous minute of bedtime audio on either
       # bedroom HomePod. Music Assistant's _2 entities report AirPlay playback;
       # the native entities remain idle/off. BookPlayer is reported as music,
       # so goodnight supplies intent rather than unreliable title/type metadata.
       {
-        alias = "White noise after five minutes of bedtime audio";
+        alias = "White noise after one minute of bedtime audio";
         id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
@@ -644,7 +639,7 @@ in
                  and (is_state('media_player.bathroom_nightstand_2', 'playing')
                       or is_state('media_player.window_nightstand_2', 'playing')) }}
             '';
-            "for".minutes = 5;
+            "for".minutes = 1;
           }
         ];
         condition = [

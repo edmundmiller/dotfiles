@@ -42,6 +42,10 @@ jobs:
         env:
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
         run: |
+          if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
+            echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
+            exit 1
+          fi
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
 
   herdr-vm-test:

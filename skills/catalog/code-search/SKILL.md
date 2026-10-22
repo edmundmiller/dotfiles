@@ -1,11 +1,41 @@
 ---
 name: code-search
-description: Compares text and structural search strategies. Use when selecting a search/codemod approach, not for ordinary known-string lookups.
+description: Compares semantic, text, and structural search strategies. Use for intent-based discovery with sgrep or selecting a search/codemod approach, not for ordinary known-string lookups.
 ---
 
 # Code Search Tool Selection
 
 Use this skill to choose the search or refactoring tool. After selecting ast-grep, load `ast-grep`; that skill owns pattern syntax, rewrites, repository rule setup, tests, severity, and CI.
+
+## Semantic discovery with sgrep
+
+Use Context.dev's `sgrep` when you know the behavior but not its identifiers.
+Scope the search to a likely directory and inspect the returned source before
+drawing conclusions. Rankings are approximate, not proof of behavior.
+
+```bash
+sgrep "retry failed requests with backoff" ./src -n 5 --json
+```
+
+When you already have useful patterns, rank only their matching passages. Run
+both commands from the same directory so ripgrep paths resolve correctly.
+
+```bash
+rg --json -C 3 'retry|backoff' ./src \
+  | sgrep "retry failed requests with backoff" --stdin --json
+```
+
+Keep `rg` for exact names, literals, and regexes. Keep `ast-grep` for syntax and
+rewrites. If `sgrep` is unavailable, use scoped `rg` searches instead.
+
+The first search downloads a 32–34 MB model and any required parsers. Source and
+queries stay local, but the local index caches source passages. After assets
+are cached, set `HF_HUB_OFFLINE=1` to prevent further downloads. `--no-cache`
+disables index reads and writes, not model downloads. Do not bypass ignore
+rules to include secrets in a search.
+
+Upstream: https://github.com/context-dot-dev/sgrep. Other projects also use the
+name `sgrep`; use the version packaged by these dotfiles.
 
 ## ast-grep vs ripgrep
 
@@ -32,6 +62,7 @@ Use this skill to choose the search or refactoring tool. After selecting ast-gre
 
 ## Rule of Thumb
 
+- Know the behavior but not the identifiers → start with `sgrep`
 - Need a syntax-structured code change → start with `ast-grep`
 - Need raw speed or you're just **hunting text** → start with `rg`
 - Often combine: `rg` to shortlist files, then `ast-grep` to match/modify with precision
@@ -79,6 +110,7 @@ Need to change syntax-structured code?
 ├─ Yes → ast-grep
 └─ No
    ├─ Searching code structure? → ast-grep
+   ├─ Searching by behavior without known names? → sgrep
    └─ Just finding text? → ripgrep
 ```
 

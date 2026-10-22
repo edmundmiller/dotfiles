@@ -45,6 +45,7 @@
         herdr.enable = true;
         herdr.mainCodingAgent = "pi";
         herdr.projects.enable = true;
+        rex.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
@@ -113,6 +114,17 @@
       };
 
       agents = {
+        mcp = {
+          enable = true;
+          agents.amp = true;
+          servers = {
+            github.enable = true;
+            seqera.enable = true;
+            linear.enable = false;
+            fff.enable = true;
+            openaiDeveloperDocs.enable = true;
+          };
+        };
         pi = {
           enable = true;
           # Work host cycles only Sol 6.1 and Luna 6; shared defaults add Astra.
@@ -130,7 +142,6 @@
         claude.enable = true;
         codex = {
           enable = true;
-          seqeraMcp.enable = true;
         };
         omp = {
           enable = false;
@@ -255,10 +266,6 @@
           # active Ghostty SeqeraDark/Light palette directly.
           themeDark = "dark-seqera";
           themeLight = "light-seqera";
-          mcpServers.seqera = {
-            type = "http";
-            url = "https://mcp.seqera.io/mcp";
-          };
           # Wire omp to the VibeProxy menu-bar app (installed via the vibeproxy
           # homebrew cask). Exposes Claude/GPT subscription models on :8317 as
           # vibeproxy/* selectors; see config/omp/models.yml.
@@ -371,6 +378,7 @@
       llm-agents.qmd
       my.betteraudio
       my.emeraldian
+      my.excalidraw-cli
       my.zele
       my.quill
       my.work-calendar-busy
@@ -430,6 +438,17 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+
+        home.activation.removeLegacyBunClis = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          legacy="$HOME/.bun/bin/excalidraw"
+          if [ -L "$legacy" ]; then
+            case "$(readlink "$legacy")" in
+              ../install/global/node_modules/*|"$HOME"/.bun/install/global/node_modules/*)
+                rm "$legacy"
+                ;;
+            esac
+          fi
         '';
       };
 

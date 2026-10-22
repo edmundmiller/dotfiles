@@ -59,6 +59,10 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     ghostty.url = "github:ghostty-org/ghostty";
+    # Rex server (Linux), separate from the currently macOS-only Rex app.
+    # Once released, uncomment with the import in lib/nixos.nix, then lock the input.
+    # https://www.superlogical.com/rex/docs/linux/installation#nix-and-nixos
+    # rex-server.url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
@@ -733,6 +737,9 @@
               nixfmt.enable = true;
               oxfmt = {
                 enable = true;
+                # Oxfmt already ignores npm lockfiles. Do not invoke it with a
+                # lockfile-only batch, which it rejects as having no targets.
+                excludes = [ "**/package-lock.json" ];
                 includes = [
                   "*.cjs"
                   "*.cts"
@@ -765,6 +772,8 @@
               "packages/*/dist/**"
               "packages/*/node_modules/**"
               ".beads/backup/**"
+              # Rex compares its stub byte for byte; formatting makes it "outdated".
+              "skills/conditional/rex/rex/SKILL.md"
             ];
           };
 
@@ -989,6 +998,36 @@
                 pass_filenames = false;
                 files = "\\.(ts|js|nix)$";
                 stages = [ "pre-push" ];
+              };
+              rex-config = {
+                enable = pkgs.stdenv.hostPlatform.isDarwin;
+                name = "rex-config";
+                description = "Validate Rex Lua configuration with the installed CLI";
+                entry = toString (
+                  pkgs.writeShellScript "rex-config" ''
+                    set -euo pipefail
+                    rex_bin=$(command -v rex || true)
+                    if [ -z "$rex_bin" ]; then
+                      for app in "/Applications/Rex Beta.app" "/Applications/Rex.app" \
+                        "$HOME/Applications/Rex Beta.app" "$HOME/Applications/Rex.app"; do
+                        candidate="$app/Contents/Helpers/Rex Server.app/Contents/MacOS/rex"
+                        if [ -x "$candidate" ]; then
+                          rex_bin="$candidate"
+                          break
+                        fi
+                      done
+                    fi
+                    if [ -z "$rex_bin" ]; then
+                      echo "rex-config: install Rex or put its CLI on PATH to validate config/rex/init.lua" >&2
+                      exit 1
+                    fi
+                    exec "$rex_bin" config check config/rex/init.lua
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "^config/rex/init\\.lua$";
+                stages = [ "pre-commit" ];
               };
               pi-settings-json = {
                 enable = true;
@@ -1323,6 +1362,25 @@
                 touch "$out"
               '';
 
+              agent-mcp-tests =
+                pkgs.runCommand "agent-mcp-tests"
+                  {
+                    MCP_NIX_FIXTURE = pkgs.writeText "mcp-migration-fixture.json" ''
+                      {"custom":"preserved","mcpServers":{}}
+                    '';
+                    nativeBuildInputs = [
+                      (pkgs.python3.withPackages (p: [
+                        p.json5
+                        p.tomlkit
+                      ]))
+                    ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_agent_mcp
+                    touch "$out"
+                  '';
+
               omp-thin-harness-tests =
                 pkgs.runCommand "omp-thin-harness-tests"
                   {
@@ -1334,6 +1392,16 @@
                   }
                   ''
                     cd ${./.}
+                    export AGENT_INSTRUCTION_CONFIG=${
+                      pkgs.writeText "agent-instruction-config.json" (
+                        builtins.toJSON (
+                          import ./tests/agent-instruction-config.nix {
+                            inherit lib inputs;
+                            inherit (pkgs) coreutils;
+                          }
+                        )
+                      )
+                    }
                     OMP_BIN=${self.packages.${system}.omp}/bin/omp \
                       PYTHONDONTWRITEBYTECODE=1 \
                       python3 -m unittest \
@@ -1789,11 +1857,6 @@
                   ${./tests/test_hermes_native_vault_runtime.py}
                 touch "$out"
               '';
-
-              nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
 
               nuc-openssh-pq-kex = import ./hosts/nuc/_tests/openssh-pq-kex.nix {
                 nixosConfig = self.nixosConfigurations.nuc;

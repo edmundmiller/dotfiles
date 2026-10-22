@@ -1,7 +1,7 @@
 ---
 name: test-quality
 compatibility: portable
-description: Write, change, review, or remove automated tests with independent expectations and observable public behavior; reject tautological, vacuous, implementation-coupled, and mock-only coverage.
+description: Use when adding or editing test files, stubs, fakes or test doubles, writing failure-path, concurrency or subprocess tests, or before calling a suite green. Write, change, review, or remove automated tests with independent expectations and observable public behavior; reject tautological, vacuous, implementation-coupled, and mock-only coverage.
 ---
 
 # Test quality

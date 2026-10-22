@@ -108,6 +108,18 @@ class ValidationTests(unittest.TestCase):
         self.write("flake.lock", "changed")
         self.assertIn("hunk-config-compatibility", self.selection()["checks"])
 
+    def test_mcp_sources_select_shared_reconciliation_tests(self):
+        for path in (
+            "config/agents/mcp.nix",
+            "config/agents/reconcile_mcp.py",
+            "modules/agents/mcp/default.nix",
+            "tests/test_agent_mcp.py",
+            "hosts/seqeratop/default.nix",
+        ):
+            with self.subTest(path=path):
+                self.write(path, "changed")
+                self.assertIn("agent-mcp-tests", self.selection(path)["checks"])
+
     def test_task_scopes_do_not_select_unrelated_dirt_or_prefix_siblings(self):
         self.write("owned/a.md", "yes")
         self.write("owned-other/b.nix", "no")
