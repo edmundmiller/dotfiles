@@ -27,7 +27,7 @@ let
       msg = "the GUI app must remain in manual mode so it cannot auto-switch outputs";
     }
     {
-      test = !hasInfix "name:Razer Seiren V3 Mini" activation;
+      test = !hasInfix "name:" activation;
       msg = "the UID-only GUI must not receive the sorter's name selectors";
     }
     {
@@ -129,6 +129,7 @@ pkgs.runCommand "audio-priority-bar-regressions"
     fi
 
     devices="$TMPDIR/input-devices"
+    priorities_file='${nameTestPriorities}'
     run_name_case() {
       local initial="$1" expected="$2"
       printf '%s\n' "$initial" > "$state"
@@ -136,7 +137,7 @@ pkgs.runCommand "audio-priority-bar-regressions"
         SWITCH_AUDIO_TEST_STATE="$state" \
         SWITCH_AUDIO_TEST_LOG="$log" \
         SWITCH_AUDIO_TEST_DEVICES="$devices" \
-        '${program}' --once --priorities-file '${nameTestPriorities}'
+        '${program}' --once --priorities-file "$priorities_file"
       if [ "$(<"$state")" != "$expected" ]; then
         echo "expected input $expected, got $(<"$state")" >&2
         exit 1
@@ -173,6 +174,32 @@ pkgs.runCommand "audio-priority-bar-regressions"
     run_name_case decoy fallback
     echo '{"name":"Unlisted","type":"input","uid":"unlisted"}' > "$devices"
     run_name_case unlisted unlisted
+
+    # Exercise the deployed priority list with new IDs for every named model.
+    # Disconnect each winner in turn; enumeration order must not set priority.
+    priorities_file='${builtins.elemAt service.ProgramArguments 3}'
+    cat > "$TMPDIR/expected-input-order" <<'EOF'
+    dji-new|Wireless Mic Rx
+    shure-new|Shure MV7
+    razer-new|Razer Seiren V3 Mini
+    brio-new|MX Brio
+    streamcam-new|Logitech StreamCam
+    builtin-new|MacBook Pro Microphone
+    airpods-new|Edmund’s AirPods Pro
+    0518F0DA-FD70-47AE-951E-692100000003|Unidentified input
+    AppleUSBAudioEngine:Generic:USB Audio:20234000:1|Unidentified USB input
+    motiv-new|MOTIV Mix Virtual
+    realtek-new|Realtek USB2.0 Audio
+    iphone-new|Edmund Miller’s iPhone Microphone
+    EOF
+    jq -Rn '[inputs | split("|") | {uid: .[0], name: .[1], type: "input"}] | reverse[]' \
+      < "$TMPDIR/expected-input-order" > "$devices"
+    echo '{"name":"Unlisted","type":"input","uid":"unlisted"}' >> "$devices"
+    while IFS='|' read -r expected name; do
+      run_name_case unlisted "$expected"
+      jq --arg uid "$expected" 'select(.uid != $uid)' "$devices" > "$devices.remaining"
+      mv "$devices.remaining" "$devices"
+    done < "$TMPDIR/expected-input-order"
 
     if grep -F -- '-t output' "$log" >/dev/null; then
       echo "the sorter attempted to inspect or modify an output device" >&2

@@ -170,22 +170,32 @@ in
         Only UID entries are seeded into the manual AudioPriorityBar GUI.
       '';
       default = [
+        "name:Wireless Mic Rx"
         "AppleUSBAudioEngine:DJI Technology Co., Ltd.:Wireless Mic Rx:XSP12345678B:3"
+        "name:Shure MV7"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:20232000:2,1"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:144000:2,1"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:20232000:3,2"
         "name:Razer Seiren V3 Mini"
         "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:20233000:1"
         "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:110000:1"
+        "name:MX Brio"
         "AppleUSBAudioEngine:Unknown Manufacturer:MX Brio:2522LVP1VGL8:5"
+        "name:Logitech StreamCam"
         "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:623EC745:3"
         "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:A7626075:3"
+        "name:MacBook Pro Microphone"
         "BuiltInMicrophoneDevice"
+        "name:Edmund’s AirPods Pro"
         "34-0E-22-1E-BE-44:input"
+        # Disconnected inputs with no recorded display name retain UID matching.
         "0518F0DA-FD70-47AE-951E-692100000003"
         "AppleUSBAudioEngine:Generic:USB Audio:20234000:1"
+        "name:MOTIV Mix Virtual"
         "ShureVirtualAudioDevice_UID"
+        "name:Realtek USB2.0 Audio"
         "AppleUSBAudioEngine:Generic:USB Audio:200901010001:1"
+        "name:Edmund Miller’s iPhone Microphone"
         "46264E0F-5044-42F2-AD00-846600000003"
       ];
     };
