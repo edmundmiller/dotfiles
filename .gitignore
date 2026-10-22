@@ -34,6 +34,10 @@ worktrees/
 **/node_modules.bkup
 /.opencode/package-lock.json
 
+# Flue build output and private observability records
+/.flue/dist/
+**/.evlog/
+
 # Nextflow
 .nextflow/
 .nextflow.log*

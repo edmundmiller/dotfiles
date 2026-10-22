@@ -46,6 +46,10 @@ CHECKS = {
         "packages/*",
         "bin/check-package-layout",
         "bin/check-patch-locality",
+        "bin/check-renovate-patch-paths",
+        "bin/import-renovate-patch-repair",
+        ".flue/*",
+        ".github/workflows/renovate-patch-repair.yml",
         "tests/test_package_policy.py",
     ],
     "hunk-config-compatibility": [
@@ -320,6 +324,7 @@ def plan(root, args):
             "checks": [],
             "packages": [],
             "integration": False,
+            "flue": False,
             "platform": target,
         }
     checks = []
@@ -336,6 +341,11 @@ def plan(root, args):
         "checks": checks,
         "packages": packages,
         "integration": integration,
+        "flue": not args.packages_only
+        and (
+            args.full
+            or matches(files, [".flue/*", "packages/flue-evlog/*", ".github/workflows/renovate-patch-repair.yml", "scripts/validation.py"])
+        ),
         "platform": None,
     }
 
@@ -504,6 +514,21 @@ def execute(root, selection, github_token=""):
             "services-vm": "vm-services-gatus-vm-test",
         }[target]
         run(target, build + [f".#checks.{system}.{name}"], env=env)
+
+    if selection["flue"]:
+        adapter = root / "packages/flue-evlog"
+        if run(
+            "Flue adapter dependencies",
+            ["npm", "ci", "--ignore-scripts"],
+            cwd=adapter,
+        ) and run("Flue adapter", ["npm", "run", "check"], cwd=adapter):
+            workspace = root / ".flue"
+            if run(
+                "Flue dependencies",
+                ["npm", "ci", "--ignore-scripts"],
+                cwd=workspace,
+            ):
+                run("Flue observability", ["npm", "run", "check"], cwd=workspace)
 
     if selection["packages"] or selection["integration"]:
         workspace = root / "packages/pi-packages"
