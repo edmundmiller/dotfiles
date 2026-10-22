@@ -67,10 +67,14 @@ Darwin evaluates each host's `system.drvPath`, not merely its outer attribute se
 Herdr's import-from-derivation requires a native Darwin builder even during
 evaluation, so Linux cannot certify this check. The CI job uses ARM64 `macos-15`.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
-required status. Native checks do not repeat the portable formatting/lint suite.
-The Darwin job reads private flake inputs with the `NIX_PRIVATE_GITHUB_TOKEN`
-repository secret. Use a fine-grained token with read-only Contents access to
-`tnote` and `agents-workspace`. Do not reuse the write-capable Renovate token.
+required status. The required `Flake Check (Linux)` and `Check Formatting`
+compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
+cancellation, or skipping fails both contexts; branch protection stays unchanged.
+Native checks do not repeat the portable formatting/lint suite.
+The Linux and Darwin validation jobs read private flake inputs with the
+`NIX_PRIVATE_GITHUB_TOKEN` repository secret. Linux display tests need the pinned
+private `tnote` source too. Use a fine-grained token with read-only Contents
+access to `tnote` and `agents-workspace`. Do not reuse the write-capable Renovate token.
 
 `scripts/validation.py` owns suite routing. `flake.nix` owns the immutable
 `pre-commit-config` and Nix derivations. The full portable route omits host and
