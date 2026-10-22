@@ -48,6 +48,18 @@ jobs:
           fi
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
 
+  # Preserve the contexts required by main without weakening branch protection.
+  required-checks:
+    name: ${{ matrix.context }}
+    needs: checks
+    if: always()
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        context: [Flake Check (Linux), Check Formatting]
+    steps:
+      - run: test "${{ needs.checks.result }}" = success
+
   herdr-vm-test:
     name: Herdr VM Test (Linux)
     runs-on: ubuntu-latest

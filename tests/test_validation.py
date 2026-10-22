@@ -547,6 +547,24 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
         self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
 
+    def test_required_ci_contexts_fail_closed(self):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn("  required-checks:", workflow)
+        required = workflow.split("  required-checks:")[1].split("  herdr-vm-test:")[0]
+        self.assertIn("name: ${{ matrix.context }}", required)
+        self.assertIn("context: [Flake Check (Linux), Check Formatting]", required)
+        self.assertIn("needs: checks\n    if: always()", required)
+        command = required.split("run: ", 1)[1].strip()
+        for result in ("success", "failure", "cancelled", "skipped", ""):
+            with self.subTest(result=result):
+                completed = subprocess.run(
+                    ["sh", "-c", command.replace("${{ needs.checks.result }}", result)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode == 0, result == "success")
+
 
 subprocess_run = subprocess.run
 
