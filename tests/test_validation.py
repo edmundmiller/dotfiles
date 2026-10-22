@@ -120,6 +120,25 @@ class ValidationTests(unittest.TestCase):
                 self.write(path, "changed")
                 self.assertIn("agent-mcp-tests", self.selection(path)["checks"])
 
+    def test_flue_and_repair_changes_select_observability_and_policy(self):
+        for path in (
+            ".flue/observability.ts",
+            ".flue/tests/observability.test.ts",
+            ".flue/package-lock.json",
+            "packages/flue-evlog/src/index.ts",
+            "packages/flue-evlog/package-lock.json",
+            ".github/workflows/renovate-patch-repair.yml",
+        ):
+            with self.subTest(path=path):
+                self.write(path, "changed")
+                selected = self.selection(path)
+                self.assertTrue(selected["flue"])
+                self.assertIn("package-policy-tests", selected["checks"])
+        self.write("docs/unrelated.md", "changed")
+        self.assertFalse(self.selection("docs/unrelated.md")["flue"])
+        self.assertTrue(self.selection("--full")["flue"])
+        self.assertFalse(self.selection("--packages-only")["flue"])
+
     def test_task_scopes_do_not_select_unrelated_dirt_or_prefix_siblings(self):
         self.write("owned/a.md", "yes")
         self.write("owned-other/b.nix", "no")
