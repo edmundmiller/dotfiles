@@ -1,0 +1,5 @@
+{"type":"summary","summary":"Earlier work on the hook","leafUuid":"0e8d1c2a-0000-4000-8000-000000000000"}
+{"type":"user","timestamp":"2026-10-21T14:02:00.000Z","message":{"role":"user","content":"Start the review"}}
+{"type":"assistant","timestamp":"2026-10-21T14:02:30.000Z","message":{"role":"assistant","model":"claude-opus-5","usage":{"input_tokens":4,"cache_creation_input_tokens":2048,"cache_read_input_tokens":60000,"output_tokens":512}}}
+{"type":"assistant","timestamp":"2026-10-21T14:05:00.000Z","isSidechain":true,"message":{"role":"assistant","model":"claude-opus-5","usage":{"input_tokens":6,"cache_creation_input_tokens":4096,"cache_read_input_tokens":900000,"output_tokens":128}}}
+{"type":"assistant","timestamp":"2026-10-21T14:06:00.000Z","message":{"role":"assistant","model":"claude-opus-5","usage":{"input_tokens":12,"cache_creation_input_tokens":8192,"cache_read_input_tokens":111796,"output_tokens":640}}}

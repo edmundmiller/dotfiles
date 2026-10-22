@@ -97,6 +97,12 @@ CHECKS = {
         "tests/omp_lazy_extensions.test.js",
         "tests/fixtures/omp-ttsr-rules.json",
     ],
+    "claude-session-budget-tests": [
+        "config/claude/session-budget-hook.py",
+        "modules/agents/claude/*",
+        "tests/fixtures/claude-session-budget/*",
+        "tests/test_claude_session_budget.py",
+    ],
     "omp-config": ["config/omp/config.yml", "modules/agents/omp/*"],
     "agent-skills-marker-migration-tests": [
         "modules/agents/skills/*",
