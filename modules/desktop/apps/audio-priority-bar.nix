@@ -100,9 +100,18 @@ let
           if [[ -z "$candidate" || "$candidate" == \#* ]]; then
             continue
           fi
-          if jq -s -e --arg uid "$candidate" 'any(.[]; .uid == $uid)' \
-            >/dev/null <<< "$devices"; then
-            desired="$candidate"
+          desired="$(jq -sr --arg candidate "$candidate" --arg current_uid "$current_uid" '
+            map(select(
+              if ($candidate | startswith("name:")) then
+                .name == ($candidate | ltrimstr("name:"))
+              else
+                .uid == $candidate
+              end
+            ))
+            | sort_by([(.uid != $current_uid), .uid])
+            | .[0].uid // empty
+          ' <<< "$devices")"
+          if [[ -n "$desired" ]]; then
             break
           fi
         done < "$priority_file"
@@ -155,12 +164,18 @@ in
 
     inputPriorities = mkOption {
       type = types.listOf types.str;
-      description = "Ordered list of CoreAudio input device UIDs for AudioPriorityBar.";
+      description = ''
+        Ordered CoreAudio input device UIDs or name:EXACT DEVICE NAME selectors.
+        Name matches prefer the current input, then the lexicographically first UID.
+        Only UID entries are seeded into the manual AudioPriorityBar GUI.
+      '';
       default = [
         "AppleUSBAudioEngine:DJI Technology Co., Ltd.:Wireless Mic Rx:XSP12345678B:3"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:20232000:2,1"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:144000:2,1"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:20232000:3,2"
+        "name:Razer Seiren V3 Mini"
+        "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:20233000:1"
         "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:110000:1"
         "AppleUSBAudioEngine:Unknown Manufacturer:MX Brio:2522LVP1VGL8:5"
         "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:623EC745:3"
@@ -213,8 +228,8 @@ in
         { lib, ... }:
         {
           home.activation.audioPriorityBarDefaults = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            # Ensure AudioPriorityBar device priorities are declaratively seeded.
-            ${mkArrayWrite "inputPriorities" cfg.inputPriorities}
+            # The GUI accepts UIDs only; name selectors belong to the input sorter.
+            ${mkArrayWrite "inputPriorities" (filter (value: !hasPrefix "name:" value) cfg.inputPriorities)}
             ${mkArrayWrite "speakerPriorities" cfg.speakerPriorities}
             ${mkArrayWrite "headphonePriorities" cfg.headphonePriorities}
             # The GUI remains available for inspection/manual selection, but
