@@ -1413,6 +1413,20 @@
                     touch $out
                   '';
 
+              claude-session-budget-tests =
+                pkgs.runCommand "claude-session-budget-tests"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                    # The sandbox has no system zone database; the hook's
+                    # America/Chicago conversion needs a real one.
+                    PYTHONTZPATH = "${pkgs.tzdata}/share/zoneinfo";
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_claude_session_budget.py
+                    touch $out
+                  '';
+
               agent-skills-marker-migration-tests =
                 pkgs.runCommand "agent-skills-marker-migration-tests"
                   {

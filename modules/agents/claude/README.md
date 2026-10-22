@@ -36,3 +36,21 @@ module does not configure or install plugins.
   activation removes other Claude skill copies
 - Project-local skills belong in `.agents/skills/`
 - If Claude reports settings schema errors, check `config/claude/settings.json`
+
+## Session budget warnings
+
+`~/.claude/hooks/session-budget` runs on `SessionStart`, `UserPromptSubmit`, and
+`Stop`. It warns, and never blocks, when:
+
+- the session's context passes `CLAUDE_CONTEXT_WARN_TOKENS` (default 250000), and
+  again on each `CLAUDE_CONTEXT_WARN_STEP_TOKENS` (default 100000) beyond it
+- a session first seen on an earlier America/Chicago day is resumed
+
+Context size comes from the newest main-thread assistant `usage` in the session
+transcript, counting input, cache-read, and cache-creation tokens. Warnings are
+recorded per session under `$XDG_CACHE_HOME/claude-session-budget` so each
+crossing warns once. Set `CLAUDE_CONTEXT_WARN_TOKENS=0` to silence the context
+warning.
+
+Activation adds the hook to `~/.claude/settings.json` alongside hooks the runtime
+registered, keyed on its command, so Herdr, Entire, and plugin hooks stay intact.
