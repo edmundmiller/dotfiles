@@ -1,0 +1,48 @@
+{
+  "name": "flue-evlog",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unsampled Flue model accounting through evlog drains",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ledger": {
+      "types": "./dist/ledger.d.ts",
+      "import": "./dist/ledger.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --target ES2023 --module NodeNext --moduleResolution NodeNext --types node tests/*.test.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "check": "npm run build && npm run typecheck && npm test",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "@flue/runtime": "1.0.0-beta.9",
+    "evlog": "2.33.1"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@flue/cli": "1.0.0-beta.9",
+    "@flue/runtime": "1.0.0-beta.9",
+    "@types/node": "22.20.5",
+    "evlog": "2.33.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}
