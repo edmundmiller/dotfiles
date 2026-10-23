@@ -236,6 +236,230 @@ class StaleResumeTests(unittest.TestCase):
             self.assertIn(started, (dt.date(2026, 10, 21), dt.date(2026, 10, 22)))
 
 
+class GenerationWarningTests(unittest.TestCase):
+    def payload(self, name, session, event="UserPromptSubmit"):
+        return {
+            "hook_event_name": event,
+            "session_id": session,
+            "transcript_path": str(FIXTURES / name),
+        }
+
+    def saved_state(self, state_dir, session):
+        return json.loads((pathlib.Path(state_dir) / f"{session}.json").read_text(encoding="utf-8"))
+
+    def test_definition_matches_existing_usage_fixtures(self):
+        hook = load_hook()
+        self.assertEqual(hook.DEFAULT_GEN_WARN_SOFT, 250)
+        self.assertEqual(hook.DEFAULT_GEN_WARN_HARD, 300)
+        # Same main-thread usage filter as context_tokens: two assistant rows,
+        # the sidechain row excluded.
+        self.assertEqual(hook.generation_count(FIXTURES / "under-threshold.jsonl", {}), 2)
+        self.assertEqual(hook.generation_count(FIXTURES / "malformed.jsonl", {}), 1)
+
+    def test_under_soft_stays_silent(self):
+        hook = load_hook()
+        transcript = FIXTURES / "under-soft.jsonl"
+        self.assertEqual(hook.generation_count(transcript, {}), 249)
+        with tempfile.TemporaryDirectory() as state:
+            result = run_hook(self.payload("under-soft.jsonl", "under-soft"), state)
+            self.assertIsNone(hook_output(result))
+            saved = self.saved_state(state, "under-soft")
+            self.assertEqual(saved["gen_count"], 249)
+            self.assertNotIn("gen_soft_warned", saved)
+
+    def test_crossing_soft_warns_once(self):
+        payload = self.payload("crossing-soft.jsonl", "soft")
+        with tempfile.TemporaryDirectory() as state:
+            first = hook_output(run_hook(payload, state))
+            self.assertIn(
+                "This session has 250 generations, past the warning at 250.",
+                first["systemMessage"],
+            )
+            self.assertIn("Wrap up, run /compact, or start a fresh session.", first["systemMessage"])
+            self.assertNotIn("Hand off", first["systemMessage"])
+            self.assertEqual(first["hookSpecificOutput"]["hookEventName"], "UserPromptSubmit")
+            self.assertIn("Wrap up", first["hookSpecificOutput"]["additionalContext"])
+            self.assertNotIn("decision", first)
+            self.assertTrue(self.saved_state(state, "soft")["gen_soft_warned"])
+
+            self.assertIsNone(hook_output(run_hook(payload, state)))
+
+    def test_crossing_hard_warns_once_after_soft(self):
+        with tempfile.TemporaryDirectory() as state:
+            soft = hook_output(run_hook(self.payload("crossing-soft.jsonl", "marathon"), state))
+            self.assertIn("Wrap up", soft["systemMessage"])
+            self.assertNotIn("Hand off", soft["systemMessage"])
+
+            hard = hook_output(
+                run_hook(self.payload("crossing-hard.jsonl", "marathon", event="Stop"), state)
+            )
+            self.assertIn(
+                "This session has 300 generations, past the higher warning at 300.",
+                hard["systemMessage"],
+            )
+            self.assertIn("Hand off the work or start a fresh session.", hard["systemMessage"])
+            self.assertNotIn("Wrap up", hard["systemMessage"])
+            self.assertNotIn("hookSpecificOutput", hard)
+            self.assertNotIn("decision", hard)
+            saved = self.saved_state(state, "marathon")
+            self.assertTrue(saved["gen_soft_warned"])
+            self.assertTrue(saved["gen_hard_warned"])
+
+            self.assertIsNone(
+                hook_output(run_hook(self.payload("crossing-hard.jsonl", "marathon"), state))
+            )
+
+    def test_both_thresholds_and_context_warn_together_once(self):
+        payload = self.payload("generations-and-context.jsonl", "both")
+        with tempfile.TemporaryDirectory() as state:
+            warned = hook_output(run_hook(payload, state))
+            text = warned["systemMessage"]
+            self.assertEqual(warned["hookSpecificOutput"]["additionalContext"], text)
+            self.assertIn("Context is about 300,000 tokens", text)
+            self.assertIn("This session has 300 generations, past the warning at 250.", text)
+            self.assertIn("This session has 300 generations, past the higher warning at 300.", text)
+            self.assertNotIn("2,100,005", text)
+            self.assertNotIn("decision", warned)
+            saved = self.saved_state(state, "both")
+            self.assertEqual(saved["context_level"], 1)
+            self.assertTrue(saved["gen_soft_warned"])
+            self.assertTrue(saved["gen_hard_warned"])
+
+            self.assertIsNone(hook_output(run_hook(payload, state)))
+
+    def test_subagent_turns_do_not_count(self):
+        hook = load_hook()
+        transcript = FIXTURES / "subagent-turns.jsonl"
+        self.assertEqual(hook.generation_count(transcript, {}), 10)
+        self.assertEqual(hook.context_tokens(transcript), 3)
+        with tempfile.TemporaryDirectory() as state:
+            self.assertIsNone(hook_output(run_hook(self.payload("subagent-turns.jsonl", "subs"), state)))
+            counted = hook_output(
+                run_hook(
+                    self.payload("subagent-turns.jsonl", "subs-low"),
+                    state,
+                    {"CLAUDE_GEN_WARN_SOFT": "10", "CLAUDE_GEN_WARN_HARD": "0"},
+                )
+            )
+            self.assertIn("This session has 10 generations, past the warning at 10.", counted["systemMessage"])
+            self.assertNotIn("310", counted["systemMessage"])
+
+    def test_malformed_transcript_fails_open(self):
+        hook = load_hook()
+        self.assertEqual(hook.generation_count(FIXTURES / "malformed.jsonl", {}), 1)
+        with tempfile.TemporaryDirectory() as state:
+            result = run_hook(self.payload("malformed.jsonl", "malformed-gen"), state)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "")
+
+            directory = pathlib.Path(state) / "not-a-file"
+            directory.mkdir()
+            unreadable = run_hook(
+                {
+                    "hook_event_name": "Stop",
+                    "session_id": "directory-transcript",
+                    "transcript_path": str(directory),
+                },
+                state,
+            )
+            self.assertEqual(unreadable.returncode, 0, unreadable.stderr)
+            self.assertEqual(unreadable.stdout.strip(), "")
+            self.assertIsNone(hook.generation_count(directory, {}))
+
+    def test_session_start_does_not_warn_about_generations(self):
+        with tempfile.TemporaryDirectory() as state:
+            result = run_hook(
+                {
+                    "hook_event_name": "SessionStart",
+                    "source": "resume",
+                    "session_id": "resume-marathon",
+                    "transcript_path": str(FIXTURES / "crossing-hard.jsonl"),
+                },
+                state,
+            )
+            self.assertIsNone(hook_output(result))
+            self.assertFalse((pathlib.Path(state) / "resume-marathon.json").exists())
+
+    def test_thresholds_can_be_lowered_or_silenced(self):
+        payload = self.payload("under-threshold.jsonl", "configured-gen")
+        with tempfile.TemporaryDirectory() as state:
+            warned = hook_output(
+                run_hook(payload, state, {"CLAUDE_GEN_WARN_SOFT": "2", "CLAUDE_GEN_WARN_HARD": "2"})
+            )
+            text = warned["systemMessage"]
+            self.assertIn("past the warning at 2.", text)
+            self.assertIn("past the higher warning at 2.", text)
+
+        with tempfile.TemporaryDirectory() as state:
+            hard_only = hook_output(
+                run_hook(
+                    self.payload("subagent-turns.jsonl", "hard-only"),
+                    state,
+                    {"CLAUDE_GEN_WARN_SOFT": "0", "CLAUDE_GEN_WARN_HARD": "10"},
+                )
+            )
+            self.assertNotIn("Wrap up", hard_only["systemMessage"])
+            self.assertIn("Hand off", hard_only["systemMessage"])
+
+        with tempfile.TemporaryDirectory() as state:
+            self.assertIsNone(
+                hook_output(
+                    run_hook(
+                        self.payload("crossing-hard.jsonl", "silenced"),
+                        state,
+                        {"CLAUDE_GEN_WARN_SOFT": "0", "CLAUDE_GEN_WARN_HARD": "0"},
+                    )
+                )
+            )
+
+    def test_appended_lines_are_not_double_counted(self):
+        usage = {"input_tokens": 1, "cache_read_input_tokens": 1, "cache_creation_input_tokens": 1}
+        row = json.dumps({"type": "assistant", "message": {"role": "assistant", "usage": usage}})
+        with tempfile.TemporaryDirectory() as state:
+            transcript = pathlib.Path(state) / "growing.jsonl"
+            transcript.write_text("\n".join([row] * 100) + "\n", encoding="utf-8")
+            payload = {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": "growing-gen",
+                "transcript_path": str(transcript),
+            }
+            self.assertIsNone(hook_output(run_hook(payload, state)))
+            self.assertEqual(self.saved_state(state, "growing-gen")["gen_count"], 100)
+
+            with transcript.open("a", encoding="utf-8") as handle:
+                handle.write("\n".join([row] * 50) + "\n")
+            self.assertIsNone(hook_output(run_hook(payload, state)))
+            self.assertEqual(self.saved_state(state, "growing-gen")["gen_count"], 150)
+
+    def test_rewritten_transcript_is_recounted(self):
+        hook = load_hook()
+
+        def write_gens(path, count, marker):
+            usage = {"input_tokens": 1, "cache_read_input_tokens": 1, "cache_creation_input_tokens": 1}
+            lines = [json.dumps({"type": "summary", "summary": marker * 80})]
+            lines.extend(
+                json.dumps({"type": "assistant", "message": {"role": "assistant", "usage": usage}})
+                for _ in range(count)
+            )
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as state:
+            transcript = pathlib.Path(state) / "replaced.jsonl"
+            write_gens(transcript, 5, "a")
+            cursor = {}
+            self.assertEqual(hook.generation_count(transcript, cursor), 5)
+            write_gens(transcript, 8, "b")
+            self.assertEqual(hook.generation_count(transcript, cursor), 8)
+
+    def test_unwritable_state_still_warns(self):
+        payload = self.payload("crossing-soft.jsonl", "no-state-gen")
+        with tempfile.TemporaryDirectory() as directory:
+            blocked = pathlib.Path(directory) / "state"
+            blocked.write_text("not a directory\n", encoding="utf-8")
+            warned = hook_output(run_hook(payload, blocked))
+            self.assertIn("250 generations", warned["systemMessage"])
+
+
 class FailOpenTests(unittest.TestCase):
     def test_malformed_inputs_exit_zero_without_output(self):
         cases = [

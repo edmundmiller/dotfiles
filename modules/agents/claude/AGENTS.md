@@ -19,7 +19,9 @@ there. `skills/flake.nix` owns shared skill sources and selection.
 
 `claude-session-budget-hooks` upserts `config/claude/session-budget-hook.py` into
 the live settings on `SessionStart`, `UserPromptSubmit`, and `Stop`. The hook only
-warns, never blocks. Hooks are upserted by command string rather than declared in
+warns, never blocks. Generation warnings run on `UserPromptSubmit` and `Stop`
+alongside the context check. `SessionStart` resume behavior is unchanged.
+Hooks are upserted by command string rather than declared in
 the template because the bootstrap keeps the runtime's hook list. Keep any new
 hook additive so Herdr, Entire, and plugin hooks survive.
 

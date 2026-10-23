@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Warn when a Claude Code session grows past a context budget or is resumed stale.
+"""Warn when a Claude Code session grows past a context or generation budget, or is resumed stale.
 
 The hook never blocks: it exits 0 on every path, prints nothing when it has
 nothing to say, and stays silent on malformed input or an unreadable transcript.
 See https://code.claude.com/docs/en/hooks for the input and output contracts.
+
+A generation is one main-thread assistant transcript entry whose message has a
+usage object. That is one completed model turn. Subagent entries (isSidechain)
+and assistant entries without usage do not count. The count follows the
+transcript. After compaction rewrites the file, only the entries still in
+it count.
 """
 
 import datetime as dt
@@ -21,8 +27,12 @@ except ImportError:  # pragma: no cover - Python 3.9+ ships zoneinfo
 
 DEFAULT_WARN_TOKENS = 250_000
 DEFAULT_STEP_TOKENS = 100_000
+DEFAULT_GEN_WARN_SOFT = 250
+DEFAULT_GEN_WARN_HARD = 300
+GENERATION_EVENTS = ("UserPromptSubmit", "Stop")
 HEAD_LINES = 200
 TAIL_BYTES = 1 << 20
+PREFIX_BYTES = 256
 SESSION_TIMEZONE = "America/Chicago"
 USAGE_FIELDS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 SAFE_SESSION_ID = re.compile(r"\A[A-Za-z0-9._-]{1,128}\Z")
@@ -108,24 +118,101 @@ def tail_lines(transcript_path, limit=TAIL_BYTES):
     return lines[1:] if start and lines else lines
 
 
+def assistant_usage(entry):
+    """Usage object on a completed assistant turn, or None.
+
+    Callers pass main-thread entries only. decode_entries drops isSidechain.
+    """
+    if entry.get("type") != "assistant":
+        return None
+    message = entry.get("message")
+    if not isinstance(message, dict):
+        return None
+    usage = message.get("usage")
+    return usage if isinstance(usage, dict) else None
+
+
+def usage_total(usage):
+    total = 0
+    for field in USAGE_FIELDS:
+        value = usage.get(field, 0)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        total += int(value)
+    return total
+
+
 def context_tokens(transcript_path):
     """Context size from the newest assistant usage, as Claude Code reports it."""
     tokens = None
     for entry in decode_entries(tail_lines(transcript_path)):
-        if entry.get("type") != "assistant":
+        usage = assistant_usage(entry)
+        if usage is None:
             continue
-        message = entry.get("message")
-        usage = message.get("usage") if isinstance(message, dict) else None
-        if not isinstance(usage, dict):
-            continue
-        total = 0
-        for field in USAGE_FIELDS:
-            value = usage.get(field, 0)
-            if isinstance(value, bool) or not isinstance(value, (int, float)):
-                continue
-            total += int(value)
-        tokens = total
+        tokens = usage_total(usage)
     return tokens
+
+
+def line_is_generation(line):
+    for entry in decode_entries([line]):
+        if assistant_usage(entry) is not None:
+            return True
+    return False
+
+
+def saved_count(state, key):
+    value = state.get(key, 0)
+    if type(value) is not int or value < 0:
+        return None
+    return value
+
+
+def generation_count(transcript_path, state):
+    """How many generations the transcript currently contains.
+
+    Remembers a prefix hash and byte offset on `state` so a later check reads
+    only appended lines. If the file no longer reaches that offset, or its
+    first 256 bytes changed, it is counted again from the beginning. Returns
+    None when the transcript cannot be read.
+    """
+    if not transcript_path:
+        return None
+    try:
+        size = os.path.getsize(transcript_path)
+        with open(transcript_path, "rb") as handle:
+            prefix = hashlib.sha256(handle.read(min(PREFIX_BYTES, size))).hexdigest()
+            offset = saved_count(state, "gen_offset")
+            count = saved_count(state, "gen_count")
+            if (
+                offset is None
+                or count is None
+                or offset > size
+                or state.get("gen_prefix") != prefix
+            ):
+                offset = 0
+                count = 0
+            handle.seek(offset)
+            pending = b""
+            added = 0
+            consumed = offset
+            while True:
+                chunk = handle.read(TAIL_BYTES)
+                if not chunk:
+                    break
+                pending += chunk
+                parts = pending.split(b"\n")
+                pending = parts.pop()
+                for part in parts:
+                    consumed += len(part) + 1
+                    if line_is_generation(part.decode("utf-8", "replace")):
+                        added += 1
+    except OSError:
+        return None
+
+    state["gen_prefix"] = prefix
+    state["gen_offset"] = consumed
+    state["gen_count"] = count + added
+    return state["gen_count"]
 
 
 def session_zone():
@@ -195,6 +282,34 @@ def stale_resume_warning(payload, state):
     )
 
 
+def generation_warnings(payload, state):
+    soft = env_int("CLAUDE_GEN_WARN_SOFT", DEFAULT_GEN_WARN_SOFT)
+    hard = env_int("CLAUDE_GEN_WARN_HARD", DEFAULT_GEN_WARN_HARD)
+    want_soft = soft > 0 and not state.get("gen_soft_warned")
+    want_hard = hard > 0 and not state.get("gen_hard_warned")
+    if not want_soft and not want_hard:
+        return []
+
+    count = generation_count(payload.get("transcript_path"), state)
+    if count is None:
+        return []
+
+    messages = []
+    if want_soft and count >= soft:
+        state["gen_soft_warned"] = True
+        messages.append(
+            f"This session has {count:,} generations, past the warning at {soft:,}. "
+            "Wrap up, run /compact, or start a fresh session."
+        )
+    if want_hard and count >= hard:
+        state["gen_hard_warned"] = True
+        messages.append(
+            f"This session has {count:,} generations, past the higher warning at {hard:,}. "
+            "Hand off the work or start a fresh session."
+        )
+    return messages
+
+
 def warnings_for(payload):
     event = payload.get("hook_event_name")
     if event == "SessionStart" and payload.get("source") != "resume":
@@ -209,6 +324,8 @@ def warnings_for(payload):
     if event == "SessionStart":
         messages.append(stale_resume_warning(payload, state))
     messages.append(context_warning(payload, state))
+    if event in GENERATION_EVENTS:
+        messages.extend(generation_warnings(payload, state))
 
     if state != before:
         write_state(path, state)
