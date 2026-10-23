@@ -1,5 +1,5 @@
 diff --git a/packages/hunk-git/src/commands.ts b/packages/hunk-git/src/commands.ts
-index b790a04..9f1117f 100644
+index b790a04e..9f1117ff 100644
 --- a/packages/hunk-git/src/commands.ts
 +++ b/packages/hunk-git/src/commands.ts
 @@ -1114,12 +1114,18 @@ export async function resolveGitDiffEndpointsAsync(
@@ -48,7 +48,7 @@ index b790a04..9f1117f 100644
        .split("\n")[0]
 diff --git a/packages/hunk-git/src/generated.ts b/packages/hunk-git/src/generated.ts
 new file mode 100644
-index 0000000..9545e1e
+index 00000000..9545e1e2
 --- /dev/null
 +++ b/packages/hunk-git/src/generated.ts
 @@ -0,0 +1,228 @@
@@ -281,7 +281,7 @@ index 0000000..9545e1e
 +  }
 +}
 diff --git a/packages/hunk-git/src/index.test.ts b/packages/hunk-git/src/index.test.ts
-index 1bb9292..b9ada58 100644
+index 1bb92928..b9ada583 100644
 --- a/packages/hunk-git/src/index.test.ts
 +++ b/packages/hunk-git/src/index.test.ts
 @@ -1,5 +1,13 @@
@@ -758,18 +758,18 @@ index 1bb9292..b9ada58 100644
    test("statSignature distinguishes present from missing paths", () => {
      const repo = createTempDir("hunk-git-statsig-");
 diff --git a/packages/hunk-git/src/index.ts b/packages/hunk-git/src/index.ts
-index e70e8da..dec902f 100644
+index 2a6d1ac6..0a9a85b7 100644
 --- a/packages/hunk-git/src/index.ts
 +++ b/packages/hunk-git/src/index.ts
-@@ -28,6 +28,7 @@ import {
-   planGitHistoryRangeReview,
- } from "./history";
+@@ -30,6 +30,7 @@ import {
+ import { createGitStatusCapability } from "./status";
+ import { buildGitMetadataTargets } from "./watchTargets";
  import { gitEndpointSourceSpec, readGitFileSource } from "./source";
 +import { generatedPaths } from "./generated";
  import { commitReviewInfo, comparisonReviewInfo } from "@hunk/vcs/review-info";
  import {
    HUNK_VCS_DETECTION_BASELINE_PRIORITY,
-@@ -37,6 +38,7 @@ import {
+@@ -39,6 +40,7 @@ import {
    type ExtensionVcsExtraFile,
    type ExtensionVcsFileSourceReader,
    type ExtensionVcsShowInput,
@@ -777,7 +777,7 @@ index e70e8da..dec902f 100644
    type ExtensionVcsWatchPlan,
    type HunkExtensionAPI,
  } from "hunkdiff/extension";
-@@ -347,6 +349,40 @@ export interface GitVcsAdapterOptions {
+@@ -329,6 +331,40 @@ export interface GitVcsAdapterOptions {
  export function createGitVcsAdapter({
    gitExecutable = "git",
  }: Readonly<GitVcsAdapterOptions> = {}) {
@@ -818,7 +818,7 @@ index e70e8da..dec902f 100644
    return {
      id: "git",
      name: "Git",
-@@ -433,41 +469,49 @@ export function createGitVcsAdapter({
+@@ -416,41 +452,49 @@ export function createGitVcsAdapter({
              gitExecutable,
              signal,
            });
@@ -889,7 +889,7 @@ index e70e8da..dec902f 100644
            };
          },
          watchPlan(input, { cwd }) {
-@@ -498,7 +542,26 @@ export function createGitVcsAdapter({
+@@ -481,7 +525,26 @@ export function createGitVcsAdapter({
            const untrackedSignatures = untrackedPaths.map(
              (filePath) => `untracked:${statSignature(join(repoRoot, filePath))}`,
            );
@@ -917,7 +917,7 @@ index e70e8da..dec902f 100644
          },
        },
        "revision-show": {
-@@ -524,21 +587,27 @@ export function createGitVcsAdapter({
+@@ -507,21 +570,27 @@ export function createGitVcsAdapter({
              )
            )[0];
            const patchInput: ExtensionVcsShowInput = { ...input, ref: revisionId };
@@ -955,7 +955,7 @@ index e70e8da..dec902f 100644
              ...(commit ? { review: commitReviewInfo("Git", commit) } : {}),
              ...sourceCapability,
            };
-@@ -547,43 +616,42 @@ export function createGitVcsAdapter({
+@@ -530,43 +599,42 @@ export function createGitVcsAdapter({
            return buildGitWatchPlan(input, cwd, gitExecutable);
          },
          watchSignature(input, { cwd, signal }) {
@@ -1024,7 +1024,7 @@ index e70e8da..dec902f 100644
              ...sourceCapability,
            };
          },
-@@ -591,14 +659,7 @@ export function createGitVcsAdapter({
+@@ -574,14 +642,7 @@ export function createGitVcsAdapter({
            return buildGitWatchPlan(input, cwd, gitExecutable);
          },
          watchSignature(input, { cwd, signal }) {
@@ -1041,10 +1041,10 @@ index e70e8da..dec902f 100644
        },
      },
 diff --git a/packages/hunk/src/app/cli.test.ts b/packages/hunk/src/app/cli.test.ts
-index e2fd57d..9c85d29 100644
+index 151a8081..6ffd49fb 100644
 --- a/packages/hunk/src/app/cli.test.ts
 +++ b/packages/hunk/src/app/cli.test.ts
-@@ -14,6 +14,36 @@ import { persistResumableReview } from "../core/resumableReview";
+@@ -15,6 +15,36 @@ import { persistResumableReview } from "../core/resumableReview";
  
  const tempDirs: string[] = [];
  
@@ -1082,10 +1082,10 @@ index e2fd57d..9c85d29 100644
    const dir = mkdtempSync(join(tmpdir(), prefix));
    tempDirs.push(dir);
 diff --git a/packages/hunk/src/app/cli.ts b/packages/hunk/src/app/cli.ts
-index 8121d1a..dac1deb 100644
+index be059e66..a9ae60ce 100644
 --- a/packages/hunk/src/app/cli.ts
 +++ b/packages/hunk/src/app/cli.ts
-@@ -122,6 +122,10 @@ export const COMMON_REVIEW_OPTIONS = [
+@@ -136,6 +136,10 @@ export const COMMON_REVIEW_OPTIONS = [
    },
    AUXILIARY_AGENT_OPTIONS.agentContext,
    { flag: "--pager", description: "use pager-style chrome" },
@@ -1096,7 +1096,7 @@ index 8121d1a..dac1deb 100644
    AUXILIARY_AGENT_OPTIONS.experimental,
    {
      flag: "--fast",
-@@ -531,6 +535,7 @@ function buildCommonOptions(
+@@ -618,6 +622,7 @@ function buildCommonOptions(
          ? true
          : undefined,
      fast: options.fast || hasPrefixedReviewFlag(argv, "--fast") ? true : undefined,
@@ -1105,7 +1105,7 @@ index 8121d1a..dac1deb 100644
        argv,
        AUXILIARY_AGENT_OPTIONS.excludeUntracked.flag,
 diff --git a/packages/hunk/src/core/changeset/loaders.test.ts b/packages/hunk/src/core/changeset/loaders.test.ts
-index b326e32..37afe0f 100644
+index d00a534e..21f66a95 100644
 --- a/packages/hunk/src/core/changeset/loaders.test.ts
 +++ b/packages/hunk/src/core/changeset/loaders.test.ts
 @@ -24,6 +24,36 @@ import { computeWatchSignature } from "../watch/signature";
@@ -1185,7 +1185,7 @@ index b326e32..37afe0f 100644
    const previousHome = process.env.HOME;
    process.env.HOME = home;
 diff --git a/packages/hunk/src/core/resumableReview.test.ts b/packages/hunk/src/core/resumableReview.test.ts
-index 5248262..f48ba4e 100644
+index ec6cf274..932a364d 100644
 --- a/packages/hunk/src/core/resumableReview.test.ts
 +++ b/packages/hunk/src/core/resumableReview.test.ts
 @@ -58,6 +58,7 @@ describe("resumable review markers", () => {
@@ -1195,8 +1195,8 @@ index 5248262..f48ba4e 100644
 +          includeGenerated: true,
            experimental: true,
            extensionPaths: ["extension.ts"],
-           extensions: false,
-@@ -79,6 +80,12 @@ describe("resumable review markers", () => {
+           fast: true,
+@@ -78,6 +79,12 @@ describe("resumable review markers", () => {
            wrapLines: true,
          },
        },
@@ -1210,7 +1210,7 @@ index 5248262..f48ba4e 100644
          kind: "show",
          ref: "HEAD",
 diff --git a/packages/hunk/src/core/resumableReview.ts b/packages/hunk/src/core/resumableReview.ts
-index 8471bd8..c2ac13f 100644
+index 58dab617..91f0a785 100644
 --- a/packages/hunk/src/core/resumableReview.ts
 +++ b/packages/hunk/src/core/resumableReview.ts
 @@ -43,6 +43,7 @@ function readCommonOptions(value: unknown): CommonOptions | null {
@@ -1221,7 +1221,7 @@ index 8471bd8..c2ac13f 100644
      "lineNumbers",
      "wrapLines",
      "hunkHeaders",
-@@ -97,13 +98,26 @@ function readCliInput(value: unknown): CliInput | null {
+@@ -98,13 +99,26 @@ function readCliInput(value: unknown): CliInput | null {
        const range = readOptionalString(value.range);
        const pathspecs = readOptionalStrings(value.pathspecs);
        if (typeof value.staged !== "boolean" || range === null || pathspecs === null) return null;
@@ -1252,10 +1252,10 @@ index 8471bd8..c2ac13f 100644
      case "show": {
        const ref = readOptionalString(value.ref);
 diff --git a/packages/hunk/src/core/run/commandInputs.ts b/packages/hunk/src/core/run/commandInputs.ts
-index 9eb4528..cf68541 100644
+index 33b34cbe..df6dab50 100644
 --- a/packages/hunk/src/core/run/commandInputs.ts
 +++ b/packages/hunk/src/core/run/commandInputs.ts
-@@ -47,6 +47,7 @@ export interface CommonOptions {
+@@ -53,6 +53,7 @@ export interface CommonOptions {
    /** Offload eligible syntax highlighting for this launch. */
    fast?: boolean;
    excludeUntracked?: boolean;
@@ -1264,10 +1264,10 @@ index 9eb4528..cf68541 100644
    tabWidth?: number;
    /** Blank rows between files in the review stream, including the `─` rule. */
 diff --git a/packages/hunk/src/core/run/config.ts b/packages/hunk/src/core/run/config.ts
-index 71d1c68..86007c9 100644
+index ac23e225..e0ba27a7 100644
 --- a/packages/hunk/src/core/run/config.ts
 +++ b/packages/hunk/src/core/run/config.ts
-@@ -1102,6 +1102,7 @@ function mergeOptions(base: CommonOptions, overrides: CommonOptions): CommonOpti
+@@ -1160,6 +1160,7 @@ function mergeOptions(base: CommonOptions, overrides: CommonOptions): CommonOpti
      experimental: overrides.experimental ?? base.experimental,
      fast: overrides.fast ?? base.fast,
      excludeUntracked: overrides.excludeUntracked ?? base.excludeUntracked,
@@ -1276,7 +1276,7 @@ index 71d1c68..86007c9 100644
      tabWidth: overrides.tabWidth ?? base.tabWidth,
      fileGap: overrides.fileGap ?? base.fileGap,
 diff --git a/packages/hunk/src/extension-api/types.ts b/packages/hunk/src/extension-api/types.ts
-index fe9d46e..ee650c9 100644
+index f6817f1f..4029b534 100644
 --- a/packages/hunk/src/extension-api/types.ts
 +++ b/packages/hunk/src/extension-api/types.ts
 @@ -728,6 +728,8 @@ export interface ExtensionVcsLoadContext {
@@ -1289,7 +1289,7 @@ index fe9d46e..ee650c9 100644
     * True when the user asked for moved lines to be detected (`--color-moved`).
     *
 diff --git a/packages/hunk/src/session/protocolSchemas.test.ts b/packages/hunk/src/session/protocolSchemas.test.ts
-index c2994f9..567082b 100644
+index c2994f9b..567082b7 100644
 --- a/packages/hunk/src/session/protocolSchemas.test.ts
 +++ b/packages/hunk/src/session/protocolSchemas.test.ts
 @@ -45,6 +45,16 @@ const _dualSelectorIsNotCliInput: CliInput = {
@@ -1310,7 +1310,7 @@ index c2994f9..567082b 100644
  const _targetlessCommentIsNotACommand: SessionCommentAddCommandInput = {
    kind: "session",
 diff --git a/packages/hunk/src/session/protocolSchemas.ts b/packages/hunk/src/session/protocolSchemas.ts
-index e359808..0580ed0 100644
+index e3598080..0580ed07 100644
 --- a/packages/hunk/src/session/protocolSchemas.ts
 +++ b/packages/hunk/src/session/protocolSchemas.ts
 @@ -73,6 +73,7 @@ const commonOptionsSchema = z.strictObject({
@@ -1322,18 +1322,18 @@ index e359808..0580ed0 100644
    tabWidth: z.int().positive().optional(),
    fileGap: z.int().nonnegative().optional(),
 diff --git a/packages/hunk/src/ui/AppHost.reload.test.tsx b/packages/hunk/src/ui/AppHost.reload.test.tsx
-index 07811d9..bd256e4 100644
+index 5f756ffa..d4d94f0b 100644
 --- a/packages/hunk/src/ui/AppHost.reload.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.reload.test.tsx
-@@ -14,6 +14,7 @@ import type {
-   HunkSessionSnapshot,
+@@ -15,6 +15,7 @@ import type {
  } from "../session/types";
  import { ThemeController } from "./theme/controller";
+ import type { CommonOptions } from "../core/run/commandInputs";
 +import { loadResumableReview, persistResumableReview } from "../core/resumableReview";
  
  const { getBundledVcsCatalog } = await import("../app/vcsCatalog");
  const { loadAppBootstrap } = await import("../core/changeset/loaders");
-@@ -127,6 +128,67 @@ function createReloadThemeRepository() {
+@@ -129,6 +130,67 @@ function createReloadThemeRepository() {
    return { configPath, dir };
  }
  
@@ -1402,19 +1402,27 @@ index 07811d9..bd256e4 100644
    test("adopts reloaded custom themes without replacing the committed theme", async () => {
      const { configPath, dir } = createReloadThemeRepository();
 diff --git a/website/src/content/docs/docs/reference/cli.md b/website/src/content/docs/docs/reference/cli.md
-index 07ff30f..b6a8e9d 100644
+index 29509553..d740452d 100644
 --- a/website/src/content/docs/docs/reference/cli.md
 +++ b/website/src/content/docs/docs/reference/cli.md
 @@ -23,6 +23,7 @@ This reference is generated from the command metadata used by Hunk itself. Run `
- | `--theme <theme>`              | named theme override                                            |
- | `--agent-context <path>`       | JSON sidecar with agent rationale                               |
- | `--pager`                      | use pager-style chrome                                          |
-+| `--include-generated`          | include Git paths hidden by linguist-generated attributes       |
- | `--experimental`               | enable experimental features (currently STML agent-note markup) |
- | `--fast`                       | experimentally offload eligible syntax highlighting             |
- | `--line-numbers`               | show line numbers                                               |
+ | `--theme <theme>`              | named theme override                                                     |
+ | `--agent-context <path>`       | JSON sidecar with agent rationale                                        |
+ | `--pager`                      | use pager-style chrome                                                   |
++| `--include-generated`          | include Git paths hidden by linguist-generated attributes                |
+ | `--experimental`               | enable experimental features (currently STML agent-note markup)          |
+ | `--line-numbers`               | show line numbers                                                        |
+ | `--no-line-numbers`            | hide line numbers                                                        |
+@@ -147,6 +148,7 @@ Status never fetches or modifies the repository; providers without status report
+ | `--mode <mode>`                | layout mode: auto, split, unified                                        |
+ | `--cursor-line <style>`        | current-line marker: row, number, off                                    |
+ | `--theme <theme>`              | named theme override                                                     |
++| `--include-generated`          | include Git paths hidden by linguist-generated attributes                |
+ | `--experimental`               | enable experimental features (currently STML agent-note markup)          |
+ | `--line-numbers`               | show line numbers                                                        |
+ | `--no-line-numbers`            | hide line numbers                                                        |
 diff --git a/website/src/content/docs/docs/workflows/working-trees-and-commits.md b/website/src/content/docs/docs/workflows/working-trees-and-commits.md
-index 55523f5..a1ba146 100644
+index 4afc9569..59c0b493 100644
 --- a/website/src/content/docs/docs/workflows/working-trees-and-commits.md
 +++ b/website/src/content/docs/docs/workflows/working-trees-and-commits.md
 @@ -24,6 +24,38 @@ hunk diff --staged

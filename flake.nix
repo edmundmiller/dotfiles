@@ -98,7 +98,7 @@
     llm-agents.inputs.systems.follows = "systems";
 
     hunk = {
-      url = "github:modem-dev/hunk/v0.23.0";
+      url = "github:modem-dev/hunk/v0.24.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
     };
@@ -566,24 +566,6 @@
               ''
             else
               pkgs.firefox;
-          hunkPackage = import ./overlays/hunk/package.nix { inherit inputs pkgs; };
-          hunkConfigCompatibility = hunkPackage.overrideAttrs (old: {
-            pname = "hunk-config-compatibility";
-            postPatch = (old.postPatch or "") + ''
-              cp ${./overlays/hunk/config-compatibility.test.ts} config-compatibility.test.ts
-            '';
-            doCheck = true;
-            checkPhase = ''
-              runHook preCheck
-              export HOME="$TMPDIR/hunk-compatibility-home"
-              mkdir -p "$HOME/.config/hunk/extensions/hunk-commit-log"
-              cp ${./config/hunk/config.toml} "$HOME/.config/hunk/config.toml"
-              cp -R ${inputs.hunk-commit-log}/. "$HOME/.config/hunk/extensions/hunk-commit-log/"
-              chmod -R u+w "$HOME"
-              "$bun_compiler" test config-compatibility.test.ts
-              runHook postCheck
-            '';
-          });
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
           antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
             builtins.toJSON {
@@ -1235,7 +1217,9 @@
                     touch $out
                   '';
 
-              hunk-config-compatibility = hunkConfigCompatibility;
+              hunk-config-compatibility = import ./overlays/hunk/config-compatibility.nix {
+                inherit inputs pkgs;
+              };
 
               agent-run-tests =
                 pkgs.runCommand "agent-run-tests"
