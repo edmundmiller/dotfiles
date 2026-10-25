@@ -22,11 +22,11 @@ invisible.
 
 Installed packages during the investigation:
 
-| Package | Version |
-| --- | --- |
-| hyprland | 0.56.2-1 |
-| hypridle | 0.1.8-1 |
-| omarchy | 4.0.0-1.2 |
+| Package        | Version              |
+| -------------- | -------------------- |
+| hyprland       | 0.56.2-1             |
+| hypridle       | 0.1.8-1              |
+| omarchy        | 4.0.0-1.2            |
 | quickshell-git | 0.3.0.r20.g28771c7-1 |
 
 The custom `edmundmiller.lock` password view was identical to the installed
