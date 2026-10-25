@@ -85,6 +85,12 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/systemd/user/app-com.mitchellh.ghostty.service.d/override.conf",
+      "target": ".config/systemd/user/app-com.mitchellh.ghostty.service.d/override.conf",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/systemd/user/amp-runner.service",
       "target": ".config/systemd/user/amp-runner.service",
       "mode": "0644",
