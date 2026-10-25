@@ -356,9 +356,7 @@ class HermesCronExecutorTests(unittest.TestCase):
 
     def test_runbook_has_strict_identity_and_staged_revision_gate(self):
         runbook = RUNBOOK.read_text(encoding="utf-8")
-        prerequisites = _bash_block_after(
-            runbook, "Before any remote check or mutating command"
-        )
+        prerequisites = _bash_block_after(runbook, "## Prerequisites")
         self.assertIn('test "$hostname" = "nuc"', prerequisites)
 
         deploy = _bash_block_after(runbook, "## Deploy")

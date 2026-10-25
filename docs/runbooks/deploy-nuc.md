@@ -76,8 +76,10 @@ landed.
 
 ## Prerequisites
 
-- SSH access to `nuc` (configured in `~/.ssh/config` via home-manager)
-- Tailscale connected (the NUC is on the tailnet)
+- For direct `hey nuc` deployments, SSH access to `nuc` (configured in
+  `~/.ssh/config` via home-manager) and Tailscale connected
+- For GitHub deployment from an orb, GitHub Actions dispatch/read access to
+  `edmundmiller/dotfiles`; the workflow supplies its own tailnet access
 - `/var/lib/opnix/secrets/githubNixToken` materialized by `opnix-secrets.service`
 - A clean, committed working tree for `dry-activate`, `test`, or `switch`
 
@@ -91,8 +93,9 @@ reference with that exact commit before Nix runs. A failed lookup or malformed
 revision aborts before activation, so an API-rate-limit failure cannot select a
 different cached dotfiles revision.
 
-Before any remote check or mutating command, verify the target identity and
-abort unless the remote hostname is exactly `nuc`:
+Before direct SSH checks or host mutations, verify the target identity and
+abort unless the remote hostname is exactly `nuc`. GitHub deployments perform
+this check inside `hey nuc revision`; the dispatching orb does not run it:
 
 ```bash
 set -euo pipefail
@@ -179,9 +182,13 @@ deployment approval boundary.
 
 ## Manual GitHub deployment
 
-In Actions, select **Deploy NUC**, choose `main`, then approve the `nuc`
-environment deployment. The workflow deploys the commit captured at dispatch,
-not whatever main points to later. It requires the latest main-push CI run for
+After explicit deployment authorization, select **Deploy NUC** in Actions and
+dispatch on `main`, supplying the exact published SHA as `expected_sha`.
+There is no second approval in the `nuc` environment.
+Anyone with permission to dispatch this workflow can deploy an eligible commit.
+The first step rejects a missing, malformed, or mismatched SHA before checkout
+or tailnet enrollment. The workflow deploys only when the requested SHA equals
+the commit captured at dispatch. It requires the latest main-push CI run for
 that exact commit to have completed successfully. Missing, failed, or running
 CI blocks deployment. If main moves before the NUC acquires its deployment
 lock, dispatch again for the new commit after its CI succeeds.
@@ -203,13 +210,49 @@ The workflow serializes deployments without cancelling an active run. The
 host lock also excludes concurrent operator deployments. Interrupted builds
 can fail the job; inspect the live generation before retrying.
 
+### Ship from an Amp orb
+
+The dotfiles Amp project's custom Ship prompt authorizes publication and NUC
+activation unless the user specifies push-only or no-deploy. Orbs dispatch
+the GitHub workflow instead of attempting `ssh nuc` or joining the tailnet.
+The workflow runs `hey nuc revision <SHA>` on their behalf.
+
+After publishing, record the exact SHA and wait for the latest `ci.yml` push
+run for that SHA on `main` to finish successfully. A missing run is not success;
+wait for it to appear. Recheck that GitHub `main` still equals the published SHA
+immediately before dispatch. If main has advanced, reconcile the shipped
+revision and rerun its checks rather than silently deploying another commit.
+
+```bash
+published_sha="$(git rev-parse HEAD)" # The exact commit just published.
+gh workflow run deploy-nuc.yml --repo edmundmiller/dotfiles --ref main \
+  -f expected_sha="$published_sha"
+```
+
+Capture the returned run URL. If the CLI does not return it, find the new
+`workflow_dispatch` run by workflow, title `Deploy NUC <published-sha>`, actor,
+and dispatch time. Do not filter by head SHA: a raced dispatch has a different
+head but the same requested SHA in its title. If multiple runs match, resolve
+the ambiguity before proceeding; never select an unrelated latest run or
+redispatch merely because its result is unclear. A raced dispatch fails the
+first step without reaching the NUC. Reconcile and validate the revision before
+retrying, keeping `expected_sha` rather than falling back to an unbound dispatch.
+Wait for the identified run with `gh run watch <run-id>
+--repo edmundmiller/dotfiles --exit-status`, then inspect its logs. Dispatch
+acceptance alone is not deployment success.
+
+The successful workflow verifies both active repository revisions and basic
+host services. Use its logs for that evidence without requiring orb SSH.
+Report failed units and any task-specific runtime checks the workflow does not
+cover separately. Missing Actions permissions are an access blocker, not a
+reason to provision SSH credentials or change tailnet policy.
+
 ### Enable deployment
 
 These are live operations and require rollout authorization:
 
 1. Create the dotfiles `nuc` GitHub environment before publishing the workflow
-   or issuing its identity. Require `edmundmiller` review,
-   allow self-review for this single-operator repository, disallow admin bypass,
+   or issuing its identity. Leave required reviewers empty, disallow admin bypass,
    and restrict deployment branches to `main` with no deployment tags.
 2. Publish the tailnet and dotfiles changes and wait for exact-head CI. Bootstrap
    the installed deployment wrapper and disabled upgrade timer with an
@@ -222,8 +265,9 @@ These are live operations and require rollout authorization:
 4. Set environment variables `TS_CLIENT_ID` and `TS_AUDIENCE` from the tailnet
    outputs `github_nuc_deploy_tailscale_client_id` and
    `github_nuc_deploy_tailscale_audience`. Neither value is a secret.
-5. Recheck the environment protections, dispatch **Deploy NUC** on `main`, and
-   approve the environment as Edmund. The workflow checks exact-head CI again.
+5. Recheck the environment protections and dispatch **Deploy NUC** on `main`
+   with the published commit as `expected_sha`.
+   The workflow checks exact-head CI again without a separate reviewer prompt.
    Inspect the job's provenance and service output before calling rollout done.
 
 Preparation on 2026-10-17 passed the selected `hey check` suites, nine simulated
@@ -235,9 +279,18 @@ The evaluated candidate has `system.autoUpgrade.enable = false`.
 ### Completed rollout, 2026-10-18
 
 The [rollout thread](https://ampcode.com/threads/T-01a14b43-6b29-72ad-835b-c035c28e18a4)
-published the deployment code and applied access through Alchemy. The protected
-`nuc` environment requires Edmund's review, allows self-review, forbids admin
-bypass, and accepts only the `main` branch with no deployment tags.
+published the deployment code and applied access through Alchemy. At rollout,
+the protected `nuc` environment required Edmund's review, allowed self-review,
+forbade admin bypass, and accepted only the `main` branch with no deployment tags.
+
+On 2026-10-25, the required-reviewer rule was removed to eliminate the second
+approval after an authorized dispatch. No deployments were pending when it
+changed. The environment identity, variables, main-only branch policy, and
+disabled admin bypass were preserved. The workflow, OIDC trust, exact-head CI,
+and host deployment guards were unchanged. This does not provide direct SSH
+access to an orb that lacks NUC connectivity. To restore the reviewer gate,
+add GitHub user `edmundmiller` with ID `20095261` as a required reviewer and
+allow self-review, preserving the other environment settings.
 
 [Dotfiles 9d2be19](https://github.com/edmundmiller/dotfiles/commit/9d2be198757b314185ed57c9da79af967ceae121)
 passed [exact-head CI](https://github.com/edmundmiller/dotfiles/actions/runs/39078566020)
