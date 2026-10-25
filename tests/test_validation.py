@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -583,6 +584,42 @@ class ValidationTests(unittest.TestCase):
                     check=False,
                 )
                 self.assertEqual(completed.returncode == 0, result == "success")
+
+class NucDeploymentWorkflowTests(unittest.TestCase):
+    def test_dispatch_rejects_a_different_revision_before_deployment(self):
+        workflow = (v.ROOT / ".github/workflows/deploy-nuc.yml").read_text()
+        self.assertIn("EXPECTED_SHA: ${{ inputs.expected_sha }}", workflow)
+        self.assertIn("DEPLOY_SHA: ${{ github.sha }}", workflow)
+        self.assertLess(workflow.index("        run: |"), workflow.index("- uses:"))
+        # Execute the first shell gate, before any checkout or tailnet enrollment.
+        gate = textwrap.dedent(
+            workflow.split("        run: |\n", 1)[1].split("      - ", 1)[0]
+        )
+        captured_sha = "0123456789abcdef0123456789abcdef01234567"
+        # Successful GitHub responses let the old CI-only gate accept the race.
+        # These functions also keep a regression from contacting real GitHub.
+        github = 'gh() { printf "%s\\n" "$DEPLOY_SHA"; }; jq() { return 0; };\n'
+        for expected_sha, accepted in (
+            (captured_sha, True),
+            ("89abcdef0123456789abcdef0123456789abcdef", False),
+            ("", False),
+            (captured_sha[:-1], False),
+            ("$(exit 0)", False),
+        ):
+            with self.subTest(expected_sha=expected_sha):
+                result = subprocess.run(
+                    ["bash", "-c", github + gate],
+                    env=os.environ
+                    | {"DEPLOY_SHA": captured_sha, "EXPECTED_SHA": expected_sha},
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if accepted:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertIn("NUC deployment revision mismatch", result.stderr)
 
 
 subprocess_run = subprocess.run
