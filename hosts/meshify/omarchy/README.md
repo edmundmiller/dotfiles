@@ -106,6 +106,9 @@ check. Normal system upgrades or Hermes self-updates can cause reported drift;
 - [Plugin reloads while locked](docs/plugin-reload-lock-crash.md): read before
   Omapods builds, plugin updates, or other writes under the watched local plugin
   directory.
+- [Lock screen after resume](docs/lock-screen-resume-rendering.md): read when
+  typing appears to require a click after suspend; records the rendering-stall
+  evidence, failed focus experiment, and unverified workaround.
 - [Agent-assisted plugin log watch](docs/plugin-log-watch.md): read when changing
   monitored plugins, Pi triage, actionable notifications, or repair authority.
 
