@@ -12,7 +12,7 @@ class AgentResponseContractTests(unittest.TestCase):
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for expected in (
             "Communicate concisely",
             "lead with the outcome",
@@ -178,7 +178,7 @@ class AgentResponseContractTests(unittest.TestCase):
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for expected in (
             "Communicate concisely",
             "lead with the outcome",

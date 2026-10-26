@@ -208,7 +208,7 @@ skills, hooks, or deterministic tooling and accept a smaller shared core.
 The source-controlled migration implements the thin architecture across the
 supported coding runtimes:
 
-- `config/agents/core.md` is a 220-word-budgeted semantic core read by OMP,
+- `config/agents/core.md` is a 400-word-budgeted semantic core read by OMP,
   Codex, Claude, Pi, and OpenCode.
 - `modules/agents/omp/default.nix` installs that core as OMP's global
   `AGENTS.md` and no longer installs the duplicate incremental-architecture

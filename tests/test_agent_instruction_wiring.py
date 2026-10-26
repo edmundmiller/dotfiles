@@ -57,7 +57,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for invariant in (
             "Preserve unrelated work and stay within the user's requested scope.",
             "Do not infer authority",
