@@ -31,12 +31,12 @@ update_when: Universal invariants change.
   watching, or checking back later is impossible.
 - Prefer the smallest correct change; preserve useful capabilities.
 - Do not claim completion without fresh evidence. For a commit or PR, that is
-  the committed tree (`git show HEAD:<file>`, `git diff --cached`), not the
-  working copy: `git checkout <ref> -- <paths>` stages paths, so a later edit
+  the committed tree (`git show HEAD:<file>`, or `git diff --cached` before
+  committing), not the working copy: `git checkout <ref> -- <paths>` stages paths, so a later edit
   stays unstaged. Skipped or no-op checks prove nothing.
 - Join dependent state-changing shell steps with `&&` (or `set -e`) so a failed
   step stops the rest.
-- Base each PR on main and give a fix to merged code its own PR; stack PRs only
+- Base each PR on the repo's default branch and give a fix to merged code its own PR; stack PRs only
   when asked, because GitHub refuses CLI and REST merges and base changes for
   stacked PRs.
 - Diagnosis or planning does not authorize implementation or publication.
