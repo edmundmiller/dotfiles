@@ -527,6 +527,40 @@ in
     # ── Automations ──────────────────────────────────────────────────────
     automation = lib.mkAfter (ensureEnabled [
       {
+        alias = "Monica Mirror NFC - Get Ready for Bed";
+        id = "monica_mirror_nfc_get_ready_for_bed";
+        mode = "single";
+        trigger = {
+          platform = "tag";
+          tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
+        };
+        # Morning face routines must not start bedtime prep.
+        condition = [
+          # Do not reapply prep lighting once bedtime mode has started.
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "off";
+          }
+          {
+            condition = "time";
+            after = "20:00:00";
+            before = "04:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "script.good_morning";
+            state = "off";
+          }
+        ];
+        action = [
+          { action = "script.get_ready_for_bed"; }
+          # Keep single mode occupied briefly to ignore duplicate scans.
+          { delay = "00:00:10"; }
+        ];
+      }
+
+      {
         alias = "Monica Nightstand NFC - Good Night";
         id = "monica_nightstand_nfc_goodnight";
         mode = "single";

@@ -1022,6 +1022,43 @@ let
     {
       test =
         let
+          tag = findAutomation "monica_mirror_nfc_get_ready_for_bed";
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
+          }
+        &&
+          tag.condition == [
+            {
+              condition = "state";
+              entity_id = "input_boolean.goodnight";
+              state = "off";
+            }
+            {
+              condition = "time";
+              after = "20:00:00";
+              before = "04:00:00";
+            }
+            {
+              condition = "state";
+              entity_id = "script.good_morning";
+              state = "off";
+            }
+          ]
+        && tag.mode == "single"
+        &&
+          tag.action == [
+            { action = "script.get_ready_for_bed"; }
+            { delay = "00:00:10"; }
+          ];
+      msg = "Monica's mirror NFC tag must require bedtime mode off, guard daytime/morning scans, and debounce Get Ready for Bed, not Good Night";
+    }
+    {
+      test =
+        let
           tag = findAutomation "monica_nightstand_nfc_goodnight";
         in
         tag != null
