@@ -21,6 +21,46 @@ Human-facing setup and troubleshooting for the personal Mac.
 - [Disk-space ledger and recovery](storage.md) — explains the APFS total,
   nested home/iCloud/Codex usage, likely regrowth, and supported reclaim paths.
 
+## Voxtype setup and upgrades
+
+The Homebrew cask installs `/opt/homebrew/bin/voxtype`, **not**
+`/Applications/Voxtype.app`. The app bundle owns the recording daemon,
+permissions, and menu bar. Nix manages its Login Item and the separate waveform
+overlay, not a second menu-bar process.
+
+After the first authorized `hey re` installs the cask, run this as `emiller`:
+
+```bash
+/opt/homebrew/bin/voxtype setup app-bundle
+```
+
+This copies the CLI into the app, signs it, adds a Login Item, and opens it.
+Grant Voxtype Accessibility, Input Monitoring, and Microphone access in System
+Settings. Confirm Voxtype appears under General > Login Items. The upstream
+`setup app-bundle --status` check can report a missing Login Item when System
+Events automation is unavailable, so verify it in Settings too.
+
+For an upgrade, finish or cancel any recording and quit Voxtype from its menu
+bar. Install the authorized cask update through the repository's guarded
+Homebrew workflow, then rerun `setup app-bundle` above and re-grant permissions
+if prompted. Do not run the installer on every rebuild: upstream resets
+Accessibility and Input Monitoring grants whenever it copies from the CLI,
+even if the version has not changed. Reopening an already running app does not
+replace its process, which is why quitting before the update matters.
+
+Verify the bundle and cask versions match:
+
+```bash
+/opt/homebrew/bin/voxtype --version
+/Applications/Voxtype.app/Contents/MacOS/voxtype-bin --version
+```
+
+`hey re` warns if the bundle is missing, cannot report its version, or differs
+from the installed CLI. It does not recreate the bundle or reset permissions.
+After setup or an upgrade, confirm one Voxtype menu-bar icon and test hold-Fn
+dictation in a scratch text field. On cancellation, the overlay should retract
+without inserting text. The overlay also treats streaming capture as recording.
+
 ## CalDigit TS5 dual displays on macOS 27
 
 ### Current status
