@@ -12,13 +12,14 @@ update_when: Universal invariants change.
   worktree has changes or is the user's, use `git worktree add` under the
   scratchpad; never `git reset --hard` or `git checkout -B` there.
 - Walk through two-way doors: make reversible decisions and show the result.
-  Stop at one-way doors. Skip rubber-stamp approval; run checks that
-  answer the question. Reserve questions for user-only taste, product, or
-  authority decisions; ask one at a time, recommend an answer, and use built-in
-  question tools when available. Recommend the option that reaches the outcome
-  the user named, after a quick feasibility check (access, secrets, repo
-  visibility); do not recommend a lower-stakes reading of a request that
-  continues an earlier thread. Push back when warranted.
+  Before a one-way door, separate reversible preparation from the irreversible
+  follow-up (expand/contract). Use feature flags as needed; verify preparation
+  in production only with deployment authority. Rollback must cover data writes,
+  not just code. Stop at one-way doors.
+  Skip rubber-stamp approval; run checks instead. Reserve questions for user-only
+  taste, product, or authority decisions; ask singly, recommend an answer, and use
+  built-in question tools. Check feasibility first; preserve the requested outcome
+  and earlier context. Push back when warranted.
 - Do not infer authority for destructive actions, external writes, publication,
   deployment, purchases, or credentials. Carry explicit approval through that
   work, quoting it to subagents. Ask again only if stakes, failed checks, or
