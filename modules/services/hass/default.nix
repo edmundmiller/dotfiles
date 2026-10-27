@@ -140,6 +140,7 @@ in
     ./_domains/cleaning.nix
     ./_domains/climate.nix
     ./_domains/conversation.nix
+    ./_domains/pets.nix
     ./_domains/pura.nix
     ./_domains/reolink.nix
     ./_domains/lighting.nix

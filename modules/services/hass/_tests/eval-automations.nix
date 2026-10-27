@@ -1052,6 +1052,39 @@ let
       msg = "Monica's NFC tag must guard daytime/morning scans and debounce the direct Good Night call";
     }
     {
+      test =
+        let
+          tag = findAutomation "phoebe_kibble_nfc_record_feeding";
+          lastFed = haConfig.input_datetime.phoebe_last_fed or { };
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = "729d23f5-3368-487e-bff0-3cf6a22cba29";
+          }
+        &&
+          tag.action == [
+            {
+              action = "input_datetime.set_datetime";
+              target.entity_id = "input_datetime.phoebe_last_fed";
+              data.timestamp = "{{ now().timestamp() }}";
+            }
+            {
+              action = "logbook.log";
+              data = {
+                name = "Phoebe Feeding";
+                message = "Phoebe was fed 1/4 cup of Hill's Science Diet Adult Sensitive Stomach & Skin kibble, 97.75 kcal.";
+                entity_id = "input_datetime.phoebe_last_fed";
+              };
+            }
+          ]
+        && (lastFed.has_date or false)
+        && (lastFed.has_time or false)
+        && !(lastFed ? initial);
+      msg = "Phoebe's kibble tag must restore the feeding time and log the food name, 1/4 cup portion, and 97.75 kcal";
+    }
+    {
       test = whiteNoiseWithBedtimeAudiobook != null;
       msg = "automation 'white_noise_with_bedtime_audiobook' missing";
     }
