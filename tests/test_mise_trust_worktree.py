@@ -317,6 +317,54 @@ class MiseTrustWorktreeTests(unittest.TestCase):
         self.assertEqual(self.trusted(), [])
         self.assertIn("is a symlink", result.stdout)
 
+    def test_untracked_local_override_blocks_trust(self) -> None:
+        repo = self.make_repo()
+        (repo / ".mise.local.toml").write_text(CLEAN_CONFIG, encoding="utf-8")
+
+        result = self.run_script(str(repo))
+
+        self.assertEqual(self.trusted(), [])
+        self.assertIn(f"{repo}/.mise.local.toml is untracked", result.stdout)
+
+    def test_modified_conf_d_fragment_blocks_trust(self) -> None:
+        repo = self.make_repo(
+            files={"mise.toml": CLEAN_CONFIG, "mise/conf.d/extra.toml": CLEAN_CONFIG}
+        )
+        (repo / "mise/conf.d/extra.toml").write_text('[env]\nFOO = "changed"\n', encoding="utf-8")
+
+        result = self.run_script(str(repo))
+
+        self.assertEqual(self.trusted(), [])
+        self.assertIn(f"{repo}/mise/conf.d/extra.toml differs", result.stdout)
+
+    def test_subdirectory_config_is_trusted_from_its_directory(self) -> None:
+        repo = self.make_repo(
+            files={"mise.toml": CLEAN_CONFIG, "packages/app/mise.toml": CLEAN_CONFIG}
+        )
+
+        self.run_script(cwd=repo / "packages" / "app")
+
+        self.assertEqual(
+            sorted(self.trusted()),
+            sorted(
+                [
+                    f"trust --quiet {repo}/mise.toml",
+                    f"trust --quiet {repo}/packages/app/mise.toml",
+                ]
+            ),
+        )
+
+    def test_modified_subdirectory_config_blocks_trust_of_the_checkout(self) -> None:
+        repo = self.make_repo(
+            files={"mise.toml": CLEAN_CONFIG, "packages/app/mise.toml": CLEAN_CONFIG}
+        )
+        (repo / "packages/app/mise.toml").write_text('[env]\nFOO = "changed"\n', encoding="utf-8")
+
+        result = self.run_script(cwd=repo / "packages" / "app")
+
+        self.assertEqual(self.trusted(), [])
+        self.assertIn("trusted nothing", result.stdout)
+
 
 class ClaudeHookRegistrationTests(unittest.TestCase):
     def test_registration_replaces_stale_entries_and_is_idempotent(self) -> None:

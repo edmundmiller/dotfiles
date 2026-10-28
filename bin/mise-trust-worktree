@@ -10,14 +10,26 @@ set -euo pipefail
 
 export GIT_LITERAL_PATHSPECS=1
 
+# Patterns mise loads by default, relative to each directory from the checkout
+# root down to the one being checked. *.dev.toml needs MISE_ENV, so it is
+# not listed.
 CONFIG_GLOBS=(
   mise.toml
   .mise.toml
   'mise.*.toml'
+  '.mise.*.toml'
   mise/config.toml
+  'mise/config.*.toml'
+  'mise/conf.d/*.toml'
   .mise/config.toml
+  '.mise/config.*.toml'
+  '.mise/conf.d/*.toml'
   .config/mise.toml
+  '.config/mise.*.toml'
+  .config/mise/config.toml
   '.config/mise/*.toml'
+  '.config/mise/config.*.toml'
+  '.config/mise/conf.d/*.toml'
   .tool-versions
 )
 TRUSTED_OWNERS='^(seqeralabs|nextflow-io|edmundmiller)$'
@@ -37,15 +49,23 @@ apply() {
   local dir=${1:-} top configs pattern f url slug owner base blockers out
   [[ -n $dir && -d $dir ]] || return 0
   top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || return 0
+  dir=$(cd "$dir" && pwd -P)
 
+  # mise loads configs from the working directory up, so scan every directory
+  # from the checkout root down to this one.
   configs=()
-  shopt -s nullglob
-  for pattern in "${CONFIG_GLOBS[@]}"; do
-    for f in "$top"/$pattern; do
-      [[ -f $f ]] && configs+=("$f")
+  scan=$dir
+  while :; do
+    shopt -s nullglob
+    for pattern in "${CONFIG_GLOBS[@]}"; do
+      for f in "$scan"/$pattern; do
+        [[ -f $f ]] && configs+=("$f")
+      done
     done
+    shopt -u nullglob
+    [[ $scan == "$top" ]] && break
+    scan=$(dirname "$scan")
   done
-  shopt -u nullglob
   ((${#configs[@]})) || return 0
 
   # Trusting a nested checkout also trusts the checkout that encloses it, so
