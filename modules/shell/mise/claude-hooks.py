@@ -17,7 +17,8 @@ EVENTS = {
 }
 
 path = pathlib.Path(sys.argv[1])
-command = sys.argv[2]
+# An empty command removes our registrations, for when mise is disabled.
+command = sys.argv[2] if len(sys.argv) > 2 else ""
 try:
     data = json.loads(path.read_text(encoding="utf-8"))
 except (OSError, ValueError):
@@ -52,10 +53,11 @@ for event, entries in list(hooks.items()):
     elif entries:
         del hooks[event]
 
-for event, fields in EVENTS.items():
-    hooks.setdefault(event, []).append(
-        {**fields, "hooks": [{"type": "command", "command": command}]}
-    )
+if command:
+    for event, fields in EVENTS.items():
+        hooks.setdefault(event, []).append(
+            {**fields, "hooks": [{"type": "command", "command": command}]}
+        )
 
 if json.dumps(hooks, sort_keys=True) != before:
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

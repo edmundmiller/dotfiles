@@ -284,6 +284,40 @@ class MiseTrustWorktreeTests(unittest.TestCase):
         self.assertEqual(self.trusted(), [])
 
 
+    def test_default_branch_falls_back_to_origin_master(self) -> None:
+        repo = self.make_repo()
+        self.git(repo, "update-ref", "refs/remotes/origin/master", "HEAD")
+        self.git(repo, "update-ref", "-d", "refs/remotes/origin/main")
+        self.git(repo, "update-ref", "-d", "refs/remotes/origin/HEAD")
+
+        self.run_script(str(repo))
+
+        self.assertEqual(self.trusted(), [f"trust --quiet {repo}/mise.toml"])
+
+    def test_skip_worktree_config_is_not_trusted(self) -> None:
+        repo = self.make_repo()
+        (repo / "mise.toml").write_text('[env]\nFOO = "changed"\n', encoding="utf-8")
+        self.git(repo, "update-index", "--skip-worktree", "mise.toml")
+
+        result = self.run_script(str(repo))
+
+        self.assertEqual(self.trusted(), [])
+        self.assertIn("skip-worktree", result.stdout)
+
+    def test_symlinked_config_is_not_trusted(self) -> None:
+        repo = self.make_repo(files={"real.toml": CLEAN_CONFIG})
+        os.symlink("real.toml", repo / "mise.toml")
+        self.git(repo, "add", "mise.toml")
+        self.git(repo, "commit", "-q", "-m", "link")
+        self.git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+        (repo / "real.toml").write_text('[env]\nFOO = "changed"\n', encoding="utf-8")
+
+        result = self.run_script(str(repo))
+
+        self.assertEqual(self.trusted(), [])
+        self.assertIn("is a symlink", result.stdout)
+
+
 class ClaudeHookRegistrationTests(unittest.TestCase):
     def test_registration_replaces_stale_entries_and_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -347,6 +381,31 @@ class ClaudeHookRegistrationTests(unittest.TestCase):
                     "CwdChanged": [{"hooks": ours}],
                     "PostToolUseFailure": [{"matcher": "Bash", "hooks": ours}],
                 },
+            )
+
+    def test_empty_command_removes_only_our_registrations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = Path(tmp) / "settings.json"
+            entire = {"type": "command", "command": "entire hooks claude-code session-start"}
+            ours_hook = {"type": "command", "command": "/nix/store/old/bin/mise-trust-worktree --hook"}
+            settings.write_text(
+                json.dumps(
+                    {
+                        "hooks": {
+                            "SessionStart": [{"matcher": "", "hooks": [entire, ours_hook]}],
+                            "CwdChanged": [{"hooks": [ours_hook]}],
+                            "PostToolUseFailure": [{"matcher": "Bash", "hooks": [ours_hook]}],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            subprocess.run([sys.executable, str(HOOKS_SCRIPT), str(settings)], check=True)
+
+            self.assertEqual(
+                json.loads(settings.read_text(encoding="utf-8"))["hooks"],
+                {"SessionStart": [{"matcher": "", "hooks": [entire]}]},
             )
 
 
