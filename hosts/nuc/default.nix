@@ -1011,10 +1011,6 @@ let
 
 in
 {
-  # Rex server (Linux): uncomment the flake input/module, then enable here before other hosts.
-  # services.rex.enable = true;
-  # user.extraGroups = [ "rex" ];
-
   assertions = telegramBindings.assertions ++ [
     {
       assertion = hermesTelegramBotTokenOwners == [ ];
@@ -1485,6 +1481,18 @@ in
   # assume networked builds.
   nix.settings.sandbox = "relaxed";
 
+  # Local shared server; connect with rex -S /run/rex/server.sock.
+  services.rex.enable = true;
+  users.users.emiller.extraGroups = [ "rex" ];
+  users.users.rex.shell = pkgs.bashInteractive;
+
+  age.secrets.rex-netrc = {
+    owner = "root";
+    group = "root";
+    mode = "0600";
+  };
+  nix.settings.netrc-file = config.age.secrets.rex-netrc.path;
+
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld = {
     enable = true;
@@ -1553,6 +1561,7 @@ in
     }
     ../_server.nix
     ../_home.nix
+    inputs.rex.nixosModules.default
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
