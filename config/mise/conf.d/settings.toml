@@ -1,0 +1,3 @@
+# Shims load the cwd's mise.toml first, so an untrusted checkout breaks every shimmed tool.
+[settings]
+activate_shims = false

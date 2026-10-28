@@ -1,13 +1,14 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
 with lib.my;
 let
   cfg = config.modules.shell.mise;
-  inherit (config.dotfiles) configDir;
+  inherit (config.dotfiles) binDir configDir;
 in
 {
   options.modules.shell.mise = {
@@ -29,5 +30,15 @@ in
         recursive = true;
       };
     };
+
+    home-manager.users.${config.user.name} =
+      { lib, ... }:
+      {
+        home.activation.mise-claude-hooks = mkIf config.modules.agents.claude.enable (
+          lib.hm.dag.entryAfter [ "writeBoundary" "claude-settings-bootstrap" ] ''
+            ${pkgs.python3}/bin/python3 ${./claude-hooks.py} "$HOME/.claude/settings.json" "${binDir}/mise-trust-worktree --hook"
+          ''
+        );
+      };
   };
 }
