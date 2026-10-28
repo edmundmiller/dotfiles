@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# mise-trust-worktree: trust a checkout's mise config when it is an allowlisted
+# GitHub repo and every config file matches the default branch.
+#
+# Usage:
+#   mise-trust-worktree [DIR]   check DIR (default: $PWD) and print a report
+#   mise-trust-worktree --hook  handle a Claude Code hook event from stdin
+
+set -euo pipefail
+
+export GIT_LITERAL_PATHSPECS=1
+
+CONFIG_GLOBS=(
+  mise.toml
+  .mise.toml
+  'mise.*.toml'
+  mise/config.toml
+  .mise/config.toml
+  .config/mise.toml
+  '.config/mise/*.toml'
+  .tool-versions
+)
+TRUSTED_OWNERS='^(seqeralabs|nextflow-io|edmundmiller)$'
+
+github_slug() {
+  local slug
+  case "$1" in
+    git@github.com:*) slug=${1#git@github.com:} ;;
+    https://github.com/*) slug=${1#https://github.com/} ;;
+    *) return 0 ;;
+  esac
+  slug=${slug%/}
+  printf '%s\n' "${slug%.git}"
+}
+
+apply() {
+  local dir=${1:-} top configs pattern f url slug owner base blockers out
+  [[ -n $dir && -d $dir ]] || return 0
+  top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || return 0
+
+  configs=()
+  shopt -s nullglob
+  for pattern in "${CONFIG_GLOBS[@]}"; do
+    for f in "$top"/$pattern; do
+      [[ -f $f ]] && configs+=("$f")
+    done
+  done
+  shopt -u nullglob
+  ((${#configs[@]})) || return 0
+
+  # Trusting a nested checkout also trusts the checkout that encloses it, so
+  # refuse here and leave both to a manual `mise trust`.
+  if enclosing=$(git -C "$(dirname "$top")" rev-parse --show-toplevel 2>/dev/null); then
+    for f in "${configs[@]}"; do
+      echo "mise: $top is nested in $enclosing; review then run: mise trust $f"
+    done
+    return 0
+  fi
+
+  url=$(git -C "$top" config --get remote.origin.url) || url=""
+  slug=$(github_slug "$url")
+  owner=$(printf '%s' "${slug%%/*}" | tr '[:upper:]' '[:lower:]')
+  if ! [[ $owner =~ $TRUSTED_OWNERS ]]; then
+    for f in "${configs[@]}"; do
+      echo "mise: ${slug:-${url:-no origin}} is not allowlisted; review then run: mise trust $f"
+    done
+    return 0
+  fi
+
+  base=$(git -C "$top" symbolic-ref -q --short refs/remotes/origin/HEAD) || base=origin/main
+  if ! git -C "$top" rev-parse -q --verify "$base^{commit}" >/dev/null; then
+    echo "mise: $base not found in $top; trusted nothing"
+    return 0
+  fi
+  blockers=()
+  for f in "${configs[@]}"; do
+    if ! git -C "$top" ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then
+      blockers+=("$f is untracked; review then run: mise trust $f")
+    elif ! git -C "$top" diff --quiet --no-ext-diff "$base" -- "$f" 2>/dev/null; then
+      blockers+=("$f differs from $base; review then run: mise trust $f")
+    fi
+  done
+  if ((${#blockers[@]})); then
+    for f in "${blockers[@]}"; do
+      echo "mise: $f"
+    done
+    # Outside paranoid mode, mise trusts a whole config directory, so trusting
+    # the clean files would also trust the ones above.
+    echo "mise: trusted nothing in $top"
+    return 0
+  fi
+
+  for f in "${configs[@]}"; do
+    if out=$(mise trust --quiet "$f" 2>&1); then
+      echo "mise: trusted $f"
+    else
+      echo "mise: mise trust $f failed: $out"
+    fi
+  done
+}
+
+HOOK_INPUT=""
+
+hook_field() {
+  jq -r "$1" <<<"$HOOK_INPUT" 2>/dev/null || true
+}
+
+hook_SessionStart() {
+  apply "$(hook_field '.cwd // empty')"
+}
+
+hook_CwdChanged() {
+  apply "$(hook_field '.new_cwd // empty')" >/dev/null
+}
+
+hook_PostToolUseFailure() {
+  local path report
+  [[ $HOOK_INPUT == *"are not trusted"* ]] || return 0
+  path=$(hook_field 'try (.error | capture("Config files in (?<path>.+) are not trusted").path) // empty')
+  [[ -n $path ]] || return 0
+  case "$path" in
+    "~"/*) path=$HOME/${path#"~/"} ;;
+  esac
+  report=$(apply "$(dirname "$path")") || true
+  jq -n --arg ctx "${report:-mise: $path is not in a checkout this hook can trust.} If trusted, retry the failed command; otherwise ask the user before running mise trust." \
+    '{hookSpecificOutput: {hookEventName: "PostToolUseFailure", additionalContext: $ctx}}'
+}
+
+if [[ ${1:-} == --hook ]]; then
+  HOOK_INPUT=$(cat) || true
+  event=$(hook_field '.hook_event_name // empty')
+  if [[ -n $event ]] && declare -F "hook_$event" >/dev/null; then
+    "hook_$event" || true
+  fi
+  exit 0
+fi
+
+apply "${1:-$PWD}"
