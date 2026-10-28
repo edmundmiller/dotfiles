@@ -182,6 +182,7 @@ in
           servers = {
             github.enable = true;
             linear.enable = true;
+            linear.excludeAgents = [ "amp" ];
             notion.enable = true;
             fff.enable = true;
             openaiDeveloperDocs.enable = true;
