@@ -237,7 +237,7 @@ class MiseTrustWorktreeTests(unittest.TestCase):
         output = json.loads(result.stdout)["hookSpecificOutput"]
         self.assertEqual(output["hookEventName"], "PostToolUseFailure")
         self.assertIn(f"trusted {repo}/mise.toml", output["additionalContext"])
-        self.assertIn("retry the failed command", output["additionalContext"])
+        self.assertIn("Retry the failed command", output["additionalContext"])
         self.assertEqual(self.trusted(), [f"trust --quiet {repo}/mise.toml"])
 
     def test_untrusted_failure_with_home_relative_path(self) -> None:
