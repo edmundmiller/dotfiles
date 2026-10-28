@@ -75,6 +75,10 @@ The Linux and Darwin validation jobs read private flake inputs with the
 `NIX_PRIVATE_GITHUB_TOKEN` repository secret. Linux display tests need the pinned
 private `tnote` source too. Use a fine-grained token with read-only Contents
 access to `tnote` and `agents-workspace`. Do not reuse the write-capable Renovate token.
+Both jobs also use the `REX_TOKEN` repository secret to fetch the private Rex
+snapshot. Each validation step writes a mode-0600 temporary netrc file for
+`pkgs.superlogical.com`, sets Nix's `netrc-file`, and deletes the file on exit.
+The NUC's agenix credential does not supply credentials to GitHub runners.
 
 `scripts/validation.py` owns suite routing. `flake.nix` owns the immutable
 `pre-commit-config` and Nix derivations. The full portable route omits host and

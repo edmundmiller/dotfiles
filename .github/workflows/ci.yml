@@ -41,11 +41,22 @@ jobs:
       - name: Validate (same runner as hey check)
         env:
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
+          REX_TOKEN: ${{ secrets.REX_TOKEN }}
         run: |
           if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
             echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
             exit 1
           fi
+          if [[ -z "$REX_TOKEN" ]]; then
+            echo "::error::Configure REX_TOKEN with access to pkgs.superlogical.com."
+            exit 1
+          fi
+          umask 077
+          rex_netrc=$(mktemp "$RUNNER_TEMP/rex-netrc.XXXXXX")
+          trap 'rm -f "$rex_netrc"' EXIT
+          printf 'machine pkgs.superlogical.com login rex password %s\n' "$REX_TOKEN" > "$rex_netrc"
+          unset REX_TOKEN
+          export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
 
   # Preserve the contexts required by main without weakening branch protection.
@@ -86,11 +97,22 @@ jobs:
       - name: Validate affected Darwin configuration
         env:
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
+          REX_TOKEN: ${{ secrets.REX_TOKEN }}
         run: |
           if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
             echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
             exit 1
           fi
+          if [[ -z "$REX_TOKEN" ]]; then
+            echo "::error::Configure REX_TOKEN with access to pkgs.superlogical.com."
+            exit 1
+          fi
+          umask 077
+          rex_netrc=$(mktemp "$RUNNER_TEMP/rex-netrc.XXXXXX")
+          trap 'rm -f "$rex_netrc"' EXIT
+          printf 'machine pkgs.superlogical.com login rex password %s\n' "$REX_TOKEN" > "$rex_netrc"
+          unset REX_TOKEN
+          export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
           python3 scripts/validation.py --ci --platform darwin
 
   vm-services:
