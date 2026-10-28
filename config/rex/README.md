@@ -6,6 +6,32 @@ Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them
 (including Pi's Rex extension) can run `rex`. Ghostty startup is unchanged.
 
+## NUC connection
+
+`init.lua` declares `nuc` at `https://nuc-rex.cinnamon-rooster.ts.net`, using
+the host ID already registered in the Mac app. Keep that ID stable when renaming
+the host. The shared Mac config makes this host available on both Macs.
+
+`hosts/nuc/default.nix` enables Rex's separate `nuc-rex` Tailscale identity at
+startup. It leaves the NUC's existing Tailscale Serve/Funnel configuration alone
+and permits only the identity's owner. Enrollment is one-time runtime state;
+the Nix configuration contains no auth key. The service runs as `emiller:users`
+with an owner-only local socket, so new terminals use the NUC user's home,
+shell, files, and permissions. Rex's state stays in `/var/lib/rex`; systemd's
+`StateDirectory` ownership follows the service user, preserving the enrolled
+Tailscale identity when switching from the default `rex` account.
+
+Changing the service user restarts Rex and ends existing terminals. Check for
+active work before deployment; existing terminals cannot change users in place.
+
+Apply the server setting with an authorized `hey nuc` deployment. Apply the Mac
+config with an authorized `hey re`, then `rex config reload`. Verify with
+`rex hosts check nuc --json` and `rex -S nuc whoami --json`. A CLI connection
+alone does not prove the app connected; `rex -S nuc client ls --json` must also
+show the Mac app connected. Select a session listed by `rex -S nuc ls --json`
+through that remote app client, then verify its session attachment. In a new
+terminal, `whoami` and `pwd` should report `emiller` and `/home/emiller`.
+
 ## Appearance
 
 The Rex module pins vertical tabs on both Macs and selects themes using the

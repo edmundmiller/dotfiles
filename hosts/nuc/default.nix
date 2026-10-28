@@ -1481,10 +1481,15 @@ in
   # assume networked builds.
   nix.settings.sandbox = "relaxed";
 
-  # Local shared server; connect with rex -S /run/rex/server.sock.
+  # Run terminals as the NUC user; retain the enrolled identity in /var/lib/rex.
   services.rex.enable = true;
-  users.users.emiller.extraGroups = [ "rex" ];
-  users.users.rex.shell = pkgs.bashInteractive;
+  services.rex.user = "emiller";
+  services.rex.group = "users";
+  services.rex.socketMode = "0600";
+  services.rex.tailscale = {
+    enable = true;
+    hostname = "nuc-rex";
+  };
 
   age.secrets.rex-netrc = {
     owner = "root";

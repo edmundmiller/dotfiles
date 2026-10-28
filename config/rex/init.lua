@@ -2,6 +2,14 @@
 -- Match tmux/Herdr's prefix without launching either multiplexer inside Rex.
 -- Reload on the server host with: rex config reload
 
+-- Keep the NUC host's existing app identity across config reloads.
+rex.host({
+  id = "host:fa2e06a4-e832-41db-a474-a56f5f04ee0b",
+  label = "nuc",
+  endpoint = "https://nuc-rex.cinnamon-rooster.ts.net",
+  icon = "globe",
+})
+
 -- Ctrl+C starts a sequence; press it twice to interrupt the foreground program.
 rex.bind("ctrl+c>ctrl+c", "pane.send_key", { key = "ctrl+c" })
 
