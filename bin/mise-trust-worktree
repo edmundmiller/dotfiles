@@ -122,7 +122,8 @@ hook_PostToolUseFailure() {
     "~"/*) path=$HOME/${path#"~/"} ;;
   esac
   report=$(apply "$(dirname "$path")") || true
-  jq -n --arg ctx "${report:-mise: $path is not in a checkout this hook can trust.} If trusted, retry the failed command; otherwise ask the user before running mise trust." \
+  jq -n --arg ctx "${report:-mise: $path is not in a checkout this hook can trust.}
+Retry the failed command if its config is now trusted; otherwise ask the user before running mise trust." \
     '{hookSpecificOutput: {hookEventName: "PostToolUseFailure", additionalContext: $ctx}}'
 }
 
