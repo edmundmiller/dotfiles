@@ -49,7 +49,25 @@ Requires Home Assistant Core 2026.7+, iOS 17.2+, a Companion app supporting Live
 Activities, and Live Activities enabled for Home Assistant on the phone. The phone
 must reach HA for the token handshake. See the
 [Companion documentation](https://companion.home-assistant.io/docs/notifications/live-activities/).
-Monica's routine remains separate and is not configured here yet.
+
+### Mirror NFC countdown
+
+Monica's mirror tag starts Get Ready for Bed and a shared 12-minute timer.
+Scans are accepted from 8 PM to 4 AM only while bedtime mode is off and Good
+Morning is not running. Later scans cannot restart prep or extend the timer.
+
+Both phones receive a separate `mirror-bedtime` Live Activity with the same
+absolute deadline. The chronometer ticks on-device without per-second pushes.
+These are Companion Live Activities, not Apple Clock timers. At expiry, both
+activities are dismissed and both phones receive "Time to brush teeth."
+Cancelling the HA timer dismisses the countdowns without the reminder.
+
+The BUSY Bar shows the same deadline in `home_assistant_mirror_bedtime` at
+priority 50, with a lifetime bounded by the remaining timer duration. Scheduled
+bedtime drawing yields while this timer is active and resumes when it ends.
+The timer restores across HA restarts; startup resends its original deadline,
+or clears stale displays if it has ended. HA does not emit `timer.finished`
+for timers that expire while HA is stopped, so those do not send a reminder.
 
 ### BUSY Bar bedtime progress
 

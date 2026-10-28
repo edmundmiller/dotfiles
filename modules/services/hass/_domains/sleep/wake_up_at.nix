@@ -25,6 +25,7 @@ let
 
   busyBarBaseUrl = "http://192.168.1.207";
   busyBarApplicationName = "home_assistant_bedtime";
+  busyBarMirrorApplicationName = "home_assistant_mirror_bedtime";
   busyBarEveningTickTriggers =
     map
       (hours: {
@@ -144,6 +145,39 @@ in
 
     busy_bar_bedtime_clear = {
       url = "${busyBarBaseUrl}/api/display/draw?application_name=${busyBarApplicationName}";
+      method = "delete";
+      timeout = 3;
+    };
+
+    busy_bar_mirror_bedtime_draw = {
+      url = "${busyBarBaseUrl}/api/display/draw";
+      method = "post";
+      content_type = "application/json";
+      timeout = 3;
+      payload = ''
+        {
+          "application_name": "${busyBarMirrorApplicationName}",
+          "priority": 50,
+          "elements": [
+            {
+              "id": "countdown",
+              "type": "countdown",
+              "timestamp": "{{ target_ts | int }}",
+              "direction": "time_left",
+              "show_hours": "when_non_zero",
+              "x": 36,
+              "y": 3,
+              "align": "top_mid",
+              "color": "#FFFFFFFF",
+              "timeout": {{ remaining_seconds | int }}
+            }
+          ]
+        }
+      '';
+    };
+
+    busy_bar_mirror_bedtime_clear = {
+      url = "${busyBarBaseUrl}/api/display/draw?application_name=${busyBarMirrorApplicationName}";
       method = "delete";
       timeout = 3;
     };
@@ -564,7 +598,23 @@ in
       id = "busy_bar_bedtime_progress";
       description = "Show a countdown and framed six-minute checkpoints before the alarm-relative in-bed target";
       mode = "restart";
+      # The mirror countdown owns the display until its twelve minutes end.
+      condition = {
+        condition = "not";
+        conditions = [
+          {
+            condition = "state";
+            entity_id = "timer.mirror_bedtime";
+            state = "active";
+          }
+        ];
+      };
       trigger = busyBarEveningTickTriggers ++ [
+        {
+          platform = "state";
+          entity_id = "timer.mirror_bedtime";
+          to = "idle";
+        }
         {
           platform = "state";
           entity_id = edmund.nextAlarm;

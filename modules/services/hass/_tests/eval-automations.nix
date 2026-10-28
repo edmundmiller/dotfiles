@@ -1051,10 +1051,59 @@ let
         && tag.mode == "single"
         &&
           tag.action == [
+            {
+              action = "timer.start";
+              target.entity_id = "timer.mirror_bedtime";
+            }
             { action = "script.get_ready_for_bed"; }
             { delay = "00:00:10"; }
           ];
       msg = "Monica's mirror NFC tag must require bedtime mode off, guard daytime/morning scans, and debounce Get Ready for Bed, not Good Night";
+    }
+    {
+      test =
+        let
+          countdown = findAutomation "mirror_bedtime_countdown";
+          phase = head countdown.action;
+          start = (head phase.choose).sequence;
+          notifications = filter (a: hasInfix "notify.mobile_app_" (a.action or "")) start;
+          clear = filter (a: hasInfix "notify.mobile_app_" (a.action or "")) phase.default;
+          finished = (pkgs.lib.last phase.default)."then";
+          phones = [
+            "notify.mobile_app_edmunds_iphone"
+            "notify.mobile_app_monicas_iphone"
+          ];
+        in
+        countdown != null
+        && timers.mirror_bedtime.duration == "00:12:00"
+        && timers.mirror_bedtime.restore
+        && map (a: a.action) notifications == phones
+        && builtins.all (
+          a:
+          a.data.data.tag == "mirror-bedtime"
+          && a.data.data.live_update
+          && a.data.data.chronometer
+          && a.data.data.when == "{{ target_ts }}"
+          && !a.data.data.when_relative
+          && a.continue_on_error
+        ) notifications
+        && hasInfix "finishes_at" (head start).variables.target_ts
+        && map (a: a.action) clear == phones
+        && builtins.all (
+          a: a.data.message == "clear_notification" && a.data.data.tag == "mirror-bedtime"
+        ) clear
+        && map (a: a.action) finished == phones
+        && builtins.all (a: a.data.title == "Time to brush teeth") finished
+        && hasEventTrigger countdown "timer.finished"
+        && hasEventTrigger countdown "timer.cancelled"
+        && hasHomeAssistantStartTrigger countdown.trigger
+        && hasActionCall start "rest_command.busy_bar_mirror_bedtime_draw"
+        && hasInfix "home_assistant_mirror_bedtime" restCommands.busy_bar_mirror_bedtime_draw.payload
+        && hasInfix "remaining_seconds" restCommands.busy_bar_mirror_bedtime_draw.payload
+        && hasInfix "?application_name=home_assistant_mirror_bedtime" restCommands.busy_bar_mirror_bedtime_clear.url
+        && hasStateTrigger busyBarBedtimeProgress "timer.mirror_bedtime" "idle"
+        && hasInfix "timer.mirror_bedtime" (builtins.toJSON busyBarBedtimeProgress.condition);
+      msg = "Mirror bedtime countdown must share a restored 12-minute deadline across both phones and a bounded BUSY Bar display, then clear and remind both phones";
     }
     {
       test =

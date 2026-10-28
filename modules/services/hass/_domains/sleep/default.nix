@@ -32,6 +32,11 @@
 let
   inherit (import ../../_lib.nix) ensureEnabled;
 
+  bedtimePhones = [
+    "notify.mobile_app_edmunds_iphone"
+    "notify.mobile_app_monicas_iphone"
+  ];
+
   # ── Per-person entity config ───────────────────────────────────────────
   edmund = {
     name = "Edmund";
@@ -262,6 +267,12 @@ in
     input_text.sleep_schedule_key = {
       name = "Sleep Schedule Key";
       icon = "mdi:calendar-clock";
+    };
+
+    timer.mirror_bedtime = {
+      name = "Mirror Bedtime Countdown";
+      duration = "00:12:00";
+      restore = true;
     };
 
     input_boolean = {
@@ -554,9 +565,122 @@ in
           }
         ];
         action = [
+          {
+            action = "timer.start";
+            target.entity_id = "timer.mirror_bedtime";
+          }
           { action = "script.get_ready_for_bed"; }
           # Keep single mode occupied briefly to ignore duplicate scans.
           { delay = "00:00:10"; }
+        ];
+      }
+
+      {
+        alias = "Mirror Bedtime Countdown - Phones and BUSY Bar";
+        id = "mirror_bedtime_countdown";
+        mode = "queued";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "timer.mirror_bedtime";
+            to = "active";
+          }
+          {
+            platform = "event";
+            event_type = "timer.finished";
+            event_data.entity_id = "timer.mirror_bedtime";
+            id = "finished";
+          }
+          {
+            platform = "event";
+            event_type = "timer.cancelled";
+            event_data.entity_id = "timer.mirror_bedtime";
+          }
+          {
+            platform = "homeassistant";
+            event = "start";
+          }
+        ];
+        action = [
+          {
+            choose = [
+              {
+                conditions = [
+                  {
+                    condition = "state";
+                    entity_id = "timer.mirror_bedtime";
+                    state = "active";
+                  }
+                ];
+                sequence = [
+                  {
+                    variables.target_ts = "{{ as_timestamp(state_attr('timer.mirror_bedtime', 'finishes_at')) | int }}";
+                  }
+                  {
+                    action = "rest_command.busy_bar_bedtime_clear";
+                    continue_on_error = true;
+                  }
+                ]
+                ++ map (notify: {
+                  action = notify;
+                  continue_on_error = true;
+                  data = {
+                    title = "Bedtime countdown";
+                    message = "Moni started her face routine. Time to wrap up.";
+                    data = {
+                      tag = "mirror-bedtime";
+                      live_update = true;
+                      chronometer = true;
+                      when = "{{ target_ts }}";
+                      when_relative = false;
+                      notification_icon = "mdi:toothbrush";
+                    };
+                  };
+                }) bedtimePhones
+                ++ [
+                  {
+                    action = "rest_command.busy_bar_mirror_bedtime_draw";
+                    continue_on_error = true;
+                    data = {
+                      target_ts = "{{ target_ts }}";
+                      remaining_seconds = "{{ [1, [720, (target_ts | int - as_timestamp(now())) | int] | min] | max }}";
+                    };
+                  }
+                ];
+              }
+            ];
+            default =
+              map (notify: {
+                action = notify;
+                continue_on_error = true;
+                data = {
+                  message = "clear_notification";
+                  data.tag = "mirror-bedtime";
+                };
+              }) bedtimePhones
+              ++ [
+                {
+                  action = "rest_command.busy_bar_mirror_bedtime_clear";
+                  continue_on_error = true;
+                }
+                {
+                  "if" = [
+                    {
+                      condition = "trigger";
+                      id = "finished";
+                    }
+                  ];
+                  "then" = map (notify: {
+                    action = notify;
+                    continue_on_error = true;
+                    data = {
+                      title = "Time to brush teeth";
+                      message = "The 12-minute bedtime countdown is finished.";
+                    };
+                  }) bedtimePhones;
+                }
+              ];
+          }
         ];
       }
 
