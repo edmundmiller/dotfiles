@@ -155,6 +155,8 @@
       "Bash(npm run start:*)",
       "Bash(just:*)",
       "Bash(hey:*)",
+      "Bash(mise-trust-worktree)",
+      "Bash(mise-trust-worktree:*)",
       "Bash(nix:*)",
       "Bash(nix-store:*)",
       "Bash(br close * --reason *)",
