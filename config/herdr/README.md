@@ -61,7 +61,7 @@ Custom/current mappings:
 | `prefix+shift+1..9`               | Switch workspace                                   |
 | `prefix+alt+1..9`                 | Focus agent                                        |
 | `prefix+J` / `prefix+K`           | Next/previous agent                                |
-| `prefix+shift+left/right`          | Move tab                                           |
+| `prefix+shift+left/right`         | Move tab                                           |
 | `prefix+X`                        | Close tab                                          |
 | `prefix+h/j/k/l`                  | Focus pane                                         |
 | `prefix+ctrl+w`                   | Last pane                                          |
@@ -93,7 +93,31 @@ Custom/current mappings:
 | `prefix+O`                        | Start from GitHub item                             |
 | `prefix+B`                        | Open Herdr Browser in a right split                |
 
-Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. Both receive the declarative `dev` layout from `workspace-manager.yml`: OMP first, then Hunk. Ordinary workspaces stay plain.
+Herdr defaults still provide other common actions. `prefix+a` creates a task-named jj workspace; `prefix+g` is the native Git fallback. Both receive the declarative `dev` layout from `workspace-manager.yml`: `$AGENT` first, then Hunk. Ordinary workspaces stay plain.
+
+Export `AGENT` as the executable name or path in the pane's shell environment,
+without arguments. The agent pane runs `exec "$AGENT"`; an unset or empty
+value reports an error rather than falling back to OMP. Use an executable
+wrapper if the selected agent needs startup arguments.
+
+With jj 0.46 or newer, `prefix+a` creates a colocated child with its own Git
+worktree when the source workspace is colocated and `git.colocate` is true,
+its default. Hunk can review that child directly. There is no separate Git
+worktree creation or jj initialization step. Keep VCS mutations in jj and
+publish the explicit task bookmark.
+
+Existing non-colocated jj children do not convert automatically. From the
+child, confirm `jj root --ignore-working-copy`, inspect `pwd` and `jj log -r @`,
+then use `jj git colocation enable` to convert it in place. Before opening Hunk,
+confirm `git rev-parse --show-toplevel` resolves to the same child checkout.
+For children kept non-colocated, review with `jj diff --git -r @` in the agent pane;
+the `dev` layout does not omit the Hunk tab automatically. Never initialize jj
+inside a Git-only worktree to imitate this conversion.
+
+Keep `prefix+d` and `prefix+D` for guarded cleanup. The plugin's
+`jj workspace forget` unregisters the child's Git worktree before directory
+removal. Colocation does not replace the clean-workspace, closed-PR, typed
+abandonment, or primary-workspace protections.
 
 Herdr-launched agents also inherit the Nix-packaged `rift` CLI for experimental copy-on-write workspace trials. Rift is not bound to a key and does not replace native Git or jj workspace lifecycle.
 
@@ -118,7 +142,7 @@ Herdr emits these lifecycle sequences:
 Current and potential repo uses:
 
 - Workspace Manager applies `workspace-manager.yml` automatically to linked Git worktrees under `~/.local/share/herdr/worktrees`.
-- The patched jj workspace plugin applies the same named layout explicitly after creating its generic Herdr workspace.
+- The patched jj workspace plugin applies the same named layout explicitly after creating its generic Herdr workspace. Keep this integration for colocated children too; a backing Git worktree does not make the plugin emit Herdr's native `worktree.created` event.
 - `worktree.opened` would fit rehydrating plugin-owned state when an existing checkout opens. No separate hook is needed now because layout state persists and a newly opened workspace emits `workspace.created`.
 - `worktree.removed` would fit deleting plugin-owned per-checkout cache. Do not use it to replace the explicit safe removal in the `done` skill; no such cache exists today.
 - Smart rename should remain on `workspace.created` and `tab.created`; it is workspace/tab lifecycle, not Git checkout lifecycle.

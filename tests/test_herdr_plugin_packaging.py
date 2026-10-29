@@ -15,7 +15,8 @@ def test_workspace_manager_owns_dev_layout_and_no_legacy_post_create() -> None:
     assert "dotfiles.dev-layout" not in str(config)
     assert "herdr-plugin-workspace-manager/config.yml" in module
     assert "id: dev" in layout
-    assert "agent: omp" in layout
+    assert 'command: \'exec "${AGENT:?Set AGENT to the agent executable}"\'' in layout
+    assert "agent: omp" not in layout
     assert "title: hunk" in layout
     assert "post_create_command" not in config.get("worktrees", {})
     assert 'if key == "post_create_command":' in module

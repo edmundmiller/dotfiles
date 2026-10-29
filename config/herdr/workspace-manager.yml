@@ -6,10 +6,10 @@ layouts:
       command: "if [ -x scripts/qmd-seed-worktree.sh ]; then scripts/qmd-seed-worktree.sh; fi"
       blocking: true
     tabs:
-      - title: omp
+      - title: agent
         panes:
-          - title: omp
-            agent: omp
+          - title: agent
+            command: 'exec "${AGENT:?Set AGENT to the agent executable}"'
             setup: true
       - title: hunk
         panes:

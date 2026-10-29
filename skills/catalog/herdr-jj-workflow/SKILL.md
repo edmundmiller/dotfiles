@@ -1,9 +1,9 @@
 ---
 name: herdr-jj-workflow
-description: Runs Herdr task workspaces with OMP, jj, Hunk, and durable receipts from creation through cleanup. Use for creating, resuming, reviewing, publishing, shipping, or removing a Herdr jj task workspace.
+description: Runs Herdr task workspaces with the selected agent, jj, Hunk, and durable receipts from creation through cleanup. Use for creating, resuming, reviewing, publishing, shipping, or removing a Herdr jj task workspace.
 ---
 
-# Herdr + OMP + jj task workflow
+# Herdr + jj task workflow
 
 Use one durable Herdr workspace per issue, PR, or task. Share one stable name across the checkout, jj workspace, jj bookmark, Herdr workspace label, and PR head:
 
@@ -13,7 +13,7 @@ Use one durable Herdr workspace per issue, PR, or task. Share one stable name ac
 
 Treat that name as durable. Treat Herdr workspace, tab, and pane IDs as live handles; re-read them after lifecycle changes.
 
-Use Hunk from the Git root when one exists. In a pure jj workspace, use `jj diff --git -r @` in OMP and record findings plus check output in the worklog when present, otherwise in the final handoff. “Review surface” below means either path.
+Use Hunk from the task checkout's own Git root. For a non-colocated jj workspace, use `jj diff --git -r @` in the agent pane and record findings plus check output in the worklog when present, otherwise in the final handoff. "Review surface" below means either path.
 
 ## When to use
 
@@ -26,19 +26,36 @@ Use this skill for `create`, `resume`, `approve commit`, `publish`, `ship`, `sub
 3. Keep one task bookmark per workspace. Reuse it; do not create a replacement branch.
 4. Shape the current change in place with `jj describe` and `jj squash`. Run `jj new` only when starting another reviewed intent.
 5. Review every intended commit. Use Hunk from the Git root when available; otherwise use the pure-jj review surface defined above. Commit only after the user says `approve commit` and findings plus checks are clear.
-6. Keep pure jj workspaces OMP-only; never launch Hunk from an arbitrary pane directory.
+6. In non-colocated jj workspaces, review in the agent pane; never point Hunk at the primary checkout or another workspace to work around a missing Git root.
 7. Fetch only during explicit `publish` or `ship`, never during workspace creation.
 8. Never stop or kill Herdr. Use config reloads and read-only state checks.
 
 ## Create or resume
 
 1. Use `prefix+a` to create a jj workspace. Enter the stable task name and base revision. Base defaults to `trunk()`; use a published parent bookmark for a stacked task.
-2. Let Herdr create the workspace and bootstrap its tabs. Do not create another workspace from the new OMP session.
+2. Let Herdr create the workspace and bootstrap its tabs. Do not create another workspace from the new agent session.
 3. Run `hey agent-start` without `--workspace` from the created checkout and retain its receipt. For work covered by `AGENT_WORKFLOW.md`, keep its required worklog too.
-4. Expect `omp` focused in every workspace. A Git-backed checkout also gets `hunk`; a non-Git workspace intentionally does not.
+4. The dotfiles `dev` layout opens `$AGENT` first, then Hunk. Export `AGENT` as the agent executable name or path in the pane's shell environment, without arguments. There is no hard-coded OMP fallback. The layout does not conditionally omit Hunk for non-colocated workspaces; use the agent pane for review there.
 5. Use `herdr agent list` and `herdr workspace list` to resolve current live handles; never reuse example IDs.
 6. Use `prefix+g` only for the native Git-only worktree flow.
 7. Resume from the issue or PR, jj log/bookmarks, review findings, the run receipt, any worklog, and live Herdr state. Conversation history is not authoritative.
+
+### Colocated child workspaces
+
+With jj 0.46 or newer, `jj workspace add` creates a corresponding Git worktree when the source workspace is colocated and `git.colocate` is true, its default. The Herdr plugin uses this default without an override. Children created from a colocated child inherit the same behavior. No separate `git worktree add` or jj initialization is needed.
+
+After creation, run these inside the child checkout:
+
+```bash
+jj root --ignore-working-copy
+git rev-parse --show-toplevel
+```
+
+Both must resolve to the child checkout before using Hunk. Keep VCS mutations in jj and retain the explicit task bookmark; colocation does not make the task a Git-only workflow.
+
+Existing non-colocated jj children do not change automatically. To convert one, first confirm its jj root, run `pwd` and `jj log -r @`, then run `jj git colocation enable` inside that child. Recheck both roots and reopen Hunk there. Do not create a replacement workspace. If keeping the child non-colocated, review with `jj diff --git -r @` in the agent pane. Manual creation can force either mode with `jj workspace add --colocate` or `--no-colocate`.
+
+This conversion applies only to an existing jj workspace. Never run `jj git init --colocate` inside a Git-only worktree created by Codex or Herdr's native Git flow.
 
 ## Review and commit
 
@@ -70,6 +87,7 @@ On explicit `ship`, verify recorded review approval and CI, then enable auto-mer
 - `prefix+d` removes only a clean secondary workspace whose PR is closed or merged.
 - `prefix+D` is the explicit abandon path. It still requires a clean workspace and exact typed task-name confirmation.
 - Never remove the main jj workspace. Never clean up work that is changed, ambiguous, or still under an open PR.
+- Keep the plugin's guarded cleanup. Its `jj workspace forget` also unregisters the corresponding Git worktree before directory removal. Do not bypass it with `git worktree remove` or an unguarded `jj workspace remove`.
 
 ## External PR review
 

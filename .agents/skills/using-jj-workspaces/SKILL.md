@@ -24,17 +24,16 @@ workspace. Keep Herdr's bindings and bootstrap out of Rex sessions.
 
 ### Inside Herdr
 
-Let `prefix+a` create the task-named jj workspace and open its OMP tab. From that checkout, record the existing workspace without `--workspace`:
+Let `prefix+a` create the task-named jj workspace and open its `$AGENT` tab. Export `AGENT` as the agent executable name or path in the pane's shell environment, without arguments. From that checkout, record the existing workspace without `--workspace`:
 
 ```bash
 hey agent-start \
   --repo "$PWD" \
   --task my-task \
-  --runtime omp \
-  --model openai-codex/gpt-5.6-sol
+  --runtime "$AGENT"
 ```
 
-Herdr bootstraps OMP in every workspace and adds Hunk only when the checkout has a Git root. Do not launch nested Herdr or create another jj workspace from the new OMP session.
+Herdr's `dev` layout opens `$AGENT` first, then Hunk, without a Git-root condition or a hard-coded OMP fallback. With jj 0.46 or newer, children created from a colocated workspace are also colocated when `git.colocate` is true, its default. Hunk can then review the child checkout directly. Do not launch nested Herdr or create another jj workspace from the new agent session.
 
 ### Outside Herdr
 
@@ -46,8 +45,7 @@ hey agent-start \
   --workspace "../workspaces/my-task" \
   --base 'trunk()' \
   --task my-task \
-  --runtime omp \
-  --model openai-codex/gpt-5.6-sol
+  --runtime "$AGENT"
 ```
 
 Both forms print one JSON receipt. Save its `receiptPath` for `done`. Without `--workspace`, the launcher records the current workspace.
@@ -68,9 +66,11 @@ Agent runtimes such as Codex Desktop can create Git worktrees before the agent s
 - Each workspace has its own working-copy commit `@`.
 - Workspaces share commit history and the operation log.
 - Mutating one workspace's `@` does not directly move another workspace's `@`.
+- Colocated children also have a Git worktree. Do not run a separate `git worktree add`; keep mutations in jj and retain the task bookmark.
 - Repository-wide operation recovery can affect concurrent work. Inspect `jj op log` and coordinate before `jj undo` or `jj op restore`.
 - In Herdr, task names are durable; workspace, tab, and pane IDs are live handles. Re-read them after lifecycle changes.
-- Review with Hunk from the Git root when available. In pure jj, use `jj diff --git -r @` in OMP and record findings plus check output in the worklog when present, otherwise in the final handoff.
+- Before using Hunk, confirm `jj root --ignore-working-copy` and `git rev-parse --show-toplevel` both resolve to this child checkout, not its primary workspace.
+- Existing non-colocated jj children stay non-colocated. Follow `herdr-jj-workflow` to convert one in place with `jj git colocation enable`, or keep reviewing with `jj diff --git -r @` in the agent pane. Record findings plus check output in the worklog when present, otherwise in the final handoff.
 
 Stay on one task per workspace. Read other changes with `jj diff -r`, `jj file show -r`, and `jj log -r`; do not use `jj edit` merely to inspect.
 
