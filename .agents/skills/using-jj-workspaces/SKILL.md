@@ -1,6 +1,6 @@
 ---
 name: using-jj-workspaces
-description: Creates or records isolated jj agent workspaces. Use when starting jj task work, entering a Herdr-created workspace, or handling an agent-created Git worktree boundary.
+description: Creates or records isolated jj agent workspaces. Use when starting jj task work, entering a Rex or Herdr workspace, or handling an agent-created Git worktree boundary.
 ---
 
 # Using jj workspaces
@@ -14,6 +14,13 @@ First confirm the current checkout is a jj repository:
 ```bash
 jj root --ignore-working-copy
 ```
+
+### Inside Rex
+
+Use the `using-rex-jj-workspaces` skill. Rex is the daily driver; its `rex-jj`
+helper owns creation and receipts. In a Rex-created task, read
+`.jj/rex-session.json` and reuse its `receiptPath` instead of creating another
+workspace. Keep Herdr's bindings and bootstrap out of Rex sessions.
 
 ### Inside Herdr
 

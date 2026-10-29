@@ -6,6 +6,74 @@ Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them
 (including Pi's Rex extension) can run `rex`. Ghostty startup is unchanged.
 
+## Daily jj workflow
+
+Rex owns task sessions; jj owns their checkouts. Set `AGENT` to one executable
+name or path in your shell environment. Use an executable wrapper for flags;
+`AGENT=1` is not an agent selection. Herdr remains available separately.
+
+| Keys               | Action                                                 |
+| ------------------ | ------------------------------------------------------ |
+| Prefix + `a`       | Prompt for a task slug and base, then open its session |
+| Prefix + `Shift+A` | Reopen the focused checkout's recorded session         |
+| Prefix + `d`       | Open a fresh review tab for the focused checkout       |
+| Prefix + `w`       | Switch between existing task sessions                  |
+
+The command palette also exposes these as **New jj task workspace**,
+**Open jj workspace session**, and **Review jj workspace**. The launcher opens
+in a separate terminal, so it never sends shell commands into a running agent.
+It keeps its result visible. Close that launcher tab when finished.
+
+The same workflow is scriptable after activation:
+
+```sh
+rex-jj new issue-123-login --repo ~/src/project --base 'trunk()'
+rex-jj open /path/to/existing/task
+rex-jj review /path/to/existing/task
+```
+
+`new` creates a named jj workspace and bookmark without fetching. Workspaces
+live under `${XDG_DATA_HOME:-~/.local/share}/rex/workspaces/<repo-key>/<task>`;
+creation from a child uses the same repository key. A stack uses its parent
+bookmark as `--base`. Existing task names and destinations are rejected.
+Git-only checkouts are rejected rather than initialized or converted.
+
+Each session has `review` and `agent` tabs, with the agent active. `open` reuses
+the recorded session even after a rename; after a session is closed, it creates
+one for the existing checkout. Closing Rex tabs never deletes the workspace.
+The helper stores session IDs and `receiptPath` in `.jj/rex-session.json`.
+`agent-run` writes the durable receipt outside the checkout. If opening Rex
+fails after creation, the helper keeps the workspace and prints its resume path.
+
+The keybinding asks the invoking Mac client to select the new session. Remote
+Control must be enabled in Rex. CLI calls print JSON without changing the app;
+pass `--client CLIENT_ID` to select it, or use prefix + `w`.
+
+With jj 0.46 and a colocated source, jj creates colocated children by default.
+Hunk runs only when Git and jj both report the task checkout as their root.
+On older jj, or in a non-colocated child, review shows `jj diff --git` instead.
+That view is a snapshot; prefix + `d` refreshes it in a new tab. For an existing
+non-colocated child on jj 0.46, verify `pwd` and `jj root`, run
+`jj git colocation enable`, then reopen review. Never use `jj git init` to
+convert an agent-created Git-only worktree.
+
+Run these commands on the machine holding the checkout. The Mac module does
+not install this workflow on the NUC; remote use requires the helper, agent,
+jj, and configuration on that server first.
+
+Review, publish, and cleanup follow the
+[Rex jj skill](../../skills/catalog/using-rex-jj-workspaces/SKILL.md).
+There is deliberately no delete-workspace key. Cleanup requires explicit
+authority, preserved changes, and a closed or merged PR before forgetting a
+workspace or removing its directory. Closing a session alone is not cleanup.
+
+Validate with `python3 -m unittest tests.test_rex_jj_workspace` on a Mac with
+Rex and jj installed. Tests start isolated Rex servers and disposable repos;
+they do not reload or stop your running Rex. Run `hey check config/rex
+modules/shell/rex.nix tests/test_rex_jj_workspace.py` for source checks.
+Activation still requires an authorized `hey re`, followed by
+`rex config reload`. The helper and these actions are not live before that.
+
 ## NUC connection
 
 `init.lua` declares `nuc` at `https://nuc-rex.cinnamon-rooster.ts.net`, using

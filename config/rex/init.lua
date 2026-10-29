@@ -23,6 +23,69 @@ rex.bind("ctrl+c>z", "pane.zoom")
 rex.bind("ctrl+c>w", "session.switch")
 rex.bind("ctrl+c>b", "client.sidebar.toggle")
 
+-- Run the workspace helper in its own terminal, never type into the agent.
+local function jj_workspace_terminal(ctx, args, command)
+  local cwd = args.path
+  if cwd == nil then
+    local process, err = rex.call("com.superlogical.terminal.process", {
+      session_id = ctx.session_id,
+      block_id = ctx.block_id,
+      args = {},
+    })
+    if err ~= nil then error(err, 0) end
+    cwd = process.foreground and process.foreground.cwd
+    if cwd == nil then error("Cannot find the focused process directory; pass path explicitly", 0) end
+  end
+  -- The module substitutes the packaged executable, independent of the app's PATH.
+  local argv = { "@rexJj@", command }
+  if command == "new" then
+    table.insert(argv, "--repo")
+    table.insert(argv, cwd)
+    if args.task then table.insert(argv, args.task) end
+    if args.base then
+      table.insert(argv, "--base")
+      table.insert(argv, args.base)
+    end
+  else
+    table.insert(argv, cwd)
+  end
+  if command ~= "review" and ctx.client_id then
+    table.insert(argv, "--client")
+    table.insert(argv, ctx.client_id)
+  end
+  local window, err = rex.session.new_window({
+    window_label = command == "review" and "review" or "jj workspace",
+    layout = rex.layout.block({
+      flavor = "com.superlogical.terminal.shell",
+      options = { cwd = cwd, command = argv, exit = { on_completion = false } },
+    }),
+  })
+  if err ~= nil then error(err, 0) end
+  return window
+end
+
+rex.action({
+  name = "jj_workspace_new",
+  title = "New jj task workspace",
+  args = { path = "string?", task = "string?", base = "string?" },
+  run = function(ctx, args) return jj_workspace_terminal(ctx, args, "new") end,
+})
+rex.action({
+  name = "jj_workspace_open",
+  title = "Open jj workspace session",
+  args = { path = "string?" },
+  run = function(ctx, args) return jj_workspace_terminal(ctx, args, "open") end,
+})
+rex.action({
+  name = "jj_workspace_review",
+  title = "Review jj workspace",
+  args = { path = "string?" },
+  run = function(ctx, args) return jj_workspace_terminal(ctx, args, "review") end,
+})
+rex.bind("ctrl+c>a", "jj_workspace_new")
+rex.bind("ctrl+c>shift+a", "jj_workspace_open")
+rex.bind("ctrl+c>d", "jj_workspace_review")
+
 -- pi-rex handles these keys without replacing the Pi editor's draft.
 rex.bind("ctrl+c>f", "pane.send_key", { key = "ctrl+alt+f" })
 rex.bind("ctrl+c>shift+f", "pane.send_key", { key = "ctrl+alt+t" })
