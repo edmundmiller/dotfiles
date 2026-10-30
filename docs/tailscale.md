@@ -2,7 +2,7 @@
 purpose: Describe Tailscale ownership, Rex remote access, and the reference agent architecture.
 applies_to: Tailscale module, host tunnel, tailnet services, or Rex phone setup.
 entrypoint: Read this doc, then modules/services/tailscale.nix.
-verification: On Darwin, build darwin-tailscaled-owner-assertions and check tailscaled is connected with SSH enabled. On NixOS, check tailscaled is active.
+verification: On Darwin, build darwin-tailscaled-owner-assertions and verify the GUI connection and Rex access. On NixOS, check tailscaled is active.
 update_when: Tunnel ownership, Rex endpoints, ACLs, or Tailscale service wiring changes.
 ---
 
@@ -57,15 +57,16 @@ Enables Tailscale with:
 
 - Shell aliases (`tsc`, `tsu`, `tsd`, `tss`)
 - NixOS: `tailscaled`, open firewall, operator mode (no sudo for `tailscale serve`), MagicDNS via resolved
-- Darwin: Nix-managed open-source `tailscaled`, CLI, and MagicDNS resolver. This variant is required for hosting Tailscale SSH. Do not install a GUI Tailscale variant or the Homebrew `tailscale` formula alongside it; only one daemon can own the tunnel. Login and `tailscale set --ssh` remain one-time stateful commands outside Nix.
+- Darwin: Homebrew `tailscale-app` owns the system-wide tunnel and CLI; Nix supplies the MagicDNS resolver and aliases. Nix `tailscaled` and the Homebrew `tailscale` formula remain disabled. Rex supplies remote terminals through its separate embedded Tailscale node.
 
-After the first rebuild or after logging out, authenticate and enable Tailscale SSH:
+After an authorized `hey re`, open `/Applications/Tailscale.app`, approve any
+macOS extension prompt, and sign in to the tailnet. Login and OS permissions
+remain one-time runtime state outside Nix. Use the app's CLI at
+`/usr/local/bin/tailscale` to check the connection.
 
-```bash
-sudo tailscale up --ssh --accept-routes
-```
-
-The tailnet policy must also authorize the source identity, destination device, and local macOS user in its `ssh` section.
+The GUI variant cannot host Tailscale SSH. Reintroducing that feature requires
+an explicit ownership migration back to open-source `tailscaled`, plus tailnet
+SSH policy authorization. It is not needed for Rex remote access.
 
 ## Rex remote access and the current setup
 
@@ -88,26 +89,35 @@ The NUC's Rex node is separate from its system-wide Tailscale identity at
 `100.112.179.64`. Its declaration lives in `hosts/nuc/default.nix`; the Mac's
 host entry and setup instructions live in [the Rex configuration](../config/rex/README.md#nuc-connection).
 
-The laptop still uses Nix-managed `tailscaled`. Direct inspection through
-`/var/run/tailscaled.socket` found it online at `100.117.59.64`, with SSH enabled,
+Before the GUI migration, the laptop used Nix-managed `tailscaled`. Inspection
+through `/var/run/tailscaled.socket` found it online at `100.117.59.64`, with SSH enabled,
 no health warnings, and a successful ping to the NUC. However, the old GUI
 network extension was also active. Plain `tailscale status` reached that
 logged-out extension instead of the healthy Nix daemon.
 
 The September migration uninstalled the Homebrew app but did not successfully
 deactivate its network extension. Rebuilds do not remove these leftovers because
-Homebrew activation has `cleanup = "none"`. For diagnosis, select the Nix daemon
-explicitly:
+Homebrew activation has `cleanup = "none"`. The diagnosis selected the Nix daemon
+explicitly with this command, which applies only while that daemon is running:
 
 ```sh
 tailscale --socket=/var/run/tailscaled.socket status
 ```
 
-Using the GUI app for system-wide networking and Rex for remote terminals was
-discussed as an alternative. That switch has not been applied. The current Nix
-configuration still owns `tailscaled`; do not treat the GUI app as the intended
-owner until an authorized migration changes that configuration and verifies
-connectivity. Keep Tailscale SSH if independent SSH access is still wanted.
+The selected configuration now uses the standalone GUI app for system-wide
+networking and Rex for remote terminals. Verify activation separately: the Nix
+launch daemon must be absent, the GUI CLI must report `Running`, and both local
+Rex and an authenticated connection to the NUC's Rex endpoint must work. Keep
+the old Nix daemon's state for rollback; do not log it out or delete its keys.
+
+Migration verified on 2026-10-30 with Darwin generation 1754. Tailscale GUI
+1.104.4 reported `Running`, no health warnings, and address `100.98.153.7`.
+Both the shell and a fresh login shell resolved `tailscale` to
+`/usr/local/bin/tailscale`; the Nix launch daemon was absent. The Mac reached
+the NUC in 1 ms and authenticated to both Rex HTTPS endpoints as
+`edmundmiller@github`, with the NUC serving account `emiller`. The Mac's Rex
+server process and instance ID were unchanged. These checks ran from the Mac,
+not the phone.
 
 ## Reference: Jess Frazelle's Rex-based agent
 

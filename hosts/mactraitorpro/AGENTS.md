@@ -10,9 +10,9 @@ Personal nix-darwin host, user `emiller`. `default.nix` owns enabled modules;
   Zele comes from `pkgs.my.zele`, not a global Bun install.
 - `modules.agents.hermes-local` owns local Hermes profiles. `hey hermes-local`
   rebuilds and checks profile/login/gateway/dispatcher health; NUC is separate.
-- Nix-managed open-source tailscaled is the sole tunnel owner. GUI variants and
-  the Homebrew formula conflict with it. Login and enabling Tailscale SSH are
-  one-time state changes; see [Tailscale](../../docs/tailscale.md).
+- The standalone Tailscale GUI app owns the tunnel; Rex owns remote terminals.
+  Nix tailscaled and the Homebrew formula must stay disabled. App login is a
+  one-time state change; see [Tailscale](../../docs/tailscale.md).
 - Host credentials use 1Password. A new terminal picks up `$DOTFILES_BIN`
   if `hey` is missing after activation.
 

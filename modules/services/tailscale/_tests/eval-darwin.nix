@@ -1,4 +1,4 @@
-# Pure Nix eval: Darwin must use exactly one open-source tailscaled owner.
+# Pure Nix eval: the standalone GUI app must be Darwin's sole tunnel owner.
 {
   darwinConfig,
   pkgs,
@@ -25,16 +25,16 @@ let
       msg = "MacTraitor-Pro must keep Tailscale aliases and the MagicDNS resolver";
     }
     {
-      test = mac.services.tailscale.enable or false;
-      msg = "MacTraitor-Pro must enable Nix tailscaled for Tailscale SSH hosting";
+      test = !(mac.services.tailscale.enable or false);
+      msg = "MacTraitor-Pro must not run Nix tailscaled alongside the GUI app";
     }
     {
-      test = mac.launchd.daemons ? tailscaled;
-      msg = "MacTraitor-Pro must install the tailscaled launch daemon";
+      test = !(mac.launchd.daemons ? tailscaled);
+      msg = "MacTraitor-Pro must not install the Nix tailscaled launch daemon";
     }
     {
-      test = !(hasCask "tailscale-app");
-      msg = "MacTraitor-Pro must not declare the competing Tailscale GUI app";
+      test = hasCask "tailscale-app";
+      msg = "MacTraitor-Pro must install the standalone Tailscale GUI app";
     }
     {
       test = !(hasCask "tailscale");
@@ -45,8 +45,8 @@ let
       msg = "MacTraitor-Pro must not declare the Homebrew tailscale formula";
     }
     {
-      test = elem mac.services.tailscale.package (mac.environment.systemPackages or [ ]);
-      msg = "MacTraitor-Pro must install the CLI package that owns tailscaled";
+      test = !(elem mac.services.tailscale.package (mac.environment.systemPackages or [ ]));
+      msg = "MacTraitor-Pro must use the GUI app's CLI instead of the Nix package";
     }
   ];
 
@@ -64,5 +64,5 @@ pkgs.runCommand "darwin-tailscaled-owner-assertions"
       exit 1
     fi
     mkdir -p "$out"
-    echo "All Darwin tailscaled ownership assertions passed." > "$out/result"
+    echo "All Darwin Tailscale GUI ownership assertions passed." > "$out/result"
   ''
