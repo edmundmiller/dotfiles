@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # Native: open a remote shell, or attach an address already running on the NUC.
-# Add the machine once with: hc machine add nuc
+# Mac activation registers the NUC through native.machines.
 hnuc() {
   local backend="${HERDR_BACKEND:-native}"
   if [[ "$backend" == legacy ]]; then

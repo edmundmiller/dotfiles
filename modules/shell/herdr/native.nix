@@ -17,6 +17,15 @@ in
 {
   options.modules.shell.herdr.native = {
     app.enable = lib.my.mkBoolOpt isDarwin;
+    machines = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = lib.optionalAttrs (isDarwin && cfg.native.app.enable) { nuc = "emiller@nuc"; };
+      description = ''
+        Named SSH targets to register with the default hc session on activation.
+        Existing connections must match; other machines are never removed.
+        Unreachable machines are retried on the next activation, without installing hc remotely.
+      '';
+    };
     appCommand = lib.mkOption {
       type = lib.types.str;
       default = "${config.user.home}/.local/bin/herdr-app";
@@ -45,6 +54,20 @@ in
           '';
         };
       }
+      (lib.mkIf (cfg.native.machines != { }) {
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-machines = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+            if [ -x ${lib.escapeShellArg cfg.native.coreCommand} ]; then
+              PATH=${lib.makeBinPath [ pkgs.openssh ]}:$PATH \
+                ${pkgs.coreutils}/bin/env -u HC_SOCKET HC_SESSION=default \
+                ${pkgs.python3}/bin/python3 ${nativeSource}/reconcile-machines.py \
+                --core ${lib.escapeShellArg cfg.native.coreCommand} \
+                --machines ${pkgs.writeText "herdr-machines.json" (builtins.toJSON cfg.native.machines)} \
+                || echo 'herdr: machine registration incomplete; retry activation when SSH is available' >&2
+            fi
+          '';
+        };
+      })
       (lib.mkIf cfg.native.app.enable {
         user.packages = [ herdrDev ] ++ lib.optional cfg.tnote.enable pkgs.my.tnote;
         environment.systemPackages = [ herdrDev ] ++ lib.optional cfg.tnote.enable pkgs.my.tnote;

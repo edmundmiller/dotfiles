@@ -73,8 +73,20 @@ agents must report OSC 7501 to appear as agents; their legacy integrations are
 not evidence of native protocol support.
 
 `hnuc` opens a native remote shell; `hnuc t7` attaches an existing terminal.
-Register the NUC first with `hc machine add nuc`. Native `herdr-studios sync`
-uses `hc machine add --install` with stable SSH alias names. It preserves
+Mac app hosts declare `native.machines.nuc = "emiller@nuc"` by default, using
+the existing `nuc` SSH alias over Tailscale. Activation registers missing
+machines through `hc` after SSH configuration is linked. The app reads that
+same default core session; no separate app connection is needed.
+
+Registration preserves other machines and running sessions. It refuses a
+conflicting name instead of removing/replacing a connection. Offline or failed
+registration warns and retries on the next activation, without blocking a Mac
+rebuild or installing anything on the server. Set `native.machines = { };` to
+disable registration; removing a declaration does not delete a saved machine.
+Servers and headless Macs default to no outbound machine registrations.
+
+Native `herdr-studios sync` uses `hc machine add --install` with stable SSH
+alias names. It preserves
 existing registered machines, including stopped or filtered Studios; it does
 not translate the old enable/disable lifecycle into deletion.
 

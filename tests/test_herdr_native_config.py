@@ -194,3 +194,118 @@ def test_nuc_alias_routes_to_selected_backend(tmp_path, backend, args, expected)
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == expected
+
+
+@pytest.fixture
+def machine_registry(tmp_path):
+    """A persistent CLI fake; rejects duplicate names and unavailable targets."""
+    registry = tmp_path / "machines.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "machines": [
+                    {
+                        "name": "studio",
+                        "target": "user@studio",
+                        "session": None,
+                        "via": False,
+                        "temporary": True,
+                        "state": "disconnected",
+                    }
+                ]
+            }
+        )
+    )
+    core = tmp_path / "hc"
+    core.write_text(
+        f"#!{sys.executable}\n"
+        "import argparse, json, pathlib, sys\n"
+        f"registry = pathlib.Path({str(registry)!r})\n"
+        "parser = argparse.ArgumentParser()\n"
+        "parser.add_argument('--json', action='store_true')\n"
+        "parser.add_argument('command', choices=['machine'])\n"
+        "parser.add_argument('action', choices=['ls', 'add'])\n"
+        "parser.add_argument('--name')\n"
+        "parser.add_argument('target', nargs='?')\n"
+        "args = parser.parse_args()\n"
+        "data = json.loads(registry.read_text())\n"
+        "if args.action == 'add':\n"
+        "    if args.target == 'offline': sys.exit('unreachable')\n"
+        "    if any(m['name'] == args.name for m in data['machines']):\n"
+        "        sys.exit('name_taken')\n"
+        "    data['machines'].append(dict(name=args.name, target=args.target,\n"
+        "        session=None, via=False, temporary=False, state='disconnected'))\n"
+        "    registry.write_text(json.dumps(data))\n"
+        "print(json.dumps(data))\n"
+    )
+    core.chmod(0o755)
+
+    def register(machines):
+        desired = tmp_path / "desired.json"
+        desired.write_text(json.dumps(machines))
+        return subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "config/herdr/native/reconcile-machines.py"),
+                "--core",
+                str(core),
+                "--machines",
+                str(desired),
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+    return registry, register
+
+
+def test_machine_registration_is_additive_and_idempotent(machine_registry):
+    registry, register = machine_registry
+    studio = json.loads(registry.read_text())["machines"][0]
+    result = register({"nuc": "emiller@nuc"})
+    assert result.returncode == 0, result.stderr
+    assert json.loads(registry.read_text())["machines"] == [
+        studio,
+        {
+            "name": "nuc",
+            "target": "emiller@nuc",
+            "session": None,
+            "via": False,
+            "temporary": False,
+            "state": "disconnected",
+        },
+    ]
+    snapshot = registry.read_bytes(), registry.stat().st_mtime_ns
+    assert register({"nuc": "emiller@nuc"}).returncode == 0
+    assert register({}).returncode == 0
+    assert (registry.read_bytes(), registry.stat().st_mtime_ns) == snapshot
+
+
+@pytest.mark.parametrize(
+    "target,temporary", [("different-host", False), ("user@studio", True)]
+)
+def test_machine_conflict_refuses_changes_before_adding_anything(
+    machine_registry, target, temporary
+):
+    registry, register = machine_registry
+    machines = json.loads(registry.read_text())
+    machines["machines"][0]["temporary"] = temporary
+    registry.write_text(json.dumps(machines))
+    before = registry.read_bytes()
+    # Even with the same target, a temporary connection cannot satisfy a
+    # declared permanent machine. A missing entry first must not be added.
+    result = register({"nuc": "emiller@nuc", "studio": target})
+    assert result.returncode != 0
+    assert "conflicts with declared SSH target" in result.stderr
+    assert registry.read_bytes() == before
+
+
+def test_unreachable_machine_reports_failure_without_changing_registry(
+    machine_registry,
+):
+    registry, register = machine_registry
+    before = registry.read_bytes()
+    result = register({"nuc": "offline"})
+    assert result.returncode != 0
+    assert "unreachable" in result.stderr
+    assert registry.read_bytes() == before

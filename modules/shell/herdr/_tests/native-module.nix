@@ -63,6 +63,7 @@ let
   headlessMac = evaluate true { native.app.enable = false; };
   desktopLinux = evaluate false { native.app.enable = true; };
   disabled = evaluate true { enable = false; };
+  noMachines = evaluate true { native.machines = { }; };
   activation = cfg: cfg.home-manager.users.alice.home.activation or { };
   appEnabled =
     cfg:
@@ -87,6 +88,11 @@ assert appEnabled mac;
 assert appEnabled desktopLinux;
 assert coreOnly server;
 assert coreOnly headlessMac;
+assert mac.modules.shell.herdr.native.machines == { nuc = "emiller@nuc"; };
+assert activation mac ? herdr-native-machines;
+assert !(activation noMachines ? herdr-native-machines);
+assert server.modules.shell.herdr.native.machines == { };
+assert headlessMac.modules.shell.herdr.native.machines == { };
 assert activation disabled == { };
 assert (disabled.home.configFile or { }) == { };
 assert (disabled.user.packages or [ ]) == [ ];
