@@ -1,0 +1,27 @@
+{
+  "source": "https://github.com/anomalyco/hex.git",
+  "ref": "c4b3287d86a74b0aeb26653375040dfa9b344f21",
+  "patches": [
+    "patches/0001-lazy-microphone-close.patch",
+    "patches/0002-nix-managed-updates.patch",
+    "patches/0003-nix-swift-macro-build.patch"
+  ],
+  "checks": [
+    ["cargo", "fmt", "--all", "--check"],
+    ["rustc", "--edition=2024", "--test", "src/microphone_idle.rs", "-o", "microphone-idle-tests"],
+    ["./microphone-idle-tests"],
+    [
+      "env",
+      "CC=/usr/bin/clang",
+      "CXX=/usr/bin/clang++",
+      "AR=/usr/bin/ar",
+      "HEX_NIX_MANAGED=1",
+      "cargo",
+      "test",
+      "--locked",
+      "--bin",
+      "voice-control",
+      "dictation_audio::tests"
+    ]
+  ]
+}

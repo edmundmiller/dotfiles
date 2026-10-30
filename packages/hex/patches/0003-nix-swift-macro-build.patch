@@ -1,0 +1,23 @@
+diff --git i/build.rs w/build.rs
+index b32c3ff..349a35d 100644
+--- i/build.rs
++++ w/build.rs
+@@ -124,6 +124,7 @@ fn compile_permission_guide() {
+ }
+ 
+ fn compile_swift_bridge(name: &str, module: &str, without_autolink: &[&str]) {
++    println!("cargo:rerun-if-env-changed=HEX_NIX_MANAGED");
+     let manifest_dir = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
+     let output_dir = PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
+     let source = manifest_dir.join(format!("src/{name}.swift"));
+@@ -152,6 +153,10 @@ fn compile_swift_bridge(name: &str, module: &str, without_autolink: &[&str]) {
+     swift
+         .arg(String::from_utf8_lossy(&sdk.stdout).trim())
+         .args(["-target", target]);
++    // Nix's build user cannot create the Swift macro subprocess sandbox.
++    if std::env::var_os("HEX_NIX_MANAGED").is_some() {
++        swift.arg("-disable-sandbox");
++    }
+     for framework in without_autolink {
+         swift.args([
+             "-Xfrontend",

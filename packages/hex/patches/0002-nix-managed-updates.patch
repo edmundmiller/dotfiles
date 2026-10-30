@@ -1,0 +1,16 @@
+diff --git i/src/sparkle.rs w/src/sparkle.rs
+index 69b49b7..5c6196a 100644
+--- i/src/sparkle.rs
++++ w/src/sparkle.rs
+@@ -94,7 +94,10 @@ struct SparkleUpdater {
+ pub fn updates_managed() -> bool {
+     static MANAGED: OnceLock<bool> = OnceLock::new();
+     *MANAGED.get_or_init(|| {
+-        NSUserDefaults::standardUserDefaults().boolForKey(&NSString::from_str("DisableUpdates"))
++        // Nix owns this build; Sparkle must not replace it with an unpatched release.
++        option_env!("HEX_NIX_MANAGED").is_some()
++            || NSUserDefaults::standardUserDefaults()
++                .boolForKey(&NSString::from_str("DisableUpdates"))
+     })
+ }
+ 
