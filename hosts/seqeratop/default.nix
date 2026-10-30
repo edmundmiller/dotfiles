@@ -133,9 +133,6 @@
             "openai-codex/gpt-6-luna"
           ];
           cursorSdk.enable = true;
-          secretReferences = {
-            OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
-          };
           memoryRemote = "git@github.com:edmundmiller/pi-memory";
         };
         agentsview.enable = true;
