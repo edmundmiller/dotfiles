@@ -1,0 +1,6 @@
+{
+  "global": {
+    "cmd-shift-g": "mod.open:dotfiles-dev",
+    "ctrl-shift-g": "mod.open:dotfiles-dev"
+  }
+}

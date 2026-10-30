@@ -66,7 +66,7 @@ let
   '';
 in
 {
-  config = mkIf cfg.enable {
+  config = mkIf (cfg.enable && cfg.backend == "legacy") {
     system.activationScripts.herdr-hermes-agent-integrations =
       mkIf
         (

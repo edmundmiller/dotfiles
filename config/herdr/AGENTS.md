@@ -1,35 +1,29 @@
 # Herdr configuration
 
-`config.toml` owns settings/keybindings; `workspace-manager.yml` owns persistent
-tab/pane topology. `modules/shell/herdr/default.nix` parses the selected template
-and reapplies managed sections to writable `~/.config/herdr/config.toml`, leaving
-Herdr-owned settings intact. Keep managed values in the template rather than
-duplicating them in activation code.
+Read `modules.shell.herdr.backend` before changing behavior. Both platforms
+default to `native`; `native.app.enable` selects app configuration and defaults
+to Darwin only. Servers use core only. `legacy` is a different protocol.
 
-- Use Herdr's `terminal` theme without custom colors so every host inherits its terminal palette.
-- Let Herdr manage onboarding. Use packaged event hooks instead of
-  `[worktrees].post_create_command`.
-- Use explicit `prefix+...` bindings; printable direct bindings steal shell input.
-  Confirm installed action IDs with `herdr plugin action list`.
-- Retain `toggle_sidebar` to intercept navigate-mode `q`, and keep `H`/`L`
-  available for pane/window navigation. Parenthesis workspace bindings have
-  been unreliable in this terminal stack.
-- Ghostty starts Herdr as the workspace owner; launcher fallbacks to tmux/jmux
-  create a nesting loop.
-- Native-worktree matching is scoped to `~/.local/share/herdr/worktrees` so
-  Review Boxes under `/.pi/worktrees/` retain their launcher-owned layouts.
-  Temporary tool panes may be created directly through Herdr.
-- jj workspace removal requires a clean workspace and a closed/merged PR;
-  abandonment requires exact typed task-name confirmation.
+Native sources live in `native/`. The official installer owns the signed
+`herdr-app` bundle and `hc`; Nix owns preferences, personal mods and the
+`herdr-dev` helper. Read the running app's `~/.config/herdr-app/AGENTS.md` and
+generated typings before changing mods. Run `herdr-app check <mod-folder>`
+after every mod edit.
 
-The template contains current visual conventions and bindings. Inspect upstream
-defaults with `herdr --default-config`; reload applied config with
-`herdr server reload-config` when live changes are authorized.
+Activation deep-merges managed settings, keys and programs into writable JSON.
+Preserve unowned preferences, shipped layouts/mods, generated instructions,
+typings, layout click state and runtime documents. App commands own space/tab
+structure. Never copy the old Workspace Manager YAML into native layout JSON.
+The native helper opens existing checkouts with an agent and Hunk; it does not
+create or remove jj workspaces. Preserve clean-workspace, closed-PR and typed
+abandonment guards when porting that lifecycle.
 
-Marketplace installation belongs to the shell module; patched plugins belong
-under `packages/`. `overlays/herdr/` owns packaging/build fixes, not dotfiles
-helper behavior. Herdr Browser needs `experimental.kitty_graphics`; cliamp needs
-`experimental.allow_nested` and `modules.shell.cliamp`.
+Legacy `config.toml` and `workspace-manager.yml` remain for the TUI backend.
+Use its terminal theme, explicit prefix bindings, packaged plugin hooks and
+`herdr server reload-config` only in that backend. Native bindings use app
+commands and leave Ctrl+C with the terminal. Remote shell helpers route by
+`HERDR_BACKEND`.
 
-Run `hey check config/herdr modules/shell/herdr` for template and bootstrap
-changes. A server reload mutates live state and does not replace source checks.
+Run `hey check config/herdr modules/shell/herdr` plus focused native behavior
+tests. Activation, live app commands and runtime restarts require authority.
+See `README.md` for native usage and legacy-only capabilities.

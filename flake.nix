@@ -1632,6 +1632,14 @@
               # Validate the tracked Herdr config template with Herdr's own
               # `config check`, which rejects unknown keys. Cheap and runs
               # everywhere; the VM test below covers the activated config.
+              pi-herdr-settings-tests = import ./modules/agents/pi/_tests/herdr-settings.nix {
+                inherit lib pkgs;
+              };
+
+              herdr-native-tests = import ./modules/shell/herdr/_tests/native-check.nix {
+                inherit lib pkgs inputs;
+              };
+
               herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
                 inherit pkgs;
                 herdrPackage = self.packages.${system}.herdr;
@@ -1641,7 +1649,10 @@
             // lib.optionalAttrs (system == darwinSystem) {
               herdr-app-launch-config =
                 let
-                  host = self.darwinConfigurations."MacTraitor-Pro";
+                  # Keep this compatibility check on the legacy Ghostty frontend.
+                  host = self.darwinConfigurations."MacTraitor-Pro".extendModules {
+                    modules = [ { modules.shell.herdr.backend = lib.mkForce "legacy"; } ];
+                  };
                   home = host.config.home-manager.users.emiller;
                   generatedConfig = pkgs.linkFarm "ghostty-launch-test-config" (
                     (map
@@ -1676,8 +1687,8 @@
                     pkgs.gnugrep
                   ];
                   text = ''
-                    exec ${pkgs.bash}/bin/bash ${./packages/herdr-app/test-launch-config.sh} \
-                      ${self.packages.${system}.herdr-app}/Applications/Herdr.app \
+                    exec ${pkgs.bash}/bin/bash ${./packages/herdr-ghostty/test-launch-config.sh} \
+                      "${self.packages.${system}.herdr-ghostty}/Applications/Herdr Ghostty.app" \
                       ${generatedConfig} \
                       ${pkgs.ghostty-bin}/Applications/Ghostty.app
                   '';

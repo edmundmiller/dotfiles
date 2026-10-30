@@ -120,6 +120,18 @@ CHECKS = {
         "hosts/nuc/*",
         "modules/agents/hermes/*",
     ],
+    "pi-herdr-settings-tests": [
+        "modules/agents/pi/*",
+        "modules/shell/herdr/*",
+        "config/pi/settings.jsonc",
+    ],
+    "herdr-native-tests": [
+        "modules/shell/herdr/*",
+        "config/herdr/*",
+        "bin/herdr-studios",
+        "tests/test_herdr_native*.py",
+        "tests/test_herdr_studios_native.py",
+    ],
     "herdr-config-check": [
         "modules/shell/herdr/*",
         "config/herdr/*",

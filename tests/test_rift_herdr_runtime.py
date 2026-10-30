@@ -10,6 +10,7 @@ def test_rift_is_packaged_only_for_herdr_agent_runtime() -> None:
 
     assert (package / "default.nix").is_file()
     assert (package / "package-harness.json").is_file()
+    assert 'config = mkIf (cfg.enable && cfg.backend == "legacy")' in herdr_module
     assert '"${pkgs.my.rift}/bin"' in herdr_module
     assert 'home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;' in herdr_module
     assert "pkgs.my.rift" not in (ROOT / "default.nix").read_text()

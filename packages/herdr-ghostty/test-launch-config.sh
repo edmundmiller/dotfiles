@@ -1,5 +1,5 @@
 #!/bin/bash
-# Exercise Ghostty's real config loader with the generated Darwin fragments.
+# Exercise the legacy Ghostty frontend, never the installer-owned native app.
 set -euo pipefail
 app=$1
 config_dir=$2
@@ -8,6 +8,9 @@ test_home=$(mktemp -d)
 trap 'rm -rf "$test_home"' EXIT
 mkdir -p "$test_home/.config/ghostty"
 cp -L "$config_dir/"* "$test_home/.config/ghostty/"
+test "$(/usr/bin/plutil -extract CFBundleIdentifier raw "$app/Contents/Info.plist")" = dev.edmundmiller.herdr-ghostty
+test "$(/usr/bin/plutil -extract CFBundleDisplayName raw "$app/Contents/Info.plist")" = 'Herdr Ghostty'
+test "$(/usr/bin/plutil -extract CFBundleExecutable raw "$app/Contents/Info.plist")" = ghostty
 herdr_config=$(/usr/bin/plutil -extract LSEnvironment.XDG_CONFIG_HOME raw "$app/Contents/Info.plist")
 
 HOME="$test_home" XDG_CONFIG_HOME="$test_home/.config" \
@@ -36,4 +39,4 @@ fi
 test "$(/usr/bin/plutil -extract SUVerifyUpdateBeforeExtraction raw "$app/Contents/Info.plist")" = true
 test "$(/usr/bin/plutil -extract SUPublicEDKey raw "$app/Contents/Info.plist")" != \
   "$(/usr/bin/plutil -extract SUPublicEDKey raw "$upstream_app/Contents/Info.plist")"
-echo 'Herdr and Ghostty launch configuration checks passed.'
+echo 'Legacy Herdr Ghostty and Ghostty launch configuration checks passed.'

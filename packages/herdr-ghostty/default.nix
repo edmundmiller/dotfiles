@@ -17,7 +17,8 @@ let
   '';
 in
 stdenvNoCC.mkDerivation {
-  pname = "herdr-app";
+  # Legacy terminal frontend only. Native Herdr is installed by its installer.
+  pname = "herdr-ghostty";
   inherit (ghostty-bin) version;
   dontUnpack = true;
   dontFixup = true;
@@ -25,14 +26,14 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/Applications"
-    cp -R ${ghostty-bin}/Applications/Ghostty.app "$out/Applications/Herdr.app"
-    chmod -R u+w "$out/Applications/Herdr.app"
-    app="$out/Applications/Herdr.app"
+    cp -R ${ghostty-bin}/Applications/Ghostty.app "$out/Applications/Herdr Ghostty.app"
+    chmod -R u+w "$out/Applications/Herdr Ghostty.app"
+    app="$out/Applications/Herdr Ghostty.app"
     plist="$app/Contents/Info.plist"
     /usr/bin/codesign --display --entitlements - --xml "$app" > entitlements.plist
-    /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier dev.edmundmiller.herdr' "$plist"
-    /usr/libexec/PlistBuddy -c 'Set :CFBundleName Herdr' "$plist"
-    /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Herdr' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier dev.edmundmiller.herdr-ghostty' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleName Herdr Ghostty' "$plist"
+    /usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName Herdr Ghostty' "$plist"
     # Explicitly initialize and activate the first window for the renamed app.
     /usr/libexec/PlistBuddy -c 'Set :LSEnvironment:GHOSTTY_MAC_LAUNCH_SOURCE cli' "$plist"
     /usr/libexec/PlistBuddy -c 'Add :LSEnvironment:GHOSTTY_HERDR_APP string 1' "$plist"
@@ -73,7 +74,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   meta = {
-    description = "Herdr workspace in a separate macOS Ghostty application";
+    description = "Legacy Herdr workspace in a separate macOS Ghostty application";
     platforms = lib.platforms.darwin;
   };
 }

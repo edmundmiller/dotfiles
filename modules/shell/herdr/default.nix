@@ -209,6 +209,19 @@ in
 {
   options.modules.shell.herdr = with types; {
     enable = mkBoolOpt false;
+    backend = mkOption {
+      type = enum [
+        "native"
+        "legacy"
+      ];
+      default = "native";
+      description = ''
+        Native uses the official installer-owned hc, with herdr-app configuration
+        enabled by native.app.enable on Macs. Servers default to core only.
+        Legacy keeps the Nix-packaged terminal multiplexer and its plugin ecosystem.
+        Changing backend never migrates or deletes running sessions.
+      '';
+    };
     package = mkOpt (nullOr package) null;
     localPluginsPackage = mkOpt package managedLocalPlugins;
     command = mkOpt str "herdr";
@@ -309,13 +322,14 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf (cfg.enable && cfg.backend == "legacy") {
     modules.shell.herdr.package = mkDefault pkgs.my.herdr;
     modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
     user.packages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
     environment.systemPackages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
     env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
+    env.HERDR_BACKEND = "legacy";
 
     home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
     home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;

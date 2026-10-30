@@ -127,6 +127,7 @@ dotfilesLib.my.mkServiceVmTest {
       modules.shell.cliamp.enable = false;
 
       modules.shell.herdr.enable = true;
+      modules.shell.herdr.backend = "legacy";
       # tnote is a private flake input. Interpolating pkgs.my.tnote 404s in
       # GitHub Actions. This test asserts activated config.toml, not tnote.
       modules.shell.herdr.tnote.enable = false;

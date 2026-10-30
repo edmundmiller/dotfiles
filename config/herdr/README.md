@@ -1,16 +1,116 @@
 ---
-purpose: Explain the managed Herdr configuration and task-workspace workflow.
-applies_to: People changing or operating Herdr in these dotfiles.
-entrypoint: Start with config/herdr/config.toml.
-verification: Rebuild, reload config, and inspect plugin and tab state.
-update_when: Herdr keys, plugins, lifecycle, or runtime paths change.
+purpose: Explain native Herdr deployment and retained legacy workflows.
+applies_to: People changing or operating either Herdr backend.
+entrypoint: Check modules.shell.herdr.backend, then read the matching section.
+verification: Native behavior tests and mod checks; legacy TOML checks.
+update_when: Backend ownership, commands, preferences, or workflows change.
 ---
 
 # Herdr
 
-This directory tracks the user-facing Herdr config for these dotfiles.
+## Native app
 
-Herdr is a terminal workspace manager/agent multiplexer. The upstream project reads config from:
+Both platforms default to `modules.shell.herdr.backend = "native"`.
+`modules.shell.herdr.native.app.enable` defaults to `true` on Macs and `false`
+on Linux servers, including the NUC. Macs receive app preferences, personal
+mods and `herdr-dev`. Servers only select the native CLI backend and
+check for `hc`; they receive no app files, app helpers or legacy integrations.
+Set `native.app.enable = true` explicitly for a Linux desktop, or `false` for
+a headless Mac. Writable app state and running sessions are left untouched.
+
+The native app and its persistent core are separate programs, `herdr-app` and
+`hc`. The official installer owns their binaries and the signed app bundle.
+Nix activation reports missing binaries but never downloads them. Bootstrap
+a Mac with:
+
+```sh
+curl -fsSL https://releases.herdr.dev/app/install.sh | sh
+```
+
+Bootstrap a server with the core-only installer:
+
+```sh
+curl -fsSL https://releases.herdr.dev/core/install.sh | sh
+```
+
+`native.coreCommand` selects the installer-owned executable, defaulting to
+`~/.local/bin/hc`. Update it with `hc update`; this preserves running terminals.
+
+Nix does not patch or re-sign that bundle. The old Ghostty copy now lives at
+`packages/herdr-ghostty` and has the separate name `Herdr Ghostty.app`.
+Ghostty opens a plain shell when using native Herdr.
+
+`native/settings.json`, `native/keys.json` and `native/programs.json` own only
+the preferences they contain. Activation deep-merges those values into writable
+files under `~/.config/herdr-app`, preserves other preferences, and refuses
+invalid JSON instead of resetting it. It sets `core` to the declared native
+core executable. Sounds default off. Fonts, themes, zoom and default navigation
+stay with the app and the user's choices. Native Herdr owns its palette; it
+cannot inherit Ghostty's `terminal` theme.
+
+Cmd+Shift+G or Ctrl+Shift+G opens the personal Dev tools mod. Existing app
+shortcuts remain, including Cmd+T, Cmd+D and Cmd+Shift+P on macOS. Ctrl+C goes
+to the program; the old Ctrl+C prefix mode is not installed.
+
+```sh
+herdr-dev open /path/to/checkout --agent pi
+herdr-dev open /path/to/checkout --agent omp
+herdr-dev hunk
+herdr-dev hunk --staged
+herdr-dev hunk --branch origin/main
+```
+
+`open` validates an existing Git checkout, runs its executable
+`scripts/qmd-seed-worktree.sh` if present, then creates an agent space and a
+Hunk tab. The default agent is OMP, matching the old Workspace Manager layout.
+Hunk reviews the invoking directory beside the focused local terminal pane.
+The panel uses the focused pane's directory. Remote and composition panes are
+rejected. Failures report partial resources and never close or delete them.
+
+Pi 1.3.0 reports OSC 7501 status natively. Legacy socket-based integrations,
+pi-herdr review boxes and internal URLs are not enabled in native mode. Other
+agents must report OSC 7501 to appear as agents; their legacy integrations are
+not evidence of native protocol support.
+
+`hnuc` opens a native remote shell; `hnuc t7` attaches an existing terminal.
+Register the NUC first with `hc machine add nuc`. Native `herdr-studios sync`
+uses `hc machine add --install` with stable SSH alias names. It preserves
+existing registered machines, including stopped or filtered Studios; it does
+not translate the old enable/disable lifecycle into deletion.
+
+### Compatibility limits
+
+The legacy plugin ecosystem is retained, not converted to mods. Projects,
+Vercel Sandbox, safe jj creation/removal, smart rename, timelines and old review
+boxes remain legacy-only. Their options are inactive under the native backend.
+Use `backend = "legacy"` when those capabilities are required. CLI tools such
+as Hunk remain usable independently. No backend switch migrates or deletes
+sessions, worktrees, machine profiles or old configuration.
+
+Native recovery starts a shell after a lost terminal. It never reruns the
+original agent task. App commands own spaces, tabs and splits; the old YAML
+is not a native layout file. Shipped layouts/mods, generated instructions and
+typings, click state and runtime documents remain app-owned.
+
+### Checks and application
+
+```sh
+uv run --with pytest python -m pytest -q tests/test_herdr_native_config.py \
+  tests/test_herdr_native_dev.py tests/test_herdr_studios_native.py
+herdr-app check config/herdr/native/mods/dotfiles-dev
+hey check config/herdr modules/shell/herdr
+```
+
+Source checks do not activate preferences or install the panel. An authorized
+`hey re` applies the selected backend. Native JSON and mods reload live; no
+`herdr server reload-config` or core restart is needed. Never stop the old
+server to apply the new app configuration.
+
+## Legacy TUI backend
+
+Everything below applies only to `backend = "legacy"`. Its configuration,
+plugins and writable activation remain available without modifying native
+Herdr. The old terminal multiplexer reads config from:
 
 ```text
 ~/.config/herdr/config.toml

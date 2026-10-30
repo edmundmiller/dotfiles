@@ -7,6 +7,9 @@
   piSettingsParsed,
 }:
 let
+  legacyHerdrEnabled =
+    config.modules.shell.herdr.enable && config.modules.shell.herdr.backend == "legacy";
+
   packageSource =
     pkg:
     if builtins.isString pkg then
@@ -83,7 +86,7 @@ let
     ) packages;
 
   moduleManagedPackages =
-    lib.optionals config.modules.shell.herdr.enable moduleManagedPackageGroups.herdr
+    lib.optionals legacyHerdrEnabled moduleManagedPackageGroups.herdr
     ++ lib.optionals config.modules.shell.tmux.enable [
       # Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
       "npm:pi-tmux-window-name"
@@ -124,28 +127,42 @@ let
         inherit (cfg) defaultModel;
       }
     )
-    //
-      lib.optionalAttrs (config.modules.shell.herdr.enable && config.modules.shell.herdr.managePiTheme)
-        (
-          let
-            herdrThemeName = config.modules.shell.herdr.piThemeName;
-          in
-          {
-            # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
-            # Configure it directly in the generated Pi settings so activation does
-            # not need to mutate the read-only Home Manager settings symlink.
-            # The theme name varies by host (`piThemeVariant`), so read it from
-            # the herdr module instead of hardcoding the default name here.
-            theme = "light/${herdrThemeName}";
-            themes = [ "${config.user.home}/.pi/agent/themes/${herdrThemeName}.json" ];
-          }
-        );
+    // lib.optionalAttrs (legacyHerdrEnabled && config.modules.shell.herdr.managePiTheme) (
+      let
+        herdrThemeName = config.modules.shell.herdr.piThemeName;
+      in
+      {
+        # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
+        # Configure it directly in the generated Pi settings so activation does
+        # not need to mutate the read-only Home Manager settings symlink.
+        # The theme name varies by host (`piThemeVariant`), so read it from
+        # the herdr module instead of hardcoding the default name here.
+        theme = "light/${herdrThemeName}";
+        themes = [ "${config.user.home}/.pi/agent/themes/${herdrThemeName}.json" ];
+      }
+    );
 
-  piSettingsWithExtras =
+  piSettingsWithExtrasUnfiltered =
     if piPackagesExtra == [ ] then
       piSettingsBase
     else
       piSettingsBase // { packages = piSettingsBase.packages ++ piPackagesExtra; };
+
+  # Filter before serialization: rendered JSON may carry Nix derivation context.
+  # Parsing it back with fromJSON rejects those dependency-bearing strings.
+  piSettingsWithExtras = piSettingsWithExtrasUnfiltered // {
+    packages = builtins.filter (
+      package:
+      let
+        source = packageSource package;
+        legacyPackage =
+          source == toString piHerdrPackage
+          || source == "npm:@ogulcancelik/pi-herdr"
+          || lib.hasPrefix "npm:@ogulcancelik/pi-herdr@" source;
+      in
+      legacyHerdrEnabled || !legacyPackage
+    ) piSettingsWithExtrasUnfiltered.packages;
+  };
 
   piSettingsPackageSources = map packageSource piSettingsWithExtras.packages;
 
