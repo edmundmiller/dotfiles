@@ -203,7 +203,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("agent-browser-after.png", github_skill)
         self.assertIn("claude-shared-skill-links", claude_module)
         self.assertIn(
-            "for skill in test-quality github-cli-media lore pe-verify; do",
+            "for skill in test-quality github-cli-media lore pe-verify git-push-https-fallback; do",
             claude_module,
         )
         self.assertIn('shared="$HOME/.agents/skills/$skill"', claude_module)
