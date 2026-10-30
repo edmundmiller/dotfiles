@@ -358,10 +358,19 @@
     nix-homebrew = {
       enable = true;
       user = "edmundmiller";
-      enableRosetta = true; # Apple Silicon + Intel compatibility
+      enableRosetta = false; # ARM-only Homebrew; Rosetta is not installed, so an Intel prefix only warns.
       autoMigrate = true; # Migrate existing homebrew installation
       mutableTaps = true; # Allow mutable taps for flexibility
     };
+
+    # TODO(dotfiles-lbea): Remove after a few rebuilds.
+    # nix-homebrew leaves the old Intel brew link behind when enableRosetta turns off.
+    # nix-darwin runs only its named activation scripts, so this uses postActivation.
+    system.activationScripts.postActivation.text = lib.mkAfter ''
+      if [ -L "/usr/local/bin/brew" ]; then
+        rm -f /usr/local/bin/brew
+      fi
+    '';
 
     # Use homebrew to install casks and Mac App Store apps
     homebrew = {
