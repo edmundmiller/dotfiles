@@ -47,3 +47,49 @@ rex.bind("ctrl+c>r", "client.mode.enter", { name = "resize" })
 rex.bind("resize/=", "pane.balance")
 rex.bind("resize/enter", "client.mode.exit")
 rex.bind("resize/escape", "client.mode.exit")
+
+-- On-demand Seqera Studios, from the rex branch of
+-- seqeralabs/custom-studios-examples (rex-actions.lua). Needs rex-studio on PATH.
+local function shell_quote(s)
+  return "'" .. string.gsub(s, "'", "'\\''") .. "'"
+end
+
+-- An interactive login shell: TOWER_ACCESS_TOKEN lives in local.zshrc.
+local function run_in_window(command)
+  local shell = os.getenv("SHELL") or "/bin/sh"
+  local w, err = rex.session.new_window({
+    layout = rex.layout.block({
+      flavor = "com.superlogical.terminal.shell",
+      options = { command = { shell, "-lic", command .. '; exec "$SHELL" -l' } },
+    }),
+  })
+  if err ~= nil then
+    error(err, 0)
+  end
+  return { window_id = w.window_id }
+end
+
+rex.action({
+  name = "seqera_studio_new",
+  title = "New Seqera Studio",
+  category = "Seqera",
+  keywords = "studio seqera cloud box",
+  args = { name = "string?" },
+  run = function(_, args)
+    local command = "rex-studio new"
+    if args.name ~= nil and args.name ~= "" then
+      command = command .. " " .. shell_quote(args.name)
+    end
+    return run_in_window(command)
+  end,
+})
+
+rex.action({
+  name = "seqera_studio_ls",
+  title = "List Seqera Studios",
+  category = "Seqera",
+  keywords = "studio seqera cloud box",
+  run = function()
+    return run_in_window("rex-studio ls")
+  end,
+})

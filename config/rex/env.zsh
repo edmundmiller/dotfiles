@@ -8,6 +8,10 @@ for rex_cli_dir in \
 done
 unset rex_cli_dir
 
+# rex-studio defaults. scidev/testing's Git builds fail on its ECR credential.
+export REX_STUDIO_WORKSPACE=seqeralabs/showcase
+export REX_STUDIO_COMPUTE_ENV=studios-aws-cloud-m6i-large
+
 # Rex tabs are narrow; show Rex's own tab name instead of Claude Code's long
 # terminal title. Status comes from OSC 7501 hooks (see README).
 [[ -n "$REX_SESSION" ]] && export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1
