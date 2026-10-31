@@ -163,6 +163,35 @@ connection settings:
 https://nuc-rex.cinnamon-rooster.ts.net
 ```
 
+## Rex on iOS: pairing QR opens Safari and returns 404
+
+Rex's pairing QR code contains a plain HTTPS server address, not a credential or
+an app deep link. Scanning it with the iPhone Camera opens Safari. Rex does not
+serve a webpage at `/`, so Safari displays `404 page not found` even when the
+server is reachable over Tailscale.
+
+Paste the address into Rex's server connection settings instead. If the iOS app
+offers a QR scanner, scan from there rather than Camera. The iPhone must be
+connected to the same tailnet.
+
+Get the current address on the Mac:
+
+```sh
+rex server tailscale pair --json
+```
+
+To check the connection through the Rex API rather than a browser, substitute
+that address below:
+
+```sh
+rex --autostart=false -S 'https://<rex-host>.<tailnet>.ts.net' whoami --json
+```
+
+During the 2026-10-27 incident, the server logged an authenticated request from
+`iphone` to `/` with status 404, while the CLI connected successfully through the
+same HTTPS address. The user confirmed Camera was opening Safari. That browser
+404 alone does not call for ACL changes, Tailscale reauthentication, or a restart.
+
 ## Tailnet Info
 
 - Tailnet: `cinnamon-rooster.ts.net`
