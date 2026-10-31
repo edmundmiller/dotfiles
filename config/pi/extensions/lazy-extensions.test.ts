@@ -128,7 +128,8 @@ describe("plain Pi lazy Plannotator", () => {
     expect(imports).toBe(0);
     expect(extension.flags.has("plan")).toBe(true);
     expect(extension.commands.has("plannotator-review")).toBe(true);
-    expect(extension.shortcuts.has("ctrl+alt+p")).toBe(true);
+    expect(extension.shortcuts.has("ctrl+alt+shift+p")).toBe(true);
+    expect(extension.shortcuts.has("ctrl+alt+p")).toBe(false);
     expect(extension.tools.has("plannotator_submit_plan")).toBe(true);
 
     const context = { cwd: "/tmp/project" };
@@ -149,6 +150,11 @@ describe("plain Pi lazy Plannotator", () => {
       ["submit", { filePath: "PLAN.md" }],
     ]);
     expect(result?.content[0]?.text).toBe("submitted");
+
+    await extension.shortcuts.get("ctrl+alt+shift+p")!.handler(context);
+    expect(calls.at(-1)).toEqual(["shortcut", "/tmp/project"]);
+    expect(extension.shortcuts.has("ctrl+alt+p")).toBe(false);
+    expect(imports).toBe(1);
   });
 
   test("loads during session start when the plan flag is set", async () => {
