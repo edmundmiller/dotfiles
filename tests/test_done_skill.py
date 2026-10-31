@@ -167,6 +167,7 @@ class DoneSkillContractTest(unittest.TestCase):
                 check=True,
                 capture_output=True,
             )
+            git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
             git(root, "init", "-b", "main", str(repo))
             git(repo, "config", "user.name", "Done Skill Test")
             git(repo, "config", "user.email", "done-skill@example.invalid")

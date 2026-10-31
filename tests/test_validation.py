@@ -585,6 +585,7 @@ class ValidationTests(unittest.TestCase):
                 )
                 self.assertEqual(completed.returncode == 0, result == "success")
 
+
 class NucDeploymentWorkflowTests(unittest.TestCase):
     def test_dispatch_rejects_a_different_revision_before_deployment(self):
         workflow = (v.ROOT / ".github/workflows/deploy-nuc.yml").read_text()
