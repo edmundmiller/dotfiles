@@ -33,11 +33,11 @@ let
         honcho.enable = false;
       };
       piHerdrPackage = legacyHerdr;
+      piGithubToolsPackage = githubTools;
       herdrVersion = "0.9.1";
       piSettingsParsed = {
         packages = [
           "npm:keep-me"
-          (toString githubTools)
           "npm:@ogulcancelik/pi-herdr"
         ];
       };

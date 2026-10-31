@@ -3,6 +3,7 @@
   cfg,
   lib,
   piHerdrPackage,
+  piGithubToolsPackage,
   herdrVersion,
   piSettingsParsed,
 }:
@@ -48,7 +49,7 @@ let
     ];
     computerUse = [ "git:github.com/injaneity/pi-computer-use" ];
     gitTools = [
-      "npm:@prinova/pi-github-tools"
+      (toString piGithubToolsPackage)
       "npm:pi-gitnexus"
       "git:github.com/MattDevy/pi-extensions"
     ];
@@ -74,7 +75,10 @@ let
   };
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
-  legacyModuleManagedPackageSources = [ "npm:@ogulcancelik/pi-herdr" ];
+  legacyModuleManagedPackageSources = [
+    "npm:@ogulcancelik/pi-herdr"
+    "npm:@prinova/pi-github-tools"
+  ];
 
   dropModuleManagedPackages =
     packages:

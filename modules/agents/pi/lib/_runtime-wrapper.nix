@@ -42,6 +42,7 @@ pkgs.stdenvNoCC.mkDerivation {
       wrapProgram "$out/bin/pi" \
         --run ${lib.escapeShellArg "${piSecretPreflightScript}"} \
         --prefix PATH : ${lib.escapeShellArg runtimePath} \
+        --set-default NODE_EXTRA_CA_CERTS "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
         --set AGENT "1" \
         --set PI_CODING_AGENT "true" \
         --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \

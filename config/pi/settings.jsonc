@@ -81,7 +81,7 @@
     "npm:pi-jj-git-align",
     // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
     {
-      "source": "https://github.com/pasky/pi-amplike",
+      "source": "git:github.com/pasky/pi-amplike#4019ce681df16c65e6dadb82427a0cf16c57a147",
       "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
       "skills": ["skills/session-query"],
     },
@@ -119,7 +119,7 @@
     // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
     // Keep normal web fetching without GUI/browser computer-use integration.
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
-    "npm:pi-smart-fetch",
+    "npm:pi-smart-fetch@0.3.21",
     // Terminal-native ANSI theme (provides theme: "terminal") - https://github.com/mavam/pi-terminal-theme
     "npm:pi-terminal-theme",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
@@ -139,7 +139,7 @@
     // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
     "npm:latchkey",
     // Ask-user-question tool variant - install equivalent: pi install npm:@juicesharp/rpiv-ask-user-question
-    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@juicesharp/rpiv-ask-user-question@2.15.0",
     // Markdown memory with optional QMD search; replaces pi-hermes-memory.
     "npm:pi-memory",
     // Retain nested AGENTS.md discovery. This package also injects workflow

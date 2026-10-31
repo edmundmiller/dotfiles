@@ -190,6 +190,7 @@ let
       piHerdrPackage
       piSettingsParsed
       ;
+    piGithubToolsPackage = pkgs.my.pi-github-tools;
     herdrVersion = pkgs.my.herdr.version;
   };
 in

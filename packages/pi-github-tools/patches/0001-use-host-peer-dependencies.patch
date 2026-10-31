@@ -1,0 +1,20 @@
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -14,13 +14,10 @@
+ 	"pi": {
+ 		"extensions": ["./src/index.ts"]
+ 	},
+-	"dependencies": {
+-		"@earendil-works/pi-coding-agent": "^0.74.0",
+-		"@earendil-works/pi-tui": "^0.74.0",
+-		"@sinclair/typebox": "^0.34.41"
+-	},
+ 	"peerDependencies": {
+-		"@earendil-works/pi-coding-agent": ">=0.74.0"
++		"@earendil-works/pi-coding-agent": "*",
++		"@earendil-works/pi-tui": "*",
++		"@sinclair/typebox": "*"
+ 	},
+ 	"keywords": [
+ 		"pi-package",
