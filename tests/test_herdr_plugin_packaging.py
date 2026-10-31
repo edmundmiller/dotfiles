@@ -124,7 +124,9 @@ def test_tnote_today_plugin_is_installed_with_its_runtime() -> None:
 
     assert "install_plugin edmundmiller tnote packages/tn/herdr-plugin" in module
     assert '"${pkgs.my.tnote}/bin"' in module
-    assert "herdrPackages ++ [ pkgs.my.tnote ]" in module
+    assert 'config = mkIf (cfg.enable && cfg.backend == "legacy")' in module
+    assert "herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote" in module
+    assert "optionalString cfg.tnote.enable" in module
 
 
 def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
@@ -159,7 +161,7 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     )
     assert 'command = "vercel.sandbox.apply-changes"' in module
     assert "herdr.vercelSandbox.enable = true;" in host
-    assert '"vercel@58.9.0"' in host
+    assert "my.vercel" in host
 
 
 def test_smart_rename_is_packaged_started_and_bound() -> None:
@@ -205,7 +207,7 @@ def test_auto_title_hook_is_pinned_and_installed_for_codex_and_claude() -> None:
 def test_requested_marketplace_plugins_are_installed_with_build_toolchains() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     launch_path = re.search(
-        r'launchPath = concatStringsSep ":" \[(.*?)\n  \];', module, re.DOTALL
+        r'launchPath = concatStringsSep ":" \((.*?)\n  \);', module, re.DOTALL
     )
     marketplace_activation = module.split(
         "home.activation.herdr-marketplace-plugins =", 1
