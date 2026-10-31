@@ -119,6 +119,21 @@ the NUC in 1 ms and authenticated to both Rex HTTPS endpoints as
 server process and instance ID were unchanged. These checks ran from the Mac,
 not the phone.
 
+Published the migration as
+[`32d74fb4d3895c575c19cc629baf6611cd4a26f1`](https://github.com/edmundmiller/dotfiles/commit/32d74fb4d3895c575c19cc629baf6611cd4a26f1)
+and deployed it through `hey nuc switch` on 2026-10-30 after
+[CI passed](https://github.com/edmundmiller/dotfiles/actions/runs/41111515763).
+NUC generation 1524 reported that exact dotfiles revision and locked
+agents-workspace revision `18ff9a586a01dd4f8b3276729a6cf273ac509cf5`.
+SSH, Tailscale, and Rex were active; the automatic-upgrade timer was absent,
+and no systemd units were failed. Both Rex endpoints authenticated successfully
+from the Mac after deployment.
+
+Edmund reported that the phone side appeared to be working on 2026-10-30 and
+requested documentation rather than further troubleshooting. This is
+user-reported status, not an independently observed iPhone connection test.
+Use the addresses above in Rex's server settings, not as browser webpages.
+
 ## Reference: Jess Frazelle's Rex-based agent
 
 In her [2026-10-29 post](https://x.com/jessfraz/status/2115791403624378474),
