@@ -63,6 +63,20 @@ without inserting text. The overlay also treats streaming capture as recording.
 
 ## CalDigit TS5 dual displays on macOS 27
 
+### Preferred display arrangement
+
+Keep this layout when troubleshooting or restoring displays. The ASUS is the main display, with the portrait LG immediately to its right and their top edges aligned. The MacBook sits below the LG, with their right edges aligned. Use an extended desktop, not mirroring.
+
+The user confirmed this arrangement on 2026-10-24. These are the matching live macOS logical coordinates, not physical pixel counts:
+
+| Display                            | Origin (x, y) | Logical size | Rotation |
+| ---------------------------------- | ------------- | ------------ | -------- |
+| ASUS XG32UCWMG, main               | (0, 0)        | 1920 × 1080  | 0°       |
+| LG Ultra HD                        | (1920, 0)     | 1080 × 1920  | 270°     |
+| Built-in Liquid Retina XDR Display | (1648, 1920)  | 1352 × 878   | 0°       |
+
+If scaling changes, preserve the relative placement and edge alignment rather than reusing these coordinates unchanged. This records the desired layout; it does not install automatic layout restoration.
+
 ### Current status
 
 The one-cable, dual-display setup remains unresolved. Turning off DSC restored
@@ -223,6 +237,18 @@ do not identify a specific hardware defect or an Apple-confirmed macOS bug.
 Turning off DSC also renegotiates the link, so it does not prove compression
 alone is the cause. Neither the firmware update nor the port swap was a verified
 dual-display fix.
+
+#### Earlier local observations, 2026-10-24
+
+Both displays initially worked through the TS5 after that connection order. This suggested macOS 27 dual-display initialization ordering on this host; it did not prove an Apple-confirmed OS bug. The successful ordered connection also did not identify a capability fault in the TS5, LG, or USB-C-to-DisplayPort cable. Later failures are recorded above.
+
+During a recurrence on 2026-10-24, swapping the displays' downstream ports made both appear online in macOS, but the ASUS did not show a usable picture. A session-only change from 4K 144 Hz to 4K 60 Hz left the ASUS showing colored vertical bands and noise while the LG displayed normally. Neither the port swap nor the refresh-rate change was a verified recovery. Require a usable picture on both physical monitors; macOS reporting both online is insufficient.
+
+Reconnecting the ASUS to the same dock port at 60 Hz also failed to clear the corruption. The user confirmed that direct ASUS-to-Mac connection already works; do not repeat that isolation test without a new reason. This implicates the dock-mediated connection, not necessarily defective dock hardware.
+
+The dock initially reported Thunderbolt firmware 64.1. With explicit user authorization, it was updated using CalDigit's signed, notarized macOS updater 2.12. At 19:42 America/Chicago on 2026-10-24, two successive System Information checks confirmed firmware 71.1 and port micro firmware 1.18.0. [CalDigit's firmware instructions](https://www.caldigit.com/ts5-plus-and-element-5-hub-macos-firmware-update-procedures/) describe 71.1 as improving monitor and USB stability. The firmware update is verified; resolution of the display corruption still requires a clean picture on both monitors through the dock. Future updates require explicit authorization, physical reconnects, and up to 8–10 minutes of uninterrupted dock power and host connection while flashing.
+
+Corruption recurred after a port change on firmware 71.1, so the update alone did not resolve it. Turning off **System Setup → DSC Support** in the ASUS's physical menu then restored a usable ASUS picture, confirmed by the user, with macOS reporting 4K 60 Hz. Keep DSC off while investigating the remaining LG detection failure. This implicates compression or the link renegotiation caused by the setting change; it does not establish a specific component's defect. Dual-display recovery with DSC off remains unverified.
 
 ### References
 
