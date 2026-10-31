@@ -305,6 +305,10 @@ class ValidationTests(unittest.TestCase):
             ],
         )
         self.assertIn(
+            ".#checks.aarch64-darwin.mactraitor-fail-closed-activation",
+            [command[-1] for command in commands if "build" in command],
+        )
+        self.assertIn(
             ".#checks.aarch64-darwin.dji-mic-mini-receiver-mute-regressions",
             [command[-1] for command in commands if "build" in command],
         )
@@ -557,7 +561,9 @@ class ValidationTests(unittest.TestCase):
         self.assertNotIn("qa-changed", workflow)
         self.assertNotIn("--platform darwin", workflow.split("  herdr-vm-test:")[0])
         linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
-        self.assertIn("NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", linux)
+        self.assertIn(
+            "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", linux
+        )
         self.assertNotIn("secrets.RENOVATE_TOKEN", linux)
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)

@@ -148,6 +148,7 @@ CHECKS = {
 }
 
 DARWIN_CHECKS = [
+    "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
     "audio-priority-bar-regressions",
     "herdr-app-launch-config",
@@ -345,7 +346,9 @@ def plan(root, args):
             name
             for name, patterns in CHECKS.items()
             if args.full
-            or matches(files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"])
+            or matches(
+                files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"]
+            )
         ]
     return {
         "files": files,
@@ -356,7 +359,15 @@ def plan(root, args):
         "flue": not args.packages_only
         and (
             args.full
-            or matches(files, [".flue/*", "packages/flue-evlog/*", ".github/workflows/renovate-patch-repair.yml", "scripts/validation.py"])
+            or matches(
+                files,
+                [
+                    ".flue/*",
+                    "packages/flue-evlog/*",
+                    ".github/workflows/renovate-patch-repair.yml",
+                    "scripts/validation.py",
+                ],
+            )
         ),
         "platform": None,
     }

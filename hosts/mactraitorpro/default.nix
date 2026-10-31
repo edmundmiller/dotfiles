@@ -79,6 +79,7 @@ let
       });
 in
 {
+  imports = [ ./fail-closed-activation.nix ];
 
   config = {
     modules = {

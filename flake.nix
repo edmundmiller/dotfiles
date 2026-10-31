@@ -1647,6 +1647,12 @@
               };
             }
             // lib.optionalAttrs (system == darwinSystem) {
+              mactraitor-fail-closed-activation = import ./hosts/mactraitorpro/_tests/fail-closed-activation.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
+                inherit inputs pkgs;
+              };
+
               herdr-app-launch-config =
                 let
                   # Keep this compatibility check on the legacy Ghostty frontend.

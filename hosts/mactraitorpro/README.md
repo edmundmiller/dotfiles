@@ -1,9 +1,9 @@
 ---
-purpose: Document human-facing setup and recovery procedures for MacTraitor-Pro.
-applies_to: Physical setup and troubleshooting for the personal Mac.
+purpose: Document setup, activation safety, and recovery for MacTraitor-Pro.
+applies_to: Configuration and physical troubleshooting for the personal Mac.
 entrypoint: Use the matching troubleshooting section below.
-verification: Confirm the affected hardware works in the documented topology.
-update_when: Host hardware, cabling, or a verified recovery procedure changes.
+verification: Run activation checks or verify hardware in the documented topology.
+update_when: Host hardware, activation policy, or recovery procedures change.
 ---
 
 # MacTraitor-Pro
@@ -20,6 +20,22 @@ Human-facing setup and troubleshooting for the personal Mac.
 
 - [Disk-space ledger and recovery](storage.md) — explains the APFS total,
   nested home/iCloud/Codex usage, likely regrowth, and supported reclaim paths.
+
+## Activation privacy checks
+
+MacTraitor-Pro keeps nix-darwin's permission probes but aborts instead of
+resetting TCC permissions after a failure. It does not grant permissions or
+turn off macOS protections. Seqeratop retains its existing policy.
+
+The [host-local guard](fail-closed-activation.nix) feeds checked text into the
+generated activation files. Its [source audits](_lib/fail-closed-tcc-reset.nix)
+block rebuilds when the reviewed upstream permission code changes. Review that
+code and rerun the tests before updating the audited hashes.
+
+Run `hey check --platform darwin hosts/mactraitorpro` before an authorized
+`hey re`. If a permission check fails, resolve it in System Settings and retry.
+Do not automatically roll back with an older activation script, since it may
+still reset TCC permissions.
 
 ## Voxtype setup and upgrades
 
