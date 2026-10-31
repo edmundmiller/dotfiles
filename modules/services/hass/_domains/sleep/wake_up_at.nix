@@ -5,7 +5,7 @@
 # separate from the schedule/homeostasis logic.
 { lib, ... }:
 let
-  inherit (import ../../_lib.nix) ensureEnabled;
+  inherit (import ../../_lib.nix) ensureEnabled notificationPalette;
 
   edmund = {
     # Eight Sleep next alarm timestamp. iOS Home Assistant Companion does not
@@ -467,7 +467,8 @@ in
                       progress = 1;
                       progress_max = 3;
                       notification_icon = "mdi:bed-clock";
-                      notification_icon_color = "#FFB000";
+                      # Use the light palette tone against the dark Live Activity.
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }
@@ -497,7 +498,7 @@ in
                       progress = 2;
                       progress_max = 3;
                       notification_icon = "mdi:bed";
-                      notification_icon_color = "#FFB000";
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }
@@ -529,7 +530,7 @@ in
                       progress = 3;
                       progress_max = 3;
                       notification_icon = "mdi:sleep";
-                      notification_icon_color = "#4CAF50";
+                      notification_icon_color = notificationPalette.success.color;
                     };
                   };
                 }
@@ -565,7 +566,7 @@ in
                       progress = 0;
                       progress_max = 3;
                       notification_icon = "mdi:weather-night";
-                      notification_icon_color = "#FFB000";
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }

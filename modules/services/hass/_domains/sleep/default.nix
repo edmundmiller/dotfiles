@@ -30,7 +30,7 @@
 # intends to sleep in, so they must not open the shade or power on the desk.
 { lib, pkgs, ... }:
 let
-  inherit (import ../../_lib.nix) ensureEnabled;
+  inherit (import ../../_lib.nix) ensureEnabled notificationPalette;
 
   bedtimePhones = [
     "notify.mobile_app_edmunds_iphone"
@@ -529,6 +529,9 @@ in
             data = {
               title = "🛏️ Bedtime";
               message = "Monica's heading to bed — time to wrap up!";
+              data = notificationPalette.home // {
+                notification_icon = "mdi:bed-clock";
+              };
             };
           }
         ];
@@ -634,6 +637,8 @@ in
                       when = "{{ target_ts }}";
                       when_relative = false;
                       notification_icon = "mdi:toothbrush";
+                      # Live Activities keep a dark Dynamic Island background.
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }) bedtimePhones
@@ -676,6 +681,9 @@ in
                     data = {
                       title = "Time to brush teeth";
                       message = "The 12-minute bedtime countdown is finished.";
+                      data = notificationPalette.home // {
+                        notification_icon = "mdi:toothbrush";
+                      };
                     };
                   }) bedtimePhones;
                 }

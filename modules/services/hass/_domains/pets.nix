@@ -1,6 +1,6 @@
 { lib, ... }:
 let
-  inherit (import ../_lib.nix) ensureEnabled;
+  inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 in
 {
   services.home-assistant.config = {
@@ -80,6 +80,9 @@ in
                 data = {
                   title = "Phoebe already had her dental treat";
                   message = "Phoebe already got her dental treat tonight! Her small Yummy Comb (49 kcal) is already logged. Don't give her another one.";
+                  data = notificationPalette.pets // {
+                    notification_icon = "mdi:dog";
+                  };
                 };
               }
             ];
