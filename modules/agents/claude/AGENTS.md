@@ -17,6 +17,12 @@ into the canonical `~/.agents/skills` tree. Other Claude skill copies are
 removed because OMP scans both locations; the full catalog must not be duplicated
 there. `skills/flake.nix` owns shared skill sources and selection.
 
+`claude-session-budget-hooks` upserts `config/claude/session-budget-hook.py` into
+the live settings on `SessionStart`, `UserPromptSubmit`, and `Stop`. The hook only
+warns, never blocks. Hooks are upserted by command string rather than declared in
+the template because the bootstrap keeps the runtime's hook list. Keep any new
+hook additive so Herdr, Entire, and plugin hooks survive.
+
 Run `python3 -m unittest tests.test_agent_instruction_wiring` and
 `hey check modules/agents/claude config/claude` for bootstrap or skill-link
 changes. A live writable settings file is not source-of-truth evidence.
