@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 from typing import Any
@@ -67,9 +68,10 @@ def git_optional(repo: Path, *args: str) -> str | None:
 
 
 def detect_backend(repo: Path) -> tuple[str, Path]:
-    jj = command(["jj", "root", "--ignore-working-copy"], repo)
-    if jj.returncode == 0 and jj.stdout.strip():
-        return "jj", Path(jj.stdout.strip()).resolve()
+    if shutil.which("jj"):
+        jj = command(["jj", "root", "--ignore-working-copy"], repo)
+        if jj.returncode == 0 and jj.stdout.strip():
+            return "jj", Path(jj.stdout.strip()).resolve()
     git = command(["git", "rev-parse", "--show-toplevel"], repo)
     if git.returncode == 0 and git.stdout.strip():
         return "git", Path(git.stdout.strip()).resolve()
