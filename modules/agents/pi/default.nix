@@ -218,8 +218,8 @@ in
     };
     computerUse.enable = mkOption {
       type = types.bool;
-      default = desktopPiHost;
-      description = "Enable Pi GUI/browser computer-use tools on desktop-capable hosts.";
+      default = false;
+      description = "Explicitly opt into Pi GUI/browser computer-use tools and their native helper permissions.";
     };
     gitTools.enable = mkOption {
       type = types.bool;
@@ -332,15 +332,6 @@ in
     # pi-overwatch dashboard cadence / stale detection
     env.PI_OVERWATCH_REFRESH_MS = "1000";
     env.PI_OVERWATCH_STALE_MS = "20000";
-    # pi-computer-use installs its native macOS helper outside the extension
-    # checkout at ~/.pi/agent/helpers/pi-computer-use/bridge. Upstream normally
-    # preserves an existing modern helper to avoid gratuitous TCC identity
-    # churn, but that can leave a stale helper after `pi update --extensions`.
-    # Force setup to reconcile the helper with the installed extension version;
-    # if the helper actually changes, macOS may require re-granting
-    # Accessibility/Screen Recording for the new binary identity.
-    env.PI_COMPUTER_USE_FORCE_HELPER_INSTALL = mkIf cfg.computerUse.enable "1";
-
     environment.shellAliases = {
       nbt = "pi -nbt";
     };

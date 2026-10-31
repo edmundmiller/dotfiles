@@ -117,7 +117,7 @@
     // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
     "git:github.com/FredySandoval/pi-logo",
     // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
-    // pi-smart-fetch stays broad; GUI/browser computer-use tools are module-gated.
+    // Keep normal web fetching without GUI/browser computer-use integration.
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
     "npm:pi-smart-fetch",
     // Terminal-native ANSI theme (provides theme: "terminal") - https://github.com/mavam/pi-terminal-theme
@@ -134,9 +134,6 @@
     // Pinned before 0.6.5 until Pi's npm install cutoff allows yaml@^2.9.0.
     "git:github.com/Whamp/pi-token-burden#v0.6.4",
     // Keep native tools: Codex conversion's apply_patch/write_stdin bypass permission hooks.
-    // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
-    // Enables provider id: kilo (e.g., model: kilocode/auto)
-    "git:github.com/mrexodia/kilo-pi-provider",
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/packages/pi-packages/pi-image-attachments",
     // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
