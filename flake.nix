@@ -377,6 +377,7 @@
             "dji-mic-mini-receiver-mute"
             "ergodox-firmware"
             "lgtm"
+            "neorex"
             "quill"
             "stack"
             "stream-deck-herdr-plugin"
