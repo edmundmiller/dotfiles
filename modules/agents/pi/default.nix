@@ -38,7 +38,6 @@ let
     inherit pkgs;
     piPkgsDir = ../../../packages/pi-packages;
   };
-  piCommandPolicyBridge = ../../../packages/pi-packages/pi-command-policy-bridge;
   piHerdrPackage = ../../../packages/pi-packages/pi-herdr;
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
@@ -168,19 +167,6 @@ let
     else
       piSettingsParsedResult.value;
 
-  # The permission policy is authored as JSONC but @gotgenes/pi-permission-system
-  # reads it with JSON.parse(stripJsonComments(raw)): comments go, trailing
-  # commas do not. Linking the raw file made every load fail closed to {}, so no
-  # rule was ever in effect, and the extension's save() then wrote
-  # `{...existing.config, debugLog, permissionReviewLog, yoloMode}` -- a
-  # four-key stub -- over the link. Materialize parsed JSON instead.
-  piPermissionParsedResult = readJsonc "${configDir}/pi/pi-permission-system.jsonc";
-  piPermissionSystemConfig =
-    if !piPermissionParsedResult.success then
-      builtins.throw "pi pi-permission-system.jsonc produced invalid JSON after stripping comments/trailing commas."
-    else
-      builtins.toJSON piPermissionParsedResult.value;
-
   desktopPiHost = ghosttyCfg.enable || config.modules.desktop.macos.enable || isDarwin;
   settings = import ./lib/_settings.nix {
     inherit
@@ -230,7 +216,7 @@ in
     statusUi.enable = mkOption {
       type = types.bool;
       default = desktopPiHost;
-      description = "Enable Pi status, usage quota, and WakaTime UI packages on interactive desktop hosts.";
+      description = "Enable Pi status and usage quota UI packages on interactive desktop hosts.";
     };
     contextMemory.enable = mkOption {
       type = types.bool;
@@ -323,7 +309,6 @@ in
     # Individual writable files (sessions, auth, cache) live alongside the
     # managed symlinks under ~/.pi/agent.
     env.PI_CODING_AGENT_DIR = "$HOME/.pi/agent";
-    env.PI_PERMISSION_SYSTEM_CONFIG_PATH = "$HOME/.pi/agent/extensions/pi-permission-system/config.json";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
@@ -352,12 +337,10 @@ in
             configDir
             agentCore
             piPkgDeps
-            piCommandPolicyBridge
             promptLinks
             agentLinks
             sessionSearchFiles
             isDarwin
-            piPermissionSystemConfig
             ;
           piPstack = pkgs.my.pstack-pi;
           inherit (settings) piSettingsValidated;

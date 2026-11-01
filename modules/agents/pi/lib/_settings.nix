@@ -57,7 +57,6 @@ let
       "npm:@marckrenn/pi-sub-bar"
       "~/.pi/agent/extensions/sub-limits.ts"
       "git:github.com/Thinkscape/pi-status"
-      "npm:pi-wakatime"
     ];
     contextMemory = [
       "npm:pi-context"

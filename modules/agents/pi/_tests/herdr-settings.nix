@@ -27,7 +27,7 @@ let
         defaultModel = null;
         computerUse.enable = false;
         gitTools.enable = true;
-        statusUi.enable = false;
+        statusUi.enable = true;
         contextMemory.enable = false;
         cursorSdk.enable = false;
         honcho.enable = false;
@@ -77,6 +77,8 @@ pkgs.runCommand "pi-herdr-settings-tests"
     for key in ["nativeSettings", "disabledSettings"]:
         packages = sources(key)
         assert "npm:keep-me" in packages
+        assert "npm:pi-wakatime" not in packages
+        assert "git:github.com/Thinkscape/pi-status" in packages
         assert os.environ["githubToolsPath"] in packages
         assert os.environ["legacyHerdrPath"] not in packages
         assert not any(item.startswith("npm:@ogulcancelik/pi-herdr") for item in packages)
