@@ -127,8 +127,6 @@ in
         cliamp.enable = true;
         herdr.enable = true;
         herdr.mainCodingAgent = "pi";
-        herdr.vercelSandbox.enable = true;
-        herdr.projects.enable = true;
         rex.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
