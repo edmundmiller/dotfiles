@@ -75,10 +75,8 @@ in
 
         # The app owns its shipped mods, layouts, typings and all runtime state.
         home.configFile."herdr-app/mods/dotfiles-dev".source = "${nativeSource}/mods/dotfiles-dev";
-        home.configFile."herdr-app/mods/dotfiles-prefix" = {
-          source = "${nativeSource}/mods/dotfiles-prefix";
-          recursive = true;
-        };
+        # Keep relative imports inside the mod's canonical directory.
+        home.configFile."herdr-app/mods/dotfiles-prefix".source = "${nativeSource}/mods/dotfiles-prefix";
         home.configFile."herdr-app/layouts/dotfiles.json".source = "${nativeSource}/layouts/dotfiles.json";
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-config = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
