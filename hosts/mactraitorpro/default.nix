@@ -294,7 +294,6 @@ in
           provider = "orbstack";
         };
         mosh.enable = true;
-        moshi.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
       };

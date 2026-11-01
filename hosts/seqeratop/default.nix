@@ -286,7 +286,6 @@
         };
         ssh.enable = true;
         mosh.enable = true;
-        moshi.enable = true;
       };
 
       desktop.macos.enable = true;
