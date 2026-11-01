@@ -1,6 +1,6 @@
 ---
 purpose: Record the host-owned MCP catalog and agent adapter decision.
-applies_to: Host MCP selection and Pi, OMP, Claude, Codex, OpenCode V2, and Amp configuration.
+applies_to: Host MCP selection and Pi, OMP, Claude, Codex, OpenCode, and Amp configuration.
 entrypoint: Edit modules.agents.mcp in the host configuration.
 verification: Run uv run --with json5 --with tomlkit python -m unittest tests.test_agent_mcp.
 update_when: MCP ownership, adapters, credential handling, or host selection changes.
@@ -31,14 +31,14 @@ flow. A gateway would share connection and authentication failures across agents
 Seed-once files were rejected because later host selections would not take effect;
 read-only links were rejected because Pi writes MCP settings in place.
 
-| Adapter           | Writable target                               | Server key       |
-| ----------------- | --------------------------------------------- | ---------------- |
-| Pi 1.0 native MCP | `~/.pi/agent/mcp.json`                        | `mcpServers`     |
-| OMP               | `~/.omp/agent/mcp.json`                       | `mcpServers`     |
-| Claude            | `~/.claude.json`                              | `mcpServers`     |
-| Codex             | `~/.codex/config.toml`                        | `mcp_servers`    |
-| OpenCode V2       | `~/.config/opencode2/opencode/opencode.jsonc` | `mcp.servers`    |
-| Amp               | `~/.config/amp/settings.json`                 | `amp.mcpServers` |
+| Adapter           | Writable target                     | Server key       |
+| ----------------- | ----------------------------------- | ---------------- |
+| Pi 1.0 native MCP | `~/.pi/agent/mcp.json`              | `mcpServers`     |
+| OMP               | `~/.omp/agent/mcp.json`             | `mcpServers`     |
+| Claude            | `~/.claude.json`                    | `mcpServers`     |
+| Codex             | `~/.codex/config.toml`              | `mcp_servers`    |
+| OpenCode          | `~/.config/opencode/opencode.jsonc` | `mcp.servers`    |
+| Amp               | `~/.config/amp/settings.json`       | `amp.mcpServers` |
 
 Amp is an explicit target via `modules.agents.mcp.agents.amp = true`.
 Other targets default to their runtime module's enable flag. Amp uses an existing

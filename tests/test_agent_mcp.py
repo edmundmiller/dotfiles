@@ -16,7 +16,7 @@ PATHS = {
     "omp": ".omp/agent/mcp.json",
     "claude": ".claude.json",
     "codex": ".codex/config.toml",
-    "opencode": ".config/opencode2/opencode/opencode.jsonc",
+    "opencode": ".config/opencode/opencode.jsonc",
     "amp": ".config/amp/settings.json",
 }
 EXPECTED = {

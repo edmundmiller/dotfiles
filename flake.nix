@@ -1450,6 +1450,9 @@
                   ''
                     # Setup git config for tests
                     export HOME=$TMPDIR
+                    # Unsandboxed Darwin builds see the host /etc/zshenv; zunit's zsh
+                    # would source nix-darwin's set-environment and replace PATH.
+                    export __NIX_DARWIN_SET_ENVIRONMENT_DONE=1
                     git config --global user.email "test@test.com"
                     git config --global user.name "Test User"
                     git config --global init.defaultBranch main

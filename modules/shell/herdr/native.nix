@@ -8,6 +8,10 @@
 let
   cfg = config.modules.shell.herdr;
   nativeSource = "${config.dotfiles.configDir}/herdr/native";
+  agentEnabled = lib.genAttrs [ "claude" "codex" "opencode" ] (
+    agent: config.modules.agents.${agent}.enable or false
+  );
+  legacyCleanupAgents = lib.filter (agent: agentEnabled.${agent}) (lib.attrNames agentEnabled);
   herdrDev = pkgs.writeShellScriptBin "herdr-dev" ''
     export PATH=${lib.escapeShellArg "${config.user.home}/.local/bin"}:$PATH
     export HERDR_APP_COMMAND=${lib.escapeShellArg cfg.native.appCommand}
@@ -54,6 +58,19 @@ in
           '';
         };
       }
+      (lib.mkIf (legacyCleanupAgents != [ ]) {
+        # Native Herdr reads OSC 7501 (rex-agent-status hooks); legacy socket
+        # integrations never fire here. Remove what `herdr integration install`
+        # left behind; backend = "legacy" reinstalls it.
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-legacy-cleanup =
+            lib.hm.dag.entryAfter [ "claude-settings-bootstrap" "codex-config-bootstrap" "rexAgentStatusHooks" ]
+              ''
+                ${pkgs.python3}/bin/python3 ${nativeSource}/legacy-agent-cleanup.py "$HOME" \
+                  ${lib.escapeShellArgs legacyCleanupAgents}
+              '';
+        };
+      })
       (lib.mkIf (cfg.native.machines != { }) {
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-machines = lib.hm.dag.entryAfter [ "linkGeneration" ] ''

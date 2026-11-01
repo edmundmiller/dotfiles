@@ -406,7 +406,7 @@ in
           "agentArgs": {
             "codex": [],
             "omp": [],
-            "opencode-v2": []
+            "opencode": []
           },
           "customAgents": {
             "omp": {
@@ -420,12 +420,12 @@ in
               "interactiveTTY": true,
               "resumeSupported": true
             },
-            "opencode-v2": {
-              "title": "OpenCode V2 beta",
-              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools opencode-ai@0.0.0-beta-202608091410",
+            "opencode": {
+              "title": "OpenCode",
+              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools opencode-ai@1.18.18",
               "launchCommand": "/vercel/sandbox/.herdr-tools/node_modules/.bin/opencode",
               "versionCommand": "/vercel/sandbox/.herdr-tools/node_modules/.bin/opencode --version",
-              "expectedVersion": "0.0.0-beta-202608091410",
+              "expectedVersion": "1.18.18",
               "authenticationMode": "provider-dependent",
               "herdrDetectionIdentifier": "opencode",
               "interactiveTTY": true,
@@ -532,7 +532,7 @@ in
               "vercel.sandbox.start-agent",
               "vercel.sandbox.start-codex",
               "vercel.sandbox.start-omp",
-              "vercel.sandbox.start-opencode-v2",
+              "vercel.sandbox.start-opencode",
               "vercel.sandbox.apply-changes",
               "vercel.sandbox.reconnect",
               "vercel.sandbox.stop",
@@ -660,8 +660,8 @@ in
                 "[[keys.command]]",
                 'key = "prefix+alt+o"',
                 'type = "plugin_action"',
-                'command = "vercel.sandbox.start-opencode-v2"',
-                'description = "start OpenCode V2 beta in a Vercel Sandbox"',
+                'command = "vercel.sandbox.start-opencode"',
+                'description = "start OpenCode in a Vercel Sandbox"',
                 "",
                 "[[keys.command]]",
                 'key = "prefix+A"',
@@ -1083,7 +1083,6 @@ in
               "pi-extension-conflict-cleanup"
               "claude-settings-bootstrap"
               "codex-config-bootstrap"
-              "opencode-v1-cleanup"
               "hermes-bootstrap"
             ]
             ''
@@ -1115,8 +1114,7 @@ in
               ''}
 
               ${optionalString (cfg.integrations.opencode.enable && config.modules.agents.opencode.enable) ''
-                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode2/opencode"
-                ${pkgs.coreutils}/bin/ln -sfn "$HOME/.config/opencode2/opencode" "$HOME/.config/opencode"
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode"
                 install_integration opencode
               ''}
 

@@ -143,12 +143,12 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     assert '"agentKind": "omp"' in module
     assert '"allowCandidateAgents": true' in module
     assert '"omp"' in module
-    assert '"opencode-v2"' in module
+    assert '"opencode"' in module
     assert '"17.2.12"' in module
     assert '"0.0.0-beta-202608091410"' in module
     assert 'command = "vercel.sandbox.start-codex"' in module
     assert 'command = "vercel.sandbox.start-omp"' in module
-    assert 'command = "vercel.sandbox.start-opencode-v2"' in module
+    assert 'command = "vercel.sandbox.start-opencode"' in module
     assert re.search(
         r"key = \"prefix\+S\".*?command = \"vercel\.sandbox\.start-omp\"",
         module,
