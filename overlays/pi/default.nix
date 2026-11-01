@@ -1,8 +1,8 @@
 final: prev:
 let
-  # Pi 1.3.0 needs the codemode worker and new native platform assets. Reuse the
+  # Pi 1.4.0 needs the codemode worker and new native platform assets. Reuse the
   # upstream packaging without updating every agent in the shared flake input.
-  source = builtins.getFlake "github:numtide/llm-agents.nix/c250766160603f5ef582adecb4f453b009f63365";
+  source = builtins.getFlake "github:numtide/llm-agents.nix/8a5736991e143964a1494333354822ceadd32b05";
 in
 {
   llm-agents = (prev.llm-agents or { }) // {
