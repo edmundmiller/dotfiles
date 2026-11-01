@@ -128,7 +128,14 @@ let
     inherit lib pkgs piSecretPreflightScript;
   };
 
-  agentCore = builtins.readFile "${configDir}/agents/core.md";
+  agentCore =
+    builtins.readFile "${configDir}/agents/core.md"
+    + lib.optionalString (cfg.classifierModel != null) (
+      "\n"
+      + lib.replaceStrings [ "@classifierModel@" ] [ (builtins.toJSON cfg.classifierModel) ] (
+        builtins.readFile "${configDir}/pi/classifier-instructions.md"
+      )
+    );
 
   markdownFilesIn =
     dir:
@@ -202,6 +209,24 @@ in
       type = types.nullOr types.str;
       default = null;
       description = "Optional override for Pi settings defaultModel. Null keeps config/pi/settings.jsonc.";
+    };
+    classifierModel = mkOption {
+      type = types.nullOr (
+        types.submodule {
+          options = {
+            provider = mkOption {
+              type = types.str;
+              description = "Pi classifier provider ID.";
+            };
+            id = mkOption {
+              type = types.str;
+              description = "Classifier model ID within the provider.";
+            };
+          };
+        }
+      );
+      default = null;
+      description = "Host classifier selection included in Pi agent instructions. Credentials use Pi auth.json or provider environment variables.";
     };
     computerUse.enable = mkOption {
       type = types.bool;

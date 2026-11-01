@@ -189,6 +189,10 @@ in
         };
         pi = {
           enable = true;
+          classifierModel = {
+            provider = "typesafe";
+            id = "jev-latest";
+          };
           secretReferences = {
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };

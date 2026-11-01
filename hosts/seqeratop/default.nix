@@ -126,6 +126,10 @@
         };
         pi = {
           enable = true;
+          classifierModel = {
+            provider = "openrouter";
+            id = "~typesafe/jev-latest";
+          };
           # Work host cycles only Sol 6.1 and Luna 6; shared defaults add Astra.
           enabledModels = [
             "openai-codex/gpt-6.1-sol"

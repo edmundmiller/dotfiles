@@ -21,6 +21,10 @@ let
           enable = true;
         })
         // {
+          pi = {
+            enable = true;
+            classifierModel = null;
+          };
           claude = {
             enable = true;
             pstack.enable = true;
