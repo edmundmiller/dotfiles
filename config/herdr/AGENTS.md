@@ -19,10 +19,10 @@ create or remove jj workspaces. Preserve clean-workspace, closed-PR and typed
 abandonment guards when porting that lifecycle.
 
 Legacy `config.toml` and `workspace-manager.yml` remain for the TUI backend.
-Use its terminal theme, explicit prefix bindings, packaged plugin hooks and
-`herdr server reload-config` only in that backend. Native bindings use app
-commands and leave Ctrl+C with the terminal. Remote shell helpers route by
-`HERDR_BACKEND`.
+Its terminal theme, packaged plugin hooks and `herdr server reload-config`
+remain legacy-only. Native `dotfiles-prefix` preserves supported Ctrl+C prefix
+bindings through app commands; a second Ctrl+C sends the terminal interrupt.
+See README.md for unmapped actions. Remote shell helpers route by `HERDR_BACKEND`.
 
 Run `hey check config/herdr modules/shell/herdr` plus focused native behavior
 tests. Activation, live app commands and runtime restarts require authority.

@@ -1,3 +1,6 @@
 {
-  "sounds": { "enabled": false }
+  "sounds": {
+    "enabled": false,
+    "done": "/System/Library/Sounds/Submarine.aiff"
+  }
 }

@@ -1,6 +1,10 @@
 {
   "global": {
     "cmd-shift-g": "mod.open:dotfiles-dev",
-    "ctrl-shift-g": "mod.open:dotfiles-dev"
+    "ctrl-shift-g": "mod.open:dotfiles-dev",
+    "ctrl-c": "mod.open:dotfiles-prefix"
+  },
+  "mod:dotfiles-prefix": {
+    "ctrl-c": "dotfiles-prefix.interrupt"
   }
 }

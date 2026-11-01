@@ -75,6 +75,11 @@ in
 
         # The app owns its shipped mods, layouts, typings and all runtime state.
         home.configFile."herdr-app/mods/dotfiles-dev".source = "${nativeSource}/mods/dotfiles-dev";
+        home.configFile."herdr-app/mods/dotfiles-prefix" = {
+          source = "${nativeSource}/mods/dotfiles-prefix";
+          recursive = true;
+        };
+        home.configFile."herdr-app/layouts/dotfiles.json".source = "${nativeSource}/layouts/dotfiles.json";
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-config = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${pkgs.python3}/bin/python3 ${nativeSource}/reconcile-config.py \

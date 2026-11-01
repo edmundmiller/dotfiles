@@ -49,8 +49,35 @@ stay with the app and the user's choices. Native Herdr owns its palette; it
 cannot inherit Ghostty's `terminal` theme.
 
 Cmd+Shift+G or Ctrl+Shift+G opens the personal Dev tools mod. Existing app
-shortcuts remain, including Cmd+T, Cmd+D and Cmd+Shift+P on macOS. Ctrl+C goes
-to the program; the old Ctrl+C prefix mode is not installed.
+shortcuts remain, including Cmd+T, Cmd+D and Cmd+Shift+P on macOS.
+Ctrl+C opens the personal `dotfiles-prefix` menu. Press Ctrl+C again to send
+an interrupt to the terminal, or Escape to cancel. `prefix+q` only cancels.
+The menu preserves the supported bindings from the legacy config, including
+pane navigation, tabs, numbered spaces, agents, the picker and Hunk reviews.
+`prefix+f` now shows the native Files panel; `prefix+m` opens the native palette.
+
+The personal `dotfiles` layout removes pane gaps, rounded pane corners and outer
+pane borders. Shipped layouts remain unchanged. Sounds stay off, with the old
+Submarine done-sound path retained. Native Herdr cannot inherit Ghostty's
+`terminal` theme.
+
+Bindings without a native equivalent remain unmapped: reload-config, last-pane,
+resize mode, edit-scrollback, file-viewer-in-tab, jj workspace lifecycle,
+Projects, smart rename, timeline, GitHub plugin actions, embedded browser and
+cliamp. The native worktree dialog uses `~/.herdr/worktrees`, not the legacy
+`~/.local/share/herdr/worktrees`. Neither existing worktrees nor sessions move.
+Native recovery starts shells, not the original agents. The old terminal-toast
+delivery, ASCII input switching, nesting flag, pane history, priority-sort
+preference, single-tab-bar hiding, scrollbar toggle, label/status style,
+right-side tab widgets and window-title template have no settings.json mapping.
+Kitty graphics and unnamed new tabs already work natively.
+
+Prefix checks:
+
+```sh
+node --experimental-vm-modules --test config/herdr/native/mods/dotfiles-prefix/prefix.test.mjs
+herdr-app check config/herdr/native/mods/dotfiles-prefix
+```
 
 ```sh
 herdr-dev open /path/to/checkout --agent pi
