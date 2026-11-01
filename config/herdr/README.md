@@ -145,6 +145,47 @@ Source checks do not activate preferences or install the panel. An authorized
 `herdr server reload-config` or core restart is needed. Never stop the old
 server to apply the new app configuration.
 
+### Mod imports resolve outside the application directory
+
+If `dotfiles-prefix` reports that `./prefix-bindings.js` resolves outside the
+application directory, inspect the installed links:
+
+```sh
+ls -ld ~/.config/herdr-app/mods/dotfiles-prefix
+ls -l ~/.config/herdr-app/mods/dotfiles-prefix/main.js \
+  ~/.config/herdr-app/mods/dotfiles-prefix/prefix-bindings.js
+herdr-app check ~/.config/herdr-app/mods/dotfiles-prefix
+```
+
+Herdr checks canonical paths for relative imports. Home Manager's
+`recursive = true` creates a real mod directory with individual file symlinks
+into `/nix/store`. The imported file resolves outside that directory, so Herdr
+rejects it even when a check of the repository source passes.
+
+`modules/shell/herdr/native.nix` deploys each personal mod as one directory
+symlink instead. The mod directory and its imported files then resolve within
+the same store directory. Keep this arrangement for mods with relative imports;
+do not inline imports, copy files by hand, or weaken Herdr's path checks.
+
+A source edit or push does not replace the installed links. With activation
+authority, run `hey re` on the target Mac. During migration, Home Manager moves
+the old real directory to `dotfiles-prefix.bkup` before linking the new one.
+Preserve that backup. If activation reports an existing backup conflict, inspect
+and preserve both versions rather than deleting either to force activation.
+
+After activation, verify the installed mod and the running app:
+
+```sh
+herdr-app check ~/.config/herdr-app/mods/dotfiles-prefix
+herdr-app status
+```
+
+Open the prefix menu with Ctrl+C and confirm that it renders without the error.
+For CLI-driven verification, `herdr-app do mod.open --name dotfiles-prefix`
+toggles the menu. Inspect `herdr-app shot /tmp/herdr-prefix.png`, then close the
+menu with Escape. A passing source check or an empty status error list alone
+is not proof that the installed menu loads.
+
 ## Legacy TUI backend
 
 Everything below applies only to `backend = "legacy"`. Its configuration,
