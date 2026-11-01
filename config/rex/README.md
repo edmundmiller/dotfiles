@@ -142,6 +142,28 @@ Rex's own names instead of Claude's long title. Restart agent sessions after
 activation. Check with `rex api call --session "$REX_SESSION"
 com.superlogical.terminal.program_status`.
 
+## 1Password CLI
+
+On macOS 27, `op` finds the desktop app by reading its settings from
+`~/Library/Group Containers/2BUA8C4S2C.com.1password/`. macOS judges that read
+by the terminal that launched `op`, not by `op`'s own signature. The kernel
+denies it without a prompt, so `op account list` prints nothing and other
+commands report `no account found for filter`. `op whoami --debug` shows the
+cause: `settings.json: operation not permitted`. Upgrading `op` does not help.
+
+Rex terminals run under Rex Server, not the Rex app. Grant Rex Server Full Disk
+Access once per Mac. In System Settings → Privacy & Security → Full Disk Access,
+click **+**, press `Cmd+Shift+G`, and add
+`~/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app`.
+Then restart the server with `rex server stop` and `rex server start`. This ends
+running sessions. The grant follows the bundle ID and team, so it also covers
+the copy inside `Rex Beta.app` and survives Rex updates. Verify with
+`rex run --focus=false --wait -- op account list`, which should list your
+accounts.
+
+Herdr panes still fail. `herdr-core` is ad-hoc signed, so macOS ties any grant
+to that exact build, and each rebuild drops it.
+
 ## Shortcuts
 
 | Keys                                   | Action                              |
