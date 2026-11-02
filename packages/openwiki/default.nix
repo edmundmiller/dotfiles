@@ -216,8 +216,11 @@ let
         }
       }
       EOF
-      $CC -Os openwiki-launchd-launcher.c -o openwiki-launchd-launcher
+      # Tell dyld to restrict injection independently of runtime code-signing flags.
+      $CC -Os -Wl,-sectcreate,__RESTRICT,__restrict,/dev/null \
+        openwiki-launchd-launcher.c -o openwiki-launchd-launcher
       $CC -Os -DOPENWIKI_LAUNCHER_TEST openwiki-launchd-launcher.c \
+        -Wl,-sectcreate,__RESTRICT,__restrict,/dev/null \
         -o openwiki-launchd-launcher-test
       $CC -dynamiclib hostile-launcher-library.c -o hostile-launcher-library.dylib
       /usr/bin/codesign --force --sign - --options runtime \
@@ -238,6 +241,8 @@ let
       fi
       if [ -e "$marker" ]; then
         echo "openwiki-launchd-launcher: injected library created marker" >&2
+        /usr/bin/codesign --display --verbose=4 openwiki-launchd-launcher-test >&2
+        /usr/bin/csrutil status >&2 || true
         exit 1
       fi
       if [ "$launcher_status" -ne 0 ]; then
