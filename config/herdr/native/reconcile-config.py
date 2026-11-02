@@ -4,6 +4,7 @@
 Nix invokes this stdlib-only activation helper with its Python interpreter.
 Invalid JSON or non-object values fail before any file is written. Unmanaged
 keys survive; managed keys follow the repository on every activation.
+Optional extra keys are merged first. Template keys win on conflict.
 """
 
 import argparse
@@ -37,8 +38,13 @@ def merge_managed_config(existing, managed):
     return merged
 
 
-def reconcile_native_config(home, source, core):
+def reconcile_native_config(home, source, core, extra_keys=None):
     """Validate all preferences first, then replace changed files atomically."""
+    extra = None
+    if extra_keys is not None:
+        if not extra_keys.is_file():
+            raise ValueError(f"herdr-native-config: missing extra keys {extra_keys}")
+        extra = read_config_object(extra_keys)
     pending = []
     for name in ("settings.json", "keys.json", "programs.json"):
         target = home / name
@@ -46,6 +52,8 @@ def reconcile_native_config(home, source, core):
         if not template.is_file():
             raise ValueError(f"herdr-native-config: missing template {template}")
         managed = read_config_object(template)
+        if name == "keys.json" and extra is not None:
+            managed = merge_managed_config(extra, managed)
         if name == "settings.json":
             managed["core"] = core
         before = target.read_bytes() if target.exists() else None
@@ -79,9 +87,10 @@ def main():
     parser.add_argument("--home", required=True, type=Path)
     parser.add_argument("--source", required=True, type=Path)
     parser.add_argument("--core", required=True)
+    parser.add_argument("--extra-keys", type=Path)
     args = parser.parse_args()
     try:
-        reconcile_native_config(args.home, args.source, args.core)
+        reconcile_native_config(args.home, args.source, args.core, args.extra_keys)
     except (OSError, ValueError) as error:
         parser.exit(1, f"herdr-native-config: {error}\n")
 

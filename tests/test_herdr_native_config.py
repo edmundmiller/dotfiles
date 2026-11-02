@@ -13,18 +13,21 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "config/herdr/native/reconcile-config.py"
 
 
-def reconcile(home, source):
+def reconcile(home, source, extra_keys=None):
+    command = [
+        sys.executable,
+        str(SCRIPT),
+        "--home",
+        str(home),
+        "--source",
+        str(source),
+        "--core",
+        "/test/bin/hc",
+    ]
+    if extra_keys is not None:
+        command.extend(["--extra-keys", str(extra_keys)])
     return subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT),
-            "--home",
-            str(home),
-            "--source",
-            str(source),
-            "--core",
-            "/test/bin/hc",
-        ],
+        command,
         text=True,
         capture_output=True,
     )
@@ -139,6 +142,58 @@ def test_store_symlink_becomes_writable_without_changing_store_target(
     assert not (home / "settings.json").is_symlink()
     assert (home / "settings.json").stat().st_mode & 0o200
     assert store.read_text() == '{"zoom":2}'
+
+
+def test_extra_keys_merge_without_replacing_managed_bindings(native_config, tmp_path):
+    home, source = native_config
+    extra = tmp_path / "t3-keys.json"
+    extra.write_text(
+        json.dumps(
+            {
+                "layout:herdr-t3": {
+                    "cmd-shift-b": "t3-chrome.sidebar",
+                    "cmd-shift-a": "t3-tabs.view",
+                },
+                "global": {"cmd-shift-g": "mod.open:should-not-win"},
+            }
+        )
+    )
+    home.mkdir()
+    (home / "keys.json").write_text(
+        json.dumps(
+            {
+                "global": {"cmd-p": "mod.open:picker"},
+                "layout:herdr-t3": {"cmd-shift-b": "user-custom"},
+            }
+        )
+    )
+    result = reconcile(home, source, extra_keys=extra)
+    assert result.returncode == 0, result.stderr
+    assert json.loads((home / "keys.json").read_text()) == {
+        "global": {
+            "cmd-p": "mod.open:picker",
+            "cmd-shift-g": "mod.open:dotfiles-dev",
+        },
+        "layout:herdr-t3": {
+            "cmd-shift-b": "t3-chrome.sidebar",
+            "cmd-shift-a": "t3-tabs.view",
+        },
+    }
+    snapshot = (home / "keys.json").read_bytes()
+    assert reconcile(home, source, extra_keys=extra).returncode == 0
+    assert (home / "keys.json").read_bytes() == snapshot
+
+
+def test_missing_extra_keys_fail_before_any_write(native_config, tmp_path):
+    home, source = native_config
+    home.mkdir()
+    original = b'{"zoom":2}'
+    (home / "settings.json").write_bytes(original)
+    result = reconcile(home, source, extra_keys=tmp_path / "missing.json")
+    assert result.returncode != 0
+    assert "missing extra keys" in result.stderr
+    assert (home / "settings.json").read_bytes() == original
+    assert not (home / "keys.json").exists()
 
 
 def test_template_changes_are_reapplied(native_config):

@@ -13,6 +13,11 @@ personally named mods; shipped assets, app state and generated files remain
 app-owned. Preserve the native signed bundle. Missing binaries produce an
 installation hint, not a network install during activation.
 
+`native.t3.enable` defaults on with the native app. It links the pinned
+herdr-t3 layout beside `dotfiles` and merges that pin's layout keys. The pin
+is `_t3-source.nix`. See `config/herdr/README.md` to switch layouts or bump
+the pin. Keep the dotfiles layout and mods when changing it.
+
 Legacy activation alone installs marketplace plugins, old agent integrations,
 smart rename and Projects. `hermes.nix` must remain legacy-gated because its
 installer speaks the old protocol. Pi's native OSC 7501 reporting needs no

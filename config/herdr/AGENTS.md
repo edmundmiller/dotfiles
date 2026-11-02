@@ -4,7 +4,9 @@ Read `modules.shell.herdr.backend` before changing behavior. Both platforms
 default to `native`; `native.app.enable` selects app configuration and defaults
 to Darwin only. Servers use core only. `legacy` is a different protocol.
 
-Native sources live in `native/`. The official installer owns the signed
+Native sources live in `native/`. The optional herdr-t3 layout is pinned in
+`modules/shell/herdr/_t3-source.nix` and linked beside `native/layouts/dotfiles.json`.
+Switching and pin bumps are in README.md. The official installer owns the signed
 `herdr-app` bundle and `hc`; Nix owns preferences, personal mods and the
 `herdr-dev` helper. Read the running app's `~/.config/herdr-app/AGENTS.md` and
 generated typings before changing mods. Run `herdr-app check <mod-folder>`

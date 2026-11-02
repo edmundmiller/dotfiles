@@ -61,6 +61,45 @@ pane borders. Shipped layouts remain unchanged. Sounds stay off, with the old
 Submarine done-sound path retained. Native Herdr cannot inherit Ghostty's
 `terminal` theme.
 
+### Herdr T3 layout
+
+`modules.shell.herdr.native.t3.enable` defaults to true. Nix links the pinned
+[herdr-t3](https://github.com/JinJieBeWater/herdr-t3) layout, every `mods/t3-*`
+directory, and `themes/herdr-t3.json` beside the personal `dotfiles` layout.
+Linking happens only when `native.app.enable` is also true, which is the Mac
+default. The `dotfiles` layout and `dotfiles-*` mods stay installed. The
+module skips `extras/mods/pulls-review` and the Maple Mono font.
+
+Each `t3-*` mod is one directory symlink, the same way `dotfiles-prefix` is
+linked. Relative imports and the mod's SVG files stay inside that store
+directory.
+
+Switch the running app to this layout with:
+
+```sh
+herdr-app do layout.switch '{"name":"herdr-t3"}'
+```
+
+Switch back with `{"name":"dotfiles"}`. Cmd+Shift+B toggles the T3 sidebar.
+Cmd+Shift+A toggles the agent view. Both bindings are in the `layout:herdr-t3`
+section, so they apply only while that layout is selected. Activation merges
+the pin's `keys.json` into `~/.config/herdr-app/keys.json`. Managed dotfiles
+bindings win if a key is listed in both files. Other bindings stay as they are.
+
+Set `native.t3.enable = false` to stop linking those files and to stop
+reapplying the two layout bindings. Bindings already written stay in
+`keys.json` until you delete them.
+
+The pin is `modules/shell/herdr/_t3-source.nix`, commit
+`2d4c304f0a5480b4405a28b42f8a8c7d166b3254`, Apache-2.0. To bump it, change
+`rev` and `hash`, then make `mods` match the `mods/t3-*` directories in that
+commit. A build of `herdr-native-tests` with a placeholder `hash` prints the
+hash Nix expects. Check with `hey check modules/shell/herdr config/herdr`.
+
+The layout file is a read-only store link. Activation replaces it, so a local
+edit such as the focus ring color is lost. The pinned layout leaves the ring
+off.
+
 Bindings without a native equivalent remain unmapped: reload-config, last-pane,
 resize mode, edit-scrollback, file-viewer-in-tab, jj workspace lifecycle,
 Projects, smart rename, timeline, GitHub plugin actions, embedded browser and
