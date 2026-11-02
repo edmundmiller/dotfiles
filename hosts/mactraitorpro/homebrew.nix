@@ -7,7 +7,6 @@
     "jnsahaj/lumen" # Diff viewer and code-review TUI
     "keith/formulae" # reminders-cli
     "openclaw/tap" # Discrawl Discord export CLI
-    "peteonrails/voxtype" # Push-to-talk voice-to-text
     "rockorager/tap" # Prise terminal multiplexer
     "steipete/tap" # Codexbar
     {
@@ -151,7 +150,6 @@
     "linear" # Linear app
     "granola"
     "tornikegomareli/talkify/talkify"
-    "peteonrails/voxtype/voxtype"
 
     # AI Tools
     "steipete/tap/codexbar"
