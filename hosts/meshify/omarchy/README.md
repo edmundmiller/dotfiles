@@ -226,17 +226,33 @@ Hold `F9` for push-to-talk or press `Super+Ctrl+X` to toggle recording. The
 restore installs the English `base.en` model, enables the user service, and
 keeps media-pausing support through `playerctl`.
 
-GPU backend selection changes a privileged package symlink and is therefore a
-manual recovery gate rather than repository state. After a fresh restore, run:
+Use the CPU AVX2 backend on Meshify. The RTX 2070 SUPER has only 256 MiB of
+BAR1 mapping space. GPU isolation reduced idle usage from 186 to 44 MiB, but
+transcription still reached 245 MiB. The CPU backend transcribed an 11-second
+speech sample in about 1.4 seconds without increasing BAR1 usage. This avoids
+GPU inference pressure; it does not establish that the NVIDIA hang is fixed.
+
+`whisper.gpu_isolation = true` keeps transcription in a short-lived child
+process. It also releases GPU mappings between recordings if the backend is
+later switched back to Vulkan.
+
+The user service starts `/usr/lib/voxtype/voxtype-avx2` directly, so restore
+selects CPU inference without changing the privileged `/usr/bin/voxtype`
+symlink. Compositor bindings still use `voxtype record` to signal that daemon.
+The system-wide CLI can therefore report Vulkan while the daemon uses CPU;
+inspect the running variant rather than `voxtype setup gpu --status`:
 
 ```bash
-sudo voxtype setup gpu --enable
-systemctl --user restart voxtype.service
-voxtype setup gpu --status
+voxtype info variants
+systemctl --user show voxtype.service -p ExecStart
 ```
 
-The final command must report `GPU (Vulkan)`. Verify the remaining setup with
+The running variant must be `Whisper (AVX2)`. Verify the remaining setup with
 `voxtype setup check` and `systemctl --user is-active voxtype.service`.
+
+To roll back with authorization, restore the service's `ExecStart` to
+`/usr/bin/voxtype daemon`, install it, reload the user manager, and restart
+Voxtype. GPU isolation remains enabled in the configuration.
 
 ## Amp runner
 

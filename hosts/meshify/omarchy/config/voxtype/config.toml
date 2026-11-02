@@ -20,6 +20,8 @@ pause_media = true
 model = "base.en"
 language = "en"
 translate = false
+# Release GPU mappings between recordings on Meshify's 256 MiB BAR1 GPU.
+gpu_isolation = true
 
 [output]
 mode = "type"

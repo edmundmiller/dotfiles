@@ -6,7 +6,8 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/voxtype daemon
+# Keep dictation inference off Meshify's constrained NVIDIA BAR1 window.
+ExecStart=/usr/lib/voxtype/voxtype-avx2 daemon
 Restart=on-failure
 RestartSec=5
 

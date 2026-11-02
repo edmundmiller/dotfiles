@@ -376,10 +376,6 @@
     {
       "id": "syncthing-pairing",
       "message": "After replacing meshify's Syncthing identity, update its device ID in modules/services/syncthing.nix and redeploy the NUC."
-    },
-    {
-      "id": "voxtype-gpu",
-      "message": "Run `sudo voxtype setup gpu --enable` after restoring on meshify, then verify that `voxtype setup gpu --status` reports GPU (Vulkan)."
     }
   ],
   "inventory": {
