@@ -117,6 +117,22 @@ alias names. It preserves
 existing registered machines, including stopped or filtered Studios; it does
 not translate the old enable/disable lifecycle into deletion.
 
+### Copy and paste on Linux
+
+In a native Herdr terminal, use **Ctrl+Shift+C** to copy selected text and
+**Ctrl+Shift+V** to paste text. If an agent or other terminal program captures
+mouse input, hold **Shift while dragging** to select text, then copy it.
+
+Plain Ctrl+C is the personal command prefix described above, not copy.
+Ctrl+V invokes `terminal.paste_image`; on Linux, ordinary text handling is
+left to the program inside the terminal rather than Herdr's text-paste command.
+Use Ctrl+Shift+V for text even when Ctrl+V works in other desktop apps.
+
+These are app bindings in `~/.config/herdr-app/keys.json` under `terminal`:
+`ctrl-shift-c` maps to `terminal.copy`, `ctrl-shift-v` to `terminal.paste`, and
+`ctrl-v` to `terminal.paste_image`. The managed `native/keys.json` preserves
+these app-owned bindings. No keybinding change or restart is needed.
+
 ### Compatibility limits
 
 The legacy plugin ecosystem is retained, not converted to mods. Projects,
