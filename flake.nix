@@ -1394,6 +1394,7 @@
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
                         tests/test_agent_response_contract.py \
+                        tests/test_pi_update.py \
                         tests/test_codex_model_config.py \
                         tests/test_omp_ttsr_rules.py
                     bun test ./tests/omp_lazy_extensions.test.js

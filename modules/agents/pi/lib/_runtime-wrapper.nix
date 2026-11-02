@@ -10,12 +10,6 @@ let
     piRuntimeNode
     nodeGypPython
   ];
-  updateExtensionsShim = lib.concatStringsSep "\n" [
-    ''if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then''
-    "  set -- update --extensions"
-    "fi"
-    ''exec -a "$0" ''
-  ];
 in
 pkgs.stdenvNoCC.mkDerivation {
   pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-runtime-wrapper";
@@ -45,15 +39,10 @@ pkgs.stdenvNoCC.mkDerivation {
         --set-default NODE_EXTRA_CA_CERTS "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
         --set AGENT "1" \
         --set PI_CODING_AGENT "true" \
+        --set-default PI_SELF_UPDATE_COMMAND "hey pi-update {version}" \
         --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \
         --set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"} \
         --unset SDKROOT
-
-      # The pi executable is Nix-managed and cannot self-update in-place.
-      # Make the common `pi update` shortcut update only user packages/extensions;
-      # explicit self-update requests like `pi update pi` still pass through and fail loudly.
-      substituteInPlace "$out/bin/pi" \
-        --replace-fail 'exec -a "$0" ' ${lib.escapeShellArg updateExtensionsShim}
     fi
 
     runHook postInstall
