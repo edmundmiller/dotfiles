@@ -1610,6 +1610,12 @@
                 inherit pkgs;
               };
 
+              tinybar-darwin-assertions = import ./modules/desktop/apps/_tests/eval-darwin.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
+                inherit pkgs;
+              };
+
               nuc-deployment-provenance = import ./hosts/nuc/_tests/deployment-provenance.nix {
                 inherit pkgs;
               };

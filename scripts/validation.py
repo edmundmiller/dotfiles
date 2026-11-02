@@ -155,6 +155,7 @@ DARWIN_CHECKS = [
     "screentime-backup-darwin-assertions",
     "discrawl-backup-darwin-assertions",
     "darwin-tailscaled-owner-assertions",
+    "tinybar-darwin-assertions",
     "hermes-local-libffi-regression",
     "hermes-local-tokenizers-cc-regression",
     "dji-mic-mini-receiver-mute-regressions",

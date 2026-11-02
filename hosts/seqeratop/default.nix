@@ -293,6 +293,7 @@
       desktop = {
         apps.audioPriorityBar.enable = true;
         apps.handy.enable = true;
+        apps.tinybar.enable = true;
         term = {
           ghostty = {
             enable = true;
