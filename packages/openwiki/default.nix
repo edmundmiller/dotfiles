@@ -174,11 +174,18 @@ let
           argc == 2 && strcmp(argv[1], "--self-test") == 0;
       #endif
         if (self_test) {
-          return getenv("NODE_OPTIONS") != NULL ||
-            strcmp(
+          if (getenv("NODE_OPTIONS") != NULL) {
+            fputs("openwiki-launchd-launcher: self-test retained NODE_OPTIONS\n", stderr);
+            return 1;
+          }
+          if (strcmp(
               getenv("PATH"),
               "/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-            ) != 0;
+            ) != 0) {
+            fputs("openwiki-launchd-launcher: self-test PATH mismatch\n", stderr);
+            return 1;
+          }
+          return 0;
         }
         if (argc != 1) {
           fputs("usage: openwiki-launchd-launcher\n", stderr);
@@ -214,15 +221,29 @@ let
         -o openwiki-launchd-launcher-test
       $CC -dynamiclib hostile-launcher-library.c -o hostile-launcher-library.dylib
       /usr/bin/codesign --force --sign - --options runtime \
-        openwiki-launchd-launcher openwiki-launchd-launcher-test
+        openwiki-launchd-launcher openwiki-launchd-launcher-test || {
+        echo "openwiki-launchd-launcher: runtime signing failed" >&2
+        exit 1
+      }
 
       marker="$PWD/hostile-library-loaded"
+      launcher_status=0
       NODE_OPTIONS=/tmp/hostile-node-options HOME=/tmp/hostile-home \
         PATH=/tmp/hostile-path \
         DYLD_INSERT_LIBRARIES="$PWD/hostile-launcher-library.dylib" \
         OPENWIKI_INJECTION_MARKER="$marker" \
-        ./openwiki-launchd-launcher-test
-      test ! -e "$marker"
+        ./openwiki-launchd-launcher-test || launcher_status=$?
+      if [ "$launcher_status" -ne 0 ]; then
+        echo "openwiki-launchd-launcher: hardened self-test exited $launcher_status" >&2
+      fi
+      if [ -e "$marker" ]; then
+        echo "openwiki-launchd-launcher: injected library created marker" >&2
+        exit 1
+      fi
+      if [ "$launcher_status" -ne 0 ]; then
+        exit "$launcher_status"
+      fi
+      echo "openwiki-launchd-launcher: hardened self-test passed; injection marker absent"
     '';
 
     installPhase = ''

@@ -65,7 +65,8 @@ VMs stay manual. Platform commands never activate or deploy a host.
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
-evaluation, so Linux cannot certify this check. The CI job uses ARM64 `macos-15`.
+evaluation, so Linux cannot certify this check. The CI job uses ARM64 macOS 27
+through GitHub's `xcode-27` runner image.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
 required status. The required `Flake Check (Linux)` and `Check Formatting`
 compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,

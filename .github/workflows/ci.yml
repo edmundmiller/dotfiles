@@ -86,7 +86,7 @@ jobs:
 
   darwin:
     name: Darwin-only checks
-    runs-on: macos-15
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
         with:

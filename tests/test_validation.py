@@ -568,7 +568,7 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
-        self.assertIn("runs-on: macos-15", darwin)
+        self.assertIn("runs-on: xcode-27", darwin)
         self.assertNotIn("if:", darwin)
         self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
         self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
