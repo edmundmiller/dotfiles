@@ -70,6 +70,9 @@ through GitHub's `xcode-27` runner image. Before installing Nix, it removes only
 inactive Xcode application directories to leave room for the host builds. It
 resolves the selected toolchain's real path and preserves that application and
 all application symlinks; it does not clean developer machines or the NUC.
+After installing Nix, it runs `hey xcode-setup` on the selected application to
+install missing Metal tools and verify the compiler, then checks `metallib`
+before starting the host builds. Hex still requires the full host toolchain.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
 required status. The required `Flake Check (Linux)` and `Check Formatting`
 compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
