@@ -573,6 +573,57 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
         self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
 
+    def test_darwin_cleanup_preserves_selected_xcode_and_rejects_invalid_selection(self):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        cleanup = textwrap.dedent(
+            workflow.split("      - name: Free space for Darwin builds\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - ", 1)[0]
+        )
+        for valid_selection in (True, False):
+            with self.subTest(valid_selection=valid_selection):
+                root = self.root / str(valid_selection)
+                applications = root / "installed-apps"
+                selected = applications / "Xcode_27.1.app"
+                developer = selected / "Contents/Developer"
+                developer.mkdir(parents=True)
+                sentinel = developer / "keep.txt"
+                sentinel.write_text("selected toolchain")
+                inactive = applications / "Xcode_27.app"
+                inactive.mkdir()
+                alias = applications / "Xcode.app"
+                alias.symlink_to(selected, target_is_directory=True)
+                unrelated = applications / "Other.app"
+                unrelated.mkdir()
+                command_line_tools = root / "CommandLineTools"
+                command_line_tools.mkdir()
+                selected_path = (
+                    alias / "Contents/Developer"
+                    if valid_selection
+                    else command_line_tools
+                )
+                command = cleanup.replace("/Applications/", f"{applications}/")
+                self.assertNotIn("/Applications/", command)
+                # Only tool discovery and privilege elevation are replaced. The
+                # workflow deletes real disposable fixture directories.
+                commands = (
+                    'xcode-select() { printf "%s\\n" "$SELECTED_DEVELOPER"; };\n'
+                    'sudo() { "$@"; };\n'
+                    'xcodebuild() { test -d "$SELECTED_DEVELOPER"; };\n'
+                )
+                result = subprocess.run(
+                    ["bash", "-c", commands + command],
+                    env=os.environ | {"SELECTED_DEVELOPER": str(selected_path)},
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode == 0, valid_selection, result.stderr)
+                self.assertEqual(sentinel.read_text(), "selected toolchain")
+                self.assertTrue(alias.is_symlink())
+                self.assertTrue(unrelated.is_dir())
+                self.assertEqual(inactive.exists(), not valid_selection)
+
     def test_required_ci_contexts_fail_closed(self):
         workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
         self.assertIn("  required-checks:", workflow)
