@@ -304,7 +304,10 @@ let
 
   last = list: builtins.elemAt list ((length list) - 1);
 
-  allowedDisabledAutomations = [ "sync_iphone_alarm_8sleep" ];
+  allowedDisabledAutomations = [
+    "sync_iphone_alarm_8sleep"
+    "plant_glow_light_on"
+  ];
 
   missingInitialState = filter (
     a: !(a.initial_state or null) && !(builtins.elem (a.id or "") allowedDisabledAutomations)
@@ -326,6 +329,8 @@ let
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
   whiteNoiseWithBedtimeAudiobook = findAutomation "white_noise_with_bedtime_audiobook";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
+  plantGlowLightOn = findAutomation "plant_glow_light_on";
+  plantGlowLightOff = findAutomation "plant_glow_light_off";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
   alSleepModeOff = findAutomation "al_sleep_mode_off";
@@ -1204,6 +1209,14 @@ let
     {
       test = syncIphoneAlarm8sleep != null && (syncIphoneAlarm8sleep.initial_state or null) == false;
       msg = "automation 'sync_iphone_alarm_8sleep' should remain present but declaratively disabled until an iOS alarm source exists";
+    }
+    {
+      test = plantGlowLightOn != null && (plantGlowLightOn.initial_state or null) == false;
+      msg = "automation 'plant_glow_light_on' must stay disabled across restarts until the broken plant light is repaired";
+    }
+    {
+      test = plantGlowLightOff != null && (plantGlowLightOff.initial_state or false);
+      msg = "automation 'plant_glow_light_off' must remain enabled while the broken plant light is paused";
     }
     {
       test =

@@ -353,6 +353,8 @@ in
       {
         alias = "Plant Glow Light on";
         id = "plant_glow_light_on";
+        # Keep the broken plant light off across restarts until it is repaired.
+        initial_state = false;
         description = "Plant light on at 8 AM daily";
         trigger = {
           platform = "time";
