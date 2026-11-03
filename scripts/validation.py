@@ -36,6 +36,7 @@ CHECKS = {
         ".codex/hooks.json",
         ".omp/hooks/*",
     ],
+    "hass-health-tests": ["modules/services/hass/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",

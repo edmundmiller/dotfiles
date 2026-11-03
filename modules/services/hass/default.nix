@@ -163,6 +163,7 @@ in
     ./_domains/sleep
     ./_domains/tv.nix
     ./_domains/vacation.nix
+    ./observability.nix
     ./sweep-unmanaged.nix
     ./validate-config.nix
   ];

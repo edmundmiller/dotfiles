@@ -1646,6 +1646,17 @@
                 herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
+
+              hass-health-tests =
+                pkgs.runCommand "hass-health-tests"
+                  {
+                    nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.websockets ])) ];
+                  }
+                  ''
+                    export PYTHONDONTWRITEBYTECODE=1
+                    python3 ${./modules/services/hass/_tests/test_hass_health.py} ${./modules/services/hass/hass-health.py}
+                    touch "$out"
+                  '';
             }
             // lib.optionalAttrs (system == darwinSystem) {
               mactraitor-fail-closed-activation = import ./hosts/mactraitorpro/_tests/fail-closed-activation.nix {
