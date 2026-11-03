@@ -6,4 +6,6 @@
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPBsb81evtCCcWSZcLbFaXWrAeCWFrPXPjUvjH4ZKbQC";
   "Seqeratop" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty";
   "nuc" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBPG2vvh8XkVObXANO9/CBfczftZrmpbjg2w5onK/Tv";
+  # No shared recipients yet; avoid the legacy load-all fallback on this NAS.
+  "unas" = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKfGBELSwvbD0Q0zboqKwP6Cq37a418aeU+LJYWTCvp2";
 }

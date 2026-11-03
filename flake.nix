@@ -519,7 +519,7 @@
           };
 
           unas = {
-            hostname = "192.168.1.101";
+            hostname = "192.168.1.206";
             sshUser = "emiller";
             user = "root";
             interactiveSudo = false;

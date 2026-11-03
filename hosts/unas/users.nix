@@ -16,4 +16,17 @@
       shell = pkgs.bashInteractive;
     };
   };
+
+  # deploy-rs uses emiller with interactiveSudo=false, as on the NUC.
+  security.sudo.extraRules = [
+    {
+      users = [ "emiller" ];
+      commands = [
+        {
+          command = "ALL";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
 }

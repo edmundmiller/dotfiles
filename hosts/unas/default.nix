@@ -1,5 +1,5 @@
 # No u nas
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   imports = [
     ../_server.nix
@@ -46,6 +46,28 @@
 
   time.timeZone = "America/Chicago";
 
+  # Preserve the installed system's data-format defaults across upgrades.
+  system.stateVersion = lib.mkForce "24.05";
+  # Recovery deployments must not be replaced overnight by an older remote tree.
+  system.autoUpgrade.enable = lib.mkForce false;
+  # No desktop session or dconf D-Bus service exists on this headless host.
+  home-manager.users.emiller.dconf.enable = false;
+
+  # The rescue connection must also work after booting the installed system.
+  users.users.emiller.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGJ64slBBRJVfH38s9zN6mlphbj/R0rrOfm91vgZEzkh blip@meshify"
+  ];
+
+  # Two older pools have the same name. Only these mirror members may satisfy
+  # the datatank import; leave the 18 TB and 6 TB disks untouched.
+  boot.zfs.pools.datatank.devNodes = "/dev/disk/unas-datatank";
+  boot.zfs.forceImportRoot = false;
+  boot.zfs.forceImportAll = false;
+  services.udev.extraRules = ''
+    SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_SERIAL}=="WDC_WD160EDGZ-11B2DA0_2PHTEHKT", ENV{ID_PART_ENTRY_NUMBER}=="1", SYMLINK+="disk/unas-datatank/mirror-1"
+    SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_SERIAL}=="WDC_WD160EDGZ-11B2DA0_3HGZMWEN", ENV{ID_PART_ENTRY_NUMBER}=="1", SYMLINK+="disk/unas-datatank/mirror-2"
+  '';
+
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
 
   services.smartd.enable = true;
@@ -57,7 +79,7 @@
     enable = true;
     autoCreation = true;
     zetup = {
-      "tank/user/home" = {
+      "zroot/user/home" = {
         plan = "1d=>1h,1m=>1d,1y=>1m";
         recursive = true;
         destinations.local = {

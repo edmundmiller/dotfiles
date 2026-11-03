@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Install an already-built system into the inspected, mounted UNAS installation.
+# No partitioning, formatting, pool imports, or automatic reboot.
+set -euo pipefail
+
+fail() { printf 'UNAS recovery refused: %s\n' "$*" >&2; exit 1; }
+
+[[ $# == 2 ]] || fail 'usage: hey unas-recover <mounted-root> <system-store-path>'
+[[ $EUID == 0 ]] || fail 'run on the rescue host as root'
+[[ $(hostname) == unas-rescue ]] || fail 'this command only runs on unas-rescue'
+[[ -d /sys/firmware/efi ]] || fail 'boot the rescue USB in UEFI mode'
+root=$(realpath -e -- "$1")
+system=$2
+[[ $root != / ]] || fail 'the live root cannot be the installation target'
+[[ $system =~ ^/nix/store/[a-z0-9]{32}-nixos-system-unas-[^/]+$ ]] || fail 'expected a UNAS system store path'
+[[ -x $root$system/bin/switch-to-configuration ]] || fail 'build the system in the target store first'
+
+[[ $(zpool get -H -o value guid zroot) == 17576335980796613953 ]] || fail 'wrong zroot pool'
+[[ $(zpool get -H -o value guid datatank) == 5553631198264591155 ]] || fail 'wrong datatank pool'
+for pool in zroot datatank; do
+  [[ $(zpool get -H -o value readonly "$pool") == off ]] || fail "$pool is read-only"
+  [[ $(zpool get -H -o value health "$pool") == ONLINE ]] || fail "$pool is not ONLINE"
+done
+
+while read -r mountpoint dataset; do
+  target="$root$mountpoint"
+  [[ $(findmnt -rn -M "$target" -o SOURCE) == "$dataset" ]] || fail "wrong dataset at $target"
+  [[ $(findmnt -rn -M "$target" -o FSTYPE) == zfs ]] || fail "not ZFS at $target"
+  [[ ,$(findmnt -rn -M "$target" -o OPTIONS), == *,rw,* ]] || fail "read-only mount at $target"
+done <<'MOUNTS'
+/ zroot/system/root
+/nix zroot/local/nix
+/var zroot/system/var
+/home/emiller zroot/user/home/emiller
+/home/monimiller zroot/user/home/monimiller
+/home/tdmiller zroot/user/home/tdmiller
+MOUNTS
+
+esp=$(findmnt -rn -M "$root/boot" -o SOURCE)
+[[ $(blkid -s PARTUUID -o value "$esp") == da97d5b7-2689-4895-8934-1f1d3ca8a5ec ]] || fail 'wrong ESP'
+[[ $(findmnt -rn -M "$root/boot" -o FSTYPE) == vfat ]] || fail 'ESP is not FAT'
+[[ ,$(findmnt -rn -M "$root/boot" -o OPTIONS), == *,rw,* ]] || fail 'ESP is read-only'
+[[ -s $root/etc/ssh/ssh_host_ed25519_key ]] || fail 'installed SSH host identity is missing'
+[[ -s $root/home/emiller/.ssh/id_ed25519 ]] || fail 'backup decryption identity is missing'
+zfs list -H datatank/backup/moni/time-machine >/dev/null
+previous=$(readlink "$root/nix/var/nix/profiles/$(readlink "$root/nix/var/nix/profiles/system")")
+[[ $previous =~ ^/nix/store/[a-z0-9]{32}-nixos-system-unas-[^/]+$ ]] || fail 'cannot identify the previous system'
+
+stamp="pre-install-$(date -u +%Y%m%dT%H%M%SZ)"
+zfs snapshot -r "zroot@$stamp"
+zfs snapshot -r "datatank@$stamp"
+umask 077
+backup="$root/var/lib/unas-recovery/$stamp"
+mkdir -p "$backup"
+tar --exclude=loader/random-seed --exclude=loader/keys -C "$root/boot" -czf "$backup/esp.tar.gz" .
+printf '%s\n' "$previous" > "$backup/previous-system"
+printf '%s\n' "$system" > "$backup/new-system"
+
+# A named profile keeps the old closure and its boot entry outside the normal
+# system generation limit. It is a rollback aid, not a RAM-root rescue image.
+recovery_profile="$root/nix/var/nix/profiles/system-profiles/pre-recovery"
+if [[ -L $recovery_profile ]]; then
+  recovery_profile+="-${stamp#pre-install-}"
+fi
+nix-env --store "$root" -p "$recovery_profile" --set "$previous"
+nixos-install --root "$root" --system "$system" --no-root-passwd --no-channel-copy
+sync
+printf 'Installed %s\nPrevious system: %s\nSnapshots: zroot@%s, datatank@%s\nESP backup: %s/esp.tar.gz\n' \
+  "$system" "$previous" "$stamp" "$stamp" "$backup"
+printf 'Inspect the new profile and boot entry before unmounting and rebooting.\n'
