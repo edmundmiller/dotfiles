@@ -1,7 +1,7 @@
 use ./common.nu *
 
 const NUC_HOST = "nuc"
-const UNAS_HOST = "192.168.1.101"
+const UNAS_HOST = "192.168.1.206"
 const NUC_WORKTREE_MODES = ["dry-activate" "test" "switch" "build" "vm" "validate"]
 
 def "main deploy" [host: string] {
@@ -702,11 +702,34 @@ def "main nuc-wt" [mode: string = "dry-activate", configuration: string = "nuc"]
   main nuc-worktree $mode $configuration
 }
 
-def "main unas" [] {
+def "main unas" [mode: string = "remote"] {
   let ctx = (context)
   print "=== Deploying to UNAS ==="
   cd $ctx.flake_dir
+  if $mode == "local" {
+    if (^hostname -s | str trim) != "unas" {
+      error make {msg: "hey unas local must run on the installed UNAS host"}
+    }
+    with-sudo-path {
+      ^sudo -n nixos-rebuild switch --flake .#unas --show-trace --accept-flake-config --max-jobs 2
+      if $env.LAST_EXIT_CODE != 0 {
+        error make {msg: "UNAS local deployment failed"}
+      }
+    }
+    return
+  }
+  if $mode != "remote" {
+    error make {msg: "hey unas mode must be remote or local"}
+  }
   ^nix run .#deploy-rs -- .#unas --skip-checks
+}
+
+def "main unas-recover" [root: string, system: string] {
+  let ctx = (context)
+  ^bash ($ctx.flake_dir | path join "bin" "unas-recover") $root $system
+  if $env.LAST_EXIT_CODE != 0 {
+    error make {msg: "UNAS recovery installation failed; do not reboot"}
+  }
 }
 
 def "main unas-ssh" [] {
