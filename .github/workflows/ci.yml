@@ -98,12 +98,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          xcode_apps=(/Applications/Xcode_27.2*.app)
-          test "${#xcode_apps[@]}" -eq 1
-          test -d "${xcode_apps[0]}/Contents/Developer"
+          selected_app=$(realpath /Applications/Xcode_27.2.app)
+          test -d "$selected_app/Contents/Developer"
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" --command \
-            nu bin/hey xcode-setup "${xcode_apps[0]}" --apply
+            nu bin/hey xcode-setup "$selected_app" --apply
           env -u DEVELOPER_DIR /usr/bin/xcrun --no-cache --find metallib
       - name: Free space for Darwin builds
         shell: bash

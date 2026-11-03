@@ -573,7 +573,48 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
         self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
 
-    def test_darwin_cleanup_preserves_selected_xcode_and_rejects_invalid_selection(self):
+    def test_darwin_xcode_selection_resolves_image_aliases_and_rejects_missing_app(
+        self,
+    ):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        preparation = textwrap.dedent(
+            workflow.split("      - name: Prepare Xcode 27.2 Metal toolchain\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - ", 1)[0]
+        )
+        for installed in (True, False):
+            with self.subTest(installed=installed):
+                applications = self.root.resolve() / str(installed) / "Applications"
+                applications.mkdir(parents=True)
+                selected = applications / "Xcode_27.2_Release_Candidate.app"
+                if installed:
+                    (selected / "Contents/Developer").mkdir(parents=True)
+                for alias in ("Xcode_27.2.app", "Xcode_27.2.0.app"):
+                    (applications / alias).symlink_to(
+                        selected, target_is_directory=True
+                    )
+                command = preparation.replace("/Applications/", f"{applications}/")
+                # Observe the app passed to hey without downloading or selecting
+                # a real toolchain. Path resolution uses the real fixture aliases.
+                commands = (
+                    'jq() { printf "fixture-revision"; };\n'
+                    'nix() { printf "%s\\n" "$7"; };\n'
+                    "env() { :; };\n"
+                )
+                result = subprocess.run(
+                    ["bash", "-c", commands + command],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode == 0, installed, result.stderr)
+                self.assertEqual(
+                    result.stdout.strip(), str(selected) if installed else ""
+                )
+
+    def test_darwin_cleanup_preserves_selected_xcode_and_rejects_invalid_selection(
+        self,
+    ):
         workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
         cleanup = textwrap.dedent(
             workflow.split("      - name: Free space for Darwin builds\n", 1)[1]
