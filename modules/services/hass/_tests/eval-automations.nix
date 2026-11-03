@@ -1152,8 +1152,12 @@ let
         &&
           tag.trigger == {
             platform = "tag";
-            tag_id = "729d23f5-3368-487e-bff0-3cf6a22cba29";
+            tag_id = [
+              "729d23f5-3368-487e-bff0-3cf6a22cba29"
+              "2e0ad6b4-069c-445a-a23f-4af99eccb21d"
+            ];
           }
+        && tag.mode == "single"
         &&
           tag.action == [
             {
@@ -1173,7 +1177,7 @@ let
         && (lastFed.has_date or false)
         && (lastFed.has_time or false)
         && !(lastFed ? initial);
-      msg = "Phoebe's kibble tag must restore the feeding time and log the food name, 1/4 cup portion, and 97.75 kcal";
+      msg = "Both Phoebe kibble tags must restore the feeding time and log the food name, 1/4 cup portion, and 97.75 kcal";
     }
     {
       test = whiteNoiseWithBedtimeAudiobook != null;
