@@ -123,6 +123,32 @@ jobs:
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" --command \
             nu bin/hey xcode-setup "$selected_app" --apply
           env -u DEVELOPER_DIR /usr/bin/xcrun --no-cache --find metallib
+      - name: Verify Metal discovery as a Nix build user
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix build --no-link --print-build-logs --expr "$(cat <<'NIX'
+          builtins.derivation {
+            name = "darwin-metal-toolchain-preflight";
+            system = "aarch64-darwin";
+            builder = "/bin/bash";
+            __noChroot = true;
+            preferLocalBuild = true;
+            allowSubstitutes = false;
+            args = [ "-euc" ''
+              /usr/bin/id
+              export DEVELOPER_DIR="$(/usr/bin/xcode-select -p)"
+              /usr/bin/xcodebuild -showComponent MetalToolchain
+              export SDKROOT="$(/usr/bin/xcrun --sdk macosx --show-sdk-path)"
+              for tool in swiftc metal metallib; do
+                /usr/bin/xcrun --find "$tool"
+              done
+              /usr/bin/xcrun metal --version
+              /usr/bin/touch "$out"
+            '' ];
+          }
+          NIX
+          )"
       - name: Validate affected Darwin configuration
         env:
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}

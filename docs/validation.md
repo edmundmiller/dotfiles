@@ -73,6 +73,9 @@ all application symlinks; it does not clean developer machines or the NUC.
 After installing Nix, it runs `hey xcode-setup` on the selected application to
 install missing Metal tools and verify the compiler, then checks `metallib`
 before starting the host builds. Hex still requires the full host toolchain.
+A separate Nix derivation checks tool discovery and runs Metal as a build user,
+with the host SDK selected. Failures print the component status and raw tool
+errors before the expensive host builds; runner-user success is not sufficient.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
 required status. The required `Flake Check (Linux)` and `Check Formatting`
 compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
