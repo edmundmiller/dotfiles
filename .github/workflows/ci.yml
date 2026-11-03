@@ -140,6 +140,12 @@ jobs:
               export DEVELOPER_DIR="$(/usr/bin/xcode-select -p)"
               /usr/bin/xcodebuild -showComponent MetalToolchain
               export SDKROOT="$(/usr/bin/xcrun --sdk macosx --show-sdk-path)"
+              printf 'Uncached lookup with selected SDK:\n'
+              /usr/bin/xcrun --no-cache --find metallib || true
+              printf 'Uncached lookup without SDK override:\n'
+              /usr/bin/env -u SDKROOT /usr/bin/xcrun --no-cache --find metallib || true
+              printf 'Direct Xcode lookup with selected SDK:\n'
+              /usr/bin/xcodebuild -sdk "$SDKROOT" -find metallib || true
               for tool in swiftc metal metallib; do
                 /usr/bin/xcrun --find "$tool"
               done
