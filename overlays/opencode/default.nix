@@ -37,7 +37,7 @@ let
       runHook preInstall
       mkdir -p "$out/bin" "$out/lib/opencode"
       cp -R bin/. "$out/lib/opencode/"
-      makeWrapper "$out/lib/opencode/opencode2" "$out/bin/opencode" --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"' ${linuxWrapperArgs}
+      makeWrapper "$out/lib/opencode/lildax" "$out/bin/opencode" --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"' ${linuxWrapperArgs}
       runHook postInstall
     '';
 
