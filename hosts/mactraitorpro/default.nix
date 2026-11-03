@@ -305,6 +305,7 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
         term = {
