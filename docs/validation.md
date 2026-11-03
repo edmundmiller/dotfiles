@@ -66,13 +66,15 @@ VMs stay manual. Platform commands never activate or deploy a host.
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
 evaluation, so Linux cannot certify this check. The CI job uses ARM64 macOS 27
-through GitHub's `xcode-27` runner image. Before installing Nix, it removes only
-inactive Xcode application directories to leave room for the host builds. It
-resolves the selected toolchain's real path and preserves that application and
-all application symlinks; it does not clean developer machines or the NUC.
-After installing Nix, it runs `hey xcode-setup` on the selected application to
-install missing Metal tools and verify the compiler, then checks `metallib`
-before starting the host builds. Hex still requires the full host toolchain.
+through GitHub's `xcode-27` runner image. After installing Nix, it requires exactly
+one installed Xcode 27.2 application and runs `hey xcode-setup` to prepare Metal
+and select it, then checks `metallib`. The current image provides 27.2 as a release
+candidate. CI's default 27.1 failed Metal discovery as a Nix build user even with
+the component installed; uncached and SDK-independent lookup also failed.
+After selection, it removes only inactive Xcode application directories to leave
+room for the host builds. It resolves the selected toolchain's real path and
+preserves that application and all application symlinks; it does not clean
+developer machines or the NUC. Hex still requires the full host toolchain.
 A separate Nix derivation checks tool discovery and runs Metal as a build user,
 with the host SDK selected. Failures print the component status and raw tool
 errors before the expensive host builds; runner-user success is not sufficient.
