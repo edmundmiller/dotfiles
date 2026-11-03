@@ -2,6 +2,24 @@
 
 NixOS module for Home Assistant with Matter, PostgreSQL recorder, Homebridge, and Tailscale access.
 
+## FitBark
+
+[FitBark](https://github.com/saubury/ha-fitbark) is Nix-managed. Do not install
+a second copy through HACS. After an authorized deployment:
+
+1. Register an application at the [FitBark developer portal](https://www.fitbark.com/dev/)
+   to obtain a client ID and client secret.
+2. Open **Settings → Devices & services → Add integration → FitBark** in Home
+   Assistant, enter the application credentials, and complete the OAuth login.
+3. Confirm each dog appears as a device. The integration initially imports
+   42 days of activity into recorder statistics.
+
+Keep credentials in Home Assistant's config flow, never in Nix or YAML. The
+integration attempts to register `https://my.home-assistant.io/redirect/oauth`
+with FitBark automatically. If registration fails, register that redirect with
+FitBark before retrying OAuth. The existing `default_config` supplies the required
+`application_credentials` and `recorder` integrations.
+
 ## Jev (TypeSafe)
 
 [HA-Jev](https://github.com/AboveColin/HA-Jev) and its `jevclient` dependency are
