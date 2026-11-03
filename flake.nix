@@ -1349,6 +1349,12 @@
                 touch "$out"
               '';
 
+              tldraw-api-tests = pkgs.runCommand "tldraw-api-tests" { } ''
+                cd ${./.}
+                PYTHONDONTWRITEBYTECODE=1 ${pkgs.python3}/bin/python3 -m unittest tests.test_tldraw_api
+                touch "$out"
+              '';
+
               agent-mcp-tests =
                 pkgs.runCommand "agent-mcp-tests"
                   {

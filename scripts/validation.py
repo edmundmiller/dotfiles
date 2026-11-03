@@ -71,6 +71,12 @@ CHECKS = {
         "docs/agent-guardrails.md",
         "docs/validation.md",
     ],
+    "tldraw-api-tests": [
+        "config/tldraw/*",
+        "modules/desktop/apps/tldraw.nix",
+        "skills/catalog/tldraw-offline/*",
+        "tests/test_tldraw_api.py",
+    ],
     "agent-mcp-tests": [
         "config/agents/mcp.nix",
         "config/agents/reconcile_mcp.py",
