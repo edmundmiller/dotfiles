@@ -58,7 +58,9 @@ An explicit `PI_SELF_UPDATE_COMMAND` environment value overrides that default.
 Use `pi update --extensions` to update extensions without rebuilding the host.
 
 The packaged self-update script targets `$FLAKE_DIR`, then `$DOTFILES`, then
-`~/.config/dotfiles`, not the current project's flake. A direct
+`~/.config/dotfiles`, not the current project's flake. It appends packaged
+Nushell/mise and the active system tools to its own PATH for GUI/service launches,
+preserving caller tool precedence. A direct
 `hey pi-update <version>` runs the current checkout's task, like every other
 `hey` command. The updater rejects downgrades
 and leaves the pins unchanged if downloading or preparing dependencies fails.

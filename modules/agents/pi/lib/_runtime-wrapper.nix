@@ -14,6 +14,14 @@ let
   # shell string. Resolve the checkout here so spaces and overrides stay intact.
   selfUpdate = pkgs.writeShellScript "pi-self-update" ''
     set -euo pipefail
+    # GUI/service launches may lack the task interpreter and system tools.
+    # Keep caller overrides first; only this updater needs these fallbacks.
+    export PATH="''${PATH:+$PATH:}${
+      lib.makeBinPath [
+        pkgs.nushell
+        pkgs.mise
+      ]
+    }:/run/current-system/sw/bin"
     exec ${lib.getExe pkgs.mise} --cd "''${FLAKE_DIR:-''${DOTFILES:-$HOME/.config/dotfiles}}" run pi:update "$@"
   '';
 in
