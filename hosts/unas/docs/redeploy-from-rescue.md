@@ -140,9 +140,11 @@ Retiring a profile alone does not free its old ESP payloads. Recheck after any
 approved cleanup. Keep other profile and ESP writers idle during the check and
 installation so the measured inputs remain valid.
 
-The Linux regression suite runs the real recovery command with real Nix
-profiles and a bounded temporary filesystem. Hardware inspection and the
-installer are isolated substitutes. It checks first use, capacity refusal
+The Linux regression suite boots an isolated NixOS test VM, then runs the real
+recovery command with real Nix profiles and a bounded temporary filesystem.
+The VM avoids dependence on the runner's unprivileged-namespace policy without
+changing that policy. Hardware inspection and the installer are isolated
+substitutes. It checks first use, capacity refusal
 before mutation, retained and shared payloads, copy headroom, generation limits,
 unsupported initrds, and rollback roots after installer failure and real GC:
 
