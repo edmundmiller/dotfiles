@@ -1,16 +1,16 @@
 diff --git a/packages/hunk/src/app/cli.test.ts b/packages/hunk/src/app/cli.test.ts
-index 3b150ab1..e2fd57db 100644
+index 9cd026bf..151a8081 100644
 --- a/packages/hunk/src/app/cli.test.ts
 +++ b/packages/hunk/src/app/cli.test.ts
-@@ -10,6 +10,7 @@ import {
-   WATCH_OPTION,
+@@ -11,6 +11,7 @@ import {
  } from "./cli";
+ import { readBundledSkillDocument } from "../core/run/paths";
  import { resolveCliVersion } from "../core/run/version";
 +import { persistResumableReview } from "../core/resumableReview";
  
  const tempDirs: string[] = [];
  
-@@ -19,6 +20,21 @@ function createTempDir(prefix: string) {
+@@ -20,6 +21,21 @@ function createTempDir(prefix: string) {
    return dir;
  }
  
@@ -32,7 +32,7 @@ index 3b150ab1..e2fd57db 100644
  /** Run `fn` with Bun.stdin.stream replaced by a one-shot reader of `text`. */
  async function withStdin<T>(text: string, fn: () => Promise<T>): Promise<T> {
    const originalStdin = Bun.stdin.stream;
-@@ -82,6 +98,53 @@ describe("parseCli", () => {
+@@ -83,6 +99,79 @@ describe("parseCli", () => {
      expect(parsed.text).not.toContain("Config:");
      expect(parsed.text).not.toContain("Examples:");
    });
@@ -45,19 +45,45 @@ index 3b150ab1..e2fd57db 100644
 +        range: "HEAD~1",
 +        staged: true,
 +        pathspecs: ["src"],
-+        options: { mode: "unified" },
++        options: { mode: "unified", extensionPaths: ["/old-package/extensions"] },
 +      },
 +      repo,
 +    );
 +
 +    const parsed = await withCwd(repo, () => parseCli(["bun", "hunk", "resume"]));
++    if (parsed.kind !== "vcs") throw new Error("Expected a resumed VCS review");
 +    expect(parsed).toEqual({
 +      kind: "vcs",
 +      range: "HEAD~1",
 +      staged: true,
 +      pathspecs: ["src"],
-+      options: { mode: "unified" },
++      options: { mode: "unified", extensionPaths: ["/old-package/extensions"] },
 +    });
++
++    const packaged = await withCwd(repo, () =>
++      parseCli([
++        "bun",
++        "hunk",
++        "--extension",
++        "/package/extensions",
++        "--disable-extension",
++        "jev-priority",
++        "resume",
++      ]),
++    );
++    expect(packaged).toEqual({
++      ...parsed,
++      options: {
++        mode: "unified",
++        extensionPaths: ["/package/extensions"],
++        extensionSelectionOverrides: [{ id: "jev-priority", enabled: false }],
++      },
++    });
++    const disabled = await withCwd(repo, () =>
++      parseCli(["bun", "hunk", "--extension", "/package/extensions", "--no-extensions", "resume"]),
++    );
++    if (disabled.kind !== "vcs") throw new Error("Expected a resumed VCS review");
++    expect(disabled.options.extensions).toBe(false);
 +
 +    const help = await parseCli(["bun", "hunk"]);
 +    expect(help.kind === "help" ? help.text : "").toContain("hunk resume");
@@ -87,10 +113,10 @@ index 3b150ab1..e2fd57db 100644
    test("prints the same top-level help for --help", async () => {
      const bare = await parseCli(["bun", "hunk"]);
 diff --git a/packages/hunk/src/app/cli.ts b/packages/hunk/src/app/cli.ts
-index 4529db29..8121d1ae 100644
+index 9eb4cc71..be059e66 100644
 --- a/packages/hunk/src/app/cli.ts
 +++ b/packages/hunk/src/app/cli.ts
-@@ -63,6 +63,7 @@ import {
+@@ -69,6 +69,7 @@ import {
    parseWheelScrollLines,
    type WheelScrollLines,
  } from "../core/run/wheelScrollLines";
@@ -98,7 +124,7 @@ index 4529db29..8121d1ae 100644
  import type { ExtensionVcsHistoryReviewAction } from "../extension-api/types";
  
  /** Structured option metadata shared by Commander registration and generated CLI docs. */
-@@ -631,6 +632,26 @@ function renderSkillHelp() {
+@@ -733,6 +734,26 @@ function renderSkillHelp() {
    ].join("\n");
  }
  
@@ -125,7 +151,7 @@ index 4529db29..8121d1ae 100644
  /** Build the top-level help text shown by bare `hunk` and `hunk --help`. */
  function renderCliHelp() {
    return [
-@@ -648,6 +669,7 @@ function renderCliHelp() {
+@@ -752,6 +773,7 @@ function renderCliHelp() {
      "  hunk gh <pr|commit|compare>             review changes hosted on GitHub",
      "  hunk stash show [ref]                   review a stash entry (git only)",
      "  hunk patch [file]                       review a patch file or stdin",
@@ -133,21 +159,33 @@ index 4529db29..8121d1ae 100644
      "  hunk pager                              general Git pager wrapper with diff detection",
      "  hunk difftool <left> <right> [path]     review Git difftool file pairs",
      "  hunk session <subcommand>               inspect or control a live Hunk session",
-@@ -2514,6 +2536,8 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
-   // Host bootstrap options must stay before a review command's `--` pathspec separator.
-   const reviewRest = [...extensionFlagTokens, ...rest];
-   switch (commandName) {
-+    case "resume":
-+      return parseResumeCommand(rest);
+@@ -2698,6 +2720,20 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
+       await parseStandaloneCommand(command, rest);
+       return { kind: "open", path, options: buildCommonOptions(options, argv) };
+     }
++    case "resume": {
++      const input = parseResumeCommand(rest);
++      if (input.kind === "help") return input;
++      return {
++        ...input,
++        options: {
++          ...input.options,
++          // The current package's explicit paths replace paths saved by an older build.
++          ...(extensionPaths.length > 0 ? { extensionPaths } : {}),
++          ...(!extensionsEnabled ? { extensions: false } : {}),
++          ...(extensionSelectionOverrides.length > 0 ? { extensionSelectionOverrides } : {}),
++        },
++      };
++    }
      case "diff":
        return parseDiffCommand(reviewRest, argv);
      case "show":
 diff --git a/packages/hunk/src/core/resumableReview.test.ts b/packages/hunk/src/core/resumableReview.test.ts
 new file mode 100644
-index 00000000..52482623
+index 00000000..ec6cf274
 --- /dev/null
 +++ b/packages/hunk/src/core/resumableReview.test.ts
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,219 @@
 +import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 +import { tmpdir } from "node:os";
 +import { dirname, join } from "node:path";
@@ -210,7 +248,6 @@ index 00000000..52482623
 +          excludeUntracked: true,
 +          experimental: true,
 +          extensionPaths: ["extension.ts"],
-+          extensions: false,
 +          fast: true,
 +          fileGap: 2,
 +          hunkGap: 3,
@@ -259,6 +296,36 @@ index 00000000..52482623
 +      expect(marker).toMatchObject({ version: 1, input });
 +      expect(new Date(marker.updatedAt).toISOString()).toBe(marker.updatedAt);
 +    }
++  });
++
++  test("does not persist or restore invocation-scoped extension selection", () => {
++    const repo = createRepo();
++    const input: CliInput = {
++      kind: "show",
++      ref: "HEAD",
++      options: {
++        extensions: false,
++        extensionSelectionOverrides: [{ id: "hunk-commit-log", enabled: false }],
++        extensionPaths: ["extension.ts"],
++      },
++    };
++    const expected: CliInput = {
++      kind: "show",
++      ref: "HEAD",
++      options: { extensionPaths: ["extension.ts"] },
++    };
++    persistResumableReview(input, repo);
++    expect(JSON.parse(readFileSync(markerPath(repo), "utf8")).input).toEqual(expected);
++    // Older markers can still contain selection. Loading must discard it too.
++    writeFileSync(
++      markerPath(repo),
++      JSON.stringify({
++        version: 1,
++        updatedAt: new Date().toISOString(),
++        input,
++      }),
++    );
++    expect(loadResumableReview(repo)).toEqual(expected);
 +  });
 +
 +  test("reopens a 0.21 stacked review with the renamed unified layout", () => {
@@ -340,10 +407,10 @@ index 00000000..52482623
 +});
 diff --git a/packages/hunk/src/core/resumableReview.ts b/packages/hunk/src/core/resumableReview.ts
 new file mode 100644
-index 00000000..8471bd81
+index 00000000..58dab617
 --- /dev/null
 +++ b/packages/hunk/src/core/resumableReview.ts
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,217 @@
 +import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 +import { dirname, join } from "node:path";
 +import type { CliInput, CommonOptions } from "./run/commandInputs";
@@ -397,7 +464,6 @@ index 00000000..8471bd81
 +    "promptSaveViewPreferences",
 +    "transparentBackground",
 +    "colorMoved",
-+    "extensions",
 +  ] as const) {
 +    const option = value[key];
 +    if (option !== undefined) {
@@ -421,6 +487,8 @@ index 00000000..8471bd81
 +  const extensionPaths = readOptionalStrings(value.extensionPaths);
 +  if (extensionPaths === null) return null;
 +  if (extensionPaths !== undefined) options.extensionPaths = extensionPaths;
++  // Extension enablement belongs to the current invocation/config, not the marker.
++  // Ignore both legacy master-off and per-ID selection when reading or writing.
 +  return options;
 +}
 +
@@ -561,7 +629,7 @@ index 00000000..8471bd81
 +  }
 +}
 diff --git a/packages/hunk/src/main.tsx b/packages/hunk/src/main.tsx
-index 362e4a60..d8a63c4e 100644
+index 17707b10..16b3b75a 100644
 --- a/packages/hunk/src/main.tsx
 +++ b/packages/hunk/src/main.tsx
 @@ -4,6 +4,7 @@ import { formatCliError } from "./core/run/errors";
@@ -572,16 +640,16 @@ index 362e4a60..d8a63c4e 100644
  import { sanitizeTerminalLine, sanitizeTerminalText } from "./lib/terminalText";
  import { serveSessionBrokerDaemon } from "./session/broker/brokerServer";
  import { runSessionCommand } from "./session/agent/commands";
-@@ -175,6 +176,7 @@ async function main() {
+@@ -193,6 +194,7 @@ async function main() {
    if (startupPlan.kind !== "app") {
      throw new Error("Unreachable startup plan.");
    }
 +  persistResumableReview(startupPlan.bootstrap.input);
  
-   // OpenTUI stays behind the interactive plan so headless commands never materialize its embedded
-   // native library. The shared interactive runner owns the highlighting worker and terminal until
+   // Grammar compilation starts in the worker now so it overlaps the OpenTUI load below.
+   const { warmHighlightWorkerForLaunch } = await import("./ui/diff/worker/highlightWorkerWarmup");
 diff --git a/packages/hunk/src/ui/AppHost.interactions.test.tsx b/packages/hunk/src/ui/AppHost.interactions.test.tsx
-index a1384889..23c15bd1 100644
+index de23b327..2fbcfd34 100644
 --- a/packages/hunk/src/ui/AppHost.interactions.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.interactions.test.tsx
 @@ -15,6 +15,7 @@ import type {
@@ -626,10 +694,10 @@ index a1384889..23c15bd1 100644
        await act(async () => {
          setup.renderer.destroy();
 diff --git a/packages/hunk/src/ui/AppHost.reload.test.tsx b/packages/hunk/src/ui/AppHost.reload.test.tsx
-index 360cca4d..07811d9a 100644
+index 74882c18..5f756ffa 100644
 --- a/packages/hunk/src/ui/AppHost.reload.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.reload.test.tsx
-@@ -581,7 +581,7 @@ describe("reload agent attention marks", () => {
+@@ -728,7 +728,7 @@ describe("reload agent attention marks", () => {
      writeFileSync(file, "base\nstaged change\nunstaged change\n");
  
      const bootstrap = await loadAppBootstrap(
@@ -638,7 +706,7 @@ index 360cca4d..07811d9a 100644
        { cwd: dir, vcsCatalog: getBundledVcsCatalog() },
      );
  
-@@ -646,7 +646,7 @@ describe("reload agent attention marks", () => {
+@@ -793,7 +793,7 @@ describe("reload agent attention marks", () => {
      writeFileSync(file, "base\nstaged change\nunstaged change\n");
  
      const bootstrap = await loadAppBootstrap(
@@ -648,18 +716,18 @@ index 360cca4d..07811d9a 100644
      );
  
 diff --git a/packages/hunk/src/ui/AppHost.tsx b/packages/hunk/src/ui/AppHost.tsx
-index b952988b..a73bb6f1 100644
+index 2a7c0c75..24fa9e11 100644
 --- a/packages/hunk/src/ui/AppHost.tsx
 +++ b/packages/hunk/src/ui/AppHost.tsx
 @@ -11,6 +11,7 @@ import { resolveRuntimeCliInput } from "../core/process/terminal";
  import type { StartupNotice } from "../core/process/startupNotice";
  import type { AppBootstrap } from "../core/bootstrap";
- import type { CliInput } from "../core/run/commandInputs";
+ import type { CliInput, CommonOptions } from "../core/run/commandInputs";
 +import { persistResumableReview } from "../core/resumableReview";
  import type { ExtensionReviewReloadResult } from "../extension-api/types";
  import type { ExtensionLoadResult } from "../extensions/types";
  import {
-@@ -385,6 +386,7 @@ export function AppHost({
+@@ -433,6 +434,7 @@ export function AppHost({
                  createUnknownVcsNotice(sessionVcs.unknownVcsId, String(reloadInput.options.vcs)),
                ]
              : configured.startupNotices;

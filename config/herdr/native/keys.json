@@ -1,0 +1,16 @@
+{
+  "global": {
+    "cmd-shift-g": "mod.open:dotfiles-dev",
+    "ctrl-shift-g": "mod.open:dotfiles-dev",
+    "ctrl-c": "mod.open:dotfiles-prefix"
+  },
+  "layout:main": {
+    "ctrl-shift-l": "layout.switch:herdr-t3"
+  },
+  "layout:herdr-t3": {
+    "ctrl-shift-l": "layout.switch:main"
+  },
+  "mod:dotfiles-prefix": {
+    "ctrl-c": "dotfiles-prefix.interrupt"
+  }
+}

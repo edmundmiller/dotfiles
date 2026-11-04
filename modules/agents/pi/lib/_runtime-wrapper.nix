@@ -10,12 +10,12 @@ let
     piRuntimeNode
     nodeGypPython
   ];
-  updateExtensionsShim = lib.concatStringsSep "\n" [
-    ''if [ "$#" -eq 1 ] && [ "''${1:-}" = "update" ]; then''
-    "  set -- update --extensions"
-    "fi"
-    ''exec -a "$0" ''
-  ];
+  # Pi splits PI_SELF_UPDATE_COMMAND on whitespace rather than evaluating a
+  # shell string. Resolve the checkout here so spaces and overrides stay intact.
+  selfUpdate = pkgs.writeShellScript "pi-self-update" ''
+    set -euo pipefail
+    exec ${lib.getExe pkgs.mise} --cd "''${FLAKE_DIR:-''${DOTFILES:-$HOME/.config/dotfiles}}" run pi:update "$@"
+  '';
 in
 pkgs.stdenvNoCC.mkDerivation {
   pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-runtime-wrapper";
@@ -42,17 +42,13 @@ pkgs.stdenvNoCC.mkDerivation {
       wrapProgram "$out/bin/pi" \
         --run ${lib.escapeShellArg "${piSecretPreflightScript}"} \
         --prefix PATH : ${lib.escapeShellArg runtimePath} \
+        --set-default NODE_EXTRA_CA_CERTS "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
         --set AGENT "1" \
         --set PI_CODING_AGENT "true" \
+        --set-default PI_SELF_UPDATE_COMMAND "${selfUpdate} {version}" \
         --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \
         --set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"} \
         --unset SDKROOT
-
-      # The pi executable is Nix-managed and cannot self-update in-place.
-      # Make the common `pi update` shortcut update only user packages/extensions;
-      # explicit self-update requests like `pi update pi` still pass through and fail loudly.
-      substituteInPlace "$out/bin/pi" \
-        --replace-fail 'exec -a "$0" ' ${lib.escapeShellArg updateExtensionsShim}
     fi
 
     runHook postInstall

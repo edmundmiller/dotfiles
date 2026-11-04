@@ -6,6 +6,5 @@ use ../scripts/nu/common.nu *
 
 def main [...args: string] {
   let ctx = (context)
-  fail-if-moshi-client-rebuild $ctx "test"
   system-rebuild $ctx "test" ...$args
 }

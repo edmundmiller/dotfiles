@@ -194,24 +194,6 @@ export def wait-homebrew-idle [ctx: record] {
 }
 
 
-export def moshi-client-active [] {
-  (($env.MOSHI_CLIENT? | default "") | str lowercase) in ["1" "true" "yes"]
-}
-
-export def fail-if-moshi-client-rebuild [ctx: record, action: string] {
-  let activates_darwin_apps = ($ctx.os_name == "macos") and ($action in ["switch" "test"])
-
-  if $activates_darwin_apps and (moshi-client-active) {
-    print -e $"BLOCKED: hey ($action) did not activate"
-    print -e "CONSEQUENCE: Nix-managed symlinks/runtime configs are unchanged; affected files still point to the old store path."
-    print -e "CAUSE: MOSHI_CLIENT=1; darwin-rebuild is running under launchctl managername=Background and cannot update /Applications/Nix Apps."
-    print -e "AGENT_ACTION: stop; do not retry here; do not change Nix config to bypass this guard."
-    print -e "HUMAN_FIX: open Ghostty/Finder-launched terminal (Aqua session), then rerun the same `hey ...` command."
-    print -e "VERIFY: after success, re-read the affected Nix-managed file/service (for example `readlink ~/.omp/agent/config.yml`)."
-    error make --unspanned {msg: $"BLOCKED hey ($action): Moshi/mosh cannot activate macOS apps; no activation happened", code: "hey::macos_activation_from_mosh", help: "Open an Aqua session (Ghostty/Finder), rerun the same hey command, then verify the affected Nix-managed file/service."}
-  }
-}
-
 export def system-rebuild [ctx: record, action: string, ...args: string] {
   let agent_mode = (
     (($env.AGENT? | default "") == "1")

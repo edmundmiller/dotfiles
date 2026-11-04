@@ -41,9 +41,6 @@
       ],
       "skills": [],
     },
-    // Context usage and cache inspection (no automatic pruning).
-    "npm:pi-context-usage",
-    "npm:pi-cache-graph",
     // Auto-load direnv env at session start
     "~/.config/dotfiles/packages/pi-packages/pi-direnv",
     // Rex location, installed guide, pane captures, and native task status.
@@ -55,11 +52,6 @@
     "~/.config/dotfiles/packages/pi-packages/pi-ast-grep",
     // Cross-agent thread reader (agents:// URIs)
     "~/.config/dotfiles/packages/pi-packages/pi-xurl",
-    // Rhubarb Pi collection - https://github.com/qualisero/rhubarb-pi
-    {
-      "source": "https://github.com/qualisero/rhubarb-pi",
-      "extensions": ["hooks/session-color/**"],
-    },
     // tmustier extensions - https://github.com/tmustier/pi-extensions
     {
       "source": "git:github.com/tmustier/pi-extensions",
@@ -71,20 +63,10 @@
       ],
       "skills": [],
     },
-    // Deterministic allow/deny gate backed by config/pi/pi-permission-system.jsonc.
-    "npm:@gotgenes/pi-permission-system",
-    // Applies bash command policy to command-bearing extension tools like process.start.
-    "~/.pi/agent/packages/pi-command-policy-bridge",
     // JJ baseline guardrail: stop editing described dirty changes without explicit intent.
     "npm:pi-jj-auto",
     // JJ publish alignment pilot for colocated repos (`jj_vcs status` / `align_push`).
     "npm:pi-jj-git-align",
-    // Amp-like features (session query, handoff) - https://github.com/pasky/pi-amplike
-    {
-      "source": "https://github.com/pasky/pi-amplike",
-      "extensions": ["extensions/session-query.ts", "extensions/handoff.ts"],
-      "skills": ["skills/session-query"],
-    },
     // Interactive /review workflow - https://github.com/earendil-works/pi-review
     "git:github.com/earendil-works/pi-review",
     // Shared /goal and /sisyphus workflow with persistent progress and optional auditing.
@@ -110,39 +92,21 @@
     // tmux/herdr shell-integration packages are injected by modules/agents/pi.
     // Parallel side conversations with /btw - https://github.com/dbachelder/pi-btw
     "npm:pi-btw",
-    // Confluence tools and the package-native usage skill. Writes remain opt-in.
-    "npm:confluence-cli",
     // Verified local archives of Pi sessions and referenced output sidecars.
     "npm:@moyai/pi-session-hoarder",
-    // Pi logo display (git source avoids npm --before cutoff for package published after current Pi release)
-    "git:github.com/FredySandoval/pi-logo",
     // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
-    // pi-smart-fetch stays broad; GUI/browser computer-use tools are module-gated.
+    // Keep normal web fetching without GUI/browser computer-use integration.
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
-    "npm:pi-smart-fetch",
+    "npm:pi-smart-fetch@0.3.21",
     // Terminal-native ANSI theme (provides theme: "terminal") - https://github.com/mavam/pi-terminal-theme
     "npm:pi-terminal-theme",
     // OpenCode-style tool call/result rendering - https://github.com/MasuRii/pi-tool-display
     "npm:pi-tool-display",
-    // Process inspection/management tools - https://github.com/aliou/pi-processes
-    "npm:@aliou/pi-processes",
-    // Programmatic Tool Calling (Python async orchestration) - https://github.com/cegersdoerfer/pi-ptc
-    "git:github.com/cegersdoerfer/pi-ptc",
-    // Interlude UI/UX enhancements - https://github.com/mjakl/pi-interlude
-    "git:github.com/mjakl/pi-interlude",
-    // Token burden visualization/management - https://github.com/Whamp/pi-token-burden
-    // Pinned before 0.6.5 until Pi's npm install cutoff allows yaml@^2.9.0.
-    "git:github.com/Whamp/pi-token-burden#v0.6.4",
-    // Keep native tools: Codex conversion's apply_patch/write_stdin bypass permission hooks.
-    // Kilo provider (300+ models via Kilo Gateway/OpenRouter-compatible)
-    // Enables provider id: kilo (e.g., model: kilocode/auto)
-    "git:github.com/mrexodia/kilo-pi-provider",
+    // Keep Pi's native tools rather than Codex conversion overrides.
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/packages/pi-packages/pi-image-attachments",
-    // Credential-injecting curl wrapper CLI for agents - https://www.npmjs.com/package/latchkey
-    "npm:latchkey",
     // Ask-user-question tool variant - install equivalent: pi install npm:@juicesharp/rpiv-ask-user-question
-    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@juicesharp/rpiv-ask-user-question@2.15.0",
     // Markdown memory with optional QMD search; replaces pi-hermes-memory.
     "npm:pi-memory",
     // Retain nested AGENTS.md discovery. This package also injects workflow
@@ -150,5 +114,6 @@
     "npm:@howaboua/pi-markdown-workflows",
     // Minimal Pi session observability dashboard/TUI - https://github.com/denismrvoljak/pi-overwatch
     "https://github.com/denismrvoljak/pi-overwatch",
+    { "source": "npm:@plannotator/pi-extension@0.28.10", "extensions": [] },
   ],
 }

@@ -5,7 +5,7 @@
  * in a real editor so you can review the verbose diff and return to pi on exit.
  *
  * Shortcuts:
- *   Ctrl+Shift+G — draft + review staged commit
+ *   Ctrl+Alt+G — draft + review staged commit
  *
  * Commands:
  *   /commit-review [guidance]
@@ -39,7 +39,7 @@ const DEFAULT_CONFIG: CommitConfig = {
 };
 const MAX_DIFF_CHARS = 32_000;
 const MAX_STAT_CHARS = 4_000;
-const COMMIT_SHORTCUT = "ctrl+shift+g";
+const COMMIT_SHORTCUT = "ctrl+alt+g";
 
 function formatCost(cost: ModelInfo["cost"] | null): string {
   if (!cost) return "cost unknown";

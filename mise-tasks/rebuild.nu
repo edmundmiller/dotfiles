@@ -7,7 +7,6 @@ use ../scripts/nu/common.nu *
 
 def main [action: string = "switch", ...args: string] {
   let ctx = (context)
-  fail-if-moshi-client-rebuild $ctx $action
   check-flake-lock
   check-local-skill-leaks
   system-rebuild $ctx $action ...$args

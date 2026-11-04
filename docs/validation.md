@@ -69,13 +69,33 @@ VMs stay manual. Platform commands never activate or deploy a host.
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
-evaluation, so Linux cannot certify this check. The CI job uses ARM64 `macos-15`.
+evaluation, so Linux cannot certify this check. The CI job uses ARM64 macOS 27
+through GitHub's `xcode-27` runner image. After installing Nix, it resolves the
+documented `/Applications/Xcode_27.2.app` alias to its real application and runs
+`hey xcode-setup` to prepare Metal and select it, then checks `metallib`. The
+current image provides 27.2 as a release candidate with multiple symlink aliases.
+CI's default 27.1 failed Metal discovery as a Nix build user even with
+the component installed; uncached and SDK-independent lookup also failed.
+After selection, it removes only inactive Xcode application directories to leave
+room for the host builds. It resolves the selected toolchain's real path and
+preserves that application and all application symlinks; it does not clean
+developer machines or the NUC. Hex still requires the full host toolchain.
+A separate Nix derivation checks tool discovery and runs Metal as a build user,
+with the host SDK selected. Failures print the component status and raw tool
+errors before the expensive host builds; runner-user success is not sufficient.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
-required status. Native checks do not repeat the portable formatting/lint suite.
-The Linux portable and Darwin jobs read private flake inputs with the
-`NIX_PRIVATE_GITHUB_TOKEN` repository secret, scoped to each validation step.
-Use a fine-grained token with read-only Contents access to `tnote` and
-`agents-workspace`. Do not reuse the write-capable Renovate token.
+required status. The required `Flake Check (Linux)` and `Check Formatting`
+compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
+cancellation, or skipping fails both contexts; branch protection stays unchanged.
+Native checks do not repeat the portable formatting/lint suite.
+The Linux and Darwin validation jobs read private flake inputs with the
+`NIX_PRIVATE_GITHUB_TOKEN` repository secret. Linux display tests need the pinned
+private `tnote` source too. Use a fine-grained token with read-only Contents
+access to `tnote` and `agents-workspace`. Do not reuse the write-capable Renovate token.
+Both jobs also use the `REX_TOKEN` repository secret to fetch the private Rex
+snapshot. Each validation step writes a mode-0600 temporary netrc file for
+`pkgs.superlogical.com`, sets Nix's `netrc-file`, and deletes the file on exit.
+The NUC's agenix credential does not supply credentials to GitHub runners.
 
 `scripts/validation.py` owns suite routing. `flake.nix` owns the immutable
 `pre-commit-config` and Nix derivations. The full portable route omits host and

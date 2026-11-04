@@ -5,9 +5,9 @@
 #   herdr-studios sync [--all-users] [--dry-run]
 #
 # sync writes one ssh Host alias per studio (seqera-studio-a<sessionId>) to
-# ~/.ssh/seqera-studios.conf, adds running studios to Herdr, enables saved ones
-# that are running again, disables stopped ones, and removes deleted ones.
-# Only Herdr machines whose target starts with seqera-studio- are touched.
+# ~/.ssh/seqera-studios.conf and adds running studios to Herdr.
+# Native preserves saved machines; legacy enables/disables/removes them.
+# HERDR_BACKEND selects native or legacy (default: native).
 
 set -euo pipefail
 
@@ -15,6 +15,11 @@ api="${TOWER_API_ENDPOINT:-https://api.cloud.seqera.io}"
 ssh_conf="${HERDR_STUDIOS_SSH_CONFIG:-$HOME/.ssh/seqera-studios.conf}"
 op_ref='op://Employee/5m7bgfkukzaekmzo5ew2nwmeuq/credential'
 alias_prefix=seqera-studio-
+backend=${HERDR_BACKEND:-native}
+case $backend in
+  native | legacy) ;;
+  *) echo "herdr-studios: unknown backend: $backend" >&2; exit 1 ;;
+esac
 
 usage() {
   sed -n '2,10s/^# \{0,1\}//p' "$0" >&2
@@ -37,20 +42,21 @@ token="${TOWER_ACCESS_TOKEN:-${SEQERA_ACCESS_TOKEN:-}}"
 [[ -n $token ]] || token=$(op read "$op_ref")
 
 get() {
-  curl -fsS -H "Authorization: Bearer $token" -H 'Accept: application/json' "$api$1"
+  # Pass the credential on stdin, not in process arguments or command logs.
+  curl -fsS -H @- -H 'Accept: application/json' "$api$1" <<<"Authorization: Bearer $token"
 }
 
 # Emit one JSON object per SSH-enabled studio visible to the user, across all
 # workspaces, tagged with workspace and owner info.
 fetch_studios() {
   local me ws_json
-  me=$(get /user-info | jq -r .user.id)
-  ws_json=$(get "/user/$me/workspaces")
+  me=$(get /user-info | jq -er .user.id) || return
+  ws_json=$(get "/user/$me/workspaces") || return
   jq -r '.orgsAndWorkspaces[] | select(.workspaceId != null) | .workspaceId' <<<"$ws_json" |
     while read -r ws; do
       local offset=0 page
       while :; do
-        page=$(get "/studios?workspaceId=$ws&max=100&offset=$offset") || break
+        page=$(get "/studios?workspaceId=$ws&max=100&offset=$offset") || return
         jq -c --argjson me "$me" --argjson ws "$ws_json" '
           .studios[]?
           | select(.configuration.sshEnabled == true and .sshDetails != null)
@@ -94,6 +100,23 @@ Host \(.alias)
     ServerAliveCountMax 3"' <<<"$studios"
     } >"$tmp"
 
+    if [[ $backend == native && -f $ssh_conf ]]; then
+      # Retain aliases outside this sync's visibility/ownership. Replace only
+      # the exact single-alias blocks generated for currently visible studios.
+      aliases=$(jq -r '[.[].alias] | join(" ")' <<<"$studios")
+      preserved=$(mktemp)
+      awk -v aliases="$aliases" '
+        BEGIN { n=split(aliases, a, " "); for (i=1; i<=n; i++) managed[a[i]]=1 }
+        tolower($1) == "host" || tolower($1) == "match" {
+          skip=(tolower($1) == "host" && NF == 2 && $2 in managed)
+        }
+        !skip { print }
+      ' "$ssh_conf" >"$preserved"
+      printf '\n' >>"$preserved"
+      cat "$tmp" >>"$preserved"
+      mv "$preserved" "$tmp"
+    fi
+
     if $dry_run; then
       cat "$tmp"
       rm -f "$tmp"
@@ -105,6 +128,7 @@ Host \(.alias)
       main="$HOME/.ssh/config"
       include="Include $ssh_conf"
       if ! grep -qxF "$include" "$main" 2>/dev/null; then
+        touch "$main"
         awk -v inc="$include" '!done && /^Host / { print inc "\n"; done=1 } { print } END { if (!done) print inc }' \
           "$main" >"$main.tmp" && mv "$main.tmp" "$main" && chmod 600 "$main"
         echo "added '$include' to $main"
@@ -116,6 +140,37 @@ Host \(.alias)
       $dry_run && return
       "$@" || { echo "  failed: $*" >&2; return 1; }
     }
+
+    if [[ $backend == native ]]; then
+      saved=$(hc machine ls --json)
+      if ! jq -e '
+        type == "object" and (.machines | type == "array") and
+        all(.machines[]; (.name | type == "string") and (.target | type == "string"))
+      ' <<<"$saved" >/dev/null; then
+        echo 'herdr-studios: invalid hc machine ls response' >&2
+        exit 1
+      fi
+      jq -c '.[]' <<<"$studios" | while read -r s; do
+        alias=$(jq -r .alias <<<"$s")
+        status=$(jq -r .status <<<"$s")
+        if [[ $status != running ]]; then
+          echo "skipped $alias ($status); saved machines preserved"
+          continue
+        fi
+        # Never replace a registered profile, including a name collision.
+        if jq -e --arg a "$alias" 'any(.machines[]; .name == $a or .target == $a)' <<<"$saved" >/dev/null; then
+          echo "preserved $alias (already registered)"
+        else
+          run hc machine add --install --name "$alias" "$alias"
+        fi
+      done
+      jq -r --argjson cur "$(jq '[.[].alias]' <<<"$studios")" --arg p "$alias_prefix" '
+        .machines[] | .target as $t
+        | select((($t | startswith($p)) or (.name | startswith($p))) and ($cur | index($t) | not))
+        | "skipped \(.name) (deleted, filtered, or not visible); saved machine preserved"
+      ' <<<"$saved"
+      exit 0
+    fi
 
     # `machine add` only installs the remote server after an interactive
     # approval, so put the matching release binary where it looks first.

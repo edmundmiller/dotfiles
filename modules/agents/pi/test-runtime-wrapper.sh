@@ -5,29 +5,33 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 wrapper_source="$repo_root/modules/agents/pi/lib/_runtime-wrapper.nix"
 
 fail() {
-  printf 'FAIL: %s\n' "$*" >&2
-  exit 1
+    printf 'FAIL: %s\n' "$*" >&2
+    exit 1
 }
 
-grep -Fq -- "pkgs.nodejs" "$wrapper_source" \
-  || fail "Pi wrapper must put Nix node on PATH before user/Homebrew node"
+grep -Fq -- "pkgs.nodejs" "$wrapper_source" ||
+    fail "Pi wrapper must put Nix node on PATH before user/Homebrew node"
 
-grep -Fq -- "pkgs.python311.withPackages (ps: [ ps.setuptools ])" "$wrapper_source" \
-  || fail "Pi wrapper must use Python 3.11 with setuptools for node-gyp"
+grep -Fq -- "pkgs.python311.withPackages (ps: [ ps.setuptools ])" "$wrapper_source" ||
+    fail "Pi wrapper must use Python 3.11 with setuptools for node-gyp"
 
-grep -Fq -- '--set DEVELOPER_DIR "/Library/Developer/CommandLineTools"' "$wrapper_source" \
-  || fail "Pi wrapper must use CommandLineTools, not Xcode.app"
+grep -Fq -- '--set DEVELOPER_DIR "/Library/Developer/CommandLineTools"' "$wrapper_source" ||
+    fail "Pi wrapper must use CommandLineTools, not Xcode.app"
 
-grep -Fq -- '--set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"}' "$wrapper_source" \
-  || fail "Pi wrapper must export PYTHON for node-gyp"
+grep -Fq -- '--set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"}' "$wrapper_source" ||
+    fail "Pi wrapper must export PYTHON for node-gyp"
 
-grep -Fq -- 'updateExtensionsShim = lib.concatStringsSep "\n"' "$wrapper_source" \
-  || fail "Pi update shim must avoid heredoc newline splitting before exec target"
+grep -Fq -- '--set-default PI_SELF_UPDATE_COMMAND "${selfUpdate} {version}"' "$wrapper_source" ||
+    fail "Pi self-update must select dotfiles while allowing an explicit environment override"
 
-grep -Fq -- '/usr/bin/codesign -f -s - "$out/libexec/pi/pi"' "$wrapper_source" \
-  || fail "Pi wrapper must re-sign the copied Darwin binary"
+if grep -Fq -- 'set -- update --extensions' "$wrapper_source"; then
+    fail "Pi update must not be rewritten into an extension update"
+fi
 
-grep -Fq -- '--replace-fail "${pkgs.llm-agents.pi}/libexec/pi/pi" "$out/libexec/pi/pi"' "$wrapper_source" \
-  || fail "Pi launcher must use the copied, re-signed runtime"
+grep -Fq -- '/usr/bin/codesign -f -s - "$out/libexec/pi/pi"' "$wrapper_source" ||
+    fail "Pi wrapper must re-sign the copied Darwin binary"
+
+grep -Fq -- '--replace-fail "${pkgs.llm-agents.pi}/libexec/pi/pi" "$out/libexec/pi/pi"' "$wrapper_source" ||
+    fail "Pi launcher must use the copied, re-signed runtime"
 
 printf 'PASS: Pi runtime wrapper keeps Nix node, Python 3.11+setuptools, and CLT wiring\n'

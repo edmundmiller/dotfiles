@@ -30,7 +30,7 @@ def main [mode: string = "dry-activate", configuration: string = "nuc"] {
     ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
     ^ssh $NUC_HOST $"touch '($remote_dir)/.nuc-deploy-active'"
   }
-  let content_digest = (nuc-worktree-prepare $ctx.flake_dir $remote_dir $revision $source.dirty $deploy_user $target_host)
+  let content_digest = (nuc-worktree-prepare $ctx.flake_dir $remote_dir $source.head $source.dirty $deploy_user $target_host)
 
   if $mode == "validate" {
     let report_dir = (nuc-worktree-validation-report-dir $deploy_user $revision)

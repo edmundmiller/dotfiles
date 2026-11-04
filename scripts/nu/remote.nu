@@ -1,7 +1,7 @@
 use ./common.nu *
 
 export const NUC_HOST = "nuc"
-export const UNAS_HOST = "192.168.1.101"
+export const UNAS_HOST = "192.168.1.206"
 export const NUC_WORKTREE_MODES = ["dry-activate" "test" "switch" "build" "vm" "validate"]
 
 export def nuc-deploy-mode [hostname: string] {
@@ -190,14 +190,20 @@ export def nuc-worktree-prune [script: string, user: string, host: string = $NUC
   }
 }
 
-export def nuc-worktree-release-script [destination: string, user: string, root: string = "/tmp"] {
+export def nuc-worktree-release-script [destination: string, user: string, root: string = "/tmp", prune_script: string = ""] {
+  let prune_command = if ($prune_script | is-empty) {
+    $"bash '($destination)/bin/prune-nuc-deploy-snapshots'"
+  } else {
+    let encoded = (open --raw $prune_script | encode base64)
+    $"printf '%s' '($encoded)' | base64 --decode | bash -s --"
+  }
   $"function nuc_release {
   local release_status=0
   if ! rm -f '($destination)/.nuc-deploy-active'; then
     printf 'warning: failed to remove active NUC snapshot lease: ($destination)\\n' >&2
     release_status=1
   fi
-  if ! bash '($destination)/bin/prune-nuc-deploy-snapshots' '($root)' '($user)' 5; then
+  if ! ($prune_command) '($root)' '($user)' 5; then
     printf 'warning: failed to prune completed NUC snapshots after: ($destination)\\n' >&2
     release_status=1
   fi
@@ -206,8 +212,8 @@ export def nuc-worktree-release-script [destination: string, user: string, root:
 nuc_release"
 }
 
-export def nuc-worktree-release [destination: string, user: string, host: string = "", root: string = "/tmp"] {
-  let command = (nuc-worktree-release-script $destination $user $root)
+export def nuc-worktree-release [destination: string, user: string, host: string = "", root: string = "/tmp", prune_script: string = ""] {
+  let command = (nuc-worktree-release-script $destination $user $root $prune_script)
   if ($host | is-empty) {
     ^bash -c $command
   } else {
@@ -550,9 +556,10 @@ export def nuc-worktree-revision-command [destination: string, revision: string]
   $"bash '($destination)/bin/write-nuc-deploy-revision' '($destination)' '($revision)'"
 }
 
-export def nuc-worktree-prepare [source: string, destination: string, revision: string, dirty: bool, user: string, host: string = "", root: string = "/tmp"] {
+export def nuc-worktree-prepare [source: string, destination: string, head: string, dirty: bool, user: string, host: string = "", root: string = "/tmp"] {
   try {
-    let content_digest = (nuc-worktree-sync $source $destination $revision $dirty $host)
+    let content_digest = (nuc-worktree-sync $source $destination $head $dirty $host)
+    let revision = if $dirty { $"($head)-dirty" } else { $head }
     let command = (nuc-worktree-revision-command $destination $revision)
     if ($host | is-empty) {
       ^bash -c $command
@@ -562,7 +569,9 @@ export def nuc-worktree-prepare [source: string, destination: string, revision: 
     $content_digest
   } catch {|err|
     try {
-      nuc-worktree-release $destination $user $host $root
+      # Transfer may have failed before the snapshot received its pruner.
+      let prune_script = ($source | path join "bin" "prune-nuc-deploy-snapshots")
+      nuc-worktree-release $destination $user $host $root $prune_script
     } catch {|cleanup_err|
       print -e $"warning: failed to release NUC snapshot after preparation error: ($cleanup_err.msg)"
     }

@@ -16,7 +16,8 @@ const COMMANDS = new Map([
   ["plannotator-annotate", "Open markdown file or folder in annotation UI"],
   ["plannotator-last", "Annotate the last assistant message"],
 ]);
-const PLAN_SHORTCUT = "ctrl+alt+p";
+const PLAN_SHORTCUT = "ctrl+alt+shift+p";
+const UPSTREAM_PLAN_SHORTCUT = "ctrl+alt+p";
 const PLAN_TOOL = "plannotator_submit_plan";
 
 function piAgentRoot() {
@@ -98,7 +99,7 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
       api,
       captureCommands: [...COMMANDS.keys()],
       captureFlags: ["plan"],
-      captureShortcuts: [PLAN_SHORTCUT],
+      captureShortcuts: [UPSTREAM_PLAN_SHORTCUT],
       captureTools: [PLAN_TOOL],
       importExtension,
       replayEvents: ["session_start"],
@@ -128,7 +129,7 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
       description: "Toggle plannotator",
       async handler(context: unknown) {
         await lazy.activate(context);
-        const shortcut = lazy.shortcuts.get(PLAN_SHORTCUT);
+        const shortcut = lazy.shortcuts.get(UPSTREAM_PLAN_SHORTCUT);
         if (!shortcut) throw new Error("Plannotator did not register Ctrl+Alt+P");
         return shortcut.handler(context);
       },

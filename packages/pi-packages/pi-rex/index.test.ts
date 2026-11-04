@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
-import type {
-  ExtensionAPI,
-  ExtensionCommandContext,
-  ExtensionContext,
-  ExtensionEvent,
+import {
+  SessionManager,
+  type ExtensionAPI,
+  type ExtensionCommandContext,
+  type ExtensionContext,
+  type ExtensionEvent,
 } from "@earendil-works/pi-coding-agent";
-import { readFile, rm, stat } from "node:fs/promises";
-import { dirname } from "node:path";
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import rexExtension from "./index.js";
 
 type PromptResult = { systemPrompt: string };
@@ -21,14 +23,17 @@ function setup(
   })
 ) {
   const handlers = new Map<string, Handler>();
+  const shortcuts = new Map<string, Parameters<ExtensionAPI["registerShortcut"]>[1]>();
   let command: Parameters<ExtensionAPI["registerCommand"]>[1];
   const messages: Array<Parameters<ExtensionAPI["sendMessage"]>> = [];
   const notifications: string[] = [];
-  // SAFETY: The extension only calls notify; unused UI methods deliberately fail if accessed.
+  const sessionManager: ExtensionContext["sessionManager"] = SessionManager.inMemory("/project");
+  // SAFETY: Unused UI methods deliberately fail if accessed.
   const ui = {
     notify: (message: string) => {
       notifications.push(message);
     },
+    select: async (_title: string, _options: string[]): Promise<string | undefined> => undefined,
   } as ExtensionContext["ui"];
   // SAFETY: This fixture supplies the context properties used by the registered handlers.
   const ctx = {
@@ -36,6 +41,7 @@ function setup(
     mode: "tui",
     hasUI: true,
     isIdle: () => false,
+    sessionManager,
     ui,
   } as ExtensionCommandContext;
   const api: Partial<ExtensionAPI> = {
@@ -48,6 +54,9 @@ function setup(
     },
     registerCommand: (_name: string, definition: typeof command) => {
       command = definition;
+    },
+    registerShortcut: (key, definition) => {
+      shortcuts.set(key, definition);
     },
     sendMessage: (...args: Parameters<ExtensionAPI["sendMessage"]>) => {
       messages.push(args);
@@ -65,6 +74,11 @@ function setup(
       return handlers.get(name)?.(event as never, ctx);
     },
     command: (args: string) => command.handler(args, ctx),
+    shortcut: (key: string) => {
+      const shortcut = shortcuts.get(key);
+      if (!shortcut) throw new Error(`Missing shortcut: ${key}`);
+      return shortcut.handler(ctx);
+    },
   };
 }
 
@@ -290,4 +304,129 @@ test("a capture that finishes after session replacement cannot enter the new con
   await pending;
   expect(app.messages).toEqual([]);
   expect(app.notifications).toEqual([]);
+});
+
+test.each([
+  ["picker", "split"],
+  ["command", "tab"],
+  ["ctrl+alt+f", "split"],
+  ["ctrl+alt+t", "tab"],
+])(
+  "%s forks the selected branch into a Rex %s without changing the source",
+  async (trigger, placement) => {
+    const directory = await mkdtemp(join(tmpdir(), "pi-rex-fork-"));
+    const source = join(directory, "source.jsonl");
+    const timestamp = "2026-10-17T12:00:00.000Z";
+    const original =
+      [
+        { type: "session", version: 3, id: "original", timestamp, cwd: "/project with spaces" },
+        {
+          type: "message",
+          id: "root",
+          parentId: null,
+          timestamp,
+          message: { role: "user", content: "Common history", timestamp: 1 },
+        },
+        {
+          type: "message",
+          id: "chosen",
+          parentId: "root",
+          timestamp,
+          message: { role: "user", content: "Selected branch", timestamp: 2 },
+        },
+        {
+          type: "message",
+          id: "other",
+          parentId: "root",
+          timestamp,
+          message: { role: "user", content: "Wrong branch", timestamp: 3 },
+        },
+      ]
+        .map((entry) => JSON.stringify(entry))
+        .join("\n") + "\n";
+    try {
+      await writeFile(source, original);
+      const manager = SessionManager.open(source, directory);
+      manager.branch("chosen");
+      let launched: string[] = [];
+      const app = setup(async (command, args) => {
+        expect(command).toBe("rex");
+        launched = args;
+        return { stdout: "{}", stderr: "", code: 0, killed: false };
+      });
+      app.ctx.sessionManager = manager;
+      app.ctx.cwd = "/project with spaces";
+      app.ctx.isIdle = () => true;
+      app.ctx.ui.select = async (_title, options) => {
+        expect(options).toEqual(["split", "tab"]);
+        return "split";
+      };
+      if (trigger === "picker") await app.command("fork");
+      else if (trigger === "command") await app.command("fork tab");
+      else await app.shortcut(trigger);
+      expect(app.notifications.at(-1)).toContain(
+        `new Rex ${placement === "split" ? "split pane" : "tab"}`
+      );
+      const separator = launched.indexOf("--");
+      expect(launched.slice(0, separator)).toEqual([
+        "run",
+        "-s",
+        "session:agent",
+        "--cwd",
+        "/project with spaces",
+        "--keep-open",
+        "--json",
+        ...(placement === "split" ? ["-b", "block:agent", "--split=right"] : []),
+      ]);
+      const forkFile = launched[separator + 3];
+      expect(launched.slice(separator + 1)).toEqual([
+        "pi",
+        "--session",
+        forkFile,
+        "--session-dir",
+        directory,
+      ]);
+      expect(forkFile).not.toBe(source);
+      const fork = SessionManager.open(forkFile, directory);
+      expect(fork.getSessionId()).not.toBe("original");
+      expect(fork.getHeader()?.parentSession).toBe(source);
+      expect(
+        fork
+          .buildSessionContext()
+          .messages.map((message) => (message.role === "user" ? message.content : message.role))
+      ).toEqual(["Common history", "Selected branch"]);
+      expect(manager.getLeafId()).toBe("chosen");
+      expect(manager.getSessionFile()).toBe(source);
+      expect(await readFile(source, "utf8")).toBe(original);
+      expect(await readdir(directory)).toHaveLength(2);
+    } finally {
+      await rm(directory, { recursive: true });
+    }
+  }
+);
+
+test("fork refuses unsafe contexts and cancelling the picker launches nothing", async () => {
+  let launches = 0;
+  const app = setup(async () => {
+    launches++;
+    return { stdout: "", stderr: "", code: 0, killed: false };
+  });
+  await app.command("fork split");
+  expect(app.notifications.at(-1)).toContain("Wait for Pi");
+  app.ctx.isIdle = () => true;
+  await app.command("fork sideways");
+  expect(app.notifications.at(-1)).toContain("Usage:");
+  await app.command("fork split");
+  expect(app.notifications.at(-1)).toContain("saved Pi session");
+  app.notifications.length = 0;
+  await app.command("fork");
+  expect(app.notifications).toEqual([]);
+  process.env.TMUX = "nested";
+  await app.command("fork tab");
+  expect(app.notifications.at(-1)).toContain("directly inside a Rex terminal");
+  delete process.env.TMUX;
+  delete process.env.REX_SESSION;
+  await app.command("fork tab");
+  expect(app.notifications.at(-1)).toContain("directly inside a Rex terminal");
+  expect(launches).toBe(0);
 });

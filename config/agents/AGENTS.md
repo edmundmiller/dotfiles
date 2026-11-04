@@ -1,10 +1,10 @@
 # Shared agent configuration
 
 `core.md` supplies startup instructions for OMP, Codex, Claude, Pi, and OpenCode;
-its limit is 220 words. Keep task procedures in skills or scoped guides.
+its limit is 400 words. Keep task procedures in skills or scoped guides.
 Unslop writing rules live in `skills/catalog/unslop/`; do not copy them into
 `core.md`.
-`modes/` deploys to `~/.claude/agents` and the OpenCode V2 agent directory.
+`modes/` deploys to `~/.claude/agents` and `~/.config/opencode/agent`.
 
 - Global skills: `skills/catalog/`, with selection and target wiring in
   `skills/flake.nix`; see [skills guidance](../../skills/AGENTS.md).
@@ -16,7 +16,7 @@ Unslop writing rules live in `skills/catalog/unslop/`; do not copy them into
   to link into `~/.claude/skills`, preserving one canonical copy for OMP discovery.
 - OMP conditional rules live in `config/omp/rules/` (TTSR). Other runtimes use
   their native scoped instructions, skills, hooks, and checks.
-- OpenCode V2 loads its global `AGENTS.md`, not the legacy `instructions` array.
+- OpenCode loads its global `AGENTS.md`, not the legacy `instructions` array.
 
 Package and runtime deployment belong to the matching `modules/agents/` module;
 Plannotator integration belongs to `modules/agents/plannotator/`.

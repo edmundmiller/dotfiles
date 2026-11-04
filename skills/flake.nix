@@ -302,6 +302,12 @@
           "herdr"
           "enable"
         ];
+        rexEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "rex"
+          "enable"
+        ];
         hunkEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -574,6 +580,10 @@
                   if [ "''${entry##*/}" = synced ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
                     continue
                   fi
+                  # Rex installs its own stub skill here via "rex skill setup".
+                  if [ "''${entry##*/}" = rex ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
                   if [ ! -L "$entry" ]; then
                     module_managed=0
                     break
@@ -758,6 +768,15 @@
                   # Checkout-owned package extends upstream guidance with current
                   # agent CLI workflows, references, and deterministic helpers.
                   path = ./conditional/herdr;
+                  subdir = ".";
+                  filter.maxDepth = 3;
+                };
+
+                rex = {
+                  # Stub copied from "rex skill setup" (rex-stub 2). The guide itself
+                  # comes from the installed rex CLI, so this never goes stale.
+                  # ~/.agents/skills is a read-only Nix tree, so rex cannot write it.
+                  path = ./conditional/rex;
                   subdir = ".";
                   filter.maxDepth = 3;
                 };
@@ -964,6 +983,10 @@
                 # module is actually turned on.
                 herdr.from = "herdr";
                 herdr.path = "herdr";
+              }
+              // lib.optionalAttrs rexEnabled {
+                rex.from = "rex";
+                rex.path = "rex";
               }
               // lib.optionalAttrs diffityEnabled {
                 diffity-diff.from = "diffity";

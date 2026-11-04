@@ -21,13 +21,15 @@ class MiseTasksTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "project with spaces"
         self.root.mkdir()
+        empty_config = Path(self.temp.name) / "empty.toml"
+        empty_config.write_text("")
         self.env = os.environ | {
             "MISE_TRUSTED_CONFIG_PATHS": str(self.root),
             "MISE_DATA_DIR": str(Path(self.temp.name) / "mise-data"),
             "MISE_STATE_DIR": str(Path(self.temp.name) / "mise-state"),
             "MISE_CACHE_DIR": str(Path(self.temp.name) / "mise-cache"),
-            "MISE_GLOBAL_CONFIG_FILE": "/dev/null",
-            "MISE_SYSTEM_CONFIG_FILE": "/dev/null",
+            "MISE_GLOBAL_CONFIG_FILE": str(empty_config),
+            "MISE_SYSTEM_CONFIG_FILE": str(empty_config),
             "MISE_TASK_OUTPUT": "interleave",
             "MISE_AUTO_INSTALL": "0",
         }
@@ -121,6 +123,13 @@ class MiseTasksTests(unittest.TestCase):
             ("agents-rollout", "dotfiles_msg"),
             ("zbench", "args"),
             ("zbench:save", "args"),
+            ("pi:update", "version"),
+            ("pi-update", "version"),
+            ("xcode:setup", "app"),
+            ("xcode-setup", "app"),
+            ("unas", "mode"),
+            ("unas:recover", "root"),
+            ("unas-recover", "root"),
             ("u", "inputs"),
         ]:
             with self.subTest(task=task):
@@ -128,6 +137,33 @@ class MiseTasksTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn(parameter, result.stdout)
                 self.assertIn("Parameters:", result.stdout)
+
+    def test_pi_update_uses_selected_checkout_and_never_rebuilds_after_failure(self):
+        self.copy_project()
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        nix = tools / "nix"
+        nix.write_text(
+            f"#!{shutil.which('bash')}\nset -euo pipefail\n"
+            'if [[ "$1" == eval ]]; then echo x86_64-linux; exit; fi\n'
+            '[[ "$*" == "run $MISE_PROJECT_ROOT#pi.updater -- $MISE_PROJECT_ROOT/overlays/pi 1.5.0" ]] || exit 92\n'
+            'exit "$TEST_UPDATE_EXIT"\n'
+        )
+        nix.chmod(0o755)
+        rebuild = self.root / "mise-tasks/rebuild.nu"
+        rebuild.write_text(
+            f"#!{shutil.which('bash')}\nprintf 'rebuilt %s\\n' \"$MISE_PROJECT_ROOT\"\n"
+        )
+        self.env["PATH"] = f"{tools}:{self.env['PATH']}"
+        self.env["FLAKE_DIR"] = "/wrong-checkout"
+        for exit_code in (0, 23):
+            with self.subTest(exit_code=exit_code):
+                self.env["TEST_UPDATE_EXIT"] = str(exit_code)
+                result = self.run_command("mise", "run", "pi-update", "1.5.0")
+                self.assertEqual(result.returncode, exit_code, result.stderr)
+                self.assertEqual(
+                    result.stdout, f"rebuilt {self.root}\n" if exit_code == 0 else ""
+                )
 
     def test_environment_and_dev_credentials_stay_scoped(self):
         self.copy_project()

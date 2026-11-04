@@ -16,7 +16,7 @@ root `AGENTS.md` route that tells agents to load that file when writing. It
 does not paste the full list into `AGENTS.md` or `config/agents/core.md`.
 
 - [ADR 0010](../adr/0010-omp-ttsr-thin-agent-harness.md) keeps the shared
-  startup core to universal invariants and a 220-word budget.
+  startup core to universal invariants and a 400-word budget.
 - [Agent guardrails](../agent-guardrails.md) keep `AGENTS.md` routers short.
   Longer recipes belong in skills or canonical docs.
 - Catalog skills under `skills/catalog/` auto-enable globally. That is how

@@ -2,6 +2,82 @@
 
 NixOS module for Home Assistant with Matter, PostgreSQL recorder, Homebridge, and Tailscale access.
 
+## Inspect health and traces
+
+After deployment, `hass-health` provides read-only health checks and trace access.
+It never calls services, runs automations, dismisses Repairs, or edits `.storage`.
+Supply an existing token with `HASS_TOKEN`, `HASS_TOKEN_FILE`, or `--token-file`.
+An explicit token file takes precedence over the environment token. HA requires
+administrator access for traces; the command is read-only, but the token itself
+is not restricted to read-only operations. Remote connections require HTTPS.
+
+On NUC, use the existing agent token without printing its contents:
+
+```bash
+hass-health health --token-file /run/agenix/ha-hermes-token --json
+hass-health traces list --domain script --item-id good_morning --token-file /run/agenix/ha-hermes-token --json
+hass-health traces get --domain script --item-id good_morning --run-id RUN_ID --token-file /run/agenix/ha-hermes-token --json
+```
+
+For automations, use `--domain automation` and the Nix automation `id`, not the
+entity ID or display name. `traces list` returns the IDs needed by `traces get`.
+Listings are newest-first and default to 20 entries; `--limit` accepts 1 through 100.
+Trace commands report `status: ok` when retrieval succeeds, even when the run failed. Inspect
+`has_error`, `script_execution`, and the step paths for the run's outcome.
+
+Health reports contain a UTC observation timestamp and these checks:
+
+- Running HA version versus the version embedded in the Nix-built command.
+  `--expected-version` overrides that expectation for a candidate upgrade.
+- Enabled integrations that are not loaded, plus active, non-dismissed Repairs.
+- Availability of both thermostats and the bedtime, goodnight, and morning
+  scripts. Repeat `--entity` to replace the default list for one invocation.
+- Errors in retained automation and script runs from the last 24 hours.
+  `--since-hours` changes that window. No retained runs means `unknown`, not a
+  successful automation check. Trigger evaluations that did not fire do not
+  count as runs.
+
+Exit codes are `0` for healthy or successful trace retrieval, `1` for observed
+health failures, and `2` for incomplete inspection or command errors. A known
+failure takes precedence over an unknown check, but every check keeps its own
+status. Backups and physical device outcomes appear in `not_checked`; this
+command alone is not an upgrade acceptance gate. The disabled HA backup
+integration does not establish restic health, and an existing backup Repair is
+still reported rather than silently ignored.
+
+Trace output includes run IDs, timestamps, step paths, condition results, and
+parent context IDs. It omits configuration, variables, service payloads, user
+IDs, and free-form error text. Use HA's trace UI for those sensitive details.
+Nix-declared automations default to 20 stored traces. The bedtime, morning, and
+climate scripts also retain 20. Explicit automation trace settings take
+precedence. Retention is count-based, not a guarantee of 24-hour coverage, and
+HA saves traces on graceful shutdown rather than continuously to durable storage.
+
+Before deployment, run the source with `uv run --script
+modules/services/hass/hass-health.py` followed by the same subcommands. Supply
+`--expected-version` and `--entity` on source health runs because the Nix wrapper
+provides those defaults. Run the isolated CLI tests with
+`uv run --with websockets==15.0.1 python modules/services/hass/_tests/test_hass_health.py`.
+`hey check modules/services/hass` also runs them through Nix.
+
+## FitBark
+
+[FitBark](https://github.com/saubury/ha-fitbark) is Nix-managed. Do not install
+a second copy through HACS. After an authorized deployment:
+
+1. Register an application at the [FitBark developer portal](https://www.fitbark.com/dev/)
+   to obtain a client ID and client secret.
+2. Open **Settings → Devices & services → Add integration → FitBark** in Home
+   Assistant, enter the application credentials, and complete the OAuth login.
+3. Confirm each dog appears as a device. The integration initially imports
+   42 days of activity into recorder statistics.
+
+Keep credentials in Home Assistant's config flow, never in Nix or YAML. The
+integration attempts to register `https://my.home-assistant.io/redirect/oauth`
+with FitBark automatically. If registration fails, register that redirect with
+FitBark before retrying OAuth. The existing `default_config` supplies the required
+`application_credentials` and `recorder` integrations.
+
 ## Jev (TypeSafe)
 
 [HA-Jev](https://github.com/AboveColin/HA-Jev) and its `jevclient` dependency are

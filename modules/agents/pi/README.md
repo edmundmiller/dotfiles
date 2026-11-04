@@ -49,6 +49,24 @@ This includes the codemode worker and native platform assets without upgrading
 the other agents in the shared `llm-agents` input. Check the effective version
 with `nix eval --raw .#pi.version`, then build with `nix build .#pi`.
 
+Pi 1.5.0 uses the upstream build recipe with local `overlays/pi/hashes.json`
+and `package-lock.json` pins. The wrapped CLI defaults `PI_SELF_UPDATE_COMMAND`
+to a packaged script that selects the dotfiles checkout and runs `mise run pi:update`.
+When Pi detects a newer release, `pi update` refreshes only these Pi pins,
+then runs the guarded rebuild task.
+An explicit `PI_SELF_UPDATE_COMMAND` environment value overrides that default.
+Use `pi update --extensions` to update extensions without rebuilding the host.
+
+The packaged self-update script targets `$FLAKE_DIR`, then `$DOTFILES`, then
+`~/.config/dotfiles`, not the current project's flake. A direct
+`hey pi-update <version>` runs the current checkout's task, like every other
+`hey` command. The updater rejects downgrades
+and leaves the pins unchanged if downloading or preparing dependencies fails.
+A failed rebuild leaves the new pins available for inspection and retry with
+`hey re`. Revert both Pi pin files and run `hey re` to return to an earlier release.
+Running a self-update activates the host configuration, so agents still need
+explicit authorization. Source checks do not run this command.
+
 `config/pi/settings.jsonc` enables codemode alongside the ordinary tools.
 The host catalog in `modules.agents.mcp` supplies native MCP registrations in
 writable `~/.pi/agent/mcp.json`, with tools available through codemode rather
