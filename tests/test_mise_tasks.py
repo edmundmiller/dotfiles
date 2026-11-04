@@ -186,6 +186,210 @@ class MiseTasksTests(unittest.TestCase):
                     result.stdout, f"rebuilt {self.root}\n" if exit_code == 0 else ""
                 )
 
+    @unittest.skipUnless(
+        os.environ.get("PI_SELF_UPDATE_TEST_LAUNCHER"), "Nix-built Pi launcher required"
+    )
+    def test_packaged_pi_update_runs_real_guards_with_only_boundary_mocks(self):
+        self.copy_project()
+        # Nix's test harness patches shebangs. Restore the checkout's env lookup
+        # while using an env executable that exists inside its sandbox.
+        for name in ("pi/update.nu", "rebuild.nu"):
+            task = self.root / "mise-tasks" / name
+            task.write_text(
+                f"#!{shutil.which('env')} -S nu --no-config-file\n"
+                + task.read_text().split("\n", 1)[1]
+            )
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        log = self.root / "operations"
+        self.env.update(
+            PATH=str(tools),
+            HOME=str(Path(self.temp.name) / "home"),
+            GH_CONFIG_DIR=str(Path(self.temp.name) / "gh"),
+            FLAKE_DIR=str(self.root),
+            TEST_LOG=str(log),
+            TEST_OVERRIDES=str(self.root / "caller-tools"),
+            NIX_CONFIG="experimental-features = nix-command flakes",
+        )
+        for key in (
+            "GH_TOKEN",
+            "GITHUB_TOKEN",
+            "GH_ENTERPRISE_TOKEN",
+            "GITHUB_ENTERPRISE_TOKEN",
+            "GH_HOST",
+        ):
+            self.env.pop(key, None)
+        Path(self.env["HOME"]).mkdir()
+        (Path(self.env["HOME"]) / ".config").mkdir()
+        (Path(self.env["HOME"]) / ".config/dotfiles").symlink_to(self.root)
+        self.env["GH_PROMPT_DISABLED"] = "1"
+        bash = shutil.which("bash")
+
+        def executable(name, body):
+            path = tools / name
+            path.write_text(f"#!{bash}\nset -euo pipefail\n" + body)
+            path.chmod(0o755)
+            return path
+
+        activation = executable(
+            "darwin-rebuild",
+            'echo activation >> "$TEST_LOG"\nexit "$TEST_ACTIVATION_EXIT"\n',
+        )
+        executable(
+            "nixos-rebuild", activation.read_text().split("set -euo pipefail\n", 1)[1]
+        )
+        executable("sudo", 'exec "$@"\n')
+        executable("systemctl", 'echo post >> "$TEST_LOG"\nexit 0\n')
+        executable(
+            "nix",
+            """
+case "$1" in
+  eval) echo x86_64-linux ;;
+  run)
+    [[ "$*" == "run $MISE_PROJECT_ROOT#pi.updater -- $MISE_PROJECT_ROOT/overlays/pi 1.5.0" ]] || exit 94
+    echo update >> "$TEST_LOG"; exit "$TEST_UPDATE_EXIT" ;;
+  flake)
+    echo archive >> "$TEST_LOG"
+    if [[ "$TEST_OS" == macos ]]; then
+      if [[ "$TEST_AUTH" == present ]]; then
+        [[ "$NIX_CONFIG" == *'access-tokens = github.com=fixture-only-token'* ]] || exit 91
+      else
+        [[ "$NIX_CONFIG" == 'experimental-features = nix-command flakes' ]] || exit 92
+        exit 41
+      fi
+    fi
+    exit "$TEST_ARCHIVE_EXIT" ;;
+  build)
+    echo build >> "$TEST_LOG"
+    mkdir -p "$MISE_PROJECT_ROOT/result/sw/bin"
+    ln -s "$MISE_PROJECT_ROOT/fake-tools/activation" "$MISE_PROJECT_ROOT/result/sw/bin/darwin-rebuild" ;;
+  *) exit 93 ;;
+esac
+""",
+        )
+        # Remap fixed host/privilege boundaries in the fixture, never on the host.
+        # All guard and orchestration functions remain the production implementation.
+        common = self.root / "scripts/nu/common.nu"
+        source = (
+            common.read_text()
+            .replace("$nu.os-info.name", "$env.TEST_OS")
+            .replace("/run/current-system/sw/bin", str(tools))
+            .replace("/run/wrappers/bin", str(tools))
+            .replace("/nix/var/nix/profiles/default/bin", str(tools))
+            .replace("^/usr/bin/sudo", f'^"{tools / "sudo"}"')
+        )
+        common.write_text(source)
+        (self.root / "flake.lock").write_text("{}\n")
+        (self.root / "flake.nix").write_text("{}\n")
+        git = shutil.which("git")
+        subprocess.run([git, "init", "--quiet", str(self.root)], check=True)
+        subprocess.run([git, "-C", str(self.root), "add", "."], check=True)
+        launcher = os.environ["PI_SELF_UPDATE_TEST_LAUNCHER"]
+        for os_name in ("linux", "macos"):
+            for case in (
+                "success",
+                "caller-tools",
+                "dotfiles",
+                "home",
+                "invalid-lock",
+                "conflict",
+                "no-auth",
+                "auth-failure",
+                "update-failure",
+                "archive-failure",
+                "activation-failure",
+                "fallback",
+            ):
+                with self.subTest(os=os_name, case=case):
+                    self.env.pop("FLAKE_DIR", None)
+                    self.env.pop("DOTFILES", None)
+                    if case == "dotfiles":
+                        self.env["DOTFILES"] = str(self.root)
+                    elif case != "home":
+                        self.env["FLAKE_DIR"] = str(self.root)
+                        self.env["DOTFILES"] = "/wrong-lower-priority-checkout"
+                    self.env.update(
+                        TEST_OS=os_name,
+                        TEST_AUTH="absent"
+                        if case in ("no-auth", "auth-failure")
+                        else "present",
+                        TEST_UPDATE_EXIT="23" if case == "update-failure" else "0",
+                        TEST_ARCHIVE_EXIT="42" if case == "archive-failure" else "0",
+                        TEST_ACTIVATION_EXIT="43"
+                        if case == "activation-failure"
+                        else "0",
+                    )
+                    self.env.pop("GH_TOKEN", None)
+                    if case != "no-auth":
+                        self.env["GH_TOKEN"] = "fixture-only-token"
+                    if case == "auth-failure":
+                        executable("gh", "exit 23\n")
+                    else:
+                        (tools / "gh").unlink(missing_ok=True)
+                    for name in ("nu", "mise"):
+                        if case == "caller-tools":
+                            executable(
+                                name,
+                                f'echo {name} >> "$TEST_OVERRIDES"\n'
+                                f'exec "{shutil.which(name)}" "$@"\n',
+                            )
+                        else:
+                            (tools / name).unlink(missing_ok=True)
+                    Path(self.env["TEST_OVERRIDES"]).unlink(missing_ok=True)
+                    lock = (
+                        "bad json\n"
+                        if case == "invalid-lock"
+                        else "<<<<<<< conflict\n"
+                        if case == "conflict"
+                        else "{}\n"
+                    )
+                    (self.root / "flake.lock").write_text(lock)
+                    if case == "fallback":
+                        activation.rename(tools / "activation")
+                    log.unlink(missing_ok=True)
+                    result = self.run_command(launcher, "1.5.0", cwd=self.temp.name)
+                    if case == "fallback":
+                        (tools / "activation").rename(activation)
+                    operations = log.read_text().splitlines()
+                    expected = ["update"]
+                    if case not in ("invalid-lock", "conflict", "update-failure"):
+                        expected.append("archive")
+                        if case != "archive-failure" and not (
+                            os_name == "macos" and case in ("no-auth", "auth-failure")
+                        ):
+                            if os_name == "macos" and case == "fallback":
+                                expected.append("build")
+                            expected.append("activation")
+                            if os_name == "linux" and case != "activation-failure":
+                                expected.append("post")
+                    self.assertEqual(operations, expected, result.stderr)
+                    success = case in (
+                        "success",
+                        "caller-tools",
+                        "dotfiles",
+                        "home",
+                        "fallback",
+                    ) or (os_name == "linux" and case in ("no-auth", "auth-failure"))
+                    self.assertEqual(result.returncode == 0, success, result.stderr)
+                    if case == "invalid-lock":
+                        self.assertIn("flake.lock is not valid JSON", result.stderr)
+                    if case == "conflict":
+                        self.assertIn(
+                            "flake.lock contains git conflict markers", result.stderr
+                        )
+                    self.assertNotIn(
+                        "fixture-only-token", result.stdout + result.stderr
+                    )
+                    if case == "caller-tools":
+                        self.assertEqual(
+                            set(
+                                Path(self.env["TEST_OVERRIDES"])
+                                .read_text()
+                                .splitlines()
+                            ),
+                            {"nu", "mise"},
+                        )
+
     def test_environment_and_dev_credentials_stay_scoped(self):
         self.copy_project()
         self.env.pop("WORKTRUNK_WORKTREE_PATH", None)

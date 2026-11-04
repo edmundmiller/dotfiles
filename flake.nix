@@ -1206,6 +1206,15 @@
               validation-tests =
                 pkgs.runCommand "validation-tests"
                   {
+                    PI_SELF_UPDATE_TEST_LAUNCHER =
+                      (import ./modules/agents/pi/lib/_runtime-wrapper.nix {
+                        inherit lib;
+                        # Only build the real launcher, not the unrelated Pi binary.
+                        pkgs = pkgs // {
+                          llm-agents.pi = pkgs.hello;
+                        };
+                        piSecretPreflightScript = "true";
+                      }).selfUpdate;
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.git

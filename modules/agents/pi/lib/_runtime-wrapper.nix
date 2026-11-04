@@ -20,6 +20,16 @@ let
       lib.makeBinPath [
         pkgs.nushell
         pkgs.mise
+        pkgs.nix
+        pkgs.git
+        pkgs.gnugrep
+        pkgs.jq
+        pkgs.gh
+        pkgs.bash
+        pkgs.gawk
+        pkgs.coreutils
+        pkgs.unixtools.hostname
+        pkgs.unixtools.ps
       ]
     }:/run/current-system/sw/bin"
     exec ${lib.getExe pkgs.mise} --cd "''${FLAKE_DIR:-''${DOTFILES:-$HOME/.config/dotfiles}}" run pi:update "$@"
@@ -62,5 +72,6 @@ pkgs.stdenvNoCC.mkDerivation {
     runHook postInstall
   '';
 
+  passthru.selfUpdate = selfUpdate;
   inherit (pkgs.llm-agents.pi) meta;
 }

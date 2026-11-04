@@ -32,6 +32,7 @@ CHECKS = {
         "scripts/nu/*",
         "mise.toml",
         "mise-tasks/*",
+        "modules/agents/pi/lib/_runtime-wrapper.nix",
         "tests/test_mise_tasks.py",
         "bin/qa-changed",
         "tests/test_validation.py",
