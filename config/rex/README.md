@@ -6,6 +6,100 @@ Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them
 (including Pi's Rex extension) can run `rex`. Ghostty startup is unchanged.
 
+## Daily jj workflow
+
+Rex owns task sessions; jj owns their checkouts. Set `AGENT` to one executable
+name or path in your shell environment. Use an executable wrapper for flags;
+`AGENT=1` is not an agent selection. Herdr remains available separately.
+
+| Keys               | Action                                                 |
+| ------------------ | ------------------------------------------------------ |
+| Prefix + `a`       | Prompt for a task slug and base, then open its session |
+| Prefix + `Shift+A` | Reopen the focused checkout's recorded session         |
+| Prefix + `d`       | Open a fresh review tab for the focused checkout       |
+| Prefix + `w`       | Switch between existing task sessions                  |
+
+The command palette also exposes these as **New jj task workspace**,
+**Open jj workspace session**, and **Review jj workspace**. The launcher opens
+in a separate terminal, so it never sends shell commands into a running agent.
+It keeps its result visible. Close that launcher tab when finished.
+
+The same workflow is scriptable after activation:
+
+```sh
+rex-jj new issue-123-login --repo ~/src/project --base 'trunk()'
+rex-jj open /path/to/existing/task
+rex-jj review /path/to/existing/task
+```
+
+`new` creates a named jj workspace and bookmark without fetching. Workspaces
+live under `${XDG_DATA_HOME:-~/.local/share}/rex/workspaces/<repo-key>/<task>`;
+creation from a child uses the same repository key. A stack uses its parent
+bookmark as `--base`. Existing task names and destinations are rejected.
+Git-only checkouts are rejected rather than initialized or converted.
+
+Each session has `review` and `agent` tabs, with the agent active. `open` reuses
+the recorded session even after a rename; after a session is closed, it creates
+one for the existing checkout. Closing Rex tabs never deletes the workspace.
+The helper stores session IDs and `receiptPath` in `.jj/rex-session.json`.
+`agent-run` writes the durable receipt outside the checkout. If opening Rex
+fails after creation, the helper keeps the workspace and prints its resume path.
+
+The keybinding asks the invoking Mac client to select the new session. Remote
+Control must be enabled in Rex. CLI calls print JSON without changing the app;
+pass `--client CLIENT_ID` to select it, or use prefix + `w`.
+
+With jj 0.46 and a colocated source, jj creates colocated children by default.
+Hunk runs only when Git and jj both report the task checkout as their root.
+On older jj, or in a non-colocated child, review shows `jj diff --git` instead.
+That view is a snapshot; prefix + `d` refreshes it in a new tab. For an existing
+non-colocated child on jj 0.46, verify `pwd` and `jj root`, run
+`jj git colocation enable`, then reopen review. Never use `jj git init` to
+convert an agent-created Git-only worktree.
+
+Run these commands on the machine holding the checkout. The Mac module does
+not install this workflow on the NUC; remote use requires the helper, agent,
+jj, and configuration on that server first.
+
+Review, publish, and cleanup follow the
+[Rex jj skill](../../skills/catalog/using-rex-jj-workspaces/SKILL.md).
+There is deliberately no delete-workspace key. Cleanup requires explicit
+authority, preserved changes, and a closed or merged PR before forgetting a
+workspace or removing its directory. Closing a session alone is not cleanup.
+
+Validate with `python3 -m unittest tests.test_rex_jj_workspace` on a Mac with
+Rex and jj installed. Tests start isolated Rex servers and disposable repos;
+they do not reload or stop your running Rex. Run `hey check config/rex
+modules/shell/rex.nix tests/test_rex_jj_workspace.py` for source checks.
+Activation still requires an authorized `hey re`, followed by
+`rex config reload`. The helper and these actions are not live before that.
+
+## NUC connection
+
+`init.lua` declares `nuc` at `https://nuc-rex.cinnamon-rooster.ts.net`, using
+the host ID already registered in the Mac app. Keep that ID stable when renaming
+the host. The shared Mac config makes this host available on both Macs.
+
+`hosts/nuc/default.nix` enables Rex's separate `nuc-rex` Tailscale identity at
+startup. It leaves the NUC's existing Tailscale Serve/Funnel configuration alone
+and permits only the identity's owner. Enrollment is one-time runtime state;
+the Nix configuration contains no auth key. The service runs as `emiller:users`
+with an owner-only local socket, so new terminals use the NUC user's home,
+shell, files, and permissions. Rex's state stays in `/var/lib/rex`; systemd's
+`StateDirectory` ownership follows the service user, preserving the enrolled
+Tailscale identity when switching from the default `rex` account.
+
+Changing the service user restarts Rex and ends existing terminals. Check for
+active work before deployment; existing terminals cannot change users in place.
+
+Apply the server setting with an authorized `hey nuc` deployment. Apply the Mac
+config with an authorized `hey re`, then `rex config reload`. Verify with
+`rex hosts check nuc --json` and `rex -S nuc whoami --json`. A CLI connection
+alone does not prove the app connected; `rex -S nuc client ls --json` must also
+show the Mac app connected. Select a session listed by `rex -S nuc ls --json`
+through that remote app client, then verify its session attachment. In a new
+terminal, `whoami` and `pwd` should report `emiller` and `/home/emiller`.
+
 ## Appearance
 
 The Rex module pins vertical tabs on both Macs and selects themes using the
@@ -47,6 +141,28 @@ a no-op outside Rex. Activation (`rexAgentStatusHooks`) merges the hooks into
 Rex's own names instead of Claude's long title. Restart agent sessions after
 activation. Check with `rex api call --session "$REX_SESSION"
 com.superlogical.terminal.program_status`.
+
+## 1Password CLI
+
+On macOS 27, `op` finds the desktop app by reading its settings from
+`~/Library/Group Containers/2BUA8C4S2C.com.1password/`. macOS judges that read
+by the terminal that launched `op`, not by `op`'s own signature. The kernel
+denies it without a prompt, so `op account list` prints nothing and other
+commands report `no account found for filter`. `op whoami --debug` shows the
+cause: `settings.json: operation not permitted`. Upgrading `op` does not help.
+
+Rex terminals run under Rex Server, not the Rex app. Grant Rex Server Full Disk
+Access once per Mac. In System Settings → Privacy & Security → Full Disk Access,
+click **+**, press `Cmd+Shift+G`, and add
+`~/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app`.
+Then restart the server with `rex server stop` and `rex server start`. This ends
+running sessions. The grant follows the bundle ID and team, so it also covers
+the copy inside `Rex Beta.app` and survives Rex updates. Verify with
+`rex run --focus=false --wait -- op account list`, which should list your
+accounts.
+
+Herdr panes still fail. `herdr-core` is ad-hoc signed, so macOS ties any grant
+to that exact build, and each rebuild drops it.
 
 ## Shortcuts
 

@@ -14,7 +14,8 @@ clean commit. Use the printed `NUC_WORKTREE_REMOTE_DIR` for checks on that exact
 snapshot. Active leases protect builds; pruning retains five recent snapshots.
 
 `hey nuc` is the deployment interface. Manual GitHub deployments use
-`hey nuc revision <SHA>` after CI and environment approval. The host wrapper
+`hey nuc revision <SHA>` after authorized dispatch and successful exact-head CI,
+with no second environment approval. The host wrapper
 rechecks live main under its deployment lock; scheduled auto-upgrades are
 disabled. Its opnix token stays root-only. See the deployment runbook for
 bootstrap and rollback. There is no persistent `~/dotfiles-deploy` clone.

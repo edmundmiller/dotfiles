@@ -68,6 +68,8 @@ let
       --stdio
   '';
   herdrPlugin = ../../../packages/pi-packages/pi-herdr;
+  legacyHerdrEnabled =
+    config.modules.shell.herdr.enable && config.modules.shell.herdr.backend == "legacy";
   hunkPlugin = ../../../packages/pi-packages/pi-hunk;
   reviewLoopPluginSource = "git:github.com/earendil-works/pi-review-loop#3822e126b8b9ec05d7796b7897512c773ba9a166";
   ponytailPlugin = pkgs.fetchzip {
@@ -196,7 +198,7 @@ let
   # copying the whole config.
   baseConfig = ../../../config/omp/config.yml;
   configOverrides = [
-    ".internalUrls.herdr = ${if config.modules.shell.herdr.enable then "true" else "false"}"
+    ".internalUrls.herdr = ${if legacyHerdrEnabled then "true" else "false"}"
     ".internalUrls.hunk = ${if config.modules.shell.git.hunk.enable then "true" else "false"}"
   ]
   ++ lib.optional (cfg.themeDark != null) ''.theme.dark = "${cfg.themeDark}"''
@@ -620,7 +622,16 @@ in
         {
           home.activation.omp-herdr-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${ompPackage}/bin/omp plugin uninstall @ogulcancelik/pi-herdr --json >/dev/null 2>&1 || true
-            ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${herdrPlugin}"} --force --json >/dev/null
+            ${
+              if legacyHerdrEnabled then
+                ''
+                  ${ompPackage}/bin/omp plugin link ${lib.escapeShellArg "${herdrPlugin}"} --force --json >/dev/null
+                ''
+              else
+                ''
+                  ${ompPackage}/bin/omp plugin uninstall pi-herdr --json >/dev/null 2>&1 || true
+                ''
+            }
           '';
 
           home.activation.omp-hunk-plugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

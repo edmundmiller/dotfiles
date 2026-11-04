@@ -4,9 +4,7 @@
   agentCore,
   piPkgDeps,
   piPstack,
-  piCommandPolicyBridge,
   piSettingsValidated,
-  piPermissionSystemConfig,
   promptLinks,
   agentLinks,
   sessionSearchFiles,
@@ -19,17 +17,6 @@ promptLinks
   ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
-  ".pi/agent/extensions/pi-permission-system/config.json" = {
-    text = piPermissionSystemConfig;
-    # The extension's save() rewrites this path in place (tmp + rename), so it
-    # replaces the symlink with a regular file. Without force, Home Manager
-    # backs that file up to config.json.bkup and the *next* activation aborts
-    # because the backup already exists. The repo owns this policy, so let
-    # activation reclaim the path; only debugLog/permissionReviewLog/yoloMode
-    # are lost, and those are declared here too.
-    force = true;
-  };
-  ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
   ".pi/agent/packages/pstack-pi".source = piPstack;
 }
 // sessionSearchFiles

@@ -16,6 +16,7 @@ Operational runbooks for the dotfiles infrastructure.
 | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | [rebuild-failure.md](rebuild-failure.md)                           | `darwin-rebuild` or `nixos-rebuild` fails                         |
 | [deploy-nuc.md](deploy-nuc.md)                                     | Deploying to the NUC server via deploy-rs                         |
+| [meshify-bios-update.md](meshify-bios-update.md)                   | Updating Meshify's ASUS PRIME X570-P BIOS locally                 |
 | [renovate.md](renovate.md)                                         | Renovate is quiet, noisy, or its Action is failing                |
 | [secret-rotation.md](secret-rotation.md)                           | Rotating secrets managed by agenix                                |
 | [remove-installer-nix-profile.md](remove-installer-nix-profile.md) | `nix` resolves to a stale installer profile instead of system nix |

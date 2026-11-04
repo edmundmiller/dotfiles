@@ -304,7 +304,10 @@ let
 
   last = list: builtins.elemAt list ((length list) - 1);
 
-  allowedDisabledAutomations = [ "sync_iphone_alarm_8sleep" ];
+  allowedDisabledAutomations = [
+    "sync_iphone_alarm_8sleep"
+    "plant_glow_light_on"
+  ];
 
   missingInitialState = filter (
     a: !(a.initial_state or null) && !(builtins.elem (a.id or "") allowedDisabledAutomations)
@@ -326,6 +329,8 @@ let
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
   whiteNoiseWithBedtimeAudiobook = findAutomation "white_noise_with_bedtime_audiobook";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
+  plantGlowLightOn = findAutomation "plant_glow_light_on";
+  plantGlowLightOff = findAutomation "plant_glow_light_off";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
   alSleepModeOff = findAutomation "al_sleep_mode_off";
@@ -1022,6 +1027,92 @@ let
     {
       test =
         let
+          tag = findAutomation "monica_mirror_nfc_get_ready_for_bed";
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
+          }
+        &&
+          tag.condition == [
+            {
+              condition = "state";
+              entity_id = "input_boolean.goodnight";
+              state = "off";
+            }
+            {
+              condition = "time";
+              after = "20:00:00";
+              before = "04:00:00";
+            }
+            {
+              condition = "state";
+              entity_id = "script.good_morning";
+              state = "off";
+            }
+          ]
+        && tag.mode == "single"
+        &&
+          tag.action == [
+            {
+              action = "timer.start";
+              target.entity_id = "timer.mirror_bedtime";
+            }
+            { action = "script.get_ready_for_bed"; }
+            { delay = "00:00:10"; }
+          ];
+      msg = "Monica's mirror NFC tag must require bedtime mode off, guard daytime/morning scans, and debounce Get Ready for Bed, not Good Night";
+    }
+    {
+      test =
+        let
+          countdown = findAutomation "mirror_bedtime_countdown";
+          phase = head countdown.action;
+          start = (head phase.choose).sequence;
+          notifications = filter (a: hasInfix "notify.mobile_app_" (a.action or "")) start;
+          clear = filter (a: hasInfix "notify.mobile_app_" (a.action or "")) phase.default;
+          finished = (pkgs.lib.last phase.default)."then";
+          phones = [
+            "notify.mobile_app_edmunds_iphone"
+            "notify.mobile_app_monicas_iphone"
+          ];
+        in
+        countdown != null
+        && timers.mirror_bedtime.duration == "00:12:00"
+        && timers.mirror_bedtime.restore
+        && map (a: a.action) notifications == phones
+        && builtins.all (
+          a:
+          a.data.data.tag == "mirror-bedtime"
+          && a.data.data.live_update
+          && a.data.data.chronometer
+          && a.data.data.when == "{{ target_ts }}"
+          && !a.data.data.when_relative
+          && a.continue_on_error
+        ) notifications
+        && hasInfix "finishes_at" (head start).variables.target_ts
+        && map (a: a.action) clear == phones
+        && builtins.all (
+          a: a.data.message == "clear_notification" && a.data.data.tag == "mirror-bedtime"
+        ) clear
+        && map (a: a.action) finished == phones
+        && builtins.all (a: a.data.title == "Time to brush teeth") finished
+        && hasEventTrigger countdown "timer.finished"
+        && hasEventTrigger countdown "timer.cancelled"
+        && hasHomeAssistantStartTrigger countdown.trigger
+        && hasActionCall start "rest_command.busy_bar_mirror_bedtime_draw"
+        && hasInfix "home_assistant_mirror_bedtime" restCommands.busy_bar_mirror_bedtime_draw.payload
+        && hasInfix "remaining_seconds" restCommands.busy_bar_mirror_bedtime_draw.payload
+        && hasInfix "?application_name=home_assistant_mirror_bedtime" restCommands.busy_bar_mirror_bedtime_clear.url
+        && hasStateTrigger busyBarBedtimeProgress "timer.mirror_bedtime" "idle"
+        && hasInfix "timer.mirror_bedtime" (builtins.toJSON busyBarBedtimeProgress.condition);
+      msg = "Mirror bedtime countdown must share a restored 12-minute deadline across both phones and a bounded BUSY Bar display, then clear and remind both phones";
+    }
+    {
+      test =
+        let
           tag = findAutomation "monica_nightstand_nfc_goodnight";
         in
         tag != null
@@ -1050,6 +1141,43 @@ let
             { delay = "00:00:10"; }
           ];
       msg = "Monica's NFC tag must guard daytime/morning scans and debounce the direct Good Night call";
+    }
+    {
+      test =
+        let
+          tag = findAutomation "phoebe_kibble_nfc_record_feeding";
+          lastFed = haConfig.input_datetime.phoebe_last_fed or { };
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = [
+              "729d23f5-3368-487e-bff0-3cf6a22cba29"
+              "2e0ad6b4-069c-445a-a23f-4af99eccb21d"
+            ];
+          }
+        && tag.mode == "single"
+        &&
+          tag.action == [
+            {
+              action = "input_datetime.set_datetime";
+              target.entity_id = "input_datetime.phoebe_last_fed";
+              data.timestamp = "{{ now().timestamp() }}";
+            }
+            {
+              action = "logbook.log";
+              data = {
+                name = "Phoebe Feeding";
+                message = "Phoebe was fed 1/4 cup of Hill's Science Diet Adult Sensitive Stomach & Skin kibble, 97.75 kcal.";
+                entity_id = "input_datetime.phoebe_last_fed";
+              };
+            }
+          ]
+        && (lastFed.has_date or false)
+        && (lastFed.has_time or false)
+        && !(lastFed ? initial);
+      msg = "Both Phoebe kibble tags must restore the feeding time and log the food name, 1/4 cup portion, and 97.75 kcal";
     }
     {
       test = whiteNoiseWithBedtimeAudiobook != null;
@@ -1085,6 +1213,14 @@ let
     {
       test = syncIphoneAlarm8sleep != null && (syncIphoneAlarm8sleep.initial_state or null) == false;
       msg = "automation 'sync_iphone_alarm_8sleep' should remain present but declaratively disabled until an iOS alarm source exists";
+    }
+    {
+      test = plantGlowLightOn != null && (plantGlowLightOn.initial_state or null) == false;
+      msg = "automation 'plant_glow_light_on' must stay disabled across restarts until the broken plant light is repaired";
+    }
+    {
+      test = plantGlowLightOff != null && (plantGlowLightOff.initial_state or false);
+      msg = "automation 'plant_glow_light_off' must remain enabled while the broken plant light is paused";
     }
     {
       test =
@@ -1371,6 +1507,12 @@ let
     {
       test = hasActionCall (toList (entranceOccupancyNightLight.action or [ ])) "adaptive_lighting.apply";
       msg = "entrance_occupancy_night_light missing adaptive_lighting.apply action";
+    }
+    {
+      test = hasStateCondition (toList (
+        entranceOccupancyNightLight.condition or [ ]
+      )) "light.smart_night_light_w" "off";
+      msg = "entrance_occupancy_night_light must require the light to be off so returning motion preserves manual adjustments";
     }
 
     {

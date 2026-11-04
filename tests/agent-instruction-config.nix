@@ -21,6 +21,10 @@ let
           enable = true;
         })
         // {
+          pi = {
+            enable = true;
+            classifierModel = null;
+          };
           claude = {
             enable = true;
             pstack.enable = true;
@@ -58,11 +62,10 @@ in
     ".codex/AGENTS.md" = (load "codex").home.file.".codex/AGENTS.md".text;
     ".claude/CLAUDE.md" = (load "claude").home.file.".claude/CLAUDE.md".text;
     ".pi/agent/AGENTS.md" = (home "pi").home.file.".pi/agent/AGENTS.md".text;
-    ".config/opencode2/opencode/AGENTS.md" =
+    ".config/opencode/AGENTS.md" =
       builtins.readFile
-        (home "opencode").xdg.configFile."opencode2/opencode/AGENTS.md".source;
+        (home "opencode").xdg.configFile."opencode/AGENTS.md".source;
   };
   ompRules = lib.filter (lib.hasPrefix ".omp/agent/rules/") (builtins.attrNames files);
   fixAgentsPrompt = builtins.readFile files.".omp/agent/commands/fix-agents-md.md".source;
-  opencodeCompatibility = (home "opencode").home.activation.opencode-v1-cleanup.data;
 }

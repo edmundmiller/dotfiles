@@ -1011,10 +1011,6 @@ let
 
 in
 {
-  # Rex server (Linux): uncomment the flake input/module, then enable here before other hosts.
-  # services.rex.enable = true;
-  # user.extraGroups = [ "rex" ];
-
   assertions = telegramBindings.assertions ++ [
     {
       assertion = hermesTelegramBotTokenOwners == [ ];
@@ -1485,6 +1481,23 @@ in
   # assume networked builds.
   nix.settings.sandbox = "relaxed";
 
+  # Run terminals as the NUC user; retain the enrolled identity in /var/lib/rex.
+  services.rex.enable = true;
+  services.rex.user = "emiller";
+  services.rex.group = "users";
+  services.rex.socketMode = "0600";
+  services.rex.tailscale = {
+    enable = true;
+    hostname = "nuc-rex";
+  };
+
+  age.secrets.rex-netrc = {
+    owner = "root";
+    group = "root";
+    mode = "0600";
+  };
+  nix.settings.netrc-file = config.age.secrets.rex-netrc.path;
+
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld = {
     enable = true;
@@ -1553,6 +1566,7 @@ in
     }
     ../_server.nix
     ../_home.nix
+    inputs.rex.nixosModules.default
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
@@ -2618,10 +2632,6 @@ in
       sonarr.enable = true;
       deploy-rs.enable = true;
       mosh.enable = true;
-      moshi = {
-        enable = true;
-        hookSecretsFile = config.age.secrets.moshi-hook-secrets-json.path;
-      };
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;

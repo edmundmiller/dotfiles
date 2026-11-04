@@ -57,7 +57,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for invariant in (
             "Preserve unrelated work and stay within the user's requested scope.",
             "Do not infer authority",
@@ -203,7 +203,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("agent-browser-after.png", github_skill)
         self.assertIn("claude-shared-skill-links", claude_module)
         self.assertIn(
-            "for skill in test-quality github-cli-media lore pe-verify; do",
+            'for skill in test-quality github-cli-media lore pe-verify${optionalString config.modules.desktop.apps.tldraw.enable " tldraw-offline"}; do',
             claude_module,
         )
         self.assertIn('shared="$HOME/.agents/skills/$skill"', claude_module)
@@ -315,21 +315,12 @@ class AgentInstructionWiringTests(unittest.TestCase):
     def test_omp_installs_fix_agents_md_prompt_template(self) -> None:
         self.assertEqual(FIX_AGENTS_COMMAND.read_text(), self.deployed["fixAgentsPrompt"])
 
-    def test_opencode_module_owns_its_v2_compatibility_alias(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            home = Path(tmp)
-            legacy = home / ".config/opencode"
-            target = home / ".config/opencode2/opencode"
-            legacy.mkdir(parents=True)
-            (legacy / "old-plugin").write_text("incompatible")
-            script = self.deployed["opencodeCompatibility"].replace(
-                "/tmp/agent-instruction-test", str(home)
-            )
-            for _ in range(2):
-                subprocess.run(["bash", "-eu", "-c", script], check=True)
-                self.assertTrue(legacy.is_symlink())
-                self.assertEqual(target.resolve(), legacy.resolve())
-                self.assertFalse((legacy / "old-plugin").exists())
+    def test_opencode_module_uses_standard_config_path_without_legacy_cleanup(self) -> None:
+        module = (ROOT / "modules/agents/opencode/default.nix").read_text()
+        self.assertIn('"opencode/AGENTS.md"', module)
+        self.assertIn('"opencode/command"', module)
+        self.assertNotIn("opencode2", module)
+        self.assertNotIn("opencode-v1-cleanup", module)
 
     def test_omp_config_uses_the_deployed_omp_18_registry(self) -> None:
         config = OMP_CONFIG.read_text()

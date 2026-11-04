@@ -12,7 +12,7 @@ with lib;
 
     # Hosts
     192.168.1.88   meshify.home
-    192.168.1.101  unas.home
+    192.168.1.206  unas.home
     192.168.1.222  nuc.home
 
     # Block garbage

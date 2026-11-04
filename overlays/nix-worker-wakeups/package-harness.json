@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/NixOS/nix.git",
+  "ref": "2.35.1",
+  "patches": ["patches/0001-fix-lost-build-slot-wakeups.patch"],
+  "checks": [["git", "diff", "--check"]]
+}
