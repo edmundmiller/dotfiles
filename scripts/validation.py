@@ -36,6 +36,7 @@ CHECKS = {
         ".codex/hooks.json",
         ".omp/hooks/*",
     ],
+    "hass-health-tests": ["modules/services/hass/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",
@@ -70,6 +71,12 @@ CHECKS = {
         "docs/agent-guardrails.md",
         "docs/validation.md",
     ],
+    "tldraw-api-tests": [
+        "config/tldraw/*",
+        "modules/desktop/apps/tldraw.nix",
+        "skills/catalog/tldraw-offline/*",
+        "tests/test_tldraw_api.py",
+    ],
     "agent-mcp-tests": [
         "config/agents/mcp.nix",
         "config/agents/reconcile_mcp.py",
@@ -93,9 +100,11 @@ CHECKS = {
         "modules/agents/opencode/*",
         "modules/agents/pi/*",
         "modules/agents/plannotator/*",
+        "overlays/pi/*",
         "tests/agent-instruction-config.nix",
         "tests/test_agent_instruction_wiring.py",
         "tests/test_agent_response_contract.py",
+        "tests/test_pi_update.py",
         "tests/test_codex_model_config.py",
         "tests/test_omp_ttsr_rules.py",
         "tests/omp_lazy_extensions.test.js",
@@ -146,6 +155,14 @@ CHECKS = {
     "nuc-hermes-displayctl-wiring": ["hosts/nuc/*", "packages/displayctl/*"],
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
 }
+
+# Recovery runs real Nix profiles inside Linux user/mount namespaces, not a VM.
+if sys.platform == "linux":
+    CHECKS["unas-recovery"] = [
+        "bin/unas-recover*",
+        "bin/tests/unas-recover.bash",
+        "hosts/unas/*",
+    ]
 
 DARWIN_CHECKS = [
     "mactraitor-fail-closed-activation",

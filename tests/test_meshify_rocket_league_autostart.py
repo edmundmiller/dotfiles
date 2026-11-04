@@ -18,6 +18,14 @@ AUTOSTART = (
 
 class RocketLeagueAutostartTest(unittest.TestCase):
     def test_retries_when_steam_drops_the_first_launch_request(self) -> None:
+        self._check_launch_attempts(steam_running=True, expected_attempts=2)
+
+    def test_does_not_reopen_steam_after_it_exits(self) -> None:
+        self._check_launch_attempts(steam_running=False, expected_attempts=1)
+
+    def _check_launch_attempts(
+        self, *, steam_running: bool, expected_attempts: int
+    ) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             root = Path(tempdir)
             bin_dir = root / "bin"
@@ -27,6 +35,7 @@ class RocketLeagueAutostartTest(unittest.TestCase):
 
             self._write_command(
                 bin_dir / "pgrep",
+                f'if [[ $1 == -x ]]; then exit {0 if steam_running else 1}; fi\n'
                 f'[[ $(<"{attempts}") -ge 2 ]]\n',
             )
             self._write_command(
@@ -48,7 +57,7 @@ class RocketLeagueAutostartTest(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertEqual(attempts.read_text(), "2\n")
+            self.assertEqual(attempts.read_text(), f"{expected_attempts}\n")
 
     def _write_command(self, path: Path, body: str) -> None:
         path.write_text("#!/usr/bin/env bash\n" + body)

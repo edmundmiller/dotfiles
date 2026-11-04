@@ -77,7 +77,7 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "github:edmundmiller/tnote/99dd970045af706a549c2ba3b3d245f6b9725b0d";
+      url = "github:edmundmiller/tnote/2085d519e13ebdcd5a9e896e35cb2ede185f4e06";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
       inputs.llm-agents.follows = "llm-agents";
@@ -519,7 +519,7 @@
           };
 
           unas = {
-            hostname = "192.168.1.101";
+            hostname = "192.168.1.206";
             sshUser = "emiller";
             user = "root";
             interactiveSudo = false;
@@ -1349,6 +1349,12 @@
                 touch "$out"
               '';
 
+              tldraw-api-tests = pkgs.runCommand "tldraw-api-tests" { } ''
+                cd ${./.}
+                PYTHONDONTWRITEBYTECODE=1 ${pkgs.python3}/bin/python3 -m unittest tests.test_tldraw_api
+                touch "$out"
+              '';
+
               agent-mcp-tests =
                 pkgs.runCommand "agent-mcp-tests"
                   {
@@ -1394,6 +1400,7 @@
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
                         tests/test_agent_response_contract.py \
+                        tests/test_pi_update.py \
                         tests/test_codex_model_config.py \
                         tests/test_omp_ttsr_rules.py
                     bun test ./tests/omp_lazy_extensions.test.js
@@ -1449,6 +1456,9 @@
                   ''
                     # Setup git config for tests
                     export HOME=$TMPDIR
+                    # Unsandboxed Darwin builds see the host /etc/zshenv; zunit's zsh
+                    # would source nix-darwin's set-environment and replace PATH.
+                    export __NIX_DARWIN_SET_ENVIRONMENT_DONE=1
                     git config --global user.email "test@test.com"
                     git config --global user.name "Test User"
                     git config --global init.defaultBranch main
@@ -1651,6 +1661,17 @@
                 herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
+
+              hass-health-tests =
+                pkgs.runCommand "hass-health-tests"
+                  {
+                    nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.websockets ])) ];
+                  }
+                  ''
+                    export PYTHONDONTWRITEBYTECODE=1
+                    python3 ${./modules/services/hass/_tests/test_hass_health.py} ${./modules/services/hass/hass-health.py}
+                    touch "$out"
+                  '';
             }
             // lib.optionalAttrs (system == darwinSystem) {
               mactraitor-fail-closed-activation = import ./hosts/mactraitorpro/_tests/fail-closed-activation.nix {
@@ -1950,6 +1971,29 @@
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
+              };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              unas-recovery = lib.my.mkServiceVmTest {
+                name = "unas-recovery";
+                extraConfig.environment.systemPackages = with pkgs; [
+                  bash
+                  bubblewrap
+                  coreutils
+                  findutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  inetutils
+                  nix
+                  python3
+                ];
+                testScript = ''
+                  start_all()
+                  machine.wait_for_unit("multi-user.target")
+                  machine.succeed("bash ${./.}/bin/tests/unas-recover.bash", timeout=300)
+                '';
               };
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.

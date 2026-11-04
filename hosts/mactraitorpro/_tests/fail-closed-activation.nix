@@ -125,9 +125,27 @@ let
     }
   ];
   failures = lib.filter (item: !item.test) assertions;
-  expectedChecks = pkgs.writeText "expected-fail-closed-checks" personal.system.activationScripts.checks.text;
-  expectedScript = pkgs.writeText "expected-fail-closed-script" personal.system.activationScripts.script.text;
-  rawChecks = pkgs.writeText "raw-permission-checks" personal.system.checks.text;
+  # These fixtures inspect script bytes without executing their store references.
+  # Keep the real generated source, but do not build its referenced host closure.
+  scriptFixture =
+    source:
+    source.overrideAttrs (old: {
+      text = builtins.unsafeDiscardStringContext old.text;
+    });
+  textFixture = name: text: pkgs.writeText name (builtins.unsafeDiscardStringContext text);
+  checksSource = scriptFixture personal.system.activationScripts.checks.source;
+  scriptSource = scriptFixture personal.system.activationScripts.script.source;
+  userChecksSource = scriptFixture activeUsers.config.system.activationScripts.checks.source;
+  expectedChecks = textFixture "expected-fail-closed-checks" personal.system.activationScripts.checks.text;
+  expectedScript = textFixture "expected-fail-closed-script" personal.system.activationScripts.script.text;
+  rawChecks = textFixture "raw-permission-checks" personal.system.checks.text;
+  forbiddenRuntime = pkgs.runCommand "activation-fixture-runtime-must-not-build" { } ''
+    echo "A content-only activation fixture tried to build a runtime dependency" >&2
+    exit 1
+  '';
+  contextProbe = scriptFixture (
+    pkgs.writeScript "activation-context-probe" "echo ${forbiddenRuntime}"
+  );
 in
 assert lib.assertMsg (failures == [ ]) (lib.concatMapStringsSep "\n" (item: item.msg) failures);
 pkgs.runCommand "mactraitor-fail-closed-activation"
@@ -137,16 +155,17 @@ pkgs.runCommand "mactraitor-fail-closed-activation"
   ''
         export PYTHONDONTWRITEBYTECODE=1
       # Match nix-darwin's existing output-message exclusions; SC2317 stays enabled.
-    ${pkgs.shellcheck}/bin/shellcheck --exclude=SC2016,SC1112 ${personal.system.activationScripts.script.source}
+    ${pkgs.shellcheck}/bin/shellcheck --exclude=SC2016,SC1112 ${scriptSource}
         ${pkgs.python3}/bin/python ${./test_fail_closed_activation.py} \
           --raw-checks ${rawChecks} \
-          --checks-source ${personal.system.activationScripts.checks.source} \
-        --raw-user-checks ${pkgs.writeText "raw-active-user-checks" activeUsers.config.system.checks.text} \
-        --user-checks-source ${activeUsers.config.system.activationScripts.checks.source} \
+          --checks-source ${checksSource} \
+        --raw-user-checks ${textFixture "raw-active-user-checks" activeUsers.config.system.checks.text} \
+        --user-checks-source ${userChecksSource} \
           --expected-checks ${expectedChecks} \
-          --script-source ${personal.system.activationScripts.script.source} \
+          --script-source ${scriptSource} \
           --expected-script ${expectedScript} \
           --bash ${pkgs.bash}/bin/bash
-        ${pkgs.diffutils}/bin/cmp ${merged.checks.source} ${pkgs.writeText "expected-merged-checks" merged.checks.text}
+        ${pkgs.diffutils}/bin/cmp ${scriptFixture merged.checks.source} ${textFixture "expected-merged-checks" merged.checks.text}
+        ${pkgs.gnugrep}/bin/grep -F 'echo /nix/store/' ${contextProbe}
         touch "$out"
   ''

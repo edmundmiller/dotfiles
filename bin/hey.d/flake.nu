@@ -24,6 +24,18 @@ def "main upgrade" [] {
   main rebuild
 }
 
+# Pin an exact Pi release and rebuild the host through hey's guarded workflow.
+# Uses FLAKE_DIR, DOTFILES, or ~/.config/dotfiles, not the current project.
+def "main pi-update" [version: string] {
+  let flake_dir = (
+    $env.FLAKE_DIR? | default ($env.DOTFILES? | default ($env.HOME | path join ".config" "dotfiles")) | path expand
+  )
+  with-env { FLAKE_DIR: $flake_dir } {
+    ^nix run $"($flake_dir)#pi.updater" -- ($flake_dir | path join "overlays" "pi") $version
+    main rebuild
+  }
+}
+
 # Python owns routing for both hey and CI. This command does not evaluate hosts
 # merely to discover the checkout or platform.
 def --wrapped "main check" [...args: string] {

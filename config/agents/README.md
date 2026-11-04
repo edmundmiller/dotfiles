@@ -24,13 +24,13 @@ config/agents/
 
 This configuration is shared across agent runtimes with generated skill targets:
 
-| Agent    | Shared skills         | Modes location                        | Instruction surface                      |
-| -------- | --------------------- | ------------------------------------- | ---------------------------------------- |
-| Claude   | Targeted shared links | `~/.claude/agents/`                   | `~/.claude/CLAUDE.md`                    |
-| Codex    | `~/.agents/skills/`   | Native profiles                       | `~/.codex/AGENTS.md`                     |
-| OpenCode | `~/.agents/skills/`   | `~/.config/opencode2/opencode/agent/` | `~/.config/opencode2/opencode/AGENTS.md` |
-| OMP      | `~/.agents/skills/`   | Native commands and TTSR              | `~/.omp/agent/AGENTS.md`                 |
-| Pi       | `~/.agents/skills/`   | Native prompts and agents             | `~/.pi/agent/AGENTS.md`                  |
+| Agent    | Shared skills         | Modes location              | Instruction surface            |
+| -------- | --------------------- | --------------------------- | ------------------------------ |
+| Claude   | Targeted shared links | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`          |
+| Codex    | `~/.agents/skills/`   | Native profiles             | `~/.codex/AGENTS.md`           |
+| OpenCode | `~/.agents/skills/`   | `~/.config/opencode/agent/` | `~/.config/opencode/AGENTS.md` |
+| OMP      | `~/.agents/skills/`   | Native commands and TTSR    | `~/.omp/agent/AGENTS.md`       |
+| Pi       | `~/.agents/skills/`   | Native prompts and agents   | `~/.pi/agent/AGENTS.md`        |
 
 The [Claude module](../../modules/agents/claude/default.nix) selects which skills
 to link under `~/.claude/skills` from the canonical copies in `~/.agents/skills`.

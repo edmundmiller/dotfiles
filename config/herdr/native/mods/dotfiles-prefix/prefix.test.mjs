@@ -6,7 +6,8 @@ import test from "node:test";
 // Exercise keyboard events through the rendered view, without sending keys to the user's app.
 async function prefixHarness(
   context = { space: "s", tab: "t", pane: "p1", terminal: "t1", cwd: "/repo" },
-  machine = null
+  machine = null,
+  layout = "main"
 ) {
   const events = [];
   const handlers = {};
@@ -60,6 +61,7 @@ async function prefixHarness(
     ],
     props: () => ({ overlay: "prefix" }),
     run: (...args) => events.push(["run", ...args]),
+    shared: (key) => (key === "layout" ? layout : null),
     spaces: () => [
       {
         id: "s",
@@ -174,4 +176,29 @@ test("files key selects Files even when Changes was previously selected", async 
     ["run", "layout.select", { stack: "panel-body", child: "files" }],
     ["run", "layout.show", { id: "panel" }],
   ]);
+});
+
+test("T3 uppercase prefix actions are layout-scoped and preserve lowercase actions", async () => {
+  const t3 = await prefixHarness(undefined, null, "herdr-t3");
+  await t3.press("b", { shift: true }, "B");
+  await t3.press("a", { shift: true }, "A");
+  await t3.press("s", { shift: true }, "S");
+  await t3.press("b");
+  await t3.press("s");
+  assert.deepEqual(t3.events, [
+    ["close", "prefix"],
+    ["run", "t3-chrome.sidebar", {}],
+    ["close", "prefix"],
+    ["run", "t3-tabs.view", {}],
+    ["close", "prefix"],
+    ["run", "t3-focus.settle", {}],
+    ["close", "prefix"],
+    ["run", "layout.toggle", { id: "sidebar" }],
+    ["close", "prefix"],
+    ["run", "pane.split", { direction: "down" }],
+  ]);
+
+  const main = await prefixHarness();
+  for (const key of ["b", "a", "s"]) await main.press(key, { shift: true });
+  assert.deepEqual(main.events, []);
 });

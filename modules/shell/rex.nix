@@ -30,6 +30,10 @@ let
     claude = {
       file = ".claude/settings.json";
       events = {
+        SessionStart = [
+          "idle"
+          ""
+        ];
         UserPromptSubmit = [
           "working"
           ""
@@ -55,6 +59,10 @@ let
     codex = {
       file = ".codex/hooks.json";
       events = {
+        SessionStart = [
+          "idle"
+          ""
+        ];
         UserPromptSubmit = [
           "working"
           ""

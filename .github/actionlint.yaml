@@ -1,0 +1,4 @@
+# GitHub-hosted macOS 27 is not yet in actionlint's built-in runner list.
+self-hosted-runner:
+  labels:
+    - xcode-27
