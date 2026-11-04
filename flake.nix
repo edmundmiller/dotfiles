@@ -519,7 +519,7 @@
           };
 
           unas = {
-            hostname = "192.168.1.101";
+            hostname = "192.168.1.206";
             sshUser = "emiller";
             user = "root";
             interactiveSudo = false;
@@ -1965,6 +1965,29 @@
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
+              };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              unas-recovery = lib.my.mkServiceVmTest {
+                name = "unas-recovery";
+                extraConfig.environment.systemPackages = with pkgs; [
+                  bash
+                  bubblewrap
+                  coreutils
+                  findutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  inetutils
+                  nix
+                  python3
+                ];
+                testScript = ''
+                  start_all()
+                  machine.wait_for_unit("multi-user.target")
+                  machine.succeed("bash ${./.}/bin/tests/unas-recover.bash", timeout=300)
+                '';
               };
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.
