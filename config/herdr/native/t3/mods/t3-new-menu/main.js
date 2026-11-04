@@ -136,7 +136,11 @@ export default class NewMenu extends View {
     if (find(layout(), "view")?.active === "agent")
       run("layout.select", { stack: "view", child: "main" });
     if (this.target === NEW) run("space.new", a ? { ...what, tab: a.name } : what);
-    else run("tab.new", { space: this.target.id, ...(a ? { ...what, name: a.name } : {}) });
+    else
+      run(
+        "tab.new",
+        a ? { space: this.target.id, ...what, name: a.name } : { space: this.target.id }
+      );
   }
 
   row(id, i, icon, name, sub, hint, pick) {
