@@ -1579,6 +1579,14 @@ let
       msg = "Sleep scene doesn't turn off switch.plant_glow_light";
     }
     {
+      test = (goodMorningScene.entities."switch.kitchen_dog_fountain" or null) == "on";
+      msg = "Good Morning must restore the dog fountain after Sleep turns it off";
+    }
+    {
+      test = (goodMorningScene.entities."switch.plant_glow_light" or null) == "off";
+      msg = "Good Morning must keep the broken plant light off";
+    }
+    {
       test = !(goodMorningScene.entities ? "switch.desk_monitor");
       msg = "Good Morning scene must not manage switch.desk_monitor directly";
     }

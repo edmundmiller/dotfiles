@@ -396,6 +396,8 @@ in
             state = "open";
             current_position = 20;
           };
+          "switch.kitchen_dog_fountain" = "on";
+          "switch.plant_glow_light" = "off";
           "switch.eve_energy_20ebu4101" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "light.kitchen_trashcan" = "on";
