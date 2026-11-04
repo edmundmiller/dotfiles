@@ -7,7 +7,7 @@
 
 import { describe, test, expect, beforeAll } from "bun:test";
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import { hashMessage, isSameOperation } from "../metadata";
+import { extractFilePath, hashMessage, isErrorMessage, isSameOperation } from "../metadata";
 import { applyPruningWorkflow } from "../workflow";
 import { registerRule } from "../registry";
 import { deduplicationRule } from "../rules/deduplication";
@@ -15,6 +15,7 @@ import { recencyRule } from "../rules/recency";
 import { toolPairingRule } from "../rules/tool-pairing";
 import { repairOrphanedToolPairsPostPruning } from "../events/context";
 import { getLogger } from "../logger";
+import { isPruneRuleObject } from "../types";
 import type { DcpConfigWithPruneRuleObjects } from "../types";
 
 // --- Helpers ---
@@ -139,6 +140,45 @@ describe("hashMessage", () => {
     const msg1 = makeUser("hello");
     const msg2 = makeUser("hello");
     expect(hashMessage(msg1)).toBe(hashMessage(msg2));
+  });
+});
+
+describe("runtime input compatibility", () => {
+  test("rule detection accepts inherited hooks and rejects malformed rule shapes", () => {
+    expect(isPruneRuleObject({ name: "prepare-only", prepare() {} })).toBe(true);
+    expect(isPruneRuleObject({ name: "process-only", process() {} })).toBe(true);
+    expect(isPruneRuleObject(Object.create({ name: "inherited", process() {} }))).toBe(true);
+    for (const value of [
+      null,
+      undefined,
+      "rule",
+      [],
+      {},
+      { name: "no-hook" },
+      { name: 1, prepare() {} },
+      { name: "bad-hook", prepare: true, process: "no" },
+    ]) {
+      expect(isPruneRuleObject(value)).toBe(false);
+    }
+  });
+
+  test("tool metadata preserves truthiness and path fallback on malformed details", () => {
+    // SAFETY: makeToolResult always constructs a toolResult message.
+    const message = makeToolResult("a", "write", "output") as Extract<
+      AgentMessage,
+      { role: "toolResult" }
+    >;
+    message.details = { path: "", file: "fallback.ts" };
+    expect(extractFilePath(message)).toBe("fallback.ts");
+    message.details = { path: 42, file: "unused.ts" };
+    // SAFETY: Observe malformed runtime data beyond the declared return type.
+    expect(extractFilePath(message) as unknown).toBe(42);
+    message.details = null;
+    expect(extractFilePath(message)).toBeNull();
+    // SAFETY: Deliberately malformed fixture checks historical truthiness coercion.
+    expect(isErrorMessage({ ...message, isError: "failed" } as any)).toBe(true);
+    // SAFETY: Deliberately malformed fixture checks historical falsiness coercion.
+    expect(isErrorMessage({ ...message, isError: 0 } as any)).toBe(false);
   });
 });
 

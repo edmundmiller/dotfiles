@@ -227,6 +227,24 @@ describe("buildTranscript", () => {
     expect(buildTranscript(entries)).toEqual([]);
   });
 
+  test("skips content-less session messages without losing adjacent transcript text", () => {
+    expect(
+      buildTranscript([
+        { type: "message", message: { role: "user", content: "before" } },
+        { type: "message", message: { role: "bashExecution" } },
+        { type: "message", message: { role: "user" } },
+        { type: "message", message: { role: "assistant" } },
+        {
+          type: "message",
+          message: { role: "assistant", content: [{ type: "text", text: "after" }] },
+        },
+      ])
+    ).toEqual([
+      { type: "user", text: "before", timestamp: undefined },
+      { type: "assistant", text: "after", timestamp: undefined },
+    ]);
+  });
+
   test("handles mixed assistant content types", () => {
     const entries = [
       {

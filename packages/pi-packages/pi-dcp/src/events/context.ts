@@ -168,13 +168,13 @@ function applyLlmDrivenPruning(
           result.push({
             ...msg,
             content: [{ type: "text", text: `[Distilled]\n${distillation}` }],
-          } as any);
+          });
           continue;
         }
 
         // Use cache entry for tool name to stay consistent with assistant-side filtering
         const cacheEntry = state.cache.get(msg.toolCallId);
-        const toolName = cacheEntry?.toolName || (msg as any).toolName || "unknown";
+        const toolName = cacheEntry?.toolName || msg.toolName || "unknown";
 
         // Write/edit: remove entirely (file system is source of truth)
         if (toolName === "write" || toolName === "edit") {
@@ -185,7 +185,7 @@ function applyLlmDrivenPruning(
         result.push({
           ...msg,
           content: [{ type: "text", text: PRUNED_REPLACEMENT }],
-        } as any);
+        });
         continue;
       }
 
@@ -196,7 +196,7 @@ function applyLlmDrivenPruning(
         result.push({
           ...msg,
           content: [{ type: "text", text: `[Compressed Summary]\n${anchorSummary}` }],
-        } as any);
+        });
         injectedAnchors.add(msg.toolCallId);
         continue;
       }
@@ -215,7 +215,7 @@ function applyLlmDrivenPruning(
 
       if (filtered.length === 0) continue;
       if (filtered.length !== msg.content.length) {
-        result.push({ ...msg, content: filtered } as any);
+        result.push({ ...msg, content: filtered });
         continue;
       }
     }
@@ -291,7 +291,7 @@ function injectContextInfo(
 
   // Find last user message and append
   for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i] as any;
+    const msg = messages[i];
     if (msg.role === "user") {
       if (typeof msg.content === "string") {
         msg.content = msg.content + "\n\n" + combined;
@@ -379,7 +379,7 @@ export function repairOrphanedToolPairsPostPruning(
           continue;
         }
 
-        finalResult.push({ ...msg, content: filtered } as any);
+        finalResult.push({ ...msg, content: filtered });
         logger.debug(
           `Post-repair: removed ${orphanedToolCalls.length} orphaned toolCall blocks from assistant`
         );

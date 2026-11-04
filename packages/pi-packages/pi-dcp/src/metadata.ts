@@ -24,7 +24,7 @@ export function hashMessage(message: AgentMessage): string {
 
   // toolResult messages: include toolCallId and toolName for uniqueness
   if (message.role === "toolResult") {
-    content = `[toolResult:${(message as any).toolCallId || "?"}:${(message as any).toolName || "?"}]`;
+    content = `[toolResult:${message.toolCallId || "?"}:${message.toolName || "?"}]`;
   }
 
   if ("content" in message) {
@@ -69,11 +69,11 @@ export function hashMessage(message: AgentMessage): string {
 export function extractFilePath(message: AgentMessage): string | null {
   if (message.role !== "toolResult") return null;
 
-  const toolName = (message as any).toolName;
+  const toolName = message.toolName;
   if (toolName !== "write" && toolName !== "edit") return null;
 
   // Try to extract from details
-  const details = (message as any).details;
+  const details = message.details;
   if (details?.path) return details.path;
   if (details?.file) return details.file;
 
@@ -85,7 +85,7 @@ export function extractFilePath(message: AgentMessage): string | null {
  */
 export function isErrorMessage(message: AgentMessage): boolean {
   if (message.role === "toolResult") {
-    return !!(message as any).isError;
+    return !!message.isError;
   }
 
   // Check content for error patterns
@@ -104,8 +104,8 @@ export function isErrorMessage(message: AgentMessage): boolean {
 export function isSameOperation(msg1: AgentMessage, msg2: AgentMessage): boolean {
   if (msg1.role !== "toolResult" || msg2.role !== "toolResult") return false;
 
-  const tool1 = (msg1 as any).toolName;
-  const tool2 = (msg2 as any).toolName;
+  const tool1 = msg1.toolName;
+  const tool2 = msg2.toolName;
 
   if (tool1 !== tool2) return false;
 

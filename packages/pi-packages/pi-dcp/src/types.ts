@@ -84,8 +84,9 @@ export const isPruneRuleObject = (obj: unknown): obj is PruneRule => {
     obj !== null &&
     "name" in obj &&
     ("prepare" in obj || "process" in obj) &&
-    typeof (obj as any).name === "string" &&
-    (typeof (obj as any).prepare === "function" || typeof (obj as any).process === "function")
+    typeof obj.name === "string" &&
+    (typeof (obj as Partial<PruneRule>).prepare === "function" ||
+      typeof (obj as Partial<PruneRule>).process === "function")
   );
 };
 

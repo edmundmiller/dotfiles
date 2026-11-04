@@ -1563,12 +1563,16 @@ export default function contextRepoExtension(pi: ExtensionAPI) {
   });
 
   // Inject memory into system prompt before each agent turn
-  (pi as any).on("auto_compaction_start", () => {
-    if (!initialized) return;
-    if (reflectionSettings.trigger === "compaction-event") {
-      pendingCompactionReminder = true;
+  // Retain the legacy runtime event, which is absent from ExtensionAPI's overloads.
+  (pi as ExtensionAPI & { on(event: "auto_compaction_start", handler: () => void): void }).on(
+    "auto_compaction_start",
+    () => {
+      if (!initialized) return;
+      if (reflectionSettings.trigger === "compaction-event") {
+        pendingCompactionReminder = true;
+      }
     }
-  });
+  );
 
   pi.on("before_agent_start", async (event, ctx) => {
     if (!initialized || !existsSync(memDir)) return;

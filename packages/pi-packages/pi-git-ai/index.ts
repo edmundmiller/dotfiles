@@ -72,7 +72,10 @@ export function runCheckpoint(payload: HumanCheckpoint | AiAgentCheckpoint): Pro
 /** Convert pi session entries to git-ai transcript format.
  *  Filters out tool results per git-ai spec. */
 export function buildTranscript(
-  entries: Array<{ type: string; message?: { role: string; content: unknown; timestamp?: number } }>
+  entries: Array<{
+    type: string;
+    message?: { role: string; content?: unknown; timestamp?: number };
+  }>
 ): TranscriptMessage[] {
   const out: TranscriptMessage[] = [];
 
@@ -170,7 +173,7 @@ export default function (pi: ExtensionAPI) {
       type: "ai_agent",
       repo_working_dir: process.cwd(),
       edited_filepaths: paths,
-      transcript: { messages: buildTranscript(ctx.sessionManager.getBranch() as any) },
+      transcript: { messages: buildTranscript(ctx.sessionManager.getBranch()) },
       agent_name: "pi",
       model: ctx.model?.id ?? "unknown",
       conversation_id: ctx.sessionManager.getSessionId(),
