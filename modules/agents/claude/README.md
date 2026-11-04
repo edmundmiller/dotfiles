@@ -47,13 +47,29 @@ does not install any marketplace other than that pstack link.
 
 - the session's context passes `CLAUDE_CONTEXT_WARN_TOKENS` (default 250000), and
   again on each `CLAUDE_CONTEXT_WARN_STEP_TOKENS` (default 100000) beyond it
+- the session's generation count passes `CLAUDE_GEN_WARN_SOFT` (default 250),
+  then again at `CLAUDE_GEN_WARN_HARD` (default 300)
 - a session first seen on an earlier America/Chicago day is resumed
 
-Context size comes from the newest main-thread assistant `usage` in the session
-transcript, counting input, cache-read, and cache-creation tokens. Warnings are
-recorded per session under `$XDG_CACHE_HOME/claude-session-budget` so each
-crossing warns once. Set `CLAUDE_CONTEXT_WARN_TOKENS=0` to silence the context
-warning.
+A generation is one main-thread assistant message with a `usage` object.
+Content blocks sharing a `message.id` count once, including across appended
+reads. Rows without an ID count individually. Subagent entries with
+`isSidechain` set and assistant entries without `usage` do not count.
+The per-session state file stores the seen message IDs, a byte offset and a
+hash of the first 256 bytes. Later checks read only the lines appended after
+that offset. If the file no longer reaches the offset, or those first bytes
+changed, the hook counts it again from the beginning.
+
+Context size still comes from the newest main-thread assistant `usage` in the
+tail of the transcript, counting input, cache-read, and cache-creation tokens.
+Generation warnings run on `UserPromptSubmit` and `Stop`, with the context
+check, so both can be returned on one event. `SessionStart` still reports a
+stale resume, and context size when the transcript is over that threshold.
+Each generation threshold warns once per session. Set `CLAUDE_GEN_WARN_SOFT=0` or
+`CLAUDE_GEN_WARN_HARD=0` to silence that warning. Set
+`CLAUDE_CONTEXT_WARN_TOKENS=0` to silence the context warning.
+
+Warnings are recorded per session under `$XDG_CACHE_HOME/claude-session-budget`.
 
 Activation adds the hook to `~/.claude/settings.json` alongside hooks the runtime
 registered, keyed on its command, so Herdr, Entire, and plugin hooks stay intact.

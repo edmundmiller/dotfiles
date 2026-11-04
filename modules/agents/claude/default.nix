@@ -21,8 +21,9 @@ let
     text = builtins.readFile "${configDir}/claude/statusline.sh";
   };
 
-  # Warns about oversized context and stale resumes. Python keeps the transcript
-  # parsing readable; the wrapper pins the interpreter the hook runs with.
+  # Warns about oversized context, generation count, and stale resumes. Python
+  # keeps the transcript parsing readable; the wrapper pins the interpreter the
+  # hook runs with.
   sessionBudgetScript = pkgs.writeText "claude-session-budget.py" (
     builtins.readFile "${configDir}/claude/session-budget-hook.py"
   );
