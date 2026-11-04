@@ -30,18 +30,20 @@ nix shell .#oxlint-plugin-jev --command oxlint-jev path/to/dir
 
 The wrapper uses `--disable-nested-config` and the store config at
 `$out/share/oxlint-jev.json`. Built-in Oxlint categories are off, so this
-path only asks Jev. It is not a pre-commit hook.
+path only asks Jev. It is not a pre-commit hook. CLI ignore patterns exclude
+`.agents`, `.claude`, `.codex`, `.omp`, `.opencode`, and `.pi` under the
+invocation directory. Run from the checkout root to apply these exclusions.
 
 ### English rules
 
 Edit `packages/oxlint-plugin-jev/rules.json`. Each item is one `jev/ask` rule:
 
-| Field | Meaning |
-| --- | --- |
-| `id` | Shown in the diagnostic. Unique in the list. |
-| `target` | `function`, `call`, `jsx`, or `file`. |
-| `question` | Yes/no. Yes means report. |
-| `cutoff` | 0 to 1. Report at or above Jev's yes-probability. |
+| Field      | Meaning                                           |
+| ---------- | ------------------------------------------------- |
+| `id`       | Shown in the diagnostic. Unique in the list.      |
+| `target`   | `function`, `call`, `jsx`, or `file`.             |
+| `question` | Yes/no. Yes means report.                         |
+| `cutoff`   | 0 to 1. Report at or above Jev's yes-probability. |
 
 Starter rules: no PII in logs, no secrets in logs, and names that match
 behavior. After you edit the list, rebuild the package. The plugin schema
@@ -66,16 +68,19 @@ Local options, in the usual secret order for this repo:
    path. The wrapper copies that file into `TYPESAFE_API_KEY` for the child
    Oxlint process. Do not pass the value on the command line.
 
-CI and any other `CI=1` run use the plugin default `ci: "skip"`. A missing
-key warns once and reports nothing. Set `ci` to `"fail"` in the generated
-config only if you want a missing key to fail the run.
+The plugin default `ci: "skip"` controls error handling, not network access.
+A missing key warns once and reports nothing. With a key, Jev sends matched
+code snippets to TypeSafe even under `CI=1`, and a yes verdict can fail lint.
+Authentication and network failures warn and skip those checks. Set `ci` to
+`"fail"` in the package config template to fail on missing keys or API errors
+when `CI` is set, then rebuild. To avoid requests, do not supply a key.
 
 ### Version pins
 
-| Path | Oxlint | Plugin |
-| --- | --- | --- |
+| Path         | Oxlint                       | Plugin                               |
+| ------------ | ---------------------------- | ------------------------------------ |
 | Default hook | 1.78.0 (`nixpkgs-anti-slop`) | anti-slop / `@oxlint/plugins` 1.78.0 |
-| `oxlint-jev` | 1.83.0 (npm lock) | `oxlint-plugin-jev` 0.1.1 |
+| `oxlint-jev` | 1.83.0 (npm lock)            | `oxlint-plugin-jev` 0.1.1            |
 
 Refresh Jev by editing `packages/oxlint-plugin-jev/package.json`, running
 `npm install` there, and keeping the two asserts in `default.nix` in sync.

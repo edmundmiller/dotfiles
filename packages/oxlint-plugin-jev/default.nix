@@ -23,7 +23,6 @@ let
   ];
   configTemplate = writeText "oxlint-jev.json" (
     builtins.toJSON {
-      inherit ignorePatterns;
       categories = {
         correctness = "off";
         nursery = "off";
@@ -94,6 +93,16 @@ assert lib.assertMsg (oxlintVersion == "1.83.0") ''
       --replace-fail '@runtimeShell@' ${lib.escapeShellArg runtimeShell} \
       --replace-fail '@nodejsBin@' ${lib.escapeShellArg (lib.makeBinPath [ nodejs ])} \
       --replace-fail '@oxlintBin@' "$out/lib/oxlint-jev/node_modules/oxlint/bin/oxlint" \
+      --replace-fail '@ignoreArgs@' ${
+        lib.escapeShellArg (
+          lib.escapeShellArgs (
+            lib.concatMap (pattern: [
+              "--ignore-pattern"
+              pattern
+            ]) ignorePatterns
+          )
+        )
+      } \
       --replace-fail '@jevConfig@' "$out/share/oxlint-jev.json"
     chmod +x "$out/bin/oxlint-jev"
 
@@ -104,8 +113,20 @@ assert lib.assertMsg (oxlintVersion == "1.83.0") ''
   nativeCheckInputs = [ nodejs ];
   installCheckPhase = ''
     runHook preInstallCheck
-    echo 'export function add(left: number, right: number): number { return left + right }' > smoke.ts
-    "$out/bin/oxlint-jev" smoke.ts
+    unset TYPESAFE_API_KEY TYPESAFE_API_KEY_FILE
+    mkdir -p fixture/src
+    echo 'export function add(left: number, right: number): number { return left + right }' > fixture/src/included.ts
+    cd fixture
+    files=(src/included.ts)
+    for dir in ${lib.escapeShellArgs (map (pattern: lib.removeSuffix "/**" pattern) ignorePatterns)}; do
+      mkdir -p "$dir"
+      cp src/included.ts "$dir/ignored.ts"
+      files+=("$dir/ignored.ts")
+    done
+    # The config lives outside this working directory, just as it does for users.
+    actual=$("$out/bin/oxlint-jev" --debug=files "''${files[@]}")
+    test "$actual" = src/included.ts
+    "$out/bin/oxlint-jev" src/included.ts
     runHook postInstallCheck
   '';
 

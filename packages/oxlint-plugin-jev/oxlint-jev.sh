@@ -9,4 +9,5 @@ exec "@oxlintBin@" \
   --threads=1 \
   --disable-nested-config \
   --config "@jevConfig@" \
+  @ignoreArgs@ \
   "$@"
