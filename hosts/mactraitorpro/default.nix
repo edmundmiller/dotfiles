@@ -308,6 +308,7 @@ in
         apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
+        apps.tinybar.enable = true;
         term = {
           ghostty.enable = true;
           themeStack = {

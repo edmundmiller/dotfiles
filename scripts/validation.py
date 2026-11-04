@@ -110,6 +110,12 @@ CHECKS = {
         "tests/test_pi_update.py",
         "tests/test_codex_model_config.py",
     ],
+    "claude-session-budget-tests": [
+        "config/claude/session-budget-hook.py",
+        "modules/agents/claude/*",
+        "tests/fixtures/claude-session-budget/*",
+        "tests/test_claude_session_budget.py",
+    ],
     "agent-skills-marker-migration-tests": [
         "modules/agents/skills/*",
         "tests/test_agent_skills_marker_migration.py",
@@ -176,6 +182,7 @@ DARWIN_CHECKS = [
     "screentime-backup-darwin-assertions",
     "discrawl-backup-darwin-assertions",
     "darwin-tailscaled-owner-assertions",
+    "tinybar-darwin-assertions",
     "hermes-local-libffi-regression",
     "hermes-local-tokenizers-cc-regression",
     "dji-mic-mini-receiver-mute-regressions",

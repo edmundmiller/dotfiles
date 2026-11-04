@@ -1352,6 +1352,20 @@
                     touch $out
                   '';
 
+              claude-session-budget-tests =
+                pkgs.runCommand "claude-session-budget-tests"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                    # The sandbox has no system zone database; the hook's
+                    # America/Chicago conversion needs a real one.
+                    PYTHONTZPATH = "${pkgs.tzdata}/share/zoneinfo";
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_claude_session_budget.py
+                    touch $out
+                  '';
+
               agent-skills-marker-migration-tests =
                 pkgs.runCommand "agent-skills-marker-migration-tests"
                   {
@@ -1562,6 +1576,12 @@
 
               darwin-tailscaled-owner-assertions = import ./modules/services/tailscale/_tests/eval-darwin.nix {
                 darwinConfig = self.darwinConfigurations."MacTraitor-Pro";
+                inherit pkgs;
+              };
+
+              tinybar-darwin-assertions = import ./modules/desktop/apps/_tests/eval-darwin.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
                 inherit pkgs;
               };
 

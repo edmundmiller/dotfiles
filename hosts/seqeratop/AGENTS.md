@@ -20,11 +20,12 @@ plugin hooks after installation; restart existing agent sessions after rebuildin
 
 Claude Code is wired through `agento11y claude install --json` rather than a
 `claude plugin marketplace add --ref`, because Claude's marketplace command has
-no ref pin; the pinned agento11y binary is what the plugin's hooks invoke. That
-installer records `agento11y-claude-code@agento11y` under `enabledPlugins` and
-`extraKnownMarketplaces` in `~/.claude/settings.json`, which
-`claude-settings-bootstrap` rewrites from the repo template, so the activation
-entry must stay ordered after it.
+no ref pin. The pinned agento11y binary is what the plugin's hooks invoke.
+`agento11y claude install` checks `installed_plugins.json` and returns
+`already_installed` without writing `enabledPlugins`. This activation then runs
+`claude plugin enable agento11y-claude-code@agento11y`.
+`claude-settings-bootstrap` keeps that enabled entry when it is already present.
+Keep this activation ordered after the bootstrap so enable is the last writer.
 
 `config/agento11y/config.env.tpl` is the source for the private mode-0600
 `~/.config/agento11y/config.env`. Activation resolves its 1Password references
