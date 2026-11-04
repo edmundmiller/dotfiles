@@ -692,6 +692,74 @@ class ValidationTests(unittest.TestCase):
                 self.assertEqual(completed.returncode == 0, result == "success")
 
 
+class TypeScriptArchitectureTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.script = self.root / "bin/lint-ts-architecture"
+        self.script.parent.mkdir()
+        shutil.copyfile(v.ROOT / "bin/lint-ts-architecture", self.script)
+        self.tools = self.root / "tools"
+        self.tools.mkdir()
+        self.bash = shutil.which("bash")
+        self.rg = shutil.which("rg")
+        self.assertIsNotNone(self.rg, "architecture tests require ripgrep")
+        (self.tools / "rg").symlink_to(self.rg)
+        self.source = "packages/pi-packages/pi-fixture/index.ts"
+        source = self.root / self.source
+        source.parent.mkdir(parents=True)
+        source.write_text("const count: number = 1;\n")
+
+    def run_gate(self, *paths):
+        return subprocess.run(
+            [self.bash, self.script, *paths],
+            env=os.environ | {"PATH": str(self.tools)},
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+    def test_scans_real_sources_and_reports_tool_and_count(self):
+        version = subprocess.check_output([self.rg, "--version"], text=True).splitlines()[0]
+        for source, status, diagnostic in (
+            ("const count: number = 1;\n", 0, "TS architecture lint passed"),
+            ("const count = input as any;\n", 1, "'as any' is forbidden"),
+            ('import other from "../pi-other/index";\n', 1, "cross-package relative import"),
+        ):
+            with self.subTest(source=source):
+                (self.root / self.source).write_text(source)
+                result = self.run_gate(self.source)
+                self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                self.assertIn(diagnostic, result.stdout + result.stderr)
+                self.assertIn(str(self.tools / "rg"), result.stdout)
+                self.assertIn(version, result.stdout)
+                self.assertIn("scanned 1 TypeScript files", result.stdout + result.stderr)
+
+    def test_missing_rg_is_not_a_clean_scan(self):
+        (self.tools / "rg").unlink()
+        result = self.run_gate(self.source)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("requires rg", result.stderr)
+        self.assertIn("nix shell .#validation-tools", result.stderr)
+        self.assertNotIn("lint passed", result.stdout)
+
+    def test_scan_error_is_not_a_clean_scan(self):
+        (self.tools / "rg").unlink()
+        command = self.tools / "rg"
+        command.write_text(
+            f'#!{self.bash}\n'
+            f'if [[ "$1" == --version ]]; then exec "{self.rg}" --version; fi\n'
+            'printf "fixture scan error\\n" >&2\nexit 2\n'
+        )
+        command.chmod(0o755)
+        result = self.run_gate(self.source)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("scan failed", result.stderr)
+        self.assertIn("fixture scan error", result.stderr)
+        self.assertNotIn("lint passed", result.stdout)
+
+
 class NucDeploymentWorkflowTests(unittest.TestCase):
     def test_dispatch_rejects_a_different_revision_before_deployment(self):
         workflow = (v.ROOT / ".github/workflows/deploy-nuc.yml").read_text()

@@ -646,8 +646,10 @@
           packages.validation-tools = pkgs.buildEnv {
             name = "validation-tools";
             paths = [
+              pkgs.bash
               pkgs.python3
               pkgs.prek
+              pkgs.ripgrep
             ];
           };
 
@@ -1239,6 +1241,7 @@
                       pkgs.mise
                       pkgs.nushell
                       pkgs.python3
+                      pkgs.ripgrep
                     ];
                   }
                   ''
