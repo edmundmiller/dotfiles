@@ -1,7 +1,7 @@
 ---
 purpose: Route NUC deployment and recovery to the supported hey commands.
 applies_to: Building, activating, or rolling back the NUC configuration.
-entrypoint: Read docs/runbooks/deploy-nuc.md and bin/hey.d/remote.nu.
+entrypoint: Read docs/runbooks/deploy-nuc.md and mise-tasks/nuc/_default.nu.
 verification: Run hey nuc-wt build and inspect services after authorized activation.
 update_when: NUC deployment transport, source isolation, or recovery changes.
 ---
@@ -9,7 +9,7 @@ update_when: NUC deployment transport, source isolation, or recovery changes.
 # NUC deployment
 
 The canonical procedure is [the NUC deployment runbook](../../docs/runbooks/deploy-nuc.md).
-`bin/hey.d/remote.nu` owns the commands.
+`mise-tasks/nuc/` owns the commands, with shared guards in `scripts/nu/remote.nu`.
 
 `hey nuc` runs `nixos-rebuild` locally when invoked on the NUC. From another
 host it syncs the worktree to a unique `/tmp/dotfiles-worktree-*` directory,

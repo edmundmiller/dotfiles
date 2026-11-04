@@ -12,15 +12,20 @@ Deterministic Pi guard for command-bearing tools and jj-aware VCS mutations.
 
 ## Command policy
 
-The bridge extracts commands from `bash`, `exec_command`, `process.start`, `interactive_shell`, `herdr_run_in_pane`, and `herdr_pane.run`. It applies `permission.bash` rules from `PI_PERMISSION_SYSTEM_CONFIG_PATH` with last-match-wins wildcard ordering. `exec_command.workdir` participates in jj repository detection.
+The bridge extracts commands from `bash`, `exec_command`, `process.start`, `interactive_shell`, `herdr_run_in_pane`, and `herdr_pane.run`. It applies `permission.bash` rules from `PI_PERMISSION_SYSTEM_CONFIG_PATH`. Allow/deny exceptions use last-match-wins ordering, but an allow cannot cancel a matching approval requirement. Wildcards span newlines. `exec_command.workdir` participates in jj repository detection.
 
 `apply_patch` and nonempty `write_stdin` are blocked because they bypass path or command checks. Empty stdin polling remains available. The default package list omits Codex conversion so standard Pi edit/write tools remain available with their path hooks.
 
 - `deny` blocks.
-- `ask`, `allow`, and no match run without prompting.
+- `ask` requires explicit UI confirmation, even with upstream `yoloMode` enabled. Headless sessions block it.
+- `allow` and no match run without prompting.
 - Unreadable policy remains fail-open for generic commands.
 
-This is a deny-list guardrail, not an LLM classifier or approval UI.
+The repository policy requires approval for `hey` and `mise`, since any project
+can define their tasks. The substring patterns deliberately also prompt for
+inspection commands and text mentioning those names. They cover literal paths,
+quoted names, and compound commands, but are not a shell sandbox against encoded
+commands or arbitrary scripts.
 
 ## jj policy
 

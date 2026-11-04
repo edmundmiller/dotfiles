@@ -51,18 +51,45 @@ with `nix eval --raw .#pi.version`, then build with `nix build .#pi`.
 
 Pi 1.5.0 uses the upstream build recipe with local `overlays/pi/hashes.json`
 and `package-lock.json` pins. The wrapped CLI defaults `PI_SELF_UPDATE_COMMAND`
-to `hey pi-update {version}`. When Pi detects a newer release, `pi update`
-refreshes only these Pi pins, then runs the guarded `hey rebuild` workflow.
+to a packaged script that selects the dotfiles checkout and runs `mise run pi:update`.
+When Pi detects a newer release, `pi update` refreshes only these Pi pins,
+then runs the guarded rebuild task.
 An explicit `PI_SELF_UPDATE_COMMAND` environment value overrides that default.
 Use `pi update --extensions` to update extensions without rebuilding the host.
 
-`hey pi-update <version>` targets `$FLAKE_DIR`, then `$DOTFILES`, then
-`~/.config/dotfiles`, not the current project's flake. It rejects downgrades
+The packaged self-update script targets `$FLAKE_DIR`, then `$DOTFILES`, then
+`~/.config/dotfiles`, not the current project's flake. It appends packaged
+tools and then the active system tools to its own PATH for GUI/service launches,
+preserving caller tool precedence without loading a user profile. A direct
+`hey pi-update <version>` runs the current checkout's task, like every other
+`hey` command. The updater rejects downgrades
 and leaves the pins unchanged if downloading or preparing dependencies fails.
 A failed rebuild leaves the new pins available for inspection and retry with
 `hey re`. Revert both Pi pin files and run `hey re` to return to an earlier release.
 Running a self-update activates the host configuration, so agents still need
 explicit authorization. Source checks do not run this command.
+
+The launcher pins the tools used before crossing the host activation boundary:
+
+| Command path                             | Packaged executables                                               |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| Task dispatch and host context           | `bash`, `mise`, `nu`, `hostname`, `nix`, coreutils including `env` |
+| Lock and tracked-file guards             | `grep`, `jq`, `git`                                                |
+| Darwin GitHub authentication             | `gh`                                                               |
+| Archive/build and Homebrew-process check | `bash`, `nix`, `ps`, `awk`                                         |
+
+`pi.updater` separately packages Python, Node/npm and `prefetch-npm-deps`.
+The active host supplies privileged `sudo`, `darwin-rebuild` or `nixos-rebuild`,
+the optional NUC `nix-private-github` credential wrapper, and Linux `systemctl`.
+Darwin uses `/usr/bin/sudo`; the launcher leaves these commands and credentials
+under host configuration. Authentication failure retains the existing Nix config;
+an archive failure stops activation. Pin updates happen before rebuild guards,
+so a guard failure can leave updated pins for inspection without activating them.
+
+The Nix `validation-tests` check executes the packaged launcher with a minimal
+PATH and real lock/auth/rebuild logic in a disposable checkout. It remaps host
+paths and platform identity only in that fixture and mocks updater, network and
+activation boundaries. It does not certify native sudo, keychain or activation.
 
 `config/pi/settings.jsonc` enables codemode alongside the ordinary tools.
 The host catalog in `modules.agents.mcp` supplies native MCP registrations in

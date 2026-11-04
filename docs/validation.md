@@ -8,6 +8,10 @@ update_when: Validation routing, check ownership, or CI jobs change.
 
 # Start with `hey check`
 
+`mise run check` is the primary task; `hey check` is its compatibility spelling.
+Both run `mise-tasks/check`, which delegates to the same Python runner as CI.
+Run them inside the checkout, or use `mise --cd <checkout> run check`.
+
 | Command                            | Scope                                                                              |
 | ---------------------------------- | ---------------------------------------------------------------------------------- |
 | `hey check`                        | Changed files, affected repository tests, Pi/OMP packages and dependents           |
@@ -175,8 +179,10 @@ separate: it clones upstream, applies carried patches and runs upstream tests.
 
 ## Hooks and migration
 
-Commit hooks retain fast formatting/lint. Expensive OMP checks now belong to
-the shared runner instead of forcing an OMP build just to create hook config.
+Commit hooks retain fast formatting/lint. Shared agent instruction checks run
+without installing a model harness. OMP is disabled on all configured hosts;
+its package exports and runtime/config-registry checks are retired. Its source
+configuration remains for reference, and existing session data is untouched.
 Pre-push safety (identity, submodules, HA assertions, runtime drift), Beads sync,
 and deployment guards remain separate from source validation. Commit/push hooks
 can mutate supported state; `hey check` does not run those stages.

@@ -101,7 +101,6 @@
     "jq"
     "yq"
     "mas"
-    "mise"
     "openclaw/tap/discrawl"
     "pngpaste"
     "usage"

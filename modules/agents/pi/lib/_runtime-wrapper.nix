@@ -10,6 +10,30 @@ let
     piRuntimeNode
     nodeGypPython
   ];
+  # Pi splits PI_SELF_UPDATE_COMMAND on whitespace rather than evaluating a
+  # shell string. Resolve the checkout here so spaces and overrides stay intact.
+  selfUpdate = pkgs.writeShellScript "pi-self-update" ''
+    set -euo pipefail
+    # GUI/service launches may lack the task interpreter and system tools.
+    # Keep caller overrides first; only this updater needs these fallbacks.
+    export PATH="''${PATH:+$PATH:}${
+      lib.makeBinPath [
+        pkgs.nushell
+        pkgs.mise
+        pkgs.nix
+        pkgs.git
+        pkgs.gnugrep
+        pkgs.jq
+        pkgs.gh
+        pkgs.bash
+        pkgs.gawk
+        pkgs.coreutils
+        pkgs.unixtools.hostname
+        pkgs.unixtools.ps
+      ]
+    }:/run/wrappers/bin:/run/current-system/sw/bin"
+    exec ${lib.getExe pkgs.mise} --cd "''${FLAKE_DIR:-''${DOTFILES:-$HOME/.config/dotfiles}}" run pi:update "$@"
+  '';
 in
 pkgs.stdenvNoCC.mkDerivation {
   pname = "${pkgs.llm-agents.pi.pname or "pi"}-with-runtime-wrapper";
@@ -39,7 +63,7 @@ pkgs.stdenvNoCC.mkDerivation {
         --set-default NODE_EXTRA_CA_CERTS "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
         --set AGENT "1" \
         --set PI_CODING_AGENT "true" \
-        --set-default PI_SELF_UPDATE_COMMAND "hey pi-update {version}" \
+        --set-default PI_SELF_UPDATE_COMMAND "${selfUpdate} {version}" \
         --set DEVELOPER_DIR "/Library/Developer/CommandLineTools" \
         --set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"} \
         --unset SDKROOT
@@ -48,5 +72,6 @@ pkgs.stdenvNoCC.mkDerivation {
     runHook postInstall
   '';
 
+  passthru.selfUpdate = selfUpdate;
   inherit (pkgs.llm-agents.pi) meta;
 }
