@@ -202,6 +202,10 @@ class MiseTasksTests(unittest.TestCase):
         tools = self.root / "fake-tools"
         tools.mkdir()
         log = self.root / "operations"
+        wrappers = self.root / "host-wrappers"
+        profile = self.root / "host-profile"
+        wrappers.mkdir()
+        profile.mkdir()
         self.env.update(
             PATH=str(tools),
             HOME=str(Path(self.temp.name) / "home"),
@@ -209,6 +213,7 @@ class MiseTasksTests(unittest.TestCase):
             FLAKE_DIR=str(self.root),
             TEST_LOG=str(log),
             TEST_OVERRIDES=str(self.root / "caller-tools"),
+            TEST_PRIVILEGED_LOG=str(self.root / "privileged-calls"),
             NIX_CONFIG="experimental-features = nix-command flakes",
         )
         for key in (
@@ -225,8 +230,8 @@ class MiseTasksTests(unittest.TestCase):
         self.env["GH_PROMPT_DISABLED"] = "1"
         bash = shutil.which("bash")
 
-        def executable(name, body):
-            path = tools / name
+        def executable(name, body, directory=tools):
+            path = directory / name
             path.write_text(f"#!{bash}\nset -euo pipefail\n" + body)
             path.chmod(0o755)
             return path
@@ -234,12 +239,16 @@ class MiseTasksTests(unittest.TestCase):
         activation = executable(
             "darwin-rebuild",
             'echo activation >> "$TEST_LOG"\nexit "$TEST_ACTIVATION_EXIT"\n',
+            profile,
         )
         executable(
-            "nixos-rebuild", activation.read_text().split("set -euo pipefail\n", 1)[1]
+            "nixos-rebuild",
+            activation.read_text().split("set -euo pipefail\n", 1)[1],
+            profile,
         )
-        executable("sudo", 'exec "$@"\n')
-        executable("systemctl", 'echo post >> "$TEST_LOG"\nexit 0\n')
+        executable("sudo", 'echo sudo >> "$TEST_PRIVILEGED_LOG"\nexec "$@"\n', wrappers)
+        executable("sudo", 'echo unsafe-sudo >> "$TEST_LOG"\nexit 96\n', profile)
+        executable("systemctl", 'echo post >> "$TEST_LOG"\nexit 0\n', profile)
         executable(
             "nix",
             """
@@ -262,21 +271,24 @@ case "$1" in
   build)
     echo build >> "$TEST_LOG"
     mkdir -p "$MISE_PROJECT_ROOT/result/sw/bin"
-    ln -s "$MISE_PROJECT_ROOT/fake-tools/activation" "$MISE_PROJECT_ROOT/result/sw/bin/darwin-rebuild" ;;
+    ln -s "$MISE_PROJECT_ROOT/host-profile/activation" "$MISE_PROJECT_ROOT/result/sw/bin/darwin-rebuild" ;;
   *) exit 93 ;;
 esac
 """,
         )
+        (profile / "nix").symlink_to(tools / "nix")
         # Remap fixed host/privilege boundaries in the fixture, never on the host.
         # All guard and orchestration functions remain the production implementation.
         common = self.root / "scripts/nu/common.nu"
         source = (
             common.read_text()
             .replace("$nu.os-info.name", "$env.TEST_OS")
-            .replace("/run/current-system/sw/bin", str(tools))
-            .replace("/run/wrappers/bin", str(tools))
-            .replace("/nix/var/nix/profiles/default/bin", str(tools))
-            .replace("^/usr/bin/sudo", f'^"{tools / "sudo"}"')
+            .replace("/run/current-system/sw/bin", str(profile))
+            .replace("/run/wrappers/bin", str(wrappers))
+            .replace(
+                "/nix/var/nix/profiles/default/bin", str(self.root / "nix-profile")
+            )
+            .replace("^/usr/bin/sudo", f'^"{wrappers / "sudo"}"')
         )
         common.write_text(source)
         (self.root / "flake.lock").write_text("{}\n")
@@ -284,7 +296,14 @@ esac
         git = shutil.which("git")
         subprocess.run([git, "init", "--quiet", str(self.root)], check=True)
         subprocess.run([git, "-C", str(self.root), "add", "."], check=True)
-        launcher = os.environ["PI_SELF_UPDATE_TEST_LAUNCHER"]
+        launcher = self.root / "pi-self-update"
+        launcher.write_text(
+            Path(os.environ["PI_SELF_UPDATE_TEST_LAUNCHER"])
+            .read_text()
+            .replace("/run/current-system/sw/bin", str(profile))
+            .replace("/run/wrappers/bin", str(wrappers))
+        )
+        launcher.chmod(0o755)
         for os_name in ("linux", "macos"):
             for case in (
                 "success",
@@ -297,9 +316,14 @@ esac
                 "auth-failure",
                 "update-failure",
                 "archive-failure",
+                "private-auth",
+                "private-auth-failure",
+                "private-auth-caller",
                 "activation-failure",
                 "fallback",
             ):
+                if os_name == "macos" and case.startswith("private-auth"):
+                    continue
                 with self.subTest(os=os_name, case=case):
                     self.env.pop("FLAKE_DIR", None)
                     self.env.pop("DOTFILES", None)
@@ -314,7 +338,9 @@ esac
                         if case in ("no-auth", "auth-failure")
                         else "present",
                         TEST_UPDATE_EXIT="23" if case == "update-failure" else "0",
-                        TEST_ARCHIVE_EXIT="42" if case == "archive-failure" else "0",
+                        TEST_ARCHIVE_EXIT="42"
+                        if case in ("archive-failure", "private-auth-failure")
+                        else "0",
                         TEST_ACTIVATION_EXIT="43"
                         if case == "activation-failure"
                         else "0",
@@ -326,6 +352,22 @@ esac
                         executable("gh", "exit 23\n")
                     else:
                         (tools / "gh").unlink(missing_ok=True)
+                    if case.startswith("private-auth"):
+                        executable(
+                            "nix-private-github",
+                            'echo "$1" >> "$TEST_PRIVILEGED_LOG"\nexec "$@"\n',
+                            profile,
+                        )
+                    else:
+                        (profile / "nix-private-github").unlink(missing_ok=True)
+                    if case == "private-auth-caller":
+                        executable(
+                            "sudo",
+                            'echo caller-sudo >> "$TEST_PRIVILEGED_LOG"\nexec "$@"\n',
+                        )
+                    else:
+                        (tools / "sudo").unlink(missing_ok=True)
+                    Path(self.env["TEST_PRIVILEGED_LOG"]).unlink(missing_ok=True)
                     for name in ("nu", "mise"):
                         if case == "caller-tools":
                             executable(
@@ -345,16 +387,19 @@ esac
                     )
                     (self.root / "flake.lock").write_text(lock)
                     if case == "fallback":
-                        activation.rename(tools / "activation")
+                        activation.rename(profile / "activation")
                     log.unlink(missing_ok=True)
                     result = self.run_command(launcher, "1.5.0", cwd=self.temp.name)
                     if case == "fallback":
-                        (tools / "activation").rename(activation)
+                        (profile / "activation").rename(activation)
                     operations = log.read_text().splitlines()
                     expected = ["update"]
                     if case not in ("invalid-lock", "conflict", "update-failure"):
                         expected.append("archive")
-                        if case != "archive-failure" and not (
+                        if case not in (
+                            "archive-failure",
+                            "private-auth-failure",
+                        ) and not (
                             os_name == "macos" and case in ("no-auth", "auth-failure")
                         ):
                             if os_name == "macos" and case == "fallback":
@@ -369,6 +414,8 @@ esac
                         "dotfiles",
                         "home",
                         "fallback",
+                        "private-auth",
+                        "private-auth-caller",
                     ) or (os_name == "linux" and case in ("no-auth", "auth-failure"))
                     self.assertEqual(result.returncode == 0, success, result.stderr)
                     if case == "invalid-lock":
@@ -380,6 +427,17 @@ esac
                     self.assertNotIn(
                         "fixture-only-token", result.stdout + result.stderr
                     )
+                    if case.startswith("private-auth"):
+                        self.assertEqual(
+                            Path(self.env["TEST_PRIVILEGED_LOG"])
+                            .read_text()
+                            .splitlines(),
+                            ["sudo", "nix"]
+                            if case == "private-auth-failure"
+                            else ["caller-sudo", "nix", "sudo", "nixos-rebuild"]
+                            if case == "private-auth-caller"
+                            else ["sudo", "nix", "sudo", "nixos-rebuild"],
+                        )
                     if case == "caller-tools":
                         self.assertEqual(
                             set(

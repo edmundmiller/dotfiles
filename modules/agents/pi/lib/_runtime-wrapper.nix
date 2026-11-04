@@ -31,7 +31,7 @@ let
         pkgs.unixtools.hostname
         pkgs.unixtools.ps
       ]
-    }:/run/current-system/sw/bin"
+    }:/run/wrappers/bin:/run/current-system/sw/bin"
     exec ${lib.getExe pkgs.mise} --cd "''${FLAKE_DIR:-''${DOTFILES:-$HOME/.config/dotfiles}}" run pi:update "$@"
   '';
 in
