@@ -32,6 +32,7 @@ hey unas-ssh
 - `modules/time-machine.nix` — Time Machine via netatalk
 - `backups.nix` — restic backup job
 - `users.nix` — local users/groups
+- [Storage benchmark and Btrfs migration plan](storage-benchmark-and-migration.md)
 
 ## Notes
 
