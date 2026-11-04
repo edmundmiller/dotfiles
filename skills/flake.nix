@@ -162,6 +162,11 @@
       flake = false;
     };
 
+    pstack = {
+      url = "github:cursor/plugins/101b274dd991f694e1f7024be2157e5f3adf07de";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -297,6 +302,12 @@
           "herdr"
           "enable"
         ];
+        rexEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "rex"
+          "enable"
+        ];
         hunkEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -324,6 +335,13 @@
           src = inputs.common-skills.outPath + "/.agents/skills/skill-doctor";
           patches = [ ./overlays/skill-doctor/pi-support.patch ];
         };
+        # Keep sibling links, playbooks, agents, and docs intact without
+        # shadowing shared skills such as tdd, teach, and unslop.
+        pstackPortable = pkgs.runCommand "pstack-portable" { } ''
+          mkdir -p "$out/poteto-mode"
+          cp ${./overlays/pstack/poteto-mode/SKILL.md} "$out/poteto-mode/SKILL.md"
+          cp -R ${inputs.pstack.outPath}/pstack "$out/poteto-mode/.upstream"
+        '';
         mattpocockSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-skills.json);
         mattpocockRuntimeOverlay = ''
 
@@ -473,6 +491,11 @@
                 path = "walking-mode";
                 meta.targets = [ "codex" ];
               };
+              poteto-mode = {
+                from = "pstack";
+                path = "poteto-mode";
+                meta.targets = [ "codex" ];
+              };
               # All coding runtimes consume the shared copy. Hermes also gets
               # a direct copy for profiles whose external_dirs still point at
               # ~/.hermes/skills.
@@ -551,6 +574,14 @@
                 for entry in "$legacy_skills"/* "$legacy_skills"/.[!.]*; do
                   [ "$module_managed" = 1 ] || break
                   if [ ! -e "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
+                  # Claude Code keeps its own claude.ai skill sync in synced/.
+                  if [ "''${entry##*/}" = synced ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
+                  # Rex installs its own stub skill here via "rex skill setup".
+                  if [ "''${entry##*/}" = rex ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
                     continue
                   fi
                   if [ ! -L "$entry" ]; then
@@ -741,6 +772,15 @@
                   filter.maxDepth = 3;
                 };
 
+                rex = {
+                  # Stub copied from "rex skill setup" (rex-stub 2). The guide itself
+                  # comes from the installed rex CLI, so this never goes stale.
+                  # ~/.agents/skills is a read-only Nix tree, so rex cannot write it.
+                  path = ./conditional/rex;
+                  subdir = ".";
+                  filter.maxDepth = 3;
+                };
+
                 diffity = {
                   path = inputs.diffity-repo.outPath;
                   subdir = "skills";
@@ -843,6 +883,12 @@
                   filter.maxDepth = 3;
                 };
 
+                pstack = {
+                  path = pstackPortable;
+                  subdir = ".";
+                  filter.maxDepth = 1;
+                };
+
                 kitlangton = {
                   path = inputs.kitlangton-skills.outPath;
                   subdir = "skills";
@@ -937,6 +983,10 @@
                 # module is actually turned on.
                 herdr.from = "herdr";
                 herdr.path = "herdr";
+              }
+              // lib.optionalAttrs rexEnabled {
+                rex.from = "rex";
+                rex.path = "rex";
               }
               // lib.optionalAttrs diffityEnabled {
                 diffity-diff.from = "diffity";

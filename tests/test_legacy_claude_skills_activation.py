@@ -21,7 +21,9 @@ def extract_activation_script() -> str:
         raise AssertionError("remove-legacy-claude-skills activation script not found")
     lines = match.group(1).splitlines()
     indentation = min(len(line) - len(line.lstrip()) for line in lines if line.strip())
-    return "\n".join(line[indentation:] for line in lines)
+    script = "\n".join(line[indentation:] for line in lines)
+    # Nix indented strings escape "${" as "''${".
+    return script.replace("''${", "${")
 
 
 class LegacyClaudeSkillsActivationTest(unittest.TestCase):
@@ -160,6 +162,28 @@ class LegacyClaudeSkillsActivationTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((skills / "lore").is_symlink())
+            self.assertEqual((backup / "old.txt").read_text(), "old\n")
+
+    def test_rex_stub_skill_dir_survives_an_existing_backup(self) -> None:
+        """"rex skill setup" writes a real ~/.claude/skills/rex directory.
+        It is Rex's own output, not legacy content to preserve."""
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            shared = home / ".agents" / "skills" / "lore"
+            shared.mkdir(parents=True)
+            (shared / "SKILL.md").write_text("shared skill\n")
+            skills = home / ".claude" / "skills"
+            (skills / "rex").mkdir(parents=True)
+            (skills / "rex" / "SKILL.md").write_text("rex stub\n")
+            (skills / "lore").symlink_to(shared)
+            backup = home / ".claude" / "skills.pre-dotfiles-agent-skills"
+            backup.mkdir()
+            (backup / "old.txt").write_text("old\n")
+
+            result = self.run_activation(home)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((skills / "rex" / "SKILL.md").read_text(), "rex stub\n")
             self.assertEqual((backup / "old.txt").read_text(), "old\n")
 
     def test_foreign_symlink_in_skills_dir_still_gets_preserved(self) -> None:

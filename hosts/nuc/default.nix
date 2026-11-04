@@ -1481,6 +1481,23 @@ in
   # assume networked builds.
   nix.settings.sandbox = "relaxed";
 
+  # Run terminals as the NUC user; retain the enrolled identity in /var/lib/rex.
+  services.rex.enable = true;
+  services.rex.user = "emiller";
+  services.rex.group = "users";
+  services.rex.socketMode = "0600";
+  services.rex.tailscale = {
+    enable = true;
+    hostname = "nuc-rex";
+  };
+
+  age.secrets.rex-netrc = {
+    owner = "root";
+    group = "root";
+    mode = "0600";
+  };
+  nix.settings.netrc-file = config.age.secrets.rex-netrc.path;
+
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld = {
     enable = true;
@@ -1549,6 +1566,7 @@ in
     }
     ../_server.nix
     ../_home.nix
+    inputs.rex.nixosModules.default
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
@@ -2420,6 +2438,19 @@ in
       herdr.enable = true;
     };
     agents = {
+      mcp = {
+        enable = true;
+        agents.amp = true;
+        servers = {
+          github.enable = true;
+          linear.enable = true;
+          notion.enable = true;
+          fff.enable = true;
+          openaiDeveloperDocs.enable = true;
+        };
+      };
+      # Claude's CLI is a backend here; keep its existing permissions/settings.
+      claude.pstack.enable = true;
       codex.enable = true;
       omp.enable = false;
       opencode.enable = true;
@@ -2601,10 +2632,6 @@ in
       sonarr.enable = true;
       deploy-rs.enable = true;
       mosh.enable = true;
-      moshi = {
-        enable = true;
-        hookSecretsFile = config.age.secrets.moshi-hook-secrets-json.path;
-      };
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
@@ -2908,15 +2935,9 @@ in
     };
   };
 
-  systemd.services.nixos-upgrade = {
-    after = [ "opnix-secrets.service" ];
-    requires = [ "opnix-secrets.service" ];
-    script = lib.mkForce ''
-      exec ${nixPrivateGithub}/bin/nix-private-github \
-        ${config.system.build.nixos-rebuild}/bin/nixos-rebuild \
-        ${config.system.autoUpgrade.operation} ${toString config.system.autoUpgrade.flags}
-    '';
-  };
+  # Deploy only through the manual, CI-gated workflow or an authorized hey nuc.
+  # Inherited periodic upgrades would activate main without that approval gate.
+  system.autoUpgrade.enable = lib.mkForce false;
 
   age = {
     secrets = {

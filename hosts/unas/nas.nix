@@ -10,8 +10,8 @@ let
     "/data/media/downloads"
     "/data/media/video/shows"
     "/data/media/video/movies"
-    "/data/media/video/music"
-    "/data/media/video/photos"
+    "/data/media/music"
+    "/data/media/photos"
   ];
 
   allowIpRanges = [
@@ -40,4 +40,7 @@ in
     # exported shares
     exports = lib.concatStringsSep "" fsExports;
   };
+
+  # Never export empty directories on the OS disk when a data mount fails.
+  systemd.services.nfs-server.unitConfig.RequiresMountsFor = fileSystems;
 }

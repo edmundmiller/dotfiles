@@ -79,6 +79,7 @@ let
       });
 in
 {
+  imports = [ ./fail-closed-activation.nix ];
 
   config = {
     modules = {
@@ -96,10 +97,6 @@ in
         nixlang.enable = true;
         node.enable = true;
         node.useFnm = true;
-        node.bunGlobalPackages = [
-          "critique@0.1.139"
-          "vercel@58.9.0"
-        ];
         # FIXME: Python disabled - bundled whisper currently includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
@@ -130,8 +127,7 @@ in
         cliamp.enable = true;
         herdr.enable = true;
         herdr.mainCodingAgent = "pi";
-        herdr.vercelSandbox.enable = true;
-        herdr.projects.enable = true;
+        rex.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
@@ -179,8 +175,24 @@ in
       };
 
       agents = {
+        mcp = {
+          enable = true;
+          agents.amp = true;
+          servers = {
+            github.enable = true;
+            linear.enable = true;
+            linear.excludeAgents = [ "amp" ];
+            notion.enable = true;
+            fff.enable = true;
+            openaiDeveloperDocs.enable = true;
+          };
+        };
         pi = {
           enable = true;
+          classifierModel = {
+            provider = "typesafe";
+            id = "jev-latest";
+          };
           secretReferences = {
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };
@@ -282,7 +294,6 @@ in
           provider = "orbstack";
         };
         mosh.enable = true;
-        moshi.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
       };
@@ -294,6 +305,7 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
         term = {
@@ -494,12 +506,15 @@ in
       clinWithVaultEnv
       llm-agents.qmd
       my.betteraudio
+      my.critique
       my.discrawl-backup
       my.emeraldian
+      my.excalidraw-cli
       my.hex
       my.meat
       my.openwiki
       my.screentime-backup
+      my.vercel
       my.writer
       my.zele
       my.work-calendar-busy
@@ -527,6 +542,19 @@ in
 
         home.activation.removeLegacyZele = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/zele" "$HOME/.cache/npm/bin/zele"
+        '';
+
+        home.activation.removeLegacyBunClis = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          for cli in critique excalidraw vercel vc; do
+            legacy="$HOME/.bun/bin/$cli"
+            if [ -L "$legacy" ]; then
+              case "$(readlink "$legacy")" in
+                ../install/global/node_modules/*|"$HOME"/.bun/install/global/node_modules/*)
+                  rm "$legacy"
+                  ;;
+              esac
+            fi
+          done
         '';
 
         home.activation.removeLegacyOpenWiki = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

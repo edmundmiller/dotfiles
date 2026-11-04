@@ -30,7 +30,12 @@
 # intends to sleep in, so they must not open the shade or power on the desk.
 { lib, pkgs, ... }:
 let
-  inherit (import ../../_lib.nix) ensureEnabled;
+  inherit (import ../../_lib.nix) ensureEnabled notificationPalette;
+
+  bedtimePhones = [
+    "notify.mobile_app_edmunds_iphone"
+    "notify.mobile_app_monicas_iphone"
+  ];
 
   # ── Per-person entity config ───────────────────────────────────────────
   edmund = {
@@ -120,11 +125,6 @@ let
       color_temp_kelvin = 2700;
     }; # Couch Lamp
     "light.nanoleaf_multicolor_hd_ls" = "off"; # Edmund Desk
-    "light.smart_night_light_w" = {
-      state = "on";
-      brightness = 80;
-      color_temp_kelvin = 2700;
-    }; # Night light: navigate to bed
   };
 
   # Reliable bed presence: bed_state_type active OR (raw presence ON AND HR available)
@@ -267,6 +267,12 @@ in
     input_text.sleep_schedule_key = {
       name = "Sleep Schedule Key";
       icon = "mdi:calendar-clock";
+    };
+
+    timer.mirror_bedtime = {
+      name = "Mirror Bedtime Countdown";
+      duration = "00:12:00";
+      restore = true;
     };
 
     input_boolean = {
@@ -523,6 +529,9 @@ in
             data = {
               title = "🛏️ Bedtime";
               message = "Monica's heading to bed — time to wrap up!";
+              data = notificationPalette.home // {
+                notification_icon = "mdi:bed-clock";
+              };
             };
           }
         ];
@@ -531,6 +540,158 @@ in
 
     # ── Automations ──────────────────────────────────────────────────────
     automation = lib.mkAfter (ensureEnabled [
+      {
+        alias = "Monica Mirror NFC - Get Ready for Bed";
+        id = "monica_mirror_nfc_get_ready_for_bed";
+        mode = "single";
+        trigger = {
+          platform = "tag";
+          tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
+        };
+        # Morning face routines must not start bedtime prep.
+        condition = [
+          # Do not reapply prep lighting once bedtime mode has started.
+          {
+            condition = "state";
+            entity_id = "input_boolean.goodnight";
+            state = "off";
+          }
+          {
+            condition = "time";
+            after = "20:00:00";
+            before = "04:00:00";
+          }
+          {
+            condition = "state";
+            entity_id = "script.good_morning";
+            state = "off";
+          }
+        ];
+        action = [
+          {
+            action = "timer.start";
+            target.entity_id = "timer.mirror_bedtime";
+          }
+          { action = "script.get_ready_for_bed"; }
+          # Keep single mode occupied briefly to ignore duplicate scans.
+          { delay = "00:00:10"; }
+        ];
+      }
+
+      {
+        alias = "Mirror Bedtime Countdown - Phones and BUSY Bar";
+        id = "mirror_bedtime_countdown";
+        mode = "queued";
+        trigger = [
+          {
+            platform = "state";
+            entity_id = "timer.mirror_bedtime";
+            to = "active";
+          }
+          {
+            platform = "event";
+            event_type = "timer.finished";
+            event_data.entity_id = "timer.mirror_bedtime";
+            id = "finished";
+          }
+          {
+            platform = "event";
+            event_type = "timer.cancelled";
+            event_data.entity_id = "timer.mirror_bedtime";
+          }
+          {
+            platform = "homeassistant";
+            event = "start";
+          }
+        ];
+        action = [
+          {
+            choose = [
+              {
+                conditions = [
+                  {
+                    condition = "state";
+                    entity_id = "timer.mirror_bedtime";
+                    state = "active";
+                  }
+                ];
+                sequence = [
+                  {
+                    variables.target_ts = "{{ as_timestamp(state_attr('timer.mirror_bedtime', 'finishes_at')) | int }}";
+                  }
+                  {
+                    action = "rest_command.busy_bar_bedtime_clear";
+                    continue_on_error = true;
+                  }
+                ]
+                ++ map (notify: {
+                  action = notify;
+                  continue_on_error = true;
+                  data = {
+                    title = "Bedtime countdown";
+                    message = "Moni started her face routine. Time to wrap up.";
+                    data = {
+                      tag = "mirror-bedtime";
+                      live_update = true;
+                      chronometer = true;
+                      when = "{{ target_ts }}";
+                      when_relative = false;
+                      notification_icon = "mdi:toothbrush";
+                      # Live Activities keep a dark Dynamic Island background.
+                      notification_icon_color = notificationPalette.home.color;
+                    };
+                  };
+                }) bedtimePhones
+                ++ [
+                  {
+                    action = "rest_command.busy_bar_mirror_bedtime_draw";
+                    continue_on_error = true;
+                    data = {
+                      target_ts = "{{ target_ts }}";
+                      remaining_seconds = "{{ [1, [720, (target_ts | int - as_timestamp(now())) | int] | min] | max }}";
+                    };
+                  }
+                ];
+              }
+            ];
+            default =
+              map (notify: {
+                action = notify;
+                continue_on_error = true;
+                data = {
+                  message = "clear_notification";
+                  data.tag = "mirror-bedtime";
+                };
+              }) bedtimePhones
+              ++ [
+                {
+                  action = "rest_command.busy_bar_mirror_bedtime_clear";
+                  continue_on_error = true;
+                }
+                {
+                  "if" = [
+                    {
+                      condition = "trigger";
+                      id = "finished";
+                    }
+                  ];
+                  "then" = map (notify: {
+                    action = notify;
+                    continue_on_error = true;
+                    data = {
+                      title = "Time to brush teeth";
+                      message = "The 12-minute bedtime countdown is finished.";
+                      data = notificationPalette.home // {
+                        notification_icon = "mdi:toothbrush";
+                      };
+                    };
+                  }) bedtimePhones;
+                }
+              ];
+          }
+        ];
+      }
+
       {
         alias = "Monica Nightstand NFC - Good Night";
         id = "monica_nightstand_nfc_goodnight";
@@ -628,12 +789,12 @@ in
         ];
       }
 
-      # White noise follows five continuous minutes of bedtime audio on either
+      # White noise follows one continuous minute of bedtime audio on either
       # bedroom HomePod. Music Assistant's _2 entities report AirPlay playback;
       # the native entities remain idle/off. BookPlayer is reported as music,
       # so goodnight supplies intent rather than unreliable title/type metadata.
       {
-        alias = "White noise after five minutes of bedtime audio";
+        alias = "White noise after one minute of bedtime audio";
         id = "white_noise_with_bedtime_audiobook";
         mode = "single";
         trigger = [
@@ -644,7 +805,7 @@ in
                  and (is_state('media_player.bathroom_nightstand_2', 'playing')
                       or is_state('media_player.window_nightstand_2', 'playing')) }}
             '';
-            "for".minutes = 5;
+            "for".minutes = 1;
           }
         ];
         condition = [

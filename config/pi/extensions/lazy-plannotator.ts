@@ -8,6 +8,7 @@ import { createLazyActivation } from "./lib/lazy-extension";
 
 const COMMANDS = new Map([
   ["plannotator", "Toggle plannotator planning mode"],
+  ["plannotator-plan-mode", "Toggle plannotator planning mode"],
   [
     "plannotator-review",
     "Open interactive code review for current changes or a PR URL; pass --git or --gitbutler to force that provider",
@@ -15,7 +16,8 @@ const COMMANDS = new Map([
   ["plannotator-annotate", "Open markdown file or folder in annotation UI"],
   ["plannotator-last", "Annotate the last assistant message"],
 ]);
-const PLAN_SHORTCUT = "ctrl+alt+p";
+const PLAN_SHORTCUT = "ctrl+alt+shift+p";
+const UPSTREAM_PLAN_SHORTCUT = "ctrl+alt+p";
 const PLAN_TOOL = "plannotator_submit_plan";
 
 function piAgentRoot() {
@@ -97,7 +99,7 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
       api,
       captureCommands: [...COMMANDS.keys()],
       captureFlags: ["plan"],
-      captureShortcuts: [PLAN_SHORTCUT],
+      captureShortcuts: [UPSTREAM_PLAN_SHORTCUT],
       captureTools: [PLAN_TOOL],
       importExtension,
       replayEvents: ["session_start"],
@@ -114,7 +116,9 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
         description,
         async handler(args: unknown, context: unknown) {
           await lazy.activate(context);
-          const command = lazy.commands.get(name);
+          const command = lazy.commands.get(
+            name === "plannotator" ? "plannotator-plan-mode" : name
+          );
           if (!command) throw new Error(`Plannotator did not register /${name}`);
           return command.handler(args, context);
         },
@@ -125,7 +129,7 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
       description: "Toggle plannotator",
       async handler(context: unknown) {
         await lazy.activate(context);
-        const shortcut = lazy.shortcuts.get(PLAN_SHORTCUT);
+        const shortcut = lazy.shortcuts.get(UPSTREAM_PLAN_SHORTCUT);
         if (!shortcut) throw new Error("Plannotator did not register Ctrl+Alt+P");
         return shortcut.handler(context);
       },
@@ -163,7 +167,11 @@ export function createLazyPlannotator(importExtension = importPlannotator) {
     });
 
     api.on("session_start", async (event: unknown, context: unknown) => {
-      if (!lazy.isActivated() && Reflect.get(api, "getFlag")?.call(api, "plan") === true) {
+      if (
+        !lazy.isActivated() &&
+        (process.env.PLANNOTATOR_INBOX_TOOL === "1" ||
+          Reflect.get(api, "getFlag")?.call(api, "plan") === true)
+      ) {
         await lazy.activate(context);
         return;
       }

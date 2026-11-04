@@ -1,7 +1,7 @@
 # Pura domain — fragrance automation routines
 { lib, ... }:
 let
-  inherit (import ../_lib.nix) ensureEnabled;
+  inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 
   # Update these area IDs after confirming your Pura device areas in HA.
   # Examples: "living_room", "bedroom".
@@ -92,6 +92,9 @@ in
             data = {
               title = "🧴 Pura refill needed";
               message = "{{ state_attr(trigger.entity_id, 'friendly_name') | replace(' fragrance remaining', '') }} is empty{% set scent = states(trigger.entity_id | replace('_fragrance_remaining', '_fragrance')) %}{% if scent not in ['unknown', 'unavailable', 'none', ''] %} ({{ scent }}){% endif %}.";
+              data = notificationPalette.warning // {
+                notification_icon = "mdi:spray-bottle";
+              };
             };
           }
         ];

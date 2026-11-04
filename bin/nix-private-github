@@ -4,11 +4,20 @@ set -euo pipefail
 token_file="${GITHUB_NIX_TOKEN_FILE:-/var/lib/opnix/secrets/githubNixToken}"
 deploy_source_head=""
 deploy_source_base=""
+deploy_expected_main=""
 deploy_source_owner="${SUDO_USER:-${USER:-unknown}}"
 deploy_allow_stale="${NIXOS_DEPLOY_ALLOW_STALE:-0}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --nuc-deploy-expected-main=*)
+      deploy_expected_main="${1#*=}"
+      if [[ ! "$deploy_expected_main" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "nix-private-github: expected main must be an exact commit SHA" >&2
+        exit 64
+      fi
+      shift
+      ;;
     --nuc-deploy-source-head=*)
       deploy_source_head="${1#*=}"
       shift
@@ -70,6 +79,29 @@ if [[ "$command_name" == "nixos-rebuild" ]]; then
   done
 fi
 
+# This option binds the fetched source as well as live main. A matching approval
+# must not accidentally accompany another flake, a local tree, or rollback.
+if [[ -n "$deploy_expected_main" ]]; then
+  deploy_flakes=()
+  previous=""
+  for arg in "${@:2}"; do
+    if [[ "$previous" == "--flake" ]]; then
+      deploy_flakes+=("$arg")
+    elif [[ "$arg" == --flake=* ]]; then
+      deploy_flakes+=("${arg#--flake=}")
+    fi
+    if [[ "$arg" == "--rollback" ]]; then
+      echo "nix-private-github: approved revision cannot be used for rollback" >&2
+      exit 64
+    fi
+    previous="$arg"
+  done
+  if [[ "$deploy_mutation" != 1 || ${#deploy_flakes[@]} != 1 || "${deploy_flakes[0]:-}" != "github:edmundmiller/dotfiles/${deploy_expected_main}#nuc" ]]; then
+    echo "nix-private-github: approved revision requires the exact pinned NUC flake" >&2
+    exit 64
+  fi
+fi
+
 if [[ "$deploy_mutation" -eq 0 ]]; then
   exec "$@"
 fi
@@ -129,12 +161,12 @@ if [[ -z "$deploy_source_head" || -z "$deploy_source_base" ]]; then
 fi
 
 deploy_git="${NIXOS_DEPLOY_GIT:-git}"
-if [[ "$dotfiles_remote_flake" -eq 1 ]]; then
+if [[ "$dotfiles_remote_flake" -eq 1 || -n "$deploy_expected_main" ]]; then
   remote_main=""
 else
   remote_main="${NIXOS_DEPLOY_REMOTE_MAIN:-}"
 fi
-if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 ]]; then
+if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 || -n "$deploy_expected_main" ]]; then
   if [[ -z "$remote_main" ]]; then
     if ! remote_main_output="$(
       "$deploy_git" ls-remote \
@@ -150,6 +182,13 @@ if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 ]]; then
     echo "nix-private-github: could not resolve current dotfiles origin/main" >&2
     exit 69
   fi
+fi
+
+# CI-approved deployments must still be current when they acquire the host
+# lock. Neither a stale override nor a cached main value can bypass this gate.
+if [[ -n "$deploy_expected_main" && "$remote_main" != "$deploy_expected_main" ]]; then
+  echo "nix-private-github: approved commit is no longer dotfiles origin/main; rerun CI and deployment" >&2
+  exit 65
 fi
 
 if [[ "$dotfiles_remote_flake" -eq 1 ]]; then

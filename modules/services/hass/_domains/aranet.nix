@@ -6,7 +6,7 @@
 # (find in HA → Developer Tools → States, filter by "aranet4")
 { lib, ... }:
 let
-  inherit (import ../_lib.nix) ensureEnabled;
+  inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 
   # Update this to match your Aranet4 entity prefix
   # e.g. sensor.aranet4_ab12cd_carbon_dioxide → prefix is "aranet4_ab12cd"
@@ -37,7 +37,10 @@ in
             data = {
               title = "🌬️ Air Quality";
               message = "CO2 is high ({{ states('${co2}') }} ppm) — open a window";
-              data.push.interruption-level = "time-sensitive";
+              data = notificationPalette.climate // {
+                notification_icon = "mdi:air-filter";
+                push.interruption-level = "time-sensitive";
+              };
             };
           }
         ];
@@ -60,7 +63,10 @@ in
             data = {
               title = "⚠️ Poor Air Quality";
               message = "CO2 is very high ({{ states('${co2}') }} ppm) — ventilate now";
-              data.push.interruption-level = "active";
+              data = notificationPalette.warning // {
+                notification_icon = "mdi:alert";
+                push.interruption-level = "active";
+              };
             };
           }
         ];
@@ -90,6 +96,9 @@ in
             data = {
               title = "✅ Air Quality OK";
               message = "CO2 back to normal ({{ states('${co2}') }} ppm)";
+              data = notificationPalette.success // {
+                notification_icon = "mdi:leaf";
+              };
             };
           }
         ];

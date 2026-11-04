@@ -1,7 +1,7 @@
 use ./common.nu *
 
 const NUC_HOST = "nuc"
-const UNAS_HOST = "192.168.1.101"
+const UNAS_HOST = "192.168.1.206"
 const NUC_WORKTREE_MODES = ["dry-activate" "test" "switch" "build" "vm" "validate"]
 
 def "main deploy" [host: string] {
@@ -85,7 +85,47 @@ def nuc-local-rebuild [] {
   nuc-post-deploy-check true
 }
 
+def nuc-revision-deploy [revision: string] {
+  if not ($revision =~ '^[0-9a-f]{40}$') {
+    error make {msg: "NUC revision deployment requires an exact 40-character lowercase Git SHA"}
+  }
+  let ctx = (context)
+  let lock = (^git -C $ctx.flake_dir show $"($revision):flake.lock" | complete)
+  if $lock.exit_code != 0 {
+    error make {msg: "could not read the approved revision's flake.lock"}
+  }
+  let locked = ($lock.stdout | from json)
+  let agents_input = ($locked.nodes | get $locked.root | get inputs.agents-workspace)
+  let agents_revision = ($locked.nodes | get $agents_input | get locked.rev)
+  if not ($agents_revision =~ '^[0-9a-f]{40}$') {
+    error make {msg: "approved revision lacks an exact agents-workspace pin"}
+  }
+  let expected = $"dotfiles=($revision);agents-workspace=($agents_revision)"
+  let script = ([
+    'set -eu'
+    'export PATH="/run/wrappers/bin:$PATH"'
+    'printf "hostname=%s\n" "$(hostname)"; uname -a'
+    'test "$(hostname)" = nuc'
+    $"sudo -n nix-private-github --nuc-deploy-expected-main=($revision) --nuc-deploy-source-head=($revision) --nuc-deploy-source-base=($revision) --nuc-deploy-source-owner=github-nuc-deploy nixos-rebuild switch --flake github:edmundmiller/dotfiles/($revision)#nuc --show-trace --accept-flake-config --max-jobs 1"
+    'actual="$(nixos-version --configuration-revision)"'
+    'printf "configurationRevision=%s\n" "$actual"'
+    $"test \"$actual\" = '($expected)'"
+    'systemctl is-active tailscaled.service'
+    'systemctl is-active sshd.service'
+    'if systemctl is-active --quiet nixos-upgrade.timer || systemctl is-enabled --quiet nixos-upgrade.timer; then echo "unexpected automatic upgrade timer" >&2; exit 1; fi'
+    'systemctl --failed --no-pager'
+  ] | str join "\n")
+  ^tailscale ssh emiller@nuc.cinnamon-rooster.ts.net $script
+  if $env.LAST_EXIT_CODE != 0 {
+    error make {msg: "NUC revision deployment or verification failed"}
+  }
+}
+
 def "main nuc" [mode: string = "auto", worktree_mode: string = "switch"] {
+  if $mode == "revision" {
+    nuc-revision-deploy $worktree_mode
+    return
+  }
   let ctx = (context)
   cd $ctx.flake_dir
 
@@ -111,7 +151,7 @@ def "main nuc" [mode: string = "auto", worktree_mode: string = "switch"] {
   }
 
   if $mode != "auto" {
-    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm, validate"
+    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm, validate, revision <SHA>"
     error make {msg: "invalid hey nuc mode"}
   }
 
@@ -202,14 +242,20 @@ def nuc-worktree-prune [script: string, user: string, host: string = $NUC_HOST] 
   }
 }
 
-def nuc-worktree-release-script [destination: string, user: string, root: string = "/tmp"] {
+def nuc-worktree-release-script [destination: string, user: string, root: string = "/tmp", prune_script: string = ""] {
+  let prune_command = if ($prune_script | is-empty) {
+    $"bash '($destination)/bin/prune-nuc-deploy-snapshots'"
+  } else {
+    let encoded = (open --raw $prune_script | encode base64)
+    $"printf '%s' '($encoded)' | base64 --decode | bash -s --"
+  }
   $"function nuc_release {
   local release_status=0
   if ! rm -f '($destination)/.nuc-deploy-active'; then
     printf 'warning: failed to remove active NUC snapshot lease: ($destination)\\n' >&2
     release_status=1
   fi
-  if ! bash '($destination)/bin/prune-nuc-deploy-snapshots' '($root)' '($user)' 5; then
+  if ! ($prune_command) '($root)' '($user)' 5; then
     printf 'warning: failed to prune completed NUC snapshots after: ($destination)\\n' >&2
     release_status=1
   fi
@@ -218,8 +264,8 @@ def nuc-worktree-release-script [destination: string, user: string, root: string
 nuc_release"
 }
 
-def nuc-worktree-release [destination: string, user: string, host: string = "", root: string = "/tmp"] {
-  let command = (nuc-worktree-release-script $destination $user $root)
+def nuc-worktree-release [destination: string, user: string, host: string = "", root: string = "/tmp", prune_script: string = ""] {
+  let command = (nuc-worktree-release-script $destination $user $root $prune_script)
   if ($host | is-empty) {
     ^bash -c $command
   } else {
@@ -562,9 +608,10 @@ def nuc-worktree-revision-command [destination: string, revision: string] {
   $"bash '($destination)/bin/write-nuc-deploy-revision' '($destination)' '($revision)'"
 }
 
-def nuc-worktree-prepare [source: string, destination: string, revision: string, dirty: bool, user: string, host: string = "", root: string = "/tmp"] {
+def nuc-worktree-prepare [source: string, destination: string, head: string, dirty: bool, user: string, host: string = "", root: string = "/tmp"] {
   try {
-    let content_digest = (nuc-worktree-sync $source $destination $revision $dirty $host)
+    let content_digest = (nuc-worktree-sync $source $destination $head $dirty $host)
+    let revision = if $dirty { $"($head)-dirty" } else { $head }
     let command = (nuc-worktree-revision-command $destination $revision)
     if ($host | is-empty) {
       ^bash -c $command
@@ -574,7 +621,9 @@ def nuc-worktree-prepare [source: string, destination: string, revision: string,
     $content_digest
   } catch {|err|
     try {
-      nuc-worktree-release $destination $user $host $root
+      # Transfer may have failed before the snapshot received its pruner.
+      let prune_script = ($source | path join "bin" "prune-nuc-deploy-snapshots")
+      nuc-worktree-release $destination $user $host $root $prune_script
     } catch {|cleanup_err|
       print -e $"warning: failed to release NUC snapshot after preparation error: ($cleanup_err.msg)"
     }
@@ -616,7 +665,7 @@ def "main nuc-worktree" [mode: string = "dry-activate", configuration: string = 
     ^ssh $NUC_HOST $"mkdir -p '($remote_dir)'"
     ^ssh $NUC_HOST $"touch '($remote_dir)/.nuc-deploy-active'"
   }
-  let content_digest = (nuc-worktree-prepare $ctx.flake_dir $remote_dir $revision $source.dirty $deploy_user $target_host)
+  let content_digest = (nuc-worktree-prepare $ctx.flake_dir $remote_dir $source.head $source.dirty $deploy_user $target_host)
 
   if $mode == "validate" {
     let report_dir = (nuc-worktree-validation-report-dir $deploy_user $revision)
@@ -662,11 +711,34 @@ def "main nuc-wt" [mode: string = "dry-activate", configuration: string = "nuc"]
   main nuc-worktree $mode $configuration
 }
 
-def "main unas" [] {
+def "main unas" [mode: string = "remote"] {
   let ctx = (context)
   print "=== Deploying to UNAS ==="
   cd $ctx.flake_dir
+  if $mode == "local" {
+    if (^hostname -s | str trim) != "unas" {
+      error make {msg: "hey unas local must run on the installed UNAS host"}
+    }
+    with-sudo-path {
+      ^sudo -n nixos-rebuild switch --flake .#unas --show-trace --accept-flake-config --max-jobs 2
+      if $env.LAST_EXIT_CODE != 0 {
+        error make {msg: "UNAS local deployment failed"}
+      }
+    }
+    return
+  }
+  if $mode != "remote" {
+    error make {msg: "hey unas mode must be remote or local"}
+  }
   ^nix run .#deploy-rs -- .#unas --skip-checks
+}
+
+def "main unas-recover" [root: string, system: string] {
+  let ctx = (context)
+  ^bash ($ctx.flake_dir | path join "bin" "unas-recover") $root $system
+  if $env.LAST_EXIT_CODE != 0 {
+    error make {msg: "UNAS recovery installation failed; do not reboot"}
+  }
 }
 
 def "main unas-ssh" [] {

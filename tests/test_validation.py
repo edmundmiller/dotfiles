@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -107,6 +108,37 @@ class ValidationTests(unittest.TestCase):
 
         self.write("flake.lock", "changed")
         self.assertIn("hunk-config-compatibility", self.selection()["checks"])
+
+    def test_mcp_sources_select_shared_reconciliation_tests(self):
+        for path in (
+            "config/agents/mcp.nix",
+            "config/agents/reconcile_mcp.py",
+            "modules/agents/mcp/default.nix",
+            "tests/test_agent_mcp.py",
+            "hosts/seqeratop/default.nix",
+        ):
+            with self.subTest(path=path):
+                self.write(path, "changed")
+                self.assertIn("agent-mcp-tests", self.selection(path)["checks"])
+
+    def test_flue_and_repair_changes_select_observability_and_policy(self):
+        for path in (
+            ".flue/observability.ts",
+            ".flue/tests/observability.test.ts",
+            ".flue/package-lock.json",
+            "packages/flue-evlog/src/index.ts",
+            "packages/flue-evlog/package-lock.json",
+            ".github/workflows/renovate-patch-repair.yml",
+        ):
+            with self.subTest(path=path):
+                self.write(path, "changed")
+                selected = self.selection(path)
+                self.assertTrue(selected["flue"])
+                self.assertIn("package-policy-tests", selected["checks"])
+        self.write("docs/unrelated.md", "changed")
+        self.assertFalse(self.selection("docs/unrelated.md")["flue"])
+        self.assertTrue(self.selection("--full")["flue"])
+        self.assertFalse(self.selection("--packages-only")["flue"])
 
     def test_task_scopes_do_not_select_unrelated_dirt_or_prefix_siblings(self):
         self.write("owned/a.md", "yes")
@@ -271,6 +303,10 @@ class ValidationTests(unittest.TestCase):
                 ".#darwinConfigurations.MacTraitor-Pro.system.drvPath",
                 ".#darwinConfigurations.Seqeratop.system.drvPath",
             ],
+        )
+        self.assertIn(
+            ".#checks.aarch64-darwin.mactraitor-fail-closed-activation",
+            [command[-1] for command in commands if "build" in command],
         )
         self.assertIn(
             ".#checks.aarch64-darwin.dji-mic-mini-receiver-mute-regressions",
@@ -524,13 +560,165 @@ class ValidationTests(unittest.TestCase):
         self.assertNotIn(".#checks.", workflow)
         self.assertNotIn("qa-changed", workflow)
         self.assertNotIn("--platform darwin", workflow.split("  herdr-vm-test:")[0])
+        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
+        self.assertIn(
+            "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", linux
+        )
+        self.assertNotIn("secrets.RENOVATE_TOKEN", linux)
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
-        self.assertIn("runs-on: macos-15", darwin)
+        self.assertIn("runs-on: xcode-27", darwin)
         self.assertNotIn("if:", darwin)
         self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
         self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
+
+    def test_darwin_xcode_selection_resolves_image_aliases_and_rejects_missing_app(
+        self,
+    ):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        preparation = textwrap.dedent(
+            workflow.split("      - name: Prepare Xcode 27.2 Metal toolchain\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - ", 1)[0]
+        )
+        for installed in (True, False):
+            with self.subTest(installed=installed):
+                applications = self.root.resolve() / str(installed) / "Applications"
+                applications.mkdir(parents=True)
+                selected = applications / "Xcode_27.2_Release_Candidate.app"
+                if installed:
+                    (selected / "Contents/Developer").mkdir(parents=True)
+                for alias in ("Xcode_27.2.app", "Xcode_27.2.0.app"):
+                    (applications / alias).symlink_to(
+                        selected, target_is_directory=True
+                    )
+                command = preparation.replace("/Applications/", f"{applications}/")
+                # Observe the app passed to hey without downloading or selecting
+                # a real toolchain. Path resolution uses the real fixture aliases.
+                commands = (
+                    'jq() { printf "fixture-revision"; };\n'
+                    'nix() { printf "%s\\n" "$7"; };\n'
+                    "env() { :; };\n"
+                )
+                result = subprocess.run(
+                    ["bash", "-c", commands + command],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode == 0, installed, result.stderr)
+                self.assertEqual(
+                    result.stdout.strip(), str(selected) if installed else ""
+                )
+
+    def test_darwin_cleanup_preserves_selected_xcode_and_rejects_invalid_selection(
+        self,
+    ):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        cleanup = textwrap.dedent(
+            workflow.split("      - name: Free space for Darwin builds\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - ", 1)[0]
+        )
+        for valid_selection in (True, False):
+            with self.subTest(valid_selection=valid_selection):
+                root = self.root / str(valid_selection)
+                applications = root / "installed-apps"
+                selected = applications / "Xcode_27.1.app"
+                developer = selected / "Contents/Developer"
+                developer.mkdir(parents=True)
+                sentinel = developer / "keep.txt"
+                sentinel.write_text("selected toolchain")
+                inactive = applications / "Xcode_27.app"
+                inactive.mkdir()
+                alias = applications / "Xcode.app"
+                alias.symlink_to(selected, target_is_directory=True)
+                unrelated = applications / "Other.app"
+                unrelated.mkdir()
+                command_line_tools = root / "CommandLineTools"
+                command_line_tools.mkdir()
+                selected_path = (
+                    alias / "Contents/Developer"
+                    if valid_selection
+                    else command_line_tools
+                )
+                command = cleanup.replace("/Applications/", f"{applications}/")
+                self.assertNotIn("/Applications/", command)
+                # Only tool discovery and privilege elevation are replaced. The
+                # workflow deletes real disposable fixture directories.
+                commands = (
+                    'xcode-select() { printf "%s\\n" "$SELECTED_DEVELOPER"; };\n'
+                    'sudo() { "$@"; };\n'
+                    'xcodebuild() { test -d "$SELECTED_DEVELOPER"; };\n'
+                )
+                result = subprocess.run(
+                    ["bash", "-c", commands + command],
+                    env=os.environ | {"SELECTED_DEVELOPER": str(selected_path)},
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode == 0, valid_selection, result.stderr)
+                self.assertEqual(sentinel.read_text(), "selected toolchain")
+                self.assertTrue(alias.is_symlink())
+                self.assertTrue(unrelated.is_dir())
+                self.assertEqual(inactive.exists(), not valid_selection)
+
+    def test_required_ci_contexts_fail_closed(self):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn("  required-checks:", workflow)
+        required = workflow.split("  required-checks:")[1].split("  herdr-vm-test:")[0]
+        self.assertIn("name: ${{ matrix.context }}", required)
+        self.assertIn("context: [Flake Check (Linux), Check Formatting]", required)
+        self.assertIn("needs: checks\n    if: always()", required)
+        command = required.split("run: ", 1)[1].strip()
+        for result in ("success", "failure", "cancelled", "skipped", ""):
+            with self.subTest(result=result):
+                completed = subprocess.run(
+                    ["sh", "-c", command.replace("${{ needs.checks.result }}", result)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode == 0, result == "success")
+
+
+class NucDeploymentWorkflowTests(unittest.TestCase):
+    def test_dispatch_rejects_a_different_revision_before_deployment(self):
+        workflow = (v.ROOT / ".github/workflows/deploy-nuc.yml").read_text()
+        self.assertIn("EXPECTED_SHA: ${{ inputs.expected_sha }}", workflow)
+        self.assertIn("DEPLOY_SHA: ${{ github.sha }}", workflow)
+        self.assertLess(workflow.index("        run: |"), workflow.index("- uses:"))
+        # Execute the first shell gate, before any checkout or tailnet enrollment.
+        gate = textwrap.dedent(
+            workflow.split("        run: |\n", 1)[1].split("      - ", 1)[0]
+        )
+        captured_sha = "0123456789abcdef0123456789abcdef01234567"
+        # Successful GitHub responses let the old CI-only gate accept the race.
+        # These functions also keep a regression from contacting real GitHub.
+        github = 'gh() { printf "%s\\n" "$DEPLOY_SHA"; }; jq() { return 0; };\n'
+        for expected_sha, accepted in (
+            (captured_sha, True),
+            ("89abcdef0123456789abcdef0123456789abcdef", False),
+            ("", False),
+            (captured_sha[:-1], False),
+            ("$(exit 0)", False),
+        ):
+            with self.subTest(expected_sha=expected_sha):
+                result = subprocess.run(
+                    ["bash", "-c", github + gate],
+                    env=os.environ
+                    | {"DEPLOY_SHA": captured_sha, "EXPECTED_SHA": expected_sha},
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if accepted:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertIn("NUC deployment revision mismatch", result.stderr)
 
 
 subprocess_run = subprocess.run

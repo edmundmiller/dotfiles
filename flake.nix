@@ -22,6 +22,8 @@
     # Two inputs so I can track them separately at different rates.
     nixpkgs.url = "nixpkgs/nixos-unstable"; # Using unstable for 25.05 compatibility
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
+    # jj 0.46 needs Rust 1.97.1; upgrade it without moving the host package set.
+    nixpkgs-jj.url = "github:NixOS/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     nixpkgs-node.url = "nixpkgs/nixos-25.11"; # newer Node 24 LTS while nixos-unstable catches up
     # Home Assistant and its Python closure can advance without upgrading the host.
     nixpkgs-hass.url = "github:NixOS/nixpkgs/b1b875982b17dabde9b4a37f3e229e74913e6db3";
@@ -59,6 +61,7 @@
     # Extras
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     ghostty.url = "github:ghostty-org/ghostty";
+    rex.url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
     wezterm.url = "github:wez/wezterm?dir=nix";
     wezterm.inputs.nixpkgs.follows = "nixpkgs";
     "op-shell-plugins".url = "github:1Password/shell-plugins";
@@ -74,7 +77,7 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "github:edmundmiller/tnote/99dd970045af706a549c2ba3b3d245f6b9725b0d";
+      url = "github:edmundmiller/tnote/2085d519e13ebdcd5a9e896e35cb2ede185f4e06";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
       inputs.llm-agents.follows = "llm-agents";
@@ -94,7 +97,7 @@
     llm-agents.inputs.systems.follows = "systems";
 
     hunk = {
-      url = "github:modem-dev/hunk/v0.23.0";
+      url = "github:modem-dev/hunk/v0.24.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
     };
@@ -349,6 +352,10 @@
             my = self.packages.${final.stdenv.hostPlatform.system} or { };
           };
 
+          jujutsu = final: _prev: {
+            jujutsu = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.jujutsu;
+          };
+
           # Needs `inputs`, so it cannot be auto-imported by mapModules.
           ghui = import ./overlays/ghui inputs;
           hermes-agent = import ./overlays/hermes-agent { inherit inputs; };
@@ -512,7 +519,7 @@
           };
 
           unas = {
-            hostname = "192.168.1.101";
+            hostname = "192.168.1.206";
             sshUser = "emiller";
             user = "root";
             interactiveSudo = false;
@@ -562,24 +569,6 @@
               ''
             else
               pkgs.firefox;
-          hunkPackage = import ./overlays/hunk/package.nix { inherit inputs pkgs; };
-          hunkConfigCompatibility = hunkPackage.overrideAttrs (old: {
-            pname = "hunk-config-compatibility";
-            postPatch = (old.postPatch or "") + ''
-              cp ${./overlays/hunk/config-compatibility.test.ts} config-compatibility.test.ts
-            '';
-            doCheck = true;
-            checkPhase = ''
-              runHook preCheck
-              export HOME="$TMPDIR/hunk-compatibility-home"
-              mkdir -p "$HOME/.config/hunk/extensions/hunk-commit-log"
-              cp ${./config/hunk/config.toml} "$HOME/.config/hunk/config.toml"
-              cp -R ${inputs.hunk-commit-log}/. "$HOME/.config/hunk/extensions/hunk-commit-log/"
-              chmod -R u+w "$HOME"
-              "$bun_compiler" test config-compatibility.test.ts
-              runHook postCheck
-            '';
-          });
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
           antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
             builtins.toJSON {
@@ -733,6 +722,9 @@
               nixfmt.enable = true;
               oxfmt = {
                 enable = true;
+                # Oxfmt already ignores npm lockfiles. Do not invoke it with a
+                # lockfile-only batch, which it rejects as having no targets.
+                excludes = [ "**/package-lock.json" ];
                 includes = [
                   "*.cjs"
                   "*.cts"
@@ -765,6 +757,8 @@
               "packages/*/dist/**"
               "packages/*/node_modules/**"
               ".beads/backup/**"
+              # Rex compares its stub byte for byte; formatting makes it "outdated".
+              "skills/conditional/rex/rex/SKILL.md"
             ];
           };
 
@@ -990,6 +984,36 @@
                 files = "\\.(ts|js|nix)$";
                 stages = [ "pre-push" ];
               };
+              rex-config = {
+                enable = pkgs.stdenv.hostPlatform.isDarwin;
+                name = "rex-config";
+                description = "Validate Rex Lua configuration with the installed CLI";
+                entry = toString (
+                  pkgs.writeShellScript "rex-config" ''
+                    set -euo pipefail
+                    rex_bin=$(command -v rex || true)
+                    if [ -z "$rex_bin" ]; then
+                      for app in "/Applications/Rex Beta.app" "/Applications/Rex.app" \
+                        "$HOME/Applications/Rex Beta.app" "$HOME/Applications/Rex.app"; do
+                        candidate="$app/Contents/Helpers/Rex Server.app/Contents/MacOS/rex"
+                        if [ -x "$candidate" ]; then
+                          rex_bin="$candidate"
+                          break
+                        fi
+                      done
+                    fi
+                    if [ -z "$rex_bin" ]; then
+                      echo "rex-config: install Rex or put its CLI on PATH to validate config/rex/init.lua" >&2
+                      exit 1
+                    fi
+                    exec "$rex_bin" config check config/rex/init.lua
+                  ''
+                );
+                language = "system";
+                pass_filenames = false;
+                files = "^config/rex/init\\.lua$";
+                stages = [ "pre-commit" ];
+              };
               pi-settings-json = {
                 enable = true;
                 name = "pi-settings-json";
@@ -1196,7 +1220,9 @@
                     touch $out
                   '';
 
-              hunk-config-compatibility = hunkConfigCompatibility;
+              hunk-config-compatibility = import ./overlays/hunk/config-compatibility.nix {
+                inherit inputs pkgs;
+              };
 
               agent-run-tests =
                 pkgs.runCommand "agent-run-tests"
@@ -1323,6 +1349,31 @@
                 touch "$out"
               '';
 
+              tldraw-api-tests = pkgs.runCommand "tldraw-api-tests" { } ''
+                cd ${./.}
+                PYTHONDONTWRITEBYTECODE=1 ${pkgs.python3}/bin/python3 -m unittest tests.test_tldraw_api
+                touch "$out"
+              '';
+
+              agent-mcp-tests =
+                pkgs.runCommand "agent-mcp-tests"
+                  {
+                    MCP_NIX_FIXTURE = pkgs.writeText "mcp-migration-fixture.json" ''
+                      {"custom":"preserved","mcpServers":{}}
+                    '';
+                    nativeBuildInputs = [
+                      (pkgs.python3.withPackages (p: [
+                        p.json5
+                        p.tomlkit
+                      ]))
+                    ];
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_agent_mcp
+                    touch "$out"
+                  '';
+
               omp-thin-harness-tests =
                 pkgs.runCommand "omp-thin-harness-tests"
                   {
@@ -1334,11 +1385,22 @@
                   }
                   ''
                     cd ${./.}
+                    export AGENT_INSTRUCTION_CONFIG=${
+                      pkgs.writeText "agent-instruction-config.json" (
+                        builtins.toJSON (
+                          import ./tests/agent-instruction-config.nix {
+                            inherit lib inputs;
+                            inherit (pkgs) coreutils;
+                          }
+                        )
+                      )
+                    }
                     OMP_BIN=${self.packages.${system}.omp}/bin/omp \
                       PYTHONDONTWRITEBYTECODE=1 \
                       python3 -m unittest \
                         tests/test_agent_instruction_wiring.py \
                         tests/test_agent_response_contract.py \
+                        tests/test_pi_update.py \
                         tests/test_codex_model_config.py \
                         tests/test_omp_ttsr_rules.py
                     bun test ./tests/omp_lazy_extensions.test.js
@@ -1394,6 +1456,9 @@
                   ''
                     # Setup git config for tests
                     export HOME=$TMPDIR
+                    # Unsandboxed Darwin builds see the host /etc/zshenv; zunit's zsh
+                    # would source nix-darwin's set-environment and replace PATH.
+                    export __NIX_DARWIN_SET_ENVIRONMENT_DONE=1
                     git config --global user.email "test@test.com"
                     git config --global user.name "Test User"
                     git config --global init.defaultBranch main
@@ -1577,16 +1642,44 @@
               # Validate the tracked Herdr config template with Herdr's own
               # `config check`, which rejects unknown keys. Cheap and runs
               # everywhere; the VM test below covers the activated config.
+              pi-herdr-settings-tests = import ./modules/agents/pi/_tests/herdr-settings.nix {
+                inherit lib pkgs;
+              };
+
+              herdr-native-tests = import ./modules/shell/herdr/_tests/native-check.nix {
+                inherit lib pkgs inputs;
+              };
+
               herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
                 inherit pkgs;
                 herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
+
+              hass-health-tests =
+                pkgs.runCommand "hass-health-tests"
+                  {
+                    nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.websockets ])) ];
+                  }
+                  ''
+                    export PYTHONDONTWRITEBYTECODE=1
+                    python3 ${./modules/services/hass/_tests/test_hass_health.py} ${./modules/services/hass/hass-health.py}
+                    touch "$out"
+                  '';
             }
             // lib.optionalAttrs (system == darwinSystem) {
+              mactraitor-fail-closed-activation = import ./hosts/mactraitorpro/_tests/fail-closed-activation.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
+                inherit inputs pkgs;
+              };
+
               herdr-app-launch-config =
                 let
-                  host = self.darwinConfigurations."MacTraitor-Pro";
+                  # Keep this compatibility check on the legacy Ghostty frontend.
+                  host = self.darwinConfigurations."MacTraitor-Pro".extendModules {
+                    modules = [ { modules.shell.herdr.backend = lib.mkForce "legacy"; } ];
+                  };
                   home = host.config.home-manager.users.emiller;
                   generatedConfig = pkgs.linkFarm "ghostty-launch-test-config" (
                     (map
@@ -1621,8 +1714,8 @@
                     pkgs.gnugrep
                   ];
                   text = ''
-                    exec ${pkgs.bash}/bin/bash ${./packages/herdr-app/test-launch-config.sh} \
-                      ${self.packages.${system}.herdr-app}/Applications/Herdr.app \
+                    exec ${pkgs.bash}/bin/bash ${./packages/herdr-ghostty/test-launch-config.sh} \
+                      "${self.packages.${system}.herdr-ghostty}/Applications/Herdr Ghostty.app" \
                       ${generatedConfig} \
                       ${pkgs.ghostty-bin}/Applications/Ghostty.app
                   '';
@@ -1790,11 +1883,6 @@
                 touch "$out"
               '';
 
-              nuc-private-flake-auth = import ./hosts/nuc/_tests/private-flake-auth.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
-                inherit pkgs;
-              };
-
               nuc-openssh-pq-kex = import ./hosts/nuc/_tests/openssh-pq-kex.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
@@ -1877,6 +1965,29 @@
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
+              };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              unas-recovery = lib.my.mkServiceVmTest {
+                name = "unas-recovery";
+                extraConfig.environment.systemPackages = with pkgs; [
+                  bash
+                  bubblewrap
+                  coreutils
+                  findutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  inetutils
+                  nix
+                  python3
+                ];
+                testScript = ''
+                  start_all()
+                  machine.wait_for_unit("multi-user.target")
+                  machine.succeed("bash ${./.}/bin/tests/unas-recover.bash", timeout=300)
+                '';
               };
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.

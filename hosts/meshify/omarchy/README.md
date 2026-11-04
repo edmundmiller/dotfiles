@@ -106,6 +106,9 @@ check. Normal system upgrades or Hermes self-updates can cause reported drift;
 - [Plugin reloads while locked](docs/plugin-reload-lock-crash.md): read before
   Omapods builds, plugin updates, or other writes under the watched local plugin
   directory.
+- [Lock screen after resume](docs/lock-screen-resume-rendering.md): read when
+  typing appears to require a click after suspend; records the rendering-stall
+  evidence, failed focus experiment, and unverified workaround.
 - [Agent-assisted plugin log watch](docs/plugin-log-watch.md): read when changing
   monitored plugins, Pi triage, actionable notifications, or repair authority.
 
@@ -262,6 +265,8 @@ user lingering is not enabled by this configuration.
 `local/bin/rocket-league-autostart` starts Rocket League at login. Steam can
 consume the first launch URI while applying startup updates, so the launcher
 retries every 15 seconds for up to 10 minutes and stops once the game runs.
+After the first launch request, it stops retrying if Steam is no longer running,
+so exiting Steam does not reopen it on the next attempt.
 The retry behavior is covered by:
 
 ```bash

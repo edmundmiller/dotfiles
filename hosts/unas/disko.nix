@@ -17,7 +17,7 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "defaults" ];
+                mountOptions = [ "umask=0077" ];
               };
             };
             zfs = {
@@ -132,6 +132,11 @@
         };
         postCreateHook = "zfs snapshot datatank@blank";
         datasets = {
+          "backup/moni/time-machine" = {
+            type = "zfs_fs";
+            options.mountpoint = "legacy";
+            mountpoint = "/data/backup/moni/time-machine";
+          };
           "media/books/audiobooks" = {
             type = "zfs_fs";
             options.mountpoint = "legacy";

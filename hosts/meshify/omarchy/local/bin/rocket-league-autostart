@@ -19,6 +19,11 @@ rocket_league_is_running() {
 for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
   rocket_league_is_running && exit 0
 
+  if ((attempt > 1)) && ! pgrep -x steam >/dev/null; then
+    printf 'rocket-league-autostart: Steam exited; stopping retries\n'
+    exit 0
+  fi
+
   printf 'rocket-league-autostart: launch attempt %d/%d\n' \
     "$attempt" "$MAX_ATTEMPTS"
   uwsm-app -- steam "$GAME_URI" >/dev/null 2>&1 || true

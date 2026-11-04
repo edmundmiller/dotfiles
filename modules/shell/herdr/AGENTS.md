@@ -1,29 +1,30 @@
-# Herdr shell integration
+# Herdr deployment
 
-This module owns the launcher, package, optional tmux popup, and writable
-`~/.config/herdr/config.toml` bootstrap. Activation updates managed template
-keys idempotently without clobbering user settings; a store symlink is unsuitable
-because Herdr writes onboarding/settings at runtime.
+`default.nix` declares shared options and gates the old TUI deployment behind
+`backend = "legacy"`. Native is the default on both platforms. `native.nix`
+checks the installer-owned `hc`; `native.app.enable` defaults to Darwin and
+gates app preferences, mods and helpers. Servers
+receive core-only configuration. Changing backend leaves all sessions and old
+configuration untouched.
 
-The read-only `piThemeName` option is consumed by `modules/agents/pi`, which owns
-Pi package wiring. Activation installs integrations for enabled agents, including
-declared NixOS Hermes profiles.
+Native activation reconciles only managed leaves of settings, keys and
+programs. Keep these writable and preserve other preferences. Deploy only
+personally named mods; shipped assets, app state and generated files remain
+app-owned. Preserve the native signed bundle. Missing binaries produce an
+installation hint, not a network install during activation.
 
-`tmux/open-herdr.sh` launches Herdr, not tmux. On failure it can fail visibly or
-use a plain login shell, not fall back to jmux/tmux and create a startup loop.
-Optional `tmux/herdr.conf` popup integration does not transfer startup ownership
-from Herdr to tmux.
+Legacy activation alone installs marketplace plugins, old agent integrations,
+smart rename and Projects. `hermes.nix` must remain legacy-gated because its
+installer speaks the old protocol. Pi's native OSC 7501 reporting needs no
+legacy integration. Verify other agents' protocol support before claiming
+native status reporting works.
 
-`modules.shell.herdr.tnote.enable` (default true) installs the packaged tnote CLI
-and its Herdr plugin. The config-check VM test disables it so CI does not
-evaluate the private `tnote` flake input.
+`piThemeName` remains a compatibility option for legacy Pi wiring. Native
+Herdr owns its terminal palette and must not force a Ghostty-tuned Pi theme.
+The Ghostty module owns the renamed `packages/herdr-ghostty` legacy frontend;
+it never launches native Herdr inside a terminal.
 
-`modules.shell.herdr.projects.enable` (default false) installs the pinned
-`eliasstravik/herdr-projects` marketplace plugin. Enable it on Herdr-primary
-hosts. This flake packages Herdr 0.9.1. First install still needs a running
-0.9.1+ server, Cargo 1.89+, and GitHub access if the upstream repo is
-private.
-
-Run `hey check modules/shell/herdr config/herdr` for launcher, bootstrap, or
-integration changes. Marketplace installation and live config reconciliation
-need activation authority; the config-check VM deliberately omits private tnote.
+Run `hey check modules/shell/herdr config/herdr` and the native CLI/config
+behavior tests. Legacy `_tests/` still checks TOML against the old binary;
+it does not validate native JSON or mods. Add Darwin evaluation for backend
+or cross-module wiring changes. Keep private tnote disabled in VM tests.

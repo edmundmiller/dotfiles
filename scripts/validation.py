@@ -36,6 +36,7 @@ CHECKS = {
         ".codex/hooks.json",
         ".omp/hooks/*",
     ],
+    "hass-health-tests": ["modules/services/hass/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",
@@ -46,6 +47,10 @@ CHECKS = {
         "packages/*",
         "bin/check-package-layout",
         "bin/check-patch-locality",
+        "bin/check-renovate-patch-paths",
+        "bin/import-renovate-patch-repair",
+        ".flue/*",
+        ".github/workflows/renovate-patch-repair.yml",
         "tests/test_package_policy.py",
     ],
     "hunk-config-compatibility": [
@@ -66,6 +71,19 @@ CHECKS = {
         "docs/agent-guardrails.md",
         "docs/validation.md",
     ],
+    "tldraw-api-tests": [
+        "config/tldraw/*",
+        "modules/desktop/apps/tldraw.nix",
+        "skills/catalog/tldraw-offline/*",
+        "tests/test_tldraw_api.py",
+    ],
+    "agent-mcp-tests": [
+        "config/agents/mcp.nix",
+        "config/agents/reconcile_mcp.py",
+        "modules/agents/mcp/*",
+        "tests/test_agent_mcp.py",
+        "hosts/*/default.nix",
+    ],
     "omp-thin-harness-tests": [
         "AGENTS.md",
         "config/agents/AGENTS.md",
@@ -82,8 +100,11 @@ CHECKS = {
         "modules/agents/opencode/*",
         "modules/agents/pi/*",
         "modules/agents/plannotator/*",
+        "overlays/pi/*",
+        "tests/agent-instruction-config.nix",
         "tests/test_agent_instruction_wiring.py",
         "tests/test_agent_response_contract.py",
+        "tests/test_pi_update.py",
         "tests/test_codex_model_config.py",
         "tests/test_omp_ttsr_rules.py",
         "tests/omp_lazy_extensions.test.js",
@@ -108,6 +129,18 @@ CHECKS = {
         "hosts/nuc/*",
         "modules/agents/hermes/*",
     ],
+    "pi-herdr-settings-tests": [
+        "modules/agents/pi/*",
+        "modules/shell/herdr/*",
+        "config/pi/settings.jsonc",
+    ],
+    "herdr-native-tests": [
+        "modules/shell/herdr/*",
+        "config/herdr/*",
+        "bin/herdr-studios",
+        "tests/test_herdr_native*.py",
+        "tests/test_herdr_studios_native.py",
+    ],
     "herdr-config-check": [
         "modules/shell/herdr/*",
         "config/herdr/*",
@@ -123,7 +156,16 @@ CHECKS = {
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
 }
 
+# Recovery runs real Nix profiles inside Linux user/mount namespaces, not a VM.
+if sys.platform == "linux":
+    CHECKS["unas-recovery"] = [
+        "bin/unas-recover*",
+        "bin/tests/unas-recover.bash",
+        "hosts/unas/*",
+    ]
+
 DARWIN_CHECKS = [
+    "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
     "audio-priority-bar-regressions",
     "herdr-app-launch-config",
@@ -312,6 +354,7 @@ def plan(root, args):
             "checks": [],
             "packages": [],
             "integration": False,
+            "flue": False,
             "platform": target,
         }
     checks = []
@@ -320,7 +363,9 @@ def plan(root, args):
             name
             for name, patterns in CHECKS.items()
             if args.full
-            or matches(files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"])
+            or matches(
+                files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"]
+            )
         ]
     return {
         "files": files,
@@ -328,6 +373,19 @@ def plan(root, args):
         "checks": checks,
         "packages": packages,
         "integration": integration,
+        "flue": not args.packages_only
+        and (
+            args.full
+            or matches(
+                files,
+                [
+                    ".flue/*",
+                    "packages/flue-evlog/*",
+                    ".github/workflows/renovate-patch-repair.yml",
+                    "scripts/validation.py",
+                ],
+            )
+        ),
         "platform": None,
     }
 
@@ -496,6 +554,21 @@ def execute(root, selection, github_token=""):
             "services-vm": "vm-services-gatus-vm-test",
         }[target]
         run(target, build + [f".#checks.{system}.{name}"], env=env)
+
+    if selection["flue"]:
+        adapter = root / "packages/flue-evlog"
+        if run(
+            "Flue adapter dependencies",
+            ["npm", "ci", "--ignore-scripts"],
+            cwd=adapter,
+        ) and run("Flue adapter", ["npm", "run", "check"], cwd=adapter):
+            workspace = root / ".flue"
+            if run(
+                "Flue dependencies",
+                ["npm", "ci", "--ignore-scripts"],
+                cwd=workspace,
+            ):
+                run("Flue observability", ["npm", "run", "check"], cwd=workspace)
 
     if selection["packages"] or selection["integration"]:
         workspace = root / "packages/pi-packages"

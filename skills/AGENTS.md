@@ -7,8 +7,8 @@ Source selection and target mappings live in the child flake.
 ## Deployment ownership
 
 Default skills target `~/.agents/skills`, shared by OMP, Pi, Codex, Amp, OpenCode,
-and Hermes. Agent-specific directories are for targeted skills only. Claude's
-module links only `test-quality`, `github-cli-media`, and `lore` to canonical
+and Hermes. Agent-specific directories are for targeted skills only. The
+[Claude module](../modules/agents/claude/default.nix) selects its links to canonical
 shared copies; copying the full catalog there duplicates OMP discovery.
 `meta.targets` accepts canonical names and `dot-*` aliases. Hermes additionally
 needs its configured `skills.external_dirs` wiring.
