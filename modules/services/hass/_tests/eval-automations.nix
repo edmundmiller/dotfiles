@@ -670,7 +670,7 @@ let
       test =
         hasInfix "input_boolean.vacation_mode" robotCleaningExceptionMonitorJson
         && hasInfix "script.robot_cleaning_refresh_presence" robotCleaningExceptionMonitorJson
-        && hasInfix "did not answer today's location verification request" robotCleaningExceptionMonitorJson;
+        && hasInfix "script.robot_cleaning_report_exception" robotCleaningExceptionMonitorJson;
       msg = "robot cleaning exception monitor must retry verified presence and stay silent during vacation";
     }
     {

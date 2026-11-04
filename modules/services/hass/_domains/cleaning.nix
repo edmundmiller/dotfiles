@@ -4,15 +4,23 @@ let
   inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 
   notifyException = message: {
-    action = "notify.mobile_app_edmunds_iphone";
-    data = {
-      title = "Robot cleaning needs attention";
-      inherit message;
-      data = notificationPalette.warning // {
-        notification_icon = "mdi:robot-vacuum";
-      };
-    };
+    action = "script.robot_cleaning_report_exception";
+    data = { inherit message; };
   };
+
+  mapsConfiguredTemplate = ''
+    {% set ns = namespace(ready=true) %}
+    {% for helper in [
+      'robot_cleaning_rosie_pmap_id', 'robot_cleaning_rosie_user_pmapv_id',
+      'robot_cleaning_rosie_high_traffic_region_ids', 'robot_cleaning_rosie_remaining_region_ids',
+      'robot_cleaning_squirty_pmap_id', 'robot_cleaning_squirty_user_pmapv_id',
+      'robot_cleaning_squirty_high_traffic_region_ids'] %}
+      {% if states('input_text.' ~ helper) | trim in ["", 'unknown', 'unavailable'] %}
+        {% set ns.ready = false %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.ready }}
+  '';
 
   dockBoth = {
     action = "vacuum.return_to_base";
@@ -162,6 +170,10 @@ in
     };
 
     input_text = {
+      robot_cleaning_last_exception = {
+        name = "Robot Cleaning Last Reported Problem";
+        max = 255;
+      };
       robot_cleaning_rosie_pmap_id = {
         name = "Rosie Map ID";
         max = 100;
@@ -193,6 +205,34 @@ in
     };
 
     script = {
+      robot_cleaning_report_exception = {
+        alias = "Report a changed robot cleaning problem";
+        description = "Remember the reported problem across restarts; repeat only after a changed failure or a successful mission";
+        mode = "queued";
+        sequence = [
+          {
+            condition = "template";
+            value_template = "{{ states('input_text.robot_cleaning_last_exception') != message | trim }}";
+          }
+          {
+            action = "notify.mobile_app_edmunds_iphone";
+            data = {
+              title = "Robot cleaning blocked";
+              message = "{{ message | trim }}";
+              data = notificationPalette.warning // {
+                notification_icon = "mdi:robot-vacuum";
+                tag = "robot-cleaning";
+              };
+            };
+          }
+          {
+            action = "input_text.set_value";
+            target.entity_id = "input_text.robot_cleaning_last_exception";
+            data.value = "{{ message | trim }}";
+          }
+        ];
+      };
+
       robot_cleaning_refresh_presence = {
         alias = "Refresh robot cleaning presence";
         description = "Silently request both iPhone locations and wait for verified post-request tracker events";
@@ -253,6 +293,10 @@ in
               pmap_entity = "{{ 'input_text.robot_cleaning_squirty_pmap_id' if job == 'squirty_high_traffic' else 'input_text.robot_cleaning_rosie_pmap_id' }}";
               map_version_entity = "{{ 'input_text.robot_cleaning_squirty_user_pmapv_id' if job == 'squirty_high_traffic' else 'input_text.robot_cleaning_rosie_user_pmapv_id' }}";
               region_ids_entity = "{{ 'input_text.robot_cleaning_rosie_high_traffic_region_ids' if job == 'rosie_high_traffic' else ('input_text.robot_cleaning_rosie_remaining_region_ids' if job == 'rosie_remaining' else 'input_text.robot_cleaning_squirty_high_traffic_region_ids') }}";
+            };
+          }
+          {
+            variables = {
               ready = ''
                 {% set map_ready = states(pmap_entity) not in ["", "unknown", "unavailable"]
                    and states(map_version_entity) not in ["", "unknown", "unavailable"]
@@ -396,6 +440,32 @@ in
                     action = "input_datetime.set_datetime";
                     target.entity_id = "{{ last_success_entity | trim }}";
                     data.datetime = "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}";
+                  }
+                  {
+                    "if" = [
+                      {
+                        condition = "template";
+                        value_template = "{{ states('input_text.robot_cleaning_last_exception') not in ['', 'unknown', 'unavailable'] }}";
+                      }
+                    ];
+                    "then" = [
+                      {
+                        action = "notify.mobile_app_edmunds_iphone";
+                        data = {
+                          title = "Robot cleaning completed";
+                          message = "{{ job }} finished successfully. The previous cleaning alert has been cleared.";
+                          data = notificationPalette.success // {
+                            notification_icon = "mdi:robot-vacuum";
+                            tag = "robot-cleaning";
+                          };
+                        };
+                      }
+                      {
+                        action = "input_text.set_value";
+                        target.entity_id = "input_text.robot_cleaning_last_exception";
+                        data.value = "";
+                      }
+                    ];
                   }
                 ];
               }
@@ -624,6 +694,10 @@ in
           }
           {
             condition = "template";
+            value_template = mapsConfiguredTemplate;
+          }
+          {
+            condition = "template";
             value_template = ''
               {{ states('input_datetime.robot_cleaning_last_dispatch')[:10]
                  != now().date().isoformat() }}
@@ -737,7 +811,7 @@ in
       {
         alias = "Robot cleaning exception monitor";
         id = "robot_cleaning_exception_monitor";
-        description = "Retry stale presence once near noon, then report verification or severely overdue failures";
+        description = "Check map setup, retry stale presence once near noon, and report only changed failures";
         trigger = {
           platform = "time";
           at = "12:02:00";
@@ -757,6 +831,10 @@ in
         action = [
           {
             "if" = [
+              {
+                condition = "template";
+                value_template = mapsConfiguredTemplate;
+              }
               {
                 condition = "template";
                 value_template = dueJobExistsTemplate;
@@ -785,6 +863,10 @@ in
                 conditions = [
                   {
                     condition = "template";
+                    value_template = mapsConfiguredTemplate;
+                  }
+                  {
+                    condition = "template";
                     value_template = dueJobExistsTemplate;
                   }
                   {
@@ -800,7 +882,33 @@ in
                   }
                 ];
                 sequence = [
-                  (notifyException "Automatic cleaning is paused because one or both iPhones did not answer today's location verification request.")
+                  (notifyException ''
+                    {% set requested = as_timestamp(states('input_datetime.robot_cleaning_last_presence_request'), 0) %}
+                    {% set ns = namespace(missing=[]) %}
+                    {% for name, helper in [('Edmund', 'edmund'), ('Monica', 'monica')] %}
+                      {% set verified = as_timestamp(states('input_datetime.robot_cleaning_' ~ helper ~ '_presence_verified'), 0) %}
+                      {% if verified < requested or as_timestamp(now()) - verified > 7200 %}
+                        {% set ns.missing = ns.missing + [name] %}
+                      {% endif %}
+                    {% endfor %}
+                    No fresh location confirmation from {{ ns.missing | join(' and ') }} after retry. Cleaning stayed off. Check HA location and background permissions on the affected iPhone.
+                  '')
+                ];
+              }
+              {
+                conditions = [
+                  {
+                    condition = "not";
+                    conditions = [
+                      {
+                        condition = "template";
+                        value_template = mapsConfiguredTemplate;
+                      }
+                    ];
+                  }
+                ];
+                sequence = [
+                  (notifyException "Saved-map or room IDs are missing. Cleaning stayed off. Rosie and Squirty need valid map IDs, map versions, and room IDs before automatic cleaning can run.")
                 ];
               }
               {

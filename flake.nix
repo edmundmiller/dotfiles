@@ -1813,6 +1813,11 @@
                 inherit pkgs;
               };
 
+              ha-robot-cleaning-tests = import ./modules/services/hass/_tests/robot-cleaning-tests.nix {
+                nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
               # Pure Nix eval: assert hass-apply-devices stays deploy-safe.
               ha-apply-devices-assertions = import ./modules/services/hass/_tests/eval-apply-devices.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
