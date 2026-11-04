@@ -1035,35 +1035,13 @@ let
             platform = "tag";
             tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
           }
-        &&
-          tag.condition == [
-            {
-              condition = "state";
-              entity_id = "input_boolean.goodnight";
-              state = "off";
-            }
-            {
-              condition = "time";
-              after = "20:00:00";
-              before = "04:00:00";
-            }
-            {
-              condition = "state";
-              entity_id = "script.good_morning";
-              state = "off";
-            }
-          ]
+        && hasTimeGuard tag.condition "20:00:00"
+        && hasStateCondition tag.condition "script.good_morning" "off"
         && tag.mode == "single"
-        &&
-          tag.action == [
-            {
-              action = "timer.start";
-              target.entity_id = "timer.mirror_bedtime";
-            }
-            { action = "script.get_ready_for_bed"; }
-            { delay = "00:00:10"; }
-          ];
-      msg = "Monica's mirror NFC tag must require bedtime mode off, guard daytime/morning scans, and debounce Get Ready for Bed, not Good Night";
+        && hasActionTarget tag.action "timer.start" "timer.mirror_bedtime"
+        && hasActionCallDeep tag.action "script.get_ready_for_bed"
+        && !(hasActionCallDeep tag.action "script.goodnight");
+      msg = "Monica's mirror NFC tag must guard daytime/morning scans and start prep, not Good Night";
     }
     {
       test =
@@ -1135,12 +1113,10 @@ let
             }
           ]
         && tag.mode == "single"
-        &&
-          tag.action == [
-            { action = "script.goodnight"; }
-            { delay = "00:00:10"; }
-          ];
-      msg = "Monica's NFC tag must guard daytime/morning scans and debounce the direct Good Night call";
+        && hasActionCallDeep tag.action "script.goodnight"
+        && hasActionTarget tag.action "input_text.set_value" "input_text.monica_in_bed_at"
+        && hasActionTarget tag.action "timer.cancel" "timer.mirror_bedtime";
+      msg = "Monica's NFC tag must guard daytime/morning scans and support recording in bed before Good Night";
     }
     {
       test =

@@ -400,6 +400,37 @@ views:
             heading_style: subtitle
             icon: mdi:account
 
+          - type: markdown
+            title: Bedtime routine
+            entity_id: sensor.monica_bedtime_routine_duration
+            content: |-
+              {% set records = state_attr('sensor.monica_bedtime_routine_duration', 'nightly_records') or [] %}
+              {% set records = records | sort(attribute='end', reverse=true) %}
+              {% if records %}
+              {{ records | count }} recorded {{ 'night' if records | count == 1 else 'nights' }} · One-year archive
+
+              {% for group in [records[:7], records[7:]] if group %}
+              {% if loop.index == 2 %}
+              <details><summary>Older nights ({{ group | count }})</summary>
+              {% endif %}
+              <table>
+              <thead><tr><th>Night</th><th>Mirror</th><th>In bed</th><th>Min</th></tr></thead>
+              <tbody>
+              {% for record in group %}
+              <tr><td>{{ ((as_datetime(record.start) | as_local) - timedelta(hours=4)).strftime('%m/%d/%y') }}</td><td>{{ record.start | timestamp_custom('%-I:%M %p') }}</td><td>{{ record.end | timestamp_custom('%-I:%M %p') }}</td><td>{{ ((record.end - record.start) / 60) | round(1) }}</td></tr>
+              {% endfor %}
+              </tbody>
+              </table>
+              {% if loop.index == 2 %}
+              </details>
+              {% endif %}
+              {% endfor %}
+
+              Times in {{ (as_datetime(records[0].end) | as_local).tzinfo }}. Scans before 4 AM belong to the previous night.
+              {% else %}
+              No nights recorded yet. Tap the mirror tag to start, then the nightstand tag when getting into bed. Your nightly times will appear here.
+              {% endif %}
+
           - type: grid
             columns: 3
             square: false

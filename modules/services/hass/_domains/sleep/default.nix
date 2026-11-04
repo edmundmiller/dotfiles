@@ -37,6 +37,12 @@ let
     "notify.mobile_app_monicas_iphone"
   ];
 
+  # One routine per night, including scans after midnight. No reset job needed.
+  monicaRoutineNightStart = ''
+    {% set start = today_at('04:00') %}
+    {{ as_timestamp(start - timedelta(days=1) if now() < start else start) }}
+  '';
+
   # ── Per-person entity config ───────────────────────────────────────────
   edmund = {
     name = "Edmund";
@@ -260,10 +266,61 @@ in
           (mkReliableBedPresence monica)
         ];
       }
+      {
+        trigger = {
+          platform = "state";
+          entity_id = "input_text.monica_in_bed_at";
+          not_to = [
+            "unknown"
+            "unavailable"
+            ""
+          ];
+        };
+        variables.night_start = monicaRoutineNightStart;
+        condition = [
+          {
+            condition = "template";
+            value_template = ''
+              {% set started = as_timestamp(states('input_text.monica_routine_started_at'), 0) %}
+              {% set finished = as_timestamp(trigger.to_state.state, 0) %}
+              {{ started >= night_start | float and finished >= started }}
+            '';
+          }
+        ];
+        sensor = [
+          {
+            name = "Monica Bedtime Routine Duration";
+            unique_id = "monica_bedtime_routine_duration";
+            device_class = "duration";
+            unit_of_measurement = "min";
+            state = ''
+              {{ ((as_timestamp(trigger.to_state.state)
+                   - as_timestamp(states('input_text.monica_routine_started_at'))) / 60) | round(2) }}
+            '';
+            attributes = {
+              started_at = "{{ states('input_text.monica_routine_started_at') }}";
+              completed_at = "{{ trigger.to_state.state }}";
+              # Trigger sensor attributes restore across restarts. Compact Unix
+              # seconds keep a full year below recorder's 16 KiB attribute limit.
+              nightly_records = ''
+                {% set started = as_timestamp(states('input_text.monica_routine_started_at')) | int %}
+                {% set completed = as_timestamp(trigger.to_state.state) | int %}
+                {% set records = this.attributes.get('nightly_records', [])
+                   | selectattr('end', 'ge', completed - 365 * 86400)
+                   | rejectattr('end', 'eq', completed) | list %}
+                {{ records + [{'start': started, 'end': completed}] }}
+              '';
+            };
+          }
+        ];
+      }
     ];
     shell_command.hermes_betty_good_morning_dj = "/run/wrappers/bin/sudo -n ${pkgs.systemd}/bin/systemctl start --no-block hermes-betty-good-morning-dj.service";
 
     # ── Input helpers (sleep/wake lifecycle) ──────────────────────────────
+    # ISO timestamps restore across restarts and start unset, unlike input_datetime.
+    input_text.monica_routine_started_at.name = "Monica Routine Started At";
+    input_text.monica_in_bed_at.name = "Monica In Bed At";
     input_text.sleep_schedule_key = {
       name = "Sleep Schedule Key";
       icon = "mdi:calendar-clock";
@@ -550,13 +607,16 @@ in
           platform = "tag";
           tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
         };
+        variables.night_start = monicaRoutineNightStart;
         # Morning face routines must not start bedtime prep.
         condition = [
-          # Do not reapply prep lighting once bedtime mode has started.
+          # Timing still works if scheduled prep already enabled bedtime mode.
           {
-            condition = "state";
-            entity_id = "input_boolean.goodnight";
-            state = "off";
+            condition = "template";
+            value_template = ''
+              {{ as_timestamp(states('input_text.monica_routine_started_at'), 0) < night_start | float
+                 and as_timestamp(states('input_text.monica_in_bed_at'), 0) < night_start | float }}
+            '';
           }
           {
             condition = "time";
@@ -571,10 +631,25 @@ in
         ];
         action = [
           {
+            action = "input_text.set_value";
+            target.entity_id = "input_text.monica_routine_started_at";
+            data.value = "{{ now().isoformat() }}";
+          }
+          {
             action = "timer.start";
             target.entity_id = "timer.mirror_bedtime";
           }
-          { action = "script.get_ready_for_bed"; }
+          {
+            # Never re-light the room after another bedtime entrypoint ran.
+            "if" = [
+              {
+                condition = "state";
+                entity_id = "input_boolean.goodnight";
+                state = "off";
+              }
+            ];
+            "then" = [ { action = "script.get_ready_for_bed"; } ];
+          }
           # Keep single mode occupied briefly to ignore duplicate scans.
           { delay = "00:00:10"; }
         ];
@@ -695,13 +770,14 @@ in
       }
 
       {
-        alias = "Monica Nightstand NFC - Good Night";
+        alias = "Monica Nightstand NFC - Record In Bed then Good Night";
         id = "monica_nightstand_nfc_goodnight";
         mode = "single";
         trigger = {
           platform = "tag";
           tag_id = "a394c0fe-467f-4a3d-8060-c1158b74d689";
         };
+        variables.night_start = monicaRoutineNightStart;
         # Ignore accidental daytime scans; deliberate voice/manual use stays unrestricted.
         condition = [
           {
@@ -717,7 +793,24 @@ in
         ];
         action = [
           {
-            action = "script.goodnight";
+            "if" = [
+              {
+                condition = "template";
+                value_template = "{{ as_timestamp(states('input_text.monica_in_bed_at'), 0) >= night_start | float }}";
+              }
+            ];
+            "then" = [ { action = "script.goodnight"; } ];
+            "else" = [
+              {
+                action = "input_text.set_value";
+                target.entity_id = "input_text.monica_in_bed_at";
+                data.value = "{{ now().isoformat() }}";
+              }
+              {
+                action = "timer.cancel";
+                target.entity_id = "timer.mirror_bedtime";
+              }
+            ];
           }
           # Keep single mode occupied briefly to ignore duplicate scans.
           { delay = "00:00:10"; }

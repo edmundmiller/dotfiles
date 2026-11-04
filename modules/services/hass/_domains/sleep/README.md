@@ -50,11 +50,64 @@ Activities, and Live Activities enabled for Home Assistant on the phone. The pho
 must reach HA for the token handshake. See the
 [Companion documentation](https://companion.home-assistant.io/docs/notifications/live-activities/).
 
-### Mirror NFC countdown
+### Monica's NFC routine tracking
 
-Monica's mirror tag starts Get Ready for Bed and a shared 12-minute timer.
-Scans are accepted from 8 PM to 4 AM only while bedtime mode is off and Good
-Morning is not running. Later scans cannot restart prep or extend the timer.
+The mirror tag records the start of Monica's whole bedtime routine, including
+face care and brushing teeth. The first nightstand scan records her arrival in
+bed and stops the shared countdown without changing lights. A second nightstand
+scan, at least ten seconds later, runs the existing Good Night script, including
+its light, TV, desk, and blind actions. Further scans repeat Good Night without
+overwriting the recorded duration.
+
+`sensor.monica_bedtime_routine_duration` holds the last completed duration in
+minutes, with `started_at` and `completed_at` attributes. HA recorder history
+stores each completion, including consecutive nights with the same duration.
+Its `nightly_records` attribute also keeps a rolling 365-day archive, independent
+of recorder's normal 10-day History view. Each entry has `start` and `end` Unix
+timestamps at one-second precision; `(end - start) / 60` gives elapsed minutes.
+Compact entries keep a full year below recorder's 16 KiB attribute limit.
+The archive restores across HA restarts and is included in existing HA backups.
+Each completed routine drops entries older than 365 days and replaces any entry
+with the same end timestamp. Expiry happens on the next completion, not during
+periods without scans. Entries begin accumulating with this configuration; it
+does not recover previously purged history or change other entities' retention.
+This measures the whole mirror-to-bed interval, not each individual activity.
+
+Scans are accepted from 8 PM to 4 AM while Good Morning is not running. The two
+timestamp helpers restore across HA restarts. Each night ends at 4 AM, so midnight
+does not reset the routine and a missed scan cannot carry into the next night.
+Repeated mirror scans cannot restart timing. Without a mirror scan that night,
+the first nightstand scan still records in-bed arrival but adds no duration.
+
+The mirror also starts the existing 12-minute reminder and runs Get Ready for
+Bed only if bedtime mode is off. Timing still starts if scheduled prep already
+ran, without reapplying its lights. The stopwatch continues beyond 12 minutes
+until the first nightstand scan. Scheduled sleep phases remain independent.
+
+`../../_tests/test_monica_routine.py` runs the NFC events, helpers, timer, and
+duration sensor in isolated Home Assistant, without physical integrations.
+It covers midnight, duplicate taps, missed scans, restarts, reminder expiry,
+and the yearly archive's inclusive 365-day cutoff.
+Export the relevant config and run with a Python environment containing HA:
+
+```sh
+nix-instantiate --eval --strict --json --expr '
+  let c = (import ./modules/services/hass/_domains/sleep/default.nix {
+    lib.mkAfter = x: x;
+    pkgs.systemd = "/unused";
+  }).services.home-assistant.config;
+  in {
+    inherit (c) input_text input_boolean timer;
+    template = builtins.filter (t: t ? sensor) c.template;
+    automation = builtins.filter (a: builtins.elem a.id [
+      "monica_mirror_nfc_get_ready_for_bed" "monica_nightstand_nfc_goodnight"
+    ]) c.automation;
+  }
+' > /tmp/monica-routine.json
+python modules/services/hass/_tests/test_monica_routine.py /tmp/monica-routine.json -v
+```
+
+### Mirror NFC countdown
 
 Both phones receive a separate `mirror-bedtime` Live Activity with the same
 absolute deadline. The chronometer ticks on-device without per-second pushes.
