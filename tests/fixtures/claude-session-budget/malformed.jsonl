@@ -1,0 +1,4 @@
+not json at all
+{"type":"assistant","timestamp":"2026-10-21T15:40:00.000Z","message":{"role":"assistant","usage":{"input_tokens":"lots","cache_read_input_tokens":null}}}
+{"type":"assistant","message":"usage lives somewhere else"
+[]

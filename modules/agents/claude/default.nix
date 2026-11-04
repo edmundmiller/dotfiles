@@ -21,6 +21,22 @@ let
     text = builtins.readFile "${configDir}/claude/statusline.sh";
   };
 
+  # Warns about oversized context and stale resumes. Python keeps the transcript
+  # parsing readable; the wrapper pins the interpreter the hook runs with.
+  sessionBudgetScript = pkgs.writeText "claude-session-budget.py" (
+    builtins.readFile "${configDir}/claude/session-budget-hook.py"
+  );
+
+  sessionBudgetHook = pkgs.writeShellApplication {
+    name = "claude-session-budget";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''
+      exec python3 ${sessionBudgetScript} "$@"
+    '';
+  };
+
+  sessionBudgetCommand = "$HOME/.claude/hooks/session-budget";
+
   agentCore = builtins.readFile "${configDir}/agents/core.md";
 
   # Claude only auto-loads CLAUDE.md. Tell it to fall back to a repo's
@@ -60,6 +76,7 @@ in
         # Claude's global instruction file receives the same bounded semantic core.
         ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
         ".claude/statusline.sh".source = "${statusline}/bin/claude-statusline";
+        ".claude/hooks/session-budget".source = "${sessionBudgetHook}/bin/claude-session-budget";
       }
       // optionalAttrs cfg.pstack.enable {
         ".claude/pstack-marketplace".source = inputs.skills-catalog.inputs.pstack.outPath;
@@ -188,6 +205,54 @@ in
           os.chmod(target, 0o600)
           PY
         '';
+
+        # The bootstrap keeps whatever hooks the runtime already registered and
+        # drops the template's, so repo-managed hooks are upserted next to
+        # Herdr's instead of being declared in config/claude/settings.json.
+        home.activation.claude-session-budget-hooks = mkIf cfg.enable (
+          lib.hm.dag.entryAfter [ "writeBoundary" "claude-settings-bootstrap" ] ''
+            ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" '${sessionBudgetCommand}' <<'PY'
+            import json
+            import pathlib
+            import sys
+
+            path = pathlib.Path(sys.argv[1])
+            command = sys.argv[2]
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}
+            if not isinstance(data, dict):
+                data = {}
+
+            hooks = data.get("hooks")
+            if not isinstance(hooks, dict):
+                hooks = {}
+                data["hooks"] = hooks
+
+            changed = False
+            events = (("SessionStart", "resume"), ("UserPromptSubmit", None), ("Stop", None))
+            for event, matcher in events:
+                entries = hooks.setdefault(event, [])
+                if not isinstance(entries, list) or any(
+                    hook.get("command") == command
+                    for entry in entries
+                    if isinstance(entry, dict)
+                    for hook in entry.get("hooks", [])
+                    if isinstance(hook, dict)
+                ):
+                    continue
+                entry = {"hooks": [{"type": "command", "command": command}]}
+                if matcher:
+                    entry["matcher"] = matcher
+                entries.append(entry)
+                changed = True
+
+            if changed:
+                path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            PY
+          ''
+        );
 
         home.activation.claude-stale-hook-cleanup = mkIf cfg.enable (
           lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
