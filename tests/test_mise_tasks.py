@@ -67,6 +67,27 @@ class MiseTasksTests(unittest.TestCase):
         self.assertEqual(result.returncode, 23, result.stderr)
         self.assertEqual(result.stdout, "<a b>\n<--help>\n<$(false)>\n")
 
+    def test_tasks_preserve_caller_tool_precedence_over_the_system_profile(self):
+        self.copy_project()
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        nix = tools / "nix"
+        nix.write_text(
+            f"#!{shutil.which('bash')}\nset -euo pipefail\n"
+            'if [[ "$1" == eval ]]; then echo x86_64-linux; else printf "%s\\n" "$PATH"; fi\n'
+        )
+        nix.chmod(0o755)
+        system_bin = "/run/current-system/sw/bin"
+        inherited = [p for p in self.env["PATH"].split(os.pathsep) if p != system_bin]
+        self.env["PATH"] = os.pathsep.join([str(tools), *inherited, system_bin])
+        for command in [("mise", "run"), (str(self.root / "bin/hey"),)]:
+            with self.subTest(command=command):
+                result = self.run_command(*command, "show")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                paths = result.stdout.strip().split(os.pathsep)
+                self.assertLess(paths.index(str(tools)), paths.index(system_bin))
+                self.assertEqual(paths.count(system_bin), 1)
+
     def test_check_matches_ci_from_subdirectory_despite_stale_flake_dir(self):
         self.copy_project()
         self.run_command("git", "init", "--quiet")

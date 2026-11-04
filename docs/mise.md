@@ -56,6 +56,8 @@ remain aliases, so `hey nuc-status` and `mise run nuc:status` run the same file.
 An inherited `FLAKE_DIR` no longer redirects a task into another checkout.
 The packaged shim contains no deployment implementation, so task edits do not
 require reinstalling it.
+Tasks preserve the caller's tool order on PATH after mise applies the project's
+environment. Importing a Nushell helper does not prepend the system profile.
 
 Tasks keep the existing guards, argument parsing, and terminal access for sudo,
 SSH and interactive commands. A task name is not permission to run it. Rebuilds,

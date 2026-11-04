@@ -1,9 +1,5 @@
 export const DARWIN_REBUILD = "/run/current-system/sw/bin/darwin-rebuild"
 
-export-env {
-  $env.PATH = ["/run/current-system/sw/bin"] ++ $env.PATH
-}
-
 export def find-flake-up [start: path] {
   mut dir = ($start | path expand)
   loop {
