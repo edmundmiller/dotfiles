@@ -78,17 +78,17 @@ class AgentResponseContractTests(unittest.TestCase):
             with self.subTest(package=package):
                 self.assertNotIn(json.dumps(package), settings)
 
-    def test_pi_retains_selected_integrations_and_drops_unused_packages(self) -> None:
+    def test_pi_retains_approval_and_selected_integrations(self) -> None:
         settings = (ROOT / "config/pi/settings.jsonc").read_text()
         for package in (
+            "npm:@gotgenes/pi-permission-system@42.0.0",
+            "~/.pi/agent/packages/pi-command-policy-bridge",
             "npm:pi-memory", "npm:pi-terminal-theme",
             "npm:@moyai/pi-session-hoarder", "npm:pi-btw",
         ):
             with self.subTest(package=package):
                 self.assertIn(json.dumps(package), settings)
         for package in (
-            "npm:@gotgenes/pi-permission-system",
-            "~/.pi/agent/packages/pi-command-policy-bridge",
             "npm:confluence-cli",
             "npm:latchkey",
             "npm:@aliou/pi-processes",
@@ -104,8 +104,6 @@ class AgentResponseContractTests(unittest.TestCase):
                 self.assertNotIn(json.dumps(package), settings)
         links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
         self.assertIn("enforce-commit-signing.ts", links)
-        self.assertNotIn("pi-command-policy-bridge", links)
-        self.assertNotIn("pi-permission-system", links)
         self.assertIn('"defaultTools": ["+codemode"]', settings)
         self.assertNotIn("you-are-right-killer.ts", links)
 

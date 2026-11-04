@@ -29,13 +29,18 @@ CHECKS = {
         "config/amp/*",
         "tests/test_amp_runner_sync.py",
         "bin/hey*",
-        "bin/hey.d/*",
+        "scripts/nu/*",
+        "mise.toml",
+        "mise-tasks/*",
+        "modules/agents/pi/lib/_runtime-wrapper.nix",
+        "tests/test_mise_tasks.py",
         "bin/qa-changed",
         "tests/test_validation.py",
         ".github/workflows/*",
         ".codex/hooks.json",
         ".omp/hooks/*",
     ],
+    "hass-health-tests": ["modules/services/hass/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",
@@ -51,6 +56,12 @@ CHECKS = {
         ".flue/*",
         ".github/workflows/renovate-patch-repair.yml",
         "tests/test_package_policy.py",
+        "tests/test_oxlint_jev.py",
+    ],
+    "oxlint-jev": [
+        "packages/oxlint-plugin-jev/*",
+        "docs/agents/oxlint.md",
+        "tests/test_oxlint_jev.py",
     ],
     "hunk-config-compatibility": [
         "config/hunk/*",
@@ -59,7 +70,7 @@ CHECKS = {
     ],
     "agent-run-tests": [
         "bin/agent-*",
-        "bin/hey.d/agent-run.nu",
+        "mise-tasks/agent/*.nu",
         "tests/test_agent_run.py",
         "tests/test_skill_quality_validator.py",
         "skills/catalog/skill-quality/*",
@@ -69,6 +80,13 @@ CHECKS = {
         "docs/README.md",
         "docs/agent-guardrails.md",
         "docs/validation.md",
+        "docs/agents/oxlint.md",
+    ],
+    "tldraw-api-tests": [
+        "config/tldraw/*",
+        "modules/desktop/apps/tldraw.nix",
+        "skills/catalog/tldraw-offline/*",
+        "tests/test_tldraw_api.py",
     ],
     "agent-mcp-tests": [
         "config/agents/mcp.nix",
@@ -77,7 +95,7 @@ CHECKS = {
         "tests/test_agent_mcp.py",
         "hosts/*/default.nix",
     ],
-    "omp-thin-harness-tests": [
+    "agent-instruction-tests": [
         "AGENTS.md",
         "config/agents/AGENTS.md",
         "docs/agents/unslop.md",
@@ -93,15 +111,19 @@ CHECKS = {
         "modules/agents/opencode/*",
         "modules/agents/pi/*",
         "modules/agents/plannotator/*",
+        "overlays/pi/*",
         "tests/agent-instruction-config.nix",
         "tests/test_agent_instruction_wiring.py",
         "tests/test_agent_response_contract.py",
+        "tests/test_pi_update.py",
         "tests/test_codex_model_config.py",
-        "tests/test_omp_ttsr_rules.py",
-        "tests/omp_lazy_extensions.test.js",
-        "tests/fixtures/omp-ttsr-rules.json",
     ],
-    "omp-config": ["config/omp/config.yml", "modules/agents/omp/*"],
+    "claude-session-budget-tests": [
+        "config/claude/session-budget-hook.py",
+        "modules/agents/claude/*",
+        "tests/fixtures/claude-session-budget/*",
+        "tests/test_claude_session_budget.py",
+    ],
     "agent-skills-marker-migration-tests": [
         "modules/agents/skills/*",
         "tests/test_agent_skills_marker_migration.py",
@@ -114,7 +136,11 @@ CHECKS = {
         "bin/tests/*nix_private*",
         "bin/tests/nix-private*",
     ],
-    "hey-nuc-deploy-mode": ["bin/hey.d/remote.nu", "bin/tests/hey-nuc-deploy-mode.nu"],
+    "hey-nuc-deploy-mode": [
+        "scripts/nu/*",
+        "mise-tasks/*",
+        "bin/tests/hey-nuc-deploy-mode.nu",
+    ],
     "hermes-cron-executor-source-tests": [
         "tests/test_hermes_cron_executors.py",
         "hosts/nuc/*",
@@ -141,11 +167,20 @@ CHECKS = {
     "discrawl-backup-cli-tests": ["packages/discrawl-backup/*"],
     "nuc-deployment-provenance": [
         "hosts/nuc/_tests/deployment-provenance.nix",
-        "bin/hey.d/remote.nu",
+        "scripts/nu/remote.nu",
+        "mise-tasks/nuc/*.nu",
     ],
     "nuc-hermes-displayctl-wiring": ["hosts/nuc/*", "packages/displayctl/*"],
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
 }
+
+# Recovery runs real Nix profiles inside Linux user/mount namespaces, not a VM.
+if sys.platform == "linux":
+    CHECKS["unas-recovery"] = [
+        "bin/unas-recover*",
+        "bin/tests/unas-recover.bash",
+        "hosts/unas/*",
+    ]
 
 DARWIN_CHECKS = [
     "rex-package-wiring",
@@ -156,6 +191,7 @@ DARWIN_CHECKS = [
     "screentime-backup-darwin-assertions",
     "discrawl-backup-darwin-assertions",
     "darwin-tailscaled-owner-assertions",
+    "tinybar-darwin-assertions",
     "hermes-local-libffi-regression",
     "hermes-local-tokenizers-cc-regression",
     "dji-mic-mini-receiver-mute-regressions",

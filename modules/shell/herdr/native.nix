@@ -8,6 +8,10 @@
 let
   cfg = config.modules.shell.herdr;
   nativeSource = "${config.dotfiles.configDir}/herdr/native";
+  agentEnabled = lib.genAttrs [ "claude" "codex" "opencode" ] (
+    agent: config.modules.agents.${agent}.enable or false
+  );
+  legacyCleanupAgents = lib.filter (agent: agentEnabled.${agent}) (lib.attrNames agentEnabled);
   herdrDev = pkgs.writeShellScriptBin "herdr-dev" ''
     export PATH=${lib.escapeShellArg "${config.user.home}/.local/bin"}:$PATH
     export HERDR_APP_COMMAND=${lib.escapeShellArg cfg.native.appCommand}
@@ -54,6 +58,19 @@ in
           '';
         };
       }
+      (lib.mkIf (legacyCleanupAgents != [ ]) {
+        # Native Herdr reads OSC 7501 (rex-agent-status hooks); legacy socket
+        # integrations never fire here. Remove what `herdr integration install`
+        # left behind; backend = "legacy" reinstalls it.
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-legacy-cleanup =
+            lib.hm.dag.entryAfter [ "claude-settings-bootstrap" "codex-config-bootstrap" "rexAgentStatusHooks" ]
+              ''
+                ${pkgs.python3}/bin/python3 ${nativeSource}/legacy-agent-cleanup.py "$HOME" \
+                  ${lib.escapeShellArgs legacyCleanupAgents}
+              '';
+        };
+      })
       (lib.mkIf (cfg.native.machines != { }) {
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-machines = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
@@ -74,10 +91,32 @@ in
         home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
 
         # The app owns its shipped mods, layouts, typings and all runtime state.
-        home.configFile."herdr-app/mods/dotfiles-dev".source = "${nativeSource}/mods/dotfiles-dev";
-        # Keep relative imports inside the mod's canonical directory.
-        home.configFile."herdr-app/mods/dotfiles-prefix".source = "${nativeSource}/mods/dotfiles-prefix";
-        home.configFile."herdr-app/layouts/dotfiles.json".source = "${nativeSource}/layouts/dotfiles.json";
+        home.configFile = {
+          "herdr-app/mods/dotfiles-dev".source = "${nativeSource}/mods/dotfiles-dev";
+          # Keep relative imports inside each mod's canonical directory.
+          "herdr-app/mods/dotfiles-prefix".source = "${nativeSource}/mods/dotfiles-prefix";
+          "herdr-app/layouts/dotfiles.json".source = "${nativeSource}/layouts/dotfiles.json";
+          "herdr-app/layouts/herdr-t3.json".source = "${nativeSource}/t3/layouts/herdr-t3.json";
+          "herdr-app/layouts/herdr-t3.svg".source = "${nativeSource}/t3/layouts/herdr-t3.svg";
+        }
+        // lib.listToAttrs (
+          map
+            (
+              name:
+              lib.nameValuePair "herdr-app/mods/${name}" {
+                source = "${nativeSource}/t3/mods/${name}";
+              }
+            )
+            [
+              "t3-agents"
+              "t3-chrome"
+              "t3-focus"
+              "t3-new-menu"
+              "t3-pane"
+              "t3-spaces"
+              "t3-tabs"
+            ]
+        );
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-config = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ${pkgs.python3}/bin/python3 ${nativeSource}/reconcile-config.py \

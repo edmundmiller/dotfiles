@@ -55,7 +55,9 @@
       flake = false;
     };
     # Keep the linter and plugin API on the same release until the main
-    # nixpkgs input catches up.
+    # nixpkgs input catches up. oxlint-plugin-jev needs Oxlint >= 1.83.0 and
+    # lives in a separate npm-locked package. Do not point this hook at 1.83
+    # unless anti-slop is verified on that plugin API.
     nixpkgs-anti-slop.url = "github:NixOS/nixpkgs/2a747aca22036dce3677fd41877427e3cd33e87a";
 
     # Extras
@@ -77,7 +79,7 @@
     try.url = "github:edmundmiller/try";
     try.inputs.nixpkgs.follows = "nixpkgs";
     tnote = {
-      url = "github:edmundmiller/tnote/99dd970045af706a549c2ba3b3d245f6b9725b0d";
+      url = "github:edmundmiller/tnote/2085d519e13ebdcd5a9e896e35cb2ede185f4e06";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.follows = "bun2nix";
       inputs.llm-agents.follows = "llm-agents";
@@ -394,7 +396,7 @@
               rtk
               workmux
               ;
-            inherit (pkgs.llm-agents) herdr omp pi;
+            inherit (pkgs.llm-agents) herdr pi;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -418,7 +420,6 @@
             inherit (darwinPkgs.llm-agents)
               gitbutler
               herdr
-              omp
               pi
               ;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
@@ -476,22 +477,30 @@
         apps."${linuxSystem}" = {
           default = {
             type = "app";
-            program = "${./bin/hey}";
+            program = "${pkgs.my.hey}/bin/hey";
           };
           renovate-update-nix-hashes = {
             type = "app";
             program = "${mkRenovateUpdateNixHashes pkgs}/bin/renovate-update-nix-hashes";
+          };
+          oxlint-jev = {
+            type = "app";
+            program = "${self.packages.${linuxSystem}.oxlint-plugin-jev}/bin/oxlint-jev";
           };
         };
 
         apps."${darwinSystem}" = {
           default = {
             type = "app";
-            program = "${./bin/hey}";
+            program = "${darwinPkgs.my.hey}/bin/hey";
           };
           renovate-update-nix-hashes = {
             type = "app";
             program = "${mkRenovateUpdateNixHashes darwinPkgs}/bin/renovate-update-nix-hashes";
+          };
+          oxlint-jev = {
+            type = "app";
+            program = "${self.packages.${darwinSystem}.oxlint-plugin-jev}/bin/oxlint-jev";
           };
         };
 
@@ -520,7 +529,7 @@
           };
 
           unas = {
-            hostname = "192.168.1.101";
+            hostname = "192.168.1.206";
             sshUser = "emiller";
             user = "root";
             interactiveSudo = false;
@@ -570,6 +579,8 @@
               ''
             else
               pkgs.firefox;
+          # Repository hook: Oxlint 1.78.0 + anti-slop. Jev is
+          # packages.oxlint-plugin-jev (Oxlint 1.83.0) and is opt-in.
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
           antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
             builtins.toJSON {
@@ -636,45 +647,12 @@
           packages.validation-tools = pkgs.buildEnv {
             name = "validation-tools";
             paths = [
+              pkgs.bash
               pkgs.python3
               pkgs.prek
+              pkgs.ripgrep
             ];
           };
-
-          # Realize OMP only when its configuration changes, not while building
-          # the hook config for an unrelated Markdown edit.
-          packages.validation-omp-config =
-            let
-              ompConfigCheck = pkgs.runCommand "omp-config-check" { } ''
-                mkdir -p "$out/bin" "$out/lib/omp"
-                src=${self.packages.${system}.omp}
-                cp -a "$src/lib/omp/." "$out/lib/omp/"
-                chmod -R u+w "$out/lib/omp"
-                ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
-                  /usr/bin/codesign -f -s - "$out/lib/omp/omp"
-                ''}
-                printf '%s\n' \
-                  '#!${pkgs.runtimeShell}' \
-                  'export PI_SKIP_VERSION_CHECK=1' \
-                  "exec \"$out/lib/omp/omp\" \"\$@\"" \
-                  > "$out/bin/omp"
-                chmod +x "$out/bin/omp"
-              '';
-            in
-            pkgs.writeShellApplication {
-              name = "validation-omp-config";
-              runtimeInputs = [
-                pkgs.coreutils
-                pkgs.git
-                pkgs.python3
-                pkgs.yq-go
-                ompConfigCheck
-              ];
-              text = ''
-                export PI_SKIP_VERSION_CHECK=1
-                bash modules/agents/omp/test-config-yml.sh
-              '';
-            };
 
           # Headless agent environment (Factory, Devin, etc.)
           # Install: nix profile install .#agent-env
@@ -692,8 +670,8 @@
                 # Shell essentials
                 zsh
                 tmux
-                direnv
-                nix-direnv
+                mise
+                nushell
                 starship
 
                 # Search & navigation
@@ -760,6 +738,8 @@
               ".beads/backup/**"
               # Rex compares its stub byte for byte; formatting makes it "outdated".
               "skills/conditional/rex/rex/SKILL.md"
+              # Preserve the pinned upstream body checked by agent-instruction-tests.
+              "skills/catalog/unslop/SKILL.md"
             ];
           };
 
@@ -1030,16 +1010,6 @@
                 files = "^(config/pi/settings\\.jsonc|modules/agents/pi/)";
                 stages = [ "pre-commit" ];
               };
-              hey-active-nix = {
-                enable = pkgs.stdenv.hostPlatform.isDarwin;
-                name = "hey-active-nix";
-                description = "Keep hey independent of stale inherited Nix paths";
-                entry = "${pkgs.bash}/bin/bash ${./bin/tests/hey-active-nix.bash}";
-                language = "system";
-                pass_filenames = false;
-                files = "^(bin/hey|bin/tests/hey-active-nix\\.bash|packages/hey\\.nix)$";
-                stages = [ "pre-push" ];
-              };
               hey-hermes-local-status = {
                 enable = true;
                 name = "hey-hermes-local-status";
@@ -1047,7 +1017,7 @@
                 entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
                 language = "system";
                 pass_filenames = false;
-                files = "^bin/(hey\\.d/hermes\\.nu|tests/hey-hermes-local-status\\.nu)$";
+                files = "^(scripts/nu/hermes\\.nu|mise-tasks/hermes/local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
                 stages = [ "pre-commit" ];
               };
               pi-runtime-wrapper = {
@@ -1141,7 +1111,7 @@
               '';
             };
 
-            # Lightweight default shell for direnv and routine agent work.
+            # Explicit dev shell, entered with `mise run dev`.
             # Refresh shared Git hooks against the immutable generated config.
             # Use `nix develop .#full` when you need deploy tooling.
             default = pkgs.mkShellNoCC {
@@ -1169,6 +1139,8 @@
               packages =
                 with pkgs;
                 [
+                  mise
+                  self.packages.${system}.hey
                   nixfmt
                   deadnix
                   statix
@@ -1217,9 +1189,13 @@
                   }
                   ''
                     cd ${./.}
-                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_package_policy.py
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests.test_package_policy \
+                      tests.test_oxlint_jev
                     touch $out
                   '';
+
+              oxlint-jev = self.packages.${system}.oxlint-plugin-jev;
 
               hunk-config-compatibility = import ./overlays/hunk/config-compatibility.nix {
                 inherit inputs pkgs;
@@ -1251,11 +1227,22 @@
               validation-tests =
                 pkgs.runCommand "validation-tests"
                   {
+                    PI_SELF_UPDATE_TEST_LAUNCHER =
+                      (import ./modules/agents/pi/lib/_runtime-wrapper.nix {
+                        inherit lib;
+                        # Only build the real launcher, not the unrelated Pi binary.
+                        pkgs = pkgs // {
+                          llm-agents.pi = pkgs.hello;
+                        };
+                        piSecretPreflightScript = "true";
+                      }).selfUpdate;
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.git
+                      pkgs.mise
                       pkgs.nushell
                       pkgs.python3
+                      pkgs.ripgrep
                     ];
                   }
                   ''
@@ -1266,9 +1253,11 @@
                     cp -R ${./.} "$TMPDIR/source"
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
+                    patchShebangs bin/hey mise-tasks
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
+                      tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py
                     touch $out
@@ -1315,7 +1304,7 @@
                   ''
                     cd ${./.}
                     status=0
-                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md docs/validation.md; do
+                    for doc in AGENT_WORKFLOW.md docs/README.md docs/agent-guardrails.md docs/validation.md docs/agents/oxlint.md; do
                       [ -f "$doc" ] || continue
                       summary="$(head -n 7 "$doc")"
                       for key in purpose applies_to entrypoint verification update_when; do
@@ -1344,9 +1333,9 @@
                     touch $out
                   '';
 
-              omp-config = pkgs.runCommand "omp-config" { } ''
+              tldraw-api-tests = pkgs.runCommand "tldraw-api-tests" { } ''
                 cd ${./.}
-                ${self.packages.${system}.validation-omp-config}/bin/validation-omp-config
+                PYTHONDONTWRITEBYTECODE=1 ${pkgs.python3}/bin/python3 -m unittest tests.test_tldraw_api
                 touch "$out"
               '';
 
@@ -1369,14 +1358,10 @@
                     touch "$out"
                   '';
 
-              omp-thin-harness-tests =
-                pkgs.runCommand "omp-thin-harness-tests"
+              agent-instruction-tests =
+                pkgs.runCommand "agent-instruction-tests"
                   {
-                    nativeBuildInputs = [
-                      pkgs.bun
-                      pkgs.python3
-                      self.packages.${system}.omp
-                    ];
+                    nativeBuildInputs = [ pkgs.python3 ];
                   }
                   ''
                     cd ${./.}
@@ -1390,14 +1375,25 @@
                         )
                       )
                     }
-                    OMP_BIN=${self.packages.${system}.omp}/bin/omp \
-                      PYTHONDONTWRITEBYTECODE=1 \
-                      python3 -m unittest \
-                        tests/test_agent_instruction_wiring.py \
-                        tests/test_agent_response_contract.py \
-                        tests/test_codex_model_config.py \
-                        tests/test_omp_ttsr_rules.py
-                    bun test ./tests/omp_lazy_extensions.test.js
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests/test_agent_instruction_wiring.py \
+                      tests/test_agent_response_contract.py \
+                      tests/test_pi_update.py \
+                      tests/test_codex_model_config.py
+                    touch $out
+                  '';
+
+              claude-session-budget-tests =
+                pkgs.runCommand "claude-session-budget-tests"
+                  {
+                    nativeBuildInputs = [ pkgs.python3 ];
+                    # The sandbox has no system zone database; the hook's
+                    # America/Chicago conversion needs a real one.
+                    PYTHONTZPATH = "${pkgs.tzdata}/share/zoneinfo";
+                  }
+                  ''
+                    cd ${./.}
+                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_claude_session_budget.py
                     touch $out
                   '';
 
@@ -1450,6 +1446,9 @@
                   ''
                     # Setup git config for tests
                     export HOME=$TMPDIR
+                    # Unsandboxed Darwin builds see the host /etc/zshenv; zunit's zsh
+                    # would source nix-darwin's set-environment and replace PATH.
+                    export __NIX_DARWIN_SET_ENVIRONMENT_DONE=1
                     git config --global user.email "test@test.com"
                     git config --global user.name "Test User"
                     git config --global init.defaultBranch main
@@ -1611,6 +1610,12 @@
                 inherit pkgs;
               };
 
+              tinybar-darwin-assertions = import ./modules/desktop/apps/_tests/eval-darwin.nix {
+                macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
+                seqeratopConfig = self.darwinConfigurations.Seqeratop;
+                inherit pkgs;
+              };
+
               nuc-deployment-provenance = import ./hosts/nuc/_tests/deployment-provenance.nix {
                 inherit pkgs;
               };
@@ -1646,6 +1651,17 @@
                 herdrPackage = self.packages.${system}.herdr;
                 configFile = ./config/herdr/config.toml;
               };
+
+              hass-health-tests =
+                pkgs.runCommand "hass-health-tests"
+                  {
+                    nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.websockets ])) ];
+                  }
+                  ''
+                    export PYTHONDONTWRITEBYTECODE=1
+                    python3 ${./modules/services/hass/_tests/test_hass_health.py} ${./modules/services/hass/hass-health.py}
+                    touch "$out"
+                  '';
             }
             // lib.optionalAttrs (system == darwinSystem) {
               rex-package-wiring =
@@ -1960,6 +1976,29 @@
               sparkyfitness-assertions = import ./modules/services/sparkyfitness/_tests/eval-sparkyfitness.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
+              };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              unas-recovery = lib.my.mkServiceVmTest {
+                name = "unas-recovery";
+                extraConfig.environment.systemPackages = with pkgs; [
+                  bash
+                  bubblewrap
+                  coreutils
+                  findutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  inetutils
+                  nix
+                  python3
+                ];
+                testScript = ''
+                  start_all()
+                  machine.wait_for_unit("multi-user.target")
+                  machine.succeed("bash ${./.}/bin/tests/unas-recover.bash", timeout=300)
+                '';
               };
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.

@@ -18,6 +18,7 @@ update_when: A canonical doc is added, moved, or changes ownership.
   Lix, and Nix command references
 - [validation.md](./validation.md) — everyday checks, comprehensive checks,
   platform boundaries, CI parity, and failure handling
+- [mise.md](./mise.md) — project tasks, direnv migration, and optional MCP access
 
 ### Agent references
 
@@ -29,6 +30,8 @@ update_when: A canonical doc is added, moved, or changes ownership.
   — OMP-first thin-harness placement policy and TTSR migration gates
 - [agents/unslop.md](./agents/unslop.md) — unslop pin, writing route, and
   adjacent slop-tool boundaries
+- [agents/oxlint.md](./agents/oxlint.md) — default anti-slop Oxlint and
+  opt-in TypeSafe Jev rules
 - [../.agents/skills/nix-darwin-reference/SKILL.md](../.agents/skills/nix-darwin-reference/SKILL.md)
   — Darwin/macOS Nix workflow; keep it out of global agent prompts
 

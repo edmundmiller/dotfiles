@@ -63,6 +63,9 @@
       ],
       "skills": [],
     },
+    // Pin the permission API validated with Pi 1.5.0; the bridge enforces asks even in yolo mode.
+    "npm:@gotgenes/pi-permission-system@42.0.0",
+    "~/.pi/agent/packages/pi-command-policy-bridge",
     // JJ baseline guardrail: stop editing described dirty changes without explicit intent.
     "npm:pi-jj-auto",
     // JJ publish alignment pilot for colocated repos (`jj_vcs status` / `align_push`).

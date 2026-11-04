@@ -113,7 +113,9 @@ in
         sd
         unstable.yazi
         zoxide
-        my.hey # Nix-managed hey command with completions
+        mise
+        nushell
+        my.hey # Thin compatibility spelling for project-local mise tasks
         my.jsongrep # `jg` path-query tool for JSON/YAML/TOML
         jq
         my.zsh-bench

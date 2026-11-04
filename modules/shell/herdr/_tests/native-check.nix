@@ -11,6 +11,7 @@ pkgs.runCommand "herdr-native-tests"
       pkgs.bash
       pkgs.git
       pkgs.jq
+      pkgs.nodejs
       pkgs.coreutils
       pkgs.gawk
       pkgs.gnused
@@ -30,5 +31,6 @@ pkgs.runCommand "herdr-native-tests"
     chmod -R u+w source
     cd source
     python3 -m pytest -q tests
+    node --experimental-vm-modules --test config/herdr/native/mods/dotfiles-prefix/prefix.test.mjs
     touch "$out"
   ''

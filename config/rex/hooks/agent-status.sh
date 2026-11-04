@@ -1,9 +1,10 @@
 #!/bin/sh
-# Report agent state to Rex as an OSC 7501 program status (no-op outside Rex).
+# Report agent state as an OSC 7501 program status to Rex or native Herdr
+# (no-op in other terminals).
 # Usage: agent-status.sh AGENT STATE [MESSAGE]
 # Hooks run without a controlling terminal, so find the pane's tty by walking
 # up the process tree.
-[ -n "$REX_BLOCK" ] || exit 0
+[ -n "$REX_BLOCK" ] || [ -n "$HC_TERMINAL_ID" ] || exit 0
 agent=$1 state=$2 msg=${3:-}
 pid=$$
 tty=

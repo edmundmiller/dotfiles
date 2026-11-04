@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if ! rg_path=$(command -v rg); then
+  echo "lint-ts-architecture requires rg; run nix shell .#validation-tools --command python3 scripts/validation.py --full" >&2
+  exit 2
+fi
+if ! rg_version=$("$rg_path" --version); then
+  echo "lint-ts-architecture cannot execute rg at $rg_path; enter nix shell .#validation-tools" >&2
+  exit 2
+fi
+
+script_path=${BASH_SOURCE[0]}
+[[ "$script_path" == */* ]] || script_path=./$script_path
+ROOT_DIR="$(cd "${script_path%/*}/.." && pwd)"
 
 if [[ $# -eq 0 ]]; then
   echo "lint-ts-architecture: no files provided, skipping"
@@ -9,6 +20,23 @@ if [[ $# -eq 0 ]]; then
 fi
 
 failures=0
+scanned_files=0
+printf 'TS architecture lint: rg=%s (%s)\n' "$rg_path" "${rg_version%%$'\n'*}"
+
+check_pattern() {
+  local matches status
+  scanned=1
+  if matches=$("$rg_path" --line-number --color never "$1" "$abs" 2>&1); then
+    printf 'TS architecture lint: %s: %s\n%s\n' "$2" "$rel" "$matches" >&2
+    failures=1
+  else
+    status=$?
+    if [[ $status -ne 1 ]]; then
+      printf 'TS architecture lint: rg scan failed (exit %s): %s\n%s\n' "$status" "$rel" "$matches" >&2
+      exit 2
+    fi
+  fi
+}
 
 for file in "$@"; do
   rel="$file"
@@ -25,31 +53,25 @@ for file in "$@"; do
     continue
   fi
 
+  scanned=0
   # Rule 1: ban `as any` outside test files
   if [[ ! "$rel" =~ \.test\.tsx?$ ]] && [[ ! "$rel" =~ \.spec\.tsx?$ ]] \
     && [[ ! "$rel" =~ /__tests__/ ]] && [[ ! "$rel" =~ /tests/ ]] \
     && [[ ! "$rel" =~ /fixtures/ ]]; then
-    if rg --line-number --color never '\bas\s+any\b' "$abs" >/tmp/lint-ts-architecture-as-any.out 2>/dev/null; then
-      echo "TS architecture lint: 'as any' is forbidden outside tests: $rel" >&2
-      cat /tmp/lint-ts-architecture-as-any.out >&2
-      failures=1
-    fi
+    check_pattern '\bas\s+any\b' "'as any' is forbidden outside tests"
   fi
 
   # Rule 2: enforce package boundaries in packages/pi-packages via import paths
   # Disallow relative imports that jump into another pi-* package directly.
   if [[ "$rel" =~ ^packages/pi-packages/(pi-[^/]+)/ ]]; then
-    if rg --line-number --color never "['\"]\.\.(/\.\.)*/pi-[^'\"]+['\"]" "$abs" >/tmp/lint-ts-architecture-boundary.out 2>/dev/null; then
-      echo "TS architecture lint: cross-package relative import detected: $rel" >&2
-      cat /tmp/lint-ts-architecture-boundary.out >&2
-      failures=1
-    fi
+    check_pattern "['\"]\.\.(/\.\.)*/pi-[^'\"]+['\"]" "cross-package relative import detected"
   fi
+  scanned_files=$((scanned_files + scanned))
 done
 
 if [[ $failures -ne 0 ]]; then
-  echo "TS architecture lint failed." >&2
+  printf 'TS architecture lint failed: scanned %s TypeScript files\n' "$scanned_files" >&2
   exit 1
 fi
 
-echo "TS architecture lint passed"
+printf 'TS architecture lint passed: scanned %s TypeScript files\n' "$scanned_files"

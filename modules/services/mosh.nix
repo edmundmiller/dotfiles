@@ -19,7 +19,7 @@ in
 
   config = mkIf cfg.enable (mkMerge [
     {
-      # Keep mosh-server on the system profile so Moshi's non-interactive SSH
+      # Keep mosh-server on the system profile so non-interactive SSH
       # bootstrap can find it without relying on login shell PATH setup.
       environment.systemPackages = [ pkgs.mosh ];
 

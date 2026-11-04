@@ -14,7 +14,14 @@
 {
   # Map over a list of automation attrsets, defaulting initial_state = true.
   # Individual automations can still override with `initial_state = false`.
-  ensureEnabled = map (a: { initial_state = true; } // a);
+  ensureEnabled = map (
+    a:
+    {
+      initial_state = true;
+      trace.stored_traces = 20;
+    }
+    // a
+  );
 
   # iOS notification icon backgrounds and glyphs, merged into data.data.
   # https://companion.home-assistant.io/docs/notifications/notifications-basic/#notification-icon-and-color

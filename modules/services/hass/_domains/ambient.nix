@@ -345,6 +345,26 @@ in
           {
             action = "light.turn_off";
             target.entity_id = "light.smart_night_light_w";
+            continue_on_error = true;
+          }
+          {
+            wait_template = "{{ is_state('light.smart_night_light_w', 'off') }}";
+            timeout.seconds = 10;
+            continue_on_timeout = true;
+          }
+          {
+            condition = "template";
+            value_template = "{{ not is_state('light.smart_night_light_w', 'off') }}";
+          }
+          {
+            condition = "state";
+            entity_id = "binary_sensor.smart_night_light_w_occupancy";
+            state = "off";
+            "for".minutes = 2;
+          }
+          {
+            action = "light.turn_off";
+            target.entity_id = "light.smart_night_light_w";
           }
         ];
       }
@@ -353,6 +373,8 @@ in
       {
         alias = "Plant Glow Light on";
         id = "plant_glow_light_on";
+        # Keep the broken plant light off across restarts until it is repaired.
+        initial_state = false;
         description = "Plant light on at 8 AM daily";
         trigger = {
           platform = "time";

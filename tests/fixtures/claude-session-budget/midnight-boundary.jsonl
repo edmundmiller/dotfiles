@@ -1,0 +1,3 @@
+{"type":"summary","summary":"No timestamp on summary entries","leafUuid":"4d1f7b90-0000-4000-8000-000000000000"}
+{"type":"user","timestamp":"2026-10-22T04:30:00.000Z","message":{"role":"user","content":"Late night turn"}}
+{"type":"assistant","timestamp":"2026-10-22T04:31:00.000Z","message":{"role":"assistant","model":"claude-opus-5","usage":{"input_tokens":8,"cache_creation_input_tokens":1024,"cache_read_input_tokens":40000,"output_tokens":256}}}

@@ -17,7 +17,6 @@ PI_SETTINGS_VALIDATOR = ROOT / "modules" / "agents" / "pi" / "validate-settings-
 OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
 BOOTSTRAP = ROOT / "bin" / "bootstrap"
 OMP_CORE = ROOT / "config" / "agents" / "core.md"
-OMP_CONFIG = ROOT / "config" / "omp" / "config.yml"
 LEGACY_RULES = ROOT / "config" / "agents" / "rules"
 FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
 THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
@@ -28,7 +27,7 @@ GITHUB_CLI_MEDIA_SKILL = (
 )
 PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
-SKILLS_COMMAND = ROOT / "bin" / "hey.d" / "skills-catalog.nu"
+SKILLS_COMMAND = ROOT / "mise-tasks" / "skills" / "sync.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
@@ -52,6 +51,21 @@ class AgentInstructionWiringTests(unittest.TestCase):
             if result.returncode:
                 raise RuntimeError(result.stderr)
             cls.deployed = json.loads(result.stdout)
+
+    def test_pi_approval_packages_and_policy_are_deployed_together(self) -> None:
+        approval = self.deployed["piApproval"]
+        packages = approval["settings"]["packages"]
+        self.assertIn("npm:@gotgenes/pi-permission-system@42.0.0", packages)
+        self.assertIn("~/.pi/agent/packages/pi-command-policy-bridge", packages)
+        self.assertTrue(approval["bridge"].endswith("pi-command-policy-bridge"))
+        self.assertEqual(
+            approval["configPath"],
+            "$HOME/.pi/agent/extensions/pi-permission-system/config.json",
+        )
+        self.assertTrue(approval["policy"]["force"])
+        policy = json.loads(approval["policy"]["text"])
+        self.assertEqual(policy["permission"]["bash"]["*hey*"], "ask")
+        self.assertEqual(policy["permission"]["bash"]["*mise*"], "ask")
 
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = OMP_CORE.read_text()
@@ -203,7 +217,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("agent-browser-after.png", github_skill)
         self.assertIn("claude-shared-skill-links", claude_module)
         self.assertIn(
-            "for skill in test-quality github-cli-media lore pe-verify; do",
+            'for skill in test-quality github-cli-media lore pe-verify${optionalString config.modules.desktop.apps.tldraw.enable " tldraw-offline"}; do',
             claude_module,
         )
         self.assertIn('shared="$HOME/.agents/skills/$skill"', claude_module)
@@ -238,13 +252,10 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
     def test_skills_sync_has_no_retired_checkout_input(self) -> None:
         command = SKILLS_COMMAND.read_text()
-        sync_start = command.index('def "main skills-sync"')
-        bump_start = command.index('def "main skills-bump"')
-        sync = command[sync_start:bump_start]
 
         self.assertNotIn("dotfiles-repo", command)
-        self.assertIn("nix flake update skills-catalog", sync)
-        self.assertIn("main rebuild", sync)
+        self.assertIn("nix flake update skills-catalog", command)
+        self.assertIn("^mise run rebuild", command)
 
     def test_unslop_is_catalog_writing_route(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()
@@ -315,30 +326,12 @@ class AgentInstructionWiringTests(unittest.TestCase):
     def test_omp_installs_fix_agents_md_prompt_template(self) -> None:
         self.assertEqual(FIX_AGENTS_COMMAND.read_text(), self.deployed["fixAgentsPrompt"])
 
-    def test_opencode_module_owns_its_v2_compatibility_alias(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            home = Path(tmp)
-            legacy = home / ".config/opencode"
-            target = home / ".config/opencode2/opencode"
-            legacy.mkdir(parents=True)
-            (legacy / "old-plugin").write_text("incompatible")
-            script = self.deployed["opencodeCompatibility"].replace(
-                "/tmp/agent-instruction-test", str(home)
-            )
-            for _ in range(2):
-                subprocess.run(["bash", "-eu", "-c", script], check=True)
-                self.assertTrue(legacy.is_symlink())
-                self.assertEqual(target.resolve(), legacy.resolve())
-                self.assertFalse((legacy / "old-plugin").exists())
-
-    def test_omp_config_uses_the_deployed_omp_18_registry(self) -> None:
-        config = OMP_CONFIG.read_text()
-        flake = (ROOT / "flake.nix").read_text()
-
-        self.assertIn("methodOrder: [remote, soft]", config)
-        self.assertIn("unexpectedStopDetection: smart", config)
-        self.assertNotIn("strategy: context-full", config)
-        self.assertIn("src=${self.packages.${system}.omp}", flake)
+    def test_opencode_module_uses_standard_config_path_without_legacy_cleanup(self) -> None:
+        module = (ROOT / "modules/agents/opencode/default.nix").read_text()
+        self.assertIn('"opencode/AGENTS.md"', module)
+        self.assertIn('"opencode/command"', module)
+        self.assertNotIn("opencode2", module)
+        self.assertNotIn("opencode-v1-cleanup", module)
 
     def test_pi_settings_hook_executes_a_real_python_file(self) -> None:
         shell = PI_SETTINGS_CHECK.read_text()
@@ -366,12 +359,11 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("skill-quality/scripts/validate.py", hook)
         self.assertIn('stages = [ "pre-commit" ]', hook)
 
-        self.assertIn("omp-thin-harness-tests =", flake)
-        self.assertIn("tests/test_omp_ttsr_rules.py", flake)
+        self.assertIn("agent-instruction-tests =", flake)
         self.assertIn("tests/test_agent_instruction_wiring.py", flake)
         from scripts.validation import CHECKS
 
-        self.assertIn("config/agents/core.md", CHECKS["omp-thin-harness-tests"])
+        self.assertIn("config/agents/core.md", CHECKS["agent-instruction-tests"])
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ export function syncToolCache(
   protectedTools: string[] = []
 ): void {
   // Build map of callId → toolResult for quick lookup
-  const resultMap = new Map<string, AgentMessage>();
+  const resultMap = new Map<string, Extract<AgentMessage, { role: "toolResult" }>>();
   for (const msg of messages) {
     if (msg.role === "toolResult" && msg.toolCallId) {
       resultMap.set(msg.toolCallId, msg);
@@ -88,7 +88,7 @@ export function syncToolCache(
       const result = resultMap.get(block.id);
 
       const tokenCount = result ? countTokens(extractMessageText(result)) : 0;
-      const isError = result ? !!(result as any).isError : false;
+      const isError = result ? !!result.isError : false;
 
       const entry: ToolCacheEntry = {
         callId: block.id,

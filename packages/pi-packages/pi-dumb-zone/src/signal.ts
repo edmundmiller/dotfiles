@@ -17,15 +17,15 @@ const SIGNAL_KEY = "__piDumbZoneSignal";
 
 /** Publish current dumb zone state for other extensions to read. */
 export function publishSignal(signal: DumbZoneSignal): void {
-  (globalThis as any)[SIGNAL_KEY] = signal;
+  (globalThis as { [SIGNAL_KEY]?: DumbZoneSignal })[SIGNAL_KEY] = signal;
 }
 
 /** Read the current dumb zone signal (returns undefined if dumb-zone not loaded). */
 export function readSignal(): DumbZoneSignal | undefined {
-  return (globalThis as any)[SIGNAL_KEY];
+  return (globalThis as { [SIGNAL_KEY]?: DumbZoneSignal })[SIGNAL_KEY];
 }
 
 /** Clear the signal (e.g. when leaving the dumb zone). */
 export function clearSignal(): void {
-  (globalThis as any)[SIGNAL_KEY] = undefined;
+  (globalThis as { [SIGNAL_KEY]?: DumbZoneSignal })[SIGNAL_KEY] = undefined;
 }

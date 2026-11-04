@@ -18,6 +18,8 @@ their inventories.
 - Use `hey` for guarded system operations: `hey re` / `hey rebuild` for Darwin,
   `hey nuc` for NUC deployment, and `hey skills-update` / `hey skills-sync` for
   catalog updates. Details: [command policy](docs/adr/0001-agent-command-policy.md).
+  `hey` forwards to project-local `mise run`; equivalent mise tasks are supported.
+  Run from this checkout or use `mise --cd <checkout> run <task>`.
 - Edit repository sources, not generated files or deployed Nix store symlinks.
   Some agent configs are intentionally writable; their scoped guides identify them.
 - Keep decrypted secrets out of Git, logs, command arguments, and Nix output.
@@ -31,6 +33,8 @@ their inventories.
 - Writing: load [unslop](skills/catalog/unslop/SKILL.md) when drafting
   user-visible prose. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).
+- Oxlint: default hook is anti-slop. Opt-in English Jev rules:
+  [docs/agents/oxlint.md](docs/agents/oxlint.md).
 - Packages/overlays: use their scoped guides; `pkg-list` shows harnessed units.
 - Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped
   guide; [NUC runbook](docs/runbooks/deploy-nuc.md) for remote deployment.

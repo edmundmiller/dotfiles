@@ -28,7 +28,7 @@ Do not serve this host-dependent build from a binary cache.
 Prepare an existing Xcode without activating the host configuration:
 
 ```sh
-nix develop --command nu bin/hey xcode-setup /Applications/Xcode.app --apply --prompt-admin
+mise run xcode:setup /Applications/Xcode.app --apply --prompt-admin
 ```
 
 Without `--apply`, this previews the selection. The command completes first-launch

@@ -2,9 +2,11 @@
 
 invalid=0
 for path in "$@"; do
+  # Omarchy's manual Arch backports belong with their host recovery runbook.
   if [[ ! "$path" =~ ^(packages|overlays)/[^/]+/patches/[^/]+\.patch$ ]] &&
-    [[ ! "$path" =~ ^skills/overlays/[^/]+/[^/]+\.patch$ ]]; then
-    echo "Patch must live at packages/<name>/patches/*.patch, overlays/<name>/patches/*.patch, or skills/overlays/<name>/*.patch: $path" >&2
+    [[ ! "$path" =~ ^skills/overlays/[^/]+/[^/]+\.patch$ ]] &&
+    [[ ! "$path" =~ ^hosts/meshify/omarchy/patches/[^/]+\.patch$ ]]; then
+    echo "Patch must live at packages/<name>/patches/*.patch, overlays/<name>/patches/*.patch, skills/overlays/<name>/*.patch, or hosts/meshify/omarchy/patches/*.patch: $path" >&2
     invalid=1
   fi
 done

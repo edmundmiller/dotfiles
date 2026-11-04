@@ -24,7 +24,7 @@ LAST_TREAT = "input_text.phoebe_last_dental_treat"
 CENTRAL = ZoneInfo("America/Chicago")
 
 
-class DentalTreatTest(unittest.IsolatedAsyncioTestCase):
+class PetsTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -87,6 +87,44 @@ class DentalTreatTest(unittest.IsolatedAsyncioTestCase):
                 "tag_scanned", {"tag_id": tag, "device_id": self.phones[phone]}
             )
             await self.hass.async_block_till_done()
+
+    async def test_kibble_tags_share_two_minute_cooldown(self):
+        tags = (
+            "729d23f5-3368-487e-bff0-3cf6a22cba29",
+            "2e0ad6b4-069c-445a-a23f-4af99eccb21d",
+        )
+        last_fed = "input_datetime.phoebe_last_fed"
+        for first, second in (tags, tags[::-1]):
+            with self.subTest(first=first):
+                await self.hass.services.async_call(
+                    "input_datetime",
+                    "set_datetime",
+                    {"entity_id": last_fed, "datetime": "2026-10-27 08:00:00"},
+                    blocking=True,
+                )
+                self.calls.clear()
+                await self.scan("2026-10-27T18:00:00", tag=first)
+                self.assertEqual(
+                    self.hass.states.get(last_fed).state, "2026-10-27 18:00:00"
+                )
+                self.assertEqual(len(self.calls), 1)
+                self.assertEqual(self.calls[0][:2], ("logbook", "log"))
+                self.assertEqual(self.calls[0][2]["entity_id"], last_fed)
+
+                self.calls.clear()
+                await self.scan("2026-10-27T18:00:30", tag=first)
+                await self.scan("2026-10-27T18:01:59", phone=1, tag=second)
+                self.assertEqual(self.calls, [])
+                self.assertEqual(
+                    self.hass.states.get(last_fed).state, "2026-10-27 18:00:00"
+                )
+
+                await self.scan("2026-10-27T18:02:00", phone=1, tag=second)
+                self.assertEqual(len(self.calls), 1)
+                self.assertEqual(self.calls[0][:2], ("logbook", "log"))
+                self.assertEqual(
+                    self.hass.states.get(last_fed).state, "2026-10-27 18:02:00"
+                )
 
     async def test_first_scan_logs_once_and_duplicates_notify_only_scanner(self):
         await self.scan("2026-10-27T22:00:00", tag="unrelated-tag")

@@ -394,9 +394,6 @@
   "packages/pi-packages/pi-dcp/src/events/context.ts": {
     "anti-slop/no-runtime-typeof": {
       "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 7
     }
   },
   "packages/pi-packages/pi-dcp/src/logger.ts": {
@@ -406,9 +403,6 @@
   },
   "packages/pi-packages/pi-dcp/src/metadata.ts": {
     "anti-slop/no-runtime-typeof": {
-      "count": 7
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
       "count": 7
     }
   },
@@ -428,9 +422,6 @@
     },
     "anti-slop/no-unsafe-dictionary-type": {
       "count": 2
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 1
     }
   },
   "packages/pi-packages/pi-dcp/src/tools/distill.ts": {
@@ -454,7 +445,7 @@
       "count": 1
     },
     "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 3
+      "count": 2
     }
   },
   "packages/pi-packages/pi-dcp/tests/fix-verification.test.ts": {
@@ -486,22 +477,8 @@
     }
   },
   "packages/pi-packages/pi-direnv/index.test.ts": {
-    "anti-slop/no-chained-type-assertions": {
-      "count": 1
-    },
     "anti-slop/no-unknown-parameters": {
       "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
-    }
-  },
-  "packages/pi-packages/pi-direnv/index.ts": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
     }
   },
   "packages/pi-packages/pi-dumb-zone/src/checks.ts": {
@@ -541,7 +518,7 @@
       "count": 3
     },
     "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 4
+      "count": 3
     }
   },
   "packages/pi-packages/pi-git-ai/tests/pure-functions.test.ts": {
@@ -636,7 +613,7 @@
       "count": 2
     },
     "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 6
+      "count": 5
     }
   },
   "packages/pi-packages/pi-image-attachments/src/editor-factory.ts": {

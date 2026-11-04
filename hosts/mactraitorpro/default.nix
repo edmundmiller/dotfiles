@@ -294,7 +294,6 @@ in
           provider = "orbstack";
         };
         mosh.enable = true;
-        moshi.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
       };
@@ -306,8 +305,10 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
+        apps.tinybar.enable = true;
         term = {
           ghostty.enable = true;
           themeStack = {
@@ -345,17 +346,6 @@ in
     };
 
     # The Amp Mac app owns the runner. See workload-placement.md for setup.
-
-    # Voxtype.app owns the daemon, permissions and menu bar. Only the overlay is a helper.
-    launchd.user.agents.voxtype-overlay.serviceConfig = {
-      ProgramArguments = [ "${pkgs.my.voxtype-overlay}/bin/voxtype-overlay" ];
-      RunAtLoad = true;
-      KeepAlive = true;
-      LimitLoadToSessionType = "Aqua";
-      ProcessType = "Interactive";
-      StandardOutPath = "${config.user.home}/Library/Logs/voxtype-overlay.log";
-      StandardErrorPath = "${config.user.home}/Library/Logs/voxtype-overlay.err.log";
-    };
 
     # Mirror LookAway's meeting detection to the USB busylight. LookAway's built-in
     # automations only cover break start/end, so this tails its debug log for
@@ -477,7 +467,6 @@ in
         "/Applications/CleanShot X.app"
         "/Applications/LookAway.app"
         "/Applications/Monologue.app"
-        "/Applications/Voxtype.app"
       ];
     };
 
@@ -527,7 +516,6 @@ in
       my.openwiki
       my.screentime-backup
       my.vercel
-      my.voxtype-overlay
       my.writer
       my.zele
       my.work-calendar-busy
@@ -572,20 +560,6 @@ in
 
         home.activation.removeLegacyOpenWiki = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.cache/npm/bin/openwiki"
-        '';
-
-        # The cask installs only the CLI. Recreating the app resets TCC grants,
-        # so bootstrap/upgrades are explicit; see this host's README.
-        home.activation.checkVoxtypeBundle = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          voxtype_app=/Applications/Voxtype.app/Contents/MacOS/voxtype-bin
-          if [ ! -x "$voxtype_app" ]; then
-            echo "warning: Voxtype.app is missing; follow hosts/mactraitorpro/README.md#voxtype-setup-and-upgrades" >&2
-          elif ! voxtype_cli_version=$(/opt/homebrew/bin/voxtype --version) \
-            || ! voxtype_app_version=$("$voxtype_app" --version); then
-            echo "warning: cannot check Voxtype versions; follow hosts/mactraitorpro/README.md#voxtype-setup-and-upgrades" >&2
-          elif [ "$voxtype_cli_version" != "$voxtype_app_version" ]; then
-            echo "warning: Voxtype.app is stale ($voxtype_app_version; cask $voxtype_cli_version); follow hosts/mactraitorpro/README.md#voxtype-setup-and-upgrades" >&2
-          fi
         '';
 
         # Keep the Seqera work wallpaper in a stable location and apply it to the desktop.

@@ -26,7 +26,15 @@ in
         mode = "single";
         trigger = {
           platform = "tag";
-          tag_id = "729d23f5-3368-487e-bff0-3cf6a22cba29";
+          tag_id = [
+            "729d23f5-3368-487e-bff0-3cf6a22cba29" # Under the food scooper.
+            "2e0ad6b4-069c-445a-a23f-4af99eccb21d" # Front of the food container.
+          ];
+        };
+        condition = {
+          # Share the cooldown across both tags, including after a restart.
+          condition = "template";
+          value_template = "{{ now().timestamp() - (state_attr('input_datetime.phoebe_last_fed', 'timestamp') | float(0)) >= 120 }}";
         };
         action = [
           {

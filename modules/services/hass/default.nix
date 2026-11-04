@@ -68,6 +68,20 @@ let
     };
   };
 
+  # FitBark - dog activity and sleep tracking, configured through OAuth in the UI.
+  # https://github.com/saubury/ha-fitbark
+  fitbark = buildHassComponent {
+    owner = "saubury";
+    domain = "fitbark";
+    version = "0.5.3";
+    src = pkgs.fetchFromGitHub {
+      owner = "saubury";
+      repo = "ha-fitbark";
+      tag = "v0.5.3";
+      hash = "sha256-K9ou+undK25BgzXS7KmKb3SmUS+BLkRikfHstRTnV1A=";
+    };
+  };
+
   # OpenClaw - native conversation agent + chat card for Assist
   # https://github.com/techartdev/OpenClawHomeAssistantIntegration
   openclaw-integration = buildHassComponent {
@@ -149,6 +163,7 @@ in
     ./_domains/sleep
     ./_domains/tv.nix
     ./_domains/vacation.nix
+    ./observability.nix
     ./sweep-unmanaged.nix
     ./validate-config.nix
   ];
@@ -287,6 +302,7 @@ in
           adaptive-lighting
           hacs
           eight-sleep
+          fitbark
           openclaw-integration
           pura-integration
           jev

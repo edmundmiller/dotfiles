@@ -3,6 +3,9 @@
     548 # netatalk
   ];
 
+  systemd.services.netatalk.unitConfig.RequiresMountsFor = [ "/data/backup/moni/time-machine" ];
+  systemd.tmpfiles.rules = [ "d /data/backup/moni/time-machine 0700 monimiller users -" ];
+
   services = {
     netatalk = {
       enable = true;

@@ -134,7 +134,7 @@ export default async function (pi: ExtensionAPI): Promise<void> {
   const [CustomEditor] = await Promise.all([loadCustomEditor(), loadEditorKeybindings()]);
 
   registerImageAttachmentsExtension(pi, {
-    BaseEditor: CustomEditor as any,
+    BaseEditor: CustomEditor,
     getEditorKeybindings,
     resolveCwd: () => process.cwd(),
     looksLikeImagePath,

@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
 use std/assert
-source ../hey.d/common.nu
-source ../hey.d/remote.nu
+use ../../scripts/nu/common.nu *
+use ../../scripts/nu/remote.nu *
 
 assert equal (nuc-deploy-mode "nuc") "local"
 assert equal (nuc-deploy-mode "mactraitorpro") "worktree-remote"
@@ -375,8 +375,9 @@ mkdir ($source_dir | path join ".pi" "runtime")
 "ignored Pi runtime" | save ($source_dir | path join ".pi" "runtime" "session.json")
 "archived lease" | save ($source_dir | path join ".nuc-deploy-active")
 ^cp $revision_writer ($source_dir | path join "bin" "write-nuc-deploy-revision")
+^cp $snapshot_pruner ($source_dir | path join "bin" "prune-nuc-deploy-snapshots")
 ^git -C $source_dir init --quiet --initial-branch main
-^git -C $source_dir add flake.nix .gitignore bin/write-nuc-deploy-revision .pi/tracked.txt
+^git -C $source_dir add flake.nix .gitignore bin .pi/tracked.txt
 ^git -C $source_dir add --force config/jj/config.toml
 ^git -C $source_dir -c user.name=Test -c user.email=test@example.invalid commit --quiet -m fixture
 require-clean-rollout-repository $source_dir "fixture"
@@ -400,7 +401,7 @@ assert equal $detected_clean_source.base $fixture_revision
 assert not $detected_clean_source.dirty
 mkdir $clean_destination_dir
 "active" | save ($clean_destination_dir | path join ".nuc-deploy-active")
-let clean_content_digest = (nuc-worktree-sync $source_dir $clean_destination_dir $fixture_revision $detected_clean_source.dirty)
+let clean_content_digest = (nuc-worktree-prepare $source_dir $clean_destination_dir $fixture_revision $detected_clean_source.dirty tester "" $temp_dir)
 
 assert (($clean_destination_dir | path join "bin" "write-nuc-deploy-revision") | path exists) "clean snapshots must include the tracked revision writer"
 assert (($clean_destination_dir | path join "config" "jj" "config.toml") | path exists) "clean snapshots must include tracked ignored source"
@@ -427,7 +428,10 @@ assert $detected_dirty_source.dirty
 require-clean-nuc-activation $detected_dirty_source "build"
 mkdir $dirty_destination_dir
 "active" | save ($dirty_destination_dir | path join ".nuc-deploy-active")
-let dirty_content_digest = (nuc-worktree-sync $source_dir $dirty_destination_dir $fixture_revision $detected_dirty_source.dirty)
+let source_index_before = (^git -C $source_dir ls-files --stage | str trim)
+let dirty_content_digest = (nuc-worktree-prepare $source_dir $dirty_destination_dir $fixture_revision $detected_dirty_source.dirty tester "" $temp_dir)
+assert equal (open --raw ($dirty_destination_dir | path join ".nuc-deploy-source-revision")) $"($fixture_revision)-dirty"
+assert equal (^git -C $source_dir ls-files --stage | str trim) $source_index_before "snapshot preparation must not stage the caller's changes"
 assert (($dirty_destination_dir | path join "untracked.txt") | path exists) "dirty build snapshots must include the tested worktree content"
 assert equal (open --raw ($dirty_destination_dir | path join "flake.nix")) "mutated after status could have been checked" "dirty snapshots must capture tracked worktree bytes despite assume-unchanged flags"
 assert equal (open --raw ($dirty_destination_dir | path join "config" "jj" "config.toml")) "tracked ignored config" "dirty snapshots must preserve tracked ignored source"
@@ -437,6 +441,39 @@ assert not (($dirty_destination_dir | path join "ignored.txt") | path exists) "d
 assert not (($dirty_destination_dir | path join ".git") | path exists) "dirty snapshots must still exclude Git metadata"
 assert (($dirty_destination_dir | path join ".nuc-deploy-active") | path exists) "dirty snapshot transfer must preserve the destination-only active lease"
 assert equal (open --raw ($dirty_destination_dir | path join ".nuc-deploy-active")) "active" "dirty snapshot transfer must not overwrite the destination-owned lease"
+
+# Exercise the public build command, but confine SSH to fixtures and stop at
+# the encoded build command. No Nix build or remote connection can run here.
+let build_bin = ($temp_dir | path join "build-bin")
+let build_root = ($temp_dir | path join "build-root")
+let build_command = ($temp_dir | path join "build-command")
+mkdir $build_bin $build_root
+let build_ssh = r#'
+#!__BASH__
+set -eu
+test "$1" = nuc
+if [[ "$2" == "printf '%s' "* ]]; then
+  printf '%s' "$2" > "$NUC_TEST_BUILD_COMMAND"
+else
+  command=${2//\/tmp/$NUC_TEST_BUILD_ROOT}
+  exec bash -c "$command"
+fi
+'#
+$build_ssh | str trim --left | str replace "__BASH__" $bash_path | save ($build_bin | path join "ssh")
+$"#!($bash_path)\necho x86_64-linux\n" | save ($build_bin | path join "nix")
+^chmod +x ($build_bin | path join "ssh") ($build_bin | path join "nix")
+with-env {
+  PATH: ([$build_bin] ++ $env.PATH)
+  MISE_PROJECT_ROOT: $source_dir
+  USER: "tester"
+  NUC_TEST_BUILD_ROOT: $build_root
+  NUC_TEST_BUILD_COMMAND: $build_command
+} { ^$nu.current-exe --no-config-file ($repo_root | path join "mise-tasks/nuc/worktree.nu") build }
+assert ($build_command | path exists) "dirty build must finish preparation and reach the build boundary"
+let build_snapshot = (glob ($build_root | path join "dotfiles-worktree-tester-*") | first)
+assert equal (open --raw ($build_snapshot | path join ".nuc-deploy-source-revision")) $"($fixture_revision)-dirty"
+assert equal (open --raw ($build_snapshot | path join "untracked.txt")) "uncommitted"
+assert equal (open --raw ($build_snapshot | path join "flake.nix")) "mutated after status could have been checked"
 
 let dirty_validation_report = ($validation_report_root | path join "dirty-report")
 mkdir $dirty_validation_report
@@ -502,6 +539,26 @@ let prepare_failed = (try {
 assert $prepare_failed "missing revision writer must fail snapshot preparation"
 assert not (($failed_prepare_destination | path join ".nuc-deploy-active") | path exists) "failed snapshot preparation must release its active lease"
 
+# Fail before any files are copied. Cleanup must still release and prune.
+let early_failure_root = ($temp_dir | path join "early-failure")
+mkdir $early_failure_root
+for index in 1..6 {
+  let snapshot = ($early_failure_root | path join $"dotfiles-worktree-tester-($source_revision)-dirty-00000000-0000-0000-0000-00000000000($index)")
+  mkdir $snapshot
+  ^touch -d $"2020-01-01 00:00:0($index) UTC" $snapshot
+}
+let early_failure_destination = ($early_failure_root | path join $"dotfiles-worktree-tester-($source_revision)-dirty-00000000-0000-0000-0000-000000000007")
+mkdir $early_failure_destination
+"active" | save ($early_failure_destination | path join ".nuc-deploy-active")
+let early_prepare_failed = (try {
+  nuc-worktree-prepare $source_dir $early_failure_destination $source_revision true tester "" $early_failure_root
+  false
+} catch { true })
+assert $early_prepare_failed "an unavailable Git object must fail preparation"
+assert not (($early_failure_destination | path join "bin") | path exists) "fixture must fail before transfer"
+assert not (($early_failure_destination | path join ".nuc-deploy-active") | path exists) "early failure must release its lease"
+assert equal (glob ($early_failure_root | path join "dotfiles-worktree-*") | length) 5 "early failure must prune without a destination pruner"
+
 mkdir $prune_root
 let snapshot_uuids = [
   "00000000-0000-0000-0000-000000000001"
@@ -566,6 +623,7 @@ assert not ($orphan_snapshot | path exists) "a stale validation lease must be pr
 assert not ($mismatched_snapshot | path exists) "a marker must not borrow another snapshot's live validation service"
 
 # Exercise the public revision command with a disposable host transport.
+let nuc_task = ($repo_root | path join "mise-tasks/nuc/_default.nu")
 let revision_repo = ($temp_dir | path join "revision-repo")
 let revision_bin = ($temp_dir | path join "revision-bin")
 let revision_marker = ($temp_dir | path join "revision-activated")
@@ -600,14 +658,14 @@ for case in [
   rm -f $revision_marker
   let succeeded = (with-env {
     PATH: ([$revision_bin] ++ $env.PATH)
-    FLAKE_DIR: $revision_repo
+    MISE_PROJECT_ROOT: $revision_repo
     NUC_TEST_HOST: $case.host
     NUC_TEST_PROVENANCE: $case.actual
     NUC_TEST_ACTIVATION: $revision_marker
     NUC_TEST_REBUILD_STATUS: $case.rebuild
     NUC_TEST_TIMER_STATUS: $case.timer
     NUC_TEST_SSH_STATUS: ($case.ssh? | default "0")
-  } { try { main nuc revision $deploy_revision; true } catch { false } })
+  } { (^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision | complete).exit_code == 0 })
   assert equal $succeeded $case.success
   assert equal ($revision_marker | path exists) $case.activated
   if $case.success {
@@ -616,7 +674,7 @@ for case in [
     assert ($activation | str contains $"--flake github:edmundmiller/dotfiles/($deploy_revision)#nuc")
   }
 }
-let invalid_revision_blocked = (try { main nuc revision "main; exit 0"; false } catch { true })
+let invalid_revision_blocked = ((^$nu.current-exe --no-config-file $nuc_task revision "main; exit 0" | complete).exit_code != 0)
 assert $invalid_revision_blocked
 rm -rf $temp_dir
 

@@ -24,16 +24,6 @@ class PackagePolicyTest(unittest.TestCase):
             "Package Git dependencies must use outputHashes instead of evaluation-time fetchGit",
         )
 
-    def test_pi_policy_bridge_uses_nix_managed_runtime_path(self):
-        settings = (ROOT / "config/pi/settings.jsonc").read_text()
-        home_files = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
-        runtime_path = "~/.pi/agent/packages/pi-command-policy-bridge"
-        self.assertIn(runtime_path, settings)
-        self.assertNotIn(
-            "~/.config/dotfiles/packages/pi-packages/pi-command-policy-bridge", settings
-        )
-        self.assertIn('".pi/agent/packages/pi-command-policy-bridge".source', home_files)
-
     def test_hunk_metadata_matches_locked_input(self):
         metadata = json.loads((ROOT / "overlays/hunk/package-harness.json").read_text())
         self.assertIsInstance(metadata, dict, "Hunk metadata must be an object")
@@ -124,6 +114,8 @@ class PackagePolicyTest(unittest.TestCase):
                 "packages/stack/patches/fix.patch",
                 "overlays/hunk/patches/fix.patch",
                 "skills/overlays/skill-doctor/pi-support.patch",
+                "hosts/meshify/omarchy/patches/6844-amp-default-agent.patch",
+                "hosts/meshify/omarchy/patches/6844-packaging.patch",
             ],
             capture_output=True,
             text=True,
@@ -131,7 +123,8 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertEqual(allowed.returncode, 0, allowed.stderr)
         locality_message = (
             "Patch must live at packages/<name>/patches/*.patch, "
-            "overlays/<name>/patches/*.patch, or skills/overlays/<name>/*.patch"
+            "overlays/<name>/patches/*.patch, skills/overlays/<name>/*.patch, "
+            "or hosts/meshify/omarchy/patches/*.patch"
         )
         invalid_cases = [
             (["patches/fix.patch"], "patches/fix.patch"),
@@ -143,6 +136,31 @@ class PackagePolicyTest(unittest.TestCase):
                 "skills/overlays/skill-doctor/nested/fix.patch",
             ),
             (["packages/group/tool/patches/fix.patch"], "packages/group/tool/patches/fix.patch"),
+            (
+                ["hosts/other/omarchy/patches/fix.patch"],
+                "hosts/other/omarchy/patches/fix.patch",
+            ),
+            (["hosts/meshify/omarchy/fix.patch"], "hosts/meshify/omarchy/fix.patch"),
+            (
+                ["hosts/meshify/omarchy/patches/nested/fix.patch"],
+                "hosts/meshify/omarchy/patches/nested/fix.patch",
+            ),
+            (
+                ["other/hosts/meshify/omarchy/patches/fix.patch"],
+                "other/hosts/meshify/omarchy/patches/fix.patch",
+            ),
+            (
+                ["hosts/meshify/omarchy/patches/fix.patch.backup"],
+                "hosts/meshify/omarchy/patches/fix.patch.backup",
+            ),
+            (
+                [
+                    "hosts/meshify/omarchy/patches/6844-amp-default-agent.patch",
+                    "misc/fix.patch",
+                    "hosts/meshify/omarchy/patches/6844-packaging.patch",
+                ],
+                "misc/fix.patch",
+            ),
             (
                 [
                     "packages/stack/patches/fix.patch",

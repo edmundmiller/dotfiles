@@ -218,6 +218,9 @@ class ValidationTests(unittest.TestCase):
         selected = self.selection("--full")
         self.assertIn("tracked.md", selected["files"])
         self.assertIn("validation-tests", selected["checks"])
+        self.assertIn("agent-instruction-tests", selected["checks"])
+        self.assertNotIn("omp-thin-harness-tests", selected["checks"])
+        self.assertNotIn("omp-config", selected["checks"])
         self.assertIn("omp-example", selected["packages"])
         self.assertIsNone(selected["platform"])
         self.assertNotIn("trmnl-agent-message-render", selected["checks"])
@@ -530,20 +533,19 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("missing nix", error)
         self.assertIn("dev shell", error)
 
-    @unittest.skipUnless(shutil.which("nu"), "Nushell required for hey parity")
-    def test_hey_and_direct_ci_entry_select_identical_work(self):
+    def test_check_file_task_and_direct_ci_entry_select_identical_work(self):
         (self.root / "scripts").mkdir()
         shutil.copy2(
             v.ROOT / "scripts/validation.py", self.root / "scripts/validation.py"
         )
         self.write("owned space.md", "edit")
-        env = os.environ | {"FLAKE_DIR": str(self.root)}
+        env = os.environ | {"MISE_PROJECT_ROOT": str(self.root)}
         result = subprocess.run(
             [
-                "nu",
-                "--no-config-file",
-                "--commands",
-                f"source '{v.ROOT}/bin/hey.d/flake.nu'; main check --plan 'owned space.md'",
+                "bash",
+                str(v.ROOT / "mise-tasks/check"),
+                "--plan",
+                "owned space.md",
             ],
             cwd=self.root,
             env=env,
@@ -567,11 +569,109 @@ class ValidationTests(unittest.TestCase):
         self.assertNotIn("secrets.RENOVATE_TOKEN", linux)
         self.assertIn("needs: darwin\n    if: always()", workflow)
         self.assertIn("if: needs.darwin.result != 'success'", workflow)
+        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
         darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
-        self.assertIn("runs-on: macos-15", darwin)
+        self.assertIn("runs-on: xcode-27", darwin)
         self.assertNotIn("if:", darwin)
-        self.assertIn("secrets.NIX_PRIVATE_GITHUB_TOKEN", darwin)
-        self.assertNotIn("secrets.RENOVATE_TOKEN", darwin)
+        for job in (linux, darwin):
+            self.assertIn(
+                "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", job
+            )
+            self.assertIn('if [[ -z "$NIX_GITHUB_TOKEN" ]]', job)
+            self.assertNotIn("secrets.RENOVATE_TOKEN", job)
+
+    def test_darwin_xcode_selection_resolves_image_aliases_and_rejects_missing_app(
+        self,
+    ):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        preparation = textwrap.dedent(
+            workflow.split("      - name: Prepare Xcode 27.2 Metal toolchain\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - ", 1)[0]
+        )
+        for installed in (True, False):
+            with self.subTest(installed=installed):
+                applications = self.root.resolve() / str(installed) / "Applications"
+                applications.mkdir(parents=True)
+                selected = applications / "Xcode_27.2_Release_Candidate.app"
+                if installed:
+                    (selected / "Contents/Developer").mkdir(parents=True)
+                for alias in ("Xcode_27.2.app", "Xcode_27.2.0.app"):
+                    (applications / alias).symlink_to(
+                        selected, target_is_directory=True
+                    )
+                command = preparation.replace("/Applications/", f"{applications}/")
+                # Observe the app passed to hey without downloading or selecting
+                # a real toolchain. Path resolution uses the real fixture aliases.
+                commands = (
+                    'jq() { printf "fixture-revision"; };\n'
+                    'nix() { while [[ "$1" != --command ]]; do shift; done; shift; "$@"; };\n'
+                    'env() { if [[ "$1" == MISE_TRUSTED_CONFIG_PATHS=* ]]; then shift; "$@"; fi; };\n'
+                    'mise() { [[ "$1 $2" == "run xcode:setup" ]] || return 1; printf "%s\\n" "$3"; };\n'
+                )
+                result = subprocess.run(
+                    ["bash", "-c", commands + command],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode == 0, installed, result.stderr)
+                self.assertEqual(
+                    result.stdout.strip(), str(selected) if installed else ""
+                )
+
+    def test_darwin_cleanup_preserves_selected_xcode_and_rejects_invalid_selection(
+        self,
+    ):
+        workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
+        cleanup = textwrap.dedent(
+            workflow.split("      - name: Free space for Darwin builds\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - ", 1)[0]
+        )
+        for valid_selection in (True, False):
+            with self.subTest(valid_selection=valid_selection):
+                root = self.root / str(valid_selection)
+                applications = root / "installed-apps"
+                selected = applications / "Xcode_27.1.app"
+                developer = selected / "Contents/Developer"
+                developer.mkdir(parents=True)
+                sentinel = developer / "keep.txt"
+                sentinel.write_text("selected toolchain")
+                inactive = applications / "Xcode_27.app"
+                inactive.mkdir()
+                alias = applications / "Xcode.app"
+                alias.symlink_to(selected, target_is_directory=True)
+                unrelated = applications / "Other.app"
+                unrelated.mkdir()
+                command_line_tools = root / "CommandLineTools"
+                command_line_tools.mkdir()
+                selected_path = (
+                    alias / "Contents/Developer"
+                    if valid_selection
+                    else command_line_tools
+                )
+                command = cleanup.replace("/Applications/", f"{applications}/")
+                self.assertNotIn("/Applications/", command)
+                # Only tool discovery and privilege elevation are replaced. The
+                # workflow deletes real disposable fixture directories.
+                commands = (
+                    'xcode-select() { printf "%s\\n" "$SELECTED_DEVELOPER"; };\n'
+                    'sudo() { "$@"; };\n'
+                    'xcodebuild() { test -d "$SELECTED_DEVELOPER"; };\n'
+                )
+                result = subprocess.run(
+                    ["bash", "-c", commands + command],
+                    env=os.environ | {"SELECTED_DEVELOPER": str(selected_path)},
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode == 0, valid_selection, result.stderr)
+                self.assertEqual(sentinel.read_text(), "selected toolchain")
+                self.assertTrue(alias.is_symlink())
+                self.assertTrue(unrelated.is_dir())
+                self.assertEqual(inactive.exists(), not valid_selection)
 
     def test_required_ci_contexts_fail_closed(self):
         workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
@@ -590,6 +690,74 @@ class ValidationTests(unittest.TestCase):
                     check=False,
                 )
                 self.assertEqual(completed.returncode == 0, result == "success")
+
+
+class TypeScriptArchitectureTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.script = self.root / "bin/lint-ts-architecture"
+        self.script.parent.mkdir()
+        shutil.copyfile(v.ROOT / "bin/lint-ts-architecture", self.script)
+        self.tools = self.root / "tools"
+        self.tools.mkdir()
+        self.bash = shutil.which("bash")
+        self.rg = shutil.which("rg")
+        self.assertIsNotNone(self.rg, "architecture tests require ripgrep")
+        (self.tools / "rg").symlink_to(self.rg)
+        self.source = "packages/pi-packages/pi-fixture/index.ts"
+        source = self.root / self.source
+        source.parent.mkdir(parents=True)
+        source.write_text("const count: number = 1;\n")
+
+    def run_gate(self, *paths):
+        return subprocess.run(
+            [self.bash, self.script, *paths],
+            env=os.environ | {"PATH": str(self.tools)},
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+    def test_scans_real_sources_and_reports_tool_and_count(self):
+        version = subprocess.check_output([self.rg, "--version"], text=True).splitlines()[0]
+        for source, status, diagnostic in (
+            ("const count: number = 1;\n", 0, "TS architecture lint passed"),
+            ("const count = input as any;\n", 1, "'as any' is forbidden"),
+            ('import other from "../pi-other/index";\n', 1, "cross-package relative import"),
+        ):
+            with self.subTest(source=source):
+                (self.root / self.source).write_text(source)
+                result = self.run_gate(self.source)
+                self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                self.assertIn(diagnostic, result.stdout + result.stderr)
+                self.assertIn(str(self.tools / "rg"), result.stdout)
+                self.assertIn(version, result.stdout)
+                self.assertIn("scanned 1 TypeScript files", result.stdout + result.stderr)
+
+    def test_missing_rg_is_not_a_clean_scan(self):
+        (self.tools / "rg").unlink()
+        result = self.run_gate(self.source)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("requires rg", result.stderr)
+        self.assertIn("nix shell .#validation-tools", result.stderr)
+        self.assertNotIn("lint passed", result.stdout)
+
+    def test_scan_error_is_not_a_clean_scan(self):
+        (self.tools / "rg").unlink()
+        command = self.tools / "rg"
+        command.write_text(
+            f'#!{self.bash}\n'
+            f'if [[ "$1" == --version ]]; then exec "{self.rg}" --version; fi\n'
+            'printf "fixture scan error\\n" >&2\nexit 2\n'
+        )
+        command.chmod(0o755)
+        result = self.run_gate(self.source)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("scan failed", result.stderr)
+        self.assertIn("fixture scan error", result.stderr)
+        self.assertNotIn("lint passed", result.stdout)
 
 
 class NucDeploymentWorkflowTests(unittest.TestCase):

@@ -2,4 +2,5 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "$0")/.." && pwd)
+cd -- "$root"
 exec "$root/bin/hey" check --worktree

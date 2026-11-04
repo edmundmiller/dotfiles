@@ -17,6 +17,10 @@
     "doom_loop": "deny",
     "bash": {
       "*": "allow",
+      // Task runners execute mutable project code, not a globally guarded dispatcher.
+      // Conservative substring matches also cover paths, quotes, and compound commands.
+      "*hey*": "ask",
+      "*mise*": "ask",
       "*darwin-rebuild*switch*": "deny",
       "*nixos-rebuild switch*": "deny",
       "*nixos-rebuild boot*": "deny",
@@ -112,16 +116,6 @@
       "*nix flake lock --update-input skills-catalog*": "deny",
       "acpx claude*": "allow",
       "*&& acpx claude*": "allow",
-      "hey re*": "allow",
-      "*&& hey re*": "allow",
-      "hey rebuild*": "allow",
-      "*&& hey rebuild*": "allow",
-      "hey nuc": "allow",
-      "hey deploy *": "allow",
-      "hey deploy-dry *": "allow",
-      "hey skills-update*": "allow",
-      "hey skills-sync*": "allow",
-      "hey gc*": "allow",
       "bd": "deny",
       "bd *": "deny",
       "*&& bd *": "deny",

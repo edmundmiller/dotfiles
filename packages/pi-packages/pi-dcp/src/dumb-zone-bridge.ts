@@ -17,5 +17,5 @@ const SIGNAL_KEY = "__piDumbZoneSignal";
 
 /** Read dumb zone signal. Returns undefined if pi-dumb-zone not loaded. */
 export function readDumbZoneSignal(): DumbZoneSignal | undefined {
-  return (globalThis as any)[SIGNAL_KEY];
+  return (globalThis as { [SIGNAL_KEY]?: DumbZoneSignal })[SIGNAL_KEY];
 }

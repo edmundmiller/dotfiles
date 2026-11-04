@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Validate source in a disposable snapshot, using the same runner as CI"
+#MISE raw_args=true
+#MISE raw=true
+set -euo pipefail
+exec python3 "${MISE_PROJECT_ROOT}/scripts/validation.py" "$@"

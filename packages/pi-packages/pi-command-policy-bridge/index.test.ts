@@ -2,7 +2,8 @@ import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { evaluateToolGuard } from "./index";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import commandPolicyBridge, { evaluateToolGuard } from "./index";
 
 const repoPolicyPath = join(import.meta.dir, "../../../config/pi/pi-permission-system.jsonc");
 
@@ -154,7 +155,7 @@ describe("pi-command-policy-bridge", () => {
     }
   });
 
-  it("allows bash policy ask rules without prompting", () => {
+  it("requires approval for bash policy ask rules", () => {
     const dir = mkdtempSync(join(tmpdir(), "pi-policy-test-"));
     const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
     const configPath = join(dir, "config.jsonc");
@@ -166,7 +167,7 @@ describe("pi-command-policy-bridge", () => {
         toolName: "bash",
         input: { command: "echo safe" },
       });
-      expect(decision.kind).toBe("allow");
+      expect(decision.kind).toBe("ask");
     } finally {
       if (previous === undefined) {
         delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
@@ -265,31 +266,109 @@ describe("pi-command-policy-bridge", () => {
     }
   });
 
-  it("repo policy allows blessed NUC validation commands", () => {
+  it("repo policy requires approval for project task runners through every shell tool", () => {
     const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
     process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
 
     try {
-      const allowed = [
-        "nix flake check",
+      const commands = [
+        "hey re",
+        "hey gc",
         "hey nuc-wt build",
         "hey nuc dry-activate",
         "hey deploy-check",
+        "mise run re",
+        "mise re",
+        "mise --cd /tmp/other run deploy nuc",
+        "env TEST=1 /usr/local/bin/mise run gc",
+        '"/usr/local/bin/mise" run re',
+        "echo first;hey re",
+        "echo first\nmise run re",
+        "br list && hey re",
+        "hey re && br list",
+        "hey",
+        "mise",
       ];
 
-      for (const command of allowed) {
-        const decision = evaluateToolGuard({
-          toolName: "bash",
-          input: { command },
-        });
-        expect(decision.kind).toBe("allow");
+      for (const command of commands) {
+        for (const toolName of [
+          "bash",
+          "exec_command",
+          "process",
+          "interactive_shell",
+          "herdr_run_in_pane",
+          "herdr_pane",
+        ]) {
+          const input = { command, cmd: command, action: toolName === "process" ? "start" : "run" };
+          expect(evaluateToolGuard({ toolName, input }).kind).toBe("ask");
+        }
       }
+      expect(
+        evaluateToolGuard({ toolName: "bash", input: { command: "nix flake check" } }).kind
+      ).toBe("allow");
+      expect(
+        evaluateToolGuard({ toolName: "bash", input: { command: "hey re && brew install foo" } })
+          .kind
+      ).toBe("deny");
     } finally {
       if (previous === undefined) {
         delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
       } else {
         process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
       }
+    }
+  });
+
+  it("executes ask commands only after explicit UI approval, including with yolo enabled", async () => {
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
+    type Handler = (
+      event: { toolName: string; input: { command: string } },
+      ctx: {
+        hasUI: boolean;
+        ui: { confirm(): Promise<boolean> };
+      }
+    ) => Promise<{ block: boolean; reason: string } | undefined>;
+    let handler: Handler | undefined;
+    const api: Partial<ExtensionAPI> = {
+      on(_name, callback) {
+        // SAFETY: The bridge registers only tool_call; the fixture supplies its consumed fields.
+        handler = callback as Handler;
+      },
+    };
+    // SAFETY: Registration is the only ExtensionAPI member the bridge uses.
+    commandPolicyBridge(api as ExtensionAPI);
+    if (!handler) throw new Error("tool_call was not registered");
+    try {
+      for (const [hasUI, approves, blocked] of [
+        [true, true, false],
+        [true, false, true],
+        [false, true, true],
+      ]) {
+        const result = await handler(
+          { toolName: "bash", input: { command: "mise run re" } },
+          {
+            hasUI,
+            ui: { confirm: async () => approves },
+          }
+        );
+        expect(result?.block ?? false).toBe(blocked);
+      }
+      const failedDialog = await handler(
+        { toolName: "bash", input: { command: "mise run re" } },
+        {
+          hasUI: true,
+          ui: {
+            confirm: async () => {
+              throw new Error("UI disconnected");
+            },
+          },
+        }
+      );
+      expect(failedDialog?.block).toBe(true);
+    } finally {
+      if (previous === undefined) delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+      else process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
     }
   });
 });

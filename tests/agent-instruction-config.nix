@@ -6,7 +6,7 @@
 }:
 let
   moduleLib = lib // {
-    my = import ../lib/options.nix { inherit lib; };
+    my = (import ../lib/options.nix { inherit lib; }) // (import ../lib/jsonc.nix { inherit lib; });
     hm.dag.entryAfter = after: data: { inherit after data; };
   };
   config = {
@@ -24,6 +24,16 @@ let
           pi = {
             enable = true;
             classifierModel = null;
+            extraPackages = [ ];
+            enabledModels = [ ];
+            defaultProvider = null;
+            defaultModel = null;
+            computerUse.enable = false;
+            gitTools.enable = false;
+            statusUi.enable = false;
+            contextMemory.enable = false;
+            cursorSdk.enable = false;
+            honcho.enable = false;
           };
           claude = {
             enable = true;
@@ -31,10 +41,15 @@ let
           };
         };
       desktop.term.ghostty.enable = false;
+      shell.herdr = {
+        enable = false;
+        backend = "native";
+      };
+      shell.tmux.enable = false;
     };
   };
-  # Only force instruction files and the compatibility activation, not packages
-  # or unrelated runtime settings. These modules return mkIf enable bodies.
+  # Force instructions and Pi approval deployment, not package builds or secrets.
+  # These modules return mkIf enable bodies.
   load =
     name:
     let
@@ -43,6 +58,8 @@ let
           inherit config inputs;
           lib = moduleLib;
           pkgs.coreutils = coreutils;
+          pkgs.my.pi-github-tools = "/fixture/pi-github-tools";
+          pkgs.my.herdr.version = "0.9.1";
           isDarwin = false;
         }).config;
     in
@@ -62,11 +79,16 @@ in
     ".codex/AGENTS.md" = (load "codex").home.file.".codex/AGENTS.md".text;
     ".claude/CLAUDE.md" = (load "claude").home.file.".claude/CLAUDE.md".text;
     ".pi/agent/AGENTS.md" = (home "pi").home.file.".pi/agent/AGENTS.md".text;
-    ".config/opencode2/opencode/AGENTS.md" =
+    ".config/opencode/AGENTS.md" =
       builtins.readFile
-        (home "opencode").xdg.configFile."opencode2/opencode/AGENTS.md".source;
+        (home "opencode").xdg.configFile."opencode/AGENTS.md".source;
   };
   ompRules = lib.filter (lib.hasPrefix ".omp/agent/rules/") (builtins.attrNames files);
   fixAgentsPrompt = builtins.readFile files.".omp/agent/commands/fix-agents-md.md".source;
-  opencodeCompatibility = (home "opencode").home.activation.opencode-v1-cleanup.data;
+  piApproval = {
+    settings = builtins.fromJSON (home "pi").home.file.".pi/agent/settings.json".text;
+    policy = (home "pi").home.file.".pi/agent/extensions/pi-permission-system/config.json";
+    bridge = toString (home "pi").home.file.".pi/agent/packages/pi-command-policy-bridge".source;
+    configPath = (load "pi").env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+  };
 }

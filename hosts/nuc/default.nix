@@ -2632,10 +2632,6 @@ in
       sonarr.enable = true;
       deploy-rs.enable = true;
       mosh.enable = true;
-      moshi = {
-        enable = true;
-        hookSecretsFile = config.age.secrets.moshi-hook-secrets-json.path;
-      };
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;

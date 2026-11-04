@@ -8,6 +8,10 @@ update_when: Validation routing, check ownership, or CI jobs change.
 
 # Start with `hey check`
 
+`mise run check` is the primary task; `hey check` is its compatibility spelling.
+Both run `mise-tasks/check`, which delegates to the same Python runner as CI.
+Run them inside the checkout, or use `mise --cd <checkout> run check`.
+
 | Command                            | Scope                                                                              |
 | ---------------------------------- | ---------------------------------------------------------------------------------- |
 | `hey check`                        | Changed files, affected repository tests, Pi/OMP packages and dependents           |
@@ -65,7 +69,20 @@ VMs stay manual. Platform commands never activate or deploy a host.
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
-evaluation, so Linux cannot certify this check. The CI job uses ARM64 `macos-15`.
+evaluation, so Linux cannot certify this check. The CI job uses ARM64 macOS 27
+through GitHub's `xcode-27` runner image. After installing Nix, it resolves the
+documented `/Applications/Xcode_27.2.app` alias to its real application and runs
+`hey xcode-setup` to prepare Metal and select it, then checks `metallib`. The
+current image provides 27.2 as a release candidate with multiple symlink aliases.
+CI's default 27.1 failed Metal discovery as a Nix build user even with
+the component installed; uncached and SDK-independent lookup also failed.
+After selection, it removes only inactive Xcode application directories to leave
+room for the host builds. It resolves the selected toolchain's real path and
+preserves that application and all application symlinks; it does not clean
+developer machines or the NUC. Hex still requires the full host toolchain.
+A separate Nix derivation checks tool discovery and runs Metal as a build user,
+with the host SDK selected. Failures print the component status and raw tool
+errors before the expensive host builds; runner-user success is not sufficient.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
 required status. The required `Flake Check (Linux)` and `Check Formatting`
 compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
@@ -162,8 +179,10 @@ separate: it clones upstream, applies carried patches and runs upstream tests.
 
 ## Hooks and migration
 
-Commit hooks retain fast formatting/lint. Expensive OMP checks now belong to
-the shared runner instead of forcing an OMP build just to create hook config.
+Commit hooks retain fast formatting/lint. Shared agent instruction checks run
+without installing a model harness. OMP is disabled on all configured hosts;
+its package exports and runtime/config-registry checks are retired. Its source
+configuration remains for reference, and existing session data is untouched.
 Pre-push safety (identity, submodules, HA assertions, runtime drift), Beads sync,
 and deployment guards remain separate from source validation. Commit/push hooks
 can mutate supported state; `hey check` does not run those stages.

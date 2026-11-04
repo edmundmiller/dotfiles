@@ -5,7 +5,7 @@ description: Runs Herdr task workspaces with the selected agent, jj, Hunk, and d
 
 # Herdr + jj task workflow
 
-Use one durable Herdr workspace per issue, PR, or task. Share one stable name across the checkout, jj workspace, jj bookmark, Herdr workspace label, and PR head:
+Use one durable Herdr workspace per issue, PR, or task. Share one stable name across the checkout, jj workspace, jj bookmark, Herdr workspace label, and PR head when a PR exists:
 
 - `issue-N-slug`
 - `pr-N-slug`
@@ -69,22 +69,18 @@ This conversion applies only to an existing jj workspace. Never run `jj git init
 
 ## Publish
 
-On explicit `publish`:
+On explicit `publish`, load `done` and follow only its authorized publication stages. Preserve this skill's review and commit approval gates, task bookmark, and jj-only mutation rules. Do not turn branch publication into landing or cleanup.
 
-1. Verify any stacked parent is reviewed, pushed, and has a PR.
-2. Run `jj git fetch`.
-3. Rebase only the task stack: `jj rebase -b <task-name> -o <base>`.
-4. Resolve conflicts, rerun focused checks, and refresh the review surface.
-5. Run `jj bookmark set <task-name> -r @` and `jj git push --bookmark <task-name>`.
-6. Create or update the PR. A stacked PR targets its parent bookmark; otherwise it targets the repository default branch.
+Create or update a PR only when explicitly requested or required by repository policy or protected-branch rules. For stacked publication, verify the parent is reviewed and published; require a parent PR only for the PR path. A stacked PR targets its parent bookmark; otherwise it targets the repository default branch.
 
 ## Ship
 
-On explicit `ship`, verify recorded review approval and CI, then enable auto-merge. Ask before changing code to fix CI. After a parent PR merges, rebase and retarget each child from its own workspace.
+On explicit `ship`, load `done` for landing, authoritative remote proof, receipts, and safe cleanup. Preserve recorded review approval and this skill's commit approval gates. Follow `done`'s direct-landing default unless a PR is explicitly requested or required; do not substitute deferred auto-merge for proved landing. Keep CI repair within `done`'s bounded authority. After a parent lands, rebase each child from its own workspace and retarget any child PR as needed.
 
 ## Cleanup and abandon
 
 - `prefix+d` removes only a clean secondary workspace whose PR is closed or merged.
+- A verified direct landing can satisfy `done`'s landing requirement without a PR. Use only a supported guarded cleanup path; if the installed plugin cannot accept that proof, report `Landed; cleanup deferred` rather than bypassing its guard.
 - `prefix+D` is the explicit abandon path. It still requires a clean workspace and exact typed task-name confirmation.
 - Never remove the main jj workspace. Never clean up work that is changed, ambiguous, or still under an open PR.
 - Keep the plugin's guarded cleanup. Its `jj workspace forget` also unregisters the corresponding Git worktree before directory removal. Do not bypass it with `git worktree remove` or an unguarded `jj workspace remove`.
