@@ -67,7 +67,7 @@ let
 
     # Eight Sleep alarm/service entities. sleepStage is the service target for
     # eight_sleep.set_one_off_alarm / dismiss_alarm / side_off calls.
-    alarmSwitch = "switch.edmund_s_eight_sleep_next_alarm";
+    alarmSwitch = "switch.edmund_s_eight_sleep_side_next_alarm";
     sleepStage = "sensor.edmund_s_eight_sleep_side_sleep_stage";
   };
 
@@ -97,7 +97,7 @@ let
     awake = "input_boolean.monica_awake";
 
     # Eight Sleep alarm/service entities.
-    alarmSwitch = "switch.monica_s_eight_sleep_next_alarm";
+    alarmSwitch = "switch.monica_s_eight_sleep_side_next_alarm";
     sleepStage = "sensor.monica_s_eight_sleep_side_sleep_stage";
   };
 

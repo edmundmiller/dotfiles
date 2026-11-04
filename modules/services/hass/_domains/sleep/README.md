@@ -144,6 +144,10 @@ one-minute setting, then accelerates the timer to one second for cancellation,
 chapter-change, either-speaker, and non-bedtime playback checks. Pass the automation
 JSON as its first argument using a Python environment with Home Assistant installed.
 
+On x86_64 Linux, `hey check modules/services/hass` runs this test and the Good
+Morning tests through `ha-behavior-tests`, using the merged NUC configuration
+and the pinned Home Assistant package in a Nix sandbox.
+
 Export only this domain's automation from the repository root (no host evaluation):
 
 ```sh
@@ -265,13 +269,14 @@ Current active integrations:
 
 ### 8Sleep
 
-| Entity                                                 | Notes                                |
-| ------------------------------------------------------ | ------------------------------------ |
-| `sensor.edmund_s_eight_sleep_side_sleep_stage`         | Service target for alarm calls       |
-| `sensor.edmund_s_eight_sleep_side_next_alarm`          | Latest wake / smart-alarm window end |
-| `switch.edmund_s_eight_sleep_side_next_alarm`          | Alarm switch, currently unavailable  |
-| `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)            |
-| `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)            |
+| Entity                                                 | Notes                                 |
+| ------------------------------------------------------ | ------------------------------------- |
+| `sensor.edmund_s_eight_sleep_side_sleep_stage`         | Service target for alarm calls        |
+| `sensor.edmund_s_eight_sleep_side_next_alarm`          | Latest wake / smart-alarm window end  |
+| `switch.edmund_s_eight_sleep_side_next_alarm`          | Enable or disable Edmund's next alarm |
+| `switch.monica_s_eight_sleep_side_next_alarm`          | Enable or disable Monica's next alarm |
+| `binary_sensor.edmund_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)             |
+| `binary_sensor.monica_s_eight_sleep_side_bed_presence` | Bed presence (unreliable)             |
 
 ### iPhone Sensors
 

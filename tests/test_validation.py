@@ -121,6 +121,38 @@ class ValidationTests(unittest.TestCase):
                 self.write(path, "changed")
                 self.assertIn("agent-mcp-tests", self.selection(path)["checks"])
 
+    def test_ha_changes_select_linux_contract_and_runtime_checks(self):
+        checks = {"ha-automation-assertions", "ha-behavior-tests"}
+        paths = (
+            "modules/services/hass/_domains/aranet.nix",
+            "modules/services/hass/_tests/test_good_morning.py",
+            "hosts/nuc/default.nix",
+            "scripts/validation.py",
+        )
+        with (
+            patch.object(v.platform, "system", return_value="Linux"),
+            patch.object(v.platform, "machine", return_value="x86_64"),
+            patch.dict(os.environ, {"VALIDATION_BASE": "origin/main"}),
+        ):
+            for path in paths:
+                with self.subTest(path=path):
+                    self.write(path, "changed")
+                    self.assertTrue(checks <= set(self.selection(path)["checks"]))
+                    self.assertTrue(checks <= set(self.selection("--ci", path)["checks"]))
+            self.write("docs/unrelated.md", "changed")
+            self.assertFalse(checks & set(self.selection("docs/unrelated.md")["checks"]))
+            self.assertFalse(checks & set(self.selection("--packages-only")["checks"]))
+            self.assertTrue(checks <= set(self.selection("--full")["checks"]))
+
+        for system, machine in (("Darwin", "arm64"), ("Linux", "aarch64")):
+            with (
+                self.subTest(system=system, machine=machine),
+                patch.object(v.platform, "system", return_value=system),
+                patch.object(v.platform, "machine", return_value=machine),
+            ):
+                self.assertFalse(checks & set(self.selection(paths[0])["checks"]))
+                self.assertFalse(checks & set(self.selection("--full")["checks"]))
+
     def test_flue_and_repair_changes_select_observability_and_policy(self):
         for path in (
             ".flue/observability.ts",

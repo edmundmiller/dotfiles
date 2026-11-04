@@ -1,17 +1,11 @@
 # Aranet4 CO2 sensor — air quality monitoring + ventilation alerts
 # Integration: built-in HA Bluetooth/Aranet
 # Sensors: CO2 (ppm), temperature, humidity, pressure, battery
-#
-# Entity IDs: update ARANET_PREFIX to match your device MAC-derived suffix
-# (find in HA → Developer Tools → States, filter by "aranet4")
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 
-  # Update this to match your Aranet4 entity prefix
-  # e.g. sensor.aranet4_ab12cd_carbon_dioxide → prefix is "aranet4_ab12cd"
-  prefix = "aranet4_XXXXXX";
-  co2 = "sensor.${prefix}_carbon_dioxide";
+  co2 = "sensor.aranet4_bedroom_carbon_dioxide";
 
   # CO2 thresholds (ppm)
   thresholdWarn = 1000; # Elevated — consider ventilating

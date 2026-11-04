@@ -182,6 +182,19 @@ if sys.platform == "linux":
         "hosts/unas/*",
     ]
 
+LINUX_CHECKS = {
+    "ha-automation-assertions": [
+        "modules/services/hass/*",
+        "hosts/nuc/*",
+        "scripts/validation.py",
+    ],
+    "ha-behavior-tests": [
+        "modules/services/hass/*",
+        "hosts/nuc/*",
+        "scripts/validation.py",
+    ],
+}
+
 DARWIN_CHECKS = [
     "rex-package-wiring",
     "mactraitor-fail-closed-activation",
@@ -379,9 +392,12 @@ def plan(root, args):
         }
     checks = []
     if not args.packages_only:
+        available_checks = CHECKS
+        if platform.system() == "Linux" and platform.machine() == "x86_64":
+            available_checks = CHECKS | LINUX_CHECKS
         checks = [
             name
-            for name, patterns in CHECKS.items()
+            for name, patterns in available_checks.items()
             if args.full
             or matches(
                 files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"]

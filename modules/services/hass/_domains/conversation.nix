@@ -199,7 +199,7 @@ _: {
         action = [
           {
             action = "media_player.media_pause";
-            target.entity_id = "media_player.tv";
+            target.entity_id = "media_player.living_room";
           }
         ];
       };
@@ -208,7 +208,7 @@ _: {
         action = [
           {
             action = "media_player.media_play";
-            target.entity_id = "media_player.tv";
+            target.entity_id = "media_player.living_room";
           }
         ];
       };

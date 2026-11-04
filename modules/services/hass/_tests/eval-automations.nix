@@ -1232,6 +1232,33 @@ let
     }
     {
       test =
+        hasActionTarget haConfig.intent_script.PauseTv.action "media_player.media_pause"
+          "media_player.living_room"
+        &&
+          hasActionTarget haConfig.intent_script.ResumeTv.action "media_player.media_play"
+            "media_player.living_room";
+      msg = "Voice TV playback must target the Living Room Apple TV, not the unavailable Cast TV";
+    }
+    {
+      test =
+        builtins.all
+          (
+            id:
+            let
+              automation = findAutomation id;
+            in
+            automation != null
+            && (automation.trigger.entity_id or null) == "sensor.aranet4_bedroom_carbon_dioxide"
+          )
+          [
+            "co2_elevated"
+            "co2_poor"
+            "co2_cleared"
+          ];
+      msg = "CO2 alerts must use the verified bedroom Aranet sensor, not a placeholder";
+    }
+    {
+      test =
         let
           tvOnSequence = toList (tvOnScript.sequence or [ ]);
           tvOffSequence = toList (tvOffScript.sequence or [ ]);
@@ -1281,6 +1308,15 @@ let
     {
       test = sleepFocusOffMonica != null;
       msg = "automation 'sleep_focus_off_stop_monica' missing";
+    }
+    {
+      test =
+        hasActionTarget (toList sleepFocusOffEdmund.action) "switch.turn_off"
+          "switch.edmund_s_eight_sleep_side_next_alarm"
+        &&
+          hasActionTarget (toList sleepFocusOffMonica.action) "switch.turn_off"
+            "switch.monica_s_eight_sleep_side_next_alarm";
+      msg = "Sleep Focus exit must cancel each person's verified Eight Sleep side alarm switch";
     }
     {
       test =
