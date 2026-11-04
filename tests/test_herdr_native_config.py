@@ -149,6 +149,21 @@ def test_template_changes_are_reapplied(native_config):
     assert json.loads((home / "settings.json").read_text())["sounds"]["enabled"] is True
 
 
+def test_desktop_layout_switches_preserve_other_shortcuts(tmp_path):
+    home = tmp_path / "app"
+    home.mkdir()
+    (home / "keys.json").write_text(
+        json.dumps({"terminal": {"ctrl-shift-c": "terminal.copy"}})
+    )
+    result = reconcile(home, ROOT / "config/herdr/native")
+    assert result.returncode == 0, result.stderr
+    keys = json.loads((home / "keys.json").read_text())
+    assert keys["layout:main"]["ctrl-shift-l"] == "layout.switch:herdr-t3"
+    assert keys["layout:herdr-t3"]["ctrl-shift-l"] == "layout.switch:main"
+    assert keys["global"]["ctrl-c"] == "mod.open:dotfiles-prefix"
+    assert keys["terminal"]["ctrl-shift-c"] == "terminal.copy"
+
+
 @pytest.mark.parametrize("damage", ["missing", "invalid"])
 def test_bad_template_fails_without_creating_preferences(native_config, damage):
     home, source = native_config

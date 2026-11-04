@@ -11,6 +11,7 @@ import {
   props,
   run,
   spaces,
+  shared,
   theme,
   nextCommand,
 } from "herdr";
@@ -128,13 +129,16 @@ export default class DotfilesPrefix extends View {
 
   render() {
     const t = theme();
+    const bindings = prefixBindings.filter(
+      (item) => !item.layout || item.layout === shared("layout")
+    );
     return v_flex()
       .id("dotfiles-prefix")
       .track_focus(this.handle)
       .on_key_down((event, cx) => {
         cx.stop_propagation();
         const key = normalizePrefixKey(event);
-        const binding = prefixBindings.find((item) => item.key === key);
+        const binding = bindings.find((item) => item.key === key);
         if (binding) this.activate(binding, cx);
         else {
           this.message = `No native binding for ${key}. Esc cancels.`;
@@ -153,7 +157,7 @@ export default class DotfilesPrefix extends View {
           .max_h(440)
           .overflow_y_scrollbar()
           .children(
-            prefixBindings
+            bindings
               .filter((item) => item.label)
               .map((item) =>
                 h_flex()

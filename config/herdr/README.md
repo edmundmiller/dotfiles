@@ -61,6 +61,18 @@ pane borders. Shipped layouts remain unchanged. Sounds stay off, with the old
 Submarine done-sound path retained. Native Herdr cannot inherit Ghostty's
 `terminal` theme.
 
+App-enabled hosts also receive [Herdr T3](native/t3/README.md), with its seven
+mods and preview. Ctrl+Shift+L alternates between the shipped default `main`
+layout and `herdr-t3`. Other layouts remain available in Settings, but are not
+in this shortcut's cycle. Activation does not change the currently shown layout.
+
+In T3, press Ctrl+C, release, then Shift+B for Spaces/Agents or Focus, Shift+A
+for single-agent view, or Shift+S to settle/unsettle the focused agent while
+Focus is shown. These actions appear in the prefix menu only in T3. Lowercase
+`b` still hides/shows the sidebar and `s` still splits down. The optional T3
+theme and pulls.review extra are not installed. Servers receive none of these
+app files.
+
 Bindings without a native equivalent remain unmapped: reload-config, last-pane,
 resize mode, edit-scrollback, file-viewer-in-tab, jj workspace lifecycle,
 Projects, smart rename, timeline, GitHub plugin actions, embedded browser and
@@ -201,6 +213,11 @@ For CLI-driven verification, `herdr-app do mod.open --name dotfiles-prefix`
 toggles the menu. Inspect `herdr-app shot /tmp/herdr-prefix.png`, then close the
 menu with Escape. A passing source check or an empty status error list alone
 is not proof that the installed menu loads.
+
+The T3 mods use the same whole-directory links. If T3 was installed manually,
+preserve those directories and layout files as backups before the first managed
+activation. Do not delete them to bypass a Home Manager collision. Existing
+layout click state, pins, folds and terminal labels stay app-owned.
 
 ## Legacy TUI backend
 

@@ -72,6 +72,17 @@ let
     && activation cfg ? herdr-native-core
     && activation cfg ? herdr-native-config
     && cfg.home.configFile ? "herdr-app/mods/dotfiles-dev"
+    && cfg.home.configFile ? "herdr-app/layouts/herdr-t3.json"
+    && cfg.home.configFile ? "herdr-app/layouts/herdr-t3.svg"
+    && lib.all (name: cfg.home.configFile ? "herdr-app/mods/${name}") [
+      "t3-agents"
+      "t3-chrome"
+      "t3-focus"
+      "t3-new-menu"
+      "t3-pane"
+      "t3-spaces"
+      "t3-tabs"
+    ]
     && builtins.elem "herdr-dev" (map lib.getName cfg.user.packages);
   coreOnly =
     cfg:
