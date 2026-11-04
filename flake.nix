@@ -519,7 +519,7 @@
           };
 
           unas = {
-            hostname = "192.168.1.101";
+            hostname = "192.168.1.206";
             sshUser = "emiller";
             user = "root";
             interactiveSudo = false;
@@ -1966,6 +1966,31 @@
                 nixosConfig = self.nixosConfigurations.nuc;
                 inherit pkgs;
               };
+            }
+            // lib.optionalAttrs (system == "x86_64-linux") {
+              unas-recovery =
+                pkgs.runCommand "unas-recovery-check"
+                  {
+                    nativeBuildInputs = with pkgs; [
+                      bash
+                      bubblewrap
+                      coreutils
+                      findutils
+                      gnugrep
+                      gnused
+                      gnutar
+                      gzip
+                      inetutils
+                      nix
+                      python3
+                      util-linux
+                    ];
+                  }
+                  ''
+                    cd ${./.}
+                    bash bin/tests/unas-recover.bash
+                    touch "$out"
+                  '';
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.
             # They need QEMU, so x86_64-linux only — run on NUC or a Linux builder.

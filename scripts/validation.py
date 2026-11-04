@@ -156,6 +156,14 @@ CHECKS = {
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
 }
 
+# Recovery runs real Nix profiles inside Linux user/mount namespaces, not a VM.
+if sys.platform == "linux":
+    CHECKS["unas-recovery"] = [
+        "bin/unas-recover*",
+        "bin/tests/unas-recover.bash",
+        "hosts/unas/*",
+    ]
+
 DARWIN_CHECKS = [
     "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
