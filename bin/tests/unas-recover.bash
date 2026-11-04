@@ -17,7 +17,9 @@ if [[ ${1:-} != --inside ]]; then
   fi
   for test_case in "$@"; do
     mkdir -p "$work/$test_case/root/boot"
-    bwrap --unshare-all --uid 0 --gid 0 --cap-add CAP_SYS_CHROOT --hostname unas-rescue \
+    # Share only unshare's fresh network namespace, without configuring loopback.
+    unshare --user --map-root-user --net -- \
+      bwrap --unshare-all --share-net --uid 0 --gid 0 --cap-add CAP_SYS_CHROOT --hostname unas-rescue \
       --ro-bind /nix/store /nix/store --ro-bind "$repo" "$repo" \
       --ro-bind "$(command -v bash)" /bin/sh \
       --ro-bind /etc/passwd /etc/passwd --ro-bind /etc/group /etc/group \
@@ -31,6 +33,7 @@ if [[ ${1:-} != --inside ]]; then
 fi
 
 scenario=$2
+python3 -c 'import socket; assert {name for _, name in socket.if_nameindex()} == {"lo"}, "test networking is not isolated"'
 mkdir -p /tmp/{home,bin} /tmp/root/{etc/ssh,home/emiller/.ssh,nix/var/nix/profiles}
 export NIX_CONFIG=$'build-users-group =\nexperimental-features = nix-command flakes'
 export PATH="/tmp/bin:$PATH"

@@ -1983,6 +1983,7 @@
                       inetutils
                       nix
                       python3
+                      util-linux
                     ];
                   }
                   ''
