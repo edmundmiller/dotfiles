@@ -4,8 +4,9 @@
 `~/.claude/CLAUDE.md`, and shared modes as `~/.claude/agents/`.
 
 Settings are a writable bootstrap from `config/claude/settings.json`, preserving
-Herdr/runtime hooks. Pstack uses the child flake's pinned input as a local
-`cursor-plugins` marketplace. Do not restore retired DuckDB, Plannotator, or WakaTime plugins.
+Herdr/runtime hooks and plugin entries that are absent from the template.
+Template plugin keys win. Do not restore retired DuckDB, Plannotator, or WakaTime plugins.
+The bootstrap drops those entries when an old settings file still has them.
 See [pstack integration](../../../docs/agents/pstack.md) for usage and pin updates.
 
 `modules.agents.claude.pstack.enable` defaults to the full module's enable flag.

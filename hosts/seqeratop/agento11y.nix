@@ -12,10 +12,11 @@
           [
             "codex-config-bootstrap"
             # claude-settings-bootstrap rewrites ~/.claude/settings.json from the
-            # repo template and keeps only the existing hooks block. The Claude
-            # plugin records itself under enabledPlugins and
-            # extraKnownMarketplaces there, so install after that rewrite or every
-            # rebuild would disable it.
+            # repo template. It keeps hooks and plugin entries that are not in
+            # the template. Install still runs after that rewrite. agento11y
+            # claude install returns already_installed when
+            # installed_plugins.json already lists the plugin and does not
+            # write enabledPlugins, so enable the plugin explicitly afterward.
             "claude-settings-bootstrap"
           ]
           ''
@@ -39,6 +40,11 @@
               # to this pinned binary.
               PATH="${pkgs.llm-agents.claude-code}/bin:$PATH" \
                 ${pkgs.my.agento11y}/bin/agento11y claude install --json
+              if ! ${pkgs.llm-agents.claude-code}/bin/claude plugin enable \
+                agento11y-claude-code@agento11y; then
+                echo "ERROR: failed to enable Claude Code plugin agento11y-claude-code@agento11y" >&2
+                exit 1
+              fi
 
               ${pkgs.my.agento11y}/bin/agento11y agents reconcile --agents cursor --json
             )
