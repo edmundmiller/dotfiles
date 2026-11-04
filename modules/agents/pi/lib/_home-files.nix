@@ -4,7 +4,9 @@
   agentCore,
   piPkgDeps,
   piPstack,
+  piCommandPolicyBridge,
   piSettingsValidated,
+  piPermissionSystemConfig,
   promptLinks,
   agentLinks,
   sessionSearchFiles,
@@ -17,6 +19,13 @@ promptLinks
   ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
+  ".pi/agent/extensions/pi-permission-system/config.json" = {
+    text = piPermissionSystemConfig;
+    # The extension saves toggles by replacing this symlink. Reclaim the
+    # repository-owned policy on activation without accumulating backup files.
+    force = true;
+  };
+  ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
   ".pi/agent/packages/pstack-pi".source = piPstack;
 }
 // sessionSearchFiles

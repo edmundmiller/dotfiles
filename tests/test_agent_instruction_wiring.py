@@ -52,6 +52,21 @@ class AgentInstructionWiringTests(unittest.TestCase):
                 raise RuntimeError(result.stderr)
             cls.deployed = json.loads(result.stdout)
 
+    def test_pi_approval_packages_and_policy_are_deployed_together(self) -> None:
+        approval = self.deployed["piApproval"]
+        packages = approval["settings"]["packages"]
+        self.assertIn("npm:@gotgenes/pi-permission-system@42.0.0", packages)
+        self.assertIn("~/.pi/agent/packages/pi-command-policy-bridge", packages)
+        self.assertTrue(approval["bridge"].endswith("pi-command-policy-bridge"))
+        self.assertEqual(
+            approval["configPath"],
+            "$HOME/.pi/agent/extensions/pi-permission-system/config.json",
+        )
+        self.assertTrue(approval["policy"]["force"])
+        policy = json.loads(approval["policy"]["text"])
+        self.assertEqual(policy["permission"]["bash"]["*hey*"], "ask")
+        self.assertEqual(policy["permission"]["bash"]["*mise*"], "ask")
+
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())
