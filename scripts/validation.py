@@ -52,6 +52,12 @@ CHECKS = {
         ".flue/*",
         ".github/workflows/renovate-patch-repair.yml",
         "tests/test_package_policy.py",
+        "tests/test_oxlint_jev.py",
+    ],
+    "oxlint-jev": [
+        "packages/oxlint-plugin-jev/*",
+        "docs/agents/oxlint.md",
+        "tests/test_oxlint_jev.py",
     ],
     "hunk-config-compatibility": [
         "config/hunk/*",
@@ -70,6 +76,7 @@ CHECKS = {
         "docs/README.md",
         "docs/agent-guardrails.md",
         "docs/validation.md",
+        "docs/agents/oxlint.md",
     ],
     "tldraw-api-tests": [
         "config/tldraw/*",

@@ -31,6 +31,8 @@ their inventories.
 - Writing: load [unslop](skills/catalog/unslop/SKILL.md) when drafting
   user-visible prose. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).
+- Oxlint: default hook is anti-slop. Opt-in English Jev rules:
+  [docs/agents/oxlint.md](docs/agents/oxlint.md).
 - Packages/overlays: use their scoped guides; `pkg-list` shows harnessed units.
 - Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped
   guide; [NUC runbook](docs/runbooks/deploy-nuc.md) for remote deployment.
