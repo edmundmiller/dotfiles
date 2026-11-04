@@ -1,0 +1,164 @@
+{
+  "id": "root",
+  "cloned_from": {
+    "name": "main",
+    "version": "0.1.10"
+  },
+  "type": "row",
+  "preview": "layouts/herdr-t3.svg",
+  "divider": { "width": 1, "color": "border" },
+  "children": [
+    {
+      "id": "sidebar",
+      "type": "column",
+      "children": [
+        {
+          "id": "brand",
+          "type": "block",
+          "content": {
+            "mod": "t3-chrome"
+          },
+          "size": {
+            "px": 40
+          },
+          "window_drag": true
+        },
+        {
+          "id": "sidebar-lists",
+          "type": "stack",
+          "active": "lists",
+          "children": [
+            {
+              "id": "lists",
+              "type": "column",
+              "children": [
+                {
+                  "id": "spaces",
+                  "type": "block",
+                  "size": { "weight": 1 },
+                  "min": 90,
+                  "content": { "mod": "t3-spaces" }
+                },
+                {
+                  "id": "agents",
+                  "type": "block",
+                  "size": { "weight": 1 },
+                  "min": 90,
+                  "content": { "mod": "t3-agents" }
+                }
+              ]
+            },
+            {
+              "id": "focus",
+              "type": "block",
+              "content": { "mod": "t3-focus", "props": { "newMenu": "t3-new-menu" } }
+            }
+          ]
+        },
+        {
+          "id": "sidebar-footer",
+          "type": "block",
+          "content": {
+            "mod": "t3-chrome",
+            "props": {
+              "footer": true
+            }
+          },
+          "size": {
+            "px": 41
+          }
+        }
+      ],
+      "size": {
+        "px": 256
+      },
+      "min": 208,
+      "max": 480,
+      "background": "chrome",
+      "resizable": false
+    },
+    {
+      "id": "work",
+      "type": "column",
+      "children": [
+        {
+          "id": "tabs",
+          "type": "block",
+          "size": { "px": 40 },
+          "window_drag": true,
+          "content": { "mod": "t3-tabs" }
+        },
+        {
+          "id": "work-body",
+          "type": "row",
+          "children": [
+            {
+              "id": "view",
+              "type": "stack",
+              "active": "main",
+              "children": [
+                {
+                  "id": "main",
+                  "type": "block",
+                  "content": {
+                    "tab": "active",
+                    "pane": {
+                      "header": {
+                        "content": {
+                          "mod": "t3-pane"
+                        },
+                        "reveal": "always",
+                        "height": 28,
+                        "position": "top"
+                      },
+                      "background": "background",
+                      "border": {
+                        "width": 2,
+                        "color": "background"
+                      },
+                      "focus": {
+                        "width": 2,
+                        "color": "background"
+                      },
+                      "radius": 8,
+                      "gap": 8,
+                      "lone": true
+                    }
+                  }
+                },
+                {
+                  "id": "agent",
+                  "type": "block",
+                  "content": { "agent": "focused" },
+                  "background": "background",
+                  "radius": 8
+                }
+              ]
+            }
+          ],
+          "padding": [2, 8],
+          "gap": 8
+        },
+        {
+          "id": "work-bottom-inset",
+          "type": "row",
+          "children": [],
+          "size": { "px": 6 }
+        },
+        {
+          "id": "status",
+          "type": "block",
+          "hidden": true,
+          "size": { "px": 28 },
+          "content": { "mod": "workspace-status" }
+        }
+      ],
+      "resizable": false
+    }
+  ],
+  "background": "canvas",
+  "terminal_opacity": 0,
+  "terminal_padding": [8, 0],
+  "titlebar": "none",
+  "traffic_lights": [16, 13]
+}

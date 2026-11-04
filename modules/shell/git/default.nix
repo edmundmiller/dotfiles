@@ -257,7 +257,6 @@ in
           }
           // optionalAttrs cfg.hunk.enable {
             "hunk/config.toml".text = hunkConfigText;
-            "hunk/extensions/hunk-commit-log".source = inputs.hunk-commit-log;
           };
         };
 

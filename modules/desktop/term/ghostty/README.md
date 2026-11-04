@@ -105,10 +105,27 @@ Use `mkBefore` to prepend or `mkAfter` to append relative to other modules.
 
 ## Startup Ownership
 
-Ghostty should have exactly one workspace owner:
+Ghostty opens a plain shell on macOS. When Herdr is enabled with
+`modules.shell.herdr.backend = "native"`, Ghostty also opens a plain shell on
+Linux and uses terminal tab bindings instead of tmux prefix bindings.
 
-- If Herdr is enabled, Ghostty starts `~/.config/tmux/open-herdr.sh` and Herdr owns the terminal. The Herdr launcher must not fall back to tmux; otherwise a failed/exited Herdr launch can attach tmux and allow Herdr to be started inside tmux, creating `Ghostty -> Herdr helper -> tmux -> Herdr`.
-- If Herdr is disabled, tmux/jmux should own startup directly. Precedence is: Herdr when enabled; otherwise jmux if enabled; otherwise plain tmux. Do not make one owner fall back into another.
+Native Herdr is a separate app installed by the official installer. Its signed
+bundle, `herdr-app` and `hc` are installer-owned. Its configuration lives under
+`~/.config/herdr-app`, independently of Ghostty. This module does not package or
+modify the native app. The Herdr backend defaults to `native` on Darwin and
+`legacy` on Linux.
+
+With the `legacy` backend on Darwin, this module installs
+`packages/herdr-ghostty`. It provides `Herdr Ghostty.app`, a locally signed
+Ghostty copy with its own bundle identifier. Its private config shares Ghostty
+settings but disables the global quick-terminal shortcut and launches
+`~/.config/tmux/open-herdr.sh`. Ordinary Ghostty keeps Cmd+grave. Nix owns updates
+to Ghostty and this legacy copy, not to native Herdr.
+
+On Linux with the `legacy` backend, startup selects legacy Herdr when enabled,
+otherwise jmux if enabled, otherwise tmux. The legacy Herdr launcher must not
+fall back to tmux. That fallback can start Herdr inside tmux and recreate a
+Ghostty to Herdr to tmux to Herdr loop.
 
 ## PATH Injection
 
@@ -121,14 +138,18 @@ env=PATH=/Users/<user>/.nix-profile/bin:/etc/profiles/per-user/<user>/bin:...
 
 ## Troubleshooting
 
-### Herdr/tmux not launched when Ghostty starts
+### Legacy Herdr/tmux not launched on Linux
 
-The PATH injection and startup command should handle this. If still failing:
+Native mode and ordinary macOS Ghostty intentionally open a plain shell.
+For legacy Linux startup:
 
-1. Verify `~/Library/Application Support/com.mitchellh.ghostty/config` is absent. If it exists, it can shadow the XDG config for GUI launches.
-2. Verify `~/.config/ghostty/behavior.conf` contains the `env=PATH=...` line and `command = ~/.config/tmux/open-herdr.sh` when Herdr is enabled.
-3. Check PATH includes `/etc/profiles/per-user/<username>/bin` and your user bins.
-4. Run `hey rebuild` to regenerate configs and remove any legacy macOS config, then fully quit/reopen Ghostty.
+1. Verify `~/.config/ghostty/behavior.conf` contains `env=PATH=...` and the expected startup command. Enabled legacy Herdr selects `~/.config/tmux/open-herdr.sh`.
+2. Check PATH includes `/etc/profiles/per-user/<username>/bin` and your user bins.
+3. After an authorized `hey rebuild`, fully quit and reopen Ghostty.
+
+On macOS, also verify that
+`~/Library/Application Support/com.mitchellh.ghostty/config` is absent. It can
+shadow the XDG config for GUI launches. Activation removes this old config.
 
 ### Keybindings not working
 

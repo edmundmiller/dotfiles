@@ -44,7 +44,6 @@
         tmux.jmux.enable = false;
         herdr.enable = true;
         herdr.mainCodingAgent = "pi";
-        herdr.projects.enable = true;
         rex.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
@@ -127,6 +126,10 @@
         };
         pi = {
           enable = true;
+          classifierModel = {
+            provider = "openrouter";
+            id = "~typesafe/jev-latest";
+          };
           # Work host cycles only Sol 6.1 and Luna 6; shared defaults add Astra.
           enabledModels = [
             "openai-codex/gpt-6.1-sol"
@@ -283,7 +286,6 @@
         };
         ssh.enable = true;
         mosh.enable = true;
-        moshi.enable = true;
       };
 
       desktop.macos.enable = true;
@@ -291,6 +293,7 @@
       desktop = {
         apps.audioPriorityBar.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         term = {
           ghostty = {
             enable = true;

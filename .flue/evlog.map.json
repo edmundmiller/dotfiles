@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-21T03:32:52.715Z",
+  "cliVersion": "0.11.0",
+  "ruleSetVersion": 1,
+  "framework": "hono",
+  "projectName": "unknown",
+  "score": 100,
+  "routes": [
+    {
+      "framework": "hono",
+      "kind": "api",
+      "method": null,
+      "path": "*",
+      "file": "app.ts",
+      "handler": {
+        "line": 11,
+        "column": 0
+      },
+      "id": "cfc6426d0697",
+      "checks": {
+        "audit": {
+          "status": "n/a"
+        },
+        "wide-event": {
+          "status": "pass"
+        },
+        "context": {
+          "status": "pass"
+        },
+        "structured-errors": {
+          "status": "pass"
+        },
+        "error-handling": {
+          "status": "pass"
+        }
+      },
+      "suggestions": {},
+      "sensitivity": {
+        "level": "none",
+        "reasons": []
+      },
+      "score": 100
+    }
+  ]
+}

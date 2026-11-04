@@ -1,0 +1,133 @@
+{
+  config,
+  isDarwin,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.modules.shell.herdr;
+  nativeSource = "${config.dotfiles.configDir}/herdr/native";
+  agentEnabled = lib.genAttrs [ "claude" "codex" "opencode" ] (
+    agent: config.modules.agents.${agent}.enable or false
+  );
+  legacyCleanupAgents = lib.filter (agent: agentEnabled.${agent}) (lib.attrNames agentEnabled);
+  herdrDev = pkgs.writeShellScriptBin "herdr-dev" ''
+    export PATH=${lib.escapeShellArg "${config.user.home}/.local/bin"}:$PATH
+    export HERDR_APP_COMMAND=${lib.escapeShellArg cfg.native.appCommand}
+    exec ${pkgs.python3}/bin/python3 ${nativeSource}/herdr-dev.py "$@"
+  '';
+in
+{
+  options.modules.shell.herdr.native = {
+    app.enable = lib.my.mkBoolOpt isDarwin;
+    machines = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = lib.optionalAttrs (isDarwin && cfg.native.app.enable) { nuc = "emiller@nuc"; };
+      description = ''
+        Named SSH targets to register with the default hc session on activation.
+        Existing connections must match; other machines are never removed.
+        Unreachable machines are retried on the next activation, without installing hc remotely.
+      '';
+    };
+    appCommand = lib.mkOption {
+      type = lib.types.str;
+      default = "${config.user.home}/.local/bin/herdr-app";
+      description = "Official installer-owned native Herdr executable. Nix never modifies its signed bundle.";
+    };
+    coreCommand = lib.mkOption {
+      type = lib.types.str;
+      default = "${config.user.home}/.local/bin/hc";
+      description = "Official installer-owned herdr-core executable.";
+    };
+  };
+
+  config = lib.mkIf (cfg.enable && cfg.backend == "native") (
+    lib.mkMerge [
+      {
+        env.HERDR_BACKEND = "native";
+        warnings = lib.optional (cfg.projects.enable || cfg.vercelSandbox.enable) ''
+          Herdr native does not load legacy Projects or Vercel Sandbox plugins.
+          Their configuration is retained for backend = "legacy"; see config/herdr/README.md.
+        '';
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-core = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            if [ ! -x ${lib.escapeShellArg cfg.native.coreCommand} ]; then
+              echo 'herdr: hc missing; install with https://releases.herdr.dev/core/install.sh' >&2
+            fi
+          '';
+        };
+      }
+      (lib.mkIf (legacyCleanupAgents != [ ]) {
+        # Native Herdr reads OSC 7501 (rex-agent-status hooks); legacy socket
+        # integrations never fire here. Remove what `herdr integration install`
+        # left behind; backend = "legacy" reinstalls it.
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-legacy-cleanup =
+            lib.hm.dag.entryAfter [ "claude-settings-bootstrap" "codex-config-bootstrap" "rexAgentStatusHooks" ]
+              ''
+                ${pkgs.python3}/bin/python3 ${nativeSource}/legacy-agent-cleanup.py "$HOME" \
+                  ${lib.escapeShellArgs legacyCleanupAgents}
+              '';
+        };
+      })
+      (lib.mkIf (cfg.native.machines != { }) {
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-machines = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+            if [ -x ${lib.escapeShellArg cfg.native.coreCommand} ]; then
+              PATH=${lib.makeBinPath [ pkgs.openssh ]}:$PATH \
+                ${pkgs.coreutils}/bin/env -u HC_SOCKET HC_SESSION=default \
+                ${pkgs.python3}/bin/python3 ${nativeSource}/reconcile-machines.py \
+                --core ${lib.escapeShellArg cfg.native.coreCommand} \
+                --machines ${pkgs.writeText "herdr-machines.json" (builtins.toJSON cfg.native.machines)} \
+                || echo 'herdr: machine registration incomplete; retry activation when SSH is available' >&2
+            fi
+          '';
+        };
+      })
+      (lib.mkIf cfg.native.app.enable {
+        user.packages = [ herdrDev ] ++ lib.optional cfg.tnote.enable pkgs.my.tnote;
+        environment.systemPackages = [ herdrDev ] ++ lib.optional cfg.tnote.enable pkgs.my.tnote;
+        home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
+
+        # The app owns its shipped mods, layouts, typings and all runtime state.
+        home.configFile = {
+          "herdr-app/mods/dotfiles-dev".source = "${nativeSource}/mods/dotfiles-dev";
+          # Keep relative imports inside each mod's canonical directory.
+          "herdr-app/mods/dotfiles-prefix".source = "${nativeSource}/mods/dotfiles-prefix";
+          "herdr-app/layouts/dotfiles.json".source = "${nativeSource}/layouts/dotfiles.json";
+          "herdr-app/layouts/herdr-t3.json".source = "${nativeSource}/t3/layouts/herdr-t3.json";
+          "herdr-app/layouts/herdr-t3.svg".source = "${nativeSource}/t3/layouts/herdr-t3.svg";
+        }
+        // lib.listToAttrs (
+          map
+            (
+              name:
+              lib.nameValuePair "herdr-app/mods/${name}" {
+                source = "${nativeSource}/t3/mods/${name}";
+              }
+            )
+            [
+              "t3-agents"
+              "t3-chrome"
+              "t3-focus"
+              "t3-new-menu"
+              "t3-pane"
+              "t3-spaces"
+              "t3-tabs"
+            ]
+        );
+        home-manager.users.${config.user.name} = { lib, ... }: {
+          home.activation.herdr-native-config = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${pkgs.python3}/bin/python3 ${nativeSource}/reconcile-config.py \
+              --home "$HOME/.config/herdr-app" --source ${nativeSource} \
+              --core ${lib.escapeShellArg cfg.native.coreCommand}
+            if [ ! -x ${lib.escapeShellArg cfg.native.appCommand} ]; then
+              echo 'herdr: app missing; install with https://releases.herdr.dev/app/install.sh' >&2
+            fi
+          '';
+        };
+      })
+    ]
+  );
+}

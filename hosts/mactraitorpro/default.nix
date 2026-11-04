@@ -79,6 +79,7 @@ let
       });
 in
 {
+  imports = [ ./fail-closed-activation.nix ];
 
   config = {
     modules = {
@@ -126,8 +127,6 @@ in
         cliamp.enable = true;
         herdr.enable = true;
         herdr.mainCodingAgent = "pi";
-        herdr.vercelSandbox.enable = true;
-        herdr.projects.enable = true;
         rex.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
@@ -182,6 +181,7 @@ in
           servers = {
             github.enable = true;
             linear.enable = true;
+            linear.excludeAgents = [ "amp" ];
             notion.enable = true;
             fff.enable = true;
             openaiDeveloperDocs.enable = true;
@@ -189,6 +189,10 @@ in
         };
         pi = {
           enable = true;
+          classifierModel = {
+            provider = "typesafe";
+            id = "jev-latest";
+          };
           secretReferences = {
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };
@@ -290,7 +294,6 @@ in
           provider = "orbstack";
         };
         mosh.enable = true;
-        moshi.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
       };
@@ -302,6 +305,7 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
         term = {

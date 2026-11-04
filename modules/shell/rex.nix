@@ -9,6 +9,9 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.shell.rex;
+  rexJj = pkgs.writeShellScriptBin "rex-jj" ''
+    exec ${pkgs.python3}/bin/python3 ${../../config/rex/jj-workspace.py} "$@"
+  '';
   themeFile =
     {
       catppuccin = ../../config/rex/themes-catppuccin.json;
@@ -27,6 +30,10 @@ let
     claude = {
       file = ".claude/settings.json";
       events = {
+        SessionStart = [
+          "idle"
+          ""
+        ];
         UserPromptSubmit = [
           "working"
           ""
@@ -52,6 +59,10 @@ let
     codex = {
       file = ".codex/hooks.json";
       events = {
+        SessionStart = [
+          "idle"
+          ""
+        ];
         UserPromptSubmit = [
           "working"
           ""
@@ -84,7 +95,10 @@ in
     {
       # The Rex app (currently macOS-only) is installed separately. Nix owns only its config.
       # The Linux Rex server is configured separately through services.rex.
-      home.configFile."rex/init.lua".source = "${config.dotfiles.configDir}/rex/init.lua";
+      home.configFile."rex/init.lua".text =
+        builtins.replaceStrings [ "@rexJj@" ] [ "${rexJj}/bin/rex-jj" ]
+          (builtins.readFile "${config.dotfiles.configDir}/rex/init.lua");
+      user.packages = [ rexJj ];
       modules.agents.mcp.servers.superlogical.enable = mkDefault true;
     }
     // optionalAttrs isDarwin {

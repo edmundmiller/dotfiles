@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -104,6 +105,40 @@ class DoneCloseoutTest(unittest.TestCase):
             self.assertEqual(
                 payload["workingCopy"]["untracked"][0]["path"], "untracked.txt"
             )
+
+    def test_snapshot_falls_back_to_git_without_a_usable_jj(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, _ = self.init_repo(root)
+            (repo / "base.txt").write_text("staged\n")
+            git(repo, "add", "base.txt")
+            (repo / "base.txt").write_text("unstaged\n")
+            (repo / "untracked.txt").write_text("keep me\n")
+            before = self.source_state(repo)
+            tools = root / "bin"
+            tools.mkdir()
+            (tools / "git").symlink_to(shutil.which("git"))
+
+            for jj_installed in (False, True):
+                with self.subTest(jj_installed=jj_installed):
+                    if jj_installed:
+                        jj = tools / "jj"
+                        jj.write_text("#!/bin/sh\nexit 1\n")
+                        jj.chmod(0o755)
+                    result = subprocess.run(
+                        [sys.executable, str(CLOSEOUT), "snapshot", "--repo", str(repo)],
+                        cwd=repo,
+                        env={**os.environ, "PATH": str(tools)},
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    payload = json.loads(result.stdout)
+                    self.assertEqual(payload["backend"], "git")
+                    self.assertEqual(payload["vcs"]["head"], before["head"])
+                    self.assertFalse(payload["workingCopy"]["clean"])
+                    self.assertEqual(self.source_state(repo), before)
+                    self.assertFalse((repo / ".jj").exists())
 
     def test_verify_preservation_detects_changed_unrelated_dirt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -41,10 +41,10 @@ in
       networking.search = [ "cinnamon-rooster.ts.net" ];
     })
 
-    # Tailscale SSH hosting on macOS requires the open-source tailscaled
-    # variant. The GUI app must not be installed alongside this daemon.
+    # The standalone GUI app owns the macOS tunnel. Rex provides remote
+    # terminals independently; do not run Nix tailscaled alongside the app.
     (optionalAttrs isDarwin {
-      services.tailscale.enable = true;
+      homebrew.casks = [ "tailscale-app" ];
       environment.etc = {
         "resolver/cinnamon-rooster.ts.net".text = ''
           nameserver 100.100.100.100

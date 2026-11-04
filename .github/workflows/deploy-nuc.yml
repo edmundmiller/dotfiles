@@ -1,7 +1,13 @@
 name: Deploy NUC
+run-name: Deploy NUC ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact published main commit to deploy (40-character lowercase SHA)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -23,6 +29,16 @@ jobs:
     env:
       DEPLOY_SHA: ${{ github.sha }}
     steps:
+      - name: Require requested deployment revision
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ || "$EXPECTED_SHA" != "$DEPLOY_SHA" ]]; then
+            echo "NUC deployment revision mismatch: expected_sha must be the exact captured main commit" >&2
+            exit 1
+          fi
       - name: Require successful main CI for this exact commit
         env:
           GH_TOKEN: ${{ github.token }}

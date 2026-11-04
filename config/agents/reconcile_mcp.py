@@ -19,7 +19,7 @@ TARGETS = {
     "omp": (".omp/agent/mcp.json", ("mcpServers",)),
     "claude": (".claude.json", ("mcpServers",)),
     "codex": (".codex/config.toml", ("mcp_servers",)),
-    "opencode": (".config/opencode2/opencode/opencode.jsonc", ("mcp", "servers")),
+    "opencode": (".config/opencode/opencode.jsonc", ("mcp", "servers")),
     "amp": (".config/amp/settings.json", ("amp.mcpServers",)),
 }
 

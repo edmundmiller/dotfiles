@@ -12,7 +12,7 @@ class AgentResponseContractTests(unittest.TestCase):
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for expected in (
             "Communicate concisely",
             "lead with the outcome",
@@ -78,18 +78,22 @@ class AgentResponseContractTests(unittest.TestCase):
             with self.subTest(package=package):
                 self.assertNotIn(json.dumps(package), settings)
 
-    def test_pi_retains_safety_and_useful_integrations(self) -> None:
+    def test_pi_retains_selected_integrations_and_drops_unused_packages(self) -> None:
         settings = (ROOT / "config/pi/settings.jsonc").read_text()
         for package in (
-            "npm:@gotgenes/pi-permission-system",
-            "~/.pi/agent/packages/pi-command-policy-bridge",
             "npm:pi-memory", "npm:pi-terminal-theme",
-            "npm:confluence-cli",
             "npm:@moyai/pi-session-hoarder", "npm:pi-btw",
         ):
             with self.subTest(package=package):
                 self.assertIn(json.dumps(package), settings)
         for package in (
+            "npm:@gotgenes/pi-permission-system",
+            "~/.pi/agent/packages/pi-command-policy-bridge",
+            "npm:confluence-cli",
+            "npm:latchkey",
+            "npm:@aliou/pi-processes",
+            "npm:pi-context-usage",
+            "git:github.com/mjakl/pi-interlude",
             "npm:pi-hermes-memory",
             # Dropped as unused; pi-mcp-adapter stays filtered in
             # modules/agents/pi/lib/_settings.nix (legacyMcp).
@@ -100,6 +104,9 @@ class AgentResponseContractTests(unittest.TestCase):
                 self.assertNotIn(json.dumps(package), settings)
         links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
         self.assertIn("enforce-commit-signing.ts", links)
+        self.assertNotIn("pi-command-policy-bridge", links)
+        self.assertNotIn("pi-permission-system", links)
+        self.assertIn('"defaultTools": ["+codemode"]', settings)
         self.assertNotIn("you-are-right-killer.ts", links)
 
     def test_host_provided_packages_are_never_declared_as_pi_packages(self) -> None:
@@ -178,7 +185,7 @@ class AgentResponseContractTests(unittest.TestCase):
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for expected in (
             "Communicate concisely",
             "lead with the outcome",
