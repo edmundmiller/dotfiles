@@ -53,6 +53,7 @@
 
   environment.systemPackages = with pkgs; [
     git
+    python3
     rsync
     smartmontools
   ];

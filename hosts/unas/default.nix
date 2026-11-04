@@ -1,5 +1,10 @@
 # No u nas
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   imports = [
     ../_server.nix
@@ -52,6 +57,14 @@
   system.autoUpgrade.enable = lib.mkForce false;
   # No desktop session or dconf D-Bus service exists on this headless host.
   home-manager.users.emiller.dconf.enable = false;
+
+  # Give offline recovery the built system's actual bootloader inputs.
+  environment.etc."unas-recovery-boot.json".text = builtins.toJSON {
+    inherit (config.boot.loader.systemd-boot) configurationLimit extraFiles extraEntries;
+    esp = config.boot.loader.efi.efiSysMountPoint;
+    xbootldr = config.boot.loader.systemd-boot.xbootldrMountPoint;
+    efiBinary = "${config.systemd.package}/lib/systemd/boot/efi/systemd-boot${pkgs.stdenv.hostPlatform.efiArch}.efi";
+  };
 
   # The rescue connection must also work after booting the installed system.
   users.users.emiller.openssh.authorizedKeys.keys = [

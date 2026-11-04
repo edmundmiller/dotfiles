@@ -85,9 +85,12 @@ hey unas-recover /mnt/unas /nix/store/BUILD-nixos-system-unas-VERSION
 ```
 
 Use the actual store path printed by the build. The command refuses the wrong
-host, pools, mounts, or ESP. It snapshots both pools, backs up the ESP boot files,
-roots the previous system in a named profile, and installs the built system for
-the next boot. The first recovery creates `pre-recovery`. Later recoveries keep
+host, pools, mounts, or ESP. Before any snapshot, backup, profile change, or
+installation, it checks the ESP's available bytes against a conservative boot
+file budget. Then it snapshots both pools, backs up the ESP boot files, roots
+the previous system in a named profile, and installs the built system for the
+next boot. The first recovery creates the missing `system-profiles` directory
+and `pre-recovery`. Later recoveries keep
 that original profile and create `pre-recovery-<UTC timestamp>` for the system
 being replaced, using the snapshot timestamp. Each profile retains its current
 system through normal generation cleanup and Nix GC, even if installation fails
@@ -99,6 +102,55 @@ Inspect the new profile and boot entry before cleanly unmounting, exporting the
 pools, and rebooting. Keep the Lexar USB attached as a fallback. Resolve the
 installed system's DHCP address again; it can differ from the live USB address.
 If it changes, update the three address references listed in `../AGENTS.md`.
+
+### Keep rollback retention within ESP capacity
+
+The internal ESP is 512 MiB. Each named rollback profile can keep a distinct
+kernel and initrd bootable, even when the ordinary system generation limit is
+small. Do not add a RAM-root rescue image to this ESP or resize partitions as
+part of recovery.
+
+The preflight reads `boot.json` for the new system, the system being replaced,
+and the normal and named generations selected by the new configuration's
+per-profile limit. It includes specialisations and deduplicates shared boot
+payloads. Absolute store symlinks resolve inside the mounted installation,
+not against the rescue host's store. Existing ESP payloads need no fresh copy.
+The new system's `etc/unas-recovery-boot.json` supplies its evaluated bootloader
+binary, mountpoints, extra files, and generation limit.
+
+The budget charges filesystem allocation units, new payloads, both bootloader
+copies, extra files, and entry metadata. It also reserves the largest pending
+copy for temporary replacement and 16 MiB for filesystem and loader overhead.
+It credits no space from future bootloader cleanup and conservatively includes
+the currently selected ordinary generations plus the replacement. A refusal
+can therefore occur before the filesystem is literally full.
+
+Missing metadata, missing boot inputs, separate XBOOTLDR layouts, dynamic initrd
+secret appenders, and extra-initrd extensions require manual inspection instead
+of an optimistic estimate. Build the replacement from this revision and check
+that `python3` is available on the rescue host. New rescue images include it.
+No secret values are read or embedded by the preflight.
+
+If the budget does not fit, the command stops without deleting a profile,
+snapshot, or ESP file. Record the reported required and available bytes.
+Identify obsolete rollback profiles and their unreferenced ESP payloads, then
+request approval for that exact retirement before cleaning anything up.
+Keep a known-good bootable generation, its store closure, and the ESP backup.
+Retiring a profile alone does not free its old ESP payloads. Recheck after any
+approved cleanup. Keep other profile and ESP writers idle during the check and
+installation so the measured inputs remain valid.
+
+The Linux regression suite runs the real recovery command with real Nix
+profiles and a bounded temporary filesystem. Hardware inspection and the
+installer are isolated substitutes. It checks first use, capacity refusal
+before mutation, retained and shared payloads, copy headroom, generation limits,
+unsupported initrds, and rollback roots after installer failure and real GC:
+
+```sh
+nix build .#checks.x86_64-linux.unas-recovery --no-link
+```
+
+This does not boot firmware, write a physical ESP, or activate the NAS.
 
 ## Verify the installed system
 

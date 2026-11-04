@@ -46,6 +46,8 @@ zfs list -H datatank/backup/moni/time-machine >/dev/null
 previous=$(readlink "$root/nix/var/nix/profiles/$(readlink "$root/nix/var/nix/profiles/system")")
 [[ $previous =~ ^/nix/store/[a-z0-9]{32}-nixos-system-unas-[^/]+$ ]] || fail 'cannot identify the previous system'
 
+python3 "$(dirname "${BASH_SOURCE[0]}")/unas-recovery-preflight.py" "$root" "$system" "$previous"
+
 stamp="pre-install-$(date -u +%Y%m%dT%H%M%SZ)"
 zfs snapshot -r "zroot@$stamp"
 zfs snapshot -r "datatank@$stamp"
@@ -59,6 +61,7 @@ printf '%s\n' "$system" > "$backup/new-system"
 # A named profile keeps the old closure and its boot entry outside the normal
 # system generation limit. It is a rollback aid, not a RAM-root rescue image.
 recovery_profile="$root/nix/var/nix/profiles/system-profiles/pre-recovery"
+mkdir -p "$(dirname "$recovery_profile")"
 if [[ -L $recovery_profile ]]; then
   recovery_profile+="-${stamp#pre-install-}"
 fi
