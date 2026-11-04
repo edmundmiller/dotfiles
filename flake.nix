@@ -1968,29 +1968,27 @@
               };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
-              unas-recovery =
-                pkgs.runCommand "unas-recovery-check"
-                  {
-                    nativeBuildInputs = with pkgs; [
-                      bash
-                      bubblewrap
-                      coreutils
-                      findutils
-                      gnugrep
-                      gnused
-                      gnutar
-                      gzip
-                      inetutils
-                      nix
-                      python3
-                      util-linux
-                    ];
-                  }
-                  ''
-                    cd ${./.}
-                    bash bin/tests/unas-recover.bash
-                    touch "$out"
-                  '';
+              unas-recovery = lib.my.mkServiceVmTest {
+                name = "unas-recovery";
+                extraConfig.environment.systemPackages = with pkgs; [
+                  bash
+                  bubblewrap
+                  coreutils
+                  findutils
+                  gnugrep
+                  gnused
+                  gnutar
+                  gzip
+                  inetutils
+                  nix
+                  python3
+                ];
+                testScript = ''
+                  start_all()
+                  machine.wait_for_unit("multi-user.target")
+                  machine.succeed("bash ${./.}/bin/tests/unas-recover.bash", timeout=300)
+                '';
+              };
             }
             # NixOS VM tests, auto-discovered from modules/**/_tests/*-test.nix.
             # They need QEMU, so x86_64-linux only — run on NUC or a Linux builder.

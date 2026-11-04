@@ -17,9 +17,7 @@ if [[ ${1:-} != --inside ]]; then
   fi
   for test_case in "$@"; do
     mkdir -p "$work/$test_case/root/boot"
-    # Share only unshare's fresh network namespace, without configuring loopback.
-    unshare --user --map-root-user --net -- \
-      bwrap --unshare-all --share-net --uid 0 --gid 0 --cap-add CAP_SYS_CHROOT --hostname unas-rescue \
+    bwrap --unshare-all --uid 0 --gid 0 --cap-add CAP_SYS_CHROOT --hostname unas-rescue \
       --ro-bind /nix/store /nix/store --ro-bind "$repo" "$repo" \
       --ro-bind "$(command -v bash)" /bin/sh \
       --ro-bind /etc/passwd /etc/passwd --ro-bind /etc/group /etc/group \
