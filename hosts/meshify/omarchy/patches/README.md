@@ -86,9 +86,9 @@ Host rollback instead restores the previous package or override and selects
 
 The packages are under `~/.local/state/meshify-omarchy/amp-6844/packages/`:
 
-| File | SHA-256 |
-| --- | --- |
-| `omarchy-4.0.0-1.2-any.pkg.tar.zst` | `2f2d1e5185f22557f4713caed26ede96845917c170e4721d6362f82c2f81b212` |
+| File                                         | SHA-256                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------ |
+| `omarchy-4.0.0-1.2-any.pkg.tar.zst`          | `2f2d1e5185f22557f4713caed26ede96845917c170e4721d6362f82c2f81b212` |
 | `omarchy-settings-4.0.0-1.2-any.pkg.tar.zst` | `d8fdaed01d3829d37fe887d1d1991618aa86ba3907ffbfa69c0126eee5dc6beb` |
 
 They use the official release recipes from

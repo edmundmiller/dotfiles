@@ -735,6 +735,8 @@
               ".beads/backup/**"
               # Rex compares its stub byte for byte; formatting makes it "outdated".
               "skills/conditional/rex/rex/SKILL.md"
+              # Preserve the pinned upstream body checked by agent-instruction-tests.
+              "skills/catalog/unslop/SKILL.md"
             ];
           };
 
