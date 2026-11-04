@@ -162,6 +162,11 @@
       flake = false;
     };
 
+    pstack = {
+      url = "github:cursor/plugins/101b274dd991f694e1f7024be2157e5f3adf07de";
+      flake = false;
+    };
+
   };
 
   outputs = inputs: {
@@ -297,6 +302,12 @@
           "herdr"
           "enable"
         ];
+        rexEnabled = moduleEnabled [
+          "modules"
+          "shell"
+          "rex"
+          "enable"
+        ];
         hunkEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -324,6 +335,13 @@
           src = inputs.common-skills.outPath + "/.agents/skills/skill-doctor";
           patches = [ ./overlays/skill-doctor/pi-support.patch ];
         };
+        # Keep sibling links, playbooks, agents, and docs intact without
+        # shadowing shared skills such as tdd, teach, and unslop.
+        pstackPortable = pkgs.runCommand "pstack-portable" { } ''
+          mkdir -p "$out/poteto-mode"
+          cp ${./overlays/pstack/poteto-mode/SKILL.md} "$out/poteto-mode/SKILL.md"
+          cp -R ${inputs.pstack.outPath}/pstack "$out/poteto-mode/.upstream"
+        '';
         mattpocockSkillPaths = builtins.fromJSON (builtins.readFile ./mattpocock-skills.json);
         mattpocockRuntimeOverlay = ''
 
@@ -353,17 +371,31 @@
             where the runtime supports it, and keep concurrent writers on disjoint files or
             in isolated worktrees.
         '';
-        mattpocockSkills = lib.mapAttrs (_: path: {
+        mattpocockSkills = lib.mapAttrs (name: path: {
           from = "mattpocock";
           inherit path;
           meta.targets = [ "agents" ];
           transform =
             { original, ... }:
+            let
+              checkOrder = "4. Discover the project's **automated checks** and run them, typically typecheck, then tests, then format. Fix anything the merge broke.";
+              skillBody =
+                if name == "resolving-merge-conflicts" then
+                  assert lib.hasInfix checkOrder original;
+                  builtins.replaceStrings
+                    [ checkOrder ]
+                    [
+                      "4. Discover the project's **automated checks**. Run mutating formatters before typechecks and relevant tests so validation covers the resulting files. After later mutations, rerun affected checks with scope appropriate to the diff. Fix anything the merge broke."
+                    ]
+                    original
+                else
+                  original;
+            in
             (builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
               lib.concatStringsSep "\n" (
                 lib.filter (
                   line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
-                ) (lib.splitString "\n" original)
+                ) (lib.splitString "\n" skillBody)
               )
             ))
             + mattpocockRuntimeOverlay;
@@ -459,6 +491,11 @@
                 path = "walking-mode";
                 meta.targets = [ "codex" ];
               };
+              poteto-mode = {
+                from = "pstack";
+                path = "poteto-mode";
+                meta.targets = [ "codex" ];
+              };
               # All coding runtimes consume the shared copy. Hermes also gets
               # a direct copy for profiles whose external_dirs still point at
               # ~/.hermes/skills.
@@ -497,11 +534,82 @@
             // mattpocockSkills;
 
             home.activation.remove-legacy-claude-skills = lib.hm.dag.entryAfter [ "agent-skills" ] ''
-              if [ -L "$HOME/.claude/skills" ]; then
-                rm -f "$HOME/.claude/skills"
-              elif [ -e "$HOME/.claude/skills" ]; then
-                chmod -R u+w "$HOME/.claude/skills" 2>/dev/null || true
-                rm -rf "$HOME/.claude/skills"
+              legacy_skills="$HOME/.claude/skills"
+              legacy_backup="$HOME/.claude/skills.pre-dotfiles-agent-skills"
+
+              if [ -L "$legacy_skills" ]; then
+                legacy_target=$(readlink "$legacy_skills")
+                case "$legacy_target" in
+                  /nix/store/*-dotfiles-agent-skills-claude)
+                    rm -f "$legacy_skills"
+                    ;;
+                  *)
+                    if [ -e "$legacy_backup" ] || [ -L "$legacy_backup" ]; then
+                      echo "Cannot preserve $legacy_skills: backup already exists at $legacy_backup" >&2
+                      exit 1
+                    fi
+                    mkdir "$legacy_backup"
+                    if ! mv "$legacy_skills" "$legacy_backup/skills"; then
+                      rmdir "$legacy_backup" 2>/dev/null || true
+                      echo "Failed to preserve $legacy_skills; it was not removed" >&2
+                      exit 1
+                    fi
+                    echo "Preserved existing Claude skills at $legacy_backup/skills"
+                    ;;
+                esac
+              elif [ -e "$legacy_skills" ]; then
+                if [ ! -d "$legacy_skills" ] && [ ! -f "$legacy_skills" ]; then
+                  echo "Refusing to move unusual file type at $legacy_skills" >&2
+                  exit 1
+                fi
+                # claude-shared-skill-links turns this path into a real
+                # directory of symlinks into ~/.agents/skills. That is this
+                # module's own output, not legacy content. Without this check
+                # every activation after the first tries to preserve it again
+                # and aborts on the backup the one real migration left behind.
+                module_managed=0
+                if [ -d "$legacy_skills" ]; then
+                  module_managed=1
+                fi
+                for entry in "$legacy_skills"/* "$legacy_skills"/.[!.]*; do
+                  [ "$module_managed" = 1 ] || break
+                  if [ ! -e "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
+                  # Claude Code keeps its own claude.ai skill sync in synced/.
+                  if [ "''${entry##*/}" = synced ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
+                  # Rex installs its own stub skill here via "rex skill setup".
+                  if [ "''${entry##*/}" = rex ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                    continue
+                  fi
+                  if [ ! -L "$entry" ]; then
+                    module_managed=0
+                    break
+                  fi
+                  case "$(readlink "$entry")" in
+                    "$HOME/.agents/skills/"*) ;;
+                    *)
+                      module_managed=0
+                      break
+                      ;;
+                  esac
+                done
+
+                if [ "$module_managed" != 1 ]; then
+                  if [ -e "$legacy_backup" ] || [ -L "$legacy_backup" ]; then
+                    echo "Cannot preserve $legacy_skills: backup already exists at $legacy_backup" >&2
+                    exit 1
+                  fi
+                  mkdir "$legacy_backup"
+                  if ! mv "$legacy_skills" "$legacy_backup/skills"; then
+                    rmdir "$legacy_backup" 2>/dev/null || true
+                    echo "Failed to preserve $legacy_skills; it was not removed" >&2
+                    exit 1
+                  fi
+                  echo "Preserved existing Claude skills at $legacy_backup/skills"
+                fi
               fi
             '';
             home.activation.dotfiles-agent-skills = lib.hm.dag.entryAfter [ "agent-skills" ] (
@@ -664,6 +772,15 @@
                   filter.maxDepth = 3;
                 };
 
+                rex = {
+                  # Stub copied from "rex skill setup" (rex-stub 2). The guide itself
+                  # comes from the installed rex CLI, so this never goes stale.
+                  # ~/.agents/skills is a read-only Nix tree, so rex cannot write it.
+                  path = ./conditional/rex;
+                  subdir = ".";
+                  filter.maxDepth = 3;
+                };
+
                 diffity = {
                   path = inputs.diffity-repo.outPath;
                   subdir = "skills";
@@ -766,6 +883,12 @@
                   filter.maxDepth = 3;
                 };
 
+                pstack = {
+                  path = pstackPortable;
+                  subdir = ".";
+                  filter.maxDepth = 1;
+                };
+
                 kitlangton = {
                   path = inputs.kitlangton-skills.outPath;
                   subdir = "skills";
@@ -786,6 +909,21 @@
               skills.explicit = {
                 gh-fix-ci.from = "openai";
                 gh-fix-ci.path = "gh-fix-ci";
+                gh-fix-ci.transform =
+                  { original, ... }:
+                  let
+                    anchor = "3. Inspect failing checks (GitHub Actions only).";
+                  in
+                  assert lib.hasInfix anchor original;
+                  builtins.replaceStrings
+                    [ anchor ]
+                    [
+                      (
+                        anchor
+                        + "\n   - Trace the earliest failure that explains later errors using full logs or artifacts when snippets are ambiguous. Treat cancellation errors as consequences when the timeline supports that diagnosis; preserve checks that correctly fail after cancellation."
+                      )
+                    ]
+                    original;
 
                 define-goal.from = "openai";
                 define-goal.path = "define-goal";
@@ -845,6 +983,10 @@
                 # module is actually turned on.
                 herdr.from = "herdr";
                 herdr.path = "herdr";
+              }
+              // lib.optionalAttrs rexEnabled {
+                rex.from = "rex";
+                rex.path = "rex";
               }
               // lib.optionalAttrs diffityEnabled {
                 diffity-diff.from = "diffity";

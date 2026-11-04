@@ -17,3 +17,7 @@ reference is `op://Agents/AgentsView/password`. Do not print it in diagnostics.
 Inspect the two units/journals and `tailscale serve status --json` for
 `svc:agentsview`. Approval/ACL recovery belongs in the tailnet repo as described
 in the parent service guide.
+
+Run `hey check modules/services/agentsview` for module and registry changes.
+Post-deployment proof requires the PostgreSQL and Serve units plus a read-only
+dashboard request; pushing workstation data is a separate authorized write.

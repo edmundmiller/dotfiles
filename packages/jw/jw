@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# jw - JJ Workspace management tool (inspired by worktrunk)
-# https://github.com/max-sixty/worktrunk
+# jw - JJ Workspace management tool
 #
 # Designed for running AI agents in parallel using jj workspaces.
 # Uses gum for interactive prompts and styled output.

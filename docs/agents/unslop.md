@@ -2,7 +2,7 @@
 purpose: Record how unslop writing rules are wired in this flake.
 applies_to: Agent prose, UI copy, commits, PRs, and docs.
 entrypoint: Root AGENTS.md writing route, then skills/catalog/unslop/SKILL.md.
-verification: python3 -m unittest tests.FAKESECRET_i3j4k5l6m7n8o9p0q1r2
+verification: python3 -m unittest tests.test_agent_instruction_wiring
 update_when: The pstack pin, catalog path, or adjacent slop tools change.
 ---
 
@@ -16,7 +16,7 @@ root `AGENTS.md` route that tells agents to load that file when writing. It
 does not paste the full list into `AGENTS.md` or `config/agents/core.md`.
 
 - [ADR 0010](../adr/0010-omp-ttsr-thin-agent-harness.md) keeps the shared
-  startup core to universal invariants and a 220-word budget.
+  startup core to universal invariants and a 400-word budget.
 - [Agent guardrails](../agent-guardrails.md) keep `AGENTS.md` routers short.
   Longer recipes belong in skills or canonical docs.
 - Catalog skills under `skills/catalog/` auto-enable globally. That is how
@@ -35,6 +35,18 @@ claim that every runtime already has the rules in context.
 - `oxlint-plugin-jev` is a separate opt-in Oxlint path. See
   [oxlint.md](./oxlint.md).
 - `no-ai-slop` remains the separate petergyang skill.
+
+## Suppressions
+
+`oxlint-suppressions.json` at the repo root holds per-file, per-rule counts for
+anti-slop findings that predate the rule. Oxlint auto-discovers it from the
+working directory; nothing in `flake.nix` points at it.
+
+Do not run `oxlint --prune-suppressions` over a subset of files. It rewrites
+the whole file from only the files it linted, so every entry for an unlinted
+file is silently dropped. When a count goes stale ("There are suppressions that
+do not occur anymore"), edit that one count by hand, or prune across the full
+lint set the pre-commit hook uses.
 
 ## Refresh
 

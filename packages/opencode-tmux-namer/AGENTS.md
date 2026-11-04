@@ -8,3 +8,7 @@ Direct session/permission events drive status; project/worktree context and
 debounced intent signals drive naming. This is distinct from external tmux pane
 content matching in tmux-opencode-integrated. Environment knobs and supported
 events live in the implementation and README.
+
+Run `bun run build`, `bun test`, and `hey check packages/opencode-tmux-namer`.
+Tests must distinguish direct status events from naming-only intent signals;
+building the plugin alone does not cover event semantics.

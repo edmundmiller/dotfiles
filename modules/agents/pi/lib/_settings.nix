@@ -3,9 +3,14 @@
   cfg,
   lib,
   piHerdrPackage,
+  piGithubToolsPackage,
+  herdrVersion,
   piSettingsParsed,
 }:
 let
+  legacyHerdrEnabled =
+    config.modules.shell.herdr.enable && config.modules.shell.herdr.backend == "legacy";
+
   packageSource =
     pkg:
     if builtins.isString pkg then
@@ -20,20 +25,31 @@ let
   # that do not run that shell integration, and avoids redundant interactive
   # shell prompts when tmux/herdr are the preferred persistent workspace layer.
   moduleManagedPackageGroups = {
-    herdr = [ (toString piHerdrPackage) ];
+    # Native agent tools require Herdr 0.7.5+; retain the older plugin below it.
+    herdr = [
+      (toString piHerdrPackage)
+      (
+        if lib.versionAtLeast herdrVersion "0.7.5" then
+          "npm:@ogulcancelik/pi-herdr@0.4.0"
+        else
+          "npm:@ogulcancelik/pi-herdr@0.2.5"
+      )
+    ];
     tmux = [
       "npm:pi-tmux-window-name"
       "git:github.com/ogulcancelik/pi-extensions"
       "https://github.com/pasky/pi-side-agents"
     ];
     interactiveShell = [ "npm:pi-interactive-shell" ];
-    mcp = [
+    # Legacy adapters must be filtered from base settings. pi-mcp-adapter
+    # registers /mcp and disables Pi 1.0's native MCP implementation.
+    legacyMcp = [
       "npm:pi-mcp-adapter"
       "npm:pi-mcporter"
     ];
     computerUse = [ "git:github.com/injaneity/pi-computer-use" ];
     gitTools = [
-      "npm:@prinova/pi-github-tools"
+      (toString piGithubToolsPackage)
       "npm:pi-gitnexus"
       "git:github.com/MattDevy/pi-extensions"
     ];
@@ -41,13 +57,12 @@ let
       "npm:@marckrenn/pi-sub-bar"
       "~/.pi/agent/extensions/sub-limits.ts"
       "git:github.com/Thinkscape/pi-status"
-      "npm:pi-wakatime"
     ];
     contextMemory = [
       "npm:pi-context"
       # pi-total-recall bundles @samfp/pi-memory and pi-session-search, which
-      # register memory_search/session_search. pi-hermes-memory is the
-      # authoritative provider for those tools in config/pi/settings.jsonc.
+      # register memory_search/session_search. pi-memory is the
+      # authoritative memory_search provider in config/pi/settings.jsonc.
       # Loading both causes Pi startup extension conflicts.
       # "npm:pi-total-recall"
     ];
@@ -59,7 +74,10 @@ let
   };
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
-  legacyModuleManagedPackageSources = [ "npm:@ogulcancelik/pi-herdr" ];
+  legacyModuleManagedPackageSources = [
+    "npm:@ogulcancelik/pi-herdr"
+    "npm:@prinova/pi-github-tools"
+  ];
 
   dropModuleManagedPackages =
     packages:
@@ -71,7 +89,7 @@ let
     ) packages;
 
   moduleManagedPackages =
-    lib.optionals config.modules.shell.herdr.enable moduleManagedPackageGroups.herdr
+    lib.optionals legacyHerdrEnabled moduleManagedPackageGroups.herdr
     ++ lib.optionals config.modules.shell.tmux.enable [
       # Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
       "npm:pi-tmux-window-name"
@@ -87,7 +105,6 @@ let
     ++ lib.optionals (
       !(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)
     ) moduleManagedPackageGroups.interactiveShell
-    ++ lib.optionals cfg.mcp.enable moduleManagedPackageGroups.mcp
     ++ lib.optionals cfg.computerUse.enable moduleManagedPackageGroups.computerUse
     ++ lib.optionals cfg.gitTools.enable moduleManagedPackageGroups.gitTools
     ++ lib.optionals cfg.statusUi.enable moduleManagedPackageGroups.statusUi
@@ -113,28 +130,42 @@ let
         inherit (cfg) defaultModel;
       }
     )
-    //
-      lib.optionalAttrs (config.modules.shell.herdr.enable && config.modules.shell.herdr.managePiTheme)
-        (
-          let
-            herdrThemeName = config.modules.shell.herdr.piThemeName;
-          in
-          {
-            # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
-            # Configure it directly in the generated Pi settings so activation does
-            # not need to mutate the read-only Home Manager settings symlink.
-            # The theme name varies by host (`piThemeVariant`), so read it from
-            # the herdr module instead of hardcoding the default name here.
-            theme = "light/${herdrThemeName}";
-            themes = [ "${config.user.home}/.pi/agent/themes/${herdrThemeName}.json" ];
-          }
-        );
+    // lib.optionalAttrs (legacyHerdrEnabled && config.modules.shell.herdr.managePiTheme) (
+      let
+        herdrThemeName = config.modules.shell.herdr.piThemeName;
+      in
+      {
+        # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
+        # Configure it directly in the generated Pi settings so activation does
+        # not need to mutate the read-only Home Manager settings symlink.
+        # The theme name varies by host (`piThemeVariant`), so read it from
+        # the herdr module instead of hardcoding the default name here.
+        theme = "light/${herdrThemeName}";
+        themes = [ "${config.user.home}/.pi/agent/themes/${herdrThemeName}.json" ];
+      }
+    );
 
-  piSettingsWithExtras =
+  piSettingsWithExtrasUnfiltered =
     if piPackagesExtra == [ ] then
       piSettingsBase
     else
       piSettingsBase // { packages = piSettingsBase.packages ++ piPackagesExtra; };
+
+  # Filter before serialization: rendered JSON may carry Nix derivation context.
+  # Parsing it back with fromJSON rejects those dependency-bearing strings.
+  piSettingsWithExtras = piSettingsWithExtrasUnfiltered // {
+    packages = builtins.filter (
+      package:
+      let
+        source = packageSource package;
+        legacyPackage =
+          source == toString piHerdrPackage
+          || source == "npm:@ogulcancelik/pi-herdr"
+          || lib.hasPrefix "npm:@ogulcancelik/pi-herdr@" source;
+      in
+      legacyHerdrEnabled || !legacyPackage
+    ) piSettingsWithExtrasUnfiltered.packages;
+  };
 
   piSettingsPackageSources = map packageSource piSettingsWithExtras.packages;
 

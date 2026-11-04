@@ -100,9 +100,18 @@ let
           if [[ -z "$candidate" || "$candidate" == \#* ]]; then
             continue
           fi
-          if jq -s -e --arg uid "$candidate" 'any(.[]; .uid == $uid)' \
-            >/dev/null <<< "$devices"; then
-            desired="$candidate"
+          desired="$(jq -sr --arg candidate "$candidate" --arg current_uid "$current_uid" '
+            map(select(
+              if ($candidate | startswith("name:")) then
+                .name == ($candidate | ltrimstr("name:"))
+              else
+                .uid == $candidate
+              end
+            ))
+            | sort_by([(.uid != $current_uid), .uid])
+            | .[0].uid // empty
+          ' <<< "$devices")"
+          if [[ -n "$desired" ]]; then
             break
           fi
         done < "$priority_file"
@@ -155,22 +164,38 @@ in
 
     inputPriorities = mkOption {
       type = types.listOf types.str;
-      description = "Ordered list of CoreAudio input device UIDs for AudioPriorityBar.";
+      description = ''
+        Ordered CoreAudio input device UIDs or name:EXACT DEVICE NAME selectors.
+        Name matches prefer the current input, then the lexicographically first UID.
+        Only UID entries are seeded into the manual AudioPriorityBar GUI.
+      '';
       default = [
+        "name:Wireless Mic Rx"
         "AppleUSBAudioEngine:DJI Technology Co., Ltd.:Wireless Mic Rx:XSP12345678B:3"
+        "name:Shure MV7"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:20232000:2,1"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:144000:2,1"
         "AppleUSBAudioEngine:Shure Inc:Shure MV7:20232000:3,2"
+        "name:Razer Seiren V3 Mini"
+        "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:20233000:1"
         "AppleUSBAudioEngine:Razer Inc.:Razer Seiren V3 Mini:110000:1"
+        "name:MX Brio"
         "AppleUSBAudioEngine:Unknown Manufacturer:MX Brio:2522LVP1VGL8:5"
+        "name:Logitech StreamCam"
         "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:623EC745:3"
         "AppleUSBAudioEngine:Unknown Manufacturer:Logitech StreamCam:A7626075:3"
+        "name:MacBook Pro Microphone"
         "BuiltInMicrophoneDevice"
+        "name:Edmund’s AirPods Pro"
         "34-0E-22-1E-BE-44:input"
+        # Disconnected inputs with no recorded display name retain UID matching.
         "0518F0DA-FD70-47AE-951E-692100000003"
         "AppleUSBAudioEngine:Generic:USB Audio:20234000:1"
+        "name:MOTIV Mix Virtual"
         "ShureVirtualAudioDevice_UID"
+        "name:Realtek USB2.0 Audio"
         "AppleUSBAudioEngine:Generic:USB Audio:200901010001:1"
+        "name:Edmund Miller’s iPhone Microphone"
         "46264E0F-5044-42F2-AD00-846600000003"
       ];
     };
@@ -213,8 +238,8 @@ in
         { lib, ... }:
         {
           home.activation.audioPriorityBarDefaults = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            # Ensure AudioPriorityBar device priorities are declaratively seeded.
-            ${mkArrayWrite "inputPriorities" cfg.inputPriorities}
+            # The GUI accepts UIDs only; name selectors belong to the input sorter.
+            ${mkArrayWrite "inputPriorities" (filter (value: !hasPrefix "name:" value) cfg.inputPriorities)}
             ${mkArrayWrite "speakerPriorities" cfg.speakerPriorities}
             ${mkArrayWrite "headphonePriorities" cfg.headphonePriorities}
             # The GUI remains available for inspection/manual selection, but

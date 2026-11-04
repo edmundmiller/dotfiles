@@ -1,12 +1,12 @@
 /**
  * pi-direnv Extension
  *
- * Automatically loads direnv environment variables at session start.
+ * Automatically loads direnv environment variables at session start and switch.
  * Ensures bash commands have access to project-specific env vars
  * defined in .envrc files (commonly used with Nix flakes).
  *
  * Behavior:
- * - Searches for .envrc from cwd up to git root
+ * - Searches for .envrc from the session cwd up to its git root
  * - Runs `direnv export json` and applies vars to process.env
  * - Shows notification if .envrc is blocked or env loaded
  * - Silently skips if direnv missing or no .envrc exists
@@ -14,20 +14,25 @@
  * Inspired by https://github.com/simonwjackson/opencode-direnv
  */
 
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  SessionStartEvent,
+  SessionSwitchEvent,
+} from "@mariozechner/pi-coding-agent";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export default function (pi: ExtensionAPI) {
-  pi.on("session_start", async (_event, ctx) => {
-    const cwd = process.cwd();
+  async function loadDirenv(_event: SessionStartEvent | SessionSwitchEvent, ctx: ExtensionContext) {
+    const cwd = ctx.sessionManager.getCwd();
 
     // Check direnv is available
     const hasDirenvCmd = await pi.exec("which", ["direnv"]);
     if (hasDirenvCmd.code !== 0) return;
 
     // Find .envrc searching upward to git root
-    const gitRoot = await findGitRoot(pi);
+    const gitRoot = await findGitRoot(pi, cwd);
     const envrcPath = findEnvrc(cwd, gitRoot);
     if (!envrcPath) return;
 
@@ -56,12 +61,15 @@ export default function (pi: ExtensionAPI) {
       }
       // Other errors (parse failures, etc.) — skip silently
     }
-  });
+  }
+
+  pi.on("session_start", loadDirenv);
+  pi.on("session_switch", loadDirenv);
 }
 
-async function findGitRoot(pi: ExtensionAPI): Promise<string | null> {
+async function findGitRoot(pi: ExtensionAPI, cwd: string): Promise<string | null> {
   try {
-    const result = await pi.exec("git", ["rev-parse", "--show-toplevel"]);
+    const result = await pi.exec("git", ["rev-parse", "--show-toplevel"], { cwd });
     return result.stdout?.trim() || null;
   } catch {
     return null;

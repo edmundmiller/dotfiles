@@ -13,3 +13,7 @@ Host activation is separate and uses `hey`.
 - A `buildNpmPackage` override changing source/lockfile must update both
   `npmDepsHash` and `npmDeps`; otherwise the upstream fixed-output derivation
   can survive. Remove upstream shrinkwrap when a local package-lock is intended.
+
+Use `pkg-check <unit>` for any harnessed pin, hash, or patch change, then
+`hey check overlays/<unit>` for repository policy and consumers. A successful
+patch application is not a package build, and a package build is not activation.

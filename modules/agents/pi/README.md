@@ -1,3 +1,11 @@
+---
+purpose: Configure and verify the Nix-managed Pi daily-driver environment.
+applies_to: Pi upgrades, native MCP, codemode, and shell helpers.
+entrypoint: Edit config/pi/settings.jsonc and overlays/pi/default.nix.
+verification: Build .#pi, run Pi settings checks, and inspect pi mcp list.
+update_when: Pi packaging, MCP ownership, or Herdr integration changes.
+---
+
 # Pi Module
 
 Pi coding agent configuration plus shell helpers for common local workflows.
@@ -8,11 +16,20 @@ Pi coding agent configuration plus shell helpers for common local workflows.
 leaving compaction, retries, message delivery, images, and skills at Pi defaults.
 The shared core remains the only global instruction file.
 
-Default packages exclude automatic goal/loop continuation, model switching,
+`pi-goal-x` owns `/goal`, `/sisyphus`, persistent progress, and optional completion
+auditing on every Pi-enabled host. It continues confirmed active goals automatically.
+Use `/goal-pause` to stop and `/goal-settings` to configure its behavior.
+
+Other default packages exclude automatic loop continuation, model switching,
 response coaching, Agentmap/QMD prompt injection, and DCP/RTK/read rewriting.
-Permissions, command policy, signing protection, Hermes memory, host integrations,
+Permissions, command policy, signing protection, `pi-memory`, host integrations,
 and explicit review/handoff commands remain available. `contextMemory.enable`
-defaults to false; it opts into the additional `pi-context` package, not Hermes.
+defaults to false; it opts into the additional `pi-context` package, not `pi-memory`.
+
+Feynman's research workflows and Confluence CLI's usage skill are intentional
+package-native resources. Session Hoarder archives sessions locally by default.
+Plannotator comes from its owning module, and `pi-btw` remains a shared package.
+Existing Hermes memory files are retained, but `pi-memory` does not read them.
 
 This is not a hook-free setup. `pi-markdown-workflows` retains nested AGENTS.md
 discovery and also injects automatic workflow-selection guidance in projects
@@ -24,6 +41,54 @@ Use `modules.agents.pi.extraPackages` for deliberately opted-in packages rather
 than growing the shared defaults. Local package sources remain available for
 that purpose. Existing sessions retain their earlier context; test in a fresh
 session after an authorized `hey re` applies the managed settings and links.
+
+## Pi 1.0 and native MCP
+
+`overlays/pi/default.nix` selects an independently pinned upstream Pi package.
+This includes the codemode worker and native platform assets without upgrading
+the other agents in the shared `llm-agents` input. Check the effective version
+with `nix eval --raw .#pi.version`, then build with `nix build .#pi`.
+
+Pi 1.5.0 uses the upstream build recipe with local `overlays/pi/hashes.json`
+and `package-lock.json` pins. The wrapped CLI defaults `PI_SELF_UPDATE_COMMAND`
+to `hey pi-update {version}`. When Pi detects a newer release, `pi update`
+refreshes only these Pi pins, then runs the guarded `hey rebuild` workflow.
+An explicit `PI_SELF_UPDATE_COMMAND` environment value overrides that default.
+Use `pi update --extensions` to update extensions without rebuilding the host.
+
+`hey pi-update <version>` targets `$FLAKE_DIR`, then `$DOTFILES`, then
+`~/.config/dotfiles`, not the current project's flake. It rejects downgrades
+and leaves the pins unchanged if downloading or preparing dependencies fails.
+A failed rebuild leaves the new pins available for inspection and retry with
+`hey re`. Revert both Pi pin files and run `hey re` to return to an earlier release.
+Running a self-update activates the host configuration, so agents still need
+explicit authorization. Source checks do not run this command.
+
+`config/pi/settings.jsonc` enables codemode alongside the ordinary tools.
+The host catalog in `modules.agents.mcp` supplies native MCP registrations in
+writable `~/.pi/agent/mcp.json`, with tools available through codemode rather
+than loading every tool into each prompt. GitHub's stdio launcher reads
+`gh auth token` at process start. Linear needs a one-time
+`pi mcp login linear`; its credentials stay in writable `~/.pi/agent/mcp-auth.json`.
+Use `pi mcp list` and `/mcp` to check connections.
+
+Edit catalog-owned registrations in the host configuration. Reconciliation
+preserves unrelated servers and settings; matching catalog names are host-owned.
+Project-specific servers can live in `.pi/mcp.json` after project trust.
+`modules.agents.mcp.agents.pi = false` removes host-managed Pi registrations;
+it does not disable project MCP servers. See [ADR 0013](../../../docs/adr/0013-host-owned-agent-mcp.md)
+for ownership and the focused adapter test.
+Do not reinstall `pi-mcp-adapter`: its `/mcp` command replaces native MCP.
+
+Hosts with Herdr 0.7.5+ use `@ogulcancelik/pi-herdr@0.4.0` for pane/layout/agent
+tools and the activation-installed lifecycle extension. Herdr 0.9.1 and 0.9.3 ship
+the same Pi integration version 9. Check the installed marker with
+`rg HERDR_INTEGRATION_VERSION ~/.pi/agent/extensions/herdr-agent-state.ts`.
+Hosts below Herdr 0.7.5 retain plugin 0.2.5 as a compatibility fallback.
+
+The repository's `pi-herdr` package supplies only `/review-box` and
+`herdr_pr_review_workspace`. General layout, pane, and agent tools come from
+the official plugin; Review Box persistence and approval behavior stay local.
 
 ## Shell Helpers
 

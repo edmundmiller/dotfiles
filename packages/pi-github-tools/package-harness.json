@@ -1,0 +1,13 @@
+{
+  "source": "https://github.com/PriNova/pi-github-tools.git",
+  "ref": "bf229248c65fcbce77377c4b3918ddedfc80dcfd",
+  "patches": ["patches/0001-use-host-peer-dependencies.patch"],
+  "checks": [
+    [
+      "node",
+      "--input-type=module",
+      "-e",
+      "import assert from \"node:assert/strict\"; import fs from \"node:fs\"; const pkg = JSON.parse(fs.readFileSync(\"package.json\", \"utf8\")); for (const name of [\"@earendil-works/pi-coding-agent\", \"@earendil-works/pi-tui\", \"@sinclair/typebox\"]) { assert.equal(pkg.dependencies?.[name], undefined); assert.equal(pkg.peerDependencies[name], \"*\"); } assert.deepEqual(pkg.pi.extensions, [\"./src/index.ts\"]); assert.ok(fs.existsSync(\"src/index.ts\"));"
+    ]
+  ]
+}

@@ -20,3 +20,5 @@ zsh -n config/zsh/.zshrc config/zsh/.zshenv config/zsh/config.zsh \
 ```
 
 For startup latency, use `hey zbench --iters 1` and the `zbench` skill.
+Syntax checking does not cover ordering or latency; use an interactive shell for
+startup behavior and benchmark only when the change can affect startup cost.

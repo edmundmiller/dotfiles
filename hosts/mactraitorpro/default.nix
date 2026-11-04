@@ -79,6 +79,7 @@ let
       });
 in
 {
+  imports = [ ./fail-closed-activation.nix ];
 
   config = {
     modules = {
@@ -96,10 +97,6 @@ in
         nixlang.enable = true;
         node.enable = true;
         node.useFnm = true;
-        node.bunGlobalPackages = [
-          "critique@0.1.139"
-          "vercel@58.9.0"
-        ];
         # FIXME: Python disabled - bundled whisper currently includes Python 3.13
         # Conflicts with python module's withPackages env. See dotfiles-c11.
         python.enable = false;
@@ -129,9 +126,8 @@ in
         acpx.enable = true;
         cliamp.enable = true;
         herdr.enable = true;
-        herdr.mainCodingAgent = "omp";
-        herdr.vercelSandbox.enable = true;
-        herdr.projects.enable = true;
+        herdr.mainCodingAgent = "pi";
+        rex.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
         tmux.jmux.package = pkgs.my.jmux;
@@ -152,6 +148,7 @@ in
           '';
         };
         mo.enable = true;
+        mo.diskReport.enable = true;
         # Scan roots for `mo purge` (rebuildable project artifacts). This list
         # replaces Mole's defaults. Missing future roots are harmless no-ops.
         # Keep cloud-synced directories omitted so purges stay local.
@@ -178,8 +175,24 @@ in
       };
 
       agents = {
+        mcp = {
+          enable = true;
+          agents.amp = true;
+          servers = {
+            github.enable = true;
+            linear.enable = true;
+            linear.excludeAgents = [ "amp" ];
+            notion.enable = true;
+            fff.enable = true;
+            openaiDeveloperDocs.enable = true;
+          };
+        };
         pi = {
           enable = true;
+          classifierModel = {
+            provider = "typesafe";
+            id = "jev-latest";
+          };
           secretReferences = {
             OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
           };
@@ -195,7 +208,7 @@ in
           ];
         };
         omp = {
-          enable = true;
+          enable = false;
           # Personal laptop providers: xai-oauth, openrouter, opencode-go, openai-codex, google-antigravity.
           # No Cursor SDK, no VibeProxy here — do not pin cursor/* or vibeproxy/*.
           # Roles: Sol default/smol/advisor/slow/plan; Luna xhigh task; K3 designer; Luna commit/tiny; Gemini vision.
@@ -281,7 +294,6 @@ in
           provider = "orbstack";
         };
         mosh.enable = true;
-        moshi.enable = true;
         tailscale.enable = true;
         ssh.enable = true;
       };
@@ -293,6 +305,7 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
         term = {
@@ -331,33 +344,7 @@ in
       enableZshIntegration = false; # We handle brew in .zshenv with caching
     };
 
-    # Amp owns its mutable CLI and login state; launchd owns the runner process.
-    launchd.user.agents.amp-runner = {
-      serviceConfig = {
-        ProgramArguments = [
-          "${config.user.home}/.amp/bin/amp"
-          "--no-tui"
-          "--runner-id"
-          "mactraitor-pro"
-          "--discover-dirs"
-          "--dir"
-          "${config.user.home}/.config/dotfiles"
-          "--remote-control-terminal"
-        ];
-        WorkingDirectory = "${config.user.home}/src";
-        RunAtLoad = true;
-        KeepAlive = true;
-        ThrottleInterval = 10;
-        StandardOutPath = "${config.user.home}/Library/Logs/amp-runner.log";
-        StandardErrorPath = "${config.user.home}/Library/Logs/amp-runner.err";
-        EnvironmentVariables = {
-          HOME = config.user.home;
-          XDG_CONFIG_HOME = "${config.user.home}/.config";
-          XDG_CACHE_HOME = "${config.user.home}/.cache";
-          PATH = "${config.user.home}/.amp/bin:${config.user.home}/.local/bin:/etc/profiles/per-user/emiller/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-        };
-      };
-    };
+    # The Amp Mac app owns the runner. See workload-placement.md for setup.
 
     # Mirror LookAway's meeting detection to the USB busylight. LookAway's built-in
     # automations only cover break start/end, so this tails its debug log for
@@ -500,6 +487,11 @@ in
           # MAS installs are unreliable during headless activation. Keep the apps
           # declared for inventory, but do not install them during routine rebuilds.
           HOMEBREW_BUNDLE_MAS_SKIP = "Xcode Keynote Numbers";
+
+          # Rooms' postflight uses writable_paths/must_succeed, unsupported by
+          # our pinned Homebrew. Keep it declared and preserve any installed app.
+          # Remove this skip when the cask and pinned Homebrew are compatible.
+          HOMEBREW_BUNDLE_CASK_SKIP = "rooms";
         };
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
@@ -514,12 +506,15 @@ in
       clinWithVaultEnv
       llm-agents.qmd
       my.betteraudio
+      my.critique
       my.discrawl-backup
       my.emeraldian
+      my.excalidraw-cli
       my.hex
       my.meat
       my.openwiki
       my.screentime-backup
+      my.vercel
       my.writer
       my.zele
       my.work-calendar-busy
@@ -536,9 +531,9 @@ in
         };
 
         home.sessionVariables = {
-          PI_MODEL_SWITCH_INTENT = "opencode-go/kimi-2.5";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
-          PI_MODEL_SWITCH_DONE = "opencode-go/kimi-2.5";
+          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-6-astra";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-6.1-sol";
+          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-6-luna";
         };
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -547,6 +542,19 @@ in
 
         home.activation.removeLegacyZele = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/zele" "$HOME/.cache/npm/bin/zele"
+        '';
+
+        home.activation.removeLegacyBunClis = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          for cli in critique excalidraw vercel vc; do
+            legacy="$HOME/.bun/bin/$cli"
+            if [ -L "$legacy" ]; then
+              case "$(readlink "$legacy")" in
+                ../install/global/node_modules/*|"$HOME"/.bun/install/global/node_modules/*)
+                  rm "$legacy"
+                  ;;
+              esac
+            fi
+          done
         '';
 
         home.activation.removeLegacyOpenWiki = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

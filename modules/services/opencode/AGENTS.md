@@ -12,3 +12,7 @@ and `tailscale status --json` service proxies.
 VIP definitions and ACL grants belong to the tailnet repo, not manual console
 approval. A deploy timeout does not establish that activation failed; inspect
 target units before retrying a state change.
+
+Run `hey check modules/services/opencode` before a NUC build. After deployment,
+verify the container unit, Serve unit, and private HTTPS endpoint separately;
+inspection after a timeout must precede any retry.

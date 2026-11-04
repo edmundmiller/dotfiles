@@ -10,13 +10,13 @@ let
     "/data/media/downloads"
     "/data/media/video/shows"
     "/data/media/video/movies"
-    "/data/media/video/music"
-    "/data/media/video/photos"
+    "/data/media/music"
+    "/data/media/photos"
   ];
 
   allowIpRanges = [
-    "100.100.100.100/8" # Tailscale
-    "192.168.0.0/8" # Local Network
+    "100.64.0.0/10" # Tailscale
+    "192.168.1.0/24" # Home LAN
   ];
 
   # Tempalte NFS config
@@ -25,10 +25,13 @@ let
   '') fileSystems;
 in
 {
-  # Firewall
-  # networking.firewall.interfaces."zt*".allowedTCPPorts = [ 111 2049 4000 4001 4002 ];
-  # networking.firewall.interfaces."zt*".allowedUDPPorts = [ 111 2049 4000 4001 4002 ];
-  networking.firewall.allowedTCPPorts = [ 2049 ];
+  # Match the export allowlist instead of exposing NFS on every source network.
+  networking.firewall.extraCommands = lib.concatMapStringsSep "\n" (range: ''
+    iptables -A nixos-fw -p tcp -s ${range} --dport 2049 -j nixos-fw-accept
+  '') allowIpRanges;
+  networking.firewall.extraStopCommands = lib.concatMapStringsSep "\n" (range: ''
+    iptables -D nixos-fw -p tcp -s ${range} --dport 2049 -j nixos-fw-accept || true
+  '') allowIpRanges;
 
   # Daemon
   services.nfs.server = {
@@ -37,4 +40,7 @@ in
     # exported shares
     exports = lib.concatStringsSep "" fsExports;
   };
+
+  # Never export empty directories on the OS disk when a data mount fails.
+  systemd.services.nfs-server.unitConfig.RequiresMountsFor = fileSystems;
 }

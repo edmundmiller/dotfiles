@@ -1,7 +1,7 @@
 From: numtide/llm-agents.nix
 Subject: [PATCH] support Python 3.14 daemon thread pool workers
 
-Rebased-Against: NousResearch/hermes-agent@939e45c91d751fadd94dcd1b873ac3cb44846213
+Rebased-Against: NousResearch/hermes-agent@345cd2b057a452236de401d3534b8502a7465e8d
 Preserve upstream per-submit context propagation for profile secret isolation.
 ---
 diff --git a/tools/daemon_pool.py b/tools/daemon_pool.py

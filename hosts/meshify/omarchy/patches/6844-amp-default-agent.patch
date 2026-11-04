@@ -1,0 +1,438 @@
+diff --git a/bin/omarchy-agent b/bin/omarchy-agent
+index 61736ea..a9898b8 100755
+--- a/bin/omarchy-agent
++++ b/bin/omarchy-agent
+@@ -46,6 +46,13 @@ if [[ -z $agent ]]; then
+   exit 1
+ fi
+ 
++# A long-running session can predate env-bootstrap's user path update. Restore
++# the standard user command path for any locally installed agent.
++case ":$PATH:" in
++  *":$HOME/.local/bin:"*) ;;
++  *) export PATH="${PATH:+$PATH:}$HOME/.local/bin" ;;
++esac
++
+ if omarchy-cmd-missing "$agent"; then
+   echo "$agent is not installed. Choose an installed agent with: omarchy default agent <name>" >&2
+   exit 1
+@@ -54,6 +61,15 @@ fi
+ # Agents launched from the keybinding or menu run unattended, so each one starts
+ # with its own spelling of "don't stop to ask". Pi has no approval prompts.
+ case "$agent" in
++amp)
++  # Amp has no approval prompts by default, and no --prompt flag. An initial
++  # message is piped into an interactive session, as Amp's CLI documents.
++  if [[ -n ${prompt:-} ]]; then
++    command=(bash -c "printf '%s\n' \"\$1\" | exec amp" _ "$prompt")
++  else
++    command=(amp)
++  fi
++  ;;
+ opencode)
+   command=(opencode --auto)
+   [[ -n ${prompt:-} ]] && command+=(--prompt "$prompt")
+diff --git a/bin/omarchy-default-agent b/bin/omarchy-default-agent
+index f018b68..0306d09 100755
+--- a/bin/omarchy-default-agent
++++ b/bin/omarchy-default-agent
+@@ -1,7 +1,7 @@
+ #!/bin/bash
+ 
+ # omarchy:summary=Set and launch the default coding agent
+-# omarchy:args=[pi|omp|opencode|claude|codex|grok|gemini|copilot|crush]
++# omarchy:args=[amp|pi|omp|opencode|claude|codex|grok|gemini|copilot|crush]
+ # omarchy:examples=omarchy default agent | omarchy default agent codex | omarchy default agent claude
+ 
+ installing=false
+@@ -24,6 +24,7 @@ if (($# == 0)); then
+ fi
+ 
+ case "$1" in
++amp) agent="amp"; name="Amp" ;;
+ pi) agent="pi"; name="Pi" ;;
+ omp | oh-my-pi) agent="omp"; name="Oh My Pi"; agent_package="github:can1357/oh-my-pi" ;;
+ opencode | open-code) agent="opencode"; name="OpenCode" ;;
+@@ -34,24 +35,42 @@ grok) agent="grok"; name="Grok"; agent_package="npm:@xai-official/grok" ;;
+ gemini | gemini-cli) agent="gemini"; name="Gemini" ;;
+ copilot | github-copilot) agent="copilot"; name="GitHub Copilot" ;;
+ *)
+-  echo "Usage: omarchy-default-agent <pi|omp|opencode|claude|codex|grok|gemini|copilot|crush>"
++  echo "Usage: omarchy-default-agent <amp|pi|omp|opencode|claude|codex|grok|gemini|copilot|crush>"
+   exit 1
+   ;;
+ esac
+ 
+-agent_package=${agent_package:-$agent}
++# A long-running session can predate env-bootstrap's user path update. Restore
++# the standard user command path without duplicating it.
++case ":$PATH:" in
++  *":$HOME/.local/bin:"*) ;;
++  *) export PATH="${PATH:+$PATH:}$HOME/.local/bin" ;;
++esac
+ 
+-if [[ $installing == "false" ]] && ! mise where "$agent_package" &>/dev/null; then
+-  exec omarchy-launch-floating-terminal-with-presentation omarchy-default-agent --install "$agent"
+-fi
++if [[ $agent == "amp" ]]; then
++  if omarchy-cmd-missing amp; then
++    if [[ $installing == "false" ]]; then
++      exec omarchy-launch-floating-terminal-with-presentation omarchy-default-agent --install amp
++    elif ! (set -o pipefail; curl -fsSL https://ampcode.com/install.sh | bash) || omarchy-cmd-missing amp; then
++      echo "Could not install Amp" >&2
++      exit 1
++    fi
++  fi
++else
++  agent_package=${agent_package:-$agent}
+ 
+-if ! mise use -g "$agent_package"; then
+-  if [[ $installing == "true" ]]; then
+-    echo "Could not install $name with mise" >&2
+-  else
+-    echo "Could not set $name as the default coding agent" >&2
++  if [[ $installing == "false" ]] && ! mise where "$agent_package" &>/dev/null; then
++    exec omarchy-launch-floating-terminal-with-presentation omarchy-default-agent --install "$agent"
++  fi
++
++  if ! mise use -g "$agent_package"; then
++    if [[ $installing == "true" ]]; then
++      echo "Could not install $name with mise" >&2
++    else
++      echo "Could not set $name as the default coding agent" >&2
++    fi
++    exit 1
+   fi
+-  exit 1
+ fi
+ 
+ mkdir -p "$(dirname "$agent_file")"
+diff --git a/default/fonts/omarchy/README.md b/default/fonts/omarchy/README.md
+index 4338a67..9e4ba0d 100644
+--- a/default/fonts/omarchy/README.md
++++ b/default/fonts/omarchy/README.md
+@@ -10,6 +10,7 @@ The private-use glyphs in `omarchy.ttf` are:
+ - `U+E905` — Codex, from the OpenAI mark on <https://developers.openai.com/codex/>
+ - `U+E906` — LM Studio, from <https://simpleicons.org/icons/lmstudio.svg>
+ - `U+E907` — Ollama, from <https://simpleicons.org/icons/ollama.svg>
++- `U+E908` — Amp, from <https://ampcode.com/amp-mark-color.svg>
+ 
+ The agent marks are monochrome so the menu can render them using the active
+ theme's foreground and selection colors.
+diff --git a/default/fonts/omarchy/omarchy.ttf b/default/fonts/omarchy/omarchy.ttf
+index ebd14589d9ddd9cb65ee915a999651e93cb9a19c..1b2a57829b47f11b64bfa8582852e10fd54e4b98 100644
+GIT binary patch
+delta 352
+zcmZos{Gd3&xW1Hufw6;ufr&3Yr!uYe^5jPh49qha7`U`DQWI13+IW62Fz_B>U|=xI
+z019w0vIqhBe}H_IjNFn66$Yli3=Dh<K)y>(esUs587ELbUkXS*H?g9CQJHZAkPkGU
+zK_M?OH}&lEXH$Uu6+k;r7vvY0)F0r|11c6M0V=56xJR6kkz?`|#_fz8n|qk9bLBEK
+zcrj!$Ph{T5z`?-BAi}^PY_4j~D$LHz&IqQ}!Q|wV|K7<k_GM>#o??9SZ@nyIUsl#<
+zD9y-x#ydCXU$!ix_*o|BXdp93ZdVLg1ZXAD86a$IthLS3eR2V>KcnE}1H29_EDQ`@
+zllYW4SVh4K1UGB(u`?+PGBPnTGXyaNFt{*;GPp5#GsG~=W@KSxWn^PyXXIeyWaOG0
+OBw)zSoS0hxG!_82Ayu~k
+
+delta 216
+zcmeyM*rGVWxW1Tyfw6;ufr&3Yr!viRO1moq1M>_92F_C%sfj6iZ9G317<f|{7#Pel
+zfC3zhEP_D(93WpMBe$eNfq`i=kbeNkcgV?4PUI+KIm^Jn2jns+<tA1XFe))_0P<CU
+ze1*Kk+|;wrpG^VsU4V9;F32w~Ig`r8542D~0H~mN;~sHFM)t{97`HRBZ|-5b&czE<
+y29#hlHWqv{Z~o*9y#9;=lNI<JCa3TzaeyR%SYUG>A3GCJe42p5<Q)Qrj0^y1s56%U
+
+diff --git a/default/omarchy/omarchy-menu.jsonc b/default/omarchy/omarchy-menu.jsonc
+index 859f089..e3816c3 100644
+--- a/default/omarchy/omarchy-menu.jsonc
++++ b/default/omarchy/omarchy-menu.jsonc
+@@ -130,6 +130,7 @@
+   "setup.network.qr": {"icon":"󰐲","label":"QR Code","aliases":["wifi-qr"],"when":"[[ $(omarchy-network-status) == wifi* ]]","action":"omarchy-shell shell summon omarchy.wifiqr"},
+   "setup.default": {"icon":"","label":"Defaults","aliases":["default","defaults"]},
+   "setup.default.agent": {"icon":"󰚩","label":"Agent","title":"Default Agent"},
++  "setup.default.agent.amp": {"icon":"","iconFont":"omarchy","label":"Amp","checked":"[[ \"$(omarchy-default-agent)\" == \"amp\" ]]","action":"omarchy-default-agent amp"},
+   "setup.default.agent.claude": {"icon":"󰛄","label":"Claude","checked":"[[ \"$(omarchy-default-agent)\" == \"claude\" ]]","action":"omarchy-default-agent claude"},
+   "setup.default.agent.codex": {"icon":"","iconFont":"omarchy","label":"Codex","checked":"[[ \"$(omarchy-default-agent)\" == \"codex\" ]]","action":"omarchy-default-agent codex"},
+   "setup.default.agent.copilot": {"icon":"","label":"Copilot","checked":"[[ \"$(omarchy-default-agent)\" == \"copilot\" ]]","action":"omarchy-default-agent copilot"},
+diff --git a/test/shell.d/default-agent-test.sh b/test/shell.d/default-agent-test.sh
+index 680d960..45cfef3 100644
+--- a/test/shell.d/default-agent-test.sh
++++ b/test/shell.d/default-agent-test.sh
+@@ -14,11 +14,13 @@ notification_history="$test_tmp/notification-history"
+ agent_open_log="$test_tmp/agent-open"
+ launch_log="$test_tmp/launch"
+ inline_log="$test_tmp/inline"
++amp_stdin_log="$test_tmp/amp-stdin"
+ mise_log="$test_tmp/mise"
+ mise_history="$test_tmp/mise-history"
+ stub_log="$test_tmp/stubs"
+ terminal_log="$test_tmp/terminal"
+ menu_log="$test_tmp/menu"
++curl_log="$test_tmp/curl"
+ mkdir -p "$mock_bin" "$test_home"
+ 
+ cat >"$mock_bin/omarchy-notification-send" <<'SH'
+@@ -28,6 +30,15 @@ SH
+ 
+ cat >"$mock_bin/omarchy-cmd-missing" <<'SH'
+ #!/bin/bash
++[[ -z ${OMARCHY_TEST_PATH_LOG:-} ]] || printf '%s\n' "$PATH" >"$OMARCHY_TEST_PATH_LOG"
++if [[ $1 == ${OMARCHY_TEST_LOCAL_COMMAND:-} ]]; then
++  if [[ -x $HOME/.local/bin/$1 ]]; then
++    case ":$PATH:" in
++      *":$HOME/.local/bin:"*) exit 1 ;;
++    esac
++  fi
++  exit 0
++fi
+ [[ $1 == ${OMARCHY_TEST_MISSING_COMMAND:-} ]]
+ SH
+ 
+@@ -46,6 +57,25 @@ cat >"$mock_bin/opencode" <<'SH'
+ printf '%s\0' opencode "$@" >"$OMARCHY_TEST_AGENT_INLINE_LOG"
+ SH
+ 
++cat >"$mock_bin/amp" <<'SH'
++#!/bin/bash
++cat >"$OMARCHY_TEST_AMP_STDIN_LOG"
++SH
++
++cat >"$mock_bin/curl" <<'SH'
++#!/bin/bash
++printf '%s\0' "$@" >"$OMARCHY_TEST_CURL_LOG"
++[[ ${OMARCHY_TEST_CURL_FAIL:-false} != "true" ]] || exit 1
++cat <<'INSTALLER'
++mkdir -p "$HOME/.local/bin"
++cat >"$HOME/.local/bin/amp" <<'AMP'
++#!/bin/bash
++cat >"$OMARCHY_TEST_AMP_STDIN_LOG"
++AMP
++chmod +x "$HOME/.local/bin/amp"
++INSTALLER
++SH
++
+ cat >"$mock_bin/omarchy-mise-install" <<'SH'
+ #!/bin/bash
+ printf '%s\n' "$*" >>"$OMARCHY_TEST_STUB_LOG"
+@@ -86,11 +116,13 @@ export OMARCHY_TEST_NOTIFICATION_HISTORY="$notification_history"
+ export OMARCHY_TEST_AGENT_OPEN_LOG="$agent_open_log"
+ export OMARCHY_TEST_AGENT_LAUNCH_LOG="$launch_log"
+ export OMARCHY_TEST_AGENT_INLINE_LOG="$inline_log"
++export OMARCHY_TEST_AMP_STDIN_LOG="$amp_stdin_log"
+ export OMARCHY_TEST_MISE_LOG="$mise_log"
+ export OMARCHY_TEST_MISE_HISTORY="$mise_history"
+ export OMARCHY_TEST_STUB_LOG="$stub_log"
+ export OMARCHY_TEST_AGENT_TERMINAL_LOG="$terminal_log"
+ export OMARCHY_TEST_AGENT_MENU_LOG="$menu_log"
++export OMARCHY_TEST_CURL_LOG="$curl_log"
+ 
+ grok_package="npm:@xai-official/grok"
+ omp_package="github:can1357/oh-my-pi"
+@@ -115,6 +147,7 @@ assert_lazy_stub "$crush_package" crush
+ pass "custom agent lazy stubs preserve their mise packages"
+ 
+ source "$ROOT/install/user/mise.sh"
++grep -Fq '@ampcode/cli' "$stub_log" && fail "user setup leaves Amp to its official installer"
+ grep -Fx "$grok_package grok" "$stub_log" >/dev/null || fail "user setup creates the Grok lazy stub"
+ grep -Fx "$omp_package omp" "$stub_log" >/dev/null || fail "user setup creates the Oh My Pi lazy stub"
+ grep -Fx "$crush_package" "$stub_log" >/dev/null || fail "user setup creates the Crush lazy stub"
+@@ -141,11 +174,19 @@ source "$ROOT/migrations/1785846769.sh" >/dev/null
+ rm "$test_home/.local/state/omarchy/preinstalls-removed"
+ pass "agent migrations install working wrappers without overriding the preinstall opt-out"
+ 
++official_amp_target="$test_tmp/official-amp"
++printf '#!/bin/bash\n' >"$official_amp_target"
++chmod +x "$official_amp_target"
++rm -f "$test_home/.local/bin/amp"
++ln -s "$official_amp_target" "$test_home/.local/bin/amp"
+ omarchy-remove-preinstalls >/dev/null
+ for command in omp grok crush; do
+   [[ ! -e $test_home/.local/bin/$command ]] || fail "Remove Preinstalls deletes the $command lazy stub"
+ done
+-pass "Remove Preinstalls deletes every optional agent lazy stub"
++[[ -L $test_home/.local/bin/amp && $(readlink "$test_home/.local/bin/amp") == $official_amp_target ]] ||
++  fail "Remove Preinstalls preserves an independent Amp installation"
++rm "$test_home/.local/bin/amp"
++pass "Remove Preinstalls leaves Amp installations it does not own alone"
+ 
+ [[ -z $(omarchy-default-agent) ]] || fail "default agent is unset until one is chosen"
+ pass "default agent is unset until one is chosen"
+@@ -188,6 +229,7 @@ chmod +x "$mock_bin/omarchy-agent"
+ hash -r
+ 
+ declare -A expected_agents=(
++  [amp]="amp"
+   [pi]="pi"
+   [omp]="omp"
+   [oh-my-pi]="omp"
+@@ -219,12 +261,17 @@ declare -A expected_packages=(
+ for selection in "${!expected_agents[@]}"; do
+   expected=${expected_agents[$selection]}
+   : >"$agent_open_log"
++  : >"$mise_log"
+   OMARCHY_TEST_AGENT_INSTALLED=true omarchy-default-agent "$selection"
+   [[ $(omarchy-default-agent) == $expected ]] || fail "default agent canonicalizes $selection"
+ 
+-  mapfile -d '' -t mise_args <"$mise_log"
+-  [[ ${mise_args[0]} == "use" && ${mise_args[1]} == "-g" && ${mise_args[2]} == ${expected_packages[$expected]} ]] ||
+-    fail "default agent installs $selection globally through mise"
++  if [[ $expected == "amp" ]]; then
++    [[ ! -s $mise_log ]] || fail "default agent leaves an installed Amp outside mise"
++  else
++    mapfile -d '' -t mise_args <"$mise_log"
++    [[ ${mise_args[0]} == "use" && ${mise_args[1]} == "-g" && ${mise_args[2]} == ${expected_packages[$expected]} ]] ||
++      fail "default agent installs $selection globally through mise"
++  fi
+ 
+   mapfile -d '' -t agent_open_args <"$agent_open_log"
+   [[ ${#agent_open_args[@]} == 1 && ${agent_open_args[0]} == "omarchy-agent" ]] ||
+@@ -235,6 +282,13 @@ pass "default agent selects and opens every supported provider and alias"
+   fail "default agent stores its selection in Omarchy user config"
+ pass "default agent stores its selection in Omarchy user config"
+ 
++path_log="$test_tmp/path"
++path_with_local_bin="$mock_bin:$ROOT/bin:$test_home/.local/bin:/usr/bin"
++PATH="$path_with_local_bin" OMARCHY_TEST_PATH_LOG="$path_log" omarchy-default-agent amp
++[[ $(<"$path_log") == $path_with_local_bin ]] ||
++  fail "default agent leaves the standard user command path unduplicated"
++pass "default agent does not duplicate the standard user command path"
++
+ OMARCHY_TEST_AGENT_INSTALLED=true omarchy-default-agent pi
+ : >"$notification_history"
+ : >"$agent_open_log"
+@@ -274,6 +328,41 @@ mapfile -d '' -t agent_open_args <"$agent_open_log"
+   fail "installed agent opens in a new terminal after selection"
+ pass "installed agents select and open without notifications"
+ 
++: >"$agent_open_log"
++: >"$terminal_log"
++: >"$mise_log"
++export OMARCHY_TEST_MISSING_COMMAND=amp
++export OMARCHY_TEST_LOCAL_COMMAND=amp
++omarchy-default-agent amp
++mapfile -d '' -t terminal_args <"$terminal_log"
++[[ ${terminal_args[0]} == "omarchy-default-agent" && ${terminal_args[1]} == "--install" && ${terminal_args[2]} == "amp" ]] ||
++  fail "missing Amp installation opens in a terminal"
++[[ $(omarchy-default-agent) == "copilot" ]] || fail "missing Amp waits to change the selection"
++
++if OMARCHY_TEST_CURL_FAIL=true omarchy-default-agent --install amp >"$test_tmp/amp-install-failure-output" 2>&1; then
++  fail "default agent rejects a failed Amp installation"
++fi
++grep -Fq "Could not install Amp" "$test_tmp/amp-install-failure-output" ||
++  fail "default agent reports a failed Amp installation"
++[[ $(omarchy-default-agent) == "copilot" ]] || fail "failed Amp installation preserves the current default"
++
++: >"$curl_log"
++omarchy-default-agent --install amp >"$test_tmp/amp-install-output"
++unset OMARCHY_TEST_MISSING_COMMAND
++unset OMARCHY_TEST_LOCAL_COMMAND
++mapfile -d '' -t curl_args <"$curl_log"
++[[ ${curl_args[0]} == "-fsSL" && ${curl_args[1]} == "https://ampcode.com/install.sh" ]] ||
++  fail "Amp installation uses the official installer"
++[[ -x $test_home/.local/bin/amp ]] || fail "official Amp installer creates the command"
++[[ $(omarchy-default-agent) == "amp" ]] || fail "Amp becomes the default after installation"
++[[ ! -s $mise_log ]] || fail "Amp installation does not use the incompatible mise npm backend"
++mapfile -d '' -t agent_open_args <"$agent_open_log"
++[[ ${#agent_open_args[@]} == 2 && ${agent_open_args[0]} == "omarchy-agent" && ${agent_open_args[1]} == "--inline" ]] ||
++  fail "newly installed Amp opens in the installation terminal"
++pass "missing Amp installs officially, becomes the default, and opens inline"
++
++OMARCHY_TEST_AGENT_INSTALLED=true omarchy-default-agent copilot
++
+ : >"$agent_open_log"
+ if omarchy-default-agent unsupported >"$test_tmp/invalid-output" 2>&1; then
+   fail "default agent rejects unsupported providers"
+@@ -311,6 +400,20 @@ pass "default agent reports mise failures without notifications"
+ rm "$mock_bin/omarchy-agent"
+ hash -r
+ 
++cat >"$test_home/.local/bin/pi" <<'SH'
++#!/bin/bash
++exit 0
++SH
++chmod +x "$test_home/.local/bin/pi"
++printf '%s\n' "pi" >"$agent_file"
++: >"$launch_log"
++OMARCHY_TEST_LOCAL_COMMAND=pi PATH="$mock_bin:$ROOT/bin:/usr/bin" omarchy-agent
++mapfile -d '' -t launch_args <"$launch_log"
++[[ ${launch_args[*]} == "--app-id=org.omarchy.agent pi" ]] ||
++  fail "agent launcher finds a non-Amp agent in the standard user command path"
++rm "$test_home/.local/bin/pi"
++pass "agent launcher restores the standard user command path for every provider"
++
+ assert_launched() {
+   local agent=$1
+   local description=$2
+@@ -325,8 +428,10 @@ assert_launched() {
+     fail "$agent launch $description" "expected: ${expected[*]}\nactual: ${actual[*]}"
+ 
+   for ((index = 0; index < ${#expected[@]}; index++)); do
+-    [[ ${actual[$index]} == ${expected[$index]} ]] ||
+-      fail "$agent launch $description" "expected: ${expected[*]}\nactual: ${actual[*]}"
++    case ${actual[$index]} in
++      "${expected[$index]}") ;;
++      *) fail "$agent launch $description" "expected: ${expected[*]}\nactual: ${actual[*]}" ;;
++    esac
+   done
+ }
+ 
+@@ -348,6 +453,7 @@ assert_bypass() {
+   assert_launched "$agent" "skips permission prompts" "$@"
+ }
+ 
++assert_launch amp bash -c "printf '%s\n' \"\$1\" | exec amp" _ "Review this project"
+ assert_launch pi pi "Review this project"
+ assert_launch omp omp --auto-approve -- "Review this project"
+ assert_launch opencode opencode --auto --prompt "Review this project"
+@@ -359,6 +465,7 @@ assert_launch gemini gemini --yolo --prompt-interactive "Review this project"
+ assert_launch copilot copilot --allow-all --interactive "Review this project"
+ pass "agent launcher adapts initial prompts for every supported agent"
+ 
++assert_bypass amp amp
+ assert_bypass pi pi
+ assert_bypass omp omp --auto-approve
+ assert_bypass opencode opencode --auto
+@@ -370,6 +477,13 @@ assert_bypass gemini gemini --yolo
+ assert_bypass copilot copilot --allow-all
+ pass "agent launcher skips permission prompts for every supported agent"
+ 
++printf '%s\n' "amp" >"$agent_file"
++omarchy-agent-prompt --inline -n
++printf '%s\n' '-n' >"$test_tmp/expected-amp-stdin"
++cmp -s "$test_tmp/expected-amp-stdin" "$amp_stdin_log" ||
++  fail "Amp launcher forwards prompts that resemble echo options verbatim"
++pass "Amp launcher forwards its initial prompt verbatim"
++
+ printf '%s\n' "opencode" >"$agent_file"
+ omarchy-agent
+ mapfile -d '' -t launch_args <"$launch_log"
+diff --git a/test/shell.d/menu-test.sh b/test/shell.d/menu-test.sh
+index 978987b..517eeb5 100644
+--- a/test/shell.d/menu-test.sh
++++ b/test/shell.d/menu-test.sh
+@@ -191,6 +191,7 @@ assertEqual(
+   'menu lists Reset Computer last under Setup'
+ )
+ const expectedAgents = {
++  amp: { icon: '\ue908', iconFont: 'omarchy', label: 'Amp' },
+   pi: { icon: '\ue901', iconFont: 'omarchy', label: 'Pi' },
+   omp: { icon: '\ue903', iconFont: 'omarchy', label: 'omp' },
+   opencode: { icon: '\ue902', iconFont: 'omarchy', label: 'OpenCode' },
+@@ -212,13 +213,13 @@ assert(
+       && !entry.when
+       && entry.checked.includes(`== \"${agent}\"`)
+   }),
+-  'menu exposes every mise-installable coding agent with its own glyph under Defaults > Agent'
++  'menu exposes every supported coding agent with its own glyph under Defaults > Agent'
+ )
+ assertDeepEqual(
+   defaultItems
+     .filter(item => item.parent === 'setup.default.agent')
+     .map(item => item.label),
+-  ['Claude', 'Codex', 'Copilot', 'Crush', 'Gemini', 'Grok', 'omp', 'OpenCode', 'Pi'],
++  ['Amp', 'Claude', 'Codex', 'Copilot', 'Crush', 'Gemini', 'Grok', 'omp', 'OpenCode', 'Pi'],
+   'menu sorts coding agents alphabetically'
+ )
+ assert(!defaultById['install.ai.crush'], 'menu removes Crush from Install > AI')
+@@ -509,5 +510,5 @@ assert(
+ JS
+ 
+ font_charset=$(fc-query --format='%{charset}' "$ROOT/default/fonts/omarchy/omarchy.ttf")
+-[[ $font_charset == *"e900-e907"* ]] || fail "Omarchy icon font includes every custom menu glyph"
++[[ $font_charset == *"e900-e908"* ]] || fail "Omarchy icon font includes every custom menu glyph"
+ pass "Omarchy icon font includes the official agent marks"

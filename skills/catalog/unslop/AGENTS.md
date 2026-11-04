@@ -16,3 +16,7 @@ Refresh:
 3. Keep the `This checkout` section.
 4. Point `metadata.pin` and the source URL at the new commit.
 5. Run `python3 skills/catalog/skill-quality/scripts/validate.py skills/catalog/unslop`.
+
+Also run `python3 -m unittest tests.test_agent_instruction_wiring`; it verifies
+the pinned vendored body hash, routing, metadata, and local-section boundary.
+Do not edit numbered upstream rules as part of a local prose cleanup.

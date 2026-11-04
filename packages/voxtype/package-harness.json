@@ -1,0 +1,9 @@
+{
+  "source": "https://github.com/peteonrails/voxtype.git",
+  "ref": "8d49248baa53f29cb33007c9625a37281c72e799",
+  "patches": ["patches/0001-native-menubar-icons.patch"],
+  "checks": [
+    ["rustfmt", "--check", "--edition", "2021", "src/menubar.rs"],
+    ["cargo", "test", "--locked", "--features", "gpu-metal"]
+  ]
+}

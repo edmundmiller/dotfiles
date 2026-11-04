@@ -24,3 +24,7 @@ fallbacks in `sesh-picker.sh` and `sesh-all.sh`, not Homebrew-only paths.
 `zoxide-list.sh` drops `/.git` entries and missing directories, and calls
 `git-worktree-cwd` only for bare-hub candidates (HEAD exists, .git absent).
 Focused regressions are in `config/tmux/tests/sesh.zunit`.
+
+Run `hey ztest` for shell regressions, then run `hey check` on
+`modules/shell/tmux` and `config/tmux` for generated-launcher wiring. Use a
+disposable tmux server; do not replace the user's active server.

@@ -1,179 +1,47 @@
-# NUC Remote Deployment Guide
+---
+purpose: Route NUC deployment and recovery to the supported hey commands.
+applies_to: Building, activating, or rolling back the NUC configuration.
+entrypoint: Read docs/runbooks/deploy-nuc.md and bin/hey.d/remote.nu.
+verification: Run hey nuc-wt build and inspect services after authorized activation.
+update_when: NUC deployment transport, source isolation, or recovery changes.
+---
 
-This document describes how to deploy configuration changes to the NUC server from your Mac.
+# NUC deployment
 
-## Quick Start
+The canonical procedure is [the NUC deployment runbook](../../docs/runbooks/deploy-nuc.md).
+`bin/hey.d/remote.nu` owns the commands.
+
+`hey nuc` runs `nixos-rebuild` locally when invoked on the NUC. From another
+host it syncs the worktree to a unique `/tmp/dotfiles-worktree-*` directory,
+then evaluates and builds on the NUC. Each invocation owns its snapshot;
+active leases protect it, and pruning retains five recent snapshots.
 
 ```bash
-# Deploy to NUC (will prompt for sudo password)
-hey nuc
+hey nuc-wt build          # build without activation
+hey nuc-wt                # dry-activate from the synced snapshot
+hey nuc-wt test           # activate until reboot
+hey nuc-wt switch         # activate and select the boot generation
+hey nuc                  # deploy, choosing local or remote by hostname
+```
 
-# Check NUC status
+Activation modes require a clean commit; dirty snapshots support only build
+and VM checks. `test` and `switch` affect the live host and require deployment authorization.
+Do not evaluate `nixosConfigurations.nuc` on macOS; use the remote build.
+
+## Recovery and verification
+
+This `nixos-rebuild` path does **not** provide deploy-rs magic rollback.
+Keep console access available for networking changes. The separately exposed
+`hey deploy HOST` command uses deploy-rs; it is not the implementation of `hey nuc`.
+
+```bash
 hey nuc-status
-
-# SSH into NUC
-hey nuc-ssh
+hey nuc-service hermes-agent
+hey nuc-logs hermes-agent 100
+hey nuc-generations
+hey nuc-rollback          # changes the live host; authorize first
 ```
 
-## Architecture
-
-The remote deployment uses **deploy-rs**:
-
-- **Builds on NUC**: `remoteBuild = true` - no cross-compilation
-- **Magic rollback**: Auto-reverts if SSH dies during deploy
-- **Interactive sudo**: Requires password for security
-- **Direct push**: Nix closure pushed via SSH (no GitHub roundtrip)
-
-## Available Commands
-
-### Deployment
-
-- `hey nuc` - Deploy to NUC via deploy-rs
-- `hey deploy HOST` - Deploy to any configured host
-- `hey deploy-check` - Dry-run all deploy configs
-
-### Management
-
-- `hey nuc-ssh` - SSH into the NUC
-- `hey nuc-status` - Show system status and current generation
-- `hey nuc-service <name>` - Check service status (e.g., `hey nuc-service docker`)
-- `hey nuc-logs [unit] [lines]` - View system logs
-- `hey nuc-rollback` - Roll back to previous generation
-- `hey nuc-generations` - List all system generations
-
-## Deployment Workflow
-
-### Standard Deployment
-
-1. Make changes to NUC configuration in `hosts/nuc/`
-2. Run `hey nuc`
-3. Enter sudo password when prompted
-4. Verify deployment succeeded
-
-```bash
-# Example: Enable a new service
-vim hosts/nuc/default.nix  # Set some-service.enable = true
-hey nuc                    # Deploy
-hey nuc-service some-service  # Verify it's running
-```
-
-### Testing Before Deployment
-
-```bash
-# Check flake syntax/evaluation
-hey check
-
-# Dry-run deploy (checks config without applying)
-hey deploy-check
-
-# If good, deploy
-hey nuc
-```
-
-### Testing From a Git Worktree
-
-When working in a secondary Git worktree (for example a Herdr worktree for the Goodnight ADR), use `hey nuc-worktree` instead of `hey nuc`. It materializes a unique `/tmp/dotfiles-worktree-$USER-$HEAD-{clean|dirty}-$UUID` snapshot on the NUC and prints the path as `NUC_WORKTREE_REMOTE_DIR`; clean runs come from the committed Git archive, not mutable working-tree files. Uncommitted worktrees may use `build` or `vm`; `dry-activate`, `test`, and `switch` require a clean commit with exact deployment provenance. Active leases protect running snapshots, while exit cleanup retains only the five newest completed revision-scoped snapshots; abandoned leases age out after 24 hours.
-
-```bash
-# Safe activation preview from a clean commit
-hey nuc-worktree          # alias: hey nuc-wt
-
-# Other modes
-hey nuc-wt build          # build only; dirty worktrees are allowed
-hey nuc-wt test           # activate until next reboot, but do not set boot generation
-hey nuc-wt switch         # actually switch the NUC to this worktree config
-hey nuc-wt vm             # build the NUC VM derivation on the NUC
-```
-
-Use `test` or `switch` only for clean commits you are comfortable activating on the real NUC. For uncommitted tests, use `build` or `vm`.
-
-### Rollback
-
-deploy-rs has **magic rollback**: if SSH becomes unreachable after activation, it automatically reverts to the previous generation.
-
-Manual rollback:
-
-```bash
-hey nuc-rollback
-```
-
-## How It Works
-
-### deploy-rs Configuration
-
-Defined in `flake.nix`:
-
-```nix
-deploy.nodes.nuc = {
-  hostname = "nuc";
-  sshUser = "emiller";
-  user = "root";
-  interactiveSudo = true;
-  remoteBuild = true;  # Build on NUC, not Mac
-
-  profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
-    self.nixosConfigurations.nuc;
-};
-```
-
-### SSH Configuration
-
-Managed in `modules/shell/ssh.nix`:
-
-```nix
-"nuc" = {
-  hostname = "192.168.1.222";
-  user = "emiller";
-  forwardAgent = true;
-};
-```
-
-### What `hey nuc` Does
-
-1. Evaluates NUC config locally
-2. SSHs to NUC and builds the derivation there (`remoteBuild = true`)
-3. Prompts for sudo password (`interactiveSudo = true`)
-4. Activates new configuration
-5. Confirms activation (magic rollback if this fails)
-
-## Troubleshooting
-
-### SSH Connection Issues
-
-```bash
-# Test SSH connection
-ssh nuc
-
-# If fails, test direct connection
-ssh emiller@192.168.1.222
-
-# Check 1Password SSH agent
-echo $SSH_AUTH_SOCK
-```
-
-### Build Failures
-
-```bash
-# View logs on NUC
-hey nuc-logs nixos-rebuild
-
-# Roll back to last working generation
-hey nuc-rollback
-```
-
-### Service Not Starting
-
-```bash
-# Check service status
-hey nuc-service <service-name>
-
-# View service logs
-hey nuc-logs <service-name> 100
-```
-
-## See Also
-
-- Main documentation: `/CLAUDE.md`
-- SSH module: `modules/shell/ssh.nix`
-- Remote commands: `bin/hey.d/remote.just`
-- NUC configuration: `hosts/nuc/default.nix`
+Private GitHub inputs use `nix-private-github` and the root-owned token file.
+Never print the token. Automatic upgrades are separately configured in
+`hosts/_server.nix`; they fetch the published GitHub flake rather than this worktree.

@@ -25,6 +25,36 @@ br sync --import-only
 br sync --flush-only
 ```
 
+## Read-only backlog filtering
+
+Run `python3 scripts/beads_filter.py` for a local JSON audit of matching titles
+and active issues without descriptions or acceptance criteria. Matching titles
+are candidates, not proof of duplication. Inspect close reasons: a closed copy
+may explicitly point back to an intentionally open issue.
+
+For semantic filtering, preview the exact TypeSafe payload before sending it:
+
+```bash
+python3 scripts/beads_filter.py --query "Remove duplicated instructions or mandatory agent ceremony" --plan
+python3 scripts/beads_filter.py --query "Remove duplicated instructions or mandatory agent ceremony" --jev
+```
+
+`--jev` requires `TYPESAFE_API_KEY` in the environment. It sends only each issue's
+ID, title, status, description and acceptance criteria to TypeSafe. Those text
+fields may still contain private information; review `--plan` before sending.
+Comments, owner identities, notes and repository files are not sent.
+Use repeatable `--id ID` to restrict the input. Without IDs, every issue except
+closed records and tombstones is evaluated in batches of ten. `--limit 20`
+limits returned results, not API usage. Output includes token usage, the resolved
+model and a source digest. Redirect stdout to save the JSON; diagnostics use stderr.
+
+Jev returns the probability that each issue matches your criterion. This is an
+advisory ranking, not evidence of completion or a calibrated automatic-close
+threshold. No mode changes issues. Missing or invalid API answers fail the run
+without emitting partial results. Review source and acceptance criteria, then
+use `br` for intentional updates. Tests run with
+`python3 -m unittest tests/test_beads_filter.py` and the shared validation suite.
+
 ## Herdr downstream patches
 
 Every Herdr downstream patch entry in its source manifest must reference an open

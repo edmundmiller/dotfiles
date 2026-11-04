@@ -43,8 +43,8 @@
         cliamp.enable = true;
         tmux.jmux.enable = false;
         herdr.enable = true;
-        herdr.mainCodingAgent = "omp";
-        herdr.projects.enable = true;
+        herdr.mainCodingAgent = "pi";
+        rex.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
         dmux.enable = false;
@@ -113,21 +113,27 @@
       };
 
       agents = {
+        mcp = {
+          enable = true;
+          agents.amp = true;
+          servers = {
+            github.enable = true;
+            seqera.enable = true;
+            linear.enable = false;
+            fff.enable = true;
+            openaiDeveloperDocs.enable = true;
+          };
+        };
         pi = {
           enable = true;
-          # Seqera Enterprise OpenAI is back. Default follows shared
-          # settings.jsonc (openai-codex gpt-5.6-sol). Sol/Terra/Luna stay on
-          # the cycling list; Cursor Grok is the cross-provider fallback.
-          # Composer and Kimi K3 stay off this host's automatic lists.
-          # No opencode-go on this host.
+          classifierModel = {
+            provider = "openrouter";
+            id = "~typesafe/jev-latest";
+          };
+          # Work host cycles only Sol 6.1 and Luna 6; shared defaults add Astra.
           enabledModels = [
-            "openai-codex/gpt-5.6-sol"
-            "openai-codex/gpt-5.6-terra"
-            "openai-codex/gpt-5.6-luna"
-            "cursor/cursor-grok-4.6-medium"
-            "cursor/cursor-grok-4.6-high"
-            "cursor/cursor-grok-4.6-xhigh"
-            "cursor/cursor-grok-4.6-low-fast"
+            "openai-codex/gpt-6.1-sol"
+            "openai-codex/gpt-6-luna"
           ];
           cursorSdk.enable = true;
           secretReferences = {
@@ -139,10 +145,9 @@
         claude.enable = true;
         codex = {
           enable = true;
-          seqeraMcp.enable = true;
         };
         omp = {
-          enable = true;
+          enable = false;
           # Work laptop providers: vibeproxy (Claude subscription), openai-codex
           # (Seqera Enterprise), cursor, google-antigravity.
           #
@@ -260,15 +265,10 @@
               "cursor/gemini-3.5-flash"
             ];
           };
-          # Match the rest of this host's Seqera branding (stylix seqera-dark,
-          # ghostty SeqeraDark/Light, herdr seqera variant). mactraitorpro
-          # keeps the shared Catppuccin default.
+          # Match the rest of this host's Seqera branding. Herdr inherits the
+          # active Ghostty SeqeraDark/Light palette directly.
           themeDark = "dark-seqera";
           themeLight = "light-seqera";
-          mcpServers.seqera = {
-            type = "http";
-            url = "https://mcp.seqera.io/mcp";
-          };
           # Wire omp to the VibeProxy menu-bar app (installed via the vibeproxy
           # homebrew cask). Exposes Claude/GPT subscription models on :8317 as
           # vibeproxy/* selectors; see config/omp/models.yml.
@@ -286,7 +286,6 @@
         };
         ssh.enable = true;
         mosh.enable = true;
-        moshi.enable = true;
       };
 
       desktop.macos.enable = true;
@@ -294,6 +293,7 @@
       desktop = {
         apps.audioPriorityBar.enable = true;
         apps.handy.enable = true;
+        apps.tldraw.enable = true;
         term = {
           ghostty = {
             enable = true;
@@ -371,6 +371,7 @@
       enable = true;
 
       onActivation = {
+        extraEnv.HOMEBREW_BUNDLE_CASK_SKIP = "rooms"; # Unsupported postflight keywords in pinned Homebrew.
         extraFlags = [ "--quiet" ]; # Reduce Homebrew activation chatter
       };
     }
@@ -380,6 +381,7 @@
       llm-agents.qmd
       my.betteraudio
       my.emeraldian
+      my.excalidraw-cli
       my.zele
       my.quill
       my.work-calendar-busy
@@ -429,9 +431,9 @@
 
           # Sol for coding, Terra for intent, Luna for done. Cursor stays on
           # Pi's cycling list as the fallback when Codex is down.
-          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-5.6-terra";
-          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-5.6-sol";
-          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-5.6-luna";
+          PI_MODEL_SWITCH_INTENT = "openai-codex/gpt-6.1-sol";
+          PI_MODEL_SWITCH_CODING = "openai-codex/gpt-6.1-sol";
+          PI_MODEL_SWITCH_DONE = "openai-codex/gpt-6-luna";
         };
 
         home.file."Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
@@ -439,6 +441,17 @@
 
         home.activation.removeLegacyQmd = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           rm -f "$HOME/.bun/bin/qmd" "$HOME/.cache/npm/bin/qmd"
+        '';
+
+        home.activation.removeLegacyBunClis = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          legacy="$HOME/.bun/bin/excalidraw"
+          if [ -L "$legacy" ]; then
+            case "$(readlink "$legacy")" in
+              ../install/global/node_modules/*|"$HOME"/.bun/install/global/node_modules/*)
+                rm "$legacy"
+                ;;
+            esac
+          fi
         '';
       };
 

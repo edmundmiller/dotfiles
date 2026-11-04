@@ -1,0 +1,16 @@
+[Unit]
+Description=Amp multi-repository runner on meshify
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/src
+ExecStart=%h/.amp/bin/amp --no-tui --runner-id meshify --no-serve-cwd --discover-dirs=%h/src --dir %h/.config/dotfiles --remote-control-terminal
+Environment=PATH=%h/.amp/bin:%h/.local/share/mise/shims:%h/.local/bin:%h/.nix-profile/bin:/usr/local/bin:/usr/bin
+Restart=always
+RestartSec=10
+UMask=0077
+
+[Install]
+WantedBy=default.target

@@ -13,3 +13,7 @@ From this directory, `agenix -e <name>.age -i ~/.ssh/id_ed25519` edits an encryp
 secret. After recipient changes, `agenix -r -i ~/.ssh/id_ed25519` re-keys it;
 the operator needs an identity that can decrypt the existing ciphertext.
 Adding a host requires its key in both mappings and re-keying.
+
+Editing or re-keying ciphertext is a secret-state change and needs explicit
+authorization. For mapping-only changes, run `hey check` on
+`hosts/shared/secrets` and `modules/agenix` without decrypting any secret.

@@ -39,8 +39,37 @@ jobs:
         with:
           extra-conf: accept-flake-config = true
       - name: Validate (same runner as hey check)
+        env:
+          NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
+          REX_TOKEN: ${{ secrets.REX_TOKEN }}
         run: |
+          if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
+            echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
+            exit 1
+          fi
+          if [[ -z "$REX_TOKEN" ]]; then
+            echo "::error::Configure REX_TOKEN with access to pkgs.superlogical.com."
+            exit 1
+          fi
+          umask 077
+          rex_netrc=$(mktemp "$RUNNER_TEMP/rex-netrc.XXXXXX")
+          trap 'rm -f "$rex_netrc"' EXIT
+          printf 'machine pkgs.superlogical.com login rex password %s\n' "$REX_TOKEN" > "$rex_netrc"
+          unset REX_TOKEN
+          export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
+
+  # Preserve the contexts required by main without weakening branch protection.
+  required-checks:
+    name: ${{ matrix.context }}
+    needs: checks
+    if: always()
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        context: [Flake Check (Linux), Check Formatting]
+    steps:
+      - run: test "${{ needs.checks.result }}" = success
 
   herdr-vm-test:
     name: Herdr VM Test (Linux)
@@ -57,7 +86,7 @@ jobs:
 
   darwin:
     name: Darwin-only checks
-    runs-on: macos-15
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,8 +94,81 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: accept-flake-config = true
+      - name: Prepare Xcode 27.2 Metal toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          selected_app=$(realpath /Applications/Xcode_27.2.app)
+          test -d "$selected_app/Contents/Developer"
+          nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
+          nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" --command \
+            nu bin/hey xcode-setup "$selected_app" --apply
+          env -u DEVELOPER_DIR /usr/bin/xcrun --no-cache --find metallib
+      - name: Free space for Darwin builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          selected_developer=$(realpath "$(xcode-select --print-path)")
+          selected_app="${selected_developer%/Contents/Developer}"
+          test -d "$selected_app/Contents/Developer"
+          df -h /
+          for app in /Applications/Xcode*.app; do
+            if [[ ! -d "$app" || -L "$app" ]]; then
+              continue
+            fi
+            if [[ "$(realpath "$app")" != "$selected_app" ]]; then
+              printf 'Removing inactive Xcode: %s\n' "$app"
+              sudo rm -rf -- "$app"
+            fi
+          done
+          xcodebuild -version
+          df -h /
+      - name: Verify Metal discovery as a Nix build user
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix build --no-link --print-build-logs --expr "$(cat <<'NIX'
+          builtins.derivation {
+            name = "darwin-metal-toolchain-preflight";
+            system = "aarch64-darwin";
+            builder = "/bin/bash";
+            __noChroot = true;
+            preferLocalBuild = true;
+            allowSubstitutes = false;
+            args = [ "-euc" ''
+              /usr/bin/id
+              export DEVELOPER_DIR="$(/usr/bin/xcode-select -p)"
+              /usr/bin/xcodebuild -showComponent MetalToolchain
+              export SDKROOT="$(/usr/bin/xcrun --sdk macosx --show-sdk-path)"
+              for tool in swiftc metal metallib; do
+                /usr/bin/xcrun --find "$tool"
+              done
+              /usr/bin/xcrun metal --version
+              /usr/bin/touch "$out"
+            '' ];
+          }
+          NIX
+          )"
       - name: Validate affected Darwin configuration
-        run: python3 scripts/validation.py --ci --platform darwin
+        env:
+          NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
+          REX_TOKEN: ${{ secrets.REX_TOKEN }}
+        run: |
+          if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
+            echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
+            exit 1
+          fi
+          if [[ -z "$REX_TOKEN" ]]; then
+            echo "::error::Configure REX_TOKEN with access to pkgs.superlogical.com."
+            exit 1
+          fi
+          umask 077
+          rex_netrc=$(mktemp "$RUNNER_TEMP/rex-netrc.XXXXXX")
+          trap 'rm -f "$rex_netrc"' EXIT
+          printf 'machine pkgs.superlogical.com login rex password %s\n' "$REX_TOKEN" > "$rex_netrc"
+          unset REX_TOKEN
+          export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
+          python3 scripts/validation.py --ci --platform darwin
 
   vm-services:
     name: Service VM Tests (Linux)

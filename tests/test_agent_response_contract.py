@@ -12,7 +12,7 @@ class AgentResponseContractTests(unittest.TestCase):
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for expected in (
             "Communicate concisely",
             "lead with the outcome",
@@ -38,14 +38,20 @@ class AgentResponseContractTests(unittest.TestCase):
 
     def test_thin_core_requires_scope_authority_and_live_evidence(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()
+        normalized = " ".join(core.split())
 
         for expected in (
             "Preserve unrelated work",
+            "make reversible decisions and show the result",
+            "Stop at one-way doors",
+            "Carry explicit approval through that work, quoting it to subagents",
+            "Ask again only if stakes, failed checks, or new facts change what was approved",
             "Do not infer authority",
             "Inspect the live source of truth before acting",
             "Do not claim completion without fresh evidence",
         ):
-            self.assertIn(expected, core)
+            self.assertIn(expected, normalized)
+        self.assertNotIn("Ask only about two-way-door changes", normalized)
 
     def test_codex_defaults_keep_responses_and_reasoning_summaries_concise(self) -> None:
         config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
@@ -72,19 +78,62 @@ class AgentResponseContractTests(unittest.TestCase):
             with self.subTest(package=package):
                 self.assertNotIn(json.dumps(package), settings)
 
-    def test_pi_retains_safety_and_useful_integrations(self) -> None:
+    def test_pi_retains_selected_integrations_and_drops_unused_packages(self) -> None:
         settings = (ROOT / "config/pi/settings.jsonc").read_text()
         for package in (
-            "npm:@gotgenes/pi-permission-system",
-            "~/.pi/agent/packages/pi-command-policy-bridge",
-            "npm:pi-hermes-memory", "npm:pi-terminal-theme",
-            "npm:pi-agent-browser-native",
+            "npm:pi-memory", "npm:pi-terminal-theme",
+            "npm:@moyai/pi-session-hoarder", "npm:pi-btw",
         ):
             with self.subTest(package=package):
                 self.assertIn(json.dumps(package), settings)
+        for package in (
+            "npm:@gotgenes/pi-permission-system",
+            "~/.pi/agent/packages/pi-command-policy-bridge",
+            "npm:confluence-cli",
+            "npm:latchkey",
+            "npm:@aliou/pi-processes",
+            "npm:pi-context-usage",
+            "git:github.com/mjakl/pi-interlude",
+            "npm:pi-hermes-memory",
+            # Dropped as unused; pi-mcp-adapter stays filtered in
+            # modules/agents/pi/lib/_settings.nix (legacyMcp).
+            "npm:@companion-ai/feynman",
+            "npm:pi-agent-browser-native",
+        ):
+            with self.subTest(package=package):
+                self.assertNotIn(json.dumps(package), settings)
         links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
         self.assertIn("enforce-commit-signing.ts", links)
+        self.assertNotIn("pi-command-policy-bridge", links)
+        self.assertNotIn("pi-permission-system", links)
+        self.assertIn('"defaultTools": ["+codemode"]', settings)
         self.assertNotIn("you-are-right-killer.ts", links)
+
+    def test_host_provided_packages_are_never_declared_as_pi_packages(self) -> None:
+        """Pi bundles these inside its binary and injects them through the
+        extension loader. A declared copy lands in ~/.pi/agent/npm and can
+        shadow the host module, which Pi warns creates duplicate runtime
+        modules. See HOST_PROVIDED_EXTENSION_PACKAGES in the Pi binary."""
+        host_provided = (
+            "@earendil-works/pi-agent-core",
+            "@earendil-works/pi-ai",
+            "@earendil-works/pi-coding-agent",
+            "@earendil-works/pi-tui",
+            "@mariozechner/pi-agent-core",
+            "@mariozechner/pi-ai",
+            "@mariozechner/pi-coding-agent",
+            "@mariozechner/pi-tui",
+            "@sinclair/typebox",
+            "typebox",
+        )
+        declarations = (
+            (ROOT / "config/pi/settings.jsonc").read_text()
+            + (ROOT / "modules/agents/pi/lib/_settings.nix").read_text()
+        )
+
+        for package in host_provided:
+            with self.subTest(package=package):
+                self.assertNotIn(f"npm:{package}", declarations)
 
     def test_goalize_does_not_require_a_goal_service(self) -> None:
         prompt = (ROOT / "config/pi/prompts/goalize.md").read_text()
@@ -136,7 +185,7 @@ class AgentResponseContractTests(unittest.TestCase):
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 220)
+        self.assertLessEqual(len(core.split()), 400)
         for expected in (
             "Communicate concisely",
             "lead with the outcome",

@@ -8,3 +8,7 @@ changing process recognition alone does not define status semantics.
 clobbering each other. Focused checks: `bun test` and
 `bun build src/index.ts --outdir dist --target node`. Nix patches Node to its
 store path in the shipped wrapper.
+
+Run both focused checks, then `hey check packages/tmux-smart-name` for packaging
+and consumer routing. Process-recognition fixtures must assert the resulting
+status and display name, not only that a binary name matched.

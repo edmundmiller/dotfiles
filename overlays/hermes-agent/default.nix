@@ -31,7 +31,7 @@ let
   # package so Photon does not regress when every profile converges here.
   hermesPhotonSidecar = final.buildNpmPackage {
     pname = "hermes-photon-sidecar";
-    version = "2026.9.11";
+    version = "2026.9.14";
     src = inputs.hermes-agent + /plugins/platforms/photon/sidecar;
     npmDepsHash = "sha256-a9IvcIEG6PbV1rH8qOUW4p68yWy8myGJaBrKMveYOwQ=";
     dontNpmBuild = true;
@@ -41,34 +41,9 @@ let
     '';
   };
 
-  firecrawlAnydoc = hermesPython.pkgs.buildPythonPackage rec {
-    pname = "firecrawl-anydoc";
-    version = "0.2.4";
-    pyproject = true;
-
-    src = final.fetchPypi {
-      pname = "firecrawl_anydoc";
-      inherit version;
-      hash = "sha256-PilGAnL+qBzeCP1a8R9rDx/wWRkhTdyTmGf3I2LIMDI=";
-    };
-
-    cargoDeps = final.rustPlatform.fetchCargoVendor {
-      inherit src;
-      name = "firecrawl-anydoc-${version}";
-      hash = "sha256-yhW5HSzVrZCms4x36J2NGIn1e5YLIgjuNKXM9EJ9J8c=";
-    };
-
-    nativeBuildInputs = with final.rustPlatform; [
-      cargoSetupHook
-      maturinBuildHook
-    ];
-
-    pythonImportsCheck = [ "anydoc" ];
-  };
-
   hermesFrontend = final.buildNpmPackage {
     pname = "hermes-frontend";
-    version = "2026.9.11";
+    version = "2026.9.14";
     src = inputs.hermes-agent;
     npmDepsHash = "sha256-hJe0Fv8TadHoo64cmA3g3eC0fcSoX2bbb0C00QhOoCo=";
     npmFlags = [
@@ -103,11 +78,9 @@ let
   sharedHermesAgentBase = prev.llm-agents."hermes-agent".overrideAttrs (
     old:
     let
-      hermesRuntimeDeps =
-        map (package: if (package.pname or "") == "nemo-relay" then nemoRelay else package) (
-          old.propagatedBuildInputs or [ ]
-        )
-        ++ [ firecrawlAnydoc ];
+      hermesRuntimeDeps = map (
+        package: if (package.pname or "") == "nemo-relay" then nemoRelay else package
+      ) (old.propagatedBuildInputs or [ ]);
       hermesPythonEnv = hermesPython.withPackages (_: hermesRuntimeDeps);
       useCurrentRuntime =
         arg:
@@ -118,7 +91,9 @@ let
     in
     {
       pname = "hermes-agent";
-      version = "2026.9.11";
+      # Keep Python distribution metadata on Hermes' semantic version. The
+      # plugin loader reads it for requires_hermes compatibility checks.
+      version = "0.21.3";
       src = inputs.hermes-agent;
       propagatedBuildInputs = hermesRuntimeDeps;
       doInstallCheck = true;
@@ -129,6 +104,12 @@ let
         ./patches/slash-worker-hermes-python.patch
         ./patches/daemon-pool-python314.patch
       ];
+      # The local patch already fixes the slash-worker interpreter and source root.
+      # Retain the other upstream fix without applying the interpreter fix twice.
+      postPatch = ''
+        substituteInPlace tools/lazy_deps.py \
+          --replace-fail 'Version(installed) in SpecifierSet(spec_tail)' 'True'
+      '';
       makeWrapperArgs = map useCurrentRuntime (old.makeWrapperArgs or [ ]);
       postInstall = (old.postInstall or "") + ''
         chmod -R u+w $out/share/hermes
@@ -163,7 +144,11 @@ let
         ${hermesPythonEnv}/bin/python3 -c '
         import yaml, cryptography, openai, nemo_relay, anydoc
         from importlib.metadata import version
+        from hermes_cli.plugins_manifest import running_hermes_version, version_satisfies
         assert version("nemo-relay") == "0.8.4"
+        assert running_hermes_version() == "0.21.3"
+        assert version_satisfies(">=0.21.3", "0.21.3")
+        assert not version_satisfies(">=0.21.3", "0.21.2")
         '
         (
           cd "$TMPDIR"
@@ -181,8 +166,8 @@ let
       '';
       passthru = (old.passthru or { }) // {
         nemo-relay = nemoRelay;
-        hermesVersion = "0.21.2";
-        hermesRelease = "v2026.9.11";
+        hermesVersion = "0.21.3";
+        hermesRelease = "v2026.9.14";
         smartModelRouting = false;
       };
     }

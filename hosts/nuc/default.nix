@@ -168,6 +168,7 @@ let
       extraPackages = [
         pkgs.my.buzz
         pkgs.my.displayctl
+        pkgs.himalaya
       ]
       ++ (profile.extraPackages or [ ]);
       environmentFiles = [ hermesDisplayctlEnvironment ] ++ (profile.environmentFiles or [ ]);
@@ -1480,6 +1481,23 @@ in
   # assume networked builds.
   nix.settings.sandbox = "relaxed";
 
+  # Run terminals as the NUC user; retain the enrolled identity in /var/lib/rex.
+  services.rex.enable = true;
+  services.rex.user = "emiller";
+  services.rex.group = "users";
+  services.rex.socketMode = "0600";
+  services.rex.tailscale = {
+    enable = true;
+    hostname = "nuc-rex";
+  };
+
+  age.secrets.rex-netrc = {
+    owner = "root";
+    group = "root";
+    mode = "0600";
+  };
+  nix.settings.netrc-file = config.age.secrets.rex-netrc.path;
+
   # nix-ld for dynamically linked binaries (e.g. sag TTS)
   programs.nix-ld = {
     enable = true;
@@ -1548,6 +1566,7 @@ in
     }
     ../_server.nix
     ../_home.nix
+    inputs.rex.nixosModules.default
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
@@ -1668,7 +1687,6 @@ in
           openssh
           pnpm
           prek
-          himalaya
           whisper-cpp
           rtk
         ];
@@ -2324,6 +2342,57 @@ in
     };
   };
 
+  # Shared threads use their own account, credentials, and checkouts. Never add
+  # this user to wheel or reuse emiller's Amp installation or repository trees.
+  users.groups.amp = { };
+  users.users.amp = {
+    isSystemUser = true;
+    group = "amp";
+    home = "/var/lib/amp";
+    createHome = true;
+    homeMode = "0700";
+    shell = pkgs.bashInteractive;
+  };
+  systemd.services.amp-shared-runner = {
+    description = "Amp shared workspace runner for NUC";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    # Bootstrap with the official installer and an independent Amp login first.
+    unitConfig.ConditionFileIsExecutable = "/var/lib/amp/.amp/bin/amp";
+    path = [
+      "/run/current-system/sw"
+      pkgs.bashInteractive
+      pkgs.coreutils
+      pkgs.curl
+      pkgs.git
+      pkgs.openssh
+      pkgs.unstable.pixi
+    ];
+    environment = {
+      HOME = "/var/lib/amp";
+      XDG_CACHE_HOME = "/var/lib/amp/.cache";
+      XDG_CONFIG_HOME = "/var/lib/amp/.config";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "amp";
+      Group = "amp";
+      StateDirectory = "amp";
+      StateDirectoryMode = "0700";
+      WorkingDirectory = "/var/lib/amp/workspaces";
+      ExecStart = "/var/lib/amp/.amp/bin/amp --no-tui --runner-id nuc-shared --share --amp-env --discover-dirs --remote-control-terminal";
+      Restart = "always";
+      RestartSec = "10s";
+      UMask = "0077";
+      ProtectHome = true;
+      ProtectSystem = "strict";
+      PrivateTmp = true;
+      NoNewPrivileges = true;
+      CapabilityBoundingSet = "";
+    };
+  };
+
   # Keep NUC on an LTS kernel for ZFS. nixos-unstable's default
   # linuxPackages currently tracks 7.0.x, where zfs-kernel-2.4.1 is marked
   # broken and blocks evaluation before deploy activation.
@@ -2369,8 +2438,21 @@ in
       herdr.enable = true;
     };
     agents = {
+      mcp = {
+        enable = true;
+        agents.amp = true;
+        servers = {
+          github.enable = true;
+          linear.enable = true;
+          notion.enable = true;
+          fff.enable = true;
+          openaiDeveloperDocs.enable = true;
+        };
+      };
+      # Claude's CLI is a backend here; keep its existing permissions/settings.
+      claude.pstack.enable = true;
       codex.enable = true;
-      omp.enable = true;
+      omp.enable = false;
       opencode.enable = true;
       pi.enable = true;
     };
@@ -2550,10 +2632,6 @@ in
       sonarr.enable = true;
       deploy-rs.enable = true;
       mosh.enable = true;
-      moshi = {
-        enable = true;
-        hookSecretsFile = config.age.secrets.moshi-hook-secrets-json.path;
-      };
       ssh.enable = true;
       syncthing.enable = true;
       tailscale.enable = true;
@@ -2593,6 +2671,7 @@ in
     "--ssh"
   ];
   systemd.tmpfiles.rules = [
+    "d /var/lib/amp/workspaces 0700 amp amp -"
     "d ${millDocsVaultPath} 0755 emiller users -"
     "d ${millDocsCodingAgentAcpxDir} 0700 emiller users -"
     "d ${factoryProductPassStateDir} 0700 emiller users -"
@@ -2842,7 +2921,7 @@ in
     enable = true;
     secrets = {
       githubNixToken = {
-        reference = "op://Agents/GH PA dotfiles flake/credential";
+        reference = "op://Agents/dl3jytukonjoafedy7rqxisiue/token";
       };
       amosburtonLinearApiKey = {
         reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;
@@ -2856,15 +2935,9 @@ in
     };
   };
 
-  systemd.services.nixos-upgrade = {
-    after = [ "opnix-secrets.service" ];
-    requires = [ "opnix-secrets.service" ];
-    script = lib.mkForce ''
-      exec ${nixPrivateGithub}/bin/nix-private-github \
-        ${config.system.build.nixos-rebuild}/bin/nixos-rebuild \
-        ${config.system.autoUpgrade.operation} ${toString config.system.autoUpgrade.flags}
-    '';
-  };
+  # Deploy only through the manual, CI-gated workflow or an authorized hey nuc.
+  # Inherited periodic upgrades would activate main without that approval gate.
+  system.autoUpgrade.enable = lib.mkForce false;
 
   age = {
     secrets = {

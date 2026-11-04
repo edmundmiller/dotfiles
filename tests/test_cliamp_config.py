@@ -40,3 +40,8 @@ def test_herdr_installs_cliamp_integration_with_nested_sessions_enabled() -> Non
     assert config["experimental"]["allow_nested"] is True
     assert "optionalString config.modules.shell.cliamp.enable" in module
     assert "install_plugin coryshaw1 herdr-cliamp" in module
+    assert 'command = "herdr-cliamp.open"' not in (
+        ROOT / "config" / "herdr" / "config.toml"
+    ).read_text()
+    assert 'command = "herdr-cliamp.open"' in module
+    assert 'key = "prefix+M"' in module

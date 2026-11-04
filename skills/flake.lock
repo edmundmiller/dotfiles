@@ -496,6 +496,23 @@
         "type": "github"
       }
     },
+    "pstack": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792211307,
+        "narHash": "sha256-R8zwlTpAw0gQbOO/SnglSN3YhqUh5r0IOg7PHU1scJg=",
+        "owner": "cursor",
+        "repo": "plugins",
+        "rev": "101b274dd991f694e1f7024be2157e5f3adf07de",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cursor",
+        "repo": "plugins",
+        "rev": "101b274dd991f694e1f7024be2157e5f3adf07de",
+        "type": "github"
+      }
+    },
     "qmd-repo": {
       "flake": false,
       "locked": {
@@ -541,6 +558,7 @@
         "pi-messenger-repo": "pi-messenger-repo",
         "prek-repo": "prek-repo",
         "product-engineering": "product-engineering",
+        "pstack": "pstack",
         "qmd-repo": "qmd-repo",
         "shadcn-improve": "shadcn-improve",
         "shaping-skills": "shaping-skills",

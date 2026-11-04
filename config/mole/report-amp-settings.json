@@ -1,0 +1,7 @@
+{
+  "amp.tools.enable": ["__no_tools_for_disk_reports__"],
+  "amp.permissions": [{ "tool": "*", "action": "reject" }],
+  "amp.mcpServers": {},
+  "amp.notifications.enabled": false,
+  "amp.updates.mode": "disabled"
+}

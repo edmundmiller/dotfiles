@@ -3,6 +3,7 @@
   "debugLog": false,
   "permissionReviewLog": true,
   "yoloMode": true,
+  "doublePressToConfirm": false,
   "permission": {
     "*": "allow",
     "path": {

@@ -38,7 +38,6 @@ let
     inherit pkgs;
     piPkgsDir = ../../../packages/pi-packages;
   };
-  piCommandPolicyBridge = ../../../packages/pi-packages/pi-command-policy-bridge;
   piHerdrPackage = ../../../packages/pi-packages/pi-herdr;
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
@@ -129,7 +128,14 @@ let
     inherit lib pkgs piSecretPreflightScript;
   };
 
-  agentCore = builtins.readFile "${configDir}/agents/core.md";
+  agentCore =
+    builtins.readFile "${configDir}/agents/core.md"
+    + lib.optionalString (cfg.classifierModel != null) (
+      "\n"
+      + lib.replaceStrings [ "@classifierModel@" ] [ (builtins.toJSON cfg.classifierModel) ] (
+        builtins.readFile "${configDir}/pi/classifier-instructions.md"
+      )
+    );
 
   markdownFilesIn =
     dir:
@@ -177,6 +183,8 @@ let
       piHerdrPackage
       piSettingsParsed
       ;
+    piGithubToolsPackage = pkgs.my.pi-github-tools;
+    herdrVersion = pkgs.my.herdr.version;
   };
 in
 {
@@ -202,15 +210,28 @@ in
       default = null;
       description = "Optional override for Pi settings defaultModel. Null keeps config/pi/settings.jsonc.";
     };
-    mcp.enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Enable Pi MCP adapter and MCPorter packages.";
+    classifierModel = mkOption {
+      type = types.nullOr (
+        types.submodule {
+          options = {
+            provider = mkOption {
+              type = types.str;
+              description = "Pi classifier provider ID.";
+            };
+            id = mkOption {
+              type = types.str;
+              description = "Classifier model ID within the provider.";
+            };
+          };
+        }
+      );
+      default = null;
+      description = "Host classifier selection included in Pi agent instructions. Credentials use Pi auth.json or provider environment variables.";
     };
     computerUse.enable = mkOption {
       type = types.bool;
-      default = desktopPiHost;
-      description = "Enable Pi GUI/browser computer-use tools on desktop-capable hosts.";
+      default = false;
+      description = "Explicitly opt into Pi GUI/browser computer-use tools and their native helper permissions.";
     };
     gitTools.enable = mkOption {
       type = types.bool;
@@ -220,12 +241,12 @@ in
     statusUi.enable = mkOption {
       type = types.bool;
       default = desktopPiHost;
-      description = "Enable Pi status, usage quota, and WakaTime UI packages on interactive desktop hosts.";
+      description = "Enable Pi status and usage quota UI packages on interactive desktop hosts.";
     };
     contextMemory.enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Opt into pi-context in addition to the base Hermes memory integration. Honcho has its own toggle.";
+      description = "Opt into pi-context in addition to the base pi-memory integration. Honcho has its own toggle.";
     };
     cursorSdk.enable = mkOption {
       type = types.bool;
@@ -313,7 +334,6 @@ in
     # Individual writable files (sessions, auth, cache) live alongside the
     # managed symlinks under ~/.pi/agent.
     env.PI_CODING_AGENT_DIR = "$HOME/.pi/agent";
-    env.PI_PERMISSION_SYSTEM_CONFIG_PATH = "$HOME/.pi/agent/extensions/pi-permission-system/config.json";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
@@ -323,15 +343,6 @@ in
     # pi-overwatch dashboard cadence / stale detection
     env.PI_OVERWATCH_REFRESH_MS = "1000";
     env.PI_OVERWATCH_STALE_MS = "20000";
-    # pi-computer-use installs its native macOS helper outside the extension
-    # checkout at ~/.pi/agent/helpers/pi-computer-use/bridge. Upstream normally
-    # preserves an existing modern helper to avoid gratuitous TCC identity
-    # churn, but that can leave a stale helper after `pi update --extensions`.
-    # Force setup to reconcile the helper with the installed extension version;
-    # if the helper actually changes, macOS may require re-granting
-    # Accessibility/Screen Recording for the new binary identity.
-    env.PI_COMPUTER_USE_FORCE_HELPER_INSTALL = mkIf cfg.computerUse.enable "1";
-
     environment.shellAliases = {
       nbt = "pi -nbt";
     };
@@ -351,12 +362,12 @@ in
             configDir
             agentCore
             piPkgDeps
-            piCommandPolicyBridge
             promptLinks
             agentLinks
             sessionSearchFiles
             isDarwin
             ;
+          piPstack = pkgs.my.pstack-pi;
           inherit (settings) piSettingsValidated;
         };
 

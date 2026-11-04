@@ -160,8 +160,17 @@ validate_metadata() {
       and (.sourceMode | type == "string" and test("^0[0-7]{3}$"))))
     and (all(.packages[];
       (.name | type == "string" and length > 0)
-      and (.manager == "repo" or .manager == "aur")
+      and (.manager == "repo" or .manager == "aur" or .manager == "archive")
+      and (if .manager == "archive" then
+        (.version | type == "string" and length > 0)
+        and (.url | type == "string" and startswith("https://"))
+        and (.sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+        else true end)
       and (.command | type == "string" and length > 0)))
+    and (if .hermesAgent then
+      (.hermesAgent.revision | type == "string" and test("^[0-9a-f]{40}$"))
+      and (.hermesAgent.installerSha256 | type == "string" and test("^[0-9a-f]{64}$"))
+      else true end)
     and (all(.services[];
       (.name | type == "string" and length > 0)
       and (.setup == "none" or .setup == "omapods" or .setup == "voxtype")
@@ -571,10 +580,15 @@ check_system_state() {
       || report_error "incompatible Omarchy version: expected $expected_version, got ${actual_version:-unavailable}"
   fi
 
-  while IFS=$'\t' read -r package command_name; do
+  while IFS=$'\t' read -r package command_name expected_version; do
     pacman -Q "$package" >/dev/null 2>&1 || report_error "missing package: $package"
+    if [[ $expected_version != - ]]; then
+      [[ $(pacman -Q "$package" 2>/dev/null) == "$package $expected_version" ]] \
+        || report_error "package version drift: $package (expected $expected_version)"
+    fi
     command -v "$command_name" >/dev/null 2>&1 || report_error "missing command: $command_name"
-  done < <(jq -r '.packages[] | [.name, .command] | @tsv' "$MANIFEST")
+  done < <(jq -r '.packages[] | [.name, .command, (.version // "-")] | @tsv' "$MANIFEST")
+  check_hermes_agent
 
   while IFS= read -r service; do
     systemctl --user is-active --quiet "$service" 2>/dev/null \
@@ -729,13 +743,31 @@ check_files() {
 }
 
 restore_packages() {
-  local package manager command_name
+  local package manager command_name version url sha256 archive
   (( NO_SYSTEM )) && return 0
-  while IFS=$'\t' read -r package manager command_name; do
-    if pacman -Q "$package" >/dev/null 2>&1; then
+  while IFS=$'\t' read -r package manager command_name version url sha256; do
+    if [[ $manager == archive && $(pacman -Q "$package" 2>/dev/null) == "$package $version" ]]; then
+      continue
+    elif [[ $manager != archive ]] && pacman -Q "$package" >/dev/null 2>&1; then
       continue
     fi
     case "$manager" in
+    archive)
+      archive="$(mktemp --suffix=.pkg.tar.zst)"
+      TEMP_FILES+=("$archive")
+      curl --fail --location --proto '=https' --proto-redir '=https' "$url" --output "$archive"
+      printf '%s  %s\n' "$sha256" "$archive" | sha256sum --check --status \
+        || fail "package checksum mismatch: $package"
+      [[ $(pacman -Qp "$archive") == "$package $version" ]] \
+        || fail "package archive identity mismatch: $package"
+      if [[ -t 0 ]]; then
+        sudo pacman -U --noconfirm "$archive"
+      else
+        pkexec pacman -U --noconfirm "$archive"
+      fi
+      [[ $(pacman -Q "$package") == "$package $version" ]] \
+        || fail "package installation did not provide $package $version"
+      ;;
     repo)
       omarchy pkg add "$package"
       ;;
@@ -749,7 +781,46 @@ restore_packages() {
     pacman -Q "$package" >/dev/null 2>&1 || fail "package installation did not provide $package"
     command -v "$command_name" >/dev/null 2>&1 \
       || fail "package $package did not provide required command $command_name"
-  done < <(jq -r '.packages[] | [.name, .manager, .command] | @tsv' "$MANIFEST")
+  done < <(jq -r '.packages[] | [.name, .manager, .command, (.version // "-"), (.url // "-"), (.sha256 // "-")] | @tsv' "$MANIFEST")
+}
+
+check_hermes_agent() {
+  local revision checkout="$TARGET_HOME/.hermes/hermes-agent"
+  revision="$(jq -r '.hermesAgent.revision // empty' "$MANIFEST")"
+  [[ -n $revision ]] || return 0
+  [[ $(git -C "$checkout" rev-parse HEAD 2>/dev/null) == "$revision" ]] \
+    || report_error "Hermes Agent revision drift: expected $revision"
+  [[ -d $checkout/.git && -z $(git -C "$checkout" status --porcelain 2>/dev/null) ]] \
+    || report_error "Hermes Agent checkout missing or dirty: $checkout"
+  [[ -x $checkout/venv/bin/hermes && -x $TARGET_HOME/.local/bin/hermes ]] \
+    || report_error "Hermes Agent CLI installation incomplete"
+  [[ -x $checkout/apps/desktop/release/linux-unpacked/Hermes ]] \
+    || report_error "Hermes Agent local desktop build missing"
+}
+
+restore_hermes_agent() {
+  local revision sha256 installer checkout="$TARGET_HOME/.hermes/hermes-agent"
+  (( NO_SYSTEM )) && return 0
+  revision="$(jq -r '.hermesAgent.revision // empty' "$MANIFEST")"
+  [[ -n $revision ]] || return 0
+  if [[ -e $checkout || -L $checkout ]]; then
+    check_hermes_agent
+    (( ERRORS == 0 )) || fail "preserving existing Hermes installation; reconcile it with the manifest before restoring"
+    return 0
+  fi
+  sha256="$(jq -r '.hermesAgent.installerSha256' "$MANIFEST")"
+  installer="$(mktemp)"
+  TEMP_FILES+=("$installer")
+  curl --fail --location --proto '=https' --proto-redir '=https' \
+    "https://raw.githubusercontent.com/NousResearch/hermes-agent/$revision/scripts/install.sh" \
+    --output "$installer"
+  printf '%s  %s\n' "$sha256" "$installer" | sha256sum --check --status \
+    || fail "Hermes installer checksum mismatch"
+  HOME="$TARGET_HOME" HERMES_HOME="$TARGET_HOME/.hermes" HERMES_INSTALL_DIR="$checkout" \
+    bash "$installer" --commit "$revision" --force-commit --non-interactive \
+      --skip-setup --skip-browser --skip-computer-use --include-desktop
+  check_hermes_agent
+  (( ERRORS == 0 )) || fail "Hermes installation failed verification"
 }
 
 backup_live_file() {
@@ -1001,6 +1072,7 @@ run_restore() {
   (( ERRORS == 0 )) || return 1
   cleanup_stale_secret_temps
   restore_packages
+  restore_hermes_agent
   restore_files
   restore_plugins
   run_setup_adapters

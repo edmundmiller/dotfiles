@@ -277,6 +277,63 @@ class NucDeployGuardTest(unittest.TestCase):
         self.assertIn("could not resolve current dotfiles origin/main", result.stderr)
         self.assertFalse(self.marker.exists())
 
+    def test_approved_revision_requires_live_main_even_with_stale_override(self) -> None:
+        approved = "a" * 40
+        for current, lookup_status, allowed in [
+            (approved, "0", True),
+            ("b" * 40, "0", False),
+            (approved, "1", False),
+            ("not-a-sha", "0", False),
+        ]:
+            with self.subTest(current=current, lookup_status=lookup_status):
+                self.marker.unlink(missing_ok=True)
+                result = self.run_wrapper(
+                    f"--nuc-deploy-expected-main={approved}",
+                    "--nuc-deploy-allow-stale",
+                    str(self.command),
+                    "switch",
+                    "--flake",
+                    f"github:edmundmiller/dotfiles/{approved}#nuc",
+                    env={
+                        "FAKE_GIT_REMOTE_MAIN": current,
+                        "FAKE_GIT_LS_REMOTE_STATUS": lookup_status,
+                        "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                        "NIXOS_DEPLOY_REMOTE_MAIN": approved,
+                    },
+                )
+                self.assertEqual(result.returncode == 0, allowed, result.stderr)
+                self.assertEqual(self.marker.exists(), allowed)
+                if allowed:
+                    self.assertIn(
+                        f"github:edmundmiller/dotfiles/{approved}#nuc",
+                        self.marker.read_text(),
+                    )
+
+    def test_approved_revision_rejects_branch_names_before_activation(self) -> None:
+        result = self.run_wrapper(
+            "--nuc-deploy-expected-main=main", str(self.command), "switch"
+        )
+        self.assertEqual(result.returncode, 64)
+        self.assertFalse(self.marker.exists())
+
+    def test_approved_revision_cannot_build_a_different_source(self) -> None:
+        approved = "a" * 40
+        for flake in [
+            "github:edmundmiller/dotfiles/" + "b" * 40 + "#nuc",
+            "github:edmundmiller/dotfiles#nuc",
+            ".#nuc",
+            f"github:edmundmiller/dotfiles/{approved}#other-host",
+        ]:
+            with self.subTest(flake=flake):
+                result = self.run_wrapper(
+                    f"--nuc-deploy-expected-main={approved}",
+                    str(self.command), "switch", "--flake", flake,
+                    env={"FAKE_GIT_REMOTE_MAIN": approved,
+                         "NIXOS_DEPLOY_GIT": str(self.fake_git)},
+                )
+                self.assertEqual(result.returncode, 64, result.stderr)
+                self.assertFalse(self.marker.exists())
+
     def test_rollback_takes_lock_without_worktree_metadata(self) -> None:
         result = self.run_wrapper(str(self.command), "--rollback", "switch")
         self.assertEqual(result.returncode, 0, result.stderr)

@@ -128,51 +128,6 @@ let
     else
       "${piThemeBaseName}-${cfg.piThemeVariant}";
   piThemeVars = piThemePalettes.${cfg.piThemeVariant};
-
-  # Herdr UI theme (separate from the Pi popup theme above). Each variant
-  # is rendered into `[theme]` / `[theme.custom]` blocks by the bootstrap
-  # activation.
-  herdrThemePalettes = {
-    default = {
-      name = "terminal";
-      custom = {
-        panel_bg = "reset";
-        surface0 = "#ccd0da";
-        surface1 = "#bcc0cc";
-        surface_dim = "#dce0e8";
-        overlay0 = "#8c8fa1";
-        overlay1 = "#7c7f93";
-        text = "#4c4f69";
-        subtext0 = "#6c6f85";
-        accent = "#1e66f5";
-        blue = "#1e66f5";
-        green = "#40a02b";
-        yellow = "#df8e1d";
-        red = "#d20f39";
-        teal = "#179299";
-        peach = "#fe640b";
-        mauve = "#8839ef";
-      };
-    };
-    catppuccin-auto = {
-      name = "terminal";
-      custom = {
-        panel_bg = "reset";
-      };
-    };
-    seqera = {
-      name = "terminal";
-      custom = {
-        panel_bg = "reset";
-        accent = "#31c9ac";
-        green = "#95bf2f";
-        blue = "#5ea0ff";
-        red = "#f38ba8";
-        yellow = "#e6d06c";
-      };
-    };
-  };
-  herdrTheme = herdrThemePalettes.${cfg.themeVariant};
   piThemeFile = pkgs.writeText "${piThemeName}.json" ''
     {
       "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
@@ -254,6 +209,19 @@ in
 {
   options.modules.shell.herdr = with types; {
     enable = mkBoolOpt false;
+    backend = mkOption {
+      type = enum [
+        "native"
+        "legacy"
+      ];
+      default = "native";
+      description = ''
+        Native uses the official installer-owned hc, with herdr-app configuration
+        enabled by native.app.enable on Macs. Servers default to core only.
+        Legacy keeps the Nix-packaged terminal multiplexer and its plugin ecosystem.
+        Changing backend never migrates or deletes running sessions.
+      '';
+    };
     package = mkOpt (nullOr package) null;
     localPluginsPackage = mkOpt package managedLocalPlugins;
     command = mkOpt str "herdr";
@@ -288,15 +256,6 @@ in
         Which palette variant to ship as the Pi `dotfiles-herdr` theme.
         `default` is tuned for the Ghostty light theme; use `seqera` on hosts
         whose ghostty background is the Seqera dark purple (`#201637`).
-      '';
-    };
-    themeVariant = mkOption {
-      type = enum (attrNames herdrThemePalettes);
-      default = "default";
-      description = ''
-        Which Herdr UI theme variant to apply via `[theme]` / `[theme.custom]`.
-        `catppuccin-auto` leaves Catppuccin polarity to Ghostty and terminal
-        defaults; `seqera` adds Seqera brand accents.
       '';
     };
     piThemeName = mkOption {
@@ -363,13 +322,14 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf (cfg.enable && cfg.backend == "legacy") {
     modules.shell.herdr.package = mkDefault pkgs.my.herdr;
     modules.shell.herdr.configFile = mkDefault "${config.dotfiles.configDir}/herdr/config.toml";
 
     user.packages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
     environment.systemPackages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
     env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
+    env.HERDR_BACKEND = "legacy";
 
     home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
     home.file.".pi/agent/themes/${piThemeName}.json".source = piThemeFile;
@@ -446,7 +406,7 @@ in
           "agentArgs": {
             "codex": [],
             "omp": [],
-            "opencode-v2": []
+            "opencode": []
           },
           "customAgents": {
             "omp": {
@@ -460,12 +420,12 @@ in
               "interactiveTTY": true,
               "resumeSupported": true
             },
-            "opencode-v2": {
-              "title": "OpenCode V2 beta",
-              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools opencode-ai@0.0.0-beta-202608091410",
+            "opencode": {
+              "title": "OpenCode",
+              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools opencode-ai@1.18.18",
               "launchCommand": "/vercel/sandbox/.herdr-tools/node_modules/.bin/opencode",
               "versionCommand": "/vercel/sandbox/.herdr-tools/node_modules/.bin/opencode --version",
-              "expectedVersion": "0.0.0-beta-202608091410",
+              "expectedVersion": "1.18.18",
               "authenticationMode": "provider-dependent",
               "herdrDetectionIdentifier": "opencode",
               "interactiveTTY": true,
@@ -513,7 +473,7 @@ in
 
           # Herdr's config stays writable for onboarding/settings, so reapply
           # values from the selected template rather than only copying it once.
-          ${pkgs.python3}/bin/python3 - "$target" "$template" ${escapeShellArg herdrTheme.name} ${escapeShellArg (builtins.toJSON herdrTheme.custom)} <<'PY'
+          ${pkgs.python3}/bin/python3 - "$target" "$template" <<'PY'
           import json
           import pathlib
           import sys
@@ -524,8 +484,9 @@ in
           canonical_config = tomllib.loads(template_path.read_text())
           canonical_keys = canonical_config.get("keys", {})
           canonical_commands = canonical_keys.get("command", [])
-          theme_name = sys.argv[3]
-          theme_custom = json.loads(sys.argv[4])
+          canonical_theme = canonical_config.get("theme", {})
+          theme_name = canonical_theme.get("name", "terminal")
+          theme_custom = canonical_theme.get("custom", {})
           lines = path.read_text().splitlines()
 
           def toml_value(value):
@@ -561,15 +522,22 @@ in
               "herdr worktree layout",
               "dotfiles.dev-layout.hunk-split",
               "dotfiles.dev-layout.hunk-tab",
+              # Legacy herdr-hunk-diff action ids. Left in place they keep
+              # prefix+] / prefix+} / prefix+{ and make Herdr disable the
+              # canonical jhochenbaum.hunkdiff.review* bindings appended below.
+              "hunk.diff.worktree-split",
+              "hunk.diff.staged-split",
+              "hunk.diff.branch-split",
               "nathanflurry.jj-workspace.new-tab",
               "vercel.sandbox.start-agent",
               "vercel.sandbox.start-codex",
               "vercel.sandbox.start-omp",
-              "vercel.sandbox.start-opencode-v2",
+              "vercel.sandbox.start-opencode",
               "vercel.sandbox.apply-changes",
               "vercel.sandbox.reconnect",
               "vercel.sandbox.stop",
               "vercel.sandbox.info",
+              "herdr-cliamp.open",
               "obsidian-neovide",
           })
 
@@ -663,6 +631,17 @@ in
                   'command = "obsidian-neovide"',
               ])
 
+          ${optionalString config.modules.shell.cliamp.enable ''
+            command_block.extend([
+                "",
+                "[[keys.command]]",
+                'key = "prefix+M"',
+                'type = "plugin_action"',
+                'command = "herdr-cliamp.open"',
+                'description = "open cliamp player"',
+            ])
+          ''}
+
           ${optionalString cfg.vercelSandbox.enable ''
             command_block.extend([
                 "",
@@ -681,8 +660,8 @@ in
                 "[[keys.command]]",
                 'key = "prefix+alt+o"',
                 'type = "plugin_action"',
-                'command = "vercel.sandbox.start-opencode-v2"',
-                'description = "start OpenCode V2 beta in a Vercel Sandbox"',
+                'command = "vercel.sandbox.start-opencode"',
+                'description = "start OpenCode in a Vercel Sandbox"',
                 "",
                 "[[keys.command]]",
                 'key = "prefix+A"',
@@ -1080,7 +1059,8 @@ in
           install_plugin persiyanov herdr-reviewr
           install_plugin ChmaraX herdr-nvim
           install_plugin plannotator herdr-annotate
-          install_plugin kryptamine herdr-auto-title
+          # Do not install kryptamine/herdr-auto-title: it requires a newer
+          # Herdr and would race the managed OMP-backed smart-rename worker.
           install_plugin nicosuave memex
           install_plugin jhochenbaum herdr-hunk-diff
           install_plugin thanhdat77 herdr-navigator
@@ -1103,7 +1083,6 @@ in
               "pi-extension-conflict-cleanup"
               "claude-settings-bootstrap"
               "codex-config-bootstrap"
-              "opencode-v1-cleanup"
               "hermes-bootstrap"
             ]
             ''
@@ -1135,8 +1114,7 @@ in
               ''}
 
               ${optionalString (cfg.integrations.opencode.enable && config.modules.agents.opencode.enable) ''
-                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode2/opencode"
-                ${pkgs.coreutils}/bin/ln -sfn "$HOME/.config/opencode2/opencode" "$HOME/.config/opencode"
+                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode"
                 install_integration opencode
               ''}
 
@@ -1167,6 +1145,32 @@ in
             ${herdrAutoTitleInstaller} --codex
           ''}
         '';
+
+        home.activation.herdr-projects =
+          lib.hm.dag.entryAfter
+            [
+              "herdr-marketplace-plugins"
+              "herdr-config-bootstrap"
+              "herdr-auto-title"
+              "claude-shared-skill-links"
+              "dotfiles-agent-skills"
+            ]
+            (
+              optionalString cfg.projects.enable ''
+                export PATH=$PATH:${escapeShellArg launchPath}
+                export HERDR_BIN_PATH=${escapeShellArg cfg.command}
+                if plugins_json=$("$HERDR_BIN_PATH" plugin list --json 2>/dev/null); then
+                  projects_root=$(printf '%s\n' "$plugins_json" | ${pkgs.jq}/bin/jq -r \
+                    '.result.plugins[] | select(.plugin_id == "herdr-projects") | .plugin_root')
+                  if [ -n "$projects_root" ]; then
+                    ${pkgs.coreutils}/bin/mkdir -p "$HOME/.local/bin"
+                    ${pkgs.coreutils}/bin/ln -sfn "$projects_root/target/release/herdr-projects" "$HOME/.local/bin/herdr-projects"
+                  fi
+                else
+                  echo "herdr: runtime unavailable; deferring Projects configuration" >&2
+                fi
+              ''
+            );
       };
 
     modules.shell.tmux.rcFiles = mkIf tmuxEnabled (mkAfter [

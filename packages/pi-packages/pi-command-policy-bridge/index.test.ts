@@ -7,6 +7,56 @@ import { evaluateToolGuard } from "./index";
 const repoPolicyPath = join(import.meta.dir, "../../../config/pi/pi-permission-system.jsonc");
 
 describe("pi-command-policy-bridge", () => {
+  it("guards Codex and current Herdr commands with the repository policy", () => {
+    const previous = process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = repoPolicyPath;
+    try {
+      for (const command of ["brew install foo", "echo safe"]) {
+        const expected = command.startsWith("brew") ? "deny" : "allow";
+        expect(evaluateToolGuard({ toolName: "exec_command", input: { cmd: command } }).kind).toBe(
+          expected
+        );
+        expect(
+          evaluateToolGuard({ toolName: "herdr_pane", input: { action: "run", command } }).kind
+        ).toBe(expected);
+      }
+      expect(evaluateToolGuard({ toolName: "herdr_pane", input: { action: "list" } }).kind).toBe(
+        "allow"
+      );
+    } finally {
+      if (previous === undefined) delete process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+      else process.env.PI_PERMISSION_SYSTEM_CONFIG_PATH = previous;
+    }
+  });
+
+  it("uses exec_command workdir to detect jj repositories", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-exec-policy-test-"));
+    mkdirSync(join(dir, ".jj"));
+    try {
+      expect(
+        evaluateToolGuard({ toolName: "exec_command", input: { cmd: "git add .", workdir: dir } })
+          .kind
+      ).toBe("deny");
+      expect(
+        evaluateToolGuard({ toolName: "exec_command", input: { cmd: "git status", workdir: dir } })
+          .kind
+      ).toBe("allow");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("blocks unchecked patches and stdin writes but allows polling", () => {
+    expect(
+      evaluateToolGuard({ toolName: "apply_patch", input: { patch: "*** Delete File: .env" } }).kind
+    ).toBe("deny");
+    for (const chars of ["brew install foo\n", "\n", " "]) {
+      expect(evaluateToolGuard({ toolName: "write_stdin", input: { chars } }).kind).toBe("deny");
+    }
+    expect(evaluateToolGuard({ toolName: "write_stdin", input: { chars: "" } }).kind).toBe("allow");
+    expect(evaluateToolGuard({ toolName: "write_stdin", input: {} }).kind).toBe("allow");
+  });
+
   it("allows git mutations outside jj repositories", () => {
     const decision = evaluateToolGuard({
       toolName: "bash",

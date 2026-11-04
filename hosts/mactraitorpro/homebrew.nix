@@ -14,7 +14,6 @@
       clone_target = "https://github.com/tornikegomareli/Talkify";
       trusted = true;
     }
-    "tw93/tap" # Mole
     "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
     "ahkohd/oyo" # oy - tmux session manager
   ];
@@ -111,7 +110,6 @@
 
     # Additional tools
     "bookokrat"
-    "tw93/tap/mole"
     "ramiawar/dataline/dataline"
     "eask-cli"
     "harper"

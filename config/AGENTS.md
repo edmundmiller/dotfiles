@@ -8,3 +8,7 @@ activation uses `hey re` when requested.
 Tool shell integration belongs in `config/<tool>/env.zsh` (environment/PATH)
 or `aliases.zsh` (interactive setup), discovered by the zsh module. Writable
 bootstrap exceptions, including Claude and Herdr, are documented in their scope.
+
+Validate source changes with `hey check config/<tool>` and include the owning
+module path when deployment wiring changed. A source check does not prove that a
+writable bootstrap or live application has adopted the new value.

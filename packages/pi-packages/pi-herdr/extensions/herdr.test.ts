@@ -10,8 +10,21 @@ import {
   openPrReviewWorkspace,
   slugify,
 } from "./herdr.js";
+import herdrExtension from "./herdr.js";
 
 describe("pi-herdr review workspace helpers", () => {
+  test("registers only Review Box tools and commands", () => {
+    const tools: string[] = [];
+    const commands: string[] = [];
+    // SAFETY: startup only registers handlers; this test never invokes them.
+    herdrExtension({
+      registerTool: (tool) => tools.push(tool.name),
+      registerCommand: (name) => commands.push(name),
+    } as ExtensionAPI);
+    expect(tools).toEqual(["herdr_pr_review_workspace"]);
+    expect(commands).toEqual(["review-box"]);
+  });
+
   test("slugify makes branch/path safe PR slugs", () => {
     expect(slugify("PR #123: Fix Hunk + OMP review!")).toBe("pr-123-fix-hunk-omp-review");
   });

@@ -21,8 +21,12 @@ grep -Fq -- '--set DEVELOPER_DIR "/Library/Developer/CommandLineTools"' "$wrappe
 grep -Fq -- '--set PYTHON ${lib.escapeShellArg "${nodeGypPython}/bin/python3"}' "$wrapper_source" \
   || fail "Pi wrapper must export PYTHON for node-gyp"
 
-grep -Fq -- 'updateExtensionsShim = lib.concatStringsSep "\n"' "$wrapper_source" \
-  || fail "Pi update shim must avoid heredoc newline splitting before exec target"
+grep -Fq -- '--set-default PI_SELF_UPDATE_COMMAND "hey pi-update {version}"' "$wrapper_source" \
+  || fail "Pi self-update must use hey while allowing an explicit environment override"
+
+if grep -Fq -- 'set -- update --extensions' "$wrapper_source"; then
+  fail "Pi update must not be rewritten into an extension update"
+fi
 
 grep -Fq -- '/usr/bin/codesign -f -s - "$out/libexec/pi/pi"' "$wrapper_source" \
   || fail "Pi wrapper must re-sign the copied Darwin binary"

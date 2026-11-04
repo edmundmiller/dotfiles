@@ -12,3 +12,7 @@ private HTTPS endpoint, backup, and Gatus status.
 to operator and NUC recipients. Keep the API encryption key and Better Auth
 secret stable: rotation invalidates integrations or sessions/two-factor state.
 Recovery requires authorized re-encryption, rebuild, and service restart.
+
+Run `hey check modules/services/sparkyfitness` for image, Compose, backup, or
+registry changes. Secret rotation and post-deployment unit/HTTPS/backup/Gatus
+checks remain separate authorized operations.

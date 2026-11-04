@@ -17,3 +17,8 @@ tests/flake checks, implementation tests beside the tool, upstream checks in
 the package harness. `hey check` routes repository policy and changed Pi/OMP
 package typechecks/tests (including dependents). `pkg-check` still owns upstream
 patch tests; package builds and host activation are distinct checks/actions.
+
+Use this order: run the package's focused tests, `hey check packages/<name>` for
+repository policy and workspace consumers, then `pkg-check <unit>` when the
+package carries upstream source or patches. Build the package when runtime files
+or wrappers changed; activation remains separate.

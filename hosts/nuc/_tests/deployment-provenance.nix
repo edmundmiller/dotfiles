@@ -72,6 +72,10 @@ let
     in
     [
       {
+        test = !nixosConfig.config.system.autoUpgrade.enable;
+        msg = "The NUC must not bypass deployment approval with automatic upgrades.";
+      }
+      {
         test =
           builtins.match "dotfiles=[0-9a-f]{40}(-dirty)?;agents-workspace=[0-9a-f]{40}" actualRevision
           != null;

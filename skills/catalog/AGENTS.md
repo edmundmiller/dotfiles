@@ -7,3 +7,7 @@ not broad invitations to load on every edit or completion.
 Keep the entrypoint a concise task router. Link detailed runbooks/examples in
 `references/`, executable helpers in `scripts/`, and templates in `assets/`
 when those resources earn their place. Short skills need no extra structure.
+
+Run the quality validator at
+`skills/catalog/skill-quality/scripts/validate.py` on each changed skill. Add
+package-owned tests for helpers; the validator does not test script semantics.

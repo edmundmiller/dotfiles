@@ -1,0 +1,137 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index c835047..6fbe8f7 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -5739,6 +5739,9 @@ dependencies = [
+  "nix 0.29.0",
+  "notify",
+  "num_cpus",
++ "objc2",
++ "objc2-app-kit",
++ "objc2-foundation",
+  "ort",
+  "parakeet-rs",
+  "pidlock",
+diff --git a/Cargo.toml b/Cargo.toml
+index 5f46b68..80203c4 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -129,6 +129,9 @@ glib = { version = "0.22", optional = true }
+ tao = "0.32"
+ core-graphics = "0.24"
+ core-foundation = "0.10"
++objc2 = "0.6"
++objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "objc2-core-foundation", "NSFontDescriptor", "NSImage", "NSButton", "NSStatusBar", "NSStatusItem", "NSStatusBarButton"] }
++objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString"] }
+ dirs = "5"
+ mac-notification-sys = "0.6"  # Native macOS notifications
+ # Global hotkey + menubar icon. Both are macOS-only:
+diff --git a/docs/INSTALL_MACOS.md b/docs/INSTALL_MACOS.md
+index 55995ba..86ecfbe 100644
+--- a/docs/INSTALL_MACOS.md
++++ b/docs/INSTALL_MACOS.md
+@@ -78,10 +78,14 @@ For a status icon showing recording state:
+ voxtype menubar
+ ```
+ 
+-This shows:
+-- 🎙️ Ready (idle)
+-- 🔴 Recording
+-- ⏳ Transcribing
++The menu bar uses monochrome macOS symbols:
++- Microphone: ready (idle)
++- Waveform: recording
++- Three dots: transcribing
++- Slashed microphone: daemon not running
++
++The symbols adapt to light and dark menu bars. Hover over the icon for the
++current status, or open the menu to see the status text.
+ 
+ ## Configuration
+ 
+diff --git a/src/menubar.rs b/src/menubar.rs
+index ee594fc..b229a2f 100644
+--- a/src/menubar.rs
++++ b/src/menubar.rs
+@@ -5,6 +5,9 @@
+ 
+ use crate::config::{ActivationMode, Config, OutputMode, TranscriptionEngine};
+ use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
++use objc2::MainThreadMarker;
++use objc2_app_kit::{NSImage, NSImageSymbolConfiguration, NSSquareStatusItemLength};
++use objc2_foundation::NSString;
+ use pidlock::Pidlock;
+ use std::path::PathBuf;
+ use std::sync::atomic::{AtomicBool, Ordering};
+@@ -13,7 +16,7 @@ use std::time::{Duration, Instant};
+ use tao::event_loop::{ControlFlow, EventLoopBuilder};
+ use tray_icon::{
+     menu::{CheckMenuItem, Menu, MenuEvent, MenuItem, PredefinedMenuItem, Submenu},
+-    TrayIconBuilder,
++    TrayIcon, TrayIconBuilder,
+ };
+ 
+ /// Current voxtype state
+@@ -35,13 +38,33 @@ impl VoxtypeState {
+         }
+     }
+ 
+-    fn icon(&self) -> &'static str {
+-        match self {
+-            VoxtypeState::Idle => "🎙",
+-            VoxtypeState::Recording => "🔴",
+-            VoxtypeState::Transcribing => "⏳",
+-            VoxtypeState::Stopped => "⬛",
+-        }
++    fn update_tray_icon(&self, tray: &TrayIcon) {
++        let symbol = match self {
++            VoxtypeState::Idle => "mic",
++            VoxtypeState::Recording => "waveform",
++            VoxtypeState::Transcribing => "ellipsis",
++            VoxtypeState::Stopped => "mic.slash",
++        };
++        let description = NSString::from_str(&format!("Voxtype. {}", self.status_text()));
++        let image = NSImage::imageWithSystemSymbolName_accessibilityDescription(
++            &NSString::from_str(symbol),
++            Some(&description),
++        )
++        .expect("Voxtype menu bar symbol is available on macOS 13 and later");
++        let configuration =
++            NSImageSymbolConfiguration::configurationWithPointSize_weight(16.0, 0.0);
++        let image = image
++            .imageWithSymbolConfiguration(&configuration)
++            .expect("Voxtype menu bar symbol supports point-size configuration");
++        // AppKit supplies the correct contrast for light, dark and selected menus.
++        image.setTemplate(true);
++        let mtm = MainThreadMarker::new().expect("Voxtype menu bar runs on the main thread");
++        let item = tray.ns_status_item().expect("Voxtype menu bar item exists");
++        // Keep neighboring icons still when the recording state changes.
++        item.setLength(NSSquareStatusItemLength);
++        let button = item.button(mtm).expect("Voxtype menu bar button exists");
++        button.setImage(Some(&image));
++        button.setToolTip(Some(&description));
+     }
+ 
+     fn status_text(&self) -> &'static str {
+@@ -527,11 +550,10 @@ pub fn run(state_file: PathBuf) -> ! {
+ 
+     // Create tray icon
+     let tray = TrayIconBuilder::new()
+-        .with_tooltip("Voxtype")
+-        .with_title(initial_state.icon())
+         .with_menu(Box::new(menu))
+         .build()
+         .expect("Failed to create tray icon");
++    initial_state.update_tray_icon(&tray);
+ 
+     println!("Menu bar is running. Look for the icon in your menu bar.");
+     println!("Press Ctrl+C to stop.\n");
+@@ -705,7 +727,7 @@ pub fn run(state_file: PathBuf) -> ! {
+             let new_state = read_state_from_file(&state_file);
+ 
+             if new_state != last_state {
+-                let _ = tray.set_title(Some(new_state.icon()));
++                new_state.update_tray_icon(&tray);
+                 let _ = status_item.set_text(new_state.status_text());
+                 last_state = new_state;
+             }

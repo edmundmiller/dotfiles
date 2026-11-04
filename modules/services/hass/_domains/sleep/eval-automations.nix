@@ -3,7 +3,7 @@
 # No VM needed — evaluates merged NixOS config and checks:
 #   - Every automation has initial_state = true
 #   - Wake detection automations exist and keep morning guards
-#   - Auto Good Morning requires all home residents awake and Sleep Focus inactive
+#   - Good Morning requires a manual/voice request
 #   - Core sleep + cross-domain safety automations exist
 { nixosConfig, pkgs }:
 let
@@ -14,8 +14,6 @@ let
     head
     concatStringsSep
     ;
-
-  inherit (pkgs.lib) hasInfix;
 
   haConfig = nixosConfig.config.services.home-assistant.config;
   automations = haConfig.automation;
@@ -69,10 +67,6 @@ let
       (c.condition or null) == "state" && (c.entity_id or null) == entityId && (c.state or null) == state
     ) conditions;
 
-  hasTemplateConditionContaining =
-    conditions: text:
-    any (c: (c.condition or null) == "template" && hasInfix text (c.value_template or "")) conditions;
-
   toList =
     v:
     if builtins.isList v then
@@ -125,24 +119,8 @@ let
       msg = "automation 'monica_awake_detection' missing";
     }
     {
-      test =
-        goodMorningBothAwake != null
-        && hasStateTrigger (toList (goodMorningBothAwake.trigger or [ ])) "input_boolean.edmund_awake" "on"
-        && hasStateTrigger (toList (goodMorningBothAwake.trigger or [ ])) "input_boolean.monica_awake" "on"
-        && length (toList (goodMorningBothAwake.trigger or [ ])) == 2
-        && hasTimeGuard (toList (goodMorningBothAwake.condition or [ ])) "07:00:00"
-        && hasStateCondition (toList (goodMorningBothAwake.condition or [ ])) "input_boolean.goodnight" "on"
-        && hasTemplateConditionContaining (toList (
-          goodMorningBothAwake.condition or [ ]
-        )) "focus_name not in ['Sleep', 'unknown', 'unavailable']"
-        &&
-          (goodMorningBothAwake.action or [ ]) == [
-            {
-              action = "script.turn_on";
-              target.entity_id = "script.good_morning";
-            }
-          ];
-      msg = "Good Morning must require all home residents awake and Edmund outside Sleep Focus";
+      test = goodMorningBothAwake == null;
+      msg = "Wake heuristics must not automatically activate Good Morning";
     }
 
     {

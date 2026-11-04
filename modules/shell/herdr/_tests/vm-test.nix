@@ -48,6 +48,8 @@ dotfilesLib.my.mkServiceVmTest {
           };
         };
 
+        options.modules.shell.cliamp.enable = lib.mkEnableOption "cliamp";
+
         options.modules.shell.git.hunk.theme = {
           dark = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
@@ -119,11 +121,13 @@ dotfilesLib.my.mkServiceVmTest {
       };
       users.users.alice.createHome = true;
 
-      # modules/shell/herdr reads config.modules.shell.tmux.enable for its
-      # optional popup integration; only the herdr module is imported here.
+      # The Herdr module reads these sibling feature flags, but the fixture
+      # deliberately imports only Herdr and declares their option shapes above.
       modules.shell.tmux.enable = false;
+      modules.shell.cliamp.enable = false;
 
       modules.shell.herdr.enable = true;
+      modules.shell.herdr.backend = "legacy";
       # tnote is a private flake input. Interpolating pkgs.my.tnote 404s in
       # GitHub Actions. This test asserts activated config.toml, not tnote.
       modules.shell.herdr.tnote.enable = false;

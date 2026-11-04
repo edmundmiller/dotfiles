@@ -142,5 +142,6 @@ if [[ $TERM != dumb ]]; then
 fi
 
 
-# Hermes Agent — ensure ~/.local/bin is on PATH
-export PATH="$HOME/.local/bin:$PATH"
+# /etc/zshrc's brew shellenv and interactive initializers can prepend PATH
+# after .zshenv. Restore managed command precedence once startup is complete.
+source "$ZDOTDIR/path.zsh"

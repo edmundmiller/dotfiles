@@ -11,7 +11,7 @@
     skip 'requires Darwin with ARM Homebrew'
   fi
 
-  run env ZSHENV_FILE="$ZSHENV_FILE" USER="$USER" "$ZSH_BIN" -fc '
+  run env ZSHENV_FILE="$ZSHENV_FILE" XDG_CONFIG_HOME="$ORIG_PWD/config" USER="$USER" "$ZSH_BIN" -fc '
     PATH=/usr/local/bin:/usr/bin:/bin
     source "$ZSHENV_FILE"
 

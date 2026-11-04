@@ -11,3 +11,6 @@ check: `bash modules/agents/pi/test-settings-json.sh`.
 
 `pi-runtime-drift` is a warning-only, read-only pre-push hook. Authorized repairs
 use `hey re` or `pi update --extensions`; the hook does not repair state itself.
+Run the settings-generation check for rendered config, then
+`hey check modules/agents/pi config/pi` for package, link, or shell-wiring changes.
+Do not use `pi update --extensions` as a source check.

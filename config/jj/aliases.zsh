@@ -102,7 +102,7 @@ jback() {
 }
 
 # =============================================================================
-# JJ Workspace (jw) - Worktrunk-inspired workspace management
+# JJ Workspace (jw) - workspace management
 # =============================================================================
 # See: jw help
 # Full tool at: bin/jw

@@ -7,6 +7,9 @@ todotxtfmt/todotxtfmt
 # Per-worktree direnv overrides
 .envrc.local
 
+# Amp portal runtime files
+.amp/portals/*
+
 # Injected only into the NUC's rsynced worktree so Nix can stamp the source HEAD.
 .nuc-deploy-source-revision
 
@@ -30,6 +33,10 @@ worktrees/
 **/node_modules
 **/node_modules.bkup
 /.opencode/package-lock.json
+
+# Flue build output and private observability records
+/.flue/dist/
+**/.evlog/
 
 # Nextflow
 .nextflow/

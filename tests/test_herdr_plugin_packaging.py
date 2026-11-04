@@ -15,7 +15,8 @@ def test_workspace_manager_owns_dev_layout_and_no_legacy_post_create() -> None:
     assert "dotfiles.dev-layout" not in str(config)
     assert "herdr-plugin-workspace-manager/config.yml" in module
     assert "id: dev" in layout
-    assert "agent: omp" in layout
+    assert 'command: \'exec "${AGENT:?Set AGENT to the agent executable}"\'' in layout
+    assert "agent: omp" not in layout
     assert "title: hunk" in layout
     assert "post_create_command" not in config.get("worktrees", {})
     assert 'if key == "post_create_command":' in module
@@ -123,7 +124,9 @@ def test_tnote_today_plugin_is_installed_with_its_runtime() -> None:
 
     assert "install_plugin edmundmiller tnote packages/tn/herdr-plugin" in module
     assert '"${pkgs.my.tnote}/bin"' in module
-    assert "herdrPackages ++ [ pkgs.my.tnote ]" in module
+    assert 'config = mkIf (cfg.enable && cfg.backend == "legacy")' in module
+    assert "herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote" in module
+    assert "optionalString cfg.tnote.enable" in module
 
 
 def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
@@ -140,12 +143,12 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     assert '"agentKind": "omp"' in module
     assert '"allowCandidateAgents": true' in module
     assert '"omp"' in module
-    assert '"opencode-v2"' in module
+    assert '"opencode"' in module
     assert '"17.2.12"' in module
     assert '"0.0.0-beta-202608091410"' in module
     assert 'command = "vercel.sandbox.start-codex"' in module
     assert 'command = "vercel.sandbox.start-omp"' in module
-    assert 'command = "vercel.sandbox.start-opencode-v2"' in module
+    assert 'command = "vercel.sandbox.start-opencode"' in module
     assert re.search(
         r"key = \"prefix\+S\".*?command = \"vercel\.sandbox\.start-omp\"",
         module,
@@ -158,7 +161,7 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     )
     assert 'command = "vercel.sandbox.apply-changes"' in module
     assert "herdr.vercelSandbox.enable = true;" in host
-    assert '"vercel@58.9.0"' in host
+    assert "my.vercel" in host
 
 
 def test_smart_rename_is_packaged_started_and_bound() -> None:
@@ -204,7 +207,7 @@ def test_auto_title_hook_is_pinned_and_installed_for_codex_and_claude() -> None:
 def test_requested_marketplace_plugins_are_installed_with_build_toolchains() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
     launch_path = re.search(
-        r'launchPath = concatStringsSep ":" \[(.*?)\n  \];', module, re.DOTALL
+        r'launchPath = concatStringsSep ":" \((.*?)\n  \);', module, re.DOTALL
     )
     marketplace_activation = module.split(
         "home.activation.herdr-marketplace-plugins =", 1
@@ -215,13 +218,16 @@ def test_requested_marketplace_plugins_are_installed_with_build_toolchains() -> 
     for spec in (
         "install_plugin ChmaraX herdr-nvim",
         "install_plugin plannotator herdr-annotate",
-        "install_plugin kryptamine herdr-auto-title",
         "install_plugin nicosuave memex",
         "install_plugin jhochenbaum herdr-hunk-diff",
         "install_plugin thanhdat77 herdr-navigator",
         "install_plugin wyattjoh herdr-plugin-gh-pr",
     ):
         assert spec in module
+
+    # The marketplace auto-title plugin requires Herdr >=0.8.2 and would race
+    # the repo-owned OMP-backed smart rename worker.
+    assert "install_plugin kryptamine herdr-auto-title" not in module
 
     # Node and Bun are plugin runtimes; Go is only needed while installing.
     assert '"${pkgs.nodejs}/bin"' in launch_path.group(1)
@@ -251,6 +257,46 @@ def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() ->
 
     assert 'command["command"]' in module
     assert "for command in canonical_commands" in module
+
+
+def test_navigation_bindings_cover_tabs_workspaces_and_agents() -> None:
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    keys = config["keys"]
+
+    assert keys["switch_tab"] == "prefix+1..9"
+    assert keys["switch_workspace"] == "prefix+shift+1..9"
+    assert keys["focus_agent"] == "prefix+alt+1..9"
+    assert keys["move_tab_previous"] == "prefix+shift+left"
+    assert keys["move_tab_next"] == "prefix+shift+right"
+    assert keys["close_tab"] == "prefix+X"
+
+
+def test_hunk_bindings_reference_installed_plugin_actions() -> None:
+    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
+    commands = config["keys"]["command"]
+
+    assert {
+        command["command"]
+        for command in commands
+        if command["key"] in {"prefix+]", "prefix+}", "prefix+{"}
+    } == {
+        "jhochenbaum.hunkdiff.review",
+        "jhochenbaum.hunkdiff.review:staged",
+        "jhochenbaum.hunkdiff.review:branch",
+    }
+
+
+def test_legacy_hunk_command_ids_are_pruned_on_activation() -> None:
+    """Stale hunk.diff.* blocks keep prefix+] / } / { and make Herdr disable
+    the canonical jhochenbaum.hunkdiff.review* bindings."""
+    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+
+    for legacy in (
+        "hunk.diff.worktree-split",
+        "hunk.diff.staged-split",
+        "hunk.diff.branch-split",
+    ):
+        assert f'"{legacy}",' in module
 
 
 def test_browser_plugin_is_installed_with_graphics_and_binding() -> None:

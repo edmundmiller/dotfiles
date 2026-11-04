@@ -12,3 +12,7 @@ explicit Nix system/per-user profile PATH entries for both `edmundmiller` and
 For packaging changes, build the package; for host wiring, check affected host
 outputs. Authorized activation may require a Stream Deck app restart to pick
 up the linked plugin.
+
+Run `hey check packages/stream-deck-herdr-plugin` for package changes and
+`hey check --platform darwin` for host links or GUI PATH changes. A successful
+Rollup build must still prove that `ws` and the log directory ship in the result.

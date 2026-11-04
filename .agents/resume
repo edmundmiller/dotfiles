@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(git rev-parse --show-toplevel)"
 nix_profile="/nix/var/nix/profiles/default"
+nix_env="$nix_profile/etc/profile.d/nix-daemon.sh"
 
 if [[ ! -x "$nix_profile/bin/nix" ]]; then
   echo "Nix is missing; rerun .agents/setup" >&2
@@ -12,4 +14,30 @@ if ! systemctl is-active --quiet nix-daemon.service; then
   sudo systemctl start nix-daemon.service
 fi
 
-echo "Orb prerequisites are ready."
+# shellcheck disable=SC1090
+source "$nix_env"
+
+nix_config="${NIX_CONFIG:-}"
+if command -v gh >/dev/null 2>&1 && github_token="$(gh auth token 2>/dev/null)" && [[ -n "$github_token" ]]; then
+  nix_config="${nix_config:+$nix_config
+}access-tokens = github.com=$github_token"
+fi
+
+agent_env="$(
+  NIX_CONFIG="$nix_config" "$nix_profile/bin/nix" --accept-flake-config build \
+    --no-link --no-write-lock-file --print-out-paths "$repo_root#agent-env"
+)"
+unset github_token nix_config
+
+mkdir -p "$HOME/.local/bin"
+ln -sfn "$nix_profile/bin/nix" "$HOME/.local/bin/nix"
+for command in agent-run hey jj prek; do
+  ln -sfn "$agent_env/bin/$command" "$HOME/.local/bin/$command"
+done
+
+PATH="$HOME/.local/bin:$PATH"
+for command in agent-run nix hey jj prek; do
+  command -v "$command" >/dev/null
+done
+
+echo "Orb prerequisites and agent commands are ready."

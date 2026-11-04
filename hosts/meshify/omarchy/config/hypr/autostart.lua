@@ -3,6 +3,9 @@
 -- Add a suspend-only idle listener alongside Omarchy's Quickshell lock timers.
 o.launch_on_start("hypridle -q")
 
+-- Warm the display from sunset to sunrise using meshify's home coordinates.
+o.launch_on_start("wlsunset -l 33.1 -L -96.8 -t 4000 -T 6500")
+
 -- Steam controller input bypasses Hyprland's idle monitor. Inhibit idle while
 -- any Steam game is fullscreen so controller-driven play stays uninterrupted.
 o.window("steam_app_.*", { idle_inhibit = "fullscreen" })

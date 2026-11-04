@@ -6,6 +6,13 @@
 *.db-wal-cert*
 *.db-fsqlite-ns-*
 
+# FrankenSQLite database sidecars (local-only)
+beads.db-fsqlite-ns-gate
+beads.db-fsqlite-ns-use
+beads.db-wal-cert
+beads.db-wal-cert-head
+beads.db.fsqlite-migration-state
+
 # Lock files
 *.lock
 .write.lock

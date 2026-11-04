@@ -39,8 +39,8 @@ let
     && pkgs.lib.hasInfix "/data/current-package/bin/hermes gateway run" preStart
   ) gatewayProfiles;
   packageIdentityMatches =
-    (hermesPackage.passthru.hermesVersion or null) == "0.21.2"
-    && (hermesPackage.passthru.hermesRelease or null) == "v2026.9.11";
+    (hermesPackage.passthru.hermesVersion or null) == "0.21.3"
+    && (hermesPackage.passthru.hermesRelease or null) == "v2026.9.14";
   dashboardStart = toString service.serviceConfig.ExecStart;
   expectedDashboardExec = "${hermesPackage}/bin/hermes dashboard";
   caduSetup = builtins.head service.serviceConfig.ExecStartPre;
@@ -83,6 +83,7 @@ let
         builtins.all (name: builtins.elem name enabled) [
           "cadu-rich-cards"
           "cadu-device"
+          "cadu-mail"
           "cadu-secrets-vault"
           "hermes-browser-stream"
           "hermes-push"
@@ -92,6 +93,23 @@ let
         ]
       ) gatewayProfiles;
       msg = "Every rendered gateway must enable Cadu plugins without dropping required runtime plugins.";
+    }
+    {
+      test = builtins.all (
+        profile: builtins.elem pkgs.himalaya cfg.services.hermes-agent.profiles.${profile}.extraPackages
+      ) gatewayProfiles;
+      msg = "Every Cadu Mail-enabled gateway must include the Himalaya runtime dependency.";
+    }
+    {
+      test = builtins.all (
+        profile:
+        let
+          gatewayService = cfg.systemd.services."hermes-gateway-${profile}";
+        in
+        gatewayService.reloadIfChanged
+        && gatewayService.serviceConfig.ExecReload == "${pkgs.coreutils}/bin/kill -USR1 $MAINPID"
+      ) gatewayProfiles;
+      msg = "NUC Hermes gateways must use the drain-aware SIGUSR1 reload path when their units change.";
     }
     {
       test = builtins.elem "photon-platform" cfg.services.hermes-agent.profiles.betty.settings.plugins.enabled;
@@ -133,7 +151,7 @@ let
     }
     {
       test = packageIdentityMatches;
-      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.2 (2026.9.11) package.";
+      msg = "Every NUC Hermes consumer must use the shared Hermes v0.21.3 (2026.9.14) package.";
     }
     {
       test = allGatewaysUseSharedPackage;
@@ -166,12 +184,24 @@ pkgs.runCommand "nuc-hermes-dashboard-enabled"
     fi
 
     # Exercise the deployed merge, including repeat starts and absent plugins.
-    mkdir -p home/plugins/cadu-rich-cards
+    mkdir -p home/plugins/{cadu-rich-cards,cadu-mail}
     touch home/plugins/cadu-rich-cards/plugin.yaml
-    printf '%s\n' 'model: {default: keep-me}' 'plugins: {enabled: [existing-plugin, buzz-platform, slack-platform], disabled: [blocked-plugin]}' 'platforms: {slack: {enabled: true, extra: {retained: true}}}' > home/config.yaml
+    printf '%s\n' 'requires_hermes: ">=0.21.4"' > home/plugins/cadu-mail/plugin.yaml
+    printf '%s\n' 'model: {default: keep-me}' 'plugins: {enabled: [existing-plugin, cadu-mail, buzz-platform, slack-platform], disabled: [blocked-plugin]}' 'platforms: {slack: {enabled: true, extra: {retained: true}}}' > home/config.yaml
     setup_script="''${caduSetup%% *}"
-    "$setup_script" "$PWD/home" cadu-rich-cards missing-plugin
-    "$setup_script" "$PWD/home" cadu-rich-cards missing-plugin
+    "$setup_script" "$PWD/home" 0.21.3 cadu-rich-cards cadu-mail missing-plugin 2> incompatible.log
+    grep -Fq 'requires hermes >=0.21.4, running 0.21.3' incompatible.log
+    ${yamlPython}/bin/python3 - <<'PY'
+    from pathlib import Path
+    import yaml
+    enabled = yaml.safe_load(Path("home/config.yaml").read_text())["plugins"]["enabled"]
+    assert "cadu-rich-cards" in enabled
+    assert "cadu-mail" not in enabled
+    PY
+
+    printf '%s\n' 'requires_hermes: ">=0.21.3"' > home/plugins/cadu-mail/plugin.yaml
+    "$setup_script" "$PWD/home" 0.21.3 cadu-rich-cards cadu-mail missing-plugin
+    "$setup_script" "$PWD/home" 0.21.3 cadu-rich-cards cadu-mail missing-plugin
     ${yamlPython}/bin/python3 - <<'PY'
     from pathlib import Path
     import yaml
@@ -179,7 +209,7 @@ pkgs.runCommand "nuc-hermes-dashboard-enabled"
     assert config == {
         "model": {"default": "keep-me"},
         "plugins": {
-            "enabled": ["existing-plugin", "cadu-rich-cards"],
+            "enabled": ["existing-plugin", "cadu-rich-cards", "cadu-mail"],
             "disabled": ["blocked-plugin", "buzz-platform", "slack-platform"],
         },
         "platforms": {

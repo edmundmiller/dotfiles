@@ -24,7 +24,8 @@ and simple timed toggles need not be forced into scenes.
   waits for availability, then powers on `media_player.living_room`. Every off
   path powers off the player before disconnecting the remote to avoid CEC wakeups.
 - Adaptive Lighting manual takeover pauses adaptation for that light. Bedtime
-  scenes enable sleep mode; Good Morning disables it, with a 7 AM hard cutoff.
+  scenes enable sleep mode; Good Morning disables it. Scheduled cleanup respects
+  Goodnight so sleeping in does not brighten the lights.
   Current schedules/entity IDs belong in `lighting.nix` and the domain sources.
 
 ## Climate safety
@@ -51,3 +52,6 @@ close reapplies policy. Vacation end replaces its raw hold with the active profi
 that snapshot's `.#checks.x86_64-linux.ha-automation-assertions`. Deployment and
 live device actions need authorization and are separate from eval checks. The
 `hass-declarative` skill covers manifests, entity identity, and orphan cleanup.
+Run `hey check modules/services/hass/_domains` first for local routing. Use the
+snapshot assertion when merged automation order, helper identity, or cross-domain
+contracts need Linux evaluation; do not fire test events as a read-only check.

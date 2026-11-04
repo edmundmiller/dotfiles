@@ -7,11 +7,15 @@ Source selection and target mappings live in the child flake.
 ## Deployment ownership
 
 Default skills target `~/.agents/skills`, shared by OMP, Pi, Codex, Amp, OpenCode,
-and Hermes. Agent-specific directories are for targeted skills only. Claude's
-module links only `test-quality`, `github-cli-media`, and `lore` to canonical
+and Hermes. Agent-specific directories are for targeted skills only. The
+[Claude module](../modules/agents/claude/default.nix) selects its links to canonical
 shared copies; copying the full catalog there duplicates OMP discovery.
 `meta.targets` accepts canonical names and `dot-*` aliases. Hermes additionally
 needs its configured `skills.external_dirs` wiring.
+
+Legacy Claude skills migration preserves unmanaged content at
+`~/.claude/skills.pre-dotfiles-agent-skills/skills` instead of deleting it.
+An existing backup causes migration to fail rather than overwrite that backup.
 
 Marker-aware activation adopts old markerless Nix trees only when managed
 entries retain epoch timestamps. Mutable `.system` is ignored; newer entries
@@ -36,3 +40,8 @@ or symlinks preserve the overwrite guard rather than replacing local edits.
 Marimo selection is intentionally curated: core authoring/conversion, widgets,
 WASM validation, interactive paper implementation, and pairing, not every
 publishing/batch/no-feedback variant. Metadata cleanup does not expand selection.
+
+Use the narrowest check: validate a local skill directory with the quality
+script, run `hey check skills` for selection or deployment wiring, and use
+`hey skills-update` only for an intended remote-pin update. `hey skills-sync`
+also rebuilds the host and requires activation authority.

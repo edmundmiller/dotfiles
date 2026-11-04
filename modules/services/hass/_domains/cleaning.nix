@@ -1,13 +1,16 @@
 # Adaptive mapped-room cleaning for Rosie (Roomba i7) and Squirty (Braava m6).
 { lib, ... }:
 let
-  inherit (import ../_lib.nix) ensureEnabled;
+  inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 
   notifyException = message: {
     action = "notify.mobile_app_edmunds_iphone";
     data = {
       title = "Robot cleaning needs attention";
       inherit message;
+      data = notificationPalette.warning // {
+        notification_icon = "mdi:robot-vacuum";
+      };
     };
   };
 

@@ -49,7 +49,25 @@ Requires Home Assistant Core 2026.7+, iOS 17.2+, a Companion app supporting Live
 Activities, and Live Activities enabled for Home Assistant on the phone. The phone
 must reach HA for the token handshake. See the
 [Companion documentation](https://companion.home-assistant.io/docs/notifications/live-activities/).
-Monica's routine remains separate and is not configured here yet.
+
+### Mirror NFC countdown
+
+Monica's mirror tag starts Get Ready for Bed and a shared 12-minute timer.
+Scans are accepted from 8 PM to 4 AM only while bedtime mode is off and Good
+Morning is not running. Later scans cannot restart prep or extend the timer.
+
+Both phones receive a separate `mirror-bedtime` Live Activity with the same
+absolute deadline. The chronometer ticks on-device without per-second pushes.
+These are Companion Live Activities, not Apple Clock timers. At expiry, both
+activities are dismissed and both phones receive "Time to brush teeth."
+Cancelling the HA timer dismisses the countdowns without the reminder.
+
+The BUSY Bar shows the same deadline in `home_assistant_mirror_bedtime` at
+priority 50, with a lifetime bounded by the remaining timer duration. Scheduled
+bedtime drawing yields while this timer is active and resumes when it ends.
+The timer restores across HA restarts; startup resends its original deadline,
+or clears stale displays if it has ended. HA does not emit `timer.finished`
+for timers that expire while HA is stopped, so those do not send a reminder.
 
 ### BUSY Bar bedtime progress
 
@@ -105,7 +123,7 @@ The test tick still requires Edmund to be home, but bypasses the normal 8 PM–m
 
 ## White noise follows bedtime playback
 
-During `input_boolean.goodnight`, five continuous minutes of playback on either
+During `input_boolean.goodnight`, one continuous minute of playback on either
 `media_player.bathroom_nightstand_2` or `media_player.window_nightstand_2` turns on
 the white-noise outlet. These are the Music Assistant entities: recorded BookPlayer
 AirPlay sessions report `playing` here while the native HomePod entities remain
@@ -113,8 +131,8 @@ idle/off. BookPlayer reports its content as `music`, so the rule intentionally
 recognizes bedroom audio during bedtime mode rather than matching book titles.
 
 Both speakers paused, idle, or unavailable cancels the countdown; resuming starts
-a fresh five minutes. Chapter metadata updates do not reset it. Playback already
-running when bedtime mode starts also gets a full five minutes. No bed-presence,
+a fresh minute. Chapter metadata updates do not reset it. Playback already
+running when bedtime mode starts also gets a full minute. No bed-presence,
 heart-rate, or `sleep_done` gate is required. Good Morning cancels the countdown
 and retains its existing outlet-off action. Turning the outlet off manually does
 not restart it during uninterrupted playback, but a later playback session can.
@@ -122,7 +140,7 @@ Home Assistant restart or automation reload discards an in-progress countdown.
 
 `../../_tests/test_bedtime_audio.py` exercises the exported Nix automation in an
 isolated Home Assistant runtime with no physical integrations. It asserts the
-five-minute setting, then accelerates the timer to one second for cancellation,
+one-minute setting, then accelerates the timer to one second for cancellation,
 chapter-change, either-speaker, and non-bedtime playback checks. Pass the automation
 JSON as its first argument using a Python environment with Home Assistant installed.
 
@@ -159,12 +177,18 @@ Focus report is stale `Sleep`, `unknown`, unavailable, or missing. An explicit
 request takes precedence over phone telemetry. HomeKit, Assist, the dashboard,
 and the voice webhook continue to use this same script.
 
-Automatic Good Morning remains separately guarded: from 7 AM to noon, every
-resident who is home must be marked awake, goodnight must be on, and Edmund's
-Focus must not be `Sleep`, `unknown`, or `unavailable` while he is home. Blocked
-automatic calls are discarded, not queued. Leaving Sleep Focus does not run Good
-Morning or re-evaluate an earlier wake signal. Activate the script, not its
-internal immediate-state scene. The script waits ten
+Good Morning is manual/voice only. Wake signals do not establish that everyone
+is ready to wake up, especially when someone plans to sleep in. Neither awake
+booleans nor Focus changes activate the routine.
+
+Until someone runs Good Morning or otherwise clears `input_boolean.goodnight`,
+night mode remains active. Scheduled cleaning stays blocked, mid-morning lighting
+skips its scheduled action, and climate stays in Sleep when no higher-priority
+mode applies. Phoebe Cam privacy also stays off under the goodnight exception,
+leaving recording available. Run Good Morning when everyone is ready to end
+night mode; simply waking up no longer clears it.
+
+Activate the script, not its internal immediate-state scene. The script waits ten
 minutes before turning on the desk monitor and desk POP switches to avoid the
 bright display at wake-up. Activating Good Morning again restarts the delay; a
 bedtime activation cancels the pending power-on.

@@ -20,3 +20,5 @@ nvim --headless +"lua vim.defer_fn(function() vim.cmd('qa!') end, 5000)"
 
 For a filetype change, open a representative file and inspect `vim.bo.filetype`,
 `require('conform').list_formatters(0)`, or `require('lint').linters_by_ft`.
+The startup smoke check covers loading only; filetype, formatter, linter, and LSP
+changes need the representative-buffer inspection that matches the changed seam.

@@ -5,7 +5,7 @@
 # separate from the schedule/homeostasis logic.
 { lib, ... }:
 let
-  inherit (import ../../_lib.nix) ensureEnabled;
+  inherit (import ../../_lib.nix) ensureEnabled notificationPalette;
 
   edmund = {
     # Eight Sleep next alarm timestamp. iOS Home Assistant Companion does not
@@ -25,6 +25,7 @@ let
 
   busyBarBaseUrl = "http://192.168.1.207";
   busyBarApplicationName = "home_assistant_bedtime";
+  busyBarMirrorApplicationName = "home_assistant_mirror_bedtime";
   busyBarEveningTickTriggers =
     map
       (hours: {
@@ -144,6 +145,39 @@ in
 
     busy_bar_bedtime_clear = {
       url = "${busyBarBaseUrl}/api/display/draw?application_name=${busyBarApplicationName}";
+      method = "delete";
+      timeout = 3;
+    };
+
+    busy_bar_mirror_bedtime_draw = {
+      url = "${busyBarBaseUrl}/api/display/draw";
+      method = "post";
+      content_type = "application/json";
+      timeout = 3;
+      payload = ''
+        {
+          "application_name": "${busyBarMirrorApplicationName}",
+          "priority": 50,
+          "elements": [
+            {
+              "id": "countdown",
+              "type": "countdown",
+              "timestamp": "{{ target_ts | int }}",
+              "direction": "time_left",
+              "show_hours": "when_non_zero",
+              "x": 36,
+              "y": 3,
+              "align": "top_mid",
+              "color": "#FFFFFFFF",
+              "timeout": {{ remaining_seconds | int }}
+            }
+          ]
+        }
+      '';
+    };
+
+    busy_bar_mirror_bedtime_clear = {
+      url = "${busyBarBaseUrl}/api/display/draw?application_name=${busyBarMirrorApplicationName}";
       method = "delete";
       timeout = 3;
     };
@@ -433,7 +467,8 @@ in
                       progress = 1;
                       progress_max = 3;
                       notification_icon = "mdi:bed-clock";
-                      notification_icon_color = "#FFB000";
+                      # Use the light palette tone against the dark Live Activity.
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }
@@ -463,7 +498,7 @@ in
                       progress = 2;
                       progress_max = 3;
                       notification_icon = "mdi:bed";
-                      notification_icon_color = "#FFB000";
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }
@@ -495,7 +530,7 @@ in
                       progress = 3;
                       progress_max = 3;
                       notification_icon = "mdi:sleep";
-                      notification_icon_color = "#4CAF50";
+                      notification_icon_color = notificationPalette.success.color;
                     };
                   };
                 }
@@ -531,7 +566,7 @@ in
                       progress = 0;
                       progress_max = 3;
                       notification_icon = "mdi:weather-night";
-                      notification_icon_color = "#FFB000";
+                      notification_icon_color = notificationPalette.home.color;
                     };
                   };
                 }
@@ -564,7 +599,23 @@ in
       id = "busy_bar_bedtime_progress";
       description = "Show a countdown and framed six-minute checkpoints before the alarm-relative in-bed target";
       mode = "restart";
+      # The mirror countdown owns the display until its twelve minutes end.
+      condition = {
+        condition = "not";
+        conditions = [
+          {
+            condition = "state";
+            entity_id = "timer.mirror_bedtime";
+            state = "active";
+          }
+        ];
+      };
       trigger = busyBarEveningTickTriggers ++ [
+        {
+          platform = "state";
+          entity_id = "timer.mirror_bedtime";
+          to = "idle";
+        }
         {
           platform = "state";
           entity_id = edmund.nextAlarm;

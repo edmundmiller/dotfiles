@@ -8,3 +8,7 @@ Reflection bundles belong in `.pi/reflection-runtime/`, outside memory Git
 content. The `pi-context-repo:reflection-launch` event hands off work; if no
 listener accepts it, preserve reminder fallback. This package prepares the
 bundle/contract, not an autonomous background worker implementation.
+
+Run `hey check packages/pi-packages/pi-context-repo`; the workspace router runs
+its declared typecheck/tests and affected consumers. Cover accepted and
+unaccepted reflection handoff separately so fallback cannot disappear silently.

@@ -64,6 +64,40 @@ Plugin repositories, build output, logs, backups, lock files, and session state
 are generated and intentionally excluded from Git. AirPods hardware pairing is
 a documented human recovery gate rather than exported secret material.
 
+## Herdr and Hermes version locks
+
+`manifest.json` owns these exceptions to Omarchy stable:
+
+- Herdr and Hermes Desktop use `manager: archive` entries with exact package
+  versions, edge download URLs, and SHA-256 checksums. Restore verifies both
+  bytes and package identity before `pacman -U`; check detects version drift.
+  Neither operation changes `/etc/pacman.conf` or opts other packages into edge.
+- `hermesAgent` pins the Git revision and the checksum of that revision's
+  upstream installer. On a fresh home, restore runs that installer with the
+  exact commit, builds the local Desktop app, and skips interactive account
+  setup, browser installation, and Computer Use installation. Configure those
+  optional features and credentials separately with Hermes.
+- An existing Hermes checkout must match the revision, be clean, and have its
+  CLI and local Desktop build present. Restore refuses to overwrite a divergent,
+  dirty, or incomplete installation; reconcile it deliberately before retrying.
+  The Desktop launcher prefers this local build over the packaged fallback.
+
+Run `./manage restore --no-secrets` to apply these locks and
+`./manage check --no-secrets` to check them. `--no-system` skips both package
+and Hermes installation/checks. Restore never restarts Herdr sessions.
+
+These are version/source locks, not a bit-for-bit offline build guarantee:
+downloads must remain available, and the upstream Hermes installer manages its
+own dependency resolution and toolchain. Keep the package archives in a backup
+if long-term recovery must survive upstream removal.
+
+Updates are intentional, not automatic edge tracking. After updating a package,
+record its version, URL, and checksum together. After `hermes update`, record
+`git -C ~/.hermes/hermes-agent rev-parse HEAD` and
+`sha256sum ~/.hermes/hermes-agent/scripts/install.sh` in `hermesAgent`, then run
+check. Normal system upgrades or Hermes self-updates can cause reported drift;
+`./manage update` only advances plugin locks, not these application locks.
+
 ## Focused recovery guides
 
 - [Bluetooth and AirPods](docs/bluetooth-airpods.md): read when the adapter or
@@ -72,6 +106,9 @@ a documented human recovery gate rather than exported secret material.
 - [Plugin reloads while locked](docs/plugin-reload-lock-crash.md): read before
   Omapods builds, plugin updates, or other writes under the watched local plugin
   directory.
+- [Lock screen after resume](docs/lock-screen-resume-rendering.md): read when
+  typing appears to require a click after suspend; records the rendering-stall
+  evidence, failed focus experiment, and unverified workaround.
 - [Agent-assisted plugin log watch](docs/plugin-log-watch.md): read when changing
   monitored plugins, Pi triage, actionable notifications, or repair authority.
 
@@ -87,6 +124,19 @@ Check the live policy without suspending:
 ```bash
 pgrep -a hypridle
 omarchy toggle idle status
+```
+
+## Solar night light
+
+`wlsunset` warms the display to 4000K between sunset and sunrise using
+meshify's home coordinates, then returns it to 6500K during daylight. It starts
+with the Hyprland session from `config/hypr/autostart.lua` and replaces
+Hyprsunset, whose profiles support only fixed clock times.
+
+Verify the live process with:
+
+```bash
+pgrep -a wlsunset
 ```
 
 ## Lock screen wake window
@@ -176,11 +226,47 @@ voxtype setup gpu --status
 The final command must report `GPU (Vulkan)`. Verify the remaining setup with
 `voxtype setup check` and `systemctl --user is-active voxtype.service`.
 
+## Amp runner
+
+`config/systemd/user/amp-runner.service` serves meshify's repositories through
+one personal runner named `meshify`. It discovers Git checkouts two levels below
+`~/src` and explicitly serves `~/.config/dotfiles`. New repositories and linked
+worktrees appear automatically. New folders created through Amp go in `~/src`.
+In Amp's directory picker, select a main checkout and press Tab to create a
+sibling worktree; no separate runner or worktree flag is needed.
+
+The service enables remote terminals, but not workspace sharing or cloud-secret
+injection. Amp's native auto-update remains enabled by default. Install Amp at
+`~/.amp/bin/amp`, sign in with `amp login`, and create `~/src` before restoring
+on a fresh host. Credentials are runtime state and are not stored here.
+
+To install only this service without restoring unrelated Omarchy state:
+
+```bash
+install -Dm644 config/systemd/user/amp-runner.service ~/.config/systemd/user/amp-runner.service
+systemctl --user daemon-reload
+systemctl --user enable --now amp-runner.service
+```
+
+After changing an already-running service, install it again, reload the user
+manager, and restart it when its threads are idle. Verify with:
+
+```bash
+systemctl --user status amp-runner.service
+amp runner dirs list --runner-id meshify
+journalctl --user -u amp-runner.service -n 30
+```
+
+The service starts with the user session. It is unavailable while meshify sleeps;
+user lingering is not enabled by this configuration.
+
 ## Rocket League autostart
 
 `local/bin/rocket-league-autostart` starts Rocket League at login. Steam can
 consume the first launch URI while applying startup updates, so the launcher
 retries every 15 seconds for up to 10 minutes and stops once the game runs.
+After the first launch request, it stops retrying if Steam is no longer running,
+so exiting Steam does not reopen it on the next attempt.
 The retry behavior is covered by:
 
 ```bash

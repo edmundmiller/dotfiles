@@ -65,9 +65,33 @@ VMs stay manual. Platform commands never activate or deploy a host.
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
-evaluation, so Linux cannot certify this check. The CI job uses ARM64 `macos-15`.
+evaluation, so Linux cannot certify this check. The CI job uses ARM64 macOS 27
+through GitHub's `xcode-27` runner image. After installing Nix, it resolves the
+documented `/Applications/Xcode_27.2.app` alias to its real application and runs
+`hey xcode-setup` to prepare Metal and select it, then checks `metallib`. The
+current image provides 27.2 as a release candidate with multiple symlink aliases.
+CI's default 27.1 failed Metal discovery as a Nix build user even with
+the component installed; uncached and SDK-independent lookup also failed.
+After selection, it removes only inactive Xcode application directories to leave
+room for the host builds. It resolves the selected toolchain's real path and
+preserves that application and all application symlinks; it does not clean
+developer machines or the NUC. Hex still requires the full host toolchain.
+A separate Nix derivation checks tool discovery and runs Metal as a build user,
+with the host SDK selected. Failures print the component status and raw tool
+errors before the expensive host builds; runner-user success is not sufficient.
 `Checks (Linux)` also requires that native job to succeed, preserving the existing
-required status. Native checks do not repeat the portable formatting/lint suite.
+required status. The required `Flake Check (Linux)` and `Check Formatting`
+compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
+cancellation, or skipping fails both contexts; branch protection stays unchanged.
+Native checks do not repeat the portable formatting/lint suite.
+The Linux and Darwin validation jobs read private flake inputs with the
+`NIX_PRIVATE_GITHUB_TOKEN` repository secret. Linux display tests need the pinned
+private `tnote` source too. Use a fine-grained token with read-only Contents
+access to `tnote` and `agents-workspace`. Do not reuse the write-capable Renovate token.
+Both jobs also use the `REX_TOKEN` repository secret to fetch the private Rex
+snapshot. Each validation step writes a mode-0600 temporary netrc file for
+`pkgs.superlogical.com`, sets Nix's `netrc-file`, and deletes the file on exit.
+The NUC's agenix credential does not supply credentials to GitHub runners.
 
 `scripts/validation.py` owns suite routing. `flake.nix` owns the immutable
 `pre-commit-config` and Nix derivations. The full portable route omits host and
@@ -76,6 +100,70 @@ the platform command for the target, on a suitably sized builder with private
 input access. GitHub's repository-scoped token cannot fetch every private input.
 The Linux-only TRMNL browser renderer belongs to `--platform nixos`; its source
 structure check remains in changed-work and portable validation on both systems.
+
+## Validate a candidate on the NUC
+
+From any checkout that can SSH to the NUC, run `hey nuc-wt validate`. The command
+copies the exact clean commit or dirty worktree into a uniquely leased NUC
+snapshot, then runs all release gates without activating or deploying anything:
+
+```sh
+python3 scripts/validation.py --full
+python3 scripts/validation.py --platform nixos
+nix flake check --keep-going -L
+```
+
+Every gate runs even if an earlier gate fails. Separate logs under the printed
+`NUC_VALIDATION_REPORT_DIR` retain output; `summary.tsv` records every exit
+status and log-write status. `state.tsv` ends in `completed` only when the gates
+and snapshot cleanup succeed. Setup, gate, logging, submission, cleanup, and
+interruption failures end in `failed` with the cause. `unit.txt` and
+`provenance.txt` retain the transient unit identifier. The command waits for the
+result and exits nonzero when the terminal state is failed. The service
+finalizer writes that state and releases the snapshot lease, including after a
+signal or OOM kill. A run continues if the calling Amp runner or SSH session
+disconnects after submission. A global NUC lock serializes these memory-heavy
+runs. Nix builds use one job and two cores. The service-owned snapshot lease
+remains protected while that exact unit is queued or running, even after the
+usual 24-hour lease timeout. Pruning removes the stale lease after the service
+exits.
+
+The transient user service limits its evaluator and client processes to a 10 GiB
+soft limit and a 12 GiB hard limit. Before each gate, the runner reads
+`MemAvailable` from `/proc/meminfo` and refuses to start the gate unless at least
+16 GiB is available. A missing or malformed reading also fails closed. A
+preflight failure has status 75 in `summary.tsv`, and the other gate preflights
+still run.
+
+This is not a builder memory limit. Nix submits builds to the system
+`nix-daemon`; its workers and KVM guests run outside the transient user service's
+cgroup. They remain uncapped and can consume the 16 GiB observed at gate start.
+Other host workloads can also consume memory after the check. A hard builder
+boundary would require a privileged system service or daemon configuration
+change. `provenance.txt` records both the evaluator boundary and the missing
+builder boundary for every run.
+
+Use one Git worktree per thread. NUC snapshots and reports are unique. Dirty
+transfers build an immutable Git tree from tracked files and non-ignored
+untracked files, then reject the transfer if the source tree changes while the
+archive is copied. This keeps tracked ignored source, including `.pi` content,
+without copying ignored runtime state. The report provenance records the Git
+tree content digest, so a `HEAD-dirty` revision identifies the exact bytes that
+the NUC reconstructed and tested.
+
+When invoked in an isolated checkout on the NUC itself, the command uses a local
+snapshot and needs no SSH or Tailscale hop. From another machine, the existing
+`ssh nuc` route works even when the Amp runner is down, as long as the NUC and
+SSH route are online. Once submitted, reconnect and inspect the printed report
+directory if the caller disconnects. A powered-off or unreachable NUC cannot
+accept or execute queued Linux/KVM work.
+
+Synced snapshots get isolated Git metadata for validation; source history,
+checkout credentials, inherited Git hooks, and the caller's `.git` directory are
+not copied. Native Darwin verification remains a separate
+`hey check --platform darwin` run in an isolated worktree on MacTraitor-Pro. The
+NUC cannot certify it. An unpushed or dirty candidate must be transferred to that
+Mac worktree explicitly; runner availability alone does not transfer source.
 
 Pi/OMP workspace manifests and lock/config changes select every package.
 Package edits select that package and transitive workspace consumers, then run

@@ -13,6 +13,7 @@
     "duckdb"
     "dvc"
     "uv"
+    "mise"
     "tealdeer"
     "joshmedeski/sesh/sesh"
     "seqeralabs/tap/tw"

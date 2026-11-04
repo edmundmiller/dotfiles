@@ -27,12 +27,33 @@ mapfile -d '' -t snapshots < <(
     name="${candidate##*/}"
     suffix="${name#"$prefix"}"
     if [[ "$name" == "$prefix"* ]] \
-      && [[ "$suffix" =~ ^[0-9a-f]{40}-(clean|dirty)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]]; then
+      && [[ "$suffix" =~ ^[0-9a-f]{40}-(clean|dirty)-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$ ]]; then
+      snapshot_id="${BASH_REMATCH[2]}"
       active_marker="$candidate/.nuc-deploy-active"
       if [[ -e "$active_marker" ]]; then
         active_age=$((now - $(stat -c '%Y' "$active_marker")))
         if ((active_age < active_max_age_seconds)); then
           continue
+        fi
+
+        lease_owner="$(cat -- "$active_marker" 2>/dev/null || true)"
+        if [[ "$lease_owner" =~ ^systemd-user-unit=(nuc-validation-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.service)$ ]]; then
+          validation_unit="${BASH_REMATCH[1]}"
+          expected_unit="nuc-validation-${snapshot_id}.service"
+          if [[ "$validation_unit" == "$expected_unit" ]]; then
+            uid="$(id -u)"
+            if XDG_RUNTIME_DIR="/run/user/$uid" \
+              DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+              systemctl --user is-active --quiet "$validation_unit"; then
+              continue
+            else
+              service_status=$?
+              if ((service_status != 3 && service_status != 4)); then
+                echo "warning: could not verify stale snapshot lease owner $validation_unit; retaining $candidate" >&2
+                continue
+              fi
+            fi
+          fi
         fi
         rm -f -- "$active_marker"
       fi

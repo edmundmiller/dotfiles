@@ -28,6 +28,7 @@ for auth in available empty missing; do
     for mode in default full light invalid; do
       (
         unset NIX_CONFIG DIRENV_TEST_SHELL_LOADED
+        unset WORKTRUNK_WORKTREE_PATH BEADS_NO_DAEMON
         original_config=
         if [[ $configured == yes ]]; then
           original_config='access-tokens = git.example.com=existing-token'
@@ -40,6 +41,8 @@ for auth in available empty missing; do
           invalid) expected_args='flake' ;;
         esac
         source .envrc 2>/dev/null
+        [[ ! -v WORKTRUNK_WORKTREE_PATH ]]
+        [[ ${BEADS_NO_DAEMON:-} == 1 ]]
         [[ ${NIX_CONFIG:-} == "$original_config" ]]
         if [[ $configured == no ]]; then
           [[ ! -v NIX_CONFIG ]]

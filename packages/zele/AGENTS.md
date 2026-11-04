@@ -11,4 +11,8 @@ Reads, draft creation, and unsubscribe dry-runs remain available.
 The Bun build needs explicit Prisma engines and sqlite to regenerate schema.
 Preserve `CREATE TABLE IF NOT EXISTS`: the schema is reapplied each startup.
 Ship `dist/`, `src/schema.sql`, and production dependencies, not the dev toolchain.
-Wrapper regressions and `pkg-check zele` cover the package's special contracts.
+Wrapper and schema-idempotency regressions cover the package's special contracts.
+
+Build the package for pin, patch, lock, or schema changes, then run `hey check`
+on `packages/zele`. For command-policy changes, prove blocked sends fail before
+any network-capable code path.

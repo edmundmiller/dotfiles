@@ -41,3 +41,7 @@ when updating a VIP service through the API, preserve its two existing `addrs`.
 Successful device registration reports `approvalLevel: approved:auto` and
 `configured: ready`. The dotfiles module owns the systemd `tailscale serve`
 proxy, including startup retry and service-specific cleanup.
+
+For routine service changes, run `hey check modules/services/<name>` first.
+Add `hey check --platform services-vm` only when the changed runtime contract is
+covered by that VM suite; use `--platform nixos` for full NUC evaluation.

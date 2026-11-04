@@ -85,12 +85,12 @@ in
       '';
     }
 
-    # Darwin: enable Remote Login for Moshi/SSH over Tailscale.
+    # Darwin: enable Remote Login for SSH over Tailscale.
     (optionalAttrs isDarwin {
       services.openssh.enable = true;
 
       # Remote Login restricts SSH to members of the com.apple.access_ssh
-      # group. Ensure our user is enrolled so Moshi/mosh SSH bootstrap is not
+      # group. Ensure our user is enrolled so SSH bootstrap is not
       # blocked by the PAM service ACL (pam_sacl).
       # nix-darwin only runs a fixed set of activation phases; a custom-named
       # script would be silently ignored, so append to postActivation.

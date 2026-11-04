@@ -3,11 +3,11 @@ let
   platformArtifacts = {
     aarch64-darwin = {
       package = "cli-darwin-arm64";
-      hash = "sha512-K9djPxU2mTX0ecbTYkVkmdhUegC47maCQFsrHZ82Tucg4Wl3OcspjpcyLa+Xqt0Ge8mGoW2cHv1PulJ6O4n9LQ==";
+      hash = "sha512-1d5rC8+rMnsWNwSGyz3R+ePspoEYF6SB+HA9QcUDfdcYVyTR9wHXIqhbQ+87tfQZjxah4jtz+bi1E4+OIaC4bw==";
     };
     x86_64-linux = {
       package = "cli-linux-x64-baseline";
-      hash = "sha512-6b9/qo+B7+VSc/JuCDEnc/29YHnxY4yMcrK/phUAE8km9rmNnngoS5kXZa1Dnzw00JmMpwRkC/ylNbkKU7kPZA==";
+      hash = "sha512-p/xHg6VJrerJFGRtyN1fUYsYqbPyPEXHsDy0M8IIKGKVkJuPr34e8uyCIp8Het5UBlHp1Zkub6dsPPIyJwcJ7Q==";
     };
   };
   platform = final.stdenv.hostPlatform.system;
@@ -17,7 +17,7 @@ let
   }";
   opencode = final.stdenv.mkDerivation rec {
     pname = "opencode";
-    version = "0.0.0-next-15586";
+    version = "1.18.18";
 
     src = final.fetchurl {
       url = "https://registry.npmjs.org/@opencode-ai/${artifact.package}/-/${artifact.package}-${version}.tgz";
@@ -37,8 +37,7 @@ let
       runHook preInstall
       mkdir -p "$out/bin" "$out/lib/opencode"
       cp -R bin/. "$out/lib/opencode/"
-      makeWrapper "$out/lib/opencode/opencode2" "$out/bin/opencode" --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config/opencode2}"' ${linuxWrapperArgs}
-      ln -s opencode "$out/bin/opencode2"
+      makeWrapper "$out/lib/opencode/lildax" "$out/bin/opencode" --run 'export XDG_CONFIG_HOME="''${XDG_CONFIG_HOME:-$HOME/.config}"' ${linuxWrapperArgs}
       runHook postInstall
     '';
 

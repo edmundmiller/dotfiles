@@ -3,7 +3,7 @@
   configDir,
   agentCore,
   piPkgDeps,
-  piCommandPolicyBridge,
+  piPstack,
   piSettingsValidated,
   promptLinks,
   agentLinks,
@@ -17,9 +17,7 @@ promptLinks
   ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
-  ".pi/agent/extensions/pi-permission-system/config.json".source =
-    "${configDir}/pi/pi-permission-system.jsonc";
-  ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
+  ".pi/agent/packages/pstack-pi".source = piPstack;
 }
 // sessionSearchFiles
 // (
@@ -38,14 +36,14 @@ promptLinks
   ".pi/agent/extensions/review.ts".source = "${configDir}/pi/extensions/review.ts";
   ".pi/agent/extensions/lazy-plannotator.ts".source =
     "${configDir}/pi/extensions/lazy-plannotator.ts";
-  ".pi/agent/extensions/lazy-agent-browser.ts".source =
-    "${configDir}/pi/extensions/lazy-agent-browser.ts";
   ".pi/agent/extensions/lib/lazy-extension.ts".source =
     "${configDir}/pi/extensions/lib/lazy-extension.ts";
   ".pi/agent/extensions/lib/commit-review-logic.ts".source =
     "${configDir}/pi/extensions/lib/commit-review-logic.ts";
   ".pi/agent/extensions/lib/commit-config.ts".source =
     "${configDir}/pi/extensions/lib/commit-config.ts";
+  ".pi/agent/extensions/lib/commit-model.ts".source =
+    "${configDir}/pi/extensions/lib/commit-model.ts";
   ".pi/agent/extensions/lib/review-git.ts".source = "${configDir}/pi/extensions/lib/review-git.ts";
   ".pi/agent/extensions/lib/review-screen.ts".source =
     "${configDir}/pi/extensions/lib/review-screen.ts";

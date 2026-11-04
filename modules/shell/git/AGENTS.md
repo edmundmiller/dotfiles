@@ -7,3 +7,7 @@ generated config uses the system theme with automatic reload.
 `modules.shell.git.ai.enable` injects `pi-git-ai` into Pi's `extraPackages` only
 when Pi is enabled. GnuPG enablement controls git-crypt. Package selection and
 option defaults live in `default.nix`, not in this guide.
+
+Run `hey check modules/shell/git config/git config/gh-dash` for affected wiring.
+Use a disposable repository for alias or signing behavior; do not mutate global
+Git or gh state merely to verify generated configuration.

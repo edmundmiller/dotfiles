@@ -13,3 +13,7 @@ Consumers use `config.age.secrets.<name>.path`, usually as `EnvironmentFile` or
 a token-file option. Ownership defaults to `config.user.name`; override it for
 service users that need access. Encryption/re-keying belongs to agenix, not
 plaintext Nix expressions.
+
+Run `hey check modules/agenix hosts/shared/secrets` for wiring or recipient-map
+changes. Do not decrypt secrets merely to validate Nix evaluation; runtime
+decryption requires the target host and separate authorization.

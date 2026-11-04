@@ -4,5 +4,6 @@ Package upstream `jarredkenny/worktree-manager` (`@jx0/wtm`) for Jmux's bare-rep
 worktree flow (`C-c M` → new worktree in this setup). Bun builds ESM and the
 wrapped `wtm` supplies Git on PATH. Upstream sources remain fetched, not vendored.
 
-Package smoke check is `wtm help`; live worktree mutations are not necessary
-to establish that packaging succeeds.
+Run `hey check packages/worktree-manager` and build the package after source,
+dependency, or wrapper changes. Keep mutation tests in a disposable bare-repo
+fixture; use `wtm help` as the smoke check for packaging-only changes.

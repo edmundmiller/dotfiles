@@ -3,6 +3,8 @@
 Firmware source is `packages/ergodox-firmware/src/`: `keymap.c` owns the layout,
 `config.h` timing, and `rules.mk` QMK options. This directory owns visualization
 metadata (`keymap.yaml`) and generated `layout.svg`.
+Do not edit `layout.svg` by hand; change `keymap.yaml`, run `hey ergodox-draw`,
+and review the regenerated SVG.
 
 Commands are in `bin/hey.d/ergodox.nu`: `hey ergodox-build`, `hey ergodox-draw`,
 `hey ergodox-info`, and `hey ergodox-edit`. Flashing uses `hey ergodox-flash`
@@ -11,3 +13,5 @@ cross-toolchain, without a `~/qmk_firmware` checkout, tested on aarch64-darwin.
 
 For upstream ZSA QMK updates, use the package header and [README.md](README.md).
 Oryx source exports replace firmware sources, not the visualization alone.
+Run `hey ergodox-build` for firmware changes; drawing alone checks only the
+visualization path.

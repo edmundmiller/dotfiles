@@ -23,6 +23,11 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKS = {
     "validation-tests": [
         "scripts/validation.py",
+        "scripts/beads_filter.py",
+        "tests/test_beads_filter.py",
+        "bin/amp-runner-sync",
+        "config/amp/*",
+        "tests/test_amp_runner_sync.py",
         "bin/hey*",
         "bin/hey.d/*",
         "bin/qa-changed",
@@ -31,6 +36,7 @@ CHECKS = {
         ".codex/hooks.json",
         ".omp/hooks/*",
     ],
+    "hass-health-tests": ["modules/services/hass/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",
@@ -41,6 +47,10 @@ CHECKS = {
         "packages/*",
         "bin/check-package-layout",
         "bin/check-patch-locality",
+        "bin/check-renovate-patch-paths",
+        "bin/import-renovate-patch-repair",
+        ".flue/*",
+        ".github/workflows/renovate-patch-repair.yml",
         "tests/test_package_policy.py",
         "tests/test_oxlint_jev.py",
     ],
@@ -68,6 +78,19 @@ CHECKS = {
         "docs/validation.md",
         "docs/agents/oxlint.md",
     ],
+    "tldraw-api-tests": [
+        "config/tldraw/*",
+        "modules/desktop/apps/tldraw.nix",
+        "skills/catalog/tldraw-offline/*",
+        "tests/test_tldraw_api.py",
+    ],
+    "agent-mcp-tests": [
+        "config/agents/mcp.nix",
+        "config/agents/reconcile_mcp.py",
+        "modules/agents/mcp/*",
+        "tests/test_agent_mcp.py",
+        "hosts/*/default.nix",
+    ],
     "omp-thin-harness-tests": [
         "AGENTS.md",
         "config/agents/AGENTS.md",
@@ -84,8 +107,11 @@ CHECKS = {
         "modules/agents/opencode/*",
         "modules/agents/pi/*",
         "modules/agents/plannotator/*",
+        "overlays/pi/*",
+        "tests/agent-instruction-config.nix",
         "tests/test_agent_instruction_wiring.py",
         "tests/test_agent_response_contract.py",
+        "tests/test_pi_update.py",
         "tests/test_codex_model_config.py",
         "tests/test_omp_ttsr_rules.py",
         "tests/omp_lazy_extensions.test.js",
@@ -110,6 +136,18 @@ CHECKS = {
         "hosts/nuc/*",
         "modules/agents/hermes/*",
     ],
+    "pi-herdr-settings-tests": [
+        "modules/agents/pi/*",
+        "modules/shell/herdr/*",
+        "config/pi/settings.jsonc",
+    ],
+    "herdr-native-tests": [
+        "modules/shell/herdr/*",
+        "config/herdr/*",
+        "bin/herdr-studios",
+        "tests/test_herdr_native*.py",
+        "tests/test_herdr_studios_native.py",
+    ],
     "herdr-config-check": [
         "modules/shell/herdr/*",
         "config/herdr/*",
@@ -125,9 +163,19 @@ CHECKS = {
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
 }
 
+# Recovery runs real Nix profiles inside Linux user/mount namespaces, not a VM.
+if sys.platform == "linux":
+    CHECKS["unas-recovery"] = [
+        "bin/unas-recover*",
+        "bin/tests/unas-recover.bash",
+        "hosts/unas/*",
+    ]
+
 DARWIN_CHECKS = [
+    "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
     "audio-priority-bar-regressions",
+    "herdr-app-launch-config",
     "screentime-backup-darwin-assertions",
     "discrawl-backup-darwin-assertions",
     "darwin-tailscaled-owner-assertions",
@@ -247,10 +295,9 @@ def package_plan(root, files, full=False, packages=()):
         ],
     )
     selected = set(packages)
-    if selected - available.keys():
-        raise ValueError(
-            "Unknown packages: " + ", ".join(sorted(selected - available.keys()))
-        )
+    unknown = selected - available.keys()
+    if unknown:
+        raise ValueError("Unknown packages: " + ", ".join(sorted(unknown)))
     changed_packages = {
         f.split("/")[2]
         for f in files
@@ -288,14 +335,6 @@ def package_plan(root, files, full=False, packages=()):
 def plan(root, args):
     files = selected_files(root, args.base_ref, args.head_ref, args.full, args.paths)
     packages, integration = package_plan(root, files, args.full, args.package)
-    checks = [
-        name
-        for name, patterns in CHECKS.items()
-        if args.full
-        or matches(files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"])
-    ]
-    if args.packages_only:
-        checks = []
     if args.platform:
         # Explicit platform runs are independent of the portable suite.
         target = args.platform
@@ -322,14 +361,38 @@ def plan(root, args):
             "checks": [],
             "packages": [],
             "integration": False,
+            "flue": False,
             "platform": target,
         }
+    checks = []
+    if not args.packages_only:
+        checks = [
+            name
+            for name, patterns in CHECKS.items()
+            if args.full
+            or matches(
+                files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"]
+            )
+        ]
     return {
         "files": files,
         "hooks": bool(files) and not args.packages_only,
         "checks": checks,
         "packages": packages,
         "integration": integration,
+        "flue": not args.packages_only
+        and (
+            args.full
+            or matches(
+                files,
+                [
+                    ".flue/*",
+                    "packages/flue-evlog/*",
+                    ".github/workflows/renovate-patch-repair.yml",
+                    "scripts/validation.py",
+                ],
+            )
+        ),
         "platform": None,
     }
 
@@ -355,7 +418,10 @@ def snapshot(root, target):
     git(target, "init", "--quiet")
     git(target, "config", "core.hooksPath", "/dev/null")
     git(target, "config", "commit.gpgsign", "false")
-    git(target, "add", "--all")
+    # source_files already excludes untracked ignored state. Force-add its
+    # copies so files tracked by the source repo remain tracked even when a
+    # source .gitignore pattern also matches them.
+    git(target, "add", "--all", "--force")
     git(
         target,
         "-c",
@@ -371,22 +437,22 @@ def snapshot(root, target):
     )
 
 
-def nix_env():
+def nix_env(token=""):
     env = os.environ.copy()
-    if shutil.which("gh"):
-        token = subprocess.run(
+    if not token and shutil.which("gh"):
+        token_result = subprocess.run(
             ["gh", "auth", "token"], capture_output=True, text=True, check=False
         )
-        if token.returncode == 0 and token.stdout.strip():
-            env["NIX_CONFIG"] = (
-                env.get("NIX_CONFIG", "")
-                + "\naccess-tokens = github.com="
-                + token.stdout.strip()
-            )
+        if token_result.returncode == 0:
+            token = token_result.stdout.strip()
+    if token:
+        env["NIX_CONFIG"] = (
+            env.get("NIX_CONFIG", "") + "\naccess-tokens = github.com=" + token
+        )
     return env
 
 
-def execute(root, selection):
+def execute(root, selection, github_token=""):
     failures = []
 
     def run(label, command, cwd=root, env=None, capture=False):
@@ -418,7 +484,7 @@ def execute(root, selection):
 
     env = None
     if selection["hooks"] or selection["checks"] or selection["platform"]:
-        env = nix_env()
+        env = nix_env(github_token)
     nix = ["nix", "--accept-flake-config"]
     build = nix + ["build", "--no-link", "--no-write-lock-file", "--print-build-logs"]
     if selection["hooks"]:
@@ -472,7 +538,17 @@ def execute(root, selection):
             )
         if system:
             for name in DARWIN_CHECKS:
-                run(name, build + [f".#checks.{system}.{name}"], env=env)
+                installable = f".#checks.{system}.{name}"
+                if name == "herdr-app-launch-config":
+                    # Ghostty's real loader needs host Apple APIs that are
+                    # unavailable inside a Nix build sandbox.
+                    run(
+                        name,
+                        nix + ["run", "--no-write-lock-file", installable],
+                        env=env,
+                    )
+                else:
+                    run(name, build + [installable], env=env)
     elif target == "nixos":
         run(
             "full NixOS flake (including deployment and VM checks)",
@@ -485,6 +561,21 @@ def execute(root, selection):
             "services-vm": "vm-services-gatus-vm-test",
         }[target]
         run(target, build + [f".#checks.{system}.{name}"], env=env)
+
+    if selection["flue"]:
+        adapter = root / "packages/flue-evlog"
+        if run(
+            "Flue adapter dependencies",
+            ["npm", "ci", "--ignore-scripts"],
+            cwd=adapter,
+        ) and run("Flue adapter", ["npm", "run", "check"], cwd=adapter):
+            workspace = root / ".flue"
+            if run(
+                "Flue dependencies",
+                ["npm", "ci", "--ignore-scripts"],
+                cwd=workspace,
+            ):
+                run("Flue observability", ["npm", "run", "check"], cwd=workspace)
 
     if selection["packages"] or selection["integration"]:
         workspace = root / "packages/pi-packages"
@@ -594,6 +685,7 @@ def main(argv=None):
         help="Repository-relative changed-file scopes (task-owned paths)",
     )
     args = parser.parse_args(argv)
+    github_token = os.environ.pop("NIX_GITHUB_TOKEN", "").strip()
     if args.ci:
         base = args.base_ref or os.environ.get("VALIDATION_BASE", "")
         if base and set(base) != {"0"}:
@@ -646,7 +738,7 @@ def main(argv=None):
             snapshot(ROOT, target)
             if fingerprint(ROOT) != before:
                 raise ValueError("Source changed while copying; rerun hey check.")
-            result = execute(target, selection)
+            result = execute(target, selection, github_token)
             if fingerprint(ROOT) != before:
                 raise ValueError(
                     "Source changed during validation; results are stale. Rerun hey check."

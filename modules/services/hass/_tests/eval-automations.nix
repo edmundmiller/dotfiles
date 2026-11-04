@@ -3,7 +3,7 @@
 # No VM needed — evaluates the NixOS module config and checks:
 #   - Every automation has initial_state = true (use ensureEnabled from _lib.nix)
 #   - Wake detection automations exist with guardrails
-#   - Auto Good Morning requires all home residents awake and Sleep Focus inactive
+#   - Good Morning requires a manual/voice request
 #   - Required automations/scenes still exist
 #   - Key scene state guarantees remain intact
 { nixosConfig, pkgs }:
@@ -304,7 +304,10 @@ let
 
   last = list: builtins.elemAt list ((length list) - 1);
 
-  allowedDisabledAutomations = [ "sync_iphone_alarm_8sleep" ];
+  allowedDisabledAutomations = [
+    "sync_iphone_alarm_8sleep"
+    "plant_glow_light_on"
+  ];
 
   missingInitialState = filter (
     a: !(a.initial_state or null) && !(builtins.elem (a.id or "") allowedDisabledAutomations)
@@ -326,8 +329,11 @@ let
   bedtimeNudgeWebhook = findAutomation "bedtime_nudge_webhook";
   whiteNoiseWithBedtimeAudiobook = findAutomation "white_noise_with_bedtime_audiobook";
   syncIphoneAlarm8sleep = findAutomation "sync_iphone_alarm_8sleep";
+  plantGlowLightOn = findAutomation "plant_glow_light_on";
+  plantGlowLightOff = findAutomation "plant_glow_light_off";
   sleepFocusOffEdmund = findAutomation "sleep_focus_off_stop_edmund";
   sleepFocusOffMonica = findAutomation "sleep_focus_off_stop_monica";
+  alSleepModeOff = findAutomation "al_sleep_mode_off";
   alDaytimeSleepCorrection = findAutomation "al_daytime_sleep_correction";
   entranceOccupancyNightLight = findAutomation "entrance_occupancy_night_light";
   frontDoorNightLights = findAutomation "front_door_night_lights";
@@ -423,6 +429,159 @@ let
 
   goodMorningBothAwake = findAutomation "good_morning_both_awake";
 
+  # Follow literal script calls through nested branches, without following
+  # cancellation or revisiting scripts in a cycle. Dynamic/UI calls are out of scope.
+  scriptReachesGoodMorning =
+    scriptDefinitions: entityId: visited: value:
+    if builtins.isList value then
+      any (scriptReachesGoodMorning scriptDefinitions entityId visited) value
+    else if builtins.isAttrs value then
+      let
+        service = value.action or (value.service or null);
+        targets = pkgs.lib.toList (value.target.entity_id or (value.data.entity_id or [ ]));
+        targetActivation = builtins.elem service [
+          "script.turn_on"
+          "script.toggle"
+          "scene.turn_on"
+          "homeassistant.turn_on"
+          "homeassistant.toggle"
+        ];
+        calls =
+          if targetActivation then
+            targets
+          else if builtins.isString service && pkgs.lib.hasPrefix "script." service then
+            [ service ]
+          else
+            [ ];
+        followsScript =
+          calledEntity:
+          let
+            name = pkgs.lib.removePrefix "script." calledEntity;
+          in
+          builtins.isString calledEntity
+          && pkgs.lib.hasPrefix "script." calledEntity
+          # The approved entry point applies the scene itself. Its callers are
+          # checked separately, so do not classify them as scene bypasses.
+          && calledEntity != "script.good_morning"
+          && !(builtins.elem calledEntity visited)
+          && builtins.hasAttr name scriptDefinitions
+          && scriptReachesGoodMorning scriptDefinitions entityId (visited ++ [ calledEntity ]) (
+            scriptDefinitions.${name}.sequence or [ ]
+          );
+      in
+      (entityId == "script.good_morning" && service == entityId)
+      || (targetActivation && builtins.elem entityId targets)
+      || any followsScript (
+        filter (
+          call:
+          !(builtins.elem call [
+            "script.turn_off"
+            "script.reload"
+          ])
+        ) calls
+      )
+      || any (scriptReachesGoodMorning scriptDefinitions entityId visited) (builtins.attrValues value)
+    else
+      false;
+  activatesGoodMorning = scriptReachesGoodMorning scripts;
+  goodMorningAutomationCallers = filter (
+    a: activatesGoodMorning "script.good_morning" [ ] (a.actions or (a.action or [ ]))
+  ) automations;
+
+  # Independent call graphs exercise both activation and cancellation paths.
+  goodMorningCallFixtures = {
+    helper.sequence = [ { action = "script.cycle"; } ];
+    cycle.sequence = [
+      { service = "script.helper"; }
+      {
+        choose = [
+          {
+            conditions = [ ];
+            sequence = [
+              {
+                action = "script.turn_on";
+                target.entity_id = [
+                  "script.unrelated"
+                  "script.good_morning"
+                ];
+              }
+            ];
+          }
+        ];
+      }
+    ];
+    harmless.sequence = [ { action = "script.harmless"; } ];
+    scene_helper.sequence = [
+      {
+        action = "scene.turn_on";
+        data.entity_id = "scene.good_morning";
+      }
+    ];
+    good_morning.sequence = [
+      {
+        action = "scene.turn_on";
+        target.entity_id = "scene.good_morning";
+      }
+    ];
+  };
+  goodMorningCallChecks =
+    map
+      (case: {
+        test =
+          scriptReachesGoodMorning goodMorningCallFixtures case.entity [ ] case.action == case.expected;
+        msg = "Good Morning call tracing: ${case.name}";
+      })
+      [
+        {
+          name = "nested indirect call after a cycle";
+          entity = "script.good_morning";
+          action.action = "script.helper";
+          expected = true;
+        }
+        {
+          name = "targeted helper call";
+          entity = "script.good_morning";
+          action = {
+            service = "script.turn_on";
+            data.entity_id = "script.helper";
+          };
+          expected = true;
+        }
+        {
+          name = "helper cancellation is not activation";
+          entity = "script.good_morning";
+          action = {
+            action = "script.turn_off";
+            target.entity_id = "script.helper";
+          };
+          expected = false;
+        }
+        {
+          name = "cycle without activation terminates";
+          entity = "script.good_morning";
+          action.action = "script.harmless";
+          expected = false;
+        }
+        {
+          name = "missing script is not activation";
+          entity = "script.good_morning";
+          action.action = "script.missing";
+          expected = false;
+        }
+        {
+          name = "indirect scene bypass";
+          entity = "scene.good_morning";
+          action.action = "script.scene_helper";
+          expected = true;
+        }
+        {
+          name = "approved script is not a scene bypass";
+          entity = "scene.good_morning";
+          action.action = "script.good_morning";
+          expected = false;
+        }
+      ];
+
   windingDownScene = findScene "Winding Down";
   getReadyForBedScene = findScene "Get Ready for Bed";
   goodNightScene = findScene "Good Night";
@@ -437,7 +596,7 @@ let
     if goodMorningScript == null then [ ] else toList (goodMorningScript.sequence or [ ]);
   goodMorningIntent = haConfig.intent_script.GoodMorning or null;
 
-  assertions = initialStateAssertions ++ [
+  assertions = (initialStateAssertions ++ goodMorningCallChecks) ++ [
     {
       test = edmundAwake != null;
       msg = "automation 'edmund_awake_detection' missing";
@@ -447,19 +606,27 @@ let
       msg = "automation 'monica_awake_detection' missing";
     }
     {
+      test = goodMorningBothAwake == null;
+      msg = "Wake heuristics must not automatically activate Good Morning";
+    }
+    {
       test =
-        goodMorningBothAwake != null
-        && hasStateTrigger goodMorningBothAwake "input_boolean.edmund_awake" "on"
-        && hasStateTrigger goodMorningBothAwake "input_boolean.monica_awake" "on"
-        && length (toList (goodMorningBothAwake.trigger or [ ])) == 2
-        && hasStateCondition (toList (goodMorningBothAwake.condition or [ ])) "input_boolean.goodnight" "on"
-        && hasTemplateConditionContaining (toList (
-          goodMorningBothAwake.condition or [ ]
-        )) "focus_name not in ['Sleep', 'unknown', 'unavailable']"
-        && hasActionTarget (toList (
-          goodMorningBothAwake.action or [ ]
-        )) "script.turn_on" "script.good_morning";
-      msg = "Good Morning must require all home residents awake and Edmund outside Sleep Focus";
+        map (a: a.id or null) goodMorningAutomationCallers == [ "voice_webhook_good_morning" ]
+        && builtins.all (
+          a:
+          let
+            triggers = toList (a.triggers or (a.trigger or [ ]));
+          in
+          triggers != [ ] && builtins.all (t: (t.trigger or (t.platform or null)) == "webhook") triggers
+        ) goodMorningAutomationCallers;
+      msg = "Only the webhook-only voice automation may activate script.good_morning";
+    }
+    {
+      test =
+        !any (
+          a: activatesGoodMorning "scene.good_morning" [ ] (a.actions or (a.action or [ ]))
+        ) automations;
+      msg = "Automations must not bypass script.good_morning to activate scene.good_morning";
     }
     {
       test = legacyRoombaStart == null;
@@ -860,6 +1027,92 @@ let
     {
       test =
         let
+          tag = findAutomation "monica_mirror_nfc_get_ready_for_bed";
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = "6eb25d1e-ef99-476e-a496-06181b2ec05e";
+          }
+        &&
+          tag.condition == [
+            {
+              condition = "state";
+              entity_id = "input_boolean.goodnight";
+              state = "off";
+            }
+            {
+              condition = "time";
+              after = "20:00:00";
+              before = "04:00:00";
+            }
+            {
+              condition = "state";
+              entity_id = "script.good_morning";
+              state = "off";
+            }
+          ]
+        && tag.mode == "single"
+        &&
+          tag.action == [
+            {
+              action = "timer.start";
+              target.entity_id = "timer.mirror_bedtime";
+            }
+            { action = "script.get_ready_for_bed"; }
+            { delay = "00:00:10"; }
+          ];
+      msg = "Monica's mirror NFC tag must require bedtime mode off, guard daytime/morning scans, and debounce Get Ready for Bed, not Good Night";
+    }
+    {
+      test =
+        let
+          countdown = findAutomation "mirror_bedtime_countdown";
+          phase = head countdown.action;
+          start = (head phase.choose).sequence;
+          notifications = filter (a: hasInfix "notify.mobile_app_" (a.action or "")) start;
+          clear = filter (a: hasInfix "notify.mobile_app_" (a.action or "")) phase.default;
+          finished = (pkgs.lib.last phase.default)."then";
+          phones = [
+            "notify.mobile_app_edmunds_iphone"
+            "notify.mobile_app_monicas_iphone"
+          ];
+        in
+        countdown != null
+        && timers.mirror_bedtime.duration == "00:12:00"
+        && timers.mirror_bedtime.restore
+        && map (a: a.action) notifications == phones
+        && builtins.all (
+          a:
+          a.data.data.tag == "mirror-bedtime"
+          && a.data.data.live_update
+          && a.data.data.chronometer
+          && a.data.data.when == "{{ target_ts }}"
+          && !a.data.data.when_relative
+          && a.continue_on_error
+        ) notifications
+        && hasInfix "finishes_at" (head start).variables.target_ts
+        && map (a: a.action) clear == phones
+        && builtins.all (
+          a: a.data.message == "clear_notification" && a.data.data.tag == "mirror-bedtime"
+        ) clear
+        && map (a: a.action) finished == phones
+        && builtins.all (a: a.data.title == "Time to brush teeth") finished
+        && hasEventTrigger countdown "timer.finished"
+        && hasEventTrigger countdown "timer.cancelled"
+        && hasHomeAssistantStartTrigger countdown.trigger
+        && hasActionCall start "rest_command.busy_bar_mirror_bedtime_draw"
+        && hasInfix "home_assistant_mirror_bedtime" restCommands.busy_bar_mirror_bedtime_draw.payload
+        && hasInfix "remaining_seconds" restCommands.busy_bar_mirror_bedtime_draw.payload
+        && hasInfix "?application_name=home_assistant_mirror_bedtime" restCommands.busy_bar_mirror_bedtime_clear.url
+        && hasStateTrigger busyBarBedtimeProgress "timer.mirror_bedtime" "idle"
+        && hasInfix "timer.mirror_bedtime" (builtins.toJSON busyBarBedtimeProgress.condition);
+      msg = "Mirror bedtime countdown must share a restored 12-minute deadline across both phones and a bounded BUSY Bar display, then clear and remind both phones";
+    }
+    {
+      test =
+        let
           tag = findAutomation "monica_nightstand_nfc_goodnight";
         in
         tag != null
@@ -890,6 +1143,43 @@ let
       msg = "Monica's NFC tag must guard daytime/morning scans and debounce the direct Good Night call";
     }
     {
+      test =
+        let
+          tag = findAutomation "phoebe_kibble_nfc_record_feeding";
+          lastFed = haConfig.input_datetime.phoebe_last_fed or { };
+        in
+        tag != null
+        &&
+          tag.trigger == {
+            platform = "tag";
+            tag_id = [
+              "729d23f5-3368-487e-bff0-3cf6a22cba29"
+              "2e0ad6b4-069c-445a-a23f-4af99eccb21d"
+            ];
+          }
+        && tag.mode == "single"
+        &&
+          tag.action == [
+            {
+              action = "input_datetime.set_datetime";
+              target.entity_id = "input_datetime.phoebe_last_fed";
+              data.timestamp = "{{ now().timestamp() }}";
+            }
+            {
+              action = "logbook.log";
+              data = {
+                name = "Phoebe Feeding";
+                message = "Phoebe was fed 1/4 cup of Hill's Science Diet Adult Sensitive Stomach & Skin kibble, 97.75 kcal.";
+                entity_id = "input_datetime.phoebe_last_fed";
+              };
+            }
+          ]
+        && (lastFed.has_date or false)
+        && (lastFed.has_time or false)
+        && !(lastFed ? initial);
+      msg = "Both Phoebe kibble tags must restore the feeding time and log the food name, 1/4 cup portion, and 97.75 kcal";
+    }
+    {
       test = whiteNoiseWithBedtimeAudiobook != null;
       msg = "automation 'white_noise_with_bedtime_audiobook' missing";
     }
@@ -899,8 +1189,8 @@ let
           triggers = toList (whiteNoiseWithBedtimeAudiobook.trigger or [ ]);
         in
         length triggers == 1
-        && any (t: (t.platform or null) == "template" && (t."for" or null) == { minutes = 5; }) triggers;
-      msg = "white_noise_with_bedtime_audiobook must require five continuous minutes of its playback template";
+        && any (t: (t.platform or null) == "template" && (t."for" or null) == { minutes = 1; }) triggers;
+      msg = "white_noise_with_bedtime_audiobook must require one continuous minute of its playback template";
     }
     {
       test =
@@ -923,6 +1213,14 @@ let
     {
       test = syncIphoneAlarm8sleep != null && (syncIphoneAlarm8sleep.initial_state or null) == false;
       msg = "automation 'sync_iphone_alarm_8sleep' should remain present but declaratively disabled until an iOS alarm source exists";
+    }
+    {
+      test = plantGlowLightOn != null && (plantGlowLightOn.initial_state or null) == false;
+      msg = "automation 'plant_glow_light_on' must stay disabled across restarts until the broken plant light is repaired";
+    }
+    {
+      test = plantGlowLightOff != null && (plantGlowLightOff.initial_state or false);
+      msg = "automation 'plant_glow_light_off' must remain enabled while the broken plant light is paused";
     }
     {
       test =
@@ -1019,8 +1317,25 @@ let
       msg = "automation 'al_daytime_sleep_correction' missing";
     }
     {
+      test =
+        alSleepModeOff != null
+        && hasStateCondition (toList (alSleepModeOff.condition or [ ])) "input_boolean.goodnight" "off";
+      msg = "The 7 AM Adaptive Lighting cleanup must preserve sleep mode while Goodnight is on";
+    }
+    {
       test = entranceOccupancyNightLight != null;
       msg = "automation 'entrance_occupancy_night_light' missing";
+    }
+    {
+      test =
+        !(any (
+          scene:
+          let
+            light = scene.entities."light.smart_night_light_w" or null;
+          in
+          light == "on" || (builtins.isAttrs light && (light.state or null) == "on")
+        ) scenes);
+      msg = "Scenes must leave entrance night-light activation to occupancy";
     }
     {
       test = frontDoorNightLights != null;
@@ -1041,11 +1356,10 @@ let
       msg = "front_door_night_lights must not wake the house after Good Night";
     }
     {
-      test = hasActionTarget (toList (frontDoorNightLights.action or [ ])) "light.turn_on" [
-        "light.smart_night_light_w"
-        "light.living_room_couch_lamp"
-      ];
-      msg = "front_door_night_lights must turn on the entrance and couch lights";
+      test = hasActionTarget (toList (
+        frontDoorNightLights.action or [ ]
+      )) "light.turn_on" "light.living_room_couch_lamp";
+      msg = "front_door_night_lights must turn on the couch lamp; entrance lighting belongs to occupancy";
     }
     {
       test = balconyOpensCouchLamp != null;
@@ -1193,6 +1507,12 @@ let
     {
       test = hasActionCall (toList (entranceOccupancyNightLight.action or [ ])) "adaptive_lighting.apply";
       msg = "entrance_occupancy_night_light missing adaptive_lighting.apply action";
+    }
+    {
+      test = hasStateCondition (toList (
+        entranceOccupancyNightLight.condition or [ ]
+      )) "light.smart_night_light_w" "off";
+      msg = "entrance_occupancy_night_light must require the light to be off so returning motion preserves manual adjustments";
     }
 
     {

@@ -8,3 +8,5 @@ subcommands or `lua` for scripting.
 Lua uses `context.change_id()`, `context.file()`, and `context.checked_files()`.
 Call `revisions.refresh()` after state-changing jj commands, `suspend()` before
 external programs, and `flash()` for feedback. Config check: `jjui --check-config`.
+Run that check against the repository config before testing state-changing custom
+commands in a disposable jj repository.

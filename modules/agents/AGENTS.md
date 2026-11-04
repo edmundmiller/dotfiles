@@ -18,3 +18,7 @@ Reusable Hermes profiles/presets belong in `agents-workspace`. Desktop app
 installation is separate. Plannotator is excluded from Codex because its global
 Stop hook interrupts normal responses. `callstack-diff skill` prints that tool's
 version-matched instructions.
+
+Use the runtime's nested guide and run `hey check modules/agents/<runtime>`.
+Changes to shared installation or discovery in `default.nix` require checking
+all affected runtimes rather than one runtime's focused test.
