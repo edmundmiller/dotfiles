@@ -5,11 +5,11 @@ The hook never blocks: it exits 0 on every path, prints nothing when it has
 nothing to say, and stays silent on malformed input or an unreadable transcript.
 See https://code.claude.com/docs/en/hooks for the input and output contracts.
 
-A generation is one main-thread assistant transcript entry whose message has a
-usage object. That is one completed model turn. Subagent entries (isSidechain)
-and assistant entries without usage do not count. The count follows the
-transcript. After compaction rewrites the file, only the entries still in
-it count.
+A generation is one main-thread assistant message with a usage object. Content
+blocks sharing a message.id count once, including across appended reads. Rows
+without an ID count individually. Subagent entries (isSidechain) and assistant
+entries without usage do not count. The count follows the transcript. After
+compaction rewrites the file, only the entries still in it count.
 """
 
 import datetime as dt
@@ -153,13 +153,6 @@ def context_tokens(transcript_path):
     return tokens
 
 
-def line_is_generation(line):
-    for entry in decode_entries([line]):
-        if assistant_usage(entry) is not None:
-            return True
-    return False
-
-
 def saved_count(state, key):
     value = state.get(key, 0)
     if type(value) is not int or value < 0:
@@ -183,14 +176,19 @@ def generation_count(transcript_path, state):
             prefix = hashlib.sha256(handle.read(min(PREFIX_BYTES, size))).hexdigest()
             offset = saved_count(state, "gen_offset")
             count = saved_count(state, "gen_count")
+            message_ids = state.get("gen_message_ids")
             if (
                 offset is None
                 or count is None
                 or offset > size
                 or state.get("gen_prefix") != prefix
+                or not isinstance(message_ids, list)
+                or not all(isinstance(value, str) for value in message_ids)
             ):
                 offset = 0
                 count = 0
+                message_ids = []
+            seen = set(message_ids)
             handle.seek(offset)
             pending = b""
             added = 0
@@ -204,11 +202,19 @@ def generation_count(transcript_path, state):
                 pending = parts.pop()
                 for part in parts:
                     consumed += len(part) + 1
-                    if line_is_generation(part.decode("utf-8", "replace")):
+                    for entry in decode_entries([part.decode("utf-8", "replace")]):
+                        if assistant_usage(entry) is None:
+                            continue
+                        message_id = entry["message"].get("id")
+                        if isinstance(message_id, str) and message_id:
+                            if message_id in seen:
+                                continue
+                            seen.add(message_id)
                         added += 1
     except OSError:
         return None
 
+    state["gen_message_ids"] = sorted(seen)
     state["gen_prefix"] = prefix
     state["gen_offset"] = consumed
     state["gen_count"] = count + added

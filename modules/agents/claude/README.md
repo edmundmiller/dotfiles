@@ -48,14 +48,14 @@ module does not configure or install plugins.
   then again at `CLAUDE_GEN_WARN_HARD` (default 300)
 - a session first seen on an earlier America/Chicago day is resumed
 
-A generation is one main-thread assistant entry in the session transcript whose
-message has a `usage` object. That is one completed model turn. Subagent entries
-with `isSidechain` set do not count, and assistant entries without `usage` do
-not count. The count is how many of those entries are in the transcript now.
-The per-session state file stores a byte offset and a hash of the first 256
-bytes. Later checks read only the lines appended after that offset. If the
-file no longer reaches the offset, or those first bytes changed, the hook
-counts it again from the beginning.
+A generation is one main-thread assistant message with a `usage` object.
+Content blocks sharing a `message.id` count once, including across appended
+reads. Rows without an ID count individually. Subagent entries with
+`isSidechain` set and assistant entries without `usage` do not count.
+The per-session state file stores the seen message IDs, a byte offset and a
+hash of the first 256 bytes. Later checks read only the lines appended after
+that offset. If the file no longer reaches the offset, or those first bytes
+changed, the hook counts it again from the beginning.
 
 Context size still comes from the newest main-thread assistant `usage` in the
 tail of the transcript, counting input, cache-read, and cache-creation tokens.

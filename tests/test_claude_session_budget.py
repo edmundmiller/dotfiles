@@ -431,6 +431,35 @@ class GenerationWarningTests(unittest.TestCase):
             self.assertIsNone(hook_output(run_hook(payload, state)))
             self.assertEqual(self.saved_state(state, "growing-gen")["gen_count"], 150)
 
+    def test_content_blocks_count_once_even_across_appended_reads(self):
+        def row(message_id):
+            return json.dumps({
+                "type": "assistant",
+                "message": {"id": message_id, "usage": {"input_tokens": 1}},
+            }) + "\n"
+
+        with tempfile.TemporaryDirectory() as directory:
+            transcript = pathlib.Path(directory) / "blocks.jsonl"
+            transcript.write_text(row("msg-a") * 3 + row("msg-b"), encoding="utf-8")
+            payload = {
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": "blocks",
+                "transcript_path": str(transcript),
+            }
+            env = {"CLAUDE_GEN_WARN_SOFT": "3", "CLAUDE_GEN_WARN_HARD": "4"}
+            self.assertIsNone(hook_output(run_hook(payload, directory, env)))
+
+            with transcript.open("a", encoding="utf-8") as handle:
+                handle.write(row("msg-a") + row("msg-b"))
+            self.assertIsNone(hook_output(run_hook(payload, directory, env)))
+
+            with transcript.open("a", encoding="utf-8") as handle:
+                handle.write(row("msg-c") * 2)
+            warned = hook_output(run_hook(payload, directory, env))
+            self.assertIn("3 generations, past the warning at 3.", warned["systemMessage"])
+            self.assertNotIn("higher warning", warned["systemMessage"])
+            self.assertIsNone(hook_output(run_hook(payload, directory, env)))
+
     def test_rewritten_transcript_is_recounted(self):
         hook = load_hook()
 
