@@ -91,7 +91,7 @@ in
       home.configFile."rex/init.lua".text =
         builtins.replaceStrings [ "@rexJj@" ] [ "${rexJj}/bin/rex-jj" ]
           (builtins.readFile "${config.dotfiles.configDir}/rex/init.lua");
-      user.packages = [ rexJj ] ++ optionals isDarwin [ pkgs.my.neorex ];
+      "user.packages" = [ rexJj ] ++ optionals isDarwin [ pkgs.my.neorex ];
       modules.agents.mcp.servers.superlogical.enable = mkDefault true;
     }
     // optionalAttrs isDarwin {

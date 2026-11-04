@@ -22,7 +22,7 @@ stdenv.mkDerivation {
   ];
 
   meta = {
-    description = "Rex-native Neovim frontend that opens splits and floats as Rex panes";
+    description = "Rex-native Neovim frontend that opens splits as Rex panes";
     homepage = "https://github.com/alexrlocke/neorex";
     license = lib.licenses.mit;
     mainProgram = "neorex";
