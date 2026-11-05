@@ -193,6 +193,11 @@ LINUX_CHECKS = {
         "hosts/nuc/*",
         "scripts/validation.py",
     ],
+    "ha-robot-cleaning-tests": [
+        "modules/services/hass/*",
+        "hosts/nuc/*",
+        "scripts/validation.py",
+    ],
 }
 
 DARWIN_CHECKS = [

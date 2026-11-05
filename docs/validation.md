@@ -36,11 +36,12 @@ the repository root. Renames select both owners; deleted paths still route tests
 `--full` cannot be combined with path scopes. `--worktree` remains an accepted
 compatibility flag but is redundant.
 
-On x86_64 Linux, HA and NUC changes also select `ha-automation-assertions` and
-`ha-behavior-tests`. The latter runs the exported Good Morning, bedtime-audio,
-entrance-light, and pet NFC routines in isolated Home Assistant instances inside
-the Nix sandbox, without physical integrations or live credentials. Normal Linux
-CI runs these checks through the same selection. Other architectures omit these
+On x86_64 Linux, HA and NUC changes also select `ha-automation-assertions`,
+`ha-behavior-tests`, and `ha-robot-cleaning-tests`. The behavior checks run the
+exported Good Morning, bedtime-audio, entrance-light, pet NFC, Monica bedtime,
+and robot-cleaning routines in isolated Home Assistant instances inside the Nix
+sandbox, without physical integrations or live credentials. Normal Linux CI runs
+these checks through the same selection. Other architectures omit these
 Linux-only checks; a successful macOS check does not verify HA behavior.
 
 ## Checks never repair the working tree

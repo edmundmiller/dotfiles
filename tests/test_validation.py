@@ -122,7 +122,11 @@ class ValidationTests(unittest.TestCase):
                 self.assertIn("agent-mcp-tests", self.selection(path)["checks"])
 
     def test_ha_changes_select_linux_contract_and_runtime_checks(self):
-        checks = {"ha-automation-assertions", "ha-behavior-tests"}
+        checks = {
+            "ha-automation-assertions",
+            "ha-behavior-tests",
+            "ha-robot-cleaning-tests",
+        }
         paths = (
             "modules/services/hass/_domains/aranet.nix",
             "modules/services/hass/_tests/test_good_morning.py",
