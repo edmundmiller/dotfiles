@@ -22,6 +22,19 @@ Keep the test's contract independent from the implementation:
   prove a meaningful result at the system boundary; a mock returning exactly
   what the test configured is not evidence.
 
+Choose checks that can expose plausible mistakes:
+
+- Name a plausible wrong implementation and choose an input that distinguishes
+  it from the required behavior. For a bug fix, show the regression test fails
+  on the original code and passes with the fix when practical.
+- When a trusted reference implementation exists, consider differential testing
+  on the same inputs, especially both sides of behavioral boundaries. Resolve
+  disagreements against the contract; the reference can also be wrong.
+- For property-based or fuzz tests, generate valid domain inputs or event
+  sequences alongside invalid cases. Check meaningful invariants and confirm
+  the generator reaches the risky behavior, rather than mostly exercising input
+  rejection. Preserve minimized failures as regression cases.
+
 Identify and correct weak coverage:
 
 - **Tautological:** the assertion restates the implementation or only checks
@@ -35,6 +48,13 @@ Identify and correct weak coverage:
 
 Replace weak tests with meaningful behavioral coverage using independent
 inputs and expected outcomes. If the code has no unique contract worth
-protecting, remove the test rather than preserving a coverage count. Follow
-the repository's existing test command and TDD workflow; this skill governs
-test quality, not the full development process.
+protecting, remove the test rather than preserving a coverage count.
+
+Prefer existing libraries and small generators over custom testing frameworks.
+Separate disposable investigation from permanent regression coverage; keep
+tests that protect a meaningful contract, not every experiment used during
+development.
+
+Follow the repository's existing test command and any explicitly required
+development workflow; this skill governs test quality, not the full development
+process.
