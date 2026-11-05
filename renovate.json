@@ -6,7 +6,7 @@
     "managerFilePatterns": ["/(^|/)flake\\.nix$/"]
   },
   "timezone": "America/Chicago",
-  "schedule": ["* 4-8 * * 1-5"],
+  "schedule": ["* 4-8 * * 1"],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"],
@@ -128,11 +128,23 @@
       "labels": ["dependencies", "nix"]
     },
     {
-      "description": "Group non-major JavaScript workspace bumps.",
+      "description": "Group non-major npm and bun dependencies, peer dependencies, and optional dependencies.",
       "matchManagers": ["npm", "bun"],
+      "matchDepTypes": ["dependencies", "optionalDependencies", "peerDependencies"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "JavaScript package dependencies",
       "groupSlug": "javascript-package-dependencies",
+      "labels": ["dependencies", "javascript"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "description": "Group non-major npm and bun devDependencies on their own branch.",
+      "matchManagers": ["npm", "bun"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "JavaScript devDependencies",
+      "groupSlug": "javascript-dev-dependencies",
       "labels": ["dependencies", "javascript"],
       "automerge": true,
       "automergeType": "branch"

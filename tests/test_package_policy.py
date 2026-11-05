@@ -424,6 +424,11 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertTrue(config["nix"]["enabled"])
         self.assertTrue(config["dependencyDashboard"])
         self.assertTrue(config["lockFileMaintenance"]["enabled"])
+        self.assertEqual(config["timezone"], "America/Chicago")
+        self.assertEqual(config["schedule"], ["* 4-8 * * 1"])
+        self.assertEqual(config["lockFileMaintenance"]["schedule"], ["before 6am on monday"])
+        self.assertTrue(config["lockFileMaintenance"]["automerge"])
+        self.assertEqual(config["lockFileMaintenance"]["automergeType"], "branch")
         self.assertEqual(config["minimumReleaseAge"], "3 days")
         self.assertEqual(config["prHourlyLimit"], 2)
         self.assertLessEqual(config["prConcurrentLimit"], 5)
@@ -457,6 +462,35 @@ class PackagePolicyTest(unittest.TestCase):
 
         slugs = [rule.get("groupSlug") for rule in config["packageRules"]]
         self.assertLess(slugs.index("javascript-package-dependencies"), slugs.index("herdr"))
+        self.assertLess(slugs.index("javascript-dev-dependencies"), slugs.index("herdr"))
+        javascript = next(
+            rule
+            for rule in config["packageRules"]
+            if rule.get("groupSlug") == "javascript-package-dependencies"
+        )
+        dev_dependencies = next(
+            rule
+            for rule in config["packageRules"]
+            if rule.get("groupSlug") == "javascript-dev-dependencies"
+        )
+        self.assertEqual(
+            javascript["matchDepTypes"],
+            ["dependencies", "optionalDependencies", "peerDependencies"],
+        )
+        self.assertEqual(dev_dependencies["matchDepTypes"], ["devDependencies"])
+        self.assertEqual(dev_dependencies["matchManagers"], ["npm", "bun"])
+        self.assertEqual(
+            dev_dependencies["matchUpdateTypes"],
+            ["minor", "patch", "pin", "digest"],
+        )
+        self.assertTrue(dev_dependencies["automerge"])
+        self.assertEqual(dev_dependencies["automergeType"], "branch")
+        actions = next(
+            rule for rule in config["packageRules"] if rule.get("groupSlug") == "github-actions"
+        )
+        self.assertIn("digest", actions["matchUpdateTypes"])
+        self.assertTrue(actions["automerge"])
+        self.assertEqual(actions["automergeType"], "branch")
         herdr = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "herdr")
         hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
         self.assertEqual(config["packageRules"][-2]["groupSlug"], "herdr")

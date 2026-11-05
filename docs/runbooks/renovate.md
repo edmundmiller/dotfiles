@@ -14,9 +14,10 @@ a second runner would duplicate PRs.
 
 ## How it runs
 
-- Schedule: Actions cron `17 10 * * *` (about 05:17 America/Chicago).
-- Config schedule: weekday mornings `04:00-08:00` America/Chicago, so the daily
-  job is inside the window.
+- Schedule: Actions cron `17 10 * * *`. That is 04:17 CST and 05:17 CDT.
+- Config schedule: Monday 04:00 through 08:59 America/Chicago. The daily Action
+  still runs. On other days Renovate rebases and automerges branches it already
+  opened, and it does not open new ones.
 - Auth: repository secret `RENOVATE_TOKEN` (a fine-grained PAT). Pull requests
   and the Dependency Dashboard issue are authored as that token's user
   (`edmundmiller` today), **not** `app/renovate`.
@@ -30,7 +31,8 @@ a second runner would duplicate PRs.
 | Branch / group                             | What lands                                          |
 | ------------------------------------------ | --------------------------------------------------- |
 | `renovate/lock-file-maintenance`           | Monday `flake.lock` refresh (branch automerge)      |
-| `renovate/javascript-package-dependencies` | Non-major npm/bun bumps                             |
+| `renovate/javascript-package-dependencies` | Non-major npm/bun dependencies, peers, and optional |
+| `renovate/javascript-dev-dependencies`     | Non-major npm/bun devDependencies                   |
 | `renovate/github-actions`                  | Non-major Actions and digest pins                   |
 | `renovate/nix-flake-inputs`                | Versioned flake inputs only                         |
 | `renovate/repo-local-nix-package-patches`  | Regex-managed Nix package patches plus hash refresh |
