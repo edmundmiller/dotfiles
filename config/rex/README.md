@@ -185,6 +185,12 @@ to that exact build, and each rebuild drops it.
 
 Bare `Ctrl+H/J/K/L` pass through to terminal applications. Other Rex shortcuts
 keep their client defaults, including the `Cmd+Shift+P` command palette.
+The Mac client already binds the chords people use most, and `init.lua` leaves
+those keys to the client. `Cmd+Shift+Arrow` splits a pane in that direction,
+`Cmd+Option+Arrow` moves focus, `Cmd+Shift+Enter` zooms, and
+`Cmd+Option+Shift+Arrow` moves a pane. `Cmd+T` opens a new tab, `Cmd+1`
+through `Cmd+9` go to that tab, and `Cmd+W` closes the focused pane, then
+the tab, then the window.
 
 The fork bindings require the `pi-rex` extension in the focused Pi session.
 They send `Ctrl+Alt+F` and `Ctrl+Alt+T` to Pi without replacing its editor draft.
