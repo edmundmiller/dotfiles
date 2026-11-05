@@ -189,10 +189,6 @@ in
     edmundmiller
     nuc
   ];
-  "moshi-hook-secrets-json.age".publicKeys = [
-    edmundmiller
-    nuc
-  ];
   "buzz-mill-docs-agent-env.age".publicKeys = [
     edmundmiller
     nuc
