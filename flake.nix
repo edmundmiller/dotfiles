@@ -379,6 +379,7 @@
             "dji-mic-mini-receiver-mute"
             "ergodox-firmware"
             "lgtm"
+            "neorex"
             "quill"
             "stack"
             "stream-deck-herdr-plugin"
@@ -1663,6 +1664,21 @@
                   '';
             }
             // lib.optionalAttrs (system == darwinSystem) {
+              rex-package-wiring =
+                let
+                  hasNeorex =
+                    host:
+                    let
+                      cfg = self.darwinConfigurations.${host}.config;
+                    in
+                    builtins.any (p: (p.pname or "") == "neorex") cfg.home-manager.users.${cfg.user.name}.home.packages;
+                in
+                assert hasNeorex "MacTraitor-Pro";
+                assert hasNeorex "Seqeratop";
+                pkgs.runCommand "rex-package-wiring" { } ''
+                  touch "$out"
+                '';
+
               mactraitor-fail-closed-activation = import ./hosts/mactraitorpro/_tests/fail-closed-activation.nix {
                 macTraitorConfig = self.darwinConfigurations."MacTraitor-Pro";
                 seqeratopConfig = self.darwinConfigurations.Seqeratop;

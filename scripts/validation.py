@@ -183,6 +183,7 @@ if sys.platform == "linux":
     ]
 
 DARWIN_CHECKS = [
+    "rex-package-wiring",
     "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
     "audio-priority-bar-regressions",

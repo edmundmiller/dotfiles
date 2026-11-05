@@ -93,12 +93,13 @@ in
 
   config = mkIf cfg.enable (
     {
-      # The Rex app (currently macOS-only) is installed separately. Nix owns only its config.
+      # The Rex app (currently macOS-only) is installed separately. Nix owns its config
+      # and installs neorex on Darwin.
       # The Linux Rex server is configured separately through services.rex.
       home.configFile."rex/init.lua".text =
         builtins.replaceStrings [ "@rexJj@" ] [ "${rexJj}/bin/rex-jj" ]
           (builtins.readFile "${config.dotfiles.configDir}/rex/init.lua");
-      user.packages = [ rexJj ];
+      "user.packages" = [ rexJj ] ++ optionals isDarwin [ pkgs.my.neorex ];
       modules.agents.mcp.servers.superlogical.enable = mkDefault true;
     }
     // optionalAttrs isDarwin {

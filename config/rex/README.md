@@ -5,6 +5,9 @@
 Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them
 (including Pi's Rex extension) can run `rex`. Ghostty startup is unchanged.
+On macOS, this module installs `neorex`. Inside a Rex pane, `neorex file.txt`
+runs Neovim headless and opens `:split` and `:vsplit` as Rex panes. Floats render
+inside their parent pane.
 
 ## Daily jj workflow
 
