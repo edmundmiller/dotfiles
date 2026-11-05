@@ -3,7 +3,14 @@ return {
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
     cmd = { 'ConformInfo' },
+    init = function()
+      vim.api.nvim_create_user_command('ToggleFormatter', function()
+        vim.b.disable_autoformat = not vim.b.disable_autoformat
+        vim.notify('Format on save ' .. (vim.b.disable_autoformat and 'disabled' or 'enabled') .. ' for this buffer')
+      end, { desc = 'Toggle format on save for this buffer' })
+    end,
     keys = {
+      { '<leader>tf', '<cmd>ToggleFormatter<CR>', desc = '[T]oggle [F]ormat on save (buffer)' },
       {
         '<leader>f',
         function()
@@ -16,6 +23,7 @@ return {
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
+        if vim.b[bufnr].disable_autoformat then return nil end
         -- Disable "format_on_save lsp_fallback" for languages that don't
         -- have a well standardized coding style. You can add additional
         -- languages here or re-enable it for the disabled ones.

@@ -11,6 +11,22 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- Quit
 vim.keymap.set('n', '<leader>qq', '<cmd>qa<CR>', { desc = 'Quit all' })
 
+-- Copy file references and whole selected lines for agents in any terminal.
+vim.keymap.set('n', '<leader>yf', function() require('custom.agent_context').copy_reference(false, false) end, { desc = 'Copy repository-relative file:line' })
+vim.keymap.set('n', '<leader>yp', function() require('custom.agent_context').copy_reference(true, false) end, { desc = 'Copy absolute file:line' })
+vim.keymap.set('x', '<leader>yf', ":<C-u>lua require('custom.agent_context').copy_reference(false, true)<CR>", {
+  desc = 'Copy repository-relative file:lines',
+  silent = true,
+})
+vim.keymap.set('x', '<leader>yp', ":<C-u>lua require('custom.agent_context').copy_reference(true, true)<CR>", {
+  desc = 'Copy absolute file:lines',
+  silent = true,
+})
+vim.keymap.set('x', '<leader>cc', ":<C-u>lua require('custom.agent_context').copy_codeblock()<CR>", {
+  desc = 'Copy selected lines as Markdown code block',
+  silent = true,
+})
+
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
