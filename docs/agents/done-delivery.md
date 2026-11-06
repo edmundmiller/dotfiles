@@ -14,10 +14,12 @@ and host activation. They do not update the hosted copy.
 
 Clone or reuse the User Skills repository listed by `amp skills repositories`.
 From the dotfiles checkout, run `mise run skills:amp-stage-done <clone>`.
-The task copies the entire canonical `done` directory into the local clone, then
-compares every bundled file with canonical source and runs the existing done
-contracts against the staged scripts. It refuses to overwrite local `done`
-edits. It does not commit, push, activate a host, or reload served skills.
+The argument must be a clone or linked worktree root. The task verifies a
+temporary copy of the entire canonical `done` directory, comparing every file
+and running the existing done contracts before replacing the target bundle.
+Clean tracked resources removed from canonical become deletions in the target.
+The task refuses local `done` edits, including ignored content, and checks again
+before replacement. It does not commit, push, activate a host, or reload skills.
 
 Do not substitute a SKILL.md-only import. Amp CLI local-path installation has
 omitted bundled scripts and references in testing. The parity gate rejects
