@@ -184,8 +184,7 @@ in
               url = "https://ampcode.com/mcp";
             };
             github.enable = true;
-            linear.enable = true;
-            linear.excludeAgents = [ "amp" ];
+            linear.enable = false;
             notion.enable = true;
             fff.enable = true;
             openaiDeveloperDocs.enable = true;

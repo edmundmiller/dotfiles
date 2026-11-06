@@ -2443,7 +2443,7 @@ in
         agents.amp = true;
         servers = {
           github.enable = true;
-          linear.enable = true;
+          linear.enable = false;
           notion.enable = true;
           fff.enable = true;
           openaiDeveloperDocs.enable = true;
