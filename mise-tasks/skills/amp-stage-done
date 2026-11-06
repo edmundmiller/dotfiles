@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#MISE description="Stage and verify done in a local Amp skills clone; never publish"
+#MISE raw_args=true
+#MISE raw=true
+set -euo pipefail
+if [[ $# != 1 || ! -d "$1/.git" ]]; then
+  echo "Usage: mise run skills:amp-stage-done <local-skills-repository>" >&2
+  exit 2
+fi
+if [[ -n "$(git -C "$1" status --porcelain -- done)" ]]; then
+  echo "Refusing to overwrite local done edits in the target repository" >&2
+  exit 1
+fi
+root="${MISE_PROJECT_ROOT:-$(git rev-parse --show-toplevel)}"
+mkdir -p "$1/done"
+cp -R "$root/skills/catalog/done/." "$1/done/"
+exec python3 "$root/scripts/check_done_bundle.py" "$1/done"
