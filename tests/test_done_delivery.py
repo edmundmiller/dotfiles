@@ -83,6 +83,54 @@ class DoneDeliveryTest(unittest.TestCase):
                     (SOURCE / "scripts/publish-clean.py").read_bytes(),
                 )
 
+    @unittest.skipUnless(shutil.which("jj"), "working-jj parity requires jj")
+    def test_failed_or_interrupted_replacement_preserves_old_bundle(self) -> None:
+        for interrupt in (False, True):
+            with self.subTest(interrupt=interrupt), tempfile.TemporaryDirectory() as tmp:
+                repo = Path(tmp) / "repository"
+                repo.mkdir()
+                git(repo, "init", "--quiet", "-b", "main")
+                (repo / "done").mkdir()
+                old = repo / "done/old.txt"
+                old.write_text("original tracked bundle\n")
+                git(repo, "add", "done")
+                git(
+                    repo,
+                    "-c", "user.name=Delivery Test",
+                    "-c", "user.email=delivery@example.invalid",
+                    "-c", "commit.gpgsign=false",
+                    "commit", "--quiet", "-m", "old bundle",
+                )
+                head = git(repo, "rev-parse", "HEAD")
+                tools = Path(tmp) / "bin"
+                tools.mkdir()
+                wrapper = tools / "mv"
+                wrapper.write_text(f"""#!{sys.executable}
+import os
+from pathlib import Path
+import signal
+import sys
+if Path(sys.argv[-2]).name == "done" and sys.argv[-1] == {str(repo / "done")!r}:
+    if {interrupt!r}:
+        os.kill(os.getppid(), signal.SIGTERM)
+    sys.exit(1)
+os.execv({shutil.which("mv")!r}, [{shutil.which("mv")!r}, *sys.argv[1:]])
+""")
+                wrapper.chmod(0o755)
+                result = subprocess.run(
+                    ["bash", str(ROOT / "mise-tasks/skills/amp-stage-done"), str(repo)],
+                    cwd=ROOT,
+                    env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT),
+                         "PATH": str(tools) + os.pathsep + os.environ["PATH"]},
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertTrue(old.exists(), result.stdout + result.stderr)
+                self.assertEqual(old.read_text(), "original tracked bundle\n")
+                self.assertEqual(git(repo, "status", "--porcelain"), "")
+                self.assertEqual(git(repo, "rev-parse", "HEAD"), head)
+
     def test_staging_refuses_local_target_edits(self) -> None:
         for ignored in (False, True):
             with self.subTest(ignored=ignored), tempfile.TemporaryDirectory() as tmp:

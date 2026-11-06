@@ -21,6 +21,12 @@ Clean tracked resources removed from canonical become deletions in the target.
 The task refuses local `done` edits, including ignored content, and checks again
 before replacement. It does not commit, push, activate a host, or reload skills.
 
+Staging and backup directories stay on the target filesystem. A failed move or
+handled interruption restores the old bundle when the destination is absent.
+If restoration fails, the task retains the backup and reports its path. An
+uncatchable interruption can leave `.done-stage.*/previous` in the clone;
+inspect that retained original before recovering it or removing the staging tree.
+
 Do not substitute a SKILL.md-only import. Amp CLI local-path installation has
 omitted bundled scripts and references in testing. The parity gate rejects
 missing resources and obsolete target files instead of accepting a partial copy.
