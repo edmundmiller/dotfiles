@@ -37,8 +37,6 @@ let
     ];
     tmux = [
       "npm:pi-tmux-window-name"
-      "git:github.com/ogulcancelik/pi-extensions"
-      "https://github.com/pasky/pi-side-agents"
     ];
     interactiveShell = [ "npm:pi-interactive-shell" ];
     # Legacy adapters must be filtered from base settings. pi-mcp-adapter
@@ -93,14 +91,6 @@ let
     ++ lib.optionals config.modules.shell.tmux.enable [
       # Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
       "npm:pi-tmux-window-name"
-      # We're experimenting with tmux pane control for now (bash, capture, send, kill, spawn agents) - https://github.com/ogulcancelik/pi-extensions
-      {
-        source = "git:github.com/ogulcancelik/pi-extensions";
-        extensions = [ "packages/pi-tmux/index.ts" ];
-        skills = [ ];
-      }
-      # Side agents in tmux windows + git worktrees - https://github.com/pasky/pi-side-agents
-      "https://github.com/pasky/pi-side-agents"
     ]
     ++ lib.optionals (
       !(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)

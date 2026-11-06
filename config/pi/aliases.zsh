@@ -272,8 +272,3 @@ piu() {
     "$pi_bin" update --extensions
   fi
 }
-
-# pi-overwatch shortcuts
-alias ow='pi-overwatch'
-alias owf='PI_OVERWATCH_REFRESH_MS=500 PI_OVERWATCH_STALE_MS=12000 pi-overwatch'
-alias owm='PI_OVERWATCH_REFRESH_MS=1500 PI_OVERWATCH_STALE_MS=30000 pi-overwatch'

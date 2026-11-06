@@ -28,7 +28,7 @@ defaults to false; it opts into the additional `pi-context` package, not `pi-mem
 
 Feynman's research workflows and Confluence CLI's usage skill are intentional
 package-native resources. Session Hoarder archives sessions locally by default.
-Plannotator comes from its owning module, and `pi-btw` remains a shared package.
+Plannotator comes from its owning module.
 Existing Hermes memory files are retained, but `pi-memory` does not read them.
 
 This is not a hook-free setup. `pi-markdown-workflows` retains nested AGENTS.md

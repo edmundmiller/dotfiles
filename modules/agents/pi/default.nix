@@ -350,9 +350,6 @@ in
     env.GITHUB_PAT = "$(gh auth token 2>/dev/null)";
     # pi-tasks backend
     env.PI_TASKS_BACKEND = "beads";
-    # pi-overwatch dashboard cadence / stale detection
-    env.PI_OVERWATCH_REFRESH_MS = "1000";
-    env.PI_OVERWATCH_STALE_MS = "20000";
     environment.shellAliases = {
       nbt = "pi -nbt";
     };

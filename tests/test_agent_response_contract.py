@@ -84,11 +84,14 @@ class AgentResponseContractTests(unittest.TestCase):
             "npm:@gotgenes/pi-permission-system@42.0.0",
             "~/.pi/agent/packages/pi-command-policy-bridge",
             "npm:pi-memory", "npm:pi-terminal-theme",
-            "npm:@moyai/pi-session-hoarder", "npm:pi-btw",
+            "npm:@moyai/pi-session-hoarder",
         ):
             with self.subTest(package=package):
                 self.assertIn(json.dumps(package), settings)
         for package in (
+            "npm:pi-btw",
+            "git:github.com/tmustier/pi-extensions",
+            "https://github.com/denismrvoljak/pi-overwatch",
             "npm:confluence-cli",
             "npm:latchkey",
             "npm:@aliou/pi-processes",
