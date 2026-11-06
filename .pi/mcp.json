@@ -1,5 +1,13 @@
 {
   "mcpServers": {
+    "homeassistant": {
+      "url": "https://homeassistant.cinnamon-rooster.ts.net/api/mcp",
+      "oauth": {
+        "clientId": "http://127.0.0.1:8765/",
+        "callbackUrl": "http://127.0.0.1:8765/callback",
+        "callbackPort": 8765
+      }
+    },
     "nixos": {
       "command": "nix",
       "args": ["run", "nixpkgs#mcp-nixos", "--"],
