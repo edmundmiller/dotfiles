@@ -10,16 +10,18 @@ import re
 import subprocess
 import tempfile
 from typing import Any
+from urllib.parse import quote, urlsplit
 
 
 MAX_ATTEMPTS = 2
 URL_CREDENTIALS = re.compile(
-    r"(?P<prefix>(?:https?|ssh|git)://)(?P<credentials>[^/@\s]+)@"
+    r"(?P<prefix>(?:https?|ssh|git)://)(?P<credentials>[^/\s]+)@"
 )
 
 
 def redact(value: str) -> str:
-    return URL_CREDENTIALS.sub(r"\g<prefix><redacted>@", value)
+    value = URL_CREDENTIALS.sub(r"\g<prefix><redacted>@", value)
+    return re.sub(r"((?:https?|ssh|git)://[^\s?#]+)[?#][^\s]*", r"\1?<redacted>", value)
 
 
 class PublishError(Exception):
@@ -197,10 +199,142 @@ def verify_publication(
 
 def is_non_fast_forward(result: subprocess.CompletedProcess[str]) -> bool:
     output = f"{result.stdout}\n{result.stderr}".lower()
-    return any(
-        phrase in output
-        for phrase in ("non-fast-forward", "fetch first", "[rejected]")
+    return any(phrase in output for phrase in ("non-fast-forward", "fetch first"))
+
+
+def github_api(endpoint: str, *, absent_ok: bool = False) -> Any:
+    try:
+        result = subprocess.run(
+            ["gh", "api", "--paginate", "--slurp", endpoint],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as error:
+        raise PublishError("GitHub policy discovery requires gh") from error
+    if result.returncode:
+        if (
+            absent_ok
+            and "(HTTP 404)" in result.stderr
+            and "Branch not protected" in result.stdout
+        ):
+            return None
+        raise PublishError(
+            f"cannot resolve GitHub policy: {redact(result.stderr.strip())}"
+        )
+    try:
+        pages = json.loads(result.stdout)
+    except ValueError as error:
+        raise PublishError("invalid GitHub policy response") from error
+    if not isinstance(pages, list) or not pages:
+        raise PublishError("missing GitHub policy response")
+    return pages
+
+
+def policy_preflight(url: str, branch: str, head: str) -> dict[str, Any]:
+    """Read destination policy and gates for the actual candidate, never a cached head."""
+    if url.startswith(("/", "./", "../", "file://")):
+        return {"compliant": True, "provider": "local"}
+    normalized = re.sub(r"^git@github\.com:", "https://github.com/", url)
+    parsed = urlsplit(normalized)
+    if parsed.hostname != "github.com":
+        raise PublishError(
+            "unsupported remote policy provider; use the repository PR path"
+        )
+    repository = parsed.path.strip("/").removesuffix(".git")
+    if len(repository.split("/")) != 2:
+        raise PublishError("cannot identify GitHub policy repository")
+    prefix = f"repos/{repository}"
+    rules = [
+        rule
+        for page in github_api(f"{prefix}/rules/branches/{quote(branch, safe='')}")
+        for rule in page
+    ]
+    protection_pages = github_api(
+        f"{prefix}/branches/{quote(branch, safe='')}/protection", absent_ok=True
     )
+    protection = protection_pages[0] if protection_pages else {}
+    if protection.get("required_pull_request_reviews"):
+        raise PublishError(
+            "required reviews prevent direct publication; use the GitHub PR path"
+        )
+    requirements = list(
+        (protection.get("required_status_checks") or {}).get("checks", [])
+    )
+    requirements.extend(
+        {"context": context}
+        for context in (protection.get("required_status_checks") or {}).get(
+            "contexts", []
+        )
+        if not any(check["context"] == context for check in requirements)
+    )
+    for rule in rules:
+        kind = rule["type"]
+        if kind == "required_status_checks":
+            requirements.extend(rule["parameters"]["required_status_checks"])
+        elif kind not in {"non_fast_forward", "deletion", "creation"}:
+            raise PublishError(f"branch rule {kind} requires the GitHub PR path")
+    if protection.get("restrictions") or any(
+        (protection.get(key) or {}).get("enabled")
+        for key in (
+            "required_signatures",
+            "required_linear_history",
+            "required_conversation_resolution",
+            "lock_branch",
+        )
+    ):
+        raise PublishError("protected publication requires the GitHub PR path")
+    if requirements:
+        runs = [
+            run
+            for page in github_api(f"{prefix}/commits/{head}/check-runs?per_page=100")
+            for run in page["check_runs"]
+        ]
+        statuses = [
+            status
+            for page in github_api(f"{prefix}/commits/{head}/statuses?per_page=100")
+            for status in page
+        ]
+        for required in requirements:
+            context = required["context"]
+            app = required.get("integration_id", required.get("app_id"))
+            checks = [
+                run
+                for run in runs
+                if run["name"] == context
+                and run.get("head_sha") == head
+                and (app in (None, -1) or (run.get("app") or {}).get("id") == app)
+            ]
+            states = [
+                status
+                for status in statuses
+                if status["context"] == context
+                and status.get("sha", head) == head
+                and app in (None, -1)
+            ]
+            # GitHub requires both when a status and check share the required name.
+            latest_status = max(states, key=lambda item: item["id"], default=None)
+            if (
+                (not checks and not states)
+                or any(
+                    run.get("status") != "completed"
+                    or run.get("conclusion") not in {"success", "neutral", "skipped"}
+                    for run in checks
+                )
+                or (
+                    latest_status is not None
+                    and latest_status.get("state") != "success"
+                )
+            ):
+                raise PublishError(
+                    f"required gate {context} is missing or not successful on {head}; use the GitHub PR path"
+                )
+    return {
+        "compliant": True,
+        "provider": "github",
+        "head": head,
+        "requiredContexts": sorted({item["context"] for item in requirements}),
+    }
 
 
 def publish(args: argparse.Namespace) -> dict[str, Any]:
@@ -246,6 +380,11 @@ def publish(args: argparse.Namespace) -> dict[str, Any]:
                 )
                 return {
                     "status": "already-landed",
+                    "published": True,
+                    "policy": {
+                        "compliant": None,
+                        "reason": "historical publication policy not verified",
+                    },
                     "remote": remote,
                     "defaultBranch": branch,
                     "sourceRepository": str(source_root),
@@ -255,15 +394,67 @@ def publish(args: argparse.Namespace) -> dict[str, Any]:
                     "remoteTip": remote_tip,
                 }
 
+            candidate = git_output(clone, "rev-parse", "HEAD")
+            policy = policy_preflight(url, branch, candidate)
             pushed = run_git(
                 clone,
                 ["push", "origin", f"HEAD:refs/heads/{branch}"],
                 check=False,
             )
-            if pushed.returncode == 0:
-                local_tip, remote_tip, final = verify_publication(
-                    clone, url, branch, revisions
+            diagnostics = redact(f"{pushed.stdout}\n{pushed.stderr}".strip())
+            bypass = bool(
+                re.search(
+                    r"bypass|rule violations|protected branch.*(?:hook declined|failed)",
+                    diagnostics,
+                    re.I,
                 )
+            )
+            if bypass:
+                policy.update(compliant=False, reason="push reported a policy bypass")
+            # Reconcile an ambiguous transport result before considering another write.
+            try:
+                remote_tip = authoritative_tip(url, branch)
+                contains_candidate = remote_tip == candidate
+                if pushed.returncode != 0 and not contains_candidate:
+                    run_git(clone, ["fetch", "--no-tags", "origin", branch])
+                    contains_candidate = (
+                        run_git(
+                            clone,
+                            [
+                                "merge-base",
+                                "--is-ancestor",
+                                candidate,
+                                f"origin/{branch}",
+                            ],
+                            check=False,
+                        ).returncode
+                        == 0
+                    )
+            except PublishError as error:
+                return {
+                    "status": (
+                        "published" if pushed.returncode == 0 else "publication-unknown"
+                    ),
+                    "published": True if pushed.returncode == 0 else None,
+                    "policy": policy,
+                    "pushDiagnostics": diagnostics,
+                    "error": str(error),
+                    "attempts": attempts,
+                }
+            if pushed.returncode == 0 or contains_candidate:
+                try:
+                    local_tip, remote_tip, final = verify_publication(
+                        clone, url, branch, revisions
+                    )
+                except PublishError as error:
+                    return {
+                        "status": "published",
+                        "published": True,
+                        "policy": policy,
+                        "pushDiagnostics": diagnostics,
+                        "error": str(error),
+                        "attempts": attempts,
+                    }
                 for item in final:
                     initial = next(
                         record
@@ -273,6 +464,10 @@ def publish(args: argparse.Namespace) -> dict[str, Any]:
                     item["initialEvidence"] = initial["evidence"]
                 return {
                     "status": "published",
+                    "published": True,
+                    "policy": policy,
+                    "pushDiagnostics": diagnostics,
+                    "pushExitCode": pushed.returncode,
                     "remote": remote,
                     "defaultBranch": branch,
                     "sourceRepository": str(source_root),
@@ -282,12 +477,9 @@ def publish(args: argparse.Namespace) -> dict[str, Any]:
                     "remoteTip": remote_tip,
                 }
             if attempts == MAX_ATTEMPTS or not is_non_fast_forward(pushed):
-                detail = (
-                    pushed.stderr.strip().splitlines()[-1]
-                    if pushed.stderr.strip()
-                    else "push failed"
+                raise PublishError(
+                    f"normal push rejected: {diagnostics or 'push failed'}"
                 )
-                raise PublishError(f"normal push rejected: {redact(detail)}")
 
         raise PublishError("remote kept advancing after one retry")
 
@@ -307,8 +499,17 @@ def main() -> int:
     except PublishError as error:
         print(json.dumps({"status": "blocked", "error": str(error)}, sort_keys=True))
         return 1
+    except (KeyError, TypeError, ValueError):
+        print(json.dumps({"status": "blocked", "error": "invalid policy response"}))
+        return 1
     print(json.dumps(payload, sort_keys=True))
-    return 0
+    return (
+        0
+        if not payload.get("error")
+        and payload.get("policy", {}).get("compliant") is not False
+        and payload["status"] != "publication-unknown"
+        else 1
+    )
 
 
 if __name__ == "__main__":

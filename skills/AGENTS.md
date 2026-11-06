@@ -29,6 +29,9 @@ or symlinks preserve the overwrite guard rather than replacing local edits.
   `hey skills-update` updates the child lock. `hey skills-sync` syncs the parent
   **and rebuilds the host**; run it only with activation authority. Child input
   changes need the corresponding parent sync before deployment.
+- Hosted Amp skills are separate copies, not Nix activation targets. For local
+  done-bundle staging and parity checks, follow
+  [done delivery](../docs/agents/done-delivery.md). Publication needs authorization.
 - For remote overlays, use a transform for SKILL.md-only edits, or
   `skills/overlays/<name>/` patches via `pkgs.applyPatches` for bundled resources.
   Patch failure on update must not silently discard local behavior.

@@ -1263,6 +1263,31 @@
                     touch $out
                   '';
 
+              done-delivery-tests =
+                pkgs.runCommand "done-delivery-tests"
+                  {
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.git
+                      pkgs.jujutsu
+                      pkgs.python3
+                    ];
+                  }
+                  ''
+                    export HOME=$TMPDIR
+                    git config --global user.name "Done Publisher"
+                    git config --global user.email "publisher@example.invalid"
+                    export GIT_CONFIG_COUNT=1
+                    export GIT_CONFIG_KEY_0=commit.gpgsign
+                    export GIT_CONFIG_VALUE_0=false
+                    cp -R ${./.} "$TMPDIR/source"
+                    chmod -R u+w "$TMPDIR/source"
+                    cd "$TMPDIR/source"
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests.test_done_closeout tests.test_done_delivery
+                    touch $out
+                  '';
+
               displayctl-tests =
                 pkgs.runCommand "displayctl-tests"
                   {

@@ -75,6 +75,13 @@ CHECKS = {
         "tests/test_skill_quality_validator.py",
         "skills/catalog/skill-quality/*",
     ],
+    "done-delivery-tests": [
+        "skills/catalog/done/*",
+        "scripts/check_done_bundle.py",
+        "mise-tasks/skills/amp-stage-done",
+        "tests/test_done_closeout.py",
+        "tests/test_done_delivery.py",
+    ],
     "agent-docs-contract": [
         "AGENT_WORKFLOW.md",
         "docs/README.md",

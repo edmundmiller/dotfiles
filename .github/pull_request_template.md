@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- Brief description of the changes -->
+<!-- What behavior changes, and why? -->
 
 ## Type of Change
 
@@ -14,17 +14,24 @@
 
 <!-- e.g., shell, editor, services, packages, packages/pi-packages, host config -->
 
-## Testing Done
+## Evidence
 
-<!-- Describe how you verified the changes -->
+<!-- Keep the shortest evidence that distinguishes the target-branch baseline
+from the candidate under comparable conditions. If unavailable, disclose that
+and limit the claim. For failures called pre-existing, give comparable baseline
+evidence or state that attribution is unverified. Routine pass counts and checks
+that do not exercise the claimed behavior are not proof. -->
 
-- [ ] Tested `darwin-rebuild switch --flake .` on macOS
-- [ ] Tested `nixos-rebuild switch --flake .` on NixOS
-- [ ] Tested affected application/service manually
+## Untested boundaries
 
-## Checklist
+<!-- What relevant behavior or environment remains unverified? Omit if none. -->
 
-- [ ] Ran `hey check` with no errors
-- [ ] Tested a full system rebuild
-- [ ] Nix evaluation succeeds (`nix flake check`)
-- [ ] No secrets or sensitive data committed
+## Activation and rollback
+
+<!-- Omit if inapplicable. Separate readiness to merge from deployment or
+enablement. State what was activated, or deliberately left inactive, and the
+applicable rollback path. Merge evidence does not establish live behavior or
+authorize activation. -->
+
+<!-- Remove inapplicable sections. Keep secrets and private receipts out of the
+PR; summarize relevant results without exposing sensitive data. -->
