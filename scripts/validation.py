@@ -22,6 +22,10 @@ ROOT = Path(__file__).resolve().parents[1]
 # Hook-owned tests are deliberately not repeated here.
 CHECKS = {
     "validation-tests": [
+        ".agents/setup",
+        ".agents/resume",
+        ".agents/nix-env.sh",
+        "tests/test_orb_setup.py",
         "scripts/validation.py",
         "scripts/beads_filter.py",
         "tests/test_beads_filter.py",

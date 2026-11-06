@@ -6,26 +6,27 @@ step() {
 }
 
 repo_root="$(git rev-parse --show-toplevel)"
-nix_profile="/nix/var/nix/profiles/default"
-nix_env="$nix_profile/etc/profile.d/nix-daemon.sh"
 
 step "Install Nix when missing"
-if [[ ! -x "$nix_profile/bin/nix" ]]; then
+# shellcheck disable=SC1091
+if ! source "$repo_root/.agents/nix-env.sh"; then
   curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
     https://install.determinate.systems/nix \
     | sh -s -- install --no-confirm
+  # The installer cannot update this running process.
+  # shellcheck disable=SC1091
+  source "$repo_root/.agents/nix-env.sh"
 fi
-
-# The installer cannot update this running process.
-# shellcheck disable=SC1090
-source "$nix_env"
 
 step "Expose Nix to non-login agent commands"
 mkdir -p "$HOME/.local/bin"
-ln -sfn "$nix_profile/bin/nix" "$HOME/.local/bin/nix"
+ln -sfn "$nix_bin" "$HOME/.local/bin/nix"
 
 step "Configure Nix for the orb"
-nix_custom_conf="/etc/nix/nix.custom.conf"
+nix_custom_conf="/etc/nix/nix.conf"
+if grep -Eq '^[[:space:]]*!?include[[:space:]]+(/etc/nix/)?nix\.custom\.conf([[:space:]]|$)' "$nix_custom_conf"; then
+  nix_custom_conf="/etc/nix/nix.custom.conf"
+fi
 nix_config_changed=0
 # Full flake evaluation can exhaust a small orb when Nix uses every core.
 for setting in \
@@ -36,19 +37,23 @@ for setting in \
   "eval-cores = 1" \
   "max-jobs = 1" \
   "cores = 1"; do
+  # Parallel evaluation is a Determinate Nix setting, not an upstream one.
+  if [[ "$setting" == "eval-cores = 1" ]] && ! "$nix_bin" config show eval-cores >/dev/null 2>&1; then
+    continue
+  fi
   if ! sudo grep -Fqx "$setting" "$nix_custom_conf" 2>/dev/null; then
     printf '%s\n' "$setting" | sudo tee -a "$nix_custom_conf" >/dev/null
     nix_config_changed=1
   fi
 done
-if ((nix_config_changed)); then
+if ((nix_config_changed)) && systemctl cat nix-daemon.service >/dev/null 2>&1; then
   sudo systemctl restart nix-daemon.service
 fi
 
 step "Allow sparse virtual memory reservations"
 # Oxlint JS plugins reserve one sparse 4 GiB arena per worker. Orbs do not
 # commit that memory, but Linux's default heuristic rejects the reservation.
-if [[ "$(sysctl -n vm.overcommit_memory)" != "1" ]]; then
+if [[ "$(/usr/sbin/sysctl -n vm.overcommit_memory)" != "1" ]]; then
   sudo sysctl -w vm.overcommit_memory=1 >/dev/null
 fi
 
@@ -71,16 +76,16 @@ orb_env="$HOME/.config/amp/dotfiles-orb-env.sh"
 mkdir -p "$(dirname "$orb_env")"
 cat > "$orb_env" <<EOF
 if [[ "\${AMP_ORB:-}" == "1" && "\${PWD:-}" == "$repo_root" && -z "\${DOTFILES_AGENT_ENV_ACTIVE:-}" ]]; then
-  source "$nix_env"
+  source "$repo_root/.agents/nix-env.sh" || return
   export DOTFILES_AGENT_ENV_ACTIVE=1
   nix_config="\${NIX_CONFIG:-}"
   if command -v gh >/dev/null 2>&1 && github_token="\$(gh auth token 2>/dev/null)" && [[ -n "\$github_token" ]]; then
     nix_config="\${nix_config:+\$nix_config
 }access-tokens = github.com=\$github_token"
   fi
-  eval "\$(NIX_CONFIG=\$nix_config "$nix_profile/bin/nix" --accept-flake-config print-dev-env --no-write-lock-file '$repo_root#agent')"
+  eval "\$(NIX_CONFIG=\$nix_config "\$nix_bin" --accept-flake-config print-dev-env --no-write-lock-file '$repo_root#agent')"
   unset github_token nix_config
-  export PATH="$nix_profile/bin:\$PATH"
+  export PATH="\$(dirname "\$nix_bin"):\$PATH"
 fi
 EOF
 
