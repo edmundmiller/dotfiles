@@ -179,6 +179,10 @@ in
           enable = true;
           agents.amp = true;
           servers = {
+            amp = {
+              enable = true;
+              url = "https://ampcode.com/mcp";
+            };
             github.enable = true;
             linear.enable = true;
             linear.excludeAgents = [ "amp" ];
