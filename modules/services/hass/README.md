@@ -111,7 +111,8 @@ HA state lives in `/var/lib/hass` and is backed up nightly by restic (see `hosts
 | Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry`                           | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                       |
 | Automations (UI-created)                       | `/var/lib/hass/automations.yaml`                                   | ❌ No                                                                                  |
 | Automations (Nix-declared)                     | `_domains/*.nix`                                                   | ✅ Yes — rebuilt from Nix                                                              |
-| HA config (http, recorder, helpers)            | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
+| HA config (recorder, helpers)                  | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
+| HTTP config (port, trusted proxies)            | `/var/lib/hass/.storage/http`                                      | ❌ No — manage under Settings > System > Network; restore from backup                  |
 | Extra components (ecobee, cast, etc.)          | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
 | Recorder history (energy, temps, states)       | PostgreSQL (`hass` db), dumped to `/var/backup/hass/recorder.dump` | ❌ No — restore the nightly restic dump                                                |
 | HACS integrations                              | `/var/lib/hass/custom_components/`                                 | Partial — HACS itself is Nix-managed, but HACS-installed integrations need re-download |

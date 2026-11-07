@@ -268,10 +268,22 @@ in
     };
   };
 
+  options.services = optionalAttrs (!isDarwin) {
+    home-assistant.config = mkOption {
+      # nixpkgs injects HTTP defaults even without an explicit http block.
+      # HA has migrated these settings to Settings > System > Network.
+      apply =
+        haConfig: if cfg.enable && haConfig != null then removeAttrs haConfig [ "http" ] else haConfig;
+    };
+  };
+
   config = optionalAttrs (!isDarwin) (
     mkIf cfg.enable {
 
-      networking.firewall.allowedTCPPorts = [ 21063 ];
+      networking.firewall.allowedTCPPorts = [
+        8123
+        21063
+      ];
 
       services.home-assistant = {
         enable = true;
@@ -353,18 +365,6 @@ in
             longitude = "!secret longitude";
             elevation = "!secret elevation";
             radius = 30; # smaller than the 33 m Parking Lot zone so Home wins overlaps
-          };
-
-          http = {
-            server_host = [
-              "0.0.0.0"
-              "::"
-            ];
-            trusted_proxies = [
-              "::1"
-              "127.0.0.1"
-            ];
-            use_x_forwarded_for = true;
           };
 
           # Siri/Home bridge for existing Apple Home voice phrases/scenes.
@@ -508,8 +508,8 @@ in
       '';
       users.users.hass.extraGroups = optionals cfg.zbt2.enable [ "dialout" ];
 
-      # Firewall: open HA port on LAN and tailscale
-      services.home-assistant.openFirewall = true;
+      # The firewall port above no longer comes from the migrated YAML config.
+      services.home-assistant.openFirewall = false;
 
       # Homebridge
       services.homebridge = mkIf cfg.homebridge.enable {
@@ -533,7 +533,7 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:${toString config.services.home-assistant.config.http.server_port} && exit 0; sleep 1; done; exit 1\"'";
+          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://localhost:8123 && exit 0; sleep 1; done; exit 1\"'";
           ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
         };
       };

@@ -598,6 +598,13 @@ let
 
   assertions = (initialStateAssertions ++ goodMorningCallChecks) ++ [
     {
+      test =
+        !(haConfig ? http)
+        && builtins.elem 8123 nixosConfig.config.networking.firewall.allowedTCPPorts
+        && hasInfix "http://localhost:8123" nixosConfig.config.systemd.services.hass-tailscale-serve.serviceConfig.ExecStart;
+      msg = "HTTP must stay UI-managed after migration while firewall and Tailscale retain port 8123";
+    }
+    {
       test = edmundAwake != null;
       msg = "automation 'edmund_awake_detection' missing";
     }
