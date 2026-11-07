@@ -1,6 +1,7 @@
 # No u nas
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -9,6 +10,7 @@
   imports = [
     ../_server.nix
     ../_home.nix
+    inputs.rex.nixosModules.default
     ./hardware-configuration.nix
     ./nas.nix
     ./disko.nix
@@ -18,9 +20,19 @@
     ./users.nix
   ];
 
-  # Rex server (Linux): enable after the NUC passes a client-session check.
-  # services.rex.enable = true;
-  # user.extraGroups = [ "rex" ];
+  # Keep Rex state in /var/lib/rex and run terminals as the NAS user.
+  services.rex = {
+    enable = true;
+    user = "emiller";
+    group = "users";
+    socketMode = "0600";
+    tailscale = {
+      enable = true;
+      hostname = "unas-rex";
+      # Admit tagged NUC clients; Tailscale ACLs remain the access boundary.
+      allowTailnetMembers = true;
+    };
+  };
 
   ## Modules
   modules = {

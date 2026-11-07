@@ -28,6 +28,27 @@ SSH helper:
 hey unas-ssh
 ```
 
+## Rex remote server
+
+`default.nix` enables Rex as `emiller:users`, with an owner-only local socket
+and persistent state in `/var/lib/rex`. Its embedded Tailscale node is named
+`unas-rex`, separate from the NAS system Tailscale node and Serve settings.
+Tailscale ACLs control which tailnet peers can connect. This includes tagged
+NUC clients; Rex's owner-only policy would reject them.
+
+After an authorized `hey unas` deployment, enroll Rex once using its Tailscale
+login flow on UNAS. Do not put an auth key in Nix. Confirm the address with
+`rex server tailscale pair --json` on UNAS. The expected address is
+`https://unas-rex.cinnamon-rooster.ts.net`; enrollment must confirm it.
+
+`config/rex/init.lua` declares the `unas` host for both Macs. After an authorized
+Mac activation and `rex config reload`, check `rex hosts check unas --json` and
+`rex -S unas whoami --json`. Check `rex -S unas client ls --json` separately
+for an app connection. On NUC, add the same URL with `rex hosts add unas` and
+verify `rex -S unas whoami --json`. Use `REX_RUNTIME_DIR=/run/rex` when managing
+the system Rex service over SSH. A new remote terminal should report `emiller`
+and `/home/emiller` for `whoami` and `pwd`.
+
 ## Key files
 
 - `default.nix` — host imports + enabled modules
