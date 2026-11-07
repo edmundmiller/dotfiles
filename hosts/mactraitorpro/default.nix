@@ -196,9 +196,6 @@ in
             provider = "typesafe";
             id = "jev-latest";
           };
-          secretReferences = {
-            OPENCODE_GO_API_KEY = "op://Agents/MTP OpenCode Go/credential";
-          };
         };
         agentsview.enable = true;
         claude.enable = true;
