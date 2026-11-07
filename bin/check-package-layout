@@ -10,7 +10,6 @@ for path in "$@"; do
     packages/git-sim.nix | \
     packages/gw.nix | \
     packages/gxf2bed.nix | \
-    packages/hey.nix | \
     packages/inspect.nix | \
     packages/jj-vine.nix | \
     packages/jsongrep.nix | \

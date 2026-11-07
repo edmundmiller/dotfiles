@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+output="${1:?usage: build OUTPUT /absolute/path/to/mise}"
+mise="${2:?usage: build OUTPUT /absolute/path/to/mise}"
+if [[ $mise != /* ]]; then
+  echo 'build: mise must be an absolute executable path' >&2
+  exit 2
+fi
+source_dir="$(dirname "$0")"
+build_dir="$(mktemp -d)"
+trap 'rm -rf "$build_dir"' EXIT
+export BEND_NO_TELEMETRY=1
+
+# Encode pathname bytes, not shell syntax, into a C string literal.
+mise_literal=$(
+  LC_ALL=C
+  for ((i = 0; i < ${#mise}; i++)); do
+    printf '\\%03o' "'${mise:i:1}"
+  done
+)
+
+bend "$source_dir/PROOF.bend"
+bend "$source_dir/main.bend" -o "$build_dir/generated.c"
+clang -O2 -pthread -I"$build_dir" \
+  "-DHEY_MISE=\"$mise_literal\"" \
+  "$source_dir/launcher.c" -o "$output" -lm

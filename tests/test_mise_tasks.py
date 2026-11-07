@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @unittest.skipUnless(
-    shutil.which("mise") and shutil.which("nu"), "mise and nu required"
+    shutil.which("hey") and shutil.which("mise") and shutil.which("nu"),
+    "installed hey, mise and nu required",
 )
 class MiseTasksTests(unittest.TestCase):
     def setUp(self):
@@ -47,7 +48,6 @@ class MiseTasksTests(unittest.TestCase):
     def copy_project(self):
         shutil.copy2(ROOT / "mise.toml", self.root)
         shutil.copytree(ROOT / "bin/hey.d", self.root / "bin/hey.d")
-        shutil.copy2(ROOT / "bin/hey", self.root / "bin/hey")
         (self.root / "scripts").mkdir()
         shutil.copy2(ROOT / "scripts/validation.py", self.root / "scripts")
 
@@ -145,7 +145,7 @@ class MiseTasksTests(unittest.TestCase):
         script.chmod(0o755)
         nested = self.root / "nested"
         nested.mkdir()
-        for command in [("mise", "run"), (str(self.root / "bin/hey"),)]:
+        for command in [("mise", "run"), ("hey",)]:
             with self.subTest(command=command):
                 result = self.run_command(
                     *command, "dispatch-fixture", "a b", "--help", "$(false)", cwd=nested
@@ -162,9 +162,7 @@ class MiseTasksTests(unittest.TestCase):
         script.chmod(0o755)
         self.env["DOTFILES"] = str(ROOT)
         self.env["FLAKE_DIR"] = str(ROOT)
-        result = self.run_command(
-            str(ROOT / "bin/hey"), "echo", "a b", "--help", "$(false)"
-        )
+        result = self.run_command("hey", "echo", "a b", "--help", "$(false)")
         self.assertEqual(result.returncode, 23, result.stderr)
         self.assertEqual(result.stdout, "<a b>\n<--help>\n<$(false)>\n")
 
@@ -181,7 +179,7 @@ class MiseTasksTests(unittest.TestCase):
         system_bin = "/run/current-system/sw/bin"
         inherited = [p for p in self.env["PATH"].split(os.pathsep) if p != system_bin]
         self.env["PATH"] = os.pathsep.join([str(tools), *inherited, system_bin])
-        for command in [("mise", "run"), (str(self.root / "bin/hey"),)]:
+        for command in [("mise", "run"), ("hey",)]:
             with self.subTest(command=command):
                 result = self.run_command(*command, "show")
                 self.assertEqual(result.returncode, 0, result.stderr)
@@ -219,7 +217,7 @@ class MiseTasksTests(unittest.TestCase):
         self.assertEqual(expected["files"], ["owned space.md"])
         for command in [
             ("mise", "run", "check"),
-            (str(self.root / "bin/hey"), "check"),
+            ("hey", "check"),
         ]:
             with self.subTest(command=command):
                 result = self.run_command(

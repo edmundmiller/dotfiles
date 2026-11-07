@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Compatibility spelling for project-local mise tasks, in any repository.
-case "${1:-help}" in
-help | -h | --help)
-  if (($# > 1)); then
-    shift
-    exec mise run "$@" --help
-  fi
-  exec mise tasks
-  ;;
-*) exec mise run "$@" ;;
-esac
+# Run this checkout's package without changing the caller's task directory.
+root=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+# Keep Nix's signal changes in a child, outside the eventual task process.
+output=$(nix build --no-link --print-out-paths --no-write-lock-file "$root#hey")
+exec "$output/bin/hey" "$@"

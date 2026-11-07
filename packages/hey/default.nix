@@ -1,28 +1,45 @@
 {
+  clang,
   lib,
   mise,
+  my,
   python3,
   stdenvNoCC,
 }:
 
 stdenvNoCC.mkDerivation {
   pname = "hey";
-  version = "2.0.0";
+  version = "2.1.0";
 
-  src = ../bin;
+  src = ./.;
 
-  # Don't run any default build phases
+  nativeBuildInputs = [
+    clang
+    my.bend
+  ];
+  nativeCheckInputs = [ python3 ];
   dontConfigure = true;
-  dontBuild = true;
+
+  buildPhase = ''
+    runHook preBuild
+    bash build hey ${lib.getExe mise}
+    runHook postBuild
+  '';
+
+  doCheck = true;
+  checkPhase = ''
+    runHook preCheck
+    # Exercise the same native boundary with a disposable mise executable.
+    HEY_TEST_LAUNCHER=${../../bin/hey} python3 -B test_hey.py
+    runHook postCheck
+  '';
 
   installPhase = ''
     runHook preInstall
 
     mkdir -p "$out/bin" "$out/libexec/hey"
     cp hey "$out/bin/hey"
-    substituteInPlace "$out/bin/hey" \
-      --replace-fail 'exec mise ' 'exec ${lib.getExe mise} '
-    cp agent-run "$out/libexec/hey/agent-run.py"
+    cp ${../../bin/agent-run} "$out/libexec/hey/agent-run.py"
     cat > "$out/bin/agent-run" <<EOF
     #!${stdenvNoCC.shell}
     exec ${lib.getExe python3} "$out/libexec/hey/agent-run.py" "\$@"
@@ -39,6 +56,6 @@ stdenvNoCC.mkDerivation {
     license = licenses.mit;
     maintainers = [ ];
     mainProgram = "hey";
-    platforms = platforms.unix;
+    platforms = my.bend.meta.platforms;
   };
 }

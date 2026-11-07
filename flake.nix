@@ -1165,6 +1165,8 @@
             # deploy-rs checks - validates deployment configurations (merge attrset)
             (lib.optionalAttrs (system == "x86_64-linux") (deploy-rs.lib.${system}.deployChecks self.deploy))
             // {
+              hey-native = self.packages.${system}.hey;
+
               package-harness-tests =
                 pkgs.runCommand "package-harness-tests"
                   {
@@ -1243,6 +1245,7 @@
                       pkgs.nushell
                       pkgs.python3
                       pkgs.ripgrep
+                      self.packages.${system}.hey
                     ];
                   }
                   ''

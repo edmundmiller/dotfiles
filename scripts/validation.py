@@ -32,7 +32,9 @@ CHECKS = {
         "bin/amp-runner-sync",
         "config/amp/*",
         "tests/test_amp_runner_sync.py",
-        "bin/hey*",
+        "bin/hey",
+        "packages/hey/*",
+        "packages/bend/*",
         "bin/hey.d/.lib/*",
         "mise.toml",
         "bin/hey.d/*",
@@ -44,6 +46,7 @@ CHECKS = {
         ".codex/hooks.json",
         ".omp/hooks/*",
     ],
+    "hey-native": ["bin/hey", "packages/hey/*", "packages/bend/*"],
     "hass-health-tests": ["modules/services/hass/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
