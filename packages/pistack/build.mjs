@@ -14,18 +14,13 @@ const skills = readdirSync(join(output, "skills"), { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 const shared = new Set(["tdd", "teach", "unslop"]);
-const agents = readdirSync(join(output, "agents")).filter((name) => name.endsWith(".md"));
 
-for (const path of [
-  ...skills.map((name) => `skills/${name}/SKILL.md`),
-  ...agents.map((name) => `agents/${name}`),
-]) {
+for (const path of skills.map((name) => `skills/${name}/SKILL.md`)) {
   const file = join(output, path);
   const text = readFileSync(file, "utf8");
   const frontmatter = text.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
   if (!frontmatter) throw new Error(`Missing frontmatter: ${path}`);
-  const relative = path.startsWith("skills/") ? "../../PI.md" : "../PI.md";
-  const header = `\n## Pi compatibility\n\nRead [the Pi runtime contract](${relative}) before following these instructions. It overrides Cursor-specific mechanics throughout this skill, its references, and delegated work.\n`;
+  const header = `\n## Pi compatibility\n\nRead [the Pi runtime contract](../../PI.md) before following these instructions. It overrides Cursor-specific mechanics throughout this skill and its references.\n`;
   chmodSync(file, statSync(file).mode | 0o200);
   writeFileSync(
     file,
@@ -47,13 +42,10 @@ writeFileSync(
       pi: {
         extensions: [],
         skills: exposed,
-        subagents: { agents: ["./agents"] },
       },
     },
     null,
     2
   ) + "\n"
 );
-console.log(
-  `Built pistack ${plugin.version}: ${exposed.length} package skills, ${agents.length} agents`
-);
+console.log(`Built pistack ${plugin.version}: ${exposed.length} package skills`);

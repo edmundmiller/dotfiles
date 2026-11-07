@@ -59,6 +59,7 @@ let
           lib = moduleLib;
           pkgs.coreutils = coreutils;
           pkgs.my.pi-github-tools = "/fixture/pi-github-tools";
+          pkgs.my.pistack = "/fixture/pistack";
           pkgs.my.herdr.version = "0.9.1";
           isDarwin = false;
         }).config;
@@ -90,5 +91,11 @@ in
     policy = (home "pi").home.file.".pi/agent/extensions/pi-permission-system/config.json";
     bridge = toString (home "pi").home.file.".pi/agent/packages/pi-command-policy-bridge".source;
     configPath = (load "pi").env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+  };
+  piSkills = {
+    pistack = toString (home "pi").home.file.".pi/agent/packages/pistack".source;
+    agentFiles = lib.filter (lib.hasPrefix ".pi/agent/agents/") (
+      builtins.attrNames (home "pi").home.file
+    );
   };
 }

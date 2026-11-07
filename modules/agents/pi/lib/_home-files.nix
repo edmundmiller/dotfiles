@@ -8,13 +8,11 @@
   piSettingsValidated,
   piPermissionSystemConfig,
   promptLinks,
-  agentLinks,
   sessionSearchFiles,
   isDarwin,
 }:
 
 promptLinks
-// agentLinks
 // {
   ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;

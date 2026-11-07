@@ -67,6 +67,15 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertEqual(policy["permission"]["bash"]["*hey*"], "ask")
         self.assertEqual(policy["permission"]["bash"]["*mise*"], "ask")
 
+    def test_pi_deploys_pistack_skills_without_a_delegation_backend(self) -> None:
+        packages = self.deployed["piApproval"]["settings"]["packages"]
+        sources = [item if isinstance(item, str) else item["source"] for item in packages]
+        self.assertIn("~/.pi/agent/packages/pistack", sources)
+        self.assertNotIn("~/.pi/agent/packages/pstack-pi", sources)
+        self.assertFalse(any(source.startswith("npm:pi-subagents") for source in sources))
+        self.assertEqual(self.deployed["piSkills"]["pistack"], "/fixture/pistack")
+        self.assertEqual(self.deployed["piSkills"]["agentFiles"], [])
+
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())

@@ -1,6 +1,6 @@
 ---
 purpose: Explain the pinned pstack integration for Claude Code, Codex, and Pi.
-applies_to: Pstack plugins, Pi delegation, and the Codex poteto-mode skill.
+applies_to: Pstack plugins, Pistack skills for Pi, and the Codex poteto-mode skill.
 entrypoint: config/claude/settings.json, config/pi/settings.jsonc, and skills/flake.nix.
 verification: Run agent instruction tests, plugin bootstrap tests, Pi settings validation, and scoped hey check.
 update_when: Pstack pins, runtime adapters, or installation behavior changes.
@@ -16,8 +16,7 @@ another pstack port. The unchanged upstream plus adapter design takes ideas from
 [sndrgrdn's port](https://github.com/sndrgrdn/pstack-pi), and checked deterministic
 updates from [aaalexliu's port](https://github.com/aaalexliu/pstack-pi).
 The workflows are explicit skills, not new shared startup instructions.
-Pi's separate delegation backend loads at startup; invoking a skill is not an
-extension activation gate.
+Pi's package is named Pistack. It supplies skills without a delegation backend.
 
 ## Claude Code
 
@@ -62,13 +61,13 @@ Executable TypeScript helpers need Bun and a writable copy of the scripts
 directory for dependency bootstrap. The adapter describes this copy-and-cleanup
 procedure. Installing the skill does not install or run those helpers.
 
-## Pi (pistack)
+## Pi with Pistack
 
 `packages/pistack/package-harness.json` owns the full upstream commit and
 ordered patch list. `default.nix` owns the matching fetch hash. Nix applies
 the patches with `git apply --check`, without fuzz. `build.mjs` preserves the
-upstream distribution, adds a link to `PI.md` after every skill's and agent's
-frontmatter, and generates a native Pi package manifest. No LLM rewrites skills.
+upstream distribution, adds a link to `PI.md` after every skill's frontmatter,
+and generates a native Pi package manifest named `pistack`. No LLM rewrites skills.
 Content tests compare every packaged upstream file, allowing only those links.
 
 Home Manager links the immutable package at `~/.pi/agent/packages/pistack`.
@@ -80,29 +79,29 @@ on disk for relative references. The separate shared catalog still uses
 `skills/flake.nix` and agent-skills-nix. There is no duplicate Pi catalog entry
 for `poteto-mode` or `sharpen`.
 
-Delegation uses the independently pinned `pi-subagents` package, not another
-pstack port's runtime. It requires Pi >=1.2.0; the selected runtime version in
-`overlays/pi/hashes.json` meets that requirement. The package manifest exposes `pstack.poteto-agent` and
-`pstack.comment-sicko`. They inherit project and global instructions, use explicit ordinary
-tool allowlists, and disable ambient extensions and the skill catalog. These
-are implementation agents, not a read-only sandbox. User overrides and native
-backend settings can change their effective configuration.
+Pistack installs no extensions, delegation backend, or registered agents. The
+upstream agent briefs remain unchanged reference files, not discoverable Pi
+agents. The Pi module no longer deploys `config/pi/agents/` definitions for the
+removed backend. Other Pi extensions and the shared skills catalog are unchanged.
 
-Parent permission hooks are not automatically inherited. Work requiring those
-hooks stays in the parent unless the backend's effective launch contract
-confirms they load as required child extensions.
+`PI.md` overrides Cursor-specific execution throughout the bundle. Run supported
+work inline in the current session. Report unavailable delegation, independent
+review, or model requirements rather than presenting sequential passes as
+independent or multi-model review. Do not install a backend or launch nested
+agent CLIs to satisfy a skill. A separately user-provided delegation tool may
+be used only according to its advertised schema, permissions, and available
+models. Work requiring parent approval hooks stays in the parent unless that
+tool demonstrably preserves them.
 
-`PI.md` maps Cursor `Task` to the advertised native schema. Blocking work uses
-`async: false`; parallelism and chains use the backend's workflow interface.
 Cursor model slugs, effort suffixes, resume IDs, and readonly flags are not
-copied into native tool calls. `setup-pstack` instead consults native backend
-configuration and asks before changing model choices. The old port's
+Pi tool arguments. `setup-pstack` explains that Pistack has no model-role router
+or agent configuration to generate. It does not write Cursor rules, install a
+backend, or change the session model. The old port's
 `~/.pi/agent/pstack-models.json` is neither read nor deleted.
 
 The adapter covers current-project session evidence and writable copies of
 immutable helpers. It does not supply Cursor Cloud Automations, Bugbot,
-artifact hosting, or a scheduler. Native backend features must be checked
-against its installed guide. Permission rules and user authorization still
+artifact hosting, or a scheduler. Permission rules and user authorization still
 apply. No prompt adapter can guarantee model compliance or provide a sandbox.
 
 ## Updating and rollback
@@ -126,7 +125,7 @@ does not change the adapter, execute upstream helpers, or activate a host.
 dispatch. It builds the Nix package and proposes a PR containing only the pin
 and hash. It does not auto-merge. The repository must allow GitHub Actions to
 create pull requests. This workflow and its schedule take effect only after
-landing on the default branch. Delegation backend updates remain separate.
+landing on the default branch. It does not install a delegation backend.
 
 Run `pkg-check pistack`, the package build, Pi settings validation, and scoped
 `hey check` before an authorized rebuild. After activation, restart Pi or run

@@ -17,7 +17,6 @@ const manifest = JSON.parse(readFileSync(join(output, "package.json"), "utf8"));
 const upstream = join(source, "pstack");
 
 test("registers all upstream skills except canonical shared copies", () => {
-  assert.equal(manifest.name, "pistack");
   const expected = readdirSync(join(upstream, "skills"))
     .filter((name) => !["tdd", "teach", "unslop"].includes(name))
     .sort()
@@ -26,8 +25,10 @@ test("registers all upstream skills except canonical shared copies", () => {
   assert.ok(manifest.pi.skills.includes("./skills/sharpen"));
   assert.ok(manifest.pi.skills.includes("./skills/statechart"));
   assert.ok(manifest.pi.skills.includes("./skills/how"));
+  assert.equal(manifest.name, "pistack");
   assert.deepEqual(manifest.pi.extensions, []);
-  assert.deepEqual(manifest.pi.subagents.agents, ["./agents"]);
+  assert.equal(manifest.pi.subagents, undefined);
+  assert.equal(manifest.dependencies, undefined);
 });
 
 test("maps Cursor skill storage to Pi discovery and preserves shared catalog ownership", () => {
@@ -39,7 +40,7 @@ test("maps Cursor skill storage to Pi discovery and preserves shared catalog own
   assert.ok(contract.includes("`skills/catalog/`"));
 });
 
-test("preserves upstream content and routes every skill and agent through the Pi contract", () => {
+test("preserves upstream content and routes every skill through the Pi contract", () => {
   const files = readdirSync(upstream, { recursive: true, withFileTypes: true }).filter((entry) =>
     entry.isFile()
   );
@@ -47,7 +48,7 @@ test("preserves upstream content and routes every skill and agent through the Pi
     const relative = join(entry.parentPath, entry.name).slice(upstream.length + 1);
     const original = readFileSync(join(upstream, relative));
     const built = readFileSync(join(output, relative));
-    if (/^skills\/[^/]+\/SKILL\.md$|^agents\/[^/]+\.md$/.test(relative)) {
+    if (/^skills\/[^/]+\/SKILL\.md$/.test(relative)) {
       const text = built.toString();
       const header = text.match(
         /\n## Pi compatibility\n\nRead \[the Pi runtime contract\]\(([^)]+)\)[^\n]*\n/
@@ -62,13 +63,5 @@ test("preserves upstream content and routes every skill and agent through the Pi
   assert.match(
     readFileSync(join(output, "skills/sharpen/SKILL.md"), "utf8"),
     /Then rewrite my prompt/
-  );
-  assert.match(
-    readFileSync(join(output, "skills/poteto-mode/SKILL.md"), "utf8"),
-    /Pi execution override/
-  );
-  assert.match(
-    readFileSync(join(output, "agents/poteto-agent.md"), "utf8"),
-    /inheritProjectContext: true/
   );
 });

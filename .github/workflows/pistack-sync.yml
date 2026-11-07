@@ -62,6 +62,6 @@ jobs:
             Existing local patches applied without fuzz, content preservation tests
             passed, and the Nix package built. No upstream scripts were executed.
 
-            This does not update the independent delegation backend, merge this PR,
+            This does not install a delegation backend, merge this PR,
             or activate a host. A patch conflict fails the workflow without changing
             the installed package. Refresh a conflicting patch only after review.

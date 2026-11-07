@@ -1,11 +1,12 @@
-# Pistack on Pi
+# Pistack
 
-This is a local compatibility layer over Cursor's pinned pstack, not a Cursor
-plugin or a fork of another Pi port. This contract overrides host-specific
+Pistack packages Cursor's pinned pstack skills for Pi. It is not a Cursor
+plugin and does not install a delegation backend. This contract overrides host-specific
 instructions in every bundled skill, agent, playbook, and script description.
 Read the upstream workflow for its reasoning and required evidence, then apply
-these mappings to its execution. Include this file's absolute path in every
-delegate brief and require the delegate to read it before acting.
+these mappings to its execution. Bundled agent files are reference briefs,
+not registered Pi agents. Read them as instructions only where useful, never
+as a reason to launch another agent runtime or search Cursor's plugin directory.
 
 ## Authority
 
@@ -49,50 +50,34 @@ Use Pi's `/reload` after creating a skill, then confirm it is discovered.
 
 ## Delegation and models
 
-Use the separately installed `pi-subagents` extension, not Cursor's `Task` or
-the retired `pstack_task`. If only `subagents_enable` is advertised, enable
-delegation through it first. Read the advertised `subagent` schema or installed
-guide before calling it. A single blocking call uses
-`{ agent: "pstack.poteto-agent", task: "...", async: false }`. Parallel work and
-chains use its workflow-script interface by default, not top-level `tasks` or
-`chain` arrays. Read the installed workflow guide before constructing them.
-Map `subagent_type` to the native agent selection, preserve the brief and file
-pointers, and include this contract's and poteto-mode's absolute paths. Use the
-bundled `pstack.poteto-agent` for implementation and `pstack.comment-sicko` where
-the workflow requests it. Other role names are task descriptions, not agent
-definitions; choose an available native agent and put the role in its brief.
+Run supported work in the current Pi session. Upstream `Task`, `subagent_type`,
+background/resume instructions, named agents, and model-role defaults do not
+create capabilities in Pi. Do not install or enable a backend to satisfy a
+skill. Do not launch nested agent CLIs through `bash`.
 
-Use `async: false` when the next step requires completed findings. Background
-calls return receipts, not results; await completion through the native backend
-before claiming success. The bundled agents inherit project and global
-instructions but not ambient extensions or the skill catalog. Their tools allow
-implementation, not enforced read-only review. For a read-only requirement choose a native
-read-only agent, inspect its effective tool allowlist, and include this contract
-and the relevant upstream agent brief in its task.
+When delegation is unavailable, disclose that limitation and perform supported
+steps inline. Preserve the workflow's scope, evidence requirements, and review
+criteria. Sequential passes are not independent or multi-model review. If a
+step requires independent agents, unavailable models, or enforced read-only
+execution, mark that step unavailable rather than claiming it passed.
 
-Parent permission and approval hooks are not automatically inherited. If the
-task relies on those hooks, confirm the backend's effective launch contract
-includes them as required child extensions before delegating. Otherwise keep
-that work in the parent. Do not substitute a prompt for an enforced boundary.
+If the user has separately provided an advertised delegation tool, read its
+actual schema and guide before using it. Check its available agents, models,
+context inheritance, and effective permissions rather than assuming bundled
+briefs are registered. Include this contract's and the relevant skill's absolute
+paths in each brief. Await results before depending on them. Work requiring
+parent approval hooks stays in the parent unless the tool demonstrably preserves
+those hooks. A prompt does not enforce a read-only boundary.
 
-Never copy `run_in_background`, resume IDs, Cursor model slugs, or readonly
-flags blindly into Pi tool arguments. Use only capabilities the installed
-schema advertises. Do not launch nested agent CLIs through `bash`. If delegation
-is unavailable, disclose the gap and do supported work inline. Do not represent
-sequential passes as independent or multi-model review.
+Use the current session's model. Never translate Cursor model slugs or effort
+suffixes into guessed Pi model IDs, or copy Cursor tool arguments blindly.
+Use another model only through an explicitly configured, verified capability.
 
-Use the parent model unless a user-configured native agent or an explicit,
-verified provider/model selection supplies another. Cursor's effort and speed
-suffixes are not Pi model IDs. Preserve diverse-model review only when those
-models are actually available. A read-only brief is an instruction, not a
-sandbox. Use the backend's supported tool restrictions when required and do
-not claim they restrict extensions, MCP, or arbitrary shell execution.
-
-For `setup-pstack`, do not follow the Cursor rule-writing procedure. Read the
-installed pi-subagents model/agent configuration guide, discover available
-models using its supported interface, and propose native agent configuration.
-Confirm user choices before writing. Do not write `.cursor/rules`, assume the
-old port's `pstack-models.json` is consumed, or change the parent chat's model.
+For `setup-pstack`, explain that Pistack supplies skills only, with no model-role
+router or agent configuration to generate. Do not write `.cursor/rules` or
+`pstack-models.json`, change the session model, or install a backend. If the user
+explicitly requests configuration of a separately installed capability, consult
+its guide and confirm model choices before writing its supported configuration.
 
 ## Sessions and helpers
 
