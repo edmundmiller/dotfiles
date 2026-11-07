@@ -175,6 +175,7 @@ in
       };
 
       agents = {
+        browse.enable = true;
         mcp = {
           enable = true;
           agents.amp = true;
@@ -183,6 +184,7 @@ in
               enable = true;
               url = "https://ampcode.com/mcp";
             };
+            browse.enable = true;
             github.enable = true;
             linear.enable = false;
             notion.enable = true;

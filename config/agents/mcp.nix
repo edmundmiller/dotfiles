@@ -12,6 +12,11 @@ in
     transport = lib.mkDefault "stdio";
     command = lib.mkDefault (toString github);
   };
+  browse = {
+    transport = lib.mkDefault "stdio";
+    command = lib.mkDefault "${pkgs.my.opencode-browse}/bin/browse";
+    args = lib.mkDefault [ "mcp" ];
+  };
   linear.url = lib.mkDefault "https://mcp.linear.app/mcp";
   notion.url = lib.mkDefault "https://mcp.notion.com/mcp";
   seqera.url = lib.mkDefault "https://mcp.seqera.io/mcp";
