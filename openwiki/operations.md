@@ -8,7 +8,7 @@ tags: [operations, deployment, nix, nuc, verification]
 
 # Rebuild, deploy, and verification workflow
 
-`bin/hey` is the Nushell command dispatcher for system lifecycle, remote deployment, tests, skills, and agent-quality gates. It applies the host outputs described in [architecture](architecture.md) and is constrained by [secrets and safety](secrets-and-safety.md) when credentials are required.
+`hey` is a native Bend dispatcher for project-local mise tasks; `bin/hey` launches the checkout's package through Nix. Operations live in `bin/hey.d/` and shared `bin/hey.d/.lib/` modules. They apply the host outputs described in [architecture](architecture.md) and follow [secrets and safety](secrets-and-safety.md) when credentials are required.
 
 ## Choose the right execution path
 
@@ -65,4 +65,4 @@ Use the least invasive check that establishes the claim. For credential-dependen
 
 ## Key sources
 
-`bin/hey`; `bin/hey.d/{rebuild,remote,test,agent-quality}.nu`; `AGENT_WORKFLOW.md`; `docs/runbooks/deploy-nuc.md`; `hosts/nuc/AGENTS.md`.
+`packages/hey/`; `bin/hey`; `bin/hey.d/`; `bin/hey.d/.lib/`; `AGENT_WORKFLOW.md`; `docs/runbooks/deploy-nuc.md`; `hosts/nuc/AGENTS.md`.

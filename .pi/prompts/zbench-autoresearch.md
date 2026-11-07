@@ -30,7 +30,7 @@ Files in scope:
 - config/zsh/completion.zsh
 - config/zsh/keybinds.zsh
 - config/zsh/prompt.zsh
-- bin/hey.d/zbench.nu only if the benchmark harness itself needs fixing
+- bin/hey.d/.lib/zbench.nu and bin/hey.d/zbench/ only if the benchmark harness itself needs fixing
 
 Important context:
 
@@ -54,7 +54,7 @@ Hypotheses to investigate:
 
 Correctness checks:
 After promising changes, run:
-nix develop --command nu --commands 'source bin/hey.d/common.nu; source bin/hey.d/zbench.nu; print ok'
+nix develop --command nu --no-config-file --commands 'use bin/hey.d/.lib/zbench.nu *; print ok'
 
 Loop behavior:
 
