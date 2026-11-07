@@ -1,0 +1,20 @@
+diff --git a/harness/pstack/claude-code/skills/make-bot-ui/SKILL.md b/harness/pstack/claude-code/skills/make-bot-ui/SKILL.md
+--- a/harness/pstack/claude-code/skills/make-bot-ui/SKILL.md
++++ b/harness/pstack/claude-code/skills/make-bot-ui/SKILL.md
+@@ -1,5 +1,5 @@
+ ---
+-name: Make Bot UI
++name: make-bot-ui
+ description: >-
+   Use when building a custom UI (page, dashboard, buttons) that should wake a
+   Grok Bot over a webhook, when the user must provide a webhook sender key, or
+diff --git a/harness/pstack/claude-code/skills/poteto-mode/SKILL.md b/harness/pstack/claude-code/skills/poteto-mode/SKILL.md
+--- a/harness/pstack/claude-code/skills/poteto-mode/SKILL.md
++++ b/harness/pstack/claude-code/skills/poteto-mode/SKILL.md
+@@ -1,5 +1,5 @@
+ ---
+-name: Poteto Mode
++name: poteto-mode
+ description: poteto's agent style for concise, detailed responses, deliberate subagents, unslopped prose, simple code, and verified work. Use for poteto, /poteto-mode, or requests to work in this style.
+ disable-model-invocation: true
+ icon: crown

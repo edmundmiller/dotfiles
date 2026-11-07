@@ -31,9 +31,28 @@ Nix links the pinned upstream repository at `~/.claude/pstack-marketplace`.
 The settings bootstrap registers its absolute path as the `cursor-plugins`
 marketplace, disables marketplace auto-updates, and enables
 `pstack@cursor-plugins`. This loads upstream's generated Claude Code adapter.
+A local source patch corrects the adapter's `make-bot-ui` and `poteto-mode`
+frontmatter names to match their directories. The upstream pin and skill bodies
+remain unchanged. The patch applies during the Nix build, never to Claude's cache.
 A GitHub marketplace `ref` cannot pin a commit because Claude clones it as a
 branch or tag. The local Nix source avoids that limitation. After an
 authorized host rebuild, start a fresh session and invoke `/pstack:poteto-mode`.
+For an already installed plugin, refresh the activated source with
+`claude plugin marketplace update cursor-plugins`, then
+`claude plugin update pstack@cursor-plugins`, and restart the session.
+When a source patch keeps the plugin version unchanged, these commands can leave
+the cached files unchanged. This occurred with version `0.15.25`. Reinstall
+through Claude's CLI while preserving the plugin's persistent data:
+
+```sh
+claude plugin uninstall --scope user --keep-data pstack@cursor-plugins
+claude plugin install --scope user pstack@cursor-plugins
+```
+
+Restart Claude Code after the reinstall. If Amp also discovers these plugin
+skills, use Amp's `reload_skills` tool and confirm that `make-bot-ui` and
+`poteto-mode` load without invalid-name errors. Do not edit the plugin cache.
+
 Use `/pstack:poteto-help` for upstream help. If Claude reports the plugin as
 not installed, run `/plugin install pstack@cursor-plugins` in that session.
 

@@ -80,7 +80,11 @@ in
         ".claude/hooks/session-budget".source = "${sessionBudgetHook}/bin/claude-session-budget";
       }
       // optionalAttrs cfg.pstack.enable {
-        ".claude/pstack-marketplace".source = inputs.skills-catalog.inputs.pstack.outPath;
+        ".claude/pstack-marketplace".source = pkgs.applyPatches {
+          name = "pstack-marketplace";
+          src = inputs.skills-catalog.inputs.pstack.outPath;
+          patches = [ ../../../skills/overlays/pstack/claude-skill-names.patch ];
+        };
       };
 
     home-manager.users.${config.user.name} =
