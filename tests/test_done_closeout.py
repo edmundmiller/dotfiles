@@ -436,6 +436,33 @@ class DoneCloseoutTest(unittest.TestCase):
                 set(git(remote, "ls-tree", "-r", "--name-only", "main").splitlines()),
             )
 
+    def test_publish_clean_reports_conflicting_paths_without_publishing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, remote = self.init_repo(root)
+            task, _ = self.create_task_revision(repo, root)
+            (task / "base.txt").write_text("task edit\n")
+            git(task, "commit", "-am", "conflicting task edit")
+            revision = git(task, "rev-parse", "HEAD")
+            (repo / "base.txt").write_text("published edit\n")
+            git(repo, "commit", "-am", "concurrent edit")
+            git(repo, "push", "origin", "main")
+            remote_before = git(remote, "rev-parse", "main")
+            (repo / "untracked.txt").write_text("preserve source dirt\n")
+            before = self.source_state(repo)
+
+            result = self.run_publish_clean(
+                "--source-repo", str(repo), "--task-revision", revision, cwd=repo
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "blocked")
+            self.assertIn("base.txt", payload["error"])
+            self.assertIn(revision, payload["error"])
+            self.assertEqual(git(remote, "rev-parse", "main"), remote_before)
+            self.assertEqual(self.source_state(repo), before)
+
     def test_publish_clean_leaves_dirty_source_untouched(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

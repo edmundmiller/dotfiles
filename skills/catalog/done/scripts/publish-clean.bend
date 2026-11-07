@@ -98,14 +98,23 @@ def fetch_revisions(revisions: List<&2, String>, +clone: String, +source: String
         fetched : String <- C.git_output(clone, ["fetch", "--no-tags", source, revision])
         fetch_revisions(tail, clone, source)
 
-def replay_one(unlanded: Bool, clone: String, revision: String) -> C.Task(Unit):
+def replay_result(success: Bool, clone: String, revision: String) -> C.Task(Unit):
+  match success:
+    case True{}:
+      C.Task.pure(Unit, Unit{})
+    case False{}:
+      do C.Task<Unit>:
+        paths : String <- C.git_output(clone, ["diff", "--name-only", "--diff-filter=U"])
+        C.Task.fail(Unit, "git cherry-pick failed for " ++ revision ++ "; conflicting paths: " ++ paths)
+
+def replay_one(unlanded: Bool, +clone: String, +revision: String) -> C.Task(Unit):
   match unlanded:
     case False{}:
       C.Task.pure(Unit, Unit{})
     case True{}:
-      do C.Task<Unit>:
-        picked : String <- C.git_output(clone, ["cherry-pick", "--no-edit", revision])
-        return Unit{}
+      do IO<Result<&1, &1, String, Unit>>:
+        picked : C.Command <- C.git(clone, ["cherry-pick", "--no-edit", revision])
+        replay_result(C.succeeded(picked), clone, revision)
 
 def replay(items: List<&2, C.Entry>, +clone: String) -> C.Task(Unit):
   match items:
