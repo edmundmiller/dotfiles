@@ -63,12 +63,13 @@
     "git:github.com/earendil-works/pi-review",
     // Shared /goal and /sisyphus workflow with persistent progress and optional auditing.
     "npm:pi-goal-x",
-    // Nix-pinned and patched pstack. Keep canonical shared skills.
+    // Native delegation stays independent of the pinned upstream pstack content.
     {
-      "source": "~/.pi/agent/packages/pstack-pi",
-      "extensions": ["extensions/pstack/index.ts"],
-      "skills": ["skills/*", "!skills/tdd", "!skills/teach", "!skills/unslop"],
+      "source": "npm:pi-subagents@0.86.0",
+      "skills": [],
     },
+    // The generated package manifest excludes canonical shared skill copies.
+    "~/.pi/agent/packages/pistack",
     // Multi-edit extension (edits[]) from gist (SSH git source)
     {
       "source": "git:git@gist.github.com:30c35e985b5ca59f8e6f69a66520d487.git",

@@ -376,7 +376,7 @@ in
             sessionSearchFiles
             isDarwin
             ;
-          piPstack = pkgs.my.pstack-pi;
+          piPstack = pkgs.my.pistack;
           inherit (settings) piSettingsValidated;
         };
 

@@ -26,7 +26,7 @@ promptLinks
     force = true;
   };
   ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
-  ".pi/agent/packages/pstack-pi".source = piPstack;
+  ".pi/agent/packages/pistack".source = piPstack;
 }
 // sessionSearchFiles
 // (
