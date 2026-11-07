@@ -11,7 +11,7 @@
   makeWrapper,
   node-gyp,
   nodejs_22,
-  pnpm_10,
+  pnpm_11,
   pnpmConfigHook,
   python313,
   removeReferencesTo,
@@ -43,6 +43,11 @@ let
       openwiki_executable="''${OPENWIKI_SCHEDULE_EXECUTABLE:-/run/current-system/sw/bin/openwiki}"
       branch="automation/openwiki"
 
+      if [ "''${OPENWIKI_SCHEDULE_PUBLISH:-0}" != "1" ]; then
+        echo "openwiki-scheduled-ingestion: publication requires OPENWIKI_SCHEDULE_PUBLISH=1" >&2
+        exit 78
+      fi
+
       mkdir -p "$(dirname "$repo")"
       if ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
         git clone --branch main "$remote" "$repo"
@@ -59,22 +64,20 @@ let
         exit 75
       fi
       if [ -n "$(git -C "$repo" status --porcelain=v1)" ]; then
-        recovery_branch="automation/openwiki-recovery-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-        git -C "$repo" switch -c "$recovery_branch"
-        git -C "$repo" add --all
-        git -C "$repo" commit --no-gpg-sign --no-verify \
-          -m "chore(openwiki): preserve interrupted scheduled run"
-        echo "openwiki-scheduled-ingestion: preserved interrupted run on $recovery_branch" >&2
-        git -C "$repo" fetch origin main
-        git -C "$repo" switch -C "$branch" origin/main
+        echo "openwiki-scheduled-ingestion: preserved dirty worktree; review it before retrying" >&2
+        exit 75
       fi
-
-      if git -C "$repo" show-ref --verify --quiet "refs/heads/$branch"; then
-        git -C "$repo" switch "$branch"
-      else
-        git -C "$repo" fetch origin main
-        git -C "$repo" switch -c "$branch" origin/main
+      if [ "$(git -C "$repo" branch --show-current)" != "$branch" ]; then
+        echo "openwiki-scheduled-ingestion: unexpected branch; refusing to switch existing work" >&2
+        exit 75
       fi
+      git -C "$repo" fetch origin main
+      if ! git -C "$repo" merge-base --is-ancestor HEAD origin/main; then
+        echo "openwiki-scheduled-ingestion: preserved unpublished commits; review them before retrying" >&2
+        exit 75
+      fi
+      git -C "$repo" merge --ff-only origin/main
+      run_base="$(git -C "$repo" rev-parse HEAD)"
 
       publish() {
         for attempt in 1 2 3 4 5; do
@@ -107,16 +110,31 @@ let
         return 75
       }
 
-      publish
-      git -C "$repo" switch -C "$branch" origin/main
       export OPENWIKI_WIKI_DIR="$repo/04_Resources"
       cd "$repo"
-      set +e
-      "$openwiki_executable" ingest all --scheduled --print
-      ingestion_status=$?
-      set -e
+      ingestion_status=0
+      "$openwiki_executable" ingest all --scheduled --print || ingestion_status=$?
+      if [ "$ingestion_status" -ne 0 ]; then
+        echo "openwiki-scheduled-ingestion: ingestion failed; preserving local output without publication" >&2
+        exit "$ingestion_status"
+      fi
+      if [ -n "$(git status --porcelain=v1)" ]; then
+        echo "openwiki-scheduled-ingestion: uncommitted output; refusing publication" >&2
+        exit 75
+      fi
+      if [ "$(git branch --show-current)" != "$branch" ] ||
+         ! git merge-base --is-ancestor "$run_base" HEAD; then
+        echo "openwiki-scheduled-ingestion: branch changed during ingestion; refusing publication" >&2
+        exit 75
+      fi
+      if [ "$(git rev-parse HEAD)" = "$run_base" ]; then
+        exit 0
+      fi
+      if [ -n "$(git diff --name-only "$run_base" HEAD -- . ':!04_Resources')" ]; then
+        echo "openwiki-scheduled-ingestion: changes outside wiki; refusing publication" >&2
+        exit 75
+      fi
       publish
-      exit "$ingestion_status"
     '';
   };
 
@@ -267,29 +285,20 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "openwiki";
-  version = "0.2.0";
+  version = "0.9.0";
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "openwiki";
-    rev = "d4e94ab513ab13908c6b61346b23dc17bbd59b1f";
-    hash = "sha256-jble+grUAwAV8+E8EfuGZ86nDwOmwVOuzV2pogplbdY=";
+    rev = "261b9ffa57493f9768d6e565d444194c7ee5cadc";
+    hash = "sha256-Jt1Qv9rLZnDxYhfXYIRPlpKvLKCM24QytOigef+TXlA=";
   };
 
   patches = [
-    ./patches/0001-configurable-personal-wiki-directory.patch
-    ./patches/0002-imessage-connector.patch
-    ./patches/0003-read-only-skills-regression.patch
-    ./patches/0004-writable-skill-replacement.patch
-    ./patches/0005-evlog-ingestion-events.patch
-    ./patches/0006-links-connector.patch
-    ./patches/0007-discrawl-connector.patch
-    ./patches/0008-rss-connector-regression.patch
-    ./patches/0009-rss-connector.patch
-    ./patches/0010-relative-raw-tool-paths.patch
-    ./patches/0011-skip-personal-tweet-index.patch
-    ./patches/0012-git-provenance.patch
-    ./patches/0013-scheduled-git-mutation-lane.patch
+    ./patches/0101-openwiki-0.9-local-connectors.patch
+    ./patches/0102-openwiki-0.9-git-ingestion.patch
+    ./patches/0103-openwiki-0.9-personal-safety.patch
+    ./patches/0104-openwiki-personal-ingestion-regressions.patch
   ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -299,16 +308,16 @@ stdenv.mkDerivation (finalAttrs: {
       src
       version
       ;
-    pnpm = pnpm_10;
-    fetcherVersion = 3;
-    hash = "sha256-g2gxm4iBRcnKfXLwZJ326IGbEBRhcXE8iXakh3dU4cY=";
+    pnpm = pnpm_11;
+    fetcherVersion = 4;
+    hash = "sha256-ooju0QHGl4cIt8KdOFci8UXXOvCcplZtKMV2dNvg5Ho=";
   };
 
   nativeBuildInputs = [
     makeWrapper
     nodejs_22
     node-gyp
-    pnpm_10
+    pnpm_11
     pnpmConfigHook
     python313
     removeReferencesTo
@@ -325,7 +334,6 @@ stdenv.mkDerivation (finalAttrs: {
     popd
 
     pnpm rebuild esbuild
-    node scripts/patch-deepagents-path-guard.mjs
     pnpm build
     runHook postBuild
   '';
@@ -334,13 +342,15 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
 
     mkdir -p "$out/lib/openwiki" "$out/bin"
-    cp -r dist node_modules package.json skills README.md LICENSE "$out/lib/openwiki/"
+    cp -r dist integrations node_modules package.json skills README.md LICENSE "$out/lib/openwiki/"
     ${lib.optionalString stdenv.hostPlatform.isDarwin ''
       ln -s ${lib.getExe openwikiLaunchdLauncher} "$out/bin/openwiki-launchd-launcher"
       ln -s ${lib.getExe openwikiScheduledIngestion} "$out/bin/openwiki-scheduled-ingestion"
     ''}
     makeWrapper ${lib.getExe nodejs_22} "$out/bin/openwiki" \
-      --add-flags "$out/lib/openwiki/dist/cli.js" \
+      --add-flags "$out/lib/openwiki/dist/cli/cli.js" \
+      --set-default OPENWIKI_TELEMETRY_DISABLED 1 \
+      --set-default DO_NOT_TRACK 1 \
       --prefix PATH : ${
         lib.makeBinPath [
           git
@@ -361,12 +371,26 @@ stdenv.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
+  # The pnpm tree contains many executable scripts; stripping each one is
+  # expensive and does not affect runtime correctness.
+  dontStrip = true;
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
+    test -f "$out/lib/openwiki/integrations/openwiki/SKILL.md"
+    test -f "$out/lib/openwiki/dist/integrations/pi/openwiki.js"
     test -f "$out/lib/openwiki/skills/write-connector/SKILL.md"
-    test -f "$out/lib/openwiki/skills/migrate-wiki-to-okf/SKILL.md"
+    test -f "$out/lib/openwiki/skills/mermaid-diagrams/SKILL.md"
     test -f "$out/lib/openwiki/node_modules/fast-xml-parser/package.json"
+    ${lib.optionalString stdenv.hostPlatform.isDarwin ''
+      PATH=${
+        lib.makeBinPath [
+          git
+          git-lfs
+        ]
+      }:$PATH \
+        bash ${./test-scheduled-ingestion-recovery.sh} "$out/bin/openwiki-scheduled-ingestion"
+    ''}
     runHook postInstallCheck
   '';
 
