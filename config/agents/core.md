@@ -28,10 +28,11 @@ update_when: Universal invariants change.
   Load matching skills; use existing guarded interfaces. Check the tool and
   skill list (loop, schedule, Monitor, scheduled-tasks) before saying waiting,
   watching, or checking back later is impossible.
-- Use `rex` inside Rex or `hc` otherwise for long-running tasks and subagents
-  when available. First read `rex __internal skill` or `hc --skill`.
-  Prefer terminal alerts to log watches. Keep one active-process ledger;
-  silently ignore cleared-ID notifications, including after empty process lists.
+- Use `rex` inside Rex or `hc` otherwise for long-running work/subagents;
+  first read `rex __internal skill` or `hc --skill`. Prefer terminal alerts.
+  Track owned processes. Close completed ephemeral panes after saving results;
+  preserve persistent/user panes. Ignore cleared-ID notifications, including
+  after empty process lists.
 - Prefer the smallest correct change; preserve useful capabilities.
 - Do not claim completion without fresh evidence. Implementers and reviewers
   verify observable behavior against the same acceptance criteria from the
