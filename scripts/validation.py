@@ -81,10 +81,13 @@ CHECKS = {
     ],
     "done-delivery-tests": [
         "skills/catalog/done/*",
+        "packages/bend/*",
         "scripts/check_done_bundle.py",
         "mise-tasks/skills/amp-stage-done",
+        "tests/done_bend.py",
         "tests/test_done_closeout.py",
         "tests/test_done_delivery.py",
+        "tests/test_done_skill.py",
     ],
     "agent-docs-contract": [
         "AGENT_WORKFLOW.md",

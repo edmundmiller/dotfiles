@@ -30,7 +30,7 @@ Clean only the recorded task workspace and task-owned branches after proof.
 Remove no dirty workspace. Before removing any candidate, run:
 
 ```bash
-bash "${HOME}/.agents/skills/done/scripts/verify-workspace-cleanup.sh" \
+bend "${HOME}/.agents/skills/done/scripts/verify-workspace-cleanup.bend" -- \
   "$active_directory" "$candidate_path"
 ```
 
@@ -43,7 +43,7 @@ For Herdr, require `HERDR_ENV=1`, `HERDR_WORKSPACE_ID`, clean recorded task
 root, and structured ownership proof, then make teardown the last tool action:
 
 ```bash
-bash "${HOME}/.agents/skills/done/scripts/teardown-herdr-worktree.sh" "$task_root"
+bend "${HOME}/.agents/skills/done/scripts/teardown-herdr-worktree.bend" -- "$task_root"
 ```
 
 The Herdr teardown must remove the owned worktree without `--force`.
