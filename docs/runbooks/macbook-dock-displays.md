@@ -49,12 +49,20 @@ The raw local file is `.amp/in/display-diagnostics/failed-20261107-103132.txt`.
   of matching display utility processes were unchanged. The battery was charging.
 
 This capture does not support a slower upstream dock link as the explanation.
-The changed laptop port is a candidate to test, not proof of a defective port.
-After preserving the failure, move only the dock's upstream cable back to the
-previously working laptop port and capture again. Keep the other cables, monitor
-inputs, and lid state unchanged. Recovery would still need a control: reconnecting
-to the failing port also renegotiates the link and might recover independently
-of which port is used. No recovery result has been recorded yet.
+
+At 17:15 America/Chicago, after the user reported that switching the bus restored
+the displays, a new capture confirmed the TS5 back on Bus 1 / receptacle 2 at
+40 Gb/s. Both displays matched the original working modes, including the LG's
+portrait 2160 × 3840 at 60 Hz and 270° rotation. The lid remained closed and AC
+power was connected. The raw local file is
+`.amp/in/display-diagnostics/recovered-20261107-171505.txt`.
+
+Moving the dock back to the previously working laptop port is an observed
+workaround for this occurrence, not proof that the other port is defective.
+Reconnecting also renegotiates the link. If the failure recurs, capture it first,
+then try reconnecting to the same failing port as a control before changing
+ports. Keep other cables, monitor inputs, and lid state unchanged. Do not
+deliberately interrupt the restored setup just to test this distinction.
 
 ## Capture a failure without changing the connection
 
