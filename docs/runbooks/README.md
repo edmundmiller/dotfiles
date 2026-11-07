@@ -12,12 +12,13 @@ Operational runbooks for the dotfiles infrastructure.
 
 ## Index
 
-| Runbook                                                            | When to use                                                       |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [rebuild-failure.md](rebuild-failure.md)                           | `darwin-rebuild` or `nixos-rebuild` fails                         |
-| [deploy-nuc.md](deploy-nuc.md)                                     | Deploying to the NUC server via deploy-rs                         |
-| [meshify-bios-update.md](meshify-bios-update.md)                   | Updating Meshify's ASUS PRIME X570-P BIOS locally                 |
-| [renovate.md](renovate.md)                                         | Renovate is quiet, noisy, or its Action is failing                |
-| [secret-rotation.md](secret-rotation.md)                           | Rotating secrets managed by agenix                                |
-| [remove-installer-nix-profile.md](remove-installer-nix-profile.md) | `nix` resolves to a stale installer profile instead of system nix |
-| [raycast-auto-update.md](raycast-auto-update.md)                   | Raycast updates fail or repeatedly offer Install Manually         |
+| Runbook                                                            | When to use                                                                |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| [rebuild-failure.md](rebuild-failure.md)                           | `darwin-rebuild` or `nixos-rebuild` fails                                  |
+| [deploy-nuc.md](deploy-nuc.md)                                     | Deploying to the NUC server via deploy-rs                                  |
+| [meshify-bios-update.md](meshify-bios-update.md)                   | Updating Meshify's ASUS PRIME X570-P BIOS locally                          |
+| [macbook-dock-displays.md](macbook-dock-displays.md)               | Comparing a failed MacBook dock/display connection with a working baseline |
+| [renovate.md](renovate.md)                                         | Renovate is quiet, noisy, or its Action is failing                         |
+| [secret-rotation.md](secret-rotation.md)                           | Rotating secrets managed by agenix                                         |
+| [remove-installer-nix-profile.md](remove-installer-nix-profile.md) | `nix` resolves to a stale installer profile instead of system nix          |
+| [raycast-auto-update.md](raycast-auto-update.md)                   | Raycast updates fail or repeatedly offer Install Manually                  |
