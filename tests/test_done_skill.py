@@ -2,17 +2,16 @@ from pathlib import Path
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
+from tests.done_bend import binary
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills/catalog/done/SKILL.md"
 REFERENCES = ROOT / "skills/catalog/done/references"
 FLAKE = ROOT / "skills/flake.nix"
-VERIFIER = ROOT / "skills/catalog/done/scripts/verify-landing.sh"
-JJ_VERIFIER = ROOT / "skills/catalog/done/scripts/verify-jj-landing.sh"
-HERDR_TEARDOWN = ROOT / "skills/catalog/done/scripts/teardown-herdr-worktree.sh"
 
 
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -25,6 +24,53 @@ def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class DoneSkillContractTest(unittest.TestCase):
+    def test_bend_laws(self) -> None:
+        result = subprocess.run(
+            ["bend", "PROOF.bend"], cwd=SKILL.parent, capture_output=True, text=True
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ALL PROOFS CHECK", result.stdout)
+
+    def test_cleanup_guard_resolves_paths_and_preserves_active_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = root / "task"
+            active = candidate / "nested"
+            active.mkdir(parents=True)
+            sibling = root / "task-other"
+            sibling.mkdir()
+            alias = root / "alias"
+            alias.symlink_to(candidate, target_is_directory=True)
+            whitespace_cases = []
+            for name in ("task ", "task\n", "task \n\n"):
+                target = root / name
+                nested = target / "nested"
+                nested.mkdir(parents=True)
+                whitespace_cases.extend(((nested, target, 1), (nested, candidate, 0)))
+            cases = (
+                (active, candidate, 1),
+                (active, active, 1),
+                (active, alias, 1),
+                (active, sibling, 0),
+                (active, Path("/"), 2),
+                (root / "missing", sibling, 2),
+                (active, root / "missing", 2),
+                *whitespace_cases,
+            )
+            for current, target, code in cases:
+                with self.subTest(current=current, target=target):
+                    result = subprocess.run(
+                        [binary("verify-workspace-cleanup"), str(current), str(target)],
+                        cwd=active,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(
+                        result.returncode, code, result.stdout + result.stderr
+                    )
+                    self.assertTrue(active.is_dir())
+                    self.assertTrue(sibling.is_dir())
+
     def done_contract(self) -> str:
         references = "\n".join(
             path.read_text() for path in sorted(REFERENCES.glob("*.md"))
@@ -53,7 +99,7 @@ class DoneSkillContractTest(unittest.TestCase):
         for phrase in (
             "HERDR_ENV",
             "HERDR_WORKSPACE_ID",
-            "teardown-herdr-worktree.sh",
+            "teardown-herdr-worktree.bend",
             "CODEX_THREAD_ID",
             "set_thread_archived",
             "without `--force`",
@@ -61,12 +107,6 @@ class DoneSkillContractTest(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
-
-    def test_herdr_teardown_streams_provenance_without_a_here_string(self) -> None:
-        teardown = HERDR_TEARDOWN.read_text()
-
-        self.assertNotIn('<<<"$worktree_json"', teardown)
-        self.assertIn('printf \'%s\' "$worktree_json" |', teardown)
 
     def test_dirty_default_attempts_safe_fast_forward_before_blocking(self) -> None:
         skill = self.done_contract()
@@ -291,8 +331,8 @@ class DoneSkillContractTest(unittest.TestCase):
             git(repo, "worktree", "add", "-qb", "task", str(worktree))
 
             mock_herdr.write_text(
-                """#!/usr/bin/env python3
-import json
+                f"#!{sys.executable}\n"
+                """import json
 import os
 from pathlib import Path
 import sys
@@ -356,7 +396,7 @@ else:
             )
 
             outside_herdr = subprocess.run(
-                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                [binary("teardown-herdr-worktree"), str(worktree)],
                 cwd=worktree,
                 env=base_env,
                 capture_output=True,
@@ -371,7 +411,7 @@ else:
                 "MOCK_WORKTREE_PATH": str(wrong_worktree),
             }
             wrong_provenance = subprocess.run(
-                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                [binary("teardown-herdr-worktree"), str(worktree)],
                 cwd=worktree,
                 env=herdr_env,
                 capture_output=True,
@@ -385,7 +425,7 @@ else:
             dirty_file = worktree / "dirty.txt"
             dirty_file.write_text("dirty\n")
             dirty = subprocess.run(
-                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                [binary("teardown-herdr-worktree"), str(worktree)],
                 cwd=worktree,
                 env=herdr_env,
                 capture_output=True,
@@ -397,7 +437,7 @@ else:
             dirty_file.unlink()
 
             safe = subprocess.run(
-                ["bash", str(HERDR_TEARDOWN), str(worktree)],
+                [binary("teardown-herdr-worktree"), str(worktree)],
                 cwd=worktree,
                 env=herdr_env,
                 capture_output=True,
@@ -437,7 +477,7 @@ else:
             feature_tip = git(feature, "rev-parse", "HEAD").stdout.strip()
 
             before = subprocess.run(
-                ["bash", str(VERIFIER), feature_tip, "main", "origin"],
+                [binary("verify-landing"), feature_tip, "main", "origin"],
                 cwd=feature,
                 capture_output=True,
                 text=True,
@@ -447,7 +487,7 @@ else:
             git(repo, "merge", "--ff-only", "feature")
             git(repo, "push", "origin", "main")
             after = subprocess.run(
-                ["bash", str(VERIFIER), feature_tip, "main", "origin"],
+                [binary("verify-landing"), feature_tip, "main", "origin"],
                 cwd=feature,
                 capture_output=True,
                 text=True,
@@ -477,6 +517,13 @@ else:
                 capture_output=True,
                 text=True,
             )
+            for key, value in (
+                ("user.name", "Done Skill Test"),
+                ("user.email", "done-skill@example.invalid"),
+            ):
+                subprocess.run(
+                    ["jj", "config", "set", "--repo", key, value], cwd=repo, check=True
+                )
             subprocess.run(
                 ["jj", "bookmark", "track", "main@origin"],
                 cwd=repo,
@@ -512,7 +559,7 @@ else:
             ).stdout.strip()
 
             before = subprocess.run(
-                ["bash", str(JJ_VERIFIER), task_tip, "main", "origin"],
+                [binary("verify-jj-landing"), task_tip, "main", "origin"],
                 cwd=workspace,
                 capture_output=True,
                 text=True,
@@ -533,7 +580,7 @@ else:
                 ["jj", "git", "fetch", "--remote", "origin"], cwd=workspace, check=True
             )
             after = subprocess.run(
-                ["bash", str(JJ_VERIFIER), task_tip, "main", "origin"],
+                [binary("verify-jj-landing"), task_tip, "main", "origin"],
                 cwd=workspace,
                 capture_output=True,
                 text=True,

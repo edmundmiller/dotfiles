@@ -1269,8 +1269,11 @@
                   {
                     nativeBuildInputs = [
                       pkgs.bash
+                      pkgs.coreutils
                       pkgs.git
+                      pkgs.jq
                       pkgs.jujutsu
+                      self.packages.${system}.bend
                       pkgs.python3
                     ];
                   }
@@ -1285,7 +1288,7 @@
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
-                      tests.test_done_closeout tests.test_done_delivery
+                      tests.test_done_closeout tests.test_done_delivery tests.test_done_skill
                     touch $out
                   '';
 

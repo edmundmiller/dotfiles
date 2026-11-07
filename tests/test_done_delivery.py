@@ -40,8 +40,8 @@ class DoneDeliveryTest(unittest.TestCase):
                 (bundle / "references/git.md").read_bytes(),
                 (SOURCE / "references/git.md").read_bytes(),
             )
-            self.assertIn('"scripts/closeout.py"', result.stdout)
-            self.assertIn('"scripts/publish-clean.py"', result.stdout)
+            self.assertIn('"scripts/closeout.bend"', result.stdout)
+            self.assertIn('"scripts/publish-clean.bend"', result.stdout)
 
     @unittest.skipUnless(shutil.which("jj"), "working-jj parity requires jj")
     def test_staging_removes_obsolete_files_in_clones_and_worktrees(self) -> None:
@@ -79,8 +79,8 @@ class DoneDeliveryTest(unittest.TestCase):
                     "done/obsolete.txt",
                 )
                 self.assertEqual(
-                    (target / "done/scripts/publish-clean.py").read_bytes(),
-                    (SOURCE / "scripts/publish-clean.py").read_bytes(),
+                    (target / "done/scripts/publish-clean.bend").read_bytes(),
+                    (SOURCE / "scripts/publish-clean.bend").read_bytes(),
                 )
 
     @unittest.skipUnless(shutil.which("jj"), "working-jj parity requires jj")
@@ -170,8 +170,8 @@ os.execv({shutil.which("mv")!r}, [{shutil.which("mv")!r}, *sys.argv[1:]])
 
     def test_rejects_stale_missing_and_extra_bundle_files(self) -> None:
         for relative, contents in (
-            ("scripts/closeout.py", "stale detector\n"),
-            ("scripts/publish-clean.py", "stale publisher\n"),
+            ("scripts/closeout.bend", "stale detector\n"),
+            ("scripts/publish-clean.bend", "stale publisher\n"),
             ("SKILL.md", None),
             ("obsolete.txt", "old resource\n"),
         ):

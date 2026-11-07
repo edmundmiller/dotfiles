@@ -2,7 +2,7 @@
 purpose: Land explicit Git task revisions without publishing or damaging unrelated work.
 applies_to: Done closeout after jj backend detection fails.
 entrypoint: Snapshot first, then classify explicit task revisions against the fetched default.
-verification: verify-landing.sh plus authoritative remote-tip equality.
+verification: verify-landing.bend plus authoritative remote-tip equality.
 update_when: Git reconciliation, dirty-checkout, or proof policy changes.
 ---
 
@@ -75,7 +75,7 @@ checkout contains dirt that must remain byte-for-byte untouched, an explicitly
 authorized caller may use the clean publication helper:
 
 ```bash
-python3 "${HOME}/.agents/skills/done/scripts/publish-clean.py" \
+bend "${HOME}/.agents/skills/done/scripts/publish-clean.bend" -- \
   --source-repo "$source_repo" \
   --task-revision "$task_revision_one" \
   --task-revision "$task_revision_two"
@@ -89,8 +89,15 @@ queries authoritative `git ls-remote --symref <url> HEAD`; cached
 authoritative default into a temporary directory, fetches the explicit task
 objects from the source repository, skips exact or patch-equivalent revisions,
 and cherry-picks only unlanded revisions in the order supplied. It pushes with
-an ordinary push without force. One rejection triggers a fetch,
-reclassification, replay, and one retry; a second rejection is `Blocked`.
+an ordinary push without force. One non-fast-forward rejection triggers a
+fetch, reclassification, replay, and one retry. Policy rejection never retries.
+
+Before each push, the helper reads GitHub rulesets and classic protection,
+including required checks for the candidate commit. Required review or
+unresolved policy blocks direct publication. Independent policy reads run
+concurrently; mutations remain sequential. A completed push with a bypass
+warning returns `published: true`, `policy.compliant: false`, and a nonzero
+exit code. Lost acknowledgements are reconciled before any retry.
 
 It then fetches the default again and checks its tip against
 `git ls-remote`. Results are structured JSON. The source checkout is never
@@ -105,7 +112,7 @@ Prefer fast-forward integration. Push the default branch normally, fetch again,
 then run:
 
 ```bash
-bash "${HOME}/.agents/skills/done/scripts/verify-landing.sh" \
+bend "${HOME}/.agents/skills/done/scripts/verify-landing.bend" -- \
   "$integration_tip" "$default_branch" "$remote"
 ```
 

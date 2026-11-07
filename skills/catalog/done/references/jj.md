@@ -2,7 +2,7 @@
 purpose: Land explicit jj changes while preserving other workspaces and bookmarks.
 applies_to: Done closeout when jj root detection succeeds.
 entrypoint: Snapshot the current workspace and stable task change IDs.
-verification: verify-jj-landing.sh against local, tracked, and authoritative tips.
+verification: verify-jj-landing.bend against local, tracked, and authoritative tips.
 update_when: jj workspace, bookmark, signing, or publication behavior changes.
 ---
 
@@ -36,7 +36,7 @@ the same working-copy commit. Never use repository-wide `jj undo` or
 6. Prove by stable change ID because signing may rewrite commit IDs:
 
    ```bash
-   bash "${HOME}/.agents/skills/done/scripts/verify-jj-landing.sh" \
+   bend "${HOME}/.agents/skills/done/scripts/verify-jj-landing.bend" -- \
      "$task_change_id" "$default_bookmark" "$remote"
    ```
 
