@@ -9,9 +9,11 @@ update_when: Task discovery, shell integration, or migration behavior changes.
 # Project-local commands with mise
 
 Nix installs mise, Nushell, and the system toolchain. Mise owns project
-environment variables and discovers executable scripts in `mise-tasks/`.
+environment variables and discovers executable scripts in `bin/hey.d/`.
 Each Nu script owns its command's typed `main` and `#MISE` metadata.
-`scripts/nu/` contains shared deployment, rebuild, and benchmark logic.
+`mise.toml` sets `[task_config].includes = ["bin/hey.d"]`.
+`bin/hey.d/.lib/` contains shared deployment, rebuild, and benchmark logic.
+Mise skips dot-prefixed subdirectories, so helpers are never discovered as tasks.
 There is no global task catalog or second dispatcher.
 
 Related tasks live in subdirectories. Mise turns the path into a colon-separated
@@ -20,7 +22,7 @@ entrypoint: `nuc/_default.nu` is `nuc`. Common commands such as `check`, `dev`,
 and `rebuild` stay at the root. For example:
 
 ```text
-mise-tasks/
+bin/hey.d/
   check
   dev
   rebuild.nu
@@ -83,7 +85,8 @@ before relying on their automatic environments. Hosts without mise enabled
 can still use the legacy direnv module.
 
 For another project, put its environment in its own `mise.toml` and its commands
-in its own `mise-tasks/`. Use `[env]` values for exports, `_.file` for dotenv,
+in its own `bin/hey.d/`, with `[task_config].includes = ["bin/hey.d"]`.
+Use `[env]` values for exports, `_.file` for dotenv,
 and `_.path` for PATH additions. Review shell code rather than blindly importing
 `.envrc`; `use flake` is not a mise directive. Keep Nix development shells
 explicit when their setup has side effects. See the

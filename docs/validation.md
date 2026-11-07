@@ -9,7 +9,7 @@ update_when: Validation routing, check ownership, or CI jobs change.
 # Start with `hey check`
 
 `mise run check` is the primary task; `hey check` is its compatibility spelling.
-Both run `mise-tasks/check`, which delegates to the same Python runner as CI.
+Both run `bin/hey.d/check`, which delegates to the same Python runner as CI.
 Run them inside the checkout, or use `mise --cd <checkout> run check`.
 
 | Command                            | Scope                                                                              |

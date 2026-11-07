@@ -4,3 +4,6 @@ min_version = "2026.7.5"
 [env]
 BEADS_NO_DAEMON = "1"
 _.path = ["bin"]
+
+[task_config]
+includes = ["bin/hey.d"]

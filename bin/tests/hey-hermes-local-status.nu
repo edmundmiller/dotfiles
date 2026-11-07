@@ -1,7 +1,7 @@
 #!/usr/bin/env nu
 
 use std/assert
-use ../../scripts/nu/hermes.nu *
+use ../hey.d/.lib/hermes.nu *
 
 let legacy = '"PID" = 1293;'
 let current = '✓ Gateway is supervised by launchd (PID 1293)'

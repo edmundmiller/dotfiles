@@ -1,7 +1,7 @@
 #!/usr/bin/env nu
 
 use std/assert
-use ../../scripts/nu/common.nu *
+use ../hey.d/.lib/common.nu *
 
 # This test lives in bin/tests/, so repo root is two levels up.
 let expected_repo_root = ($env.FILE_PWD | path join ".." ".." | path expand)
