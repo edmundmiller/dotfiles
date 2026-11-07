@@ -10,6 +10,14 @@ rex.host({
   icon = "globe",
 })
 
+-- Stable identity shared by the Mac configs for the NAS server.
+rex.host({
+  id = "host:ca157b92-36d0-42f3-8f95-e8801d106c7a",
+  label = "unas",
+  endpoint = "https://unas-rex.cinnamon-rooster.ts.net",
+  icon = "globe",
+})
+
 -- Ctrl+C starts a sequence; press it twice to interrupt the foreground program.
 rex.bind("ctrl+c>ctrl+c", "pane.send_key", { key = "ctrl+c" })
 

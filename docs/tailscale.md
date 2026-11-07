@@ -76,12 +76,14 @@ Tailscale still connects browsers and other applications to tailnet services.
 The macOS GUI app can provide that network connection alongside Rex. Hosting
 Tailscale SSH instead requires the open-source `tailscaled` variant.
 
-Verified on 2026-10-29:
+The [iOS connection table](#add-servers-in-rex-on-ios) lists the server addresses
+and access policies. On 2026-11-06, the Mac reached both NUC and NAS through Rex,
+and its own Rex node reported HTTPS available. NUC also authenticated to NAS as
+`tag:nuc` and ran a terminal as `emiller` in `/home/emiller`.
 
-| Host           | Rex address                                          | Access                                                                  |
-| -------------- | ---------------------------------------------------- | ----------------------------------------------------------------------- |
-| NUC            | `https://nuc-rex.cinnamon-rooster.ts.net`            | Runs as `emiller`; only the Tailscale identity's owner is allowed       |
-| MacTraitor Pro | `https://mactraitor-pro-rex.cinnamon-rooster.ts.net` | Embedded Tailscale node running with HTTPS available; owner-only access |
+NAS permits tailnet peers allowed by Tailscale ACLs, including tagged NUC clients.
+Its configuration lives in `hosts/unas/default.nix`. NUC and Mac retain Rex's
+owner-only policy.
 
 The Mac successfully authenticated to the NUC's Rex API at that address as
 `emiller`. This verifies the server connection, not an iPhone connection.
@@ -132,7 +134,8 @@ from the Mac after deployment.
 Edmund reported that the phone side appeared to be working on 2026-10-30 and
 requested documentation rather than further troubleshooting. This is
 user-reported status, not an independently observed iPhone connection test.
-Use the addresses above in Rex's server settings, not as browser webpages.
+Use the [server addresses below](#add-servers-in-rex-on-ios) in Rex's server
+settings, not as browser webpages.
 
 ## Reference: Jess Frazelle's Rex-based agent
 
@@ -153,15 +156,25 @@ require Tailscale SSH. Rex replaces the remote-terminal use case, not every
 application's need for system-wide Tailscale. This is a reference architecture,
 not a record that her agent has been installed here.
 
-## Add the NUC in Rex on iOS
+## Add servers in Rex on iOS
 
-To add the NUC on your phone, connect the iPhone's Tailscale app to the same
-tailnet under the owner's account, then paste this address into Rex's server
-connection settings:
+1. Connect the iPhone's Tailscale app to `cinnamon-rooster.ts.net` under your
+   owner account. Keep Tailscale connected while using Rex.
+2. In Rex's server connection settings, add each address below. Use the label
+   to distinguish the servers.
 
-```text
-https://nuc-rex.cinnamon-rooster.ts.net
-```
+| Label | Rex server address                                   | Access                                                                |
+| ----- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| NAS   | `https://unas-rex.cinnamon-rooster.ts.net`           | Tailnet peers permitted by Tailscale ACLs; terminals run as `emiller` |
+| NUC   | `https://nuc-rex.cinnamon-rooster.ts.net`            | Owner-only; terminals run as `emiller`                                |
+| Mac   | `https://mactraitor-pro-rex.cinnamon-rooster.ts.net` | Owner-only                                                            |
+
+Paste these into Rex, not Safari. A browser `404` at these addresses does not
+mean Rex is offline. If scanning a pairing QR, use Rex's scanner rather than
+the iPhone Camera, which opens Safari.
+
+The addresses and Mac/NUC API connections were checked on 2026-11-06. This does
+not establish that each connection has been tested from the iPhone.
 
 ## Rex on iOS: pairing QR opens Safari and returns 404
 
