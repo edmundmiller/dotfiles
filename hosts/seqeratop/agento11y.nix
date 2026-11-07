@@ -40,7 +40,11 @@
               # to this pinned binary.
               PATH="${pkgs.llm-agents.claude-code}/bin:$PATH" \
                 ${pkgs.my.agento11y}/bin/agento11y claude install --json
-              if ! ${pkgs.llm-agents.claude-code}/bin/claude plugin enable \
+              # Claude exits nonzero when enable is called on an enabled plugin.
+              if ! ${pkgs.jq}/bin/jq -e \
+                '.enabledPlugins["agento11y-claude-code@agento11y"] == true' \
+                "$HOME/.claude/settings.json" >/dev/null &&
+                ! ${pkgs.llm-agents.claude-code}/bin/claude plugin enable \
                 agento11y-claude-code@agento11y; then
                 echo "ERROR: failed to enable Claude Code plugin agento11y-claude-code@agento11y" >&2
                 exit 1
