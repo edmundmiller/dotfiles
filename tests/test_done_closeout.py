@@ -509,6 +509,8 @@ class DoneCloseoutTest(unittest.TestCase):
             "import json, os, sys\n"
             "policy = json.loads(os.environ['PUBLISH_POLICY'])\n"
             "endpoint = sys.argv[-1]\n"
+            "host = sys.argv[sys.argv.index('--hostname') + 1] if '--hostname' in sys.argv else os.environ.get('GH_HOST', 'github.com')\n"
+            "if host != 'github.com': policy = {'rules': [[]], 'protection': 'absent'}\n"
             "if '/rules/branches/' in endpoint: key = 'rules'\n"
             "elif endpoint.endswith('/protection'): key = 'protection'\n"
             "elif '/check-runs?' in endpoint: key = 'checks'\n"
@@ -529,6 +531,7 @@ class DoneCloseoutTest(unittest.TestCase):
         env.update(
             {
                 "PATH": f"{wrapper_dir}:{env['PATH']}",
+                "GH_HOST": "github.com",
                 "PUBLISH_REAL_GIT": str(shutil.which("git")),
                 "PUBLISH_REMOTE": str(remote),
                 "PUBLISH_POLICY": json.dumps(policy),
@@ -729,6 +732,146 @@ class DoneCloseoutTest(unittest.TestCase):
                     0 if state == "success" else 1, result.returncode, result.stdout
                 )
                 self.assertEqual(state == "success", (root / "pushes").exists())
+
+    def test_publish_clean_requires_both_app_bound_check_and_same_name_status(
+        self,
+    ) -> None:
+        for state, has_check in (
+            ("success", True),
+            ("pending", True),
+            ("failure", True),
+            ("success", False),
+        ):
+            with self.subTest(
+                state=state, has_check=has_check
+            ), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                repo, remote = self.init_repo(root)
+                _, revision = self.create_task_revision(repo, root)
+                before = git(remote, "rev-parse", "main")
+                check = {
+                    "id": 1,
+                    "name": "gate",
+                    "head_sha": "$HEAD",
+                    "app": {"id": 42},
+                    "status": "completed",
+                    "conclusion": "success",
+                }
+                env = self.publisher_policy_environment(
+                    root,
+                    remote,
+                    {
+                        "rules": [
+                            [
+                                {
+                                    "type": "required_status_checks",
+                                    "parameters": {
+                                        "required_status_checks": [
+                                            {"context": "gate", "integration_id": 42}
+                                        ]
+                                    },
+                                }
+                            ]
+                        ],
+                        "protection": "absent",
+                        "checks": [{"check_runs": [check] if has_check else []}],
+                        "statuses": [[{"id": 2, "context": "gate", "state": state}]],
+                    },
+                )
+                result = self.run_publish_clean(
+                    "--source-repo",
+                    str(repo),
+                    "--task-revision",
+                    revision,
+                    cwd=repo,
+                    env=env,
+                )
+                permitted = state == "success" and has_check
+                self.assertEqual(
+                    0 if permitted else 1, result.returncode, result.stdout
+                )
+                self.assertEqual(permitted, (root / "pushes").exists())
+                if not permitted:
+                    self.assertEqual(before, git(remote, "rev-parse", "main"))
+                    self.assertIn(
+                        "required gate gate", json.loads(result.stdout)["error"]
+                    )
+
+    def test_publish_clean_uses_destination_policy_despite_gh_host(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, remote = self.init_repo(root)
+            _, revision = self.create_task_revision(repo, root)
+            before = git(remote, "rev-parse", "main")
+            env = self.publisher_policy_environment(
+                root,
+                remote,
+                {
+                    "rules": [[{"type": "pull_request", "parameters": {}}]],
+                    "protection": "absent",
+                },
+            )
+            env["GH_HOST"] = "enterprise.example.invalid"
+            result = self.run_publish_clean(
+                "--source-repo",
+                str(repo),
+                "--task-revision",
+                revision,
+                cwd=repo,
+                env=env,
+            )
+            self.assertEqual(1, result.returncode, result.stdout)
+            self.assertIn("pull_request", json.loads(result.stdout)["error"])
+            self.assertFalse((root / "pushes").exists())
+            self.assertEqual(before, git(remote, "rev-parse", "main"))
+
+    def test_publish_clean_allows_linear_history_without_requiring_pr(self) -> None:
+        for classic in (True, False):
+            with self.subTest(classic=classic), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                repo, remote = self.init_repo(root)
+                git(repo, "switch", "-c", "historical-side")
+                (repo / "side.txt").write_text("side\n")
+                git(repo, "add", "side.txt")
+                git(repo, "commit", "-m", "historical side")
+                git(repo, "switch", "main")
+                git(
+                    repo,
+                    "merge",
+                    "--no-ff",
+                    "historical-side",
+                    "-m",
+                    "historical merge",
+                )
+                git(repo, "push", "origin", "main")
+                _, revision = self.create_task_revision(repo, root)
+                env = self.publisher_policy_environment(
+                    root,
+                    remote,
+                    {
+                        "rules": (
+                            [[]] if classic else [[{"type": "required_linear_history"}]]
+                        ),
+                        "protection": (
+                            [{"required_linear_history": {"enabled": True}}]
+                            if classic
+                            else "absent"
+                        ),
+                    },
+                )
+                result = self.run_publish_clean(
+                    "--source-repo",
+                    str(repo),
+                    "--task-revision",
+                    revision,
+                    cwd=repo,
+                    env=env,
+                )
+                payload = json.loads(result.stdout)
+                self.assertEqual(0, result.returncode, payload)
+                self.assertTrue(payload["policy"]["compliant"])
+                self.assertEqual("push\n", (root / "pushes").read_text())
+                self.assertEqual(payload["remoteTip"], git(remote, "rev-parse", "main"))
 
     def test_publish_clean_bounds_retries_to_non_fast_forward_rejections(self) -> None:
         for mode, count in (("reject", 2), ("policy-reject", 1)):

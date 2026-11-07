@@ -205,7 +205,15 @@ def is_non_fast_forward(result: subprocess.CompletedProcess[str]) -> bool:
 def github_api(endpoint: str, *, absent_ok: bool = False) -> Any:
     try:
         result = subprocess.run(
-            ["gh", "api", "--paginate", "--slurp", endpoint],
+            [
+                "gh",
+                "api",
+                "--hostname",
+                "github.com",
+                "--paginate",
+                "--slurp",
+                endpoint,
+            ],
             capture_output=True,
             text=True,
             check=False,
@@ -231,7 +239,7 @@ def github_api(endpoint: str, *, absent_ok: bool = False) -> Any:
     return pages
 
 
-def policy_preflight(url: str, branch: str, head: str) -> dict[str, Any]:
+def policy_preflight(clone: Path, url: str, branch: str, head: str) -> dict[str, Any]:
     """Read destination policy and gates for the actual candidate, never a cached head."""
     if url.startswith(("/", "./", "../", "file://")):
         return {"compliant": True, "provider": "local"}
@@ -272,13 +280,24 @@ def policy_preflight(url: str, branch: str, head: str) -> dict[str, Any]:
         kind = rule["type"]
         if kind == "required_status_checks":
             requirements.extend(rule["parameters"]["required_status_checks"])
-        elif kind not in {"non_fast_forward", "deletion", "creation"}:
+        elif kind not in {
+            "non_fast_forward",
+            "deletion",
+            "creation",
+            "required_linear_history",
+        }:
             raise PublishError(f"branch rule {kind} requires the GitHub PR path")
+    if (protection.get("required_linear_history") or {}).get("enabled") or any(
+        rule["type"] == "required_linear_history" for rule in rules
+    ):
+        if git_output(clone, "rev-list", "--min-parents=2", f"origin/{branch}..{head}"):
+            raise PublishError(
+                "linear-history policy forbids introducing merge commits"
+            )
     if protection.get("restrictions") or any(
         (protection.get(key) or {}).get("enabled")
         for key in (
             "required_signatures",
-            "required_linear_history",
             "required_conversation_resolution",
             "lock_branch",
         )
@@ -310,12 +329,11 @@ def policy_preflight(url: str, branch: str, head: str) -> dict[str, Any]:
                 for status in statuses
                 if status["context"] == context
                 and status.get("sha", head) == head
-                and app in (None, -1)
             ]
             # GitHub requires both when a status and check share the required name.
             latest_status = max(states, key=lambda item: item["id"], default=None)
             if (
-                (not checks and not states)
+                (not checks and (app not in (None, -1) or not states))
                 or any(
                     run.get("status") != "completed"
                     or run.get("conclusion") not in {"success", "neutral", "skipped"}
@@ -395,7 +413,7 @@ def publish(args: argparse.Namespace) -> dict[str, Any]:
                 }
 
             candidate = git_output(clone, "rev-parse", "HEAD")
-            policy = policy_preflight(url, branch, candidate)
+            policy = policy_preflight(clone, url, branch, candidate)
             pushed = run_git(
                 clone,
                 ["push", "origin", f"HEAD:refs/heads/{branch}"],
