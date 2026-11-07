@@ -155,7 +155,7 @@ let
       extern char **environ;
       static char *empty_environment[] = { NULL };
 
-      static int prepare_environment(void) {
+      static int prepare_environment(int allow_publish) {
         const struct passwd *user = getpwuid(getuid());
         if (user == NULL) {
           fputs("openwiki-launchd-launcher: cannot resolve user\n", stderr);
@@ -166,6 +166,7 @@ let
         if (
           setenv("HOME", user->pw_dir, 1) != 0 ||
           setenv("USER", user->pw_name, 1) != 0 ||
+          (allow_publish && setenv("OPENWIKI_SCHEDULE_PUBLISH", "1", 1) != 0) ||
           setenv(
             "PATH",
             "/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin",
@@ -180,7 +181,11 @@ let
       }
 
       int main(int argc, char **argv) {
-        int status = prepare_environment();
+        /* Preserve only the explicit boolean opt-in, never arbitrary values or
+           execution/repository overrides from the inherited environment. */
+        const char *publish = getenv("OPENWIKI_SCHEDULE_PUBLISH");
+        const int allow_publish = publish != NULL && strcmp(publish, "1") == 0;
+        int status = prepare_environment(allow_publish);
         if (status != 0) {
           return status;
         }
@@ -188,12 +193,23 @@ let
       #ifdef OPENWIKI_LAUNCHER_TEST
         const int self_test = 1;
       #else
-        const int self_test =
-          argc == 2 && strcmp(argv[1], "--self-test") == 0;
+        const int self_test = argc == 2 &&
+          (strcmp(argv[1], "--self-test") == 0 ||
+           strcmp(argv[1], "--self-test-publish") == 0);
       #endif
         if (self_test) {
-          if (getenv("NODE_OPTIONS") != NULL) {
-            fputs("openwiki-launchd-launcher: self-test retained NODE_OPTIONS\n", stderr);
+          if (getenv("NODE_OPTIONS") != NULL ||
+              getenv("OPENWIKI_SCHEDULE_EXECUTABLE") != NULL ||
+              getenv("OPENWIKI_SCHEDULE_REPO") != NULL) {
+            fputs("openwiki-launchd-launcher: self-test retained an unsafe override\n", stderr);
+            return 1;
+          }
+          const int expected_publish = argc == 2 &&
+            strcmp(argv[1], "--self-test-publish") == 0;
+          const char *preserved = getenv("OPENWIKI_SCHEDULE_PUBLISH");
+          if ((expected_publish && (preserved == NULL || strcmp(preserved, "1") != 0)) ||
+              (!expected_publish && preserved != NULL)) {
+            fputs("openwiki-launchd-launcher: self-test publication opt-in mismatch\n", stderr);
             return 1;
           }
           if (strcmp(
@@ -266,7 +282,17 @@ let
       if [ "$launcher_status" -ne 0 ]; then
         exit "$launcher_status"
       fi
+      for publish in 1 0 invalid; do
+        expectation=--self-test
+        if [ "$publish" = 1 ]; then expectation=--self-test-publish; fi
+        OPENWIKI_SCHEDULE_PUBLISH="$publish" \
+          OPENWIKI_SCHEDULE_EXECUTABLE=/tmp/hostile-executable \
+          OPENWIKI_SCHEDULE_REPO=/tmp/hostile-repo \
+          NODE_OPTIONS=/tmp/hostile-node-options \
+          ./openwiki-launchd-launcher "$expectation"
+      done
       echo "openwiki-launchd-launcher: hardened self-test passed; injection marker absent"
+      echo "openwiki-launchd-launcher: explicit publication opt-in preserved; unsafe overrides stripped"
     '';
 
     installPhase = ''
