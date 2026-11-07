@@ -6,7 +6,15 @@ from the skill directory before committing; `bend PROOF.bend --verdict`
 also checks the pure laws with BendTT. A changed law needs review as a changed
 contract, not as a way to make a failing proof pass.
 
-The laws cover retry and required-gate decisions in `scripts/policy.bend`.
+The laws cover retry, cleanup, publication status, and required-gate decisions
+in `scripts/policy.bend`. Retrying is allowed exactly when the write is not
+complete, no bypass occurred, rejection was non-fast-forward, and budget remains.
+Cleanup rejects root, the active directory, and its ancestors, while allowing
+directories outside the active path.
+
+Cleanup proofs take Base's string equality and slash-delimited prefix results
+as premises. Callers must first resolve existing directories to physical paths;
+the laws do not establish path normalization, symlink resolution, or existence.
 They do not prove Git, GitHub, jq, shell utilities, the Bend runtime, or the
 filesystem correct. Test those boundaries against disposable repositories.
 
