@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
 use std/assert
-use ../../scripts/nu/common.nu *
-use ../../scripts/nu/remote.nu *
+use ../hey.d/.lib/common.nu *
+use ../hey.d/.lib/remote.nu *
 
 assert equal (nuc-deploy-mode "nuc") "local"
 assert equal (nuc-deploy-mode "mactraitorpro") "worktree-remote"
@@ -468,7 +468,7 @@ with-env {
   USER: "tester"
   NUC_TEST_BUILD_ROOT: $build_root
   NUC_TEST_BUILD_COMMAND: $build_command
-} { ^$nu.current-exe --no-config-file ($repo_root | path join "mise-tasks/nuc/worktree.nu") build }
+} { ^$nu.current-exe --no-config-file ($repo_root | path join "bin/hey.d/nuc/worktree.nu") build }
 assert ($build_command | path exists) "dirty build must finish preparation and reach the build boundary"
 let build_snapshot = (glob ($build_root | path join "dotfiles-worktree-tester-*") | first)
 assert equal (open --raw ($build_snapshot | path join ".nuc-deploy-source-revision")) $"($fixture_revision)-dirty"
@@ -623,7 +623,7 @@ assert not ($orphan_snapshot | path exists) "a stale validation lease must be pr
 assert not ($mismatched_snapshot | path exists) "a marker must not borrow another snapshot's live validation service"
 
 # Exercise the public revision command with a disposable host transport.
-let nuc_task = ($repo_root | path join "mise-tasks/nuc/_default.nu")
+let nuc_task = ($repo_root | path join "bin/hey.d/nuc/_default.nu")
 let revision_repo = ($temp_dir | path join "revision-repo")
 let revision_bin = ($temp_dir | path join "revision-bin")
 let revision_marker = ($temp_dir | path join "revision-activated")

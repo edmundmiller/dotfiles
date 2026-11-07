@@ -19,7 +19,7 @@ class MiseTasksTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name) / "project with spaces"
+        self.root = Path(self.temp.name).resolve() / "project with spaces"
         self.root.mkdir()
         empty_config = Path(self.temp.name) / "empty.toml"
         empty_config.write_text("")
@@ -46,11 +46,112 @@ class MiseTasksTests(unittest.TestCase):
 
     def copy_project(self):
         shutil.copy2(ROOT / "mise.toml", self.root)
-        shutil.copytree(ROOT / "mise-tasks", self.root / "mise-tasks")
-        (self.root / "bin").mkdir()
+        shutil.copytree(ROOT / "bin/hey.d", self.root / "bin/hey.d")
         shutil.copy2(ROOT / "bin/hey", self.root / "bin/hey")
-        shutil.copytree(ROOT / "scripts/nu", self.root / "scripts/nu")
+        (self.root / "scripts").mkdir()
         shutil.copy2(ROOT / "scripts/validation.py", self.root / "scripts")
+
+    def test_discovery_preserves_task_catalog_and_excludes_shared_helpers(self):
+        self.copy_project()
+        # An executable and a TOML task would both be discovered in a visible directory.
+        helpers = self.root / "bin/hey.d/.lib"
+        decoy = helpers / "not-a-task"
+        decoy.write_text("#!/bin/sh\nexit 99\n")
+        decoy.chmod(0o755)
+        (helpers / "not-tasks.toml").write_text('[tasks.helper-leak]\nrun = "exit 99"\n')
+        expected = {
+            'agent:adopt': ['agent-adopt'],
+            'agent:checkpoint': ['agent-checkpoint'],
+            'agent:complete': ['agent-complete'],
+            'agent:start': ['agent-start'],
+            'agent:sweep': ['agent-sweep'],
+            'check': [],
+            'deploy': [],
+            'deploy:agents': ['agents-rollout'],
+            'deploy:check': ['deploy-check'],
+            'deploy:dry': ['deploy-dry'],
+            'dev': [],
+            'ergodox:build-flash': ['ergodox-build-flash'],
+            'ergodox:build': ['ergodox-build'],
+            'ergodox:draw': ['ergodox-draw'],
+            'ergodox:edit': ['ergodox-edit'],
+            'ergodox:flash': ['ergodox-flash'],
+            'ergodox:info': ['ergodox-info'],
+            'gc': [],
+            'hermes:local': ['hermes-local'],
+            'login:betty': ['login-betty'],
+            'login:scintillate': ['login-scintillate'],
+            'mole:upgrade': ['mole-upgrade'],
+            'nuc': [],
+            'nuc:generations': ['nuc-generations'],
+            'nuc:logs': ['nuc-logs'],
+            'nuc:rebuild': ['rebuild-nuc'],
+            'nuc:rollback': ['nuc-rollback'],
+            'nuc:service': ['nuc-service'],
+            'nuc:ssh': ['nuc-ssh'],
+            'nuc:status': ['nuc-status'],
+            'nuc:test': ['nuc-test'],
+            'nuc:worktree': ['nuc-worktree', 'nuc-wt'],
+            'opencode:update': ['opencode-update'],
+            'pi:update': ['pi-update'],
+            'qa-changed': [],
+            'rebuild': ['re'],
+            'reclaim-mac-development': [],
+            'repl': [],
+            'rollback': [],
+            'search': [],
+            'setup-caches': [],
+            'shell': [],
+            'show': [],
+            'skillkit:sync': ['skillkit-sync'],
+            'skills:amp-stage-done': [],
+            'skills:bump': ['skills-bump'],
+            'skills:cleanup-local-leaks': ['skills-cleanup-local-leaks'],
+            'skills:sync': ['skills-sync'],
+            'skills:update': ['skills-update'],
+            'test': [],
+            'unas': [],
+            'unas:recover': ['unas-recover'],
+            'unas:ssh': ['unas-ssh'],
+            'update': ['u'],
+            'upgrade': [],
+            'xcode:setup': ['xcode-setup'],
+            'zbench': [],
+            'zbench:baseline': ['zbench-baseline'],
+            'zbench:check': ['zbench-check'],
+            'zbench:compare': ['zbench-compare'],
+            'zbench:history': ['zbench-history'],
+            'zbench:save': ['zbench-save'],
+            'ztest': [],
+        }
+        nested = self.root / "nested"
+        nested.mkdir()
+        for cwd in (self.root, nested):
+            with self.subTest(cwd=cwd):
+                result = self.run_command("mise", "tasks", "--hidden", "--json", cwd=cwd)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                tasks = json.loads(result.stdout)
+                self.assertEqual({task["name"]: task["aliases"] for task in tasks}, expected)
+                for task in tasks:
+                    self.assertTrue(Path(task["source"]).is_relative_to(self.root / "bin/hey.d"))
+
+    def test_discovered_file_dispatch_preserves_raw_arguments_and_exit_status(self):
+        self.copy_project()
+        script = self.root / "bin/hey.d/dispatch-fixture"
+        script.write_text(
+            f'#!{shutil.which("bash")}\n#MISE raw_args=true\n#MISE raw=true\n'
+            'printf "<%s>\\n" "$@"\nexit 23\n'
+        )
+        script.chmod(0o755)
+        nested = self.root / "nested"
+        nested.mkdir()
+        for command in [("mise", "run"), (str(self.root / "bin/hey"),)]:
+            with self.subTest(command=command):
+                result = self.run_command(
+                    *command, "dispatch-fixture", "a b", "--help", "$(false)", cwd=nested
+                )
+                self.assertEqual(result.returncode, 23, result.stderr)
+                self.assertEqual(result.stdout, "<a b>\n<--help>\n<$(false)>\n")
 
     def test_hey_uses_current_project_and_preserves_arguments_and_failure(self):
         (self.root / "mise.toml").write_text(
@@ -171,7 +272,7 @@ class MiseTasksTests(unittest.TestCase):
             'exit "$TEST_UPDATE_EXIT"\n'
         )
         nix.chmod(0o755)
-        rebuild = self.root / "mise-tasks/rebuild.nu"
+        rebuild = self.root / "bin/hey.d/rebuild.nu"
         rebuild.write_text(
             f"#!{shutil.which('bash')}\nprintf 'rebuilt %s\\n' \"$MISE_PROJECT_ROOT\"\n"
         )
@@ -194,7 +295,7 @@ class MiseTasksTests(unittest.TestCase):
         # Nix's test harness patches shebangs. Restore the checkout's env lookup
         # while using an env executable that exists inside its sandbox.
         for name in ("pi/update.nu", "rebuild.nu"):
-            task = self.root / "mise-tasks" / name
+            task = self.root / "bin/hey.d" / name
             task.write_text(
                 f"#!{shutil.which('env')} -S nu --no-config-file\n"
                 + task.read_text().split("\n", 1)[1]
@@ -279,7 +380,7 @@ esac
         (profile / "nix").symlink_to(tools / "nix")
         # Remap fixed host/privilege boundaries in the fixture, never on the host.
         # All guard and orchestration functions remain the production implementation.
-        common = self.root / "scripts/nu/common.nu"
+        common = self.root / "bin/hey.d/.lib/common.nu"
         source = (
             common.read_text()
             .replace("$nu.os-info.name", "$env.TEST_OS")

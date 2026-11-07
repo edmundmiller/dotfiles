@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "bin" / "agent-run"
-TASKS = ROOT / "mise-tasks"
+TASKS = ROOT / "bin/hey.d"
 FLAKE = ROOT / "flake.nix"
 ORB_SETUP = ROOT / ".agents" / "setup"
 AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"

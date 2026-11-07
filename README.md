@@ -61,7 +61,7 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 
 ## Management
 
-Mise discovers this checkout's executable tasks in `mise-tasks/`. `hey` is a
+Mise discovers this checkout's executable tasks in `bin/hey.d/`. `hey` is a
 small compatibility spelling for `mise run`, so `hey re` still works inside the
 repo. Run `mise tasks` to list commands and `mise run <task> --help` for arguments.
 Related tasks use subdirectories and namespaces, such as `nuc:status` and

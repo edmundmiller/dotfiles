@@ -579,7 +579,7 @@ class ValidationTests(unittest.TestCase):
         result = subprocess.run(
             [
                 "bash",
-                str(v.ROOT / "mise-tasks/check"),
+                str(v.ROOT / "bin/hey.d/check"),
                 "--plan",
                 "owned space.md",
             ],

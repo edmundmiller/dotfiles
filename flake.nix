@@ -1017,7 +1017,7 @@
                 entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
                 language = "system";
                 pass_filenames = false;
-                files = "^(scripts/nu/hermes\\.nu|mise-tasks/hermes/local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
+                files = "^(bin/hey\\.d/\\.lib/hermes\\.nu|bin/hey\\.d/hermes/local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
                 stages = [ "pre-commit" ];
               };
               pi-runtime-wrapper = {
@@ -1253,7 +1253,7 @@
                     cp -R ${./.} "$TMPDIR/source"
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
-                    patchShebangs bin/hey mise-tasks
+                    patchShebangs bin/hey bin/hey.d
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \

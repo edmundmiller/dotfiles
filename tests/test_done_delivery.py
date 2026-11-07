@@ -29,7 +29,7 @@ class DoneDeliveryTest(unittest.TestCase):
             bundle = Path(tmp) / "done"
             subprocess.run(["git", "init", "--quiet", tmp], check=True)
             result = subprocess.run(
-                ["bash", str(ROOT / "mise-tasks/skills/amp-stage-done"), tmp],
+                ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), tmp],
                 cwd=ROOT,
                 env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT)},
                 capture_output=True,
@@ -66,7 +66,7 @@ class DoneDeliveryTest(unittest.TestCase):
                     git(repo, "worktree", "add", "--detach", str(target))
                     self.assertTrue((target / ".git").is_file())
                 result = subprocess.run(
-                    ["bash", str(ROOT / "mise-tasks/skills/amp-stage-done"), str(target)],
+                    ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), str(target)],
                     cwd=ROOT,
                     env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT)},
                     capture_output=True,
@@ -87,7 +87,8 @@ class DoneDeliveryTest(unittest.TestCase):
     def test_failed_or_interrupted_replacement_preserves_old_bundle(self) -> None:
         for interrupt in (False, True):
             with self.subTest(interrupt=interrupt), tempfile.TemporaryDirectory() as tmp:
-                repo = Path(tmp) / "repository"
+                # Match Git's canonical target when TMPDIR uses macOS's /tmp symlink.
+                repo = Path(tmp).resolve() / "repository"
                 repo.mkdir()
                 git(repo, "init", "--quiet", "-b", "main")
                 (repo / "done").mkdir()
@@ -118,7 +119,7 @@ os.execv({shutil.which("mv")!r}, [{shutil.which("mv")!r}, *sys.argv[1:]])
 """)
                 wrapper.chmod(0o755)
                 result = subprocess.run(
-                    ["bash", str(ROOT / "mise-tasks/skills/amp-stage-done"), str(repo)],
+                    ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), str(repo)],
                     cwd=ROOT,
                     env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT),
                          "PATH": str(tools) + os.pathsep + os.environ["PATH"]},
@@ -142,7 +143,7 @@ os.execv({shutil.which("mv")!r}, [{shutil.which("mv")!r}, *sys.argv[1:]])
                 entrypoint = bundle / "SKILL.md"
                 entrypoint.write_text("local work\n")
                 result = subprocess.run(
-                    ["bash", str(ROOT / "mise-tasks/skills/amp-stage-done"), tmp],
+                    ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), tmp],
                     cwd=ROOT,
                     env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT)},
                     capture_output=True,
@@ -159,7 +160,7 @@ os.execv({shutil.which("mv")!r}, [{shutil.which("mv")!r}, *sys.argv[1:]])
             subdir = Path(tmp) / "subdirectory"
             subdir.mkdir()
             result = subprocess.run(
-                ["bash", str(ROOT / "mise-tasks/skills/amp-stage-done"), str(subdir)],
+                ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), str(subdir)],
                 cwd=ROOT,
                 env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT)},
                 capture_output=True,

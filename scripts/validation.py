@@ -33,9 +33,8 @@ CHECKS = {
         "config/amp/*",
         "tests/test_amp_runner_sync.py",
         "bin/hey*",
-        "scripts/nu/*",
         "mise.toml",
-        "mise-tasks/*",
+        "bin/hey.d/*",
         "modules/agents/pi/lib/_runtime-wrapper.nix",
         "tests/test_mise_tasks.py",
         "bin/qa-changed",
@@ -74,7 +73,7 @@ CHECKS = {
     ],
     "agent-run-tests": [
         "bin/agent-*",
-        "mise-tasks/agent/*.nu",
+        "bin/hey.d/agent/*.nu",
         "tests/test_agent_run.py",
         "tests/test_skill_quality_validator.py",
         "skills/catalog/skill-quality/*",
@@ -82,7 +81,7 @@ CHECKS = {
     "done-delivery-tests": [
         "skills/catalog/done/*",
         "scripts/check_done_bundle.py",
-        "mise-tasks/skills/amp-stage-done",
+        "bin/hey.d/skills/amp-stage-done",
         "tests/test_done_closeout.py",
         "tests/test_done_delivery.py",
     ],
@@ -152,8 +151,7 @@ CHECKS = {
         "bin/tests/nix-private*",
     ],
     "hey-nuc-deploy-mode": [
-        "scripts/nu/*",
-        "mise-tasks/*",
+        "bin/hey.d/*",
         "bin/tests/hey-nuc-deploy-mode.nu",
     ],
     "hermes-cron-executor-source-tests": [
@@ -182,8 +180,8 @@ CHECKS = {
     "discrawl-backup-cli-tests": ["packages/discrawl-backup/*"],
     "nuc-deployment-provenance": [
         "hosts/nuc/_tests/deployment-provenance.nix",
-        "scripts/nu/remote.nu",
-        "mise-tasks/nuc/*.nu",
+        "bin/hey.d/.lib/remote.nu",
+        "bin/hey.d/nuc/*.nu",
     ],
     "nuc-hermes-displayctl-wiring": ["hosts/nuc/*", "packages/displayctl/*"],
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
