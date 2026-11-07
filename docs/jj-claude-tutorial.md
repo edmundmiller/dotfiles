@@ -2,7 +2,7 @@
 purpose: Teach the supported isolated jj workflow for coding agents.
 applies_to: Agent tasks in repositories already initialized with jj.
 entrypoint: Start with hey agent-start and finish with the global done skill.
-verification: jj workspace list, receipt JSON, and verify-jj-landing.sh.
+verification: jj workspace list, receipt JSON, and verify-jj-landing.bend.
 update_when: Workspace, receipt, policy, or landing behavior changes.
 ---
 

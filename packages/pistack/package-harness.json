@@ -1,0 +1,10 @@
+{
+  "source": "https://github.com/cursor/plugins.git",
+  "ref": "c742dd61706fbacc1b95f1a20b7b988cf096ce6c",
+  "patches": ["patches/0001-respect-host-authority.patch"],
+  "checks": [
+    ["git", "diff", "--check"],
+    ["test", "-f", "pstack/skills/sharpen/SKILL.md"],
+    ["test", "-f", "pstack/skills/poteto-mode/playbooks/feature.md"]
+  ]
+}

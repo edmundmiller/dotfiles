@@ -31,7 +31,9 @@ Do not substitute a SKILL.md-only import. Amp CLI local-path installation has
 omitted bundled scripts and references in testing. The parity gate rejects
 missing resources and obsolete target files instead of accepting a partial copy.
 
-The gate requires Python 3.11+, Git, and a working `jj`. It exercises Git-only
+The gate requires Python 3.11+, Bend 2.0.40+, clang 14+, Git, jq, Bash,
+GNU coreutils, and a working `jj`. The Nix Bend package includes clang on its
+compiler PATH. The gate exercises Git-only
 and unusable-jj fallback with staged, unstaged, and untracked content preserved,
 plus the real jj backend and publisher tests. Whole-bundle comparison prevents
 staging a fixed detector with a stale publisher or missing resource. Coordinate

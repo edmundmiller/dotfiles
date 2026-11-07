@@ -1,6 +1,6 @@
 ---
 purpose: Explain the pinned pstack integration for Claude Code, Codex, and Pi.
-applies_to: Pstack plugins, Pi delegation, and the Codex poteto-mode skill.
+applies_to: Pstack plugins, Pistack skills for Pi, and the Codex poteto-mode skill.
 entrypoint: config/claude/settings.json, config/pi/settings.jsonc, and skills/flake.nix.
 verification: Run agent instruction tests, plugin bootstrap tests, Pi settings validation, and scoped hey check.
 update_when: Pstack pins, runtime adapters, or installation behavior changes.
@@ -10,11 +10,13 @@ update_when: Pstack pins, runtime adapters, or installation behavior changes.
 
 Adopted from [the Claude Code support announcement](https://x.com/cu30rry_/status/2111227122308300976).
 The source is [cursor/plugins](https://github.com/cursor/plugins/tree/main/pstack).
-Claude Code and Codex share one pinned revision. Pi uses the
-[native port](https://github.com/0xrsydn/pstack-pi) from
-[this announcement](https://x.com/0xrsydn/status/2111313240684994721).
+Claude Code and Codex share one pinned revision. Pi independently pins Cursor's
+upstream content and applies local compatibility patches. It does not depend on
+another pstack port. The unchanged upstream plus adapter design takes ideas from
+[sndrgrdn's port](https://github.com/sndrgrdn/pstack-pi), and checked deterministic
+updates from [aaalexliu's port](https://github.com/aaalexliu/pstack-pi).
 The workflows are explicit skills, not new shared startup instructions.
-Pi's extension loads at startup; invoking a skill is not an activation gate.
+Pi's package is named Pistack. It supplies skills without a delegation backend.
 
 ## Claude Code
 
@@ -59,51 +61,48 @@ Executable TypeScript helpers need Bun and a writable copy of the scripts
 directory for dependency bootstrap. The adapter describes this copy-and-cleanup
 procedure. Installing the skill does not install or run those helpers.
 
-## Pi
+## Pi with Pistack
 
-`packages/pstack-pi/default.nix` pins and patches the native package.
-Home Manager links its immutable source at `~/.pi/agent/packages/pstack-pi`,
-which `config/pi/settings.jsonc` loads as a local package. Pi's mutable Git
-cache is not used. The pin includes the Pi session-history fix for
-`automate-me`, which is absent from the `v0.16.0` tag.
-The port requires Pi >=1.1. The existing Pi 1.3.0 selection in
-`overlays/pi/default.nix` meets that requirement without a runtime change.
+`packages/pistack/package-harness.json` owns the full upstream commit and
+ordered patch list. `default.nix` owns the matching fetch hash. Nix applies
+the patches with `git apply --check`, without fuzz. `build.mjs` preserves the
+upstream distribution, adds a link to `PI.md` after every skill's frontmatter,
+and generates a native Pi package manifest named `pistack`. No LLM rewrites skills.
+Content tests compare every packaged upstream file, allowing only those links.
 
-Use `/skill:poteto-mode`. Other package-native workflows include `/skill:arena`
-and `/skill:swarm`. `/setup-pstack` configures role models and thinking levels
-using Pi's authenticated model registry. Its writable config lives at
-`~/.pi/agent/pstack-models.json`. The parent chat's default model is unchanged.
-Without a role config, the extension tries its upstream model pair and falls
-back to the parent for unavailable model families.
+Home Manager links the immutable package at `~/.pi/agent/packages/pistack`.
+`config/pi/settings.jsonc` loads its manifest rather than a mutable Git cache.
+Use `/skill:poteto-mode`, `/skill:sharpen`, `/skill:arena`, or `/skill:swarm`.
+The manifest discovers new upstream skill directories automatically. `tdd`,
+`teach`, and `unslop` stay private to preserve existing shared skills, but remain
+on disk for relative references. The separate shared catalog still uses
+`skills/flake.nix` and agent-skills-nix. There is no duplicate Pi catalog entry
+for `poteto-mode` or `sharpen`.
 
-The package loads `pstack_task` for single, parallel, and chained child Pi
-processes. Parallel calls accept eight tasks with four children at a time.
-Children receive their brief, not the parent's conversation, and load their
-own global Pi resources. They do not inherit parent-only CLI extensions or
-parent CLI restrictions such as `--tools`, `--exclude-tools`, and `--no-mcp`.
-Do not assume a child has the same restrictions as its parent.
-`readonly` restricts ordinary tools; it is not a sandbox for extensions or MCP.
-Repository rules and existing authorization still apply to every delegate.
+Pistack installs no extensions, delegation backend, or registered agents. The
+upstream agent briefs remain unchanged reference files, not discoverable Pi
+agents. The Pi module no longer deploys `config/pi/agents/` definitions for the
+removed backend. Other Pi extensions and the shared skills catalog are unchanged.
 
-Top-level `readonly` is supported only for single tasks. The carried patch
-rejects it on `tasks[]` and `chain[]` before spawning children rather than
-silently dropping the restriction. Set `readonly` on every batch item that
-needs it, for example:
+`PI.md` overrides Cursor-specific execution throughout the bundle. Run supported
+work inline in the current session. Report unavailable delegation, independent
+review, or model requirements rather than presenting sequential passes as
+independent or multi-model review. Do not install a backend or launch nested
+agent CLIs to satisfy a skill. A separately user-provided delegation tool may
+be used only according to its advertised schema, permissions, and available
+models. Work requiring parent approval hooks stays in the parent unless that
+tool demonstrably preserves them.
 
-```json
-{
-  "tasks": [{ "agent": "general-purpose", "task": "Review the change", "readonly": true }]
-}
-```
+Cursor model slugs, effort suffixes, resume IDs, and readonly flags are not
+Pi tool arguments. `setup-pstack` explains that Pistack has no model-role router
+or agent configuration to generate. It does not write Cursor rules, install a
+backend, or change the session model. The old port's
+`~/.pi/agent/pstack-models.json` is neither read nor deleted.
 
-The package's `tdd`, `teach`, and `unslop` are excluded from discovery to keep
-existing shared skills. They remain in the package for relative references.
-No second catalog copy of `poteto-mode` is installed for Pi.
-
-This port does not provide durable background jobs, resumed child sessions,
-automatic worktrees, or Cursor Cloud Automations. Some advanced playbooks
-still describe those features. Use only the advertised tool schema and
-supported foreground delegation; do not claim upstream parity.
+The adapter covers current-project session evidence and writable copies of
+immutable helpers. It does not supply Cursor Cloud Automations, Bugbot,
+artifact hosting, or a scheduler. Permission rules and user authorization still
+apply. No prompt adapter can guarantee model compliance or provide a sandbox.
 
 ## Updating and rollback
 
@@ -113,12 +112,25 @@ Regenerate the child lock and synchronize the parent lock without activation. `h
 also rebuilds the host and requires activation authority. Run the scoped checks
 before an authorized rebuild.
 
-Update Pi's source revision and hash in `packages/pstack-pi/default.nix` and
-the matching ref in its `package-harness.json`. Review the runtime requirements,
-carried patch, and skill exclusions. Run `pkg-check pstack-pi` and build the
-package before an authorized rebuild. After activation, restart Pi or run
-`/reload` and verify `readlink -f ~/.pi/agent/packages/pstack-pi` resolves to
-the expected store path from `nix build --no-link --print-out-paths .#pstack-pi`.
+For Pi, run `node packages/pistack/update.mjs` from the checkout. An optional
+full commit SHA selects a specific candidate. Without it, the updater selects
+the latest commit touching upstream `pstack/`, not unrelated plugin changes.
+It fetches a hash-pinned source, applies our patches in a writable temporary
+copy, and runs the content tests before changing either pin file. A patch
+conflict or failed content test leaves both files unchanged. Review the printed
+upstream comparison, especially new Cursor-specific instructions. The updater
+does not change the adapter, execute upstream helpers, or activate a host.
+
+`.github/workflows/pistack-sync.yml` runs the same updater weekly and on manual
+dispatch. It builds the Nix package and proposes a PR containing only the pin
+and hash. It does not auto-merge. The repository must allow GitHub Actions to
+create pull requests. This workflow and its schedule take effect only after
+landing on the default branch. It does not install a delegation backend.
+
+Run `pkg-check pistack`, the package build, Pi settings validation, and scoped
+`hey check` before an authorized rebuild. After activation, restart Pi or run
+`/reload` and verify `readlink -f ~/.pi/agent/packages/pistack` resolves to
+the expected store path from `nix build --no-link --print-out-paths .#pistack`.
 No `pi update` or Git cache reconciliation is needed for this local package.
 
 To roll back, disable the Claude plugin with `claude plugin disable pstack@cursor-plugins`,
@@ -128,6 +140,6 @@ settings when the Nix marketplace link is removed. Removing the integration
 removes the Codex entry point and stops loading Pi's package on activation.
 It does not delete runtime-owned plugin caches or Pi's model-role config.
 For a Pi package rollback, restore its Nix pin, hash,
-patches, and harness ref, rebuild with authorization, verify the package symlink,
+patches, adapter, builder, and matching settings, rebuild with authorization, verify the package symlink,
 and restart Pi or run `/reload`. Old cached Git checkouts may remain on disk but
 are not loaded.

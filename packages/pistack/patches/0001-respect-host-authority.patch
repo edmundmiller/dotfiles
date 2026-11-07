@@ -1,0 +1,13 @@
+diff --git a/pstack/skills/poteto-mode/SKILL.md b/pstack/skills/poteto-mode/SKILL.md
+index 2dd5e76..df939b5 100644
+--- a/pstack/skills/poteto-mode/SKILL.md
++++ b/pstack/skills/poteto-mode/SKILL.md
+@@ -81,7 +81,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
+ 
+ ## Autonomy
+ 
+-**Just do it.** Use any MCP tool. Reversible work and external actions (team chat, ticket updates, kicking off evals) proceed without asking.
++**Just do it within the user's authority.** Complete reversible local work without routine checkpoints. External actions, including team chat, ticket updates, and launching jobs, require the user's authorization under the host's rules. This skill does not grant it.
+ 
+ **Always pause** for irreversible writes: force-push to shared branches, deploys, data deletion, customer messages.
+ 

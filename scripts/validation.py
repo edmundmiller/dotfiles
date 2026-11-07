@@ -33,6 +33,7 @@ CHECKS = {
         "config/amp/*",
         "tests/test_amp_runner_sync.py",
         "bin/hey*",
+        "bin/hey.d/.lib/*",
         "mise.toml",
         "bin/hey.d/*",
         "modules/agents/pi/lib/_runtime-wrapper.nix",
@@ -80,10 +81,13 @@ CHECKS = {
     ],
     "done-delivery-tests": [
         "skills/catalog/done/*",
+        "packages/bend/*",
         "scripts/check_done_bundle.py",
         "bin/hey.d/skills/amp-stage-done",
+        "tests/done_bend.py",
         "tests/test_done_closeout.py",
         "tests/test_done_delivery.py",
+        "tests/test_done_skill.py",
     ],
     "agent-docs-contract": [
         "AGENT_WORKFLOW.md",
@@ -151,6 +155,7 @@ CHECKS = {
         "bin/tests/nix-private*",
     ],
     "hey-nuc-deploy-mode": [
+        "bin/hey.d/.lib/*",
         "bin/hey.d/*",
         "bin/tests/hey-nuc-deploy-mode.nu",
     ],

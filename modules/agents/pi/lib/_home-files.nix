@@ -8,13 +8,11 @@
   piSettingsValidated,
   piPermissionSystemConfig,
   promptLinks,
-  agentLinks,
   sessionSearchFiles,
   isDarwin,
 }:
 
 promptLinks
-// agentLinks
 // {
   ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;
@@ -26,7 +24,7 @@ promptLinks
     force = true;
   };
   ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
-  ".pi/agent/packages/pstack-pi".source = piPstack;
+  ".pi/agent/packages/pistack".source = piPstack;
 }
 // sessionSearchFiles
 // (

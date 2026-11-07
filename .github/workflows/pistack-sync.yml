@@ -1,0 +1,67 @@
+name: Sync pistack skills
+
+on:
+  schedule:
+    - cron: "30 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pistack-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: DeterminateSystems/nix-installer-action@v20
+      - name: Check candidate against local compatibility patches
+        id: update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "old=$(node -p 'require("./packages/pistack/package-harness.json").ref')" >> "$GITHUB_OUTPUT"
+          node packages/pistack/update.mjs
+          echo "new=$(node -p 'require("./packages/pistack/package-harness.json").ref')" >> "$GITHUB_OUTPUT"
+      - name: Build package and run content contracts
+        if: steps.update.outputs.old != steps.update.outputs.new
+        run: |
+          nix build --no-link --print-build-logs --impure --expr "$(cat <<'NIX'
+            let
+              lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+              pin = lock.nodes.nixpkgs.locked;
+              pkgs = import (builtins.fetchTarball {
+                url = "https://github.com/${pin.owner}/${pin.repo}/archive/${pin.rev}.tar.gz";
+                sha256 = pin.narHash;
+              }) {};
+            in pkgs.callPackage ./packages/pistack {}
+          NIX
+          )"
+      - uses: peter-evans/create-pull-request@v7
+        if: steps.update.outputs.old != steps.update.outputs.new
+        with:
+          branch: automation/pistack-upstream
+          add-paths: |
+            packages/pistack/default.nix
+            packages/pistack/package-harness.json
+          commit-message: "chore(pistack): update pinned upstream skills"
+          title: "chore(pistack): update pinned upstream skills"
+          body: |
+            Updates only the independent Pi port's Cursor source pin and hash.
+
+            [Review upstream changes](https://github.com/cursor/plugins/compare/${{ steps.update.outputs.old }}...${{ steps.update.outputs.new }}).
+            Inspect changes under `pstack/`, including new Cursor-only mechanics.
+            Existing local patches applied without fuzz, content preservation tests
+            passed, and the Nix package built. No upstream scripts were executed.
+
+            This does not install a delegation backend, merge this PR,
+            or activate a host. A patch conflict fails the workflow without changing
+            the installed package. Refresh a conflicting patch only after review.

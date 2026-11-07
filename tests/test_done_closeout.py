@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -7,11 +8,7 @@ import sys
 import tempfile
 import unittest
 
-
-ROOT = Path(__file__).resolve().parents[1]
-DONE_SKILL = Path(os.environ.get("DONE_SKILL_DIR", ROOT / "skills/catalog/done"))
-CLOSEOUT = DONE_SKILL / "scripts/closeout.py"
-PUBLISH_CLEAN = DONE_SKILL / "scripts/publish-clean.py"
+from tests.done_bend import SKILL, binary
 
 
 def git(repo: Path, *args: str) -> str:
@@ -45,7 +42,7 @@ class DoneCloseoutTest(unittest.TestCase):
 
     def run_closeout(self, *args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            ["python3", str(CLOSEOUT), *args],
+            [binary("closeout"), *args],
             cwd=cwd,
             capture_output=True,
             text=True,
@@ -58,7 +55,7 @@ class DoneCloseoutTest(unittest.TestCase):
         env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            ["python3", str(PUBLISH_CLEAN), *args],
+            [binary("publish-clean"), *args],
             cwd=cwd,
             capture_output=True,
             text=True,
@@ -91,7 +88,19 @@ class DoneCloseoutTest(unittest.TestCase):
             (repo / "untracked.txt").write_text(secret)
 
             first = self.run_closeout("snapshot", "--repo", str(repo), cwd=repo)
-            second = self.run_closeout("snapshot", "--repo", str(repo), cwd=repo)
+            second = subprocess.run(
+                [
+                    "bend",
+                    str(SKILL / "scripts/closeout.bend"),
+                    "--",
+                    "snapshot",
+                    "--repo",
+                    str(repo),
+                ],
+                cwd=repo,
+                capture_output=True,
+                text=True,
+            )
 
             self.assertEqual(first.returncode, 0, first.stderr)
             self.assertEqual(second.returncode, 0, second.stderr)
@@ -118,7 +127,8 @@ class DoneCloseoutTest(unittest.TestCase):
             before = self.source_state(repo)
             tools = root / "bin"
             tools.mkdir()
-            (tools / "git").symlink_to(shutil.which("git"))
+            for command in ("git", "sh", "bash", "jq", "sha256sum", "readlink"):
+                (tools / command).symlink_to(shutil.which(command))
 
             for jj_installed in (False, True):
                 with self.subTest(jj_installed=jj_installed):
@@ -127,7 +137,7 @@ class DoneCloseoutTest(unittest.TestCase):
                         jj.write_text("#!/bin/sh\nexit 1\n")
                         jj.chmod(0o755)
                     result = subprocess.run(
-                        [sys.executable, str(CLOSEOUT), "snapshot", "--repo", str(repo)],
+                        [binary("closeout"), "snapshot", "--repo", str(repo)],
                         cwd=repo,
                         env={**os.environ, "PATH": str(tools)},
                         capture_output=True,
@@ -141,6 +151,36 @@ class DoneCloseoutTest(unittest.TestCase):
                     self.assertFalse(payload["workingCopy"]["clean"])
                     self.assertEqual(self.source_state(repo), before)
                     self.assertFalse((repo / ".jj").exists())
+
+    def test_snapshot_preserves_binary_files_and_control_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, _ = self.init_repo(root)
+            name = '  control\x01\n" snowman ☃'
+            content = b"\xff\x00secret\n"
+            (repo / name).write_bytes(content)
+            (repo / "symlink").symlink_to("missing-target")
+            receipt = root / "receipt.json"
+            receipt.write_text(json.dumps({"schemaVersion": 2, "status": "blocked"}))
+            result = self.run_closeout(
+                "snapshot", "--repo", str(repo), "--receipt", str(receipt), cwd=repo
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            hashes = {
+                entry["path"]: entry["sha256"]
+                for entry in payload["workingCopy"]["untracked"]
+            }
+            self.assertEqual(hashes[name], hashlib.sha256(content).hexdigest())
+            self.assertEqual(
+                hashes["symlink"], hashlib.sha256(b"missing-target").hexdigest()
+            )
+            snapshot = root / "snapshot.json"
+            snapshot.write_text(json.dumps(payload, sort_keys=True))
+            preserved = self.run_closeout(
+                "verify-preservation", "--snapshot", str(snapshot), cwd=repo
+            )
+            self.assertEqual(preserved.returncode, 0, preserved.stderr)
 
     def test_verify_preservation_detects_changed_unrelated_dirt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -162,6 +202,53 @@ class DoneCloseoutTest(unittest.TestCase):
             )
             self.assertEqual(changed.returncode, 1)
             self.assertIn("working-copy fingerprint changed", changed.stderr)
+
+    def test_relative_receipt_survives_directory_change(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, _ = self.init_repo(root)
+            receipt = repo / "receipt \n.json"
+            receipt.write_text(json.dumps({"schemaVersion": 2, "runId": "source"}))
+            snapshot = self.run_closeout(
+                "snapshot", "--repo", str(repo), "--receipt", receipt.name, cwd=repo
+            )
+            self.assertEqual(snapshot.returncode, 0, snapshot.stderr)
+            snapshot_path = root / "snapshot.json"
+            snapshot_path.write_text(snapshot.stdout)
+            self.assertEqual(
+                json.loads(snapshot.stdout)["receipt"]["path"], str(receipt)
+            )
+            (root / receipt.name).write_text("not a receipt")
+            preserved = self.run_closeout(
+                "verify-preservation", "--snapshot", str(snapshot_path), cwd=root
+            )
+            self.assertEqual(preserved.returncode, 0, preserved.stderr)
+
+    def test_snapshot_accepts_untracked_nested_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, _ = self.init_repo(Path(tmp))
+            nested = repo / "nested"
+            nested.mkdir()
+            git(nested, "init", "-b", "main")
+            git(
+                nested,
+                "-c",
+                "user.name=Test",
+                "-c",
+                "user.email=test@example.invalid",
+                "commit",
+                "--allow-empty",
+                "-m",
+                "nested",
+            )
+            result = self.run_closeout("snapshot", "--repo", str(repo), cwd=repo)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            work = json.loads(result.stdout)["workingCopy"]
+            self.assertFalse(work["clean"])
+            self.assertEqual(
+                work["untracked"],
+                [{"path": "nested/", "sha256": hashlib.sha256(b"").hexdigest()}],
+            )
 
     def test_classify_blocks_unrelated_local_default_commits(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -301,7 +388,9 @@ class DoneCloseoutTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_publish_clean_uses_authoritative_default_over_stale_cached_head(self) -> None:
+    def test_publish_clean_uses_authoritative_default_over_stale_cached_head(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             repo, remote = self.init_repo(root)
@@ -338,12 +427,41 @@ class DoneCloseoutTest(unittest.TestCase):
             self.assertEqual(before, self.source_state(repo))
             self.assertEqual(
                 {"base.txt", "develop.txt", "task.txt"},
-                set(git(remote, "ls-tree", "-r", "--name-only", "develop").splitlines()),
+                set(
+                    git(remote, "ls-tree", "-r", "--name-only", "develop").splitlines()
+                ),
             )
             self.assertEqual(
                 {"base.txt"},
                 set(git(remote, "ls-tree", "-r", "--name-only", "main").splitlines()),
             )
+
+    def test_publish_clean_reports_conflicting_paths_without_publishing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, remote = self.init_repo(root)
+            task, _ = self.create_task_revision(repo, root)
+            (task / "base.txt").write_text("task edit\n")
+            git(task, "commit", "-am", "conflicting task edit")
+            revision = git(task, "rev-parse", "HEAD")
+            (repo / "base.txt").write_text("published edit\n")
+            git(repo, "commit", "-am", "concurrent edit")
+            git(repo, "push", "origin", "main")
+            remote_before = git(remote, "rev-parse", "main")
+            (repo / "untracked.txt").write_text("preserve source dirt\n")
+            before = self.source_state(repo)
+
+            result = self.run_publish_clean(
+                "--source-repo", str(repo), "--task-revision", revision, cwd=repo
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "blocked")
+            self.assertIn("base.txt", payload["error"])
+            self.assertIn(revision, payload["error"])
+            self.assertEqual(git(remote, "rev-parse", "main"), remote_before)
+            self.assertEqual(self.source_state(repo), before)
 
     def test_publish_clean_leaves_dirty_source_untouched(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -370,7 +488,9 @@ class DoneCloseoutTest(unittest.TestCase):
             self.assertEqual(payload["status"], "published")
             self.assertEqual(payload["defaultBranch"], "main")
             self.assertEqual(payload["taskRevisions"][0]["initialEvidence"], "unlanded")
-            self.assertEqual(payload["taskRevisions"][0]["evidence"], "patch-equivalent")
+            self.assertEqual(
+                payload["taskRevisions"][0]["evidence"], "patch-equivalent"
+            )
             self.assertEqual(before, self.source_state(repo))
             self.assertEqual(
                 payload["remoteTip"],
@@ -404,11 +524,13 @@ class DoneCloseoutTest(unittest.TestCase):
                 "import os\n"
                 "from pathlib import Path\n"
                 "import subprocess\n\n"
-                "real = os.environ[\"PUBLISH_REAL_GIT\"]\n"
-                "marker = Path(os.environ[\"PUBLISH_RACE_MARKER\"])\n"
-                "if len(os.sys.argv) > 1 and os.sys.argv[1] == \"push\" and not marker.exists():\n"
-                "    subprocess.run([real, \"-C\", os.environ[\"PUBLISH_RACE_UPDATER\"], \"push\", \"origin\", \"main\"], check=True)\n"
-                "    marker.write_text(\"raced\\n\")\n"
+                'real = os.environ["PUBLISH_REAL_GIT"]\n'
+                'marker = Path(os.environ["PUBLISH_RACE_MARKER"])\n'
+                "args = os.sys.argv[1:]\n"
+                "command = args[2:] if args[:1] == ['-C'] else args\n"
+                "if command[:1] == ['push'] and not marker.exists():\n"
+                '    subprocess.run([real, "-C", os.environ["PUBLISH_RACE_UPDATER"], "push", "origin", "main"], check=True)\n'
+                '    marker.write_text("raced\\n")\n'
                 "os.execv(real, [real, *os.sys.argv[1:]])\n"
             )
             wrapper.chmod(0o755)
@@ -484,10 +606,11 @@ class DoneCloseoutTest(unittest.TestCase):
             "args = sys.argv[1:]\n"
             "real = os.environ['PUBLISH_REAL_GIT']\n"
             "url = 'https://github.com/example/project.git'\n"
-            "if args[:2] == ['remote', 'get-url']:\n"
+            "command = args[2:] if args[:1] == ['-C'] else args\n"
+            "if command[:2] == ['remote', 'get-url']:\n"
             "    print(url); sys.exit(0)\n"
             "args = [os.environ['PUBLISH_REMOTE'] if a == url else a for a in args]\n"
-            "if args[0] != 'push':\n"
+            "if command[:1] != ['push']:\n"
             "    os.execv(real, [real, *args])\n"
             "marker = Path(os.environ['PUBLISH_PUSHES'])\n"
             "marker.write_text(marker.read_text() + 'push\\n' if marker.exists() else 'push\\n')\n"
@@ -904,12 +1027,17 @@ class DoneCloseoutTest(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("jj"), "jj is not installed")
     def test_jj_snapshot_and_verify_classification_are_structured(self) -> None:
+        for colocation in ("--colocate", "--no-colocate"):
+            with self.subTest(colocation=colocation):
+                self.assert_jj_snapshot_preservation(colocation)
+
+    def assert_jj_snapshot_preservation(self, colocation: str) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _, remote = self.init_repo(root)
             repo = root / "jjrepo"
             subprocess.run(
-                ["jj", "git", "clone", str(remote), str(repo)],
+                ["jj", "git", "clone", colocation, str(remote), str(repo)],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -937,3 +1065,56 @@ class DoneCloseoutTest(unittest.TestCase):
             classified = json.loads(result.stdout)
             self.assertEqual(classified["status"], "blocked")
             self.assertEqual(classified["taskRevisions"][0]["evidence"], "unlanded")
+
+            def recorded_state():
+                state = {
+                    str(path.relative_to(repo)): path.read_bytes()
+                    for directory in (
+                        repo / ".jj/working_copy",
+                        repo / ".jj/repo/op_heads",
+                    )
+                    for path in directory.rglob("*")
+                    if path.is_file()
+                }
+                if (repo / ".git/index").exists():
+                    state[".git/index"] = (repo / ".git/index").read_bytes()
+                return state
+
+            recorded_before = recorded_state()
+            base = (repo / "base.txt").read_bytes()
+            for name in ("base.txt", "untracked \n.txt"):
+                with self.subTest(name=name):
+                    changed_file = repo / name
+                    changed_file.write_bytes(b"first\x00\xff")
+                    changed = self.run_closeout(
+                        "verify-preservation",
+                        "--snapshot",
+                        str(snapshot_path),
+                        cwd=root,
+                    )
+                    self.assertEqual(
+                        changed.returncode, 1, changed.stdout + changed.stderr
+                    )
+                    dirty = self.run_closeout("snapshot", "--repo", str(repo), cwd=repo)
+                    self.assertEqual(dirty.returncode, 0, dirty.stderr)
+                    self.assertFalse(json.loads(dirty.stdout)["workingCopy"]["clean"])
+                    dirty_path = root / "dirty.json"
+                    dirty_path.write_text(dirty.stdout)
+                    unchanged = self.run_closeout(
+                        "verify-preservation", "--snapshot", str(dirty_path), cwd=root
+                    )
+                    self.assertEqual(unchanged.returncode, 0, unchanged.stderr)
+                    changed_file.write_bytes(b"second\x00\xff")
+                    changed_again = self.run_closeout(
+                        "verify-preservation", "--snapshot", str(dirty_path), cwd=root
+                    )
+                    self.assertEqual(
+                        changed_again.returncode,
+                        1,
+                        changed_again.stdout + changed_again.stderr,
+                    )
+                    self.assertEqual(recorded_state(), recorded_before)
+                    if name == "base.txt":
+                        changed_file.write_bytes(base)
+                    else:
+                        changed_file.unlink()

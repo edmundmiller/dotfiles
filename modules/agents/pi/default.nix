@@ -9,7 +9,6 @@
 # - Loads generated shared skills from ~/.agents/skills/
 # - Loads Pi-specific skills from ~/.pi/agent/skills/
 # - Project-local skills should live in .agents/skills/
-# - Auto-discovers subagent definitions from config/pi/agents/
 # - Installs the shared thin core as AGENTS.md
 # - Strips // comments from settings.jsonc (pi only supports standard JSON)
 #
@@ -161,11 +160,6 @@ let
   # Note: skills/catalog/ entries are managed by agent-skills-nix
   # (skills/flake.nix). Shared defaults go to ~/.agents/skills; only Pi-specific
   # skills go to ~/.pi/agent/skills to avoid duplicate discovery conflicts.
-
-  # Dynamically discover subagent definitions from config/pi/agents/
-  # Supports both .md (agents) and .chain.md (chains) for pi-subagents
-  agentsDir = "${configDir}/pi/agents";
-  agentLinks = mkPiAgentLinks "agents" agentsDir (markdownFilesIn agentsDir);
 
   # Parse JSONC settings (strips comments and trailing commas via lib.my.readJsonc)
   piSettingsParsedResult = readJsonc "${configDir}/pi/settings.jsonc";
@@ -372,11 +366,10 @@ in
             piCommandPolicyBridge
             piPermissionSystemConfig
             promptLinks
-            agentLinks
             sessionSearchFiles
             isDarwin
             ;
-          piPstack = pkgs.my.pstack-pi;
+          piPstack = pkgs.my.pistack;
           inherit (settings) piSettingsValidated;
         };
 

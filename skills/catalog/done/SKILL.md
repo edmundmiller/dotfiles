@@ -40,13 +40,18 @@ push, merged PR label, or passing build alone is never completion proof.
 
 ## Workflow
 
+Helpers require Bend 2.0.40+, Git, jq, Bash, a POSIX shell, and GNU coreutils on
+PATH. GitHub publication also requires authenticated `gh`; jj repositories
+require `jj`. See [Bend maintenance](./references/bend.md) when changing or
+testing a helper.
+
 1. Record `active_directory=$(pwd -P)` before changing directories. Establish
    the explicit task boundary from a receipt, recorded revisions, or a direct
    user statement. Subjects and ancestry position are not task provenance.
 2. Capture read-only evidence before mutations:
 
    ```bash
-   python3 "${HOME}/.agents/skills/done/scripts/closeout.py" snapshot \
+   bend "${HOME}/.agents/skills/done/scripts/closeout.bend" -- snapshot \
      --repo "$PWD" --active-directory "$active_directory" \
      ${receipt:+--receipt "$receipt"} >"$snapshot"
    ```
