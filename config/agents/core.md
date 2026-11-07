@@ -33,14 +33,15 @@ update_when: Universal invariants change.
   Prefer terminal alerts to log watches. Keep one active-process ledger;
   silently ignore cleared-ID notifications, including after empty process lists.
 - Prefer the smallest correct change; preserve useful capabilities.
-- Do not claim completion without fresh evidence. Verify commits/PRs against
-  the committed tree (`git show HEAD:<file>`) or staged diff (`git diff --cached`):
-  `git checkout <ref> -- <paths>` stages paths; later edits stay unstaged.
-  Skipped or no-op checks prove nothing.
+- Do not claim completion without fresh evidence. Implementers and reviewers
+  verify observable behavior against the same acceptance criteria from the
+  request, issue, or spec on the current revision. Rerun affected checks after
+  edits. Distinguish working, staged, committed, and deployed state;
+  skipped or no-op checks prove nothing.
 - Join dependent state-changing shell steps with `&&` (or `set -e`) so a failed
   step stops the rest.
-- Base each PR on the repo's default branch and give a fix to merged code its own PR; stack PRs only
-  when asked; GitHub refuses stacked-PR CLI/REST merges and base changes.
+- Base PRs on the default branch; fixes to merged code get separate PRs.
+  Stack only when asked; use the stack-maintenance skill.
 - Diagnosis or planning does not authorize implementation or publication.
 - Communicate concisely: lead with the outcome, separate evidence from
   uncertainty, and state blockers with the smallest action that resolves them.

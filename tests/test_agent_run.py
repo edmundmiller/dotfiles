@@ -167,6 +167,11 @@ class AgentRunTests(unittest.TestCase):
                 for token in ("CONTINUE", "PARTIAL", "LANDED", "BLOCKED"):
                     self.assertIn(token, source)
 
+        loop = " ".join(sources["autonomous loop skill"].split())
+        self.assertIn("local-only request can finish `UNLANDED`", loop)
+        self.assertIn("when landing is requested and authorized", loop)
+        self.assertIn("A goal does not grant publication or deployment authority", loop)
+
         worker = sources["worker"]
         for field in (
             "status",
@@ -197,7 +202,7 @@ class AgentRunTests(unittest.TestCase):
             self.assertNotIn(detail, primary)
 
     def test_self_improvement_routes_away_from_shared_rule_bundles(self) -> None:
-        skill = AUTONOMOUS_SKILL.read_text()
+        skill = " ".join(AUTONOMOUS_SKILL.read_text().split())
 
         self.assertNotIn("shared rules", skill.lower())
         for destination in ("`AGENTS.md`", "existing skill", "prompt template", "repo doc"):

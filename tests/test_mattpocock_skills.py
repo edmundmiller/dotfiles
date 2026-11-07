@@ -13,7 +13,6 @@ EXPECTED_SKILLS = {
     "codebase-design": "engineering/codebase-design",
     "diagnosing-bugs": "engineering/diagnosing-bugs",
     "domain-modeling": "engineering/domain-modeling",
-    "grill-me": "productivity/grill-me",
     "grill-with-docs": "engineering/grill-with-docs",
     "grilling": "productivity/grilling",
     "handoff": "productivity/handoff",
@@ -37,7 +36,7 @@ EXPECTED_SKILLS = {
 
 
 class MattPocockSkillsTest(unittest.TestCase):
-    def test_curated_manifest_matches_agents_workspace_selection(self) -> None:
+    def test_curated_manifest_keeps_interviews_without_redirect_entrypoint(self) -> None:
         self.assertEqual(EXPECTED_SKILLS, json.loads(MANIFEST.read_text()))
 
     def test_flake_routes_manifest_to_shared_agents_bundle(self) -> None:

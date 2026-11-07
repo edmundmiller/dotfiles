@@ -96,7 +96,7 @@ then validates imported patches in a fresh, read-only container. It now runs
 Flue from trusted base source, probes telemetry before model access, limits the
 repair step to 15 minutes, and checks the ledger before importing or publishing
 repairs. An incomplete ledger blocks publication. Nested errors remain available
-to agents using the catalog's `analyze-logs` skill.
+to agents using the log-analysis guide in the catalog's `review-logging-patterns` skill.
 
 The model cannot change workflows, telemetry, tests, pins, credentials, or merge
 policy. It cannot read the host ledger or publish its own changes. The existing

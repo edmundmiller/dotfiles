@@ -73,8 +73,31 @@ let
       config.home.homeDirectory = config.user.home;
     };
   files = (load "omp").home.file;
+  skillsConfig =
+    (
+      ((import (root + "/skills/flake.nix")).outputs inputs.skills-catalog.inputs)
+      .homeManagerModules.default
+      {
+        lib = moduleLib;
+        config = { };
+        pkgs = { };
+      }
+    ).config.programs;
+  interviewSkills = inputs.skills-catalog.inputs.agent-skills.lib.agent-skills.selectSkills {
+    catalog = { };
+    sources = skillsConfig.agent-skills.sources;
+    skills = lib.filterAttrs (
+      _: skill: skill.from == "mattpocock"
+    ) skillsConfig.dotfiles-agent-skills.targetedExplicit;
+  };
+  originalAskMatt = builtins.readFile (interviewSkills.ask-matt.absPath + "/SKILL.md");
 in
 {
+  interviews = {
+    selected = builtins.attrNames interviewSkills;
+    original = originalAskMatt;
+    rendered = interviewSkills.ask-matt.transform { original = originalAskMatt; };
+  };
   instructions = {
     ".omp/agent/AGENTS.md" = files.".omp/agent/AGENTS.md".text;
     ".codex/AGENTS.md" = (load "codex").home.file.".codex/AGENTS.md".text;

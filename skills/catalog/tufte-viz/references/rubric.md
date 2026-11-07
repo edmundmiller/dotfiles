@@ -14,7 +14,7 @@ This rubric is broken into seven rules.
 
 ## How to use
 
-- Start with `SKILL.md` for the compact review workflow.
+- Start with [the review workflow](tufte-test.md).
 - Use these rule files only when you need more detail on a specific failure.
 - Keep reviews strict but practical.
 

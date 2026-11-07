@@ -1,12 +1,3 @@
----
-name: analyze-logs
-description: Analyze application logs from the .evlog/logs/ directory. Use when debugging errors, investigating slow requests, understanding request patterns, or answering questions about application behavior. Reads structured NDJSON wide events written by evlog's file system drain.
-license: MIT
-metadata:
-  author: HugoRCD
-  version: "0.3"
----
-
 # Analyze application logs
 
 Read and analyze structured wide-event logs from the local `.evlog/logs/` directory to debug errors, investigate performance issues, and understand application behavior.

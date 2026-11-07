@@ -1,13 +1,22 @@
 ---
 name: microdose
-description: A subtle creativity mode for escaping obvious solutions without losing coherence. Use when the work feels technically correct but predictable, flat, or overly constrained.
+description: Explores creative alternatives with validation. Use for microdose, Ballmer Peak, bold brainstorming, or escaping predictable solutions. Defaults to a subtle twist; broad exploration requires a request for it.
 metadata:
   source: "https://x.com/Douglance/status/2078642630473199924"
 ---
 
 # Microdose
 
-Use this skill when the user wants slightly stranger, more original thinking without entering full brainstorming chaos.
+Choose the requested intensity before exploring:
+
+- Subtle or unspecified creativity: use the baseline, microdose, and integration
+  passes below, defaulting to intensity 2/5.
+- Explicit `ballmer-peak`, Ballmer Peak, bold brainstorming, or wide exploration:
+  read [the broad exploration mode](references/ballmer-peak.md). Generate broadly,
+  then complete its mandatory recovery phase before recommending or implementing.
+
+Both modes preserve the user's goal and constraints. Speculation is not evidence,
+and neither mode grants authority for external actions or scope expansion.
 
 This skill does **not** simulate drug use literally. “Microdose” is a metaphor for temporarily increasing:
 

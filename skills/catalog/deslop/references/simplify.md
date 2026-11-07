@@ -1,9 +1,3 @@
----
-name: simplify
-compatibility: portable
-description: Review changed code for reuse, quality, and efficiency, then fix worthwhile issues.
----
-
 # Simplify: Code Review and Cleanup
 
 Review all changed files for reuse, quality, and efficiency. Fix any issues found.

@@ -26,7 +26,11 @@ to apply. Upstream API examples were not runtime-tested here.
 
 Refresh from an explicit reviewed commit, retain the license and all references,
 repeat the entrypoint move and relative-link adjustment, and update this pin.
-Run the repository skill-quality validator on all three evlog skills.
+Run the repository skill-quality validator on `review-logging-patterns` and
+`build-audit-logs`. The former `analyze-logs` entrypoint is now
+[a directly linked guide](references/analyze-logs.md); retain its
+[provenance](references/analyze-logs-source.md) and do not recreate the duplicate
+discovery entry on refresh. Its identical MIT license is retained here.
 
 These catalog skills auto-enable globally through the existing Nix selection.
 Vendoring did not install packages, run `npx skills` or `evlog agents`, write

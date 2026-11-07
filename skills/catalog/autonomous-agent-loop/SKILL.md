@@ -1,71 +1,74 @@
 ---
 name: autonomous-agent-loop
-description: Maintains durable goal and handoff state. Use for explicit goal-management requests, resuming a recorded goal, or diagnosing agents that stall and need repeated prompts.
+description: Maintains goal and handoff state and diagnoses stalled agents. Use for explicit goal management, resuming recorded work, repeated nudges, or anti-ceremony/process-porn requests. Ordinary small tasks need no goal record.
 ---
 
-# Autonomous Agent Loop
+# Autonomous agent loop
 
-Use this skill when the task should finish without repeated user nudges.
+Use for explicit goal management, resuming a recorded goal, or diagnosing stalls.
+Ordinary small tasks do not need a new goal record.
 
-## Start: make the contract durable
+For anti-ceremony requests or work dominated by plans and status reports, read
+[the stalled-work diagnostic](references/anti-ceremony.md), formerly
+`just-say-no-to-process-porn`. Use the diagnostic without creating a goal or
+tracker. Never alter tests merely to manufacture a pass; establish that a check
+is wrong before correcting it. Preserve safety checks and explicitly requested
+multi-stakeholder process.
 
-Keep exactly one active outcome. Record:
+## Keep one contract
+
+Keep one active outcome in the existing request, issue, spec, or goal:
 
 - `Outcome`: the single requested end state.
 - `Done when`: the observable stopping condition.
-- `Proof`: the commands, diffs, rendered output, smoke checks, logs, or artifacts that establish it.
+- `Proof`: checks and evidence of that behavior on the current revision.
 
-Derive repository facts before asking. Request only missing product intent or authority. If a durable goal tool exists and no active goal covers the work, create one; do not add a task store or second goal-tracking convention. Prefer `goalize` and `goal-continue-audit`, and keep project-specific details in the goal or repository docs.
+Derive repository facts before asking for missing intent or authority. Update
+the existing record rather than creating a second tracker. When durable goal
+management is requested and no record covers it, use an available goal tool;
+otherwise keep the contract in the conversation. Use `goalize` and
+`goal-continue-audit` when available. A goal does not grant publication or
+deployment authority.
 
 ## Work loop
 
-Repeat until the only valid return state is `done` or genuine `blocked`:
+1. Choose the next authorized step that reduces uncertainty or advances the outcome.
+2. Run it, inspect evidence, and revise the approach. Rerun affected checks after edits.
+3. Keep unrelated discoveries `Parked`; do not silently expand scope.
+4. Continue until the requested outcome is verified or genuinely blocked by
+   access, tools, or a required decision. Do not stop at a plan, actionable next
+   steps, or untriaged failures.
 
-1. Choose the next low-risk step that reduces uncertainty or advances the outcome.
-2. Run it and inspect fresh evidence.
-3. Update the plan from that evidence.
-4. Record unrelated discoveries as `Parked`, then resume the active outcome.
-5. Before proposing scope expansion, state what current work it would displace.
-6. Continue without waiting unless tools, access, or a required decision make progress impossible.
-7. For background jobs, use a blocking or longest bounded wait when available. After an unchanged status, increase the interval; never poll again immediately unless the status changed or a real deadline is near.
-
-Do not stop at a plan, agent-actionable next steps, untriaged validation failures, or partial completion. Do not add a scheduler, dashboard, coordinator process, or notification policy; existing durable-goal tools are the execution mechanism.
+For background jobs, use a blocking or longest bounded wait. Increase intervals
+after unchanged status; do not poll immediately without a change or near deadline.
+Durable goals are checkpoints, not wake schedulers. Do not add a scheduler,
+dashboard, coordinator, or notification policy to keep this loop running.
 
 ## Delegation return contract
 
-When a primary delegates a bounded task, require one compact structured progress
-report from the worker:
+When delegation is authorized, share the acceptance criteria and authority.
+Request a compact structured report:
 
 - `status`: `DONE`, `CONTINUE`, `PARTIAL`, or `BLOCKED`.
 - `changed_paths`: every created, modified, or deleted path.
 - `verification`: exact checks and evidence, including failures.
 - `landing_state`: `UNLANDED`, `READY_FOR_DONE`, `LANDED`, or `BLOCKED`.
-- `next_action`: exactly one concrete follow-up, or `none` when no follow-up is needed.
+- `next_action`: next owner and concrete action, or `none`.
 
-The primary must wait for each worker. Follow up `CONTINUE` and `PARTIAL` results
-or take the next bounded step; a worker's `DONE` only completes its assignment.
-Durable goals are checkpoints, not wake schedulers: an active goal does not relaunch
-a stopped worker. Keep the goal open through `done`, and close it only after
-`landing_state` is `LANDED` or the outcome is genuinely `BLOCKED`.
+Include revision and checkout so the primary can inspect the actual changes.
+Wait for dependent workers, inspect their evidence, and resolve `CONTINUE` or
+`PARTIAL` results. A worker's `DONE` completes only its assignment. A verified
+local-only request can finish `UNLANDED`; when landing is requested and authorized,
+keep the goal open until landing is verified. Mark genuinely blocked work as
+blocked, not done.
 
 ## Evidence-first debugging
 
-When behavior is “rough” or repeatedly needs kicks:
+Compare the original request, repeated follow-ups such as `continue` or `still
+broken`, and the delivered evidence. Identify the missing check or unfinished
+action. Patch the smallest owning instruction or tool: `AGENTS.md`, an existing
+skill, a prompt template, a repo doc, or a deterministic check.
 
-- Search session/log history for repeated user follow-ups: `continue`, `try again`, `did that fix`, `how is it going`, `commit`, `rerun`, `still broken`.
-- Compare the first ask to the final answer: did the agent deliver artifacts and verification, or just recommendations?
-- Identify missing feedback loops: no build/test, no smoke check, no rendered UI inspection, no deploy verification, no issue update.
-- Patch the smallest durable surface that future agents read: `AGENTS.md`, an
-  existing skill, a prompt template, a repo doc, or a deterministic check.
-
-## Blocked stop format
-
-Return `blocked` only when completion is impossible. Report:
-
-- attempted paths
-- evidence gathered
-- exact blocker
-- unmet requirements
-- exactly one smallest human action needed to continue
-
-Never mark a durable goal `done` while any requirement is unverified, narrowed, deferred, or merely locally checked when authorized landing remains.
+When blocked, report attempted paths, evidence, unmet criteria, the exact blocker,
+and the smallest human action needed. Never call unverified, narrowed, or deferred
+requirements complete.

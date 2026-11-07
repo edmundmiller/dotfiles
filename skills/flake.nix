@@ -391,13 +391,23 @@
                 else
                   original;
             in
-            (builtins.replaceStrings [ "](link)" ] [ "](https://tracker.example/ticket)" ] (
-              lib.concatStringsSep "\n" (
-                lib.filter (
-                  line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
-                ) (lib.splitString "\n" skillBody)
+            # grill-me is only an upstream redirect to grilling. Keep one
+            # deployed entrypoint and route callers directly to it.
+            (builtins.replaceStrings
+              [ "](link)" "/grill-me" ]
+              [ "](https://tracker.example/ticket)" "/grilling" ]
+              (
+                lib.concatStringsSep "\n" (
+                  lib.filter (
+                    line: !(lib.hasPrefix "disable-model-invocation:" line) && !(lib.hasPrefix "argument-hint:" line)
+                  ) (lib.splitString "\n" skillBody)
+                )
               )
-            ))
+            )
+            + lib.optionalString (name == "grilling") ''
+
+              The former `grill-me` request uses this interview directly.
+            ''
             + mattpocockRuntimeOverlay;
         }) mattpocockSkillPaths;
         duckdbSkillNames = [

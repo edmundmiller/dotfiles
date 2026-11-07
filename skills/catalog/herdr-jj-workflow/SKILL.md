@@ -34,7 +34,7 @@ Use this skill for `create`, `resume`, `approve commit`, `publish`, `ship`, `sub
 
 1. Use `prefix+a` to create a jj workspace. Enter the stable task name and base revision. Base defaults to `trunk()`; use a published parent bookmark for a stacked task.
 2. Let Herdr create the workspace and bootstrap its tabs. Do not create another workspace from the new agent session.
-3. Run `hey agent-start` without `--workspace` from the created checkout and retain its receipt. For work covered by `AGENT_WORKFLOW.md`, keep its required worklog too.
+3. Run `hey agent-start` without `--workspace` from the created checkout and retain its receipt. Follow `AGENT_WORKFLOW.md` when applicable; its worklog is optional, not a second tracker.
 4. The dotfiles `dev` layout opens `$AGENT` first, then Hunk. Export `AGENT` as the agent executable name or path in the pane's shell environment, without arguments. There is no hard-coded OMP fallback. The layout does not conditionally omit Hunk for non-colocated workspaces; use the agent pane for review there.
 5. Use `herdr agent list` and `herdr workspace list` to resolve current live handles; never reuse example IDs.
 6. Use `prefix+g` only for the native Git-only worktree flow.

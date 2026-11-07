@@ -148,19 +148,21 @@ def validate_skill(path: Path) -> list[Finding]:
                     )
                 )
 
-    for match in LINK_PATTERN.finditer(text):
-        target = local_reference(match.group(1))
-        if target is None:
-            continue
-        resolved = path.parent / target
-        if not resolved.exists():
-            findings.append(
-                Finding(
-                    str(path),
-                    "local-reference",
-                    f"missing local reference: {target}",
+    documents = [path, *sorted((path.parent / "references").rglob("*.md"))]
+    for document in documents:
+        for match in LINK_PATTERN.finditer(document.read_text(encoding="utf-8", errors="replace")):
+            target = local_reference(match.group(1))
+            if target is None:
+                continue
+            resolved = document.parent / target
+            if not resolved.exists():
+                findings.append(
+                    Finding(
+                        str(document),
+                        "local-reference",
+                        f"missing local reference: {target}",
+                    )
                 )
-            )
     return findings
 
 

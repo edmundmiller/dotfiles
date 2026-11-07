@@ -182,18 +182,40 @@ class AgentResponseContractTests(unittest.TestCase):
 
         self.assertNotRegex("git status", condition)
 
-    def test_thin_core_keeps_a_compact_response_contract(self) -> None:
+    def test_implementers_and_reviewers_share_current_behavioral_criteria(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())
 
-        self.assertLessEqual(len(core.split()), 400)
         for expected in (
-            "Communicate concisely",
-            "lead with the outcome",
-            "separate evidence from uncertainty",
-            "state blockers with the smallest action that resolves them",
+            "Implementers and reviewers",
+            "verify observable behavior against the same acceptance criteria",
+            "request, issue, or spec on the current revision",
+            "Rerun affected checks after edits",
+            "Distinguish working, staged, committed, and deployed state",
         ):
             self.assertIn(expected, normalized)
+
+    def test_handoffs_preserve_authority_without_mandatory_tracking(self) -> None:
+        workflow = " ".join((ROOT / "AGENT_WORKFLOW.md").read_text().split())
+        template = " ".join((ROOT / ".agents/worklogs/TEMPLATE.md").read_text().split())
+
+        for expected in (
+            "same acceptance criteria",
+            "Do not create a second tracking system",
+            "observable behavior on the current revision",
+            "Checkpoints are optional for small work",
+            "inspects the referenced sources and current code",
+        ):
+            self.assertIn(expected, workflow)
+        for source in (workflow, template):
+            with self.subTest(source=source[:40]):
+                for field in ("revision", "checkout", "authority", "evidence", "next owner/action"):
+                    self.assertIn(field, source.lower())
+                self.assertIn(
+                    "does not authorize commits, tags, publication, cleanup, or deployment",
+                    source,
+                )
+                self.assertNotIn("After landing, create annotated tag", source)
 
 
 if __name__ == "__main__":

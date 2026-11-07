@@ -209,6 +209,23 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertTrue(pi_input["locked"]["rev"])
         self.assertTrue(pi_input["locked"]["narHash"])
 
+    def test_interview_redirect_calls_resolve_to_selected_skill(self) -> None:
+        interviews = self.deployed["interviews"]
+        original, rendered = interviews["original"], interviews["rendered"]
+
+        self.assertIn("grilling", interviews["selected"])
+        self.assertIn("grill-with-docs", interviews["selected"])
+        self.assertNotIn("grill-me", interviews["selected"])
+        self.assertGreater(original.count("/grill-me"), 0)
+        self.assertNotIn("/grill-me", rendered)
+        self.assertEqual(
+            rendered.count("/grilling"),
+            original.count("/grilling") + original.count("/grill-me"),
+        )
+        self.assertEqual(
+            rendered.count("/grill-with-docs"), original.count("/grill-with-docs")
+        )
+
     def test_shared_skill_source_routes_stay_selective(self) -> None:
         core = OMP_CORE.read_text()
         standard = CODING_STANDARDS.read_text()

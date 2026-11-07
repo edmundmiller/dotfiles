@@ -2,7 +2,8 @@
 
 Vendored from https://github.com/evloghq/evlog at commit
 `c5dd007b9552048068f3dfc801a7625144554992`, directory `skills/analyze-logs`.
-The upstream MIT license is in `LICENSE`.
+The upstream MIT license is in [LICENSE](../LICENSE).
+The original metadata names HugoRCD as author and version 0.3.
 Repository formatting is applied to Markdown and code examples.
 
 Reviewed the entire skill. No scripts, executables, MCP servers, or activation
@@ -17,5 +18,9 @@ Refresh from an explicit reviewed commit, copy the upstream entrypoint and
 license, review the content, update this pin, and run the repository
 skill-quality validator.
 
-The catalog auto-enables this skill globally through existing Nix selection.
+Keep the guide at [analyze-logs.md](analyze-logs.md), without skill frontmatter.
+`review-logging-patterns` owns its discovery and safety boundaries. Refreshes
+must not restore a second standalone entrypoint.
+
+The catalog auto-enables the parent skill through existing Nix selection.
 No installer, project-convention write, or host activation ran during vendoring.

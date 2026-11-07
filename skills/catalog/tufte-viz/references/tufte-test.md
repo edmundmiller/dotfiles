@@ -1,14 +1,6 @@
----
-name: tufte-test
-description: >
-  Review charts with a simple Tufte-style rubric. Use when judging whether a
-  chart is clean, honest, readable, and insight-forward, or when iterating on a
-  visualization until it passes a concise quality bar.
----
-
 # Tufte Test
 
-Use this skill to review a chart locally with a lightweight Tufte-style rubric.
+Use this guide to review a chart locally with a lightweight Tufte-style rubric.
 
 This skill is intentionally simple:
 
@@ -129,11 +121,11 @@ alternative.
 
 For the expanded checklist, see:
 
-- `references/rubric.md`
-- `references/rules/01-data-ink-ratio.md`
-- `references/rules/02-no-3d-effects.md`
-- `references/rules/03-direct-labeling.md`
-- `references/rules/04-axis-readability.md`
-- `references/rules/05-muted-purposeful-color.md`
-- `references/rules/06-integrated-annotations.md`
-- `references/rules/07-graphical-integrity.md`
+- [Rubric](rubric.md)
+- [Data-ink ratio](rules/01-data-ink-ratio.md)
+- [No 3D effects](rules/02-no-3d-effects.md)
+- [Direct labeling](rules/03-direct-labeling.md)
+- [Axis readability](rules/04-axis-readability.md)
+- [Purposeful color](rules/05-muted-purposeful-color.md)
+- [Annotations](rules/06-integrated-annotations.md)
+- [Graphical integrity](rules/07-graphical-integrity.md)

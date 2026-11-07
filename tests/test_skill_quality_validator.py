@@ -84,6 +84,28 @@ class SkillQualityValidatorTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing local reference", result.stdout)
 
+    def test_checks_links_inside_moved_reference_guides(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = self.write_skill(
+                Path(tmp), "merged-skill", "Read [the guide](references/guide.md).\n"
+            )
+            references = skill / "references"
+            references.mkdir()
+            guide = references / "guide.md"
+            guide.write_text("Read [the rule](rules/detail.md) and [parent](../SKILL.md).\n")
+            missing = self.run_validator(skill, json_output=True)
+            self.assertNotEqual(missing.returncode, 0)
+            findings = json.loads(missing.stdout)["findings"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["path"], str(guide))
+            self.assertIn("rules/detail.md", findings[0]["message"])
+
+            (references / "rules").mkdir()
+            (references / "rules/detail.md").write_text("Return to [the guide](../guide.md).\n")
+            repaired = self.run_validator(skill, json_output=True)
+            self.assertEqual(repaired.returncode, 0, repaired.stdout + repaired.stderr)
+            self.assertEqual(json.loads(repaired.stdout), {"checked": 1, "findings": []})
+
     def test_portable_skill_rejects_runtime_specific_tool_names(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             skill = self.write_skill(

@@ -1,11 +1,6 @@
----
-name: ballmer-peak
-description: A high-divergence, low-inhibition ideation mode that encourages bold exploration first and strict validation second. Use when you want unusually creative problem solving, surprising solution candidates, and wider search before converging.
-metadata:
-  source: "https://x.com/bentlegen/status/2078632622335336461"
----
-
 # Ballmer Peak
+
+Source: https://x.com/bentlegen/status/2078632622335336461
 
 Use this skill when the user wants the agent to enter a more exploratory, less self-censoring creative mode while still producing useful output.
 

@@ -1,8 +1,3 @@
----
-name: code-simplifier
-description: Refines code without changing behavior. Use when explicitly asked to simplify, clean up, or improve code readability.
----
-
 # Code Simplifier
 
 Refine code for clarity and maintainability without changing behavior. Prioritize readable, explicit code over compact cleverness.
@@ -40,7 +35,8 @@ Read project-level config (AGENTS.md, CLAUDE.md, .editorconfig, linter configs) 
 
 ## Process
 
-1. Identify recently modified sections (`diffs`, changed files; fallback `git diff`)2. Analyze for clarity, consistency, and convention adherence
-2. Apply refinements — smallest diff that achieves the improvement
-3. Verify functionality is unchanged
-4. Summarize only significant changes worth noting
+1. Identify recently modified sections (`diffs`, changed files; fallback `git diff`).
+2. Analyze for clarity, consistency, and convention adherence.
+3. Apply refinements with the smallest diff that achieves the improvement.
+4. Verify functionality is unchanged.
+5. Summarize only significant changes worth noting.

@@ -32,7 +32,7 @@ The validator enforces:
 - lowercase hyphenated name matching the skill directory
 - description length at most 1024 characters
 - `SKILL.md` at most 500 lines
-- existing local Markdown references
+- existing local Markdown links in `SKILL.md` and bundled `references/**/*.md`
 - no known runtime-specific tool names when `compatibility: portable` is declared
 
 These are structural requirements. They do not prove that instructions are correct or useful.
