@@ -127,15 +127,16 @@ def health(ha, args, now):
         )
 
     def integrations():
-        entries = ha.request("config_entries/get")
-        failures = [
+        entries = [
             {key: entry[key] for key in ("entry_id", "domain", "state")}
-            for entry in entries
+            for entry in ha.request("config_entries/get")
             if not entry.get("disabled_by")
             and entry.get("source") != "ignore"
-            and entry["state"] != "loaded"
         ]
-        return check("unhealthy" if failures else "healthy", failures=failures)
+        failures = [entry for entry in entries if entry["state"] != "loaded"]
+        return check(
+            "unhealthy" if failures else "healthy", entries=entries, failures=failures
+        )
 
     def repairs():
         issues = [

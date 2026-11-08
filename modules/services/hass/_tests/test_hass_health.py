@@ -31,6 +31,8 @@ class HassHealthTest(unittest.TestCase):
                     "domain": "test",
                     "state": "loaded",
                     "disabled_by": None,
+                    "title": "private integration title",
+                    "data": {"password": "private credential"},
                 },
                 {
                     "entry_id": "disabled",
@@ -182,6 +184,10 @@ class HassHealthTest(unittest.TestCase):
         code, report = self.health()
         self.assertEqual(code, 0)
         self.assertEqual(report["checks"]["integrations"]["failures"], [])
+        self.assertEqual(
+            report["checks"]["integrations"]["entries"],
+            [{"entry_id": "enabled", "domain": "test", "state": "loaded"}],
+        )
 
         self.responses["config_entries/get"][0]["state"] = "not_loaded"
         code, report = self.health()

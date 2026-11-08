@@ -338,6 +338,41 @@ class NucShippingTests(unittest.TestCase):
         self.assertNotIn("always()", deployment)
         self.assertIn("inputs.expected_sha", deployment)
         self.assertIn("mise run nuc revision", deployment)
+        for name in (
+            "Fetch, build, activate and verify on the NUC",
+            "Record deployed revision",
+        ):
+            self.assertIn(
+                f"- name: {name}\n        if: inputs.operation == 'deploy'\n",
+                deployment,
+            )
+
+    def test_diagnostics_preserve_unhealthy_and_unknown_results_without_activation(self):
+        workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
+        self.assertIn(
+            "- name: Inspect running HA without activation\n"
+            "        if: inputs.operation == 'ha-diagnostics'\n",
+            workflow,
+        )
+        for code, status in ((0, "healthy"), (1, "unhealthy"), (2, "unknown")):
+            with self.subTest(status=status):
+                report = {
+                    "schema_version": 1,
+                    "status": status,
+                    "checks": {"repairs": {"issues": [{"issue_id": "backup_repair"}]}},
+                }
+                setup = (
+                    f'export RUNNER_TEMP="{self.root}"\n'
+                    f'export GITHUB_STEP_SUMMARY="{self.root / "summary"}"\n'
+                    "tailscale() { cat > /dev/null; "
+                    f"printf '%s\\n' '{json.dumps(report)}'; return {code}; }}\n"
+                )
+                result = self.workflow_shell(
+                    "Inspect running HA without activation", setup=setup
+                )
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertEqual(json.loads(result.stdout), report)
+                self.assertIn("backup_repair", (self.root / "summary").read_text())
 
 
 if __name__ == "__main__":

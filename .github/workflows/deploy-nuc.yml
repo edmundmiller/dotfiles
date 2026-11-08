@@ -1,13 +1,20 @@
 name: Deploy NUC
-run-name: Deploy NUC ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-diagnostics' && 'Inspect HA' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
     inputs:
       expected_sha:
-        description: Exact published main commit to deploy (40-character lowercase SHA)
+        description: Exact published main workflow commit (40-character lowercase SHA)
         required: true
         type: string
+      operation:
+        description: Deploy this revision or only inspect the running HA instance
+        type: choice
+        default: deploy
+        options:
+          - deploy
+          - ha-diagnostics
 
 permissions:
   contents: read
@@ -124,6 +131,7 @@ jobs:
           tags: tag:github-nuc-deploy
           ping: nuc.cinnamon-rooster.ts.net
       - name: Fetch, build, activate and verify on the NUC
+        if: inputs.operation == 'deploy'
         shell: bash
         run: |
           set -euo pipefail
@@ -131,6 +139,38 @@ jobs:
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
             env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$DEPLOY_SHA"
       - name: Record deployed revision
+        if: inputs.operation == 'deploy'
         run: |
           printf 'Deployed dotfiles [%s](https://github.com/edmundmiller/dotfiles/commit/%s) to NUC.\n' \
             "$DEPLOY_SHA" "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+      - name: Inspect running HA without activation
+        if: inputs.operation == 'ha-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Stream the tested reader, not a new host configuration. Token stays on NUC.
+          result=0
+          # Expand these variables on NUC, not on the GitHub runner.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            export PATH="/run/wrappers/bin:$PATH"
+            printf "hostname=%s\n" "$(hostname)" >&2
+            test "$(hostname)" = nuc
+            printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
+            systemctl show home-assistant.service -p ActiveState -p SubState -p MainPID -p ActiveEnterTimestamp >&2
+            exec sudo -n uv run --no-project --script - health \
+              --url http://127.0.0.1:8123 --token-file /run/agenix/ha-hermes-token \
+              --expected-version 2026.11.0 --entity climate.main_floor --entity climate.master_suite \
+              --entity script.goodnight --entity script.good_morning --entity script.get_ready_for_bed --json
+          ' < modules/services/hass/hass-health.py > "$RUNNER_TEMP/ha-health.json" || result=$?
+          # Includes observed failures and unknowns; neither is silently made healthy.
+          jq -e '.schema_version == 1 and (.status | IN("healthy", "unhealthy", "unknown"))' \
+            "$RUNNER_TEMP/ha-health.json" > /dev/null
+          jq . "$RUNNER_TEMP/ha-health.json"
+          {
+            printf '## Read-only HA diagnostics\n\nNo deployment, restart, or HA write was requested.\n\n```json\n'
+            jq . "$RUNNER_TEMP/ha-health.json"
+            printf '\n```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$result"

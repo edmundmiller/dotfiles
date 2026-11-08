@@ -29,7 +29,8 @@ Health reports contain a UTC observation timestamp and these checks:
 
 - Running HA version versus the version embedded in the Nix-built command.
   `--expected-version` overrides that expectation for a candidate upgrade.
-- Enabled integrations that are not loaded, plus active, non-dismissed Repairs.
+- Enabled integration states, their unloaded entries, and active, non-dismissed
+  Repairs. Entry titles, credentials, and configuration data are omitted.
 - Availability of both thermostats and the bedtime, goodnight, and morning
   scripts. Repeat `--entity` to replace the default list for one invocation.
 - Errors in retained automation and script runs from the last 24 hours.

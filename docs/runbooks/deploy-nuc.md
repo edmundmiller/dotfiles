@@ -210,6 +210,24 @@ The workflow serializes deployments without cancelling an active run. The
 host lock also excludes concurrent operator deployments. Interrupted builds
 can fail the job; inspect the live generation before retrying.
 
+### Read-only Home Assistant diagnostics
+
+With explicit inspection approval, dispatch the same workflow on `main` with
+`operation=ha-diagnostics` and `expected_sha` set to the exact workflow revision.
+This mode retains the exact-main CI and existing OIDC checks, but skips activation
+and the deployed-revision announcement. It prints the running host revision and
+HA service metadata, then streams the tested `hass-health.py` reader through the
+existing SSH connection. NUC's `uv` runs the reader with its declared dependency;
+this can populate the tool cache but does not activate a system configuration.
+
+The existing HA token stays in `/run/agenix/ha-hermes-token`. The report omits
+config-entry titles and data, trace payloads, and free-form errors. It includes
+enabled integration states and active Repairs, without dismissing them. The
+workflow summary preserves the JSON report. Exit codes remain `0` for healthy,
+`1` for observed failures, and `2` for incomplete inspection. A retained Backup
+Repair can therefore make a successful inspection report an unhealthy result.
+Physical device behavior and restic freshness still need separate checks.
+
 ### Ship from an Amp orb
 
 The dotfiles Amp project's custom Ship prompt authorizes publication and NUC
