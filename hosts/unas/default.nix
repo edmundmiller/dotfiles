@@ -43,7 +43,7 @@
     hardware = {
       fs = {
         enable = true;
-        zfs.enable = true;
+        zfs.enable = false;
         ssd.enable = true;
       };
     };
@@ -63,10 +63,8 @@
 
   time.timeZone = "America/Chicago";
 
-  # Preserve the installed system's data-format defaults across upgrades.
+  # Preserve the installed data-format and headless activation defaults.
   system.stateVersion = lib.mkForce "24.05";
-  # Recovery deployments must not be replaced overnight by an older remote tree.
-  system.autoUpgrade.enable = lib.mkForce false;
   # No desktop session or dconf D-Bus service exists on this headless host.
   home-manager.users.emiller.dconf.enable = false;
 
@@ -78,41 +76,25 @@
     efiBinary = "${config.systemd.package}/lib/systemd/boot/efi/systemd-boot${pkgs.stdenv.hostPlatform.efiArch}.efi";
   };
 
-  # The rescue connection must also work after booting the installed system.
-  users.users.emiller.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGJ64slBBRJVfH38s9zN6mlphbj/R0rrOfm91vgZEzkh blip@meshify"
+  # Keep runtime identities independent of the build machine's filesystem.
+  age.identityPaths = lib.mkForce [
+    "/home/emiller/.ssh/id_ed25519"
+    "/etc/ssh/ssh_host_rsa_key"
+    "/etc/ssh/ssh_host_ed25519_key"
   ];
+  # Agenix needs the preserved home identity before stage-two activation.
+  fileSystems."/home".neededForBoot = true;
 
-  # Two older pools have the same name. Only these mirror members may satisfy
-  # the datatank import; leave the 18 TB and 6 TB disks untouched.
-  boot.zfs.pools.datatank.devNodes = "/dev/disk/unas-datatank";
-  boot.zfs.forceImportRoot = false;
-  boot.zfs.forceImportAll = false;
-  services.udev.extraRules = ''
-    SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_SERIAL}=="WDC_WD160EDGZ-11B2DA0_2PHTEHKT", ENV{ID_PART_ENTRY_NUMBER}=="1", SYMLINK+="disk/unas-datatank/mirror-1"
-    SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_SERIAL}=="WDC_WD160EDGZ-11B2DA0_3HGZMWEN", ENV{ID_PART_ENTRY_NUMBER}=="1", SYMLINK+="disk/unas-datatank/mirror-2"
-  '';
-
+  boot.kernelPackages = pkgs.linuxPackages;
+  boot.supportedFilesystems = [ "btrfs" ];
   boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+
+  environment.systemPackages = [ pkgs.btrfs-progs ];
+
+  # The public flake must contain this layout before automatic upgrades resume.
+  system.autoUpgrade.enable = lib.mkForce false;
 
   services.smartd.enable = true;
   # FIXME https://discourse.nixos.org/t/logrotate-config-fails-due-to-missing-group-30000/28501/7
   services.logrotate.checkConfig = false;
-
-  # systemd.services.znapzend.serviceConfig.User = lib.mkForce "emiller";
-  services.znapzend = {
-    enable = true;
-    autoCreation = true;
-    zetup = {
-      "zroot/user/home" = {
-        plan = "1d=>1h,1m=>1d,1y=>1m";
-        recursive = true;
-        destinations.local = {
-          dataset = "datatank/backup/unas";
-          presend = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/ccb26fbc-95af-45bb-b4e6-38da23db6893/start";
-          postsend = "${pkgs.curl}/bin/curl -m 10 --retry 5 https://hc-ping.com/ccb26fbc-95af-45bb-b4e6-38da23db6893";
-        };
-      };
-    };
-  };
 }

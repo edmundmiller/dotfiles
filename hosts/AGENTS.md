@@ -8,6 +8,9 @@ For host operations, confirm `hostname` and `uname -a`. Darwin activation uses
 `hey re`, rollback uses `hey rollback`, and NUC deployment uses `hey nuc`.
 Activation/deployment requires authorization, not merely a configuration edit.
 
+For new host setup or redeployment, read [the provisioning guidance](../docs/install.md#nixos-host-setup-and-redeployment)
+before disk work. It covers existing disko layouts and staged execution safety.
+
 Secret recipients live in `hosts/<host>/secrets/secrets.nix` and
 `hosts/shared/secrets/`. A changed encrypted file is not reflected in decrypted
 runtime state until the target rebuilds. Recipient changes also require re-keying.

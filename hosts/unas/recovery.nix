@@ -70,7 +70,7 @@
     UNAS recovery is ready. Connect Ethernet and use:
       ssh root@unas-rescue.local
 
-    SSH accepts only the supplied public keys. Console login needs no password.
+    SSH accepts only approved public keys. Console login needs no password.
     No NAS pool is imported and no disk is formatted automatically.
     Read /etc/unas-recovery.txt before reinstalling.
   '';
@@ -78,23 +78,31 @@
   environment.etc."unas-recovery.txt".text = ''
     UNAS data-preserving reinstall
 
-    This USB boots a live system with Ethernet DHCP, SSH, and ZFS tools.
-    It does not reinstall, partition, format, or import pools automatically.
+    This USB boots a live system with Ethernet DHCP, SSH, Btrfs, and ZFS tools.
+    It does not reinstall, partition, format, mount data filesystems, or import
+    pools automatically. Disk writes require separate authorization.
 
-    First inspect lsblk -f, /dev/disk/by-id, and zpool import.
-    The configured OS disk is nvme-PCIe_SSD_20092410240085.
-    Confirm it against the actual hardware; do not trust an old configuration.
-    zroot contains /home as well as the OS. Preserve both zroot and datatank.
-    Never run disko in format/destroy mode, wipefs, mkfs, or zpool create.
+    First inspect lsblk -f, findmnt, and /dev/disk/by-id. Confirm filesystem
+    types, device identities, and existing mounts against the actual hardware;
+    do not infer them from an old configuration or a pool name alone.
+    The NVMe and bulk storage may use Btrfs, older ZFS pools, or a mixture
+    during migration. An OS disk may also contain home directories and history.
+    Never run disko in format/destroy mode, wipefs, mkfs, zpool create, or any
+    command that recreates an existing filesystem or pool.
 
-    Inspect existing pools read-only before planning any writes. Keep the
-    installed SSH host keys, secrets, home datasets, and service state.
+    Inspect existing filesystems read-only before planning any writes. An
+    authorized Btrfs inspection mount needs ro,rescue=nologreplay. Add subvolid=5
+    only when explicitly inspecting the filesystem top level. ro alone can
+    replay the tree log. Inspect ZFS discovery with zpool import, then use
+    verified pool identities for any separately authorized read-only imports.
+    Preserve Btrfs subvolumes and snapshots, ZFS datasets and snapshots, home
+    data, installed SSH host keys, secrets, service state, and existing history.
     Reinstall into the existing mounted filesystems, without repartitioning.
-    Snapshot affected datasets and retain the previous system generation
-    before installing a replacement generation or repairing the bootloader.
+    Before authorized installation writes, snapshot affected subvolumes or
+    datasets and retain the previous system generation and EFI boot files.
 
-    The existing machine uses /boot as its EFI mountpoint. Verify UEFI boot
-    and the actual partition before installing a bootloader. Do not reboot
-    until the installed system profile and boot entries have been checked.
+    Verify UEFI boot, the actual EFI partition, and its installed mountpoint
+    before repairing a bootloader. Do not reboot until the installed system
+    profile and boot entries have been checked.
   '';
 }
