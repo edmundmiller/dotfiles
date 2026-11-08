@@ -1262,6 +1262,7 @@
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
                       tests/test_nuc_shipping.py \
+                      tests/test_candidate_ci.py \
                       tests/test_orb_setup.py \
                       tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \

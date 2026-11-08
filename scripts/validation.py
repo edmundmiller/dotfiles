@@ -29,6 +29,8 @@ CHECKS = {
         "scripts/validation.py",
         "scripts/nuc_shipping.py",
         "tests/test_nuc_shipping.py",
+        "scripts/candidate_ci.py",
+        "tests/test_candidate_ci.py",
         "scripts/beads_filter.py",
         "tests/test_beads_filter.py",
         "bin/amp-runner-sync",

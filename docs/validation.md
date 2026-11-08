@@ -69,13 +69,19 @@ there is no one-shot completion token or persistent success cache.
 ## CI uses the same selection
 
 `Checks (Linux)` runs the shared portable runner. PRs use
-the PR base SHA; pushes use the previous SHA. `--ci` consumes `VALIDATION_BASE`;
-manual/new-branch events with no usable base run the full portable suite. The
+the PR base SHA; main pushes use the previous SHA. Candidate pushes use the
+explicit base encoded in `candidate/BASE/SHA`, not the all-zero before-SHA
+of a new branch. The planner rejects mismatched candidate refs, non-ancestor
+bases, or main that has moved beyond that base. `--ci` consumes `VALIDATION_BASE`;
+manual events with no usable base run the full portable suite. The
 lightweight platform planner runs the same selector without Nix before allocating
-the Herdr VM runner. Unaffected Herdr work is explicitly skipped. Planning can
-run on either platform without a native builder.
+the Herdr VM runner and passes the same base to Linux and Herdr. Unaffected
+Herdr work is explicitly skipped. Planning can run on either platform without
+a native builder. See [candidate admission](runbooks/candidate-ci.md) for the
+pre-main publication route and the separately approved live settings.
 
-Ordinary PR and main-push CI allocates no Mac runner. Linux starts independently;
+Ordinary PR, candidate and main-push CI allocates no Mac runner. Linux waits only
+for lightweight planning, not Darwin;
 green default CI certifies portable/Linux checks, not Darwin. Before Mac activation,
 run `hey check --platform darwin` on the exact candidate, or explicitly dispatch
 CI on that candidate with `darwin=true`. The optional job always runs native

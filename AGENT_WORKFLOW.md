@@ -39,6 +39,13 @@ The [guardrails](docs/agent-guardrails.md) define source ownership and approval
 boundaries. Commit, publish, deploy, or clean up only within the user's request;
 publication and host activation are not implied by completing local edits.
 
+For authorized publication to main, follow
+[candidate CI](docs/runbooks/candidate-ci.md). Submit a candidate, resume on
+hosted CI completion, then fast-forward main to the exact passing SHA. No PR
+is required. Do not push unchecked task commits directly to main or bypass
+required statuses. Legacy commands that combine a direct push and activation
+must not be used as an alternative publication route.
+
 For authorized NUC shipping, follow the request handoff in
 [NUC shipping](docs/runbooks/deploy-nuc.md#ship-from-an-amp-orb). GitHub owns CI
 waiting and deployment after the agent submits the authorized exact revision.

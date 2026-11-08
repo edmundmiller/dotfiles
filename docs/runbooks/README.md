@@ -15,6 +15,7 @@ Operational runbooks for the dotfiles infrastructure.
 | Runbook                                                            | When to use                                                                |
 | ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | [rebuild-failure.md](rebuild-failure.md)                           | `darwin-rebuild` or `nixos-rebuild` fails                                  |
+| [candidate-ci.md](candidate-ci.md)                                 | Validate a candidate before advancing main without mandatory PRs           |
 | [deploy-nuc.md](deploy-nuc.md)                                     | Deploying to the NUC server via deploy-rs                                  |
 | [meshify-bios-update.md](meshify-bios-update.md)                   | Updating Meshify's ASUS PRIME X570-P BIOS locally                          |
 | [macbook-dock-displays.md](macbook-dock-displays.md)               | Comparing a failed MacBook dock/display connection with a working baseline |

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "candidate/**"]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -30,6 +30,7 @@ jobs:
     name: Plan platform checks
     runs-on: ubuntu-latest
     outputs:
+      base: ${{ steps.plan.outputs.base }}
       herdr_vm: ${{ steps.plan.outputs.herdr_vm }}
     steps:
       - uses: actions/checkout@v4
@@ -38,13 +39,19 @@ jobs:
       - id: plan
         name: Select affected Herdr VM before provisioning
         run: |
+          VALIDATION_BASE=$(python3 scripts/candidate_ci.py base)
+          export VALIDATION_BASE
+          printf 'base=%s\n' "$VALIDATION_BASE" >> "$GITHUB_OUTPUT"
           plan=$(python3 scripts/validation.py --ci --platform herdr-vm --plan)
           required=$(jq -er 'if .platform == "herdr-vm" then "true" elif has("platform") and .platform == null then "false" else error("Invalid Herdr plan") end' <<< "$plan")
           printf 'herdr_vm=%s\n' "$required" >> "$GITHUB_OUTPUT"
 
   checks:
     name: Checks (Linux)
+    needs: plan
     runs-on: ubuntu-latest
+    env:
+      VALIDATION_BASE: ${{ needs.plan.outputs.base }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,6 +119,8 @@ jobs:
     needs: plan
     if: needs.plan.outputs.herdr_vm == 'true'
     runs-on: ubuntu-latest
+    env:
+      VALIDATION_BASE: ${{ needs.plan.outputs.base }}
     steps:
       - uses: actions/checkout@v4
         with:
