@@ -5,6 +5,15 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      darwin:
+        description: Run native Darwin validation before Mac activation
+        type: boolean
+        default: false
+      services_vm:
+        description: Run the service VM suite
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -17,17 +26,26 @@ env:
   VALIDATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
 
 jobs:
+  plan:
+    name: Plan platform checks
+    runs-on: ubuntu-latest
+    outputs:
+      herdr_vm: ${{ steps.plan.outputs.herdr_vm }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: plan
+        name: Select affected Herdr VM before provisioning
+        run: |
+          plan=$(python3 scripts/validation.py --ci --platform herdr-vm --plan)
+          required=$(jq -er 'if .platform == "herdr-vm" then "true" elif has("platform") and .platform == null then "false" else error("Invalid Herdr plan") end' <<< "$plan")
+          printf 'herdr_vm=%s\n' "$required" >> "$GITHUB_OUTPUT"
+
   checks:
     name: Checks (Linux)
-    needs: darwin
-    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require native Darwin validation
-        if: needs.darwin.result != 'success'
-        run: |
-          echo "Darwin validation did not succeed: ${{ needs.darwin.result }}"
-          exit 1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -62,17 +80,37 @@ jobs:
   # Preserve the contexts required by main without weakening branch protection.
   required-checks:
     name: ${{ matrix.context }}
-    needs: checks
+    needs: [plan, checks, herdr-vm-test, darwin, vm-services]
     if: always()
     runs-on: ubuntu-latest
     strategy:
       matrix:
         context: [Flake Check (Linux), Check Formatting]
     steps:
-      - run: test "${{ needs.checks.result }}" = success
+      - name: Require every selected check
+        env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+          LINUX_RESULT: ${{ needs.checks.result }}
+          HERDR_REQUIRED: ${{ needs.plan.outputs.herdr_vm }}
+          HERDR_RESULT: ${{ needs.herdr-vm-test.result }}
+          DARWIN_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.darwin }}
+          DARWIN_RESULT: ${{ needs.darwin.result }}
+          SERVICES_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.services_vm }}
+          SERVICES_RESULT: ${{ needs.vm-services.result }}
+        run: |
+          test "$PLAN_RESULT" = success
+          test "$LINUX_RESULT" = success
+          for result in "$HERDR_REQUIRED:$HERDR_RESULT" "$DARWIN_REQUIRED:$DARWIN_RESULT" "$SERVICES_REQUIRED:$SERVICES_RESULT"; do
+            case "$result" in
+              true:success|false:skipped) ;;
+              *) echo "Required check did not succeed: $result"; exit 1 ;;
+            esac
+          done
 
   herdr-vm-test:
     name: Herdr VM Test (Linux)
+    needs: plan
+    if: needs.plan.outputs.herdr_vm == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +124,7 @@ jobs:
 
   darwin:
     name: Darwin-only checks
+    if: github.event_name == 'workflow_dispatch' && inputs.darwin
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +188,7 @@ jobs:
           }
           NIX
           )"
-      - name: Validate affected Darwin configuration
+      - name: Validate native Darwin configuration
         env:
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
           REX_TOKEN: ${{ secrets.REX_TOKEN }}
@@ -168,11 +207,11 @@ jobs:
           printf 'machine pkgs.superlogical.com login rex password %s\n' "$REX_TOKEN" > "$rex_netrc"
           unset REX_TOKEN
           export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
-          python3 scripts/validation.py --ci --platform darwin
+          python3 scripts/validation.py --platform darwin
 
   vm-services:
     name: Service VM Tests (Linux)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.services_vm
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:

@@ -15,3 +15,5 @@ runtime state until the target rebuilds. Recipient changes also require re-keyin
 Run `hey check hosts/<host>` before requesting activation. Use the matching
 `hey check --platform <suite>` when the change depends on host evaluation; neither
 command activates or deploys the host.
+Before Mac activation, require `hey check --platform darwin` or explicitly
+requested native CI for the exact candidate. Default CI does not certify Darwin.

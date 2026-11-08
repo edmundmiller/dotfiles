@@ -19,10 +19,21 @@ to its requested publish, PR, merge, or verification stages.
    unambiguous failure.
 3. Use the repository's configured default merge method unless the user named
    squash, merge, rebase, or fast-forward explicitly.
-4. Poll checks and approvals for at most 15 minutes total, with status updates.
-   Do not enable deferred auto-merge. If one clearly task-caused check fails,
-   allow one bounded repair commit after focused local proof, update the PR,
-   and continue within the same wait budget.
+4. Subscribe the existing owner thread to exact-head CI and PR comments/reviews
+   through the runtime's native event tools. Confirm the subscriptions are active;
+   a returned ID can refer to a paused listener. Persist their IDs, exact SHA,
+   branch, workflow, remaining authority, and next action in the existing receipt.
+   When checks or approvals remain, checkpoint `pr_merge_pending` and end active
+   waiting within 60 seconds if no independent work remains. Use no CI watcher,
+   sleep loop, or keep-alive polling. Missing event support is a recoverable
+   blocker, not permission to lose follow-through. If higher-priority runtime
+   instructions require synchronous waiting, report that capability blocker.
+   Do not enable deferred auto-merge. On an event, re-read the current PR head,
+   latest check attempts, approvals, policy, and authorization before any write.
+   A stale event is not merge authority. For a clearly task-caused failure, allow
+   one bounded repair after focused proof, publish, and replace the exact-head
+   subscription and checkpoint. Duplicate events first recheck whether the
+   requested merge already happened.
 5. Merge only when policy, checks, and approvals permit. Otherwise checkpoint
    `pr_merge_pending` with the exact gate and leave the receipt open.
 

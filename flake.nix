@@ -1241,6 +1241,7 @@
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.git
+                      pkgs.jq
                       pkgs.mise
                       pkgs.nushell
                       pkgs.python3
@@ -1260,6 +1261,7 @@
                     git init --quiet
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
+                      tests/test_nuc_shipping.py \
                       tests/test_orb_setup.py \
                       tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \

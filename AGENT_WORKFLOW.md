@@ -39,6 +39,15 @@ The [guardrails](docs/agent-guardrails.md) define source ownership and approval
 boundaries. Commit, publish, deploy, or clean up only within the user's request;
 publication and host activation are not implied by completing local edits.
 
+For authorized NUC shipping, follow the request handoff in
+[NUC shipping](docs/runbooks/deploy-nuc.md#ship-from-an-amp-orb). GitHub owns CI
+waiting and deployment after the agent submits the authorized exact revision.
+Persist the request, authority, run URL, and reporting subscriptions in the
+existing receipt. Submission ends after handoff; deployment remains pending.
+Keep that receipt and checkout until deployment evidence and cleanup are
+complete. A completion event resumes result inspection by the same owner;
+it does not authorize new changes or another deployment.
+
 Cross-model review is optional and runs only on explicit request. It is not a
 quality gate. `hey check` never applies repairs to source; use `nix fmt` for
 intentional formatting. Model-driven repairs are explicit agent work.

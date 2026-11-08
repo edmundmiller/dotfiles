@@ -211,10 +211,22 @@ class ValidationTests(unittest.TestCase):
             self.assertIsNone(
                 self.selection("--ci", "--platform", "darwin")["platform"]
             )
+            self.assertIsNone(
+                self.selection("--ci", "--platform", "herdr-vm")["platform"]
+            )
             self.write("modules/shell/herdr/default.nix", "affected")
             self.assertEqual(
                 self.selection("--ci", "--platform", "herdr-vm")["platform"], "herdr-vm"
             )
+
+    def test_platform_plan_does_not_require_a_native_builder(self):
+        self.write("flake.lock", "shared change")
+        with patch.dict(os.environ, {"VALIDATION_BASE": "origin/main"}):
+            for host, target in (("Darwin", "herdr-vm"), ("Linux", "darwin")):
+                with patch.object(v.platform, "system", return_value=host):
+                    self.assertEqual(
+                        self.selection("--ci", "--platform", target)["platform"], target
+                    )
 
     def test_source_mutation_during_validation_invalidates_success(self):
         self.write("owned.md", "before")
@@ -603,12 +615,13 @@ class ValidationTests(unittest.TestCase):
             "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", linux
         )
         self.assertNotIn("secrets.RENOVATE_TOKEN", linux)
-        self.assertIn("needs: darwin\n    if: always()", workflow)
-        self.assertIn("if: needs.darwin.result != 'success'", workflow)
+        self.assertNotIn("needs: darwin", linux)
         linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
-        darwin = workflow.split("  darwin:")[1].split("  vm-services:")[0]
+        darwin = workflow.split("\n  darwin:\n")[1].split("  vm-services:")[0]
         self.assertIn("runs-on: xcode-27", darwin)
-        self.assertNotIn("if:", darwin)
+        self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.darwin", darwin)
+        self.assertIn("darwin:\n        description:", workflow)
+        self.assertIn("default: false", workflow.split("permissions:")[0])
         for job in (linux, darwin):
             self.assertIn(
                 "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", job
@@ -715,17 +728,34 @@ class ValidationTests(unittest.TestCase):
         required = workflow.split("  required-checks:")[1].split("  herdr-vm-test:")[0]
         self.assertIn("name: ${{ matrix.context }}", required)
         self.assertIn("context: [Flake Check (Linux), Check Formatting]", required)
-        self.assertIn("needs: checks\n    if: always()", required)
-        command = required.split("run: ", 1)[1].strip()
-        for result in ("success", "failure", "cancelled", "skipped", ""):
-            with self.subTest(result=result):
+        self.assertIn("needs: [plan, checks, herdr-vm-test, darwin, vm-services]", required)
+        self.assertIn("if: always()", required)
+        command = textwrap.dedent(required.split("run: |\n", 1)[1])
+        baseline = {
+            "PLAN_RESULT": "success", "LINUX_RESULT": "success",
+            "HERDR_REQUIRED": "false", "HERDR_RESULT": "skipped",
+            "DARWIN_REQUIRED": "false", "DARWIN_RESULT": "skipped",
+            "SERVICES_REQUIRED": "false", "SERVICES_RESULT": "skipped",
+        }
+        cases = [(baseline, True)]
+        for job in ("PLAN", "LINUX"):
+            for result in ("failure", "cancelled", "skipped", ""):
+                cases.append((baseline | {job + "_RESULT": result}, False))
+        for job in ("HERDR", "DARWIN", "SERVICES"):
+            for requested in ("true", "false", ""):
+                for result in ("success", "failure", "cancelled", "skipped", ""):
+                    expected = (requested, result) in (("true", "success"), ("false", "skipped"))
+                    cases.append((baseline | {job + "_REQUIRED": requested, job + "_RESULT": result}, expected))
+        for environment, expected in cases:
+            with self.subTest(environment=environment):
                 completed = subprocess.run(
-                    ["sh", "-c", command.replace("${{ needs.checks.result }}", result)],
+                    ["bash", "-euc", command],
+                    env=os.environ | environment,
                     capture_output=True,
                     text=True,
                     check=False,
                 )
-                self.assertEqual(completed.returncode == 0, result == "success")
+                self.assertEqual(completed.returncode == 0, expected, completed.stderr)
 
 
 class TypeScriptArchitectureTests(unittest.TestCase):

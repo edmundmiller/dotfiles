@@ -71,9 +71,16 @@ there is no one-shot completion token or persistent success cache.
 `Checks (Linux)` runs the shared portable runner. PRs use
 the PR base SHA; pushes use the previous SHA. `--ci` consumes `VALIDATION_BASE`;
 manual/new-branch events with no usable base run the full portable suite. The
-Herdr job keeps its existing name but reports success without a VM build when
-its inputs are unchanged. Native Darwin checks now cover affected PRs too; service
-VMs stay manual. Platform commands never activate or deploy a host.
+lightweight platform planner runs the same selector without Nix before allocating
+the Herdr VM runner. Unaffected Herdr work is explicitly skipped. Planning can
+run on either platform without a native builder.
+
+Ordinary PR and main-push CI allocates no Mac runner. Linux starts independently;
+green default CI certifies portable/Linux checks, not Darwin. Before Mac activation,
+run `hey check --platform darwin` on the exact candidate, or explicitly dispatch
+CI on that candidate with `darwin=true`. The optional job always runs native
+validation, even when the candidate has no changed files. Service VMs are separately
+opt-in with `services_vm=true`. Neither platform command activates or deploys a host.
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
@@ -91,10 +98,12 @@ developer machines or the NUC. Hex still requires the full host toolchain.
 A separate Nix derivation checks tool discovery and runs Metal as a build user,
 with the host SDK selected. Failures print the component status and raw tool
 errors before the expensive host builds; runner-user success is not sufficient.
-`Checks (Linux)` also requires that native job to succeed, preserving the existing
-required status. The required `Flake Check (Linux)` and `Check Formatting`
-compatibility contexts succeed only when `Checks (Linux)` succeeds. Failure,
-cancellation, or skipping fails both contexts; branch protection stays unchanged.
+The required `Flake Check (Linux)` and `Check Formatting` compatibility contexts
+require successful planning, Linux checks, and every selected platform job.
+Failure, cancellation, missing results, or an unexpected skip fails both contexts.
+An unselected platform job must be skipped. Native Darwin is required only when
+explicitly requested; branch protection and exact-main NUC deployment guards
+stay unchanged.
 Native checks do not repeat the portable formatting/lint suite.
 The Linux and Darwin validation jobs read private flake inputs with the
 `NIX_PRIVATE_GITHUB_TOKEN` repository secret. Linux display tests need the pinned

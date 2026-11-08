@@ -217,35 +217,89 @@ activation unless the user specifies push-only or no-deploy. Orbs dispatch
 the GitHub workflow instead of attempting `ssh nuc` or joining the tailnet.
 The workflow runs `hey nuc revision <SHA>` on their behalf.
 
-After publishing, record the exact SHA and wait for the latest `ci.yml` push
-run for that SHA on `main` to finish successfully. A missing run is not success;
-wait for it to appear. Recheck that GitHub `main` still equals the published SHA
-immediately before dispatch. If main has advanced, reconcile the shipped
-revision and rerun its checks rather than silently deploying another commit.
+GitHub owns CI waiting and activation. The agent's submission stage ends after
+publishing the authorized revision, handing off one bound deployment request,
+and establishing completion reporting. It does not require CI to have started
+or finished. Only `workflow_dispatch` can request deployment; neither a push
+nor a CI completion authorizes activation.
+
+Keep the same owner thread and existing schema-v2 agent-run receipt. Record the
+explicit Ship invocation or user authorization. For push-only or no-deploy,
+submit no deployment request. The optional `request --no-deploy` command records
+that decision offline and prevents a later replay from silently rearming it.
 
 ```bash
 published_sha="$(git rev-parse HEAD)" # The exact commit just published.
-gh workflow run deploy-nuc.yml --repo edmundmiller/dotfiles --ref main \
-  -f expected_sha="$published_sha"
+python3 scripts/nuc_shipping.py --receipt "$receipt" request \
+  --sha "$published_sha" --thread "$owner_thread" \
+  --deployment-authority "$authorization_reference"
 ```
 
-Capture the returned run URL. If the CLI does not return it, find the new
-`workflow_dispatch` run by workflow, title `Deploy NUC <published-sha>`, actor,
-and dispatch time. Do not filter by head SHA: a raced dispatch has a different
-head but the same requested SHA in its title. If multiple runs match, resolve
-the ambiguity before proceeding; never select an unrelated latest run or
-redispatch merely because its result is unclear. A raced dispatch fails the
-first step without reaching the NUC. Reconcile and validate the revision before
-retrying, keeping `expected_sha` rather than falling back to an unbound dispatch.
-Wait for the identified run with `gh run watch <run-id>
---repo edmundmiller/dotfiles --exit-status`, then inspect its logs. Dispatch
-acceptance alone is not deployment success.
+The request command checks current main, records a pre-dispatch claim, and sends
+`expected_sha` to the existing workflow. It never reads or waits for CI. An
+authentication failure before dispatch leaves `request_pending`, which can be
+retried. An uncertain API result or process crash leaves `dispatch_unknown`.
+Duplicate calls reconcile that claim rather than issuing another request:
+
+```bash
+python3 scripts/nuc_shipping.py --receipt "$receipt" reconcile
+```
+
+A single match by workflow, requested-SHA title, actor, and dispatch time records
+the run URL. Do not filter only by head SHA: a raced dispatch has a different
+captured head but the same requested-SHA title. Missing or ambiguous matches
+require investigation, never automatic redispatch. Preserve the claim even when
+no run appears. Keep one receipt and owner; do not copy it between executors or
+write it concurrently with other receipt commands.
+
+The read-only `wait-for-ci` job rejects a captured-head mismatch before doing
+anything else. It checks current main and the latest exact-SHA `ci.yml` main-push
+run every 30 seconds for 180 attempts, with a 95-minute job timeout. Missing or
+running CI waits; failure, cancellation, malformed responses, or moved main
+stops the request. It never searches for an older successful attempt. Waiting
+uses Linux runner minutes but no checkout, Nix, NUC environment, or OIDC token.
+
+Only successful waiting allows the deployment job to start. That job repeats
+the requested-SHA, current-main, and latest-CI checks before checkout or tailnet
+enrollment, then retains the existing provenance and host-lock guards. A rerun
+starting after the wait, or a main race, cannot substitute another revision.
+Failed or timed-out requests do not automatically retry deployment. Reconcile
+their actual outcome before an explicitly authorized retry.
+
+Use Amp's native subscriptions for reporting, not for dispatch. Confirm active
+listeners for `ci.yml` and `deploy-nuc.yml`, `filter_kind: "ci"`, exact commit,
+and `destination: "this-thread"`; automatic pushed-head listeners also need
+`automatic: true` and `branch: "main"`. For a raced deployment, watch its actual
+captured head and retain its requested SHA separately. Save listener IDs and the
+run URL in the existing receipt's closeout evidence after the request command
+finishes. If setup fails, record a reporting blocker; the already accepted
+workflow can still deploy. Do not redispatch to repair a listener.
+
+Return **Published; deployment request handed to GitHub** when submission and
+reporting are established. Keep the receipt and checkout for the result. No
+Orb-side CI watcher, sleep loop, or repeated polling is needed. A notification
+starts result inspection: read the saved deployment run and its latest attempt,
+check its identity and conclusion, then inspect logs before normal closeout.
+CI notifications cannot authorize another dispatch. Submission is not deployment
+success, and ending a turn does not prove the Orb paused or establish savings.
+
+To revoke an already submitted request, cancel the identified GitHub workflow
+and verify its outcome. `--no-deploy` does not cancel accepted work and refuses
+to relabel it as skipped. Cancellation during activation may leave a generation
+active; inspect the NUC state before reporting that deployment was prevented.
 
 The successful workflow verifies both active repository revisions and basic
 host services. Use its logs for that evidence without requiring orb SSH.
 Report failed units and any task-specific runtime checks the workflow does not
 cover separately. Missing Actions permissions are an access blocker, not a
 reason to provision SSH credentials or change tailnet policy.
+
+The repository-owned replacement Ship prompt is [`.agents/ship.md`](../../.agents/ship.md).
+Publishing these files does not update Amp's project setting or its hosted Done
+skill. Read and preserve the live prompt, then apply the replacement only with
+project-setting authorization. Publish the whole Done bundle separately using
+the [delivery runbook](../agents/done-delivery.md). The request-handoff prompt
+must replace the old synchronous Ship contract before claiming Orb savings.
 
 ### Enable deployment
 

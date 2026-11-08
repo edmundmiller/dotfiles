@@ -76,7 +76,7 @@ testing a helper.
 - `Done`: remote landing and cleanup proved; receipt terminal.
 - `Done locally`: local-only-by-design landing and cleanup proved; receipt terminal.
 - `Landed; cleanup deferred`: remote landing proved, but safe cleanup did not.
-- `PR ready; merge pending`: required PR exists but gates remain after bounded waiting.
+- `PR ready; merge pending`: required PR exists; an active event subscription owns the remaining gates.
 - `Local only`: publication was expected but unavailable or unauthorized.
 - `Blocked`: scope, validation, conflict, identity, policy, or proof is unresolved.
 

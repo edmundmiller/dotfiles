@@ -27,6 +27,8 @@ CHECKS = {
         ".agents/nix-env.sh",
         "tests/test_orb_setup.py",
         "scripts/validation.py",
+        "scripts/nuc_shipping.py",
+        "tests/test_nuc_shipping.py",
         "scripts/beads_filter.py",
         "tests/test_beads_filter.py",
         "bin/amp-runner-sync",
@@ -765,7 +767,7 @@ def main(argv=None):
         parser.error(
             "--platform darwin requires an aarch64 Darwin builder; nothing ran"
         )
-    if args.platform in ("nixos", "herdr-vm", "services-vm") and (
+    if args.platform in ("nixos", "herdr-vm", "services-vm") and not args.plan and (
         platform.system() != "Linux" or platform.machine() != "x86_64"
     ):
         parser.error(
