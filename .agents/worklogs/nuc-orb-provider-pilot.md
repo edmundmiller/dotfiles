@@ -83,3 +83,26 @@ Report actual live test results or readiness to
 final response. Distinguish local preparation, actual container smoke results,
 and full Amp provider/thread tests. Name remaining gates and do not claim the
 pilot operational without the runbook's live acceptance evidence.
+
+## First live deployment and repair
+
+The exact tested pilot landed and activated on NUC:
+https://github.com/edmundmiller/dotfiles/commit/335d47369e65b9674d1abf7d4fb6d10c90d291f0
+https://github.com/edmundmiller/dotfiles/actions/runs/42526100798
+
+Live preflight reported eight CPUs, 6,320,824 KiB available RAM, 203,865,728 KiB
+free local storage, and load averages 1.79, 1.94, 1.67. The new dataset was active
+with quota 68,719,476,736 bytes and used 95,469,568 bytes. The host reported the
+expected configuration revision after activation.
+
+The backend smoke then failed before creating a container. Its dedicated account
+inherited the SSH account's `/home/emiller` working directory, which rootless
+Podman could not enter. The repair changes to the dedicated account's own home
+before Podman starts. It does not weaken home permissions or reuse runner state.
+Reconcile this repair onto the latest main, validate, submit candidate CI, and
+request a new authorized exact-SHA pilot run after landing. Preserve the first
+run's outcome in this receipt before recording the new request.
+
+This is installed host wiring and successful live capacity evidence, not a
+working provider. Container lifecycle/resource tests, NUC Amp authentication,
+provider registration, and end-to-end thread tests remain unverified.

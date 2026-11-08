@@ -28,6 +28,7 @@ case "${1:-}" in
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
       CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf bash -s <<'SMOKE'
     set -euo pipefail
+    cd "$HOME"
     test "$(podman info --format '{{.Host.Security.Rootless}}')" = true
     mkdir -p "$HOME/.local/state/amp-orbs"
     exec 9>"$HOME/.local/state/amp-orbs/dispatch.lock"
