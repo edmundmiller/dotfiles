@@ -185,6 +185,10 @@ in
               url = "https://ampcode.com/mcp";
             };
             browse.enable = true;
+            exa = {
+              enable = true;
+              url = "https://mcp.exa.ai/mcp?tools=web_search_exa,web_fetch_exa";
+            };
             github.enable = true;
             linear.enable = false;
             notion.enable = true;
