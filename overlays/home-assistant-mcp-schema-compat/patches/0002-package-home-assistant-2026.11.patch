@@ -1516,7 +1516,7 @@ diff --git a/default.nix b/default.nix
 index 77afb35..dcd63c8 100644
 --- a/default.nix
 +++ b/default.nix
-@@ -12,6 +12,10 @@
+@@ -12,6 +12,11 @@
    nixosTests,
    home-assistant,
    versionCheckHook,
@@ -1524,15 +1524,17 @@ index 77afb35..dcd63c8 100644
 +  git,
 +  tzdata,
 +  mosquitto,
++  syrupySnapshotTestPatch,
  
    # Look up dependencies of specified components in component-packages.nix
    extraComponents ? [ ],
-@@ -29,10 +33,207 @@
+@@ -29,10 +34,208 @@
  }:
  
  let
 +  syrupy = python3Packages.syrupy.overridePythonAttrs {
 +    version = "6.1.1";
++    patches = [ syrupySnapshotTestPatch ];
 +    src = fetchFromGitHub {
 +      owner = "syrupy-project";
 +      repo = "syrupy";
