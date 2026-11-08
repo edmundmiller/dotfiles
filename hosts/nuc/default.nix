@@ -2567,6 +2567,7 @@ in
           "spotify" # Spotify playback control (config-flow: add via UI after deploy)
           "music_assistant" # Music Assistant server/player bridge (config-flow: add via UI after deploy)
           "elevenlabs" # ElevenLabs TTS/STT (config-flow: add API key via UI)
+          "google_translate" # Existing TTS config entry requires gtts in the Nix runtime
           "zha" # Zigbee Home Automation via ZBT-2 dongle
           "thread" # Thread border router via ZBT-2 dongle
           "otbr" # OpenThread Border Router (ZBT-2 Thread radio)

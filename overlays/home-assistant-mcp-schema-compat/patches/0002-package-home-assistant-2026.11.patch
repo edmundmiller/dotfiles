@@ -1513,20 +1513,21 @@ index fb0dac5..9348aa4 100644
      "uk_transport"
      "ukraine_alarm"
 diff --git a/default.nix b/default.nix
-index 77afb35..caadb0a 100644
+index 77afb35..dcd63c8 100644
 --- a/default.nix
 +++ b/default.nix
-@@ -12,6 +12,9 @@
+@@ -12,6 +12,10 @@
    nixosTests,
    home-assistant,
    versionCheckHook,
 +  unzip,
 +  git,
 +  tzdata,
++  mosquitto,
  
    # Look up dependencies of specified components in component-packages.nix
    extraComponents ? [ ],
-@@ -29,10 +32,159 @@
+@@ -29,10 +33,207 @@
  }:
  
  let
@@ -1568,6 +1569,54 @@ index 77afb35..caadb0a 100644
 +        };
 +        dependencies = old.dependencies ++ [ self.requests ];
 +      });
++
++      matter-python-client = super.matter-python-client.overridePythonAttrs rec {
++        version = "1.5.5";
++        src = fetchFromGitHub {
++          owner = "matter-js";
++          repo = "matterjs-server";
++          tag = "v${version}";
++          hash = "sha256-A5TjsRVtIXzaFOYzy1kR0Rbdh41HqXmayM17Dg1c8eA=";
++        };
++        # This release vendors chip; the older external package would collide.
++        dependencies = with self; [
++          aiohttp
++          dacite
++          orjson
++        ];
++      };
++
++      roombapy = super.roombapy.overridePythonAttrs rec {
++        version = "2.0.2";
++        src = fetchFromGitHub {
++          owner = "pschmitt";
++          repo = "roombapy";
++          tag = version;
++          hash = "sha256-7E68w7BDmERCCQjdB79vw60Xy/nAQKH2ym8qzPOAU2I=";
++        };
++        nativeBuildInputs = [ self.uv-build ];
++        propagatedBuildInputs = with self; [
++          aiomqtt
++          mashumaro
++          orjson
++          typing-extensions
++        ];
++        # The async client's upstream tests exercise a local TLS MQTT broker.
++        preCheck = ''
++          substitute .github/workflows/mosquitto/mosquitto.conf mosquitto.conf \
++            --replace-fail '/mosquitto/config/' "$PWD/.github/workflows/mosquitto/" \
++            --replace-fail '/mosquitto-certs/' "$PWD/.github/workflows/mosquitto/tls-certificates/" \
++            --replace-fail 'listener 8883' 'listener 8883 127.0.0.1'
++          ${mosquitto}/bin/mosquitto -c mosquitto.conf > mosquitto.log 2>&1 &
++          brokerPid=$!
++          trap 'kill "$brokerPid"' EXIT
++          for attempt in {1..50}; do
++            if (: > /dev/tcp/127.0.0.1/8883) 2>/dev/null; then break; fi
++            sleep 0.1
++          done
++          kill -0 "$brokerPid"
++        '';
++      };
 +
 +      pygbl = self.callPackage ./python-modules/pygbl { };
 +
@@ -1686,7 +1735,7 @@ index 77afb35..caadb0a 100644
        aionotion = super.aionotion.overridePythonAttrs rec {
          version = "2024.03.0";
          src = fetchFromGitHub {
-@@ -73,8 +225,6 @@ let
+@@ -73,8 +274,6 @@ let
          };
        });
  
@@ -1695,7 +1744,7 @@ index 77afb35..caadb0a 100644
        notifications-android-tv = super.notifications-android-tv.overridePythonAttrs (oldAttrs: rec {
          version = "0.1.5";
          format = "setuptools";
-@@ -152,7 +302,7 @@ let
+@@ -152,7 +351,7 @@ let
    extraBuildInputs = extraPackages python3Packages;
  
    # Don't forget to run update-component-packages.py after updating
@@ -1704,7 +1753,7 @@ index 77afb35..caadb0a 100644
  
  in
  python3Packages.buildPythonApplication rec {
-@@ -173,13 +323,16 @@ python3Packages.buildPythonApplication rec {
+@@ -173,13 +372,16 @@ python3Packages.buildPythonApplication rec {
      owner = "home-assistant";
      repo = "core";
      tag = version;
@@ -1724,7 +1773,7 @@ index 77afb35..caadb0a 100644
    };
  
    build-system = with python3Packages; [
-@@ -188,9 +341,11 @@ python3Packages.buildPythonApplication rec {
+@@ -188,9 +390,11 @@ python3Packages.buildPythonApplication rec {
  
    pythonRelaxDeps = true;
  
@@ -1738,7 +1787,7 @@ index 77afb35..caadb0a 100644
    '';
  
    # leave this in, so users don't have to constantly update their downstream patch handling
-@@ -260,7 +415,7 @@ python3Packages.buildPythonApplication rec {
+@@ -260,7 +464,7 @@ python3Packages.buildPythonApplication rec {
      hass-nabucasa
      home-assistant-bluetooth
      home-assistant-intents
@@ -1747,7 +1796,7 @@ index 77afb35..caadb0a 100644
      ifaddr
      infrared-protocols
      jinja2
-@@ -275,6 +430,7 @@ python3Packages.buildPythonApplication rec {
+@@ -275,6 +479,7 @@ python3Packages.buildPythonApplication rec {
      pyjwt
      pymicro-vad
      pyopenssl
@@ -1755,7 +1804,7 @@ index 77afb35..caadb0a 100644
      pyspeex-noise
      python-slugify
      pyturbojpeg
-@@ -285,6 +441,7 @@ python3Packages.buildPythonApplication rec {
+@@ -285,6 +490,7 @@ python3Packages.buildPythonApplication rec {
      sqlalchemy
      standard-aifc
      standard-telnetlib
@@ -1763,7 +1812,7 @@ index 77afb35..caadb0a 100644
      typing-extensions
      ulid-transform
      urllib3
-@@ -321,11 +478,42 @@ python3Packages.buildPythonApplication rec {
+@@ -321,11 +527,42 @@ python3Packages.buildPythonApplication rec {
      unidiff
      # Used in tests/common.py
      paho-mqtt
@@ -1807,7 +1856,7 @@ index 77afb35..caadb0a 100644
      ++ (with python3Packages; [
        # Used in tests/non_packaged_scripts/test_alexa_locales.py
        beautifulsoup4
-@@ -337,6 +525,7 @@ python3Packages.buildPythonApplication rec {
+@@ -337,6 +574,7 @@ python3Packages.buildPythonApplication rec {
        mypy
        # Used in tests/scripts/check_requirements/test_gate.py
        pygithub
@@ -1815,7 +1864,7 @@ index 77afb35..caadb0a 100644
      ])
      ++ lib.concatMap (component: getPackages component python3Packages) [
        # some components are needed even if tests in tests/components are disabled
-@@ -358,7 +547,7 @@ python3Packages.buildPythonApplication rec {
+@@ -358,7 +596,7 @@ python3Packages.buildPythonApplication rec {
  
    disabledTestPaths = [
      # we neither run nor distribute hassfest
@@ -1824,7 +1873,7 @@ index 77afb35..caadb0a 100644
      # we don't care about code quality
      "tests/pylint"
      # redundant component import test, which would make debugpy & sentry expensive to review
-@@ -378,6 +567,8 @@ python3Packages.buildPythonApplication rec {
+@@ -378,6 +616,8 @@ python3Packages.buildPythonApplication rec {
    preCheck = ''
      export HOME="$TEMPDIR"
      export PYTHONASYNCIODEBUG=1
