@@ -175,6 +175,23 @@ jobs:
             test "$(hostname)" = nuc
             printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
             systemctl show home-assistant.service -p ActiveState -p SubState -p MainPID -p ActiveEnterTimestamp >&2
+            systemctl show home-assistant.service -p User -p SupplementaryGroups -p CapabilityBoundingSet -p AmbientCapabilities -p PrivateDevices -p PrivateNetwork >&2
+            systemctl show bluetooth.service -p LoadState -p ActiveState -p SubState >&2
+            adapters=0
+            for adapter in /sys/class/bluetooth/hci*; do
+              test -e "$adapter" || continue
+              adapters=$((adapters + 1))
+              printf "bluetooth_kernel_adapter=%s\n" "${adapter##*/}" >&2
+            done
+            printf "bluetooth_kernel_adapters=%s\n" "$adapters" >&2
+            radios=0
+            for radio in /sys/class/rfkill/rfkill*; do
+              test -r "$radio/type" || continue
+              test "$(cat "$radio/type")" = bluetooth || continue
+              radios=$((radios + 1))
+              printf "bluetooth_rfkill_soft=%s hard=%s\n" "$(cat "$radio/soft")" "$(cat "$radio/hard")" >&2
+            done
+            printf "bluetooth_rfkill_radios=%s\n" "$radios" >&2
             exec sudo -n uv run --no-project --script - health \
               --url http://127.0.0.1:8123 --token-file /run/agenix/ha-hermes-token \
               --expected-version 2026.11.0 --entity climate.main_floor --entity climate.master_suite \

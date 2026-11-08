@@ -197,6 +197,39 @@ class HassHealthTest(unittest.TestCase):
             [{"entry_id": "enabled", "domain": "test", "state": "not_loaded"}],
         )
 
+    def test_bluetooth_retry_signatures_do_not_expose_error_parameters(self):
+        for reason, expected in (
+            (
+                "Bluetooth adapter None with address AA:BB:CC:DD:EE:FF not found",
+                ["adapter_not_found"],
+            ),
+            (
+                "private adapter: Failed to start Bluetooth: "
+                "[org.bluez.Error.NotReady] private exception parameter",
+                ["bluez_not_ready"],
+            ),
+            ("private unrecognized error", []),
+            (None, []),
+        ):
+            with self.subTest(reason=reason):
+                self.responses["config_entries/get"][0].update(
+                    domain="bluetooth", state="setup_retry", reason=reason
+                )
+                code, report = self.health()
+                self.assertEqual(code, 1)
+                self.assertEqual(
+                    report["checks"]["integrations"]["failures"],
+                    [
+                        {
+                            "entry_id": "enabled",
+                            "domain": "bluetooth",
+                            "state": "setup_retry",
+                            "retry_reason_codes": expected,
+                        }
+                    ],
+                )
+                self.assertNotIn("AA:BB:CC:DD:EE:FF", json.dumps(report))
+
     def test_empty_trace_error_is_a_failure_in_health_and_trace_list(self):
         self.trace_responses = {
             "automation": [],

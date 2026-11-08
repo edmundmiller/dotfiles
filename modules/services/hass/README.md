@@ -31,6 +31,9 @@ Health reports contain a UTC observation timestamp and these checks:
   `--expected-version` overrides that expectation for a candidate upgrade.
 - Enabled integration states, their unloaded entries, and active, non-dismissed
   Repairs. Entry titles, credentials, and configuration data are omitted.
+  Retrying Bluetooth entries include allowlisted `retry_reason_codes` matched
+  against upstream errors, never raw error text. An empty list means no known
+  signature matched, not that the retry is healthy.
 - Availability of both thermostats and the bedtime, goodnight, and morning
   scripts. Repeat `--entity` to replace the default list for one invocation.
 - Errors in retained automation and script runs from the last 24 hours.

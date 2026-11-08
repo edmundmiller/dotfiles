@@ -127,12 +127,30 @@ def health(ha, args, now):
         )
 
     def integrations():
-        entries = [
-            {key: entry[key] for key in ("entry_id", "domain", "state")}
-            for entry in ha.request("config_entries/get")
-            if not entry.get("disabled_by")
-            and entry.get("source") != "ignore"
-        ]
+        entries = []
+        for entry in ha.request("config_entries/get"):
+            if entry.get("disabled_by") or entry.get("source") == "ignore":
+                continue
+            summary = {key: entry[key] for key in ("entry_id", "domain", "state")}
+            if entry["domain"] == "bluetooth" and entry["state"] == "setup_retry":
+                # Match upstream failure signatures, never publish raw errors,
+                # adapter addresses, titles, or exception parameters.
+                reason = entry.get("reason") or ""
+                summary["retry_reason_codes"] = [
+                    code
+                    for signature, code in (
+                        ("Bluetooth adapter None with address ", "adapter_not_found"),
+                        ("Timed out starting Bluetooth after", "scanner_start_timeout"),
+                        ("DBus service not found;", "dbus_service_not_found"),
+                        ("DBus connection broken:", "dbus_connection_broken"),
+                        ("org.bluez.Error.NotReady", "bluez_not_ready"),
+                        ("org.bluez.Error.InProgress", "bluez_in_progress"),
+                        ("org.bluez.Error.Failed", "bluez_failed"),
+                        ("Starting bluetooth scanner aborted", "scanner_start_aborted"),
+                    )
+                    if signature in reason
+                ]
+            entries.append(summary)
         failures = [entry for entry in entries if entry["state"] != "loaded"]
         return check(
             "unhealthy" if failures else "healthy", entries=entries, failures=failures
