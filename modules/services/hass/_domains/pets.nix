@@ -1,6 +1,10 @@
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled notificationPalette;
+  # Feeding plan is code-owned. Zero leaves the vet's calorie target unset.
+  dailyCalorieGoal = 0;
+  kibblePortion = 0.25;
+  boneCalories = 0;
   feedingDay = "{{ (now() - timedelta(hours=6)).date().isoformat() }}";
   dailyLedger = ''
     {% set saved = states('input_text.phoebe_food_ledger') | from_json({}) %}
@@ -35,39 +39,20 @@ in
       };
     };
 
-    input_number = {
-      phoebe_daily_calorie_goal = {
-        name = "Phoebe Daily Calorie Goal";
-        min = 0;
-        max = 2000;
-        step = 1;
-        unit_of_measurement = "kcal";
-        mode = "box";
-        icon = "mdi:target";
-      };
-      phoebe_bone_calories = {
-        name = "Phoebe Calories Per Bone";
-        min = 0;
-        max = 1000;
-        step = 1;
-        unit_of_measurement = "kcal";
-        mode = "box";
-        icon = "mdi:bone";
-      };
-      phoebe_kibble_portion = {
-        name = "Phoebe Kibble Portion";
-        min = 0.25;
-        max = 2;
-        step = 0.125;
-        unit_of_measurement = "cups";
-        mode = "box";
-        icon = "mdi:measuring-cup";
-      };
-    };
-
     template = lib.mkAfter [
       {
         sensor = [
+          {
+            name = "Phoebe Daily Calorie Goal";
+            unique_id = "phoebe_daily_calorie_goal";
+            unit_of_measurement = "kcal";
+            icon = "mdi:target";
+            state = toString dailyCalorieGoal;
+            attributes = {
+              meal_portion_cups = kibblePortion;
+              bone_calories = boneCalories;
+            };
+          }
           {
             name = "Phoebe Daily Calories";
             unique_id = "phoebe_daily_calories";
@@ -78,7 +63,7 @@ in
               {% set stamp = as_datetime(states('input_text.phoebe_last_dental_treat'), none) %}
               {% set dental = stamp is not none and (as_local(stamp) - timedelta(hours=6)).date().isoformat() == day %}
               {{ (cups * 391 + (49 if dental else 0)
-                  + ledger.get('bone', 0) * states('input_number.phoebe_bone_calories') | float(0)) | round(2) }}
+                  + ledger.get('bone', 0) * ${toString boneCalories}) | round(2) }}
             '';
             attributes = {
               tracking_day = feedingDay;
@@ -94,12 +79,12 @@ in
             unique_id = "phoebe_calorie_budget";
             icon = "mdi:target";
             state = ''
-              {% set goal = states('input_number.phoebe_daily_calorie_goal') | float(0) %}
+              {% set goal = states('sensor.phoebe_daily_calorie_goal') | float(0) %}
               {% set calories = states('sensor.phoebe_daily_calories') | float(0) %}
               {% if goal <= 0 %}Set calorie goal
               {% elif calories > goal %}Over goal
               {% elif state_attr('sensor.phoebe_daily_calories', 'bone_count') | int(0) > 0
-                  and states('input_number.phoebe_bone_calories') | float(0) <= 0 %}Bone calories needed
+                  and ${toString boneCalories} <= 0 %}Bone calories needed
               {% else %}Within goal{% endif %}
             '';
           }
@@ -140,13 +125,13 @@ in
       sequence = [
         {
           condition = "template";
-          value_template = "{{ food in ['kibble', 'breakfast', 'lunch', 'dinner', 'dental', 'bone'] and (food in ['dental', 'bone'] or 0.125 <= cups | default(states('input_number.phoebe_kibble_portion')) | float(0) <= 2) }}";
+          value_template = "{{ food in ['kibble', 'breakfast', 'lunch', 'dinner', 'dental', 'bone'] and (food in ['dental', 'bone'] or 0.125 <= cups | default(${toString kibblePortion}) | float(0) <= 2) }}";
         }
         {
           variables = {
             day = feedingDay;
             meal = "{{ ('breakfast' if 6 <= now().hour < 11 else 'lunch' if 11 <= now().hour < 16 else 'dinner') if food == 'kibble' else food }}";
-            portion = "{{ cups | default(states('input_number.phoebe_kibble_portion')) | float }}";
+            portion = "{{ cups | default(${toString kibblePortion}) | float }}";
             ledger = dailyLedger + "{{ ledger }}";
             had_dental = dentalToday;
           };
@@ -209,7 +194,7 @@ in
             {% elif food == 'dental' %}
               Recorded Phoebe's dental treat: 1 small Yummy Comb, 49 kcal.
             {% elif food == 'bone' %}
-              Recorded Phoebe's bone: {{ states('input_number.phoebe_bone_calories') | float(0) | round(0) }} kcal.{{ ' Set calories per bone to include it in the total.' if states('input_number.phoebe_bone_calories') | float(0) <= 0 else "" }}
+              Recorded Phoebe's bone: ${toString boneCalories} kcal.{{ ' Bone calories are not configured; total is incomplete.' if ${toString boneCalories} <= 0 else "" }}
             {% else %}
               Recorded Phoebe's {{ meal }}: {{ portion }} cup kibble, {{ (portion * 391) | round(2) }} kcal.
             {% endif %}
