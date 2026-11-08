@@ -34,11 +34,27 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
         self.hass.config_entries = ConfigEntries(self.hass, CONFIG)
         self.assertTrue(await bootstrap.async_load_base_functionality(self.hass))
         await self.hass.config.async_set_time_zone("America/Chicago")
-        for domain in ("input_datetime", "input_text", "automation"):
+        for domain in (
+            "input_datetime",
+            "input_text",
+            "input_number",
+            "script",
+            "template",
+            "automation",
+        ):
             self.assertTrue(await async_setup_component(self.hass, domain, CONFIG))
         await self.hass.async_start()
         await self.hass.async_block_till_done()
         self.calls = []
+        await self.hass.services.async_call(
+            "input_datetime",
+            "set_datetime",
+            {
+                "entity_id": "input_datetime.phoebe_last_fed",
+                "datetime": "2026-01-01 08:00:00",
+            },
+            blocking=True,
+        )
 
         async def record(call):
             self.calls.append((call.domain, call.service, dict(call.data)))
@@ -107,20 +123,36 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(
                     self.hass.states.get(last_fed).state, "2026-10-27 18:00:00"
                 )
-                self.assertEqual(len(self.calls), 1)
+                self.assertEqual(len(self.calls), 2)
                 self.assertEqual(self.calls[0][:2], ("logbook", "log"))
-                self.assertEqual(self.calls[0][2]["entity_id"], last_fed)
+                self.assertIn("97.75 kcal", self.calls[1][2]["message"])
+                self.assertEqual(
+                    self.calls[1][:2], ("notify", "mobile_app_first_phone")
+                )
 
                 self.calls.clear()
                 await self.scan("2026-10-27T18:00:30", tag=first)
                 await self.scan("2026-10-27T18:01:59", phone=1, tag=second)
-                self.assertEqual(self.calls, [])
+                self.assertEqual(
+                    [call[:2] for call in self.calls],
+                    [
+                        ("notify", "mobile_app_first_phone"),
+                        ("notify", "mobile_app_second_phone"),
+                    ],
+                )
+                self.assertTrue(
+                    all(
+                        "no extra portion" in data["message"]
+                        for _, _, data in self.calls
+                    )
+                )
                 self.assertEqual(
                     self.hass.states.get(last_fed).state, "2026-10-27 18:00:00"
                 )
 
+                self.calls.clear()
                 await self.scan("2026-10-27T18:02:00", phone=1, tag=second)
-                self.assertEqual(len(self.calls), 1)
+                self.assertEqual(len(self.calls), 2)
                 self.assertEqual(self.calls[0][:2], ("logbook", "log"))
                 self.assertEqual(
                     self.hass.states.get(last_fed).state, "2026-10-27 18:02:00"
@@ -131,19 +163,11 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.calls, [])
         await self.scan("2026-10-27T22:00:00")
         self.assertEqual(
-            self.calls,
-            [
-                (
-                    "logbook",
-                    "log",
-                    {
-                        "name": "Phoebe Dental Treat",
-                        "message": "Phoebe was given 1 small Yummy Combs dental treat, 49 kcal.",
-                        "entity_id": LAST_TREAT,
-                    },
-                )
-            ],
+            [call[:2] for call in self.calls],
+            [("logbook", "log"), ("notify", "mobile_app_first_phone")],
         )
+        self.assertIn("1 small Yummy Comb, 49 kcal", self.calls[1][2]["message"])
+        self.assertEqual(self.calls[1][2]["data"]["url"], "/nixos-lovelace/phoebe")
         first_time = self.hass.states.get(LAST_TREAT).state
         self.calls.clear()
         await self.scan("2026-10-27T23:00:00", phone=1)
@@ -156,10 +180,7 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
             ],
         )
         self.assertTrue(
-            all(
-                "already got her dental treat" in data["message"]
-                for _, _, data in self.calls
-            )
+            all("already logged" in data["message"] for _, _, data in self.calls)
         )
         self.assertEqual(self.hass.states.get(LAST_TREAT).state, first_time)
 
@@ -186,7 +207,7 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
                 )
                 self.calls.clear()
                 await self.scan(f"{morning}T06:00:00")
-                self.assertEqual(len(self.calls), 1)
+                self.assertEqual(len(self.calls), 2)
                 self.assertEqual(self.calls[0][:2], ("logbook", "log"))
 
     async def test_simultaneous_scans_log_one_treat_and_warn_second_phone(self):
@@ -199,7 +220,35 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
             await self.hass.async_block_till_done()
         self.assertEqual(
             [(domain, service) for domain, service, _ in self.calls],
-            [("logbook", "log"), ("notify", "mobile_app_second_phone")],
+            [
+                ("logbook", "log"),
+                ("notify", "mobile_app_first_phone"),
+                ("notify", "mobile_app_second_phone"),
+            ],
+        )
+
+    async def test_concurrent_kibble_and_treat_scans_keep_both_foods_without_double_portions(
+        self,
+    ):
+        when = datetime(2026, 10, 27, 22, tzinfo=CENTRAL)
+        with patch.object(dt_util, "now", return_value=when):
+            for tag, phone in (
+                ("729d23f5-3368-487e-bff0-3cf6a22cba29", 0),
+                ("2e0ad6b4-069c-445a-a23f-4af99eccb21d", 1),
+                (TAG, 0),
+            ):
+                self.hass.bus.async_fire(
+                    "tag_scanned", {"tag_id": tag, "device_id": self.phones[phone]}
+                )
+            await self.hass.async_block_till_done()
+        total = self.hass.states.get("sensor.phoebe_daily_calories")
+        self.assertEqual(float(total.state), 146.75)
+        self.assertEqual(total.attributes["dinner_cups"], 0.25)
+        self.assertIs(total.attributes["dental_treat"], True)
+        notifications = [data for domain, _, data in self.calls if domain == "notify"]
+        self.assertEqual(len(notifications), 3)
+        self.assertEqual(
+            sum("no extra portion" in data["message"] for data in notifications), 1
         )
 
     async def test_unknown_scanner_never_broadcasts_or_logs_again(self):
@@ -208,6 +257,94 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
         self.phones.append("unknown-device")
         await self.scan("2026-10-27T23:00:00", phone=2)
         self.assertEqual(self.calls, [])
+
+    async def record_food(self, when, food, **data):
+        local_time = datetime.fromisoformat(when).replace(tzinfo=CENTRAL)
+        with patch.object(dt_util, "now", return_value=local_time):
+            await self.hass.services.async_call(
+                "script", "phoebe_record_food", {"food": food, **data}, blocking=True
+            )
+            await self.hass.async_block_till_done()
+
+    async def set_number(self, name, value):
+        await self.hass.services.async_call(
+            "input_number",
+            "set_value",
+            {"entity_id": f"input_number.{name}", "value": value},
+            blocking=True,
+        )
+
+    async def test_meal_button_portion_survives_home_assistant_restart(self):
+        self.assertEqual(
+            float(self.hass.states.get("input_number.phoebe_kibble_portion").state),
+            0.25,
+        )
+        await self.set_number("phoebe_kibble_portion", 0.375)
+        await self.hass.async_stop()
+
+        self.hass = HomeAssistant(self.directory.name)
+        self.hass.config.skip_pip = True
+        loader.async_setup(self.hass)
+        self.hass.config_entries = ConfigEntries(self.hass, CONFIG)
+        self.assertTrue(await bootstrap.async_load_base_functionality(self.hass))
+        self.assertTrue(await async_setup_component(self.hass, "input_number", CONFIG))
+        await self.hass.async_start()
+        await self.hass.async_block_till_done()
+        self.assertEqual(
+            float(self.hass.states.get("input_number.phoebe_kibble_portion").state),
+            0.375,
+        )
+
+    async def test_meals_treat_bone_and_budget_use_real_amounts(self):
+        await self.set_number("phoebe_daily_calorie_goal", 400)
+        await self.set_number("phoebe_bone_calories", 35)
+        await self.scan(
+            "2026-10-27T08:00:00", tag="729d23f5-3368-487e-bff0-3cf6a22cba29"
+        )
+        await self.record_food("2026-10-27T12:30:00", "lunch", cups=0.125)
+        await self.record_food("2026-10-27T18:00:00", "dinner", cups=0.5)
+        await self.scan("2026-10-27T22:00:00")
+        await self.record_food("2026-10-27T22:10:00", "bone")
+        total = self.hass.states.get("sensor.phoebe_daily_calories")
+        # 0.875 cups at 391 kcal/cup, plus a 49 kcal treat and 35 kcal bone.
+        self.assertEqual(float(total.state), 426.12)
+        self.assertEqual(total.attributes["breakfast_cups"], 0.25)
+        self.assertEqual(total.attributes["lunch_cups"], 0.125)
+        self.assertEqual(total.attributes["dinner_cups"], 0.5)
+        self.assertEqual(total.attributes["bone_count"], 1)
+        self.assertIs(total.attributes["dental_treat"], True)
+        self.assertEqual(
+            self.hass.states.get("sensor.phoebe_calorie_budget").state, "Over goal"
+        )
+
+    async def test_dashboard_portion_and_unknown_bone_calories(self):
+        await self.set_number("phoebe_kibble_portion", 0.375)
+        await self.record_food("2026-10-27T18:00:00", "dinner")
+        await self.record_food("2026-10-27T18:05:00", "bone")
+        self.assertEqual(
+            float(self.hass.states.get("sensor.phoebe_daily_calories").state), 146.62
+        )
+        self.assertEqual(
+            self.hass.states.get("sensor.phoebe_calorie_budget").state,
+            "Set calorie goal",
+        )
+        await self.set_number("phoebe_daily_calorie_goal", 300)
+        await self.hass.async_block_till_done()
+        self.assertEqual(
+            self.hass.states.get("sensor.phoebe_calorie_budget").state,
+            "Bone calories needed",
+        )
+
+    async def test_day_rollover_discards_yesterday_without_a_reset_automation(self):
+        await self.record_food("2026-10-27T23:00:00", "dinner", cups=0.5)
+        await self.record_food("2026-10-28T05:59:59", "dinner", cups=0.125)
+        self.assertEqual(
+            float(self.hass.states.get("sensor.phoebe_daily_calories").state), 244.38
+        )
+        await self.record_food("2026-10-28T06:00:00", "breakfast", cups=0.25)
+        total = self.hass.states.get("sensor.phoebe_daily_calories")
+        self.assertEqual(float(total.state), 97.75)
+        self.assertEqual(total.attributes["dinner_cups"], 0)
 
 
 if __name__ == "__main__":

@@ -26,7 +26,18 @@ let
   petsConfig = pkgs.writeText "pets-config.json" (
     builtins.toJSON {
       input_datetime = { inherit (haConfig.input_datetime) phoebe_last_fed; };
-      input_text = { inherit (haConfig.input_text) phoebe_last_dental_treat; };
+      input_text = pkgs.lib.filterAttrs (name: _: pkgs.lib.hasPrefix "phoebe_" name) haConfig.input_text;
+      input_number = pkgs.lib.filterAttrs (
+        name: _: pkgs.lib.hasPrefix "phoebe_" name
+      ) haConfig.input_number;
+      script = { inherit (haConfig.script) phoebe_record_food; };
+      template = [
+        {
+          sensor = builtins.filter (sensor: pkgs.lib.hasPrefix "phoebe_" (sensor.unique_id or "")) (
+            pkgs.lib.concatMap (template: template.sensor or [ ]) haConfig.template
+          );
+        }
+      ];
       automation = builtins.filter (
         automation:
         builtins.elem automation.id [

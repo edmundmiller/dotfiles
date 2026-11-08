@@ -586,3 +586,114 @@ views:
 
           - type: todo-list
             entity: todo.shopping_list
+
+  - type: sections
+    title: Phoebe
+    path: phoebe
+    icon: mdi:dog-side
+    max_columns: 1
+    sections:
+      - cards:
+          - type: markdown
+            title: Phoebe today
+            content: |
+              {% set total = states('sensor.phoebe_daily_calories') | float(0) %}
+              {% set goal = states('input_number.phoebe_daily_calorie_goal') | float(0) %}
+              {% set bones = state_attr('sensor.phoebe_daily_calories', 'bone_count') | int(0) %}
+              {% set incomplete = bones > 0 and states('input_number.phoebe_bone_calories') | float(0) <= 0 %}
+              # {{ total | round(2) }} kcal recorded
+              {% if goal <= 0 %}
+              No calorie goal set. [Set goal](/nixos-lovelace/phoebe-settings)
+              {% elif total > goal %}
+              **{{ (total - goal) | round(2) }} kcal over** her {{ goal | round(0) }} kcal goal.
+              {% elif not incomplete %}
+              **{{ (goal - total) | round(2) }} kcal remaining** of {{ goal | round(0) }} kcal.
+              {% endif %}
+              {% if incomplete %}
+              Total incomplete: bone calories are missing.
+              {% endif %}
+
+              | Food | Recorded | kcal |
+              | :--- | :--- | ---: |
+              {% for meal in ['breakfast', 'lunch', 'dinner'] -%}
+              {% set cups = state_attr('sensor.phoebe_daily_calories', meal ~ '_cups') | float(0) -%}
+              | {{ meal | title }} | {{ (cups | string) ~ ' cups' if cups > 0 else 'Not recorded' }} | {{ (cups * 391) | round(2) if cups > 0 else '—' }} |
+              {% endfor -%}
+              {% set dental = state_attr('sensor.phoebe_daily_calories', 'dental_treat') -%}
+              | Dental treat | {{ 'Given' if dental else 'Not recorded' }} | {{ 49 if dental else '—' }} |
+
+          - type: grid
+            columns: 4
+            square: false
+            cards:
+              - type: button
+                name: Breakfast
+                show_icon: false
+                tap_action:
+                  action: perform-action
+                  perform_action: script.phoebe_record_food
+                  data:
+                    food: breakfast
+                  confirmation:
+                    text: Record breakfast using the portion chosen in Settings?
+              - type: button
+                name: Lunch
+                show_icon: false
+                tap_action:
+                  action: perform-action
+                  perform_action: script.phoebe_record_food
+                  data:
+                    food: lunch
+                  confirmation:
+                    text: Record lunch using the portion chosen in Settings?
+              - type: button
+                name: Dinner
+                show_icon: false
+                tap_action:
+                  action: perform-action
+                  perform_action: script.phoebe_record_food
+                  data:
+                    food: dinner
+                  confirmation:
+                    text: Record dinner using the portion chosen in Settings?
+              - type: button
+                name: Greenie
+                show_icon: false
+                tap_action:
+                  action: perform-action
+                  perform_action: script.phoebe_record_food
+                  data:
+                    food: dental
+                  confirmation:
+                    text: Record one small Yummy Comb? Repeat taps won't add another.
+          - type: markdown
+            content: |
+              Tap a meal to add **{{ states('input_number.phoebe_kibble_portion') | float(0.25) }} cup**. NFC always adds **¼ cup**.
+
+              [Portion & goal settings](/nixos-lovelace/phoebe-settings) · Day starts at 6 a.m.
+
+  - type: sections
+    title: Phoebe settings
+    path: phoebe-settings
+    subview: true
+    back_path: /nixos-lovelace/phoebe
+    max_columns: 1
+    sections:
+      - cards:
+          - type: entities
+            title: Portion & calorie goal
+            entities:
+              - entity: input_number.phoebe_kibble_portion
+                name: Meal button portion
+              - entity: input_number.phoebe_daily_calorie_goal
+                name: Daily calorie goal
+          - type: markdown
+            content: |
+              Use Phoebe's vet-recommended calorie goal. Zero means no goal set.
+
+              Kibble: Hill's Science Diet Adult Sensitive Stomach & Skin, 391 kcal/cup.
+              Dental treat: small Yummy Comb, 49 kcal.
+
+              NFC always records ¼ cup, 97.75 kcal, regardless of the meal button portion.
+              Before 11 a.m. it counts as breakfast, 11 a.m. to 4 p.m. as lunch, and later as dinner.
+              Taps before 6 a.m. count as the previous day's dinner. Repeat kibble taps within 2 minutes don't add another portion.
