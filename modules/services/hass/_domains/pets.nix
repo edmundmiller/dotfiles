@@ -33,11 +33,6 @@ in
         name = "Phoebe Food Ledger";
         max = 255;
       };
-      phoebe_last_food_scan = {
-        name = "Phoebe Last Food Update";
-        max = 255;
-        icon = "mdi:tag-check";
-      };
     };
 
     input_number = {
@@ -61,12 +56,11 @@ in
       };
       phoebe_kibble_portion = {
         name = "Phoebe Kibble Portion";
-        min = 0.125;
+        min = 0.25;
         max = 2;
         step = 0.125;
         unit_of_measurement = "cups";
         mode = "box";
-        initial = 0.25;
         icon = "mdi:measuring-cup";
       };
     };
@@ -220,11 +214,6 @@ in
               Recorded Phoebe's {{ meal }}: {{ portion }} cup kibble, {{ (portion * 391) | round(2) }} kcal.
             {% endif %}
           '';
-        }
-        {
-          action = "input_text.set_value";
-          target.entity_id = "input_text.phoebe_last_food_scan";
-          data.value = "{{ feedback | trim }}";
         }
         {
           "if" = [

@@ -622,11 +622,6 @@ views:
               {% set dental = state_attr('sensor.phoebe_daily_calories', 'dental_treat') -%}
               | Dental treat | {{ 'Given' if dental else 'Not recorded' }} | {{ 49 if dental else '—' }} |
 
-              {% set last = states('input_text.phoebe_last_food_scan') %}
-              {% if last not in ['unknown', 'unavailable', ''] %}
-              {{ last }}
-              {% endif %}
-
           - type: grid
             columns: 4
             square: false

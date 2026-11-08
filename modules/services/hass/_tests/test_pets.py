@@ -274,6 +274,27 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
             blocking=True,
         )
 
+    async def test_meal_button_portion_survives_home_assistant_restart(self):
+        self.assertEqual(
+            float(self.hass.states.get("input_number.phoebe_kibble_portion").state),
+            0.25,
+        )
+        await self.set_number("phoebe_kibble_portion", 0.375)
+        await self.hass.async_stop()
+
+        self.hass = HomeAssistant(self.directory.name)
+        self.hass.config.skip_pip = True
+        loader.async_setup(self.hass)
+        self.hass.config_entries = ConfigEntries(self.hass, CONFIG)
+        self.assertTrue(await bootstrap.async_load_base_functionality(self.hass))
+        self.assertTrue(await async_setup_component(self.hass, "input_number", CONFIG))
+        await self.hass.async_start()
+        await self.hass.async_block_till_done()
+        self.assertEqual(
+            float(self.hass.states.get("input_number.phoebe_kibble_portion").state),
+            0.375,
+        )
+
     async def test_meals_treat_bone_and_budget_use_real_amounts(self):
         await self.set_number("phoebe_daily_calorie_goal", 400)
         await self.set_number("phoebe_bone_calories", 35)
