@@ -44,11 +44,6 @@
       "count": 2
     }
   },
-  "config/pi/extensions/gitbutler-guard-logic.ts": {
-    "anti-slop/no-unknown-parameters": {
-      "count": 1
-    }
-  },
   "config/pi/extensions/lazy-extensions.test.ts": {
     "anti-slop/no-unknown-parameters": {
       "count": 5
