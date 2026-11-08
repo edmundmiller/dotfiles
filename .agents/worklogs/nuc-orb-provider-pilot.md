@@ -1,7 +1,8 @@
 # NUC orb provider pilot
 
-Status: authorized candidate preparation; not deployed. Current publication and
-deployment evidence stays in the existing agent-run receipt.
+Status: initial host wiring deployed; provider not registered or ready. A smaller
+pilot is being prepared after the second run failed its capacity gate. Current
+publication and deployment evidence stays in the existing agent-run receipt.
 
 Request and approval:
 https://ampcode.com/threads/T-01a1bb8c-9138-71d1-9002-41a01abffe05
@@ -16,7 +17,7 @@ gate and hosted orbs as default. Do not ask for the same approval again.
 
 The pilot is a workspace provider named
 `nuc-orbs`, a dedicated rootless Podman account, bounded local storage, and one
-active 2-CPU/4-GiB orb. Leave public portals disabled. Keep existing runners,
+active 2-CPU/3-GiB orb. Leave public portals disabled. Keep existing runners,
 the Mac app, NAS duties, and Meshify sleep unchanged. Do not create another thread
 or silently switch this orb to a runner. The approval does not authorize changes
 to HA/Matter, tailnet policy, unrelated services, or destructive cleanup.
@@ -106,3 +107,21 @@ run's outcome in this receipt before recording the new request.
 This is installed host wiring and successful live capacity evidence, not a
 working provider. Container lifecycle/resource tests, NUC Amp authentication,
 provider registration, and end-to-end thread tests remain unverified.
+
+## Second live attempt and smaller pilot
+
+The working-directory repair passed candidate CI and landed on main:
+https://github.com/edmundmiller/dotfiles/commit/78da1c8b2bd235321eb3a532df99b567fc96e1dc
+https://github.com/edmundmiller/dotfiles/actions/runs/42527893784
+
+The next live attempt stopped before activation at the retained capacity gate:
+https://github.com/edmundmiller/dotfiles/actions/runs/42528091834
+It reported eight CPUs, 6,243,256 KiB available RAM and 204,487,808 KiB local
+free storage. Available RAM was below the original 6-GiB requirement. No smoke
+container ran, and the working-directory repair has not been verified live.
+
+Reduce the pilot allocation from 4 GiB to 3 GiB for lighter workloads. Require
+5 GiB available before activation to retain the same 2-GiB host headroom. Do not
+stop unrelated services, loosen the storage gate, or alter the hosted default.
+Publish through candidate CI, then submit a new exact-main deployment under the
+existing scoped approval. Preserve both earlier run outcomes in the receipt.

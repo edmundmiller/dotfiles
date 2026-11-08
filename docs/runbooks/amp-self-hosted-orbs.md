@@ -78,11 +78,15 @@ administration are separate. Confirm the workspace plan before assuming savings.
 ## Prepared pilot
 
 `config/amp-orbs/dispatch.sh` uses rootless Podman under a dedicated account.
-It admits one running managed container, caps it at two CPUs and 4 GiB with no
+It admits one running managed container, caps it at two CPUs and 3 GiB with no
 extra swap allowance, sets 1 GiB shared memory and a PID limit, and requires
 20 GiB free before spawn or snapshot. Its lock serializes lifecycle jobs.
 It implements disk snapshots and repeatable lifecycle jobs, refuses containers
 without its ownership label, and passes bootstrap tokens only through exec.
+
+The live NUC reported about 6 GiB available RAM across two preflights. The pilot
+uses 3 GiB for lighter workloads so it can retain 2 GiB of host headroom without
+stopping existing services. Large builds should continue using hosted orbs.
 
 The dispatcher grants no host mounts, container socket, host networking, devices,
 or privileged mode. These limits do not isolate the LAN or prevent kernel
@@ -116,7 +120,7 @@ usual exact-main CI, identity, and deployment-lock guards still apply. Other
 NUC deployments do not run the pilot's capacity or smoke tests by default.
 
 `scripts/amp-orb-pilot.sh preflight` checks host identity, cgroup v2, at least four
-online CPUs, 6 GiB available RAM, and 100 GiB free on local `/var/lib` storage before
+online CPUs, 5 GiB available RAM, and 100 GiB free on local `/var/lib` storage before
 activation. The post-deploy `verify` mode checks actual rootless resource limits,
 disk resume, and snapshot cloning with Amp's image. It deletes only its disposable
 smoke containers and snapshot. This is backend evidence, not an Amp thread test.

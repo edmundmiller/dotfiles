@@ -59,7 +59,7 @@ case "$ORB_OPERATION" in
       fi
       [[ $image != -* ]] || fail "invalid image"
       podman create --name "$ORB_ID" --label "$label=true" \
-        --platform linux/amd64 --init --cpus 2 --memory 4g --memory-swap 4g \
+        --platform linux/amd64 --init --cpus 2 --memory 3g --memory-swap 3g \
         --pids-limit 512 --shm-size 1g --entrypoint sleep "$image" infinity
     fi
     podman start "$ORB_ID"

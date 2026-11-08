@@ -14,7 +14,11 @@ case "${1:-}" in
     printf 'CPUs=%s MemAvailableKiB=%s LocalFreeKiB=%s\n' "$cpus" "$available_kib" "$free_kib"
     printf 'Load=%s\n' "$(cat /proc/loadavg)"
     [[ $(stat -fc %T /sys/fs/cgroup) == cgroup2fs ]]
-    (( cpus >= 4 && available_kib >= 6 * 1024 * 1024 && free_kib >= 100 * 1024 * 1024 ))
+    # Reserve 2 GiB for the host above the pilot's 3 GiB memory limit.
+    if ! (( cpus >= 4 && available_kib >= 5 * 1024 * 1024 && free_kib >= 100 * 1024 * 1024 )); then
+      echo 'FAIL: pilot requires 4 CPUs, 5 GiB available RAM and 100 GiB free local storage' >&2
+      exit 1
+    fi
     echo 'PASS: live NUC pilot capacity preflight'
     ;;
   verify)
@@ -47,18 +51,18 @@ case "${1:-}" in
     }
     trap cleanup EXIT
     image=us-central1-docker.pkg.dev/amp-prod-0/amp-orb/amp-orb:latest
-    podman run --detach --init --name "$name" --cpus 2 --memory 4g \
-      --memory-swap 4g --pids-limit 512 --shm-size 1g --entrypoint sleep "$image" infinity
+    podman run --detach --init --name "$name" --cpus 2 --memory 3g \
+      --memory-swap 3g --pids-limit 512 --shm-size 1g --entrypoint sleep "$image" infinity
     podman exec "$name" sh -c 'printf live-pilot-sentinel > /home/user/pilot-sentinel'
-    test "$(podman exec "$name" cat /sys/fs/cgroup/memory.max)" = 4294967296
+    test "$(podman exec "$name" cat /sys/fs/cgroup/memory.max)" = 3221225472
     test "$(podman exec "$name" cat /sys/fs/cgroup/cpu.max)" = '200000 100000'
     podman stop --time 10 "$name"
     podman start "$name"
     test "$(podman exec "$name" cat /home/user/pilot-sentinel)" = live-pilot-sentinel
     podman stop --time 10 "$name"
     podman commit "$name" "$snapshot"
-    podman run --detach --init --name "$clone" --cpus 2 --memory 4g \
-      --memory-swap 4g --pids-limit 512 --shm-size 1g --entrypoint sleep "$snapshot" infinity
+    podman run --detach --init --name "$clone" --cpus 2 --memory 3g \
+      --memory-swap 3g --pids-limit 512 --shm-size 1g --entrypoint sleep "$snapshot" infinity
     test "$(podman exec "$clone" cat /home/user/pilot-sentinel)" = live-pilot-sentinel
     echo 'PASS: live rootless image, CPU/memory limits, disk resume and snapshot clone'
     echo 'This is a container-backend smoke test, not an Amp thread/provider end-to-end test.'
