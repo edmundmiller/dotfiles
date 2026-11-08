@@ -4,12 +4,10 @@
   agentCore,
   piPkgDeps,
   piPstack,
-  piCommandPolicyBridge,
   piSettingsValidated,
   piPermissionSystemConfig,
   promptLinks,
   sessionSearchFiles,
-  isDarwin,
 }:
 
 promptLinks
@@ -23,19 +21,9 @@ promptLinks
     # repository-owned policy on activation without accumulating backup files.
     force = true;
   };
-  ".pi/agent/packages/pi-command-policy-bridge".source = piCommandPolicyBridge;
   ".pi/agent/packages/pistack".source = piPstack;
 }
 // sessionSearchFiles
-// (
-  if isDarwin then
-    {
-      ".pi/agent/extensions/enforce-commit-signing.ts".source =
-        "${configDir}/pi/extensions/enforce-commit-signing.ts";
-    }
-  else
-    { }
-)
 // {
   ".pi/agent/extensions/process-info.ts".source = "${configDir}/pi/extensions/process-info.ts";
   ".pi/agent/extensions/critique.ts".source = "${configDir}/pi/extensions/critique.ts";

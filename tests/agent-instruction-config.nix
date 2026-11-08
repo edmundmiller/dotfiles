@@ -112,8 +112,7 @@ in
   piApproval = {
     settings = builtins.fromJSON (home "pi").home.file.".pi/agent/settings.json".text;
     policy = (home "pi").home.file.".pi/agent/extensions/pi-permission-system/config.json";
-    bridge = toString (home "pi").home.file.".pi/agent/packages/pi-command-policy-bridge".source;
-    configPath = (load "pi").env.PI_PERMISSION_SYSTEM_CONFIG_PATH;
+    homeFiles = builtins.attrNames (home "pi").home.file;
   };
   piSkills = {
     pistack = toString (home "pi").home.file.".pi/agent/packages/pistack".source;

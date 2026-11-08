@@ -10,7 +10,8 @@ update_when: Backend detection, workspace, policy, or landing behavior changes.
 
 ## Status
 
-Accepted
+Accepted. The custom command-policy bridge was removed in favor of upstream
+`pi-permission-system`; section 5 records the current permission boundary.
 
 ## Date
 
@@ -28,10 +29,8 @@ still heavily Git-shaped: they reach for `git status`, `git diff`, `git add`,
 Jujutsu. If jj is simply enabled and agents are told to remember a different
 workflow, they will eventually bypass it.
 
-This also intersects with `packages/pi-packages/pi-command-policy-bridge`, which
-currently applies the existing `pi-permission-system` bash policy to tools that
-embed shell commands. jj support should use the same deterministic policy layer
-rather than relying on prompt instructions alone.
+Pi uses upstream `pi-permission-system` for command permissions. Repository-aware
+jj workflow guidance remains in the jj skills and `pi-jj-auto`.
 
 Packages reviewed for Pi + jj support:
 
@@ -143,37 +142,20 @@ compete with existing repo patterns:
 - Pi rollback/checkpoints;
 - Herdr panes and side agents;
 - current PR/worktree habits;
-- future `pi-command-policy-bridge` enforcement.
+- existing command permissions.
 
 They may be installed project-locally or tested in a dedicated pilot repo. The
 next broad adoption point should be after the baseline jj policy and publish
 alignment behavior are reliable.
 
-### 5. Extend command policy for VCS-aware tools
+### 5. Use upstream command permissions
 
-`pi-command-policy-bridge` should become the enforcement point for extension
-tools that perform VCS mutations, not just tools with a literal `command` string.
-At minimum, policy coverage should include:
+`pi-permission-system` is the sole command permission layer. Its approval and
+YOLO settings apply without a second confirmation dialog. The custom bridge and
+its cwd-aware Git mutation and extension-tool blocks have been removed.
 
-| Tool               | Safe/read action                                         | Mutating action                                         |
-| ------------------ | -------------------------------------------------------- | ------------------------------------------------------- |
-| `jj_vcs`           | `status` allowed                                         | `align_push` ask/guarded                                |
-| `jj_stack_pr_flow` | `status`, `checkpoints`, `plan`, dry-run publish allowed | real `publish`, `sync`, `close`, `init` ask/guarded     |
-| `jj_workspace`     | status/list-style actions allowed if added               | workspace create/squash/delete ask/guarded              |
-| dashboard tools    | snapshots allowed                                        | complete/archive/open-in-shell ask if they mutate state |
-
-The bridge should return concrete remediation guidance when blocking common Git
-mutations in a jj repo, for example:
-
-- `git add` → "jj snapshots automatically; use `jj diff` and continue."
-- `git commit -m ...` → "use `jj describe -m ...` then `jj new --no-edit`."
-- `git reset --hard` → "use `jj restore`, `jj abandon`, or ask before destructive cleanup."
-- `git push` → "use `/jj-align-push <branch>` or `jj_vcs align_push` after status."
-
-A static wildcard-only policy is not enough for this, because Git mutating
-commands may still be legitimate in non-jj repositories. The jj policy should be
-cwd-aware: detect whether the command is running inside a jj repository before
-rewriting a Git-trained agent's behavior.
+Agents must still follow the jj workflow and obtain publication authority.
+Those requirements are not enforced by a separate Pi command interceptor.
 
 ### 6. Recommended agent workflow
 
@@ -221,14 +203,13 @@ jj new --no-edit
   than ad hoc `git push` attempts.
 - Larger jj workspace/dashboard/stacked-PR systems remain available for pilots
   without committing the whole Pi environment to them.
-- `pi-command-policy-bridge` needs a VCS-aware extension point before mutating jj
-  tools are broadly trusted.
+- Upstream permissions do not add repository-aware Git mutation checks.
 
 ## Implementation
 
 - `hey agent-start` detects the live backend, creates jj workspaces, and writes versioned receipts outside repositories.
 - Codex-created Git worktrees stay on Git; the launcher refuses nested jj initialization.
-- `pi-command-policy-bridge` blocks Git mutations in jj repositories and routes publication through `done`.
+- Pi uses upstream permissions without a custom bridge. The `done` skill owns the verified publication workflow.
 - The global `done` skill has Git and jj branches plus authoritative remote verifiers.
 - `hey agent-sweep` aggregates bounded receipt evidence instead of inferring quality from commit prose.
 
@@ -238,7 +219,5 @@ jj new --no-edit
    deployment path.
 2. Add `pi-jj-auto` to the Pi package list once package load behavior is verified.
 3. Pilot `pi-jj-git-align` in this repo or a scratch colocated jj repo.
-4. Extend `pi-command-policy-bridge` to classify known jj extension tools and
-   cwd-aware Git mutations.
-5. Add or update local agent guidance so blocked Git commands teach the jj
-   equivalent instead of only denying the command.
+4. Keep local agent guidance aligned with the jj workflow and upstream
+   command permissions.

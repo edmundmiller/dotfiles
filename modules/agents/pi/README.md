@@ -44,22 +44,17 @@ session after an authorized `hey re` applies the managed settings and links.
 
 ## Command approvals
 
-The shared settings load `@gotgenes/pi-permission-system@42.0.0` and the
-Nix-deployed `pi-command-policy-bridge` together. The module renders
-`config/pi/pi-permission-system.jsonc` as strict JSON and points the bridge at
-that same policy through `PI_PERMISSION_SYSTEM_CONFIG_PATH`.
-
-The bridge requires UI approval for `hey` and `mise` commands across its six
-supported command-bearing tools, including paths, quotes, compound commands,
-and newlines. Rejecting, losing, or lacking the dialog blocks execution.
-The policy's upstream `yoloMode` does not bypass these bridge approvals.
-These are conservative command-pattern checks, not a shell sandbox.
+The shared settings load `@gotgenes/pi-permission-system@42.0.0` as the sole
+command permission layer. The module renders
+`config/pi/pi-permission-system.jsonc` as strict JSON at the package's default
+configuration path. Upstream owns approval dialogs, session approvals, and
+`yoloMode` behavior. No custom command-policy or commit-signing gate is loaded.
+Git still enforces its configured commit signing.
 
 Home Manager owns the policy file and reclaims it on activation if the upstream
 settings UI replaced its symlink. Runtime toggle changes do not survive that
-activation. An unreadable policy still uses the bridge's existing fail-open
-behavior; generated-file and loading checks are therefore part of validation.
-Restoring these sources does not activate them on a running host.
+activation. Source edits require an authorized rebuild and a Pi reload or fresh
+session before running agents adopt them.
 
 ## Pi 1.0 and native MCP
 

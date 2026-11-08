@@ -52,20 +52,23 @@ class AgentInstructionWiringTests(unittest.TestCase):
                 raise RuntimeError(result.stderr)
             cls.deployed = json.loads(result.stdout)
 
-    def test_pi_approval_packages_and_policy_are_deployed_together(self) -> None:
+    def test_pi_uses_upstream_permissions_without_custom_gates(self) -> None:
         approval = self.deployed["piApproval"]
         packages = approval["settings"]["packages"]
         self.assertIn("npm:@gotgenes/pi-permission-system@42.0.0", packages)
-        self.assertIn("~/.pi/agent/packages/pi-command-policy-bridge", packages)
-        self.assertTrue(approval["bridge"].endswith("pi-command-policy-bridge"))
-        self.assertEqual(
-            approval["configPath"],
-            "$HOME/.pi/agent/extensions/pi-permission-system/config.json",
-        )
+        self.assertNotIn("~/.pi/agent/packages/pi-command-policy-bridge", packages)
+        self.assertNotIn(".pi/agent/packages/pi-command-policy-bridge", approval["homeFiles"])
+        self.assertNotIn(".pi/agent/extensions/enforce-commit-signing.ts", approval["homeFiles"])
         self.assertTrue(approval["policy"]["force"])
         policy = json.loads(approval["policy"]["text"])
-        self.assertEqual(policy["permission"]["bash"]["*hey*"], "ask")
-        self.assertEqual(policy["permission"]["bash"]["*mise*"], "ask")
+        rules = policy["permission"]["bash"]
+        self.assertNotIn("*hey*", rules)
+        self.assertNotIn("*mise*", rules)
+        self.assertEqual(rules["hey *"], "ask")
+        self.assertEqual(rules["mise run *"], "ask")
+        for command in ("hey check", "hey check *", "hey test", "mise run check *"):
+            with self.subTest(command=command):
+                self.assertEqual(rules[command], "allow")
 
     def test_pi_deploys_pistack_skills_without_a_delegation_backend(self) -> None:
         packages = self.deployed["piApproval"]["settings"]["packages"]
