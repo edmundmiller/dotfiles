@@ -276,6 +276,20 @@ class ValidationTests(unittest.TestCase):
             any("dji" in name or "vm-test" in name for name in selected["checks"])
         )
 
+    def test_unas_vm_checks_are_excluded_from_portable_plans(self):
+        vm_checks = {"unas-recovery", "unas-late-bulk"}
+        for path in (
+            "hosts/nuc/default.nix",
+            "hosts/unas/nas.nix",
+            "overlays/home-assistant-mcp-schema-compat/default.nix",
+            "flake.nix",
+        ):
+            self.write(path, "changed")
+            with self.subTest(path=path):
+                self.assertFalse(vm_checks & set(self.selection(path)["checks"]))
+        self.assertFalse(vm_checks & set(self.selection("--full")["checks"]))
+        self.assertEqual(self.selection("--platform", "nixos")["platform"], "nixos")
+
     def test_shared_lock_and_tests_only_changes_check_all_packages(self):
         self.package("pi-a")
         self.package("omp-b")
@@ -325,6 +339,32 @@ class ValidationTests(unittest.TestCase):
             ):
                 self.invoke("--platform", target)
             self.assertEqual(error.exception.code, 2)
+
+    def test_nixos_platform_reports_flake_check_failure(self):
+        commands = []
+
+        def tools(command, **kwargs):
+            commands.append(command)
+            failure = "flake" in command and "check" in command
+            return subprocess.CompletedProcess(command, 1 if failure else 0, stdout="x86_64-linux")
+
+        with (
+            patch.object(v.platform, "system", return_value="Linux"),
+            patch.object(v.platform, "machine", return_value="x86_64"),
+            patch.object(v, "nix_env", return_value={}),
+            patch(
+                "scripts.validation.subprocess.run",
+                side_effect=lambda command, **kw: (
+                    subprocess_run(command, **kw)
+                    if command[0] == "git"
+                    else tools(command, **kw)
+                ),
+            ),
+        ):
+            code, _, error = self.invoke("--platform", "nixos")
+        self.assertEqual(code, 1)
+        self.assertTrue(any("flake" in command and "check" in command for command in commands))
+        self.assertIn("full NixOS flake", error)
 
     def test_darwin_forces_host_derivations_and_builds_native_checks(self):
         commands = []
