@@ -56,6 +56,14 @@ settings UI replaced its symlink. Runtime toggle changes do not survive that
 activation. Source edits require an authorized rebuild and a Pi reload or fresh
 session before running agents adopt them.
 
+## Project environment
+
+Pi inherits its launch environment. The `pi-direnv` package is disabled by
+default, so Pi does not automatically import mise or direnv exports on session
+start or switch. Normal shell mise integration is unchanged. Launch with
+`mise exec -- pi` when a project needs its mise environment. Restart Pi from a
+fresh shell to discard exports an earlier loader may already have injected.
+
 ## Pi 1.0 and native MCP
 
 `overlays/pi/default.nix` selects an independently pinned upstream Pi package.
