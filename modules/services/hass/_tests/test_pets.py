@@ -266,38 +266,22 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
             )
             await self.hass.async_block_till_done()
 
-    async def set_number(self, name, value):
-        await self.hass.services.async_call(
-            "input_number",
-            "set_value",
-            {"entity_id": f"input_number.{name}", "value": value},
-            blocking=True,
-        )
-
-    async def test_meal_button_portion_survives_home_assistant_restart(self):
-        self.assertEqual(
-            float(self.hass.states.get("input_number.phoebe_kibble_portion").state),
-            0.25,
-        )
-        await self.set_number("phoebe_kibble_portion", 0.375)
-        await self.hass.async_stop()
-
-        self.hass = HomeAssistant(self.directory.name)
-        self.hass.config.skip_pip = True
-        loader.async_setup(self.hass)
-        self.hass.config_entries = ConfigEntries(self.hass, CONFIG)
-        self.assertTrue(await bootstrap.async_load_base_functionality(self.hass))
-        self.assertTrue(await async_setup_component(self.hass, "input_number", CONFIG))
-        await self.hass.async_start()
+    async def set_goal(self, value):
+        # Simulate a different declarative goal without an editable production helper.
+        self.hass.states.async_set("sensor.phoebe_daily_calorie_goal", value)
         await self.hass.async_block_till_done()
+
+    async def test_meal_buttons_use_config_not_legacy_editable_helpers(self):
+        for name in ("kibble_portion", "daily_calorie_goal", "bone_calories"):
+            self.assertIsNone(self.hass.states.get(f"input_number.phoebe_{name}"))
+        self.hass.states.async_set("input_number.phoebe_kibble_portion", 0.375)
+        await self.record_food("2026-10-27T18:00:00", "dinner")
         self.assertEqual(
-            float(self.hass.states.get("input_number.phoebe_kibble_portion").state),
-            0.375,
+            float(self.hass.states.get("sensor.phoebe_daily_calories").state), 97.75
         )
 
     async def test_meals_treat_bone_and_budget_use_real_amounts(self):
-        await self.set_number("phoebe_daily_calorie_goal", 400)
-        await self.set_number("phoebe_bone_calories", 35)
+        await self.set_goal(400)
         await self.scan(
             "2026-10-27T08:00:00", tag="729d23f5-3368-487e-bff0-3cf6a22cba29"
         )
@@ -306,30 +290,36 @@ class PetsTest(unittest.IsolatedAsyncioTestCase):
         await self.scan("2026-10-27T22:00:00")
         await self.record_food("2026-10-27T22:10:00", "bone")
         total = self.hass.states.get("sensor.phoebe_daily_calories")
-        # 0.875 cups at 391 kcal/cup, plus a 49 kcal treat and 35 kcal bone.
-        self.assertEqual(float(total.state), 426.12)
+        # 0.875 cups at 391 kcal/cup, plus a 49 kcal treat. Bones remain unpriced.
+        self.assertEqual(float(total.state), 391.12)
         self.assertEqual(total.attributes["breakfast_cups"], 0.25)
         self.assertEqual(total.attributes["lunch_cups"], 0.125)
         self.assertEqual(total.attributes["dinner_cups"], 0.5)
         self.assertEqual(total.attributes["bone_count"], 1)
         self.assertIs(total.attributes["dental_treat"], True)
         self.assertEqual(
+            self.hass.states.get("sensor.phoebe_calorie_budget").state,
+            "Bone calories needed",
+        )
+        await self.record_food("2026-10-27T22:15:00", "dinner", cups=0.125)
+        self.assertEqual(
+            float(self.hass.states.get("sensor.phoebe_daily_calories").state), 440
+        )
+        self.assertEqual(
             self.hass.states.get("sensor.phoebe_calorie_budget").state, "Over goal"
         )
 
     async def test_dashboard_portion_and_unknown_bone_calories(self):
-        await self.set_number("phoebe_kibble_portion", 0.375)
         await self.record_food("2026-10-27T18:00:00", "dinner")
         await self.record_food("2026-10-27T18:05:00", "bone")
         self.assertEqual(
-            float(self.hass.states.get("sensor.phoebe_daily_calories").state), 146.62
+            float(self.hass.states.get("sensor.phoebe_daily_calories").state), 97.75
         )
         self.assertEqual(
             self.hass.states.get("sensor.phoebe_calorie_budget").state,
             "Set calorie goal",
         )
-        await self.set_number("phoebe_daily_calorie_goal", 300)
-        await self.hass.async_block_till_done()
+        await self.set_goal(300)
         self.assertEqual(
             self.hass.states.get("sensor.phoebe_calorie_budget").state,
             "Bone calories needed",

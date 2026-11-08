@@ -594,16 +594,45 @@ views:
     max_columns: 1
     sections:
       - cards:
+          - type: conditional
+            conditions:
+              - condition: numeric_state
+                entity: sensor.phoebe_daily_calorie_goal
+                below: 1
+            card: &phoebe-calorie-history
+              type: history-graph
+              title: Calorie history · past 24 hours
+              entities:
+                - entity: sensor.phoebe_daily_calories
+                  name: Recorded
+                  color: "#26a69a"
+              hours_to_show: 24
+              min_y_axis: 0
+              fit_y_data: true
+          - type: conditional
+            conditions:
+              - condition: numeric_state
+                entity: sensor.phoebe_daily_calorie_goal
+                above: 0
+            card:
+              <<: *phoebe-calorie-history
+              entities:
+                - entity: sensor.phoebe_daily_calories
+                  name: Recorded
+                  color: "#26a69a"
+                - entity: sensor.phoebe_daily_calorie_goal
+                  name: Daily goal
+                  color: "#ffb74d"
           - type: markdown
             title: Phoebe today
             content: |
               {% set total = states('sensor.phoebe_daily_calories') | float(0) %}
-              {% set goal = states('input_number.phoebe_daily_calorie_goal') | float(0) %}
+              {% set goal = states('sensor.phoebe_daily_calorie_goal') | float(0) %}
               {% set bones = state_attr('sensor.phoebe_daily_calories', 'bone_count') | int(0) %}
-              {% set incomplete = bones > 0 and states('input_number.phoebe_bone_calories') | float(0) <= 0 %}
+              {% set incomplete = bones > 0 and state_attr('sensor.phoebe_daily_calorie_goal', 'bone_calories') | float(0) <= 0 %}
               # {{ total | round(2) }} kcal recorded
               {% if goal <= 0 %}
-              No calorie goal set. [Set goal](/nixos-lovelace/phoebe-settings)
+              Calorie goal not yet declared in the feeding config.
               {% elif total > goal %}
               **{{ (total - goal) | round(2) }} kcal over** her {{ goal | round(0) }} kcal goal.
               {% elif not incomplete %}
@@ -635,7 +664,7 @@ views:
                   data:
                     food: breakfast
                   confirmation:
-                    text: Record breakfast using the portion chosen in Settings?
+                    text: Record breakfast using the declared meal portion?
               - type: button
                 name: Lunch
                 show_icon: false
@@ -645,7 +674,7 @@ views:
                   data:
                     food: lunch
                   confirmation:
-                    text: Record lunch using the portion chosen in Settings?
+                    text: Record lunch using the declared meal portion?
               - type: button
                 name: Dinner
                 show_icon: false
@@ -655,7 +684,7 @@ views:
                   data:
                     food: dinner
                   confirmation:
-                    text: Record dinner using the portion chosen in Settings?
+                    text: Record dinner using the declared meal portion?
               - type: button
                 name: Greenie
                 show_icon: false
@@ -668,32 +697,6 @@ views:
                     text: Record one small Yummy Comb? Repeat taps won't add another.
           - type: markdown
             content: |
-              Tap a meal to add **{{ states('input_number.phoebe_kibble_portion') | float(0.25) }} cup**. NFC always adds **¼ cup**.
+              Tap a meal to add **{{ state_attr('sensor.phoebe_daily_calorie_goal', 'meal_portion_cups') }} cup**. NFC always adds **¼ cup**.
 
-              [Portion & goal settings](/nixos-lovelace/phoebe-settings) · Day starts at 6 a.m.
-
-  - type: sections
-    title: Phoebe settings
-    path: phoebe-settings
-    subview: true
-    back_path: /nixos-lovelace/phoebe
-    max_columns: 1
-    sections:
-      - cards:
-          - type: entities
-            title: Portion & calorie goal
-            entities:
-              - entity: input_number.phoebe_kibble_portion
-                name: Meal button portion
-              - entity: input_number.phoebe_daily_calorie_goal
-                name: Daily calorie goal
-          - type: markdown
-            content: |
-              Use Phoebe's vet-recommended calorie goal. Zero means no goal set.
-
-              Kibble: Hill's Science Diet Adult Sensitive Stomach & Skin, 391 kcal/cup.
-              Dental treat: small Yummy Comb, 49 kcal.
-
-              NFC always records ¼ cup, 97.75 kcal, regardless of the meal button portion.
-              Before 11 a.m. it counts as breakfast, 11 a.m. to 4 p.m. as lunch, and later as dinner.
-              Taps before 6 a.m. count as the previous day's dinner. Repeat kibble taps within 2 minutes don't add another portion.
+              The graph shows recorded intake only, restarting at 6 a.m. each day. Unlogged food is not included.
