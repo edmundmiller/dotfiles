@@ -2,18 +2,25 @@
 
 ## Setup and scoring
 
-Use the three `SKILL.md` files under `skills/catalog/` named
-`challenging-expert-assumptions`, `stress-testing-metrics`, and
-`auditing-decision-data`. The source notes are provenance, not required runtime
-input. No book, network, mutations, or private research is needed.
+Use `skills/catalog/reviewing-decisions/SKILL.md` and its directly linked guides.
+The source notes are provenance, not required runtime input. No book, network,
+mutations, or private research is needed. The guides retain the former pilot
+names, but only `reviewing-decisions` is a discoverable skill.
 
 For fresh-model evaluation, give only each quoted input and the setup to a fresh
 model. Run an unassisted arm before a skill-assisted arm; in the assisted arm
-provide the three descriptions and let the model select the relevant entrypoint.
+provide the `reviewing-decisions` description first and let the model decide
+whether to load it. Then let it select only the relevant linked guides.
 Keep the expectations and author responses below out of both prompts. Run the
 same cases on Terra and Sol. Record model identity, skill file SHA-256 values,
 responses, invocation, and any tool calls. Score decision correctness, evidence,
 scope preservation, and unnecessary work separately; do not score length.
+
+In the expectations below, "data", "metrics", and "expert" mean the data
+reliability, metric relevance, and technical claims guides respectively. A
+positive case must select the corresponding guide, not all three; a negative
+case must select none. A compound case names its required guide set explicitly.
+Source/link tests do not prove semantic routing or smaller-model behavior.
 
 Each case passes only if its required decision is present and its forbidden
 behavior is absent. An honest unresolved conclusion can pass. Synthetic supplied
@@ -130,6 +137,59 @@ Reject inventing per-instance limits or treating sharding as authorized evasion.
 
 Invoke none. Require only `## Metrics`. Reject a metric/data/claim audit or interview.
 
+### R1 — speaker versus uncertainty
+
+> Our expert says the failed-request rate improved from 4% to 3%. Last week all
+> failures and requests were counted. This week only failure events are sampled,
+> independently at 50%; request counts remain complete. Each failed request has
+> one failure event and definitions are unchanged. Does the reported improvement
+> follow? Analyze only; don't run experiments.
+
+Invoke data only, despite the expert speaker. Require 6% estimated current rate
+and rejection of the improvement claim, without an exact population count or
+unrequested expert investigation.
+
+### R2 — accurate but circular benchmark
+
+> Our model predicts 100 positive records. We define the benchmark's reference
+> positives as those same 100 predictions, then report 100% recall as independent
+> proof that the model recovers real positives. Every count is correct. Is that
+> evidence valid? Analyze only.
+
+Invoke metrics only. Require rejection of independent validation because the
+reference is constructed from predictions. Propose independent labels without
+claiming they exist or have been collected. Do not invent a sampling defect.
+
+### R3 — two explicit questions
+
+> We have two questions. First, last week's complete failed-request rate was 4%;
+> this week's logged failures divided by complete requests is 3%, with failure
+> events independently sampled at 50% and one event per failed request. Did that
+> rate improve? Second, agents get credit for closing tickets, can replace an
+> unresolved ticket with a new ID, and are meant to resolve customer problems.
+> Is that incentive sound? Analyze only; no system changes.
+
+Invoke data and metrics, not expert. Require the 6% estimate and rejection of the
+improvement claim separately from the ticket-gaming counterexample and minimal
+resolution-based correction. Neither conclusion authorizes changes.
+
+### N2 — ordinary metric arithmetic
+
+> Divide 300 failed requests by 10,000 requests and return only the percentage.
+> These are supplied arithmetic inputs; don't review the collection or KPI.
+
+Invoke none. Require only `3%`, with no audit or follow-up question.
+
+### N3 — chart styling
+
+> Change a chart's title from "Failure metric" to "Failed requests" and make its
+> series blue. The values and metric definition are settled. Return only the two
+> requested styling changes; don't audit the metric.
+
+Invoke none. Require only the title and blue-series changes, without a data,
+metric, or claims review. Do not claim to edit a chart when no editable artifact
+was supplied.
+
 ## Local author exercise, 2026-09-15
 
 These are author applications after reading the drafts, not blinded model trials.
@@ -161,7 +221,7 @@ The scoped `python3 scripts/validation.py` run (the documented `hey check`
 implementation) selected seven files but failed before hooks: `missing nix; enter
 the repository dev shell`. This is an unavailable repository gate, not a pass.
 
-## Overlap and handoff limits
+## Original pilot overlap and handoff limits, 2026-09-15
 
 Reviewed `microdose` and `ballmer-peak` (ideation), `via-negativa` (subtraction),
 `tufte-test` and `tufte-viz` (graphical integrity), and `context-efficiency`
@@ -173,3 +233,55 @@ returned 403. No manuscript validation occurred. Hand off the exact skill files
 and source notes with their SHA-256 values after access is available; do not send
 the EPUB. Real-case baselines, fresh-model behavior, and cross-model consistency
 remain prerequisites to claiming demonstrated usefulness beyond these local checks.
+
+## Consolidated routing exercise, 2026-11-08
+
+Tested the uncommitted consolidation on base `7c23024654ee952572beafc25486e7467af334af`.
+An isolated Amp Task subagent received only the 16 quoted inputs, without case
+titles, expectations, or author responses. It read the description first and
+recorded invocation choices, then read the router and three guides. It returned
+selected guide filenames and answers for grading against the expectations above.
+No private book, network, runtime mutations, or source notes were used.
+
+This was one shared-context batch, not a fresh context per case, a live loader
+test, or a comparison against the former entrypoints. The evaluator did not
+report its underlying model/version. The local `codex`, `acpx`, `omp`, and `pi`
+executables were absent, so the existing CLI evaluation route could not run
+Terra/Sol trials. No cross-model or smaller-model improvement is claimed.
+
+All 16 invocation/guide choices and answers matched their withheld expectations:
+
+| Cases              | Selected guides  | Decisive observed result                                                                                                    |
+| ------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| M1, M2             | Metrics          | Closure gaming rejected; clean control retained.                                                                            |
+| D1, D2, D3, D4, D5 | Data             | Respectively 6% estimate, supported 4% to 3% observation, 3% estimate, unresolved coverage, and comparable 5%.              |
+| E1, E2, E3         | Claims           | Encoding bound upheld; obsolete memory premise rejected without promising success; vendor scope unresolved without evasion. |
+| R1                 | Data only        | Expert speaker did not divert the sampling question; 6% estimate.                                                           |
+| R2                 | Metrics only     | Circular reference construction rejected as independent validation.                                                         |
+| R3                 | Data and metrics | Separate rate correction and ticket-incentive conclusions; no claims review.                                                |
+| N1, N2, N3         | None             | Heading only, 3% only, and requested styling changes only.                                                                  |
+
+The evaluator noted the arithmetic boundary in D2/D3 versus N2 and respected it:
+interpreting observations/sampling invoked the guide; supplied arithmetic did not.
+
+SHA-256 of the evaluated files under `skills/catalog/reviewing-decisions/`:
+
+| File                                           | SHA-256                                                            |
+| ---------------------------------------------- | ------------------------------------------------------------------ |
+| `SKILL.md`                                     | `fbe51504bf2428cae5802895abcf2729a2f87ca2c17796ec90602bcef4b3c043` |
+| `references/auditing-decision-data.md`         | `9679f75595869d8f9c88846e0a69cf367115321054e9b45513749007ec665a60` |
+| `references/stress-testing-metrics.md`         | `e5f6d7395be96547da1c95d456ad0d602bae7e21f12ff2ed4998f7f2ee1c9a56` |
+| `references/challenging-expert-assumptions.md` | `c3c18e7024ae2c2c34f6670e19fbc8868f7dafba050d78e465fa92613f871ee6` |
+
+Deterministic checks passed: the skill validator checked 67 owned skills with
+zero findings; the nine validator tests passed; the Nix agent-run suite passed
+28 tests. The route-link regression also failed, as intended, in disposable
+copies with a wrong guide target and a missing guide. These checks verify
+packaging and link integrity, not language-model decisions.
+
+The actual NUC-configured shared bundle built from a disposable source snapshot
+contains 113 entries instead of 115. Its only selection change removes the
+three old entrypoints and adds `reviewing-decisions`; all other selected skills
+are byte-identical. The three procedure/example sections and all provenance
+notes byte-match their originals. No source pins, upstream selections, deployed
+hosts, or hosted Amp skills changed. Publication and activation remain separate.

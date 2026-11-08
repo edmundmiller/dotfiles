@@ -1,8 +1,3 @@
----
-name: auditing-decision-data
-description: Checks whether observations support a consequential decision. Use when a reported trend, experiment, survey, or operational rate may be distorted by collection, sampling, denominators, or changing definitions.
----
-
 # Auditing Decision Data
 
 Find whether the observations support this decision, and whether a plausible
@@ -11,8 +6,8 @@ data defect would change it. Reliable enough is decision-specific, not perfectio
 Preserve the user's settled objective. Do not audit routine formatting, simple
 arithmetic, or every dataset encountered. This skill authorizes bounded analysis,
 not production writes, new data collection, expensive experiments, or an extra
-approval gate. Score/outcome alignment belongs to `stress-testing-metrics`;
-disputed technical bounds belong to `challenging-expert-assumptions`. Do not run
+approval gate. Score/outcome alignment belongs to [the metrics guide](stress-testing-metrics.md);
+disputed technical bounds belong to [the claims guide](challenging-expert-assumptions.md). Do not run
 all three by default.
 
 ## Procedure
@@ -63,6 +58,6 @@ would be wrong. If coverage and definitions were unchanged and complete, the
 
 ## Provenance
 
-Read [source notes](references/source.md) when explaining or revising the
+Read [source notes](auditing-decision-data-source.md) when explaining or revising the
 derivation. This is our adaptation of Hamming, not his prescribed procedure or
 an empirically validated framework.

@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -105,6 +106,27 @@ class SkillQualityValidatorTests(unittest.TestCase):
             repaired = self.run_validator(skill, json_output=True)
             self.assertEqual(repaired.returncode, 0, repaired.stdout + repaired.stderr)
             self.assertEqual(json.loads(repaired.stdout), {"checked": 1, "findings": []})
+
+    def test_decision_review_routes_to_distinct_bundled_guides(self) -> None:
+        catalog = ROOT / "skills" / "catalog"
+        skill = catalog / "reviewing-decisions"
+        routes = dict(re.findall(r"\[([^\]]+)\]\(([^)]+)\)", (skill / "SKILL.md").read_text()))
+        for label, heading in {
+            "Data reliability": "# Auditing Decision Data",
+            "Metric relevance": "# Stress-Testing Metrics",
+            "Technical claims": "# Challenging Expert Assumptions",
+        }.items():
+            with self.subTest(route=label):
+                guide = (skill / routes[label]).resolve()
+                self.assertTrue(guide.is_relative_to(skill.resolve()))
+                self.assertEqual(guide.read_text().splitlines()[0], heading)
+
+        for former in (
+            "auditing-decision-data",
+            "stress-testing-metrics",
+            "challenging-expert-assumptions",
+        ):
+            self.assertFalse((catalog / former / "SKILL.md").exists())
 
     def test_portable_skill_rejects_runtime_specific_tool_names(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

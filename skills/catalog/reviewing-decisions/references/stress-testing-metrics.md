@@ -1,8 +1,3 @@
----
-name: stress-testing-metrics
-description: Tests whether a score can improve while the intended outcome worsens. Use when choosing a KPI, setting a performance target, or deciding whether a benchmark or rating represents progress.
----
-
 # Stress-Testing Metrics
 
 Try to improve the score without delivering the intended outcome. Return a
@@ -12,8 +7,8 @@ within the tested scope when no credible counterexample survives.
 Preserve the user's objective and constraints. This is a bounded analysis, not
 permission to change targets, incentives, production systems, or run expensive
 experiments. Do not invoke for routine formatting, arithmetic, or chart styling.
-Observation reliability belongs to `auditing-decision-data`; a disputed technical
-bound belongs to `challenging-expert-assumptions`. Do not run all three by default.
+Observation reliability belongs to [the data guide](auditing-decision-data.md); a disputed technical
+bound belongs to [the claims guide](challenging-expert-assumptions.md). Do not run all three by default.
 
 ## Procedure
 
@@ -63,6 +58,6 @@ counterexample fails; do not recommend the same control again.
 
 ## Provenance
 
-Read [source notes](references/source.md) when explaining or revising the
+Read [source notes](stress-testing-metrics-source.md) when explaining or revising the
 derivation. This is our adaptation of Hamming, not his prescribed procedure or
 an empirically validated framework.

@@ -1,8 +1,3 @@
----
-name: challenging-expert-assumptions
-description: Examines the assumptions and evidence behind categorical technical claims. Use when an expert says an approach is impossible, a design review stalls on received wisdom, or changed conditions may invalidate an earlier conclusion.
----
-
 # Challenging Expert Assumptions
 
 Find whether a technical claim applies to this problem, and what evidence would
@@ -14,8 +9,8 @@ user's settled constraints. An alternative outside those constraints is not a
 solution to the requested problem.
 
 Routine formatting needs no claim audit. Keep the user's settled objective.
-Use `auditing-decision-data` for observation reliability and
-`stress-testing-metrics` for score/outcome alignment; do not run all three by default.
+Use [the data guide](auditing-decision-data.md) for observation reliability and
+[the metrics guide](stress-testing-metrics.md) for score/outcome alignment; do not run all three by default.
 
 ## Workflow
 
@@ -78,6 +73,6 @@ must be explicit and accepted, not hidden inside a clever workaround.
 
 ## Provenance
 
-Read [the source notes](references/source.md) when explaining the derivation or
+Read [the source notes](challenging-expert-assumptions-source.md) when explaining the derivation or
 revising this skill. The workflow is our adaptation, not a procedure Hamming
 specified or an empirically validated framework.
