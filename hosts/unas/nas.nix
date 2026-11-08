@@ -79,6 +79,23 @@ in
     };
     nfs-mountd = bulkDependency;
     netatalk = bulkDependency;
+    unas-share-recovery = {
+      description = "Retry NAS shares after optional storage becomes available";
+      serviceConfig.Type = "oneshot";
+      # Dependency rejection does not trigger the share daemons' Restart policy.
+      script = ''
+        ${pkgs.systemd}/bin/systemctl --no-block start nfs-server.service netatalk.service
+      '';
+    };
+  };
+
+  systemd.timers.unas-share-recovery = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "30s";
+      OnUnitInactiveSec = "1min";
+      AccuracySec = "1s";
+    };
   };
 
   # Match the export allowlist instead of exposing NFS on every source network.

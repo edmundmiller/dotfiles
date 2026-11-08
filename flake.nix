@@ -2024,6 +2024,10 @@
               };
             }
             // lib.optionalAttrs (system == "x86_64-linux") {
+              unas-late-bulk = import ./hosts/unas/tests/late-bulk.nix {
+                inherit pkgs inputs;
+                inherit (self.nixosConfigurations.unas.config) fileSystems;
+              };
               unas-recovery = lib.my.mkServiceVmTest {
                 name = "unas-recovery";
                 modules = [ ./hosts/unas/modules/time-machine.nix ];

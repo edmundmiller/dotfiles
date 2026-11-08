@@ -66,6 +66,11 @@ The NVMe uses separate Btrfs subvolumes for root, home, var, Nix, snapshots, and
 legacy ZFS history. The two bulk HDDs use Btrfs RAID1 for data and metadata.
 The separate preservation disk is outside disko's destructive target set.
 
+Optional bulk mounts can time out without blocking SSH or NVMe boot. The
+`unas-share-recovery` timer retries normal NFS and Time Machine starts every
+minute, so late storage can recover without restarting healthy shares. Every
+attempt still requires the existing filesystem and subvolume identity checks.
+
 Btrbk snapshots root, home, and var independently, then replicates them to bulk
 and preservation storage. Documents also replicate to preservation. These
 snapshots exclude Nix and do not replace the retained installation closure.

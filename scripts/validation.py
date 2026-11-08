@@ -207,6 +207,7 @@ if sys.platform == "linux":
         "bin/tests/unas-recover.bash",
         "hosts/unas/*",
     ]
+    CHECKS["unas-late-bulk"] = ["hosts/unas/*"]
 
 LINUX_CHECKS = {
     "ha-automation-assertions": [
