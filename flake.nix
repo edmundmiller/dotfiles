@@ -2026,22 +2026,47 @@
             // lib.optionalAttrs (system == "x86_64-linux") {
               unas-recovery = lib.my.mkServiceVmTest {
                 name = "unas-recovery";
-                extraConfig.environment.systemPackages = with pkgs; [
-                  bash
-                  bubblewrap
-                  coreutils
-                  findutils
-                  gnugrep
-                  gnused
-                  gnutar
-                  gzip
-                  inetutils
-                  nix
-                  python3
-                ];
+                modules = [ ./hosts/unas/modules/time-machine.nix ];
+                extraConfig = {
+                  environment.systemPackages = with pkgs; [
+                    bash
+                    bubblewrap
+                    coreutils
+                    findutils
+                    gnugrep
+                    gnused
+                    gnutar
+                    gzip
+                    inetutils
+                    nix
+                    python3
+                  ];
+                  users.users.monimiller = {
+                    isNormalUser = true;
+                    uid = 1001;
+                  };
+                  virtualisation.fileSystems."/data/backup" = {
+                    device = "tmpfs";
+                    fsType = "tmpfs";
+                    options = [
+                      "nofail"
+                      "x-systemd.requires=systemd-tmpfiles-setup.service"
+                      "x-systemd.after=systemd-tmpfiles-setup.service"
+                    ];
+                  };
+                };
                 testScript = ''
                   start_all()
                   machine.wait_for_unit("multi-user.target")
+                  machine.wait_for_unit("netatalk.service")
+                  machine.succeed("findmnt --mountpoint /data/backup --types tmpfs")
+                  machine.succeed('test "$(stat -c %u:%g:%a /data/backup/moni/time-machine)" = 1001:100:700')
+                  machine.succeed("printf retained > /data/backup/moni/time-machine/existing-backup; systemctl restart netatalk.service")
+                  machine.succeed("grep -Fx retained /data/backup/moni/time-machine/existing-backup")
+                  machine.succeed("systemctl stop netatalk.service data-backup.mount")
+                  machine.succeed("test ! -e /data/backup/moni/time-machine")
+                  machine.succeed("systemctl start data-backup.mount; systemctl start netatalk.service")
+                  machine.succeed('test "$(stat -c %u:%g:%a /data/backup/moni/time-machine)" = 1001:100:700')
                   machine.succeed("bash ${./.}/bin/tests/unas-recover.bash", timeout=300)
                 '';
               };

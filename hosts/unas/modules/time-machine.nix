@@ -1,10 +1,15 @@
+{ pkgs, ... }:
 {
   networking.firewall.allowedTCPPorts = [
     548 # netatalk
   ];
 
-  systemd.services.netatalk.unitConfig.RequiresMountsFor = [ "/data/backup/moni/time-machine" ];
-  systemd.tmpfiles.rules = [ "d /data/backup/moni/time-machine 0700 monimiller users -" ];
+  systemd.services.netatalk = {
+    unitConfig.RequiresMountsFor = [ "/data/backup/moni/time-machine" ];
+    preStart = ''
+      ${pkgs.coreutils}/bin/install -d -m 0700 -o monimiller -g users /data/backup/moni/time-machine
+    '';
+  };
 
   services = {
     netatalk = {
