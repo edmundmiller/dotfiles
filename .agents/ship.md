@@ -5,10 +5,29 @@ no-deploy instruction overrides activation: submit no deployment request and
 report deployment skipped.
 
 Follow repository guidance, preserve unrelated work, run task-scoped checks,
-and publish without rewriting remote history. Include approved task-owned
-repairs. Record the exact published revision. Green default CI certifies Linux
-and portable checks, not native Darwin; Mac activation still requires native
-validation of its exact candidate.
+and include approved task-owned repairs. Follow docs/runbooks/candidate-ci.md
+for publication. Commit task changes, fetch origin/main, reconcile onto its
+exact SHA, and validate the candidate locally. Use
+python3 scripts/candidate_ci.py submit --base BASE --sha SHA to publish only
+candidate/BASE/SHA. Record the base, candidate SHA, branch, original authority
+and CI subscription in the existing receipt. Subscribe to candidate CI
+completion and return "Candidate
+submitted; main unchanged" rather than watching or polling CI in the Orb.
+
+On the candidate's completion event, recheck current authority and use
+python3 scripts/candidate_ci.py land --base BASE --sha SHA. It requires the latest
+exact-candidate CI attempt and both required contexts to succeed, then makes
+a non-forced fast-forward to the same SHA. Failed, missing, cancelled or
+pending checks block publication to main. If main moved, reconcile, rerun
+affected checks and submit a new candidate; never reuse old CI for a new SHA.
+No mandatory PR, merge commit, force push or admin bypass is part of this route.
+An uncertain push requires remote readback before retrying. A bypass warning
+means a write may have occurred but compliant landing is unproved; stop and
+report it. Do not change the live ruleset or Ship prompt without approval.
+
+Record the exact published revision after landing. Green default CI certifies
+affected Linux and portable checks, not native Darwin; Mac activation still
+requires native validation of its exact candidate.
 
 Choose the deployment route before SSH preflight. From an Amp orb, use the
 existing Deploy NUC GitHub Actions workflow, not direct SSH. Read and follow
@@ -42,9 +61,12 @@ this same owner and the exact head. Inspect already-completed runs immediately.
 Missing or ambiguous run identity is a reporting blocker; never choose an
 unrelated latest run or submit another request. A subscription failure does
 not cancel work already accepted by GitHub. On completion, recheck the saved
-run and latest attempt before inspecting logs. Events never dispatch deployment.
-Dispatch acceptance is not deployment success. Do not provision SSH credentials,
-change tailnet access, or create another runner thread to bypass missing access.
+run and latest attempt before inspecting logs.
+Candidate completion may resume the original authorized landing and handoff;
+events confer no new authority, and deployment completion never submits another
+request. Dispatch acceptance is not deployment success. Do not provision SSH
+credentials, change tailnet access, or create another runner thread to bypass
+missing access.
 
 If no-deploy arrives after submission, cancel the identified workflow and verify
 its outcome. The local --no-deploy flag cannot revoke an accepted request.

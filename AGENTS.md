@@ -15,6 +15,8 @@ their inventories.
 
 - Host activation, deployment, publication, secret rotation, and destructive
   cleanup need explicit authorization. Local edits and checks do not imply it.
+- Publication to main uses [candidate CI](docs/runbooks/candidate-ci.md): hosted
+  checks first, then the exact passing SHA, without mandatory PRs or bypasses.
 - Use `hey` for guarded system operations: `hey re` / `hey rebuild` for Darwin,
   `hey nuc` for NUC deployment, and `hey skills-update` / `hey skills-sync` for
   catalog updates. Details: [command policy](docs/adr/0001-agent-command-policy.md).
