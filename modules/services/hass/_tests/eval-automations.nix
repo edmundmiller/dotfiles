@@ -1140,27 +1140,23 @@ let
               "2e0ad6b4-069c-445a-a23f-4af99eccb21d"
             ];
           }
-        && tag.mode == "single"
+        && tag.mode == "queued"
         &&
           tag.action == [
             {
-              action = "input_datetime.set_datetime";
-              target.entity_id = "input_datetime.phoebe_last_fed";
-              data.timestamp = "{{ now().timestamp() }}";
-            }
-            {
-              action = "logbook.log";
+              action = "script.phoebe_record_food";
               data = {
-                name = "Phoebe Feeding";
-                message = "Phoebe was fed 1/4 cup of Hill's Science Diet Adult Sensitive Stomach & Skin kibble, 97.75 kcal.";
-                entity_id = "input_datetime.phoebe_last_fed";
+                food = "kibble";
+                cups = 0.25;
+                scanner = "{{ trigger.event.data.get('device_id', '') }}";
               };
             }
           ]
+        && (haConfig.script.phoebe_record_food.mode or null) == "queued"
         && (lastFed.has_date or false)
         && (lastFed.has_time or false)
         && !(lastFed ? initial);
-      msg = "Both Phoebe kibble tags must restore the feeding time and log the food name, 1/4 cup portion, and 97.75 kcal";
+      msg = "Both Phoebe kibble tags must queue 1/4 cup through the shared food recorder and preserve the restored cooldown";
     }
     {
       test = whiteNoiseWithBedtimeAudiobook != null;
