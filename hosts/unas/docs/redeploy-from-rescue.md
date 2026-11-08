@@ -1,12 +1,21 @@
 ---
-purpose: Redeploy UNAS in place while preserving existing pools and home data.
-applies_to: Authorized UNAS recovery, deployment, and post-boot verification.
-entrypoint: Boot the Lexar recovery USB and inspect pool GUIDs before importing.
+purpose: Retain historical ZFS recovery steps and route current UNAS redeployment safely.
+applies_to: Historical ZFS recovery after confirming the actual storage layout.
+entrypoint: Inspect hosts/unas/disko.nix and read the host provisioning guidance first.
 verification: Build the host, run scoped checks, and verify storage and services after reboot.
 update_when: Pool identities, deployment guards, secrets, or recovery constraints change.
 ---
 
-# Redeploy UNAS without formatting its disks
+# Historical ZFS redeployment from rescue
+
+The current [UNAS disko configuration](../disko.nix) declares Btrfs, not the ZFS
+installation recorded below. Do not apply these former pool GUIDs or mount steps
+to the migrated NAS. For new host setup or redeployment, follow the
+[host provisioning guidance](../../../docs/install.md#nixos-host-setup-and-redeployment).
+It defines disko as the layout source of truth and requires separate approval,
+device validation, preservation checks, and staged targets for destructive work.
+Any necessary imperative cleanup is a documented exception, not a replacement
+layout.
 
 Use the [Lexar recovery USB](boot-recovery-usb.md) to restore SSH access, then
 inspect storage before importing anything. The recovery image does not import

@@ -23,8 +23,4 @@
   nix.settings.max-jobs = lib.mkDefault 6;
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = true;
-
-  ## ZFS
-  networking.hostId = "13e53d45";
-  boot.loader.grub.copyKernels = true;
 }

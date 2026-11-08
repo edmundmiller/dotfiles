@@ -1,27 +1,7 @@
 { pkgs, ... }:
 {
-  users.users = {
-    # FIXME https://superuser.com/questions/1352477/nixos-nixops-declarative-group-management-and-services
-    # Add KAH group 568
-    emiller.extraGroups = [ "568" ];
-    # NUC's existing user identity, limited to its LAN and Tailscale addresses.
-    emiller.openssh.authorizedKeys.keys = [
-      ''from="192.168.1.222,100.112.179.64",no-agent-forwarding,no-port-forwarding,no-X11-forwarding ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6NdOGUlSTcYb9lB7CGx98mAZwvgATLNoRpB69CwE/F nuc-emiller''
-    ];
-    monimiller = {
-      isNormalUser = true;
-      createHome = true;
-      shell = pkgs.zsh;
-    };
+  users.groups.users.gid = 100;
 
-    tdmiller = {
-      isNormalUser = true;
-      createHome = true;
-      shell = pkgs.bashInteractive;
-    };
-  };
-
-  # deploy-rs uses emiller with interactiveSudo=false, as on the NUC.
   security.sudo.extraRules = [
     {
       users = [ "emiller" ];
@@ -33,4 +13,25 @@
       ];
     }
   ];
+
+  users.users = {
+    # FIXME https://superuser.com/questions/1352477/nixos-nixops-declarative-group-management-and-services
+    # Add KAH group 568
+    emiller.uid = 1000;
+    emiller.extraGroups = [ "568" ];
+    emiller.openssh.authorizedKeys.keys = (import ../../config/ssh/authorized-keys.nix).unasMachineKeys;
+    monimiller = {
+      uid = 1001;
+      isNormalUser = true;
+      createHome = true;
+      shell = pkgs.zsh;
+    };
+
+    tdmiller = {
+      uid = 1002;
+      isNormalUser = true;
+      createHome = true;
+      shell = pkgs.bashInteractive;
+    };
+  };
 }

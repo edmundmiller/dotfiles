@@ -52,12 +52,29 @@ and `/home/emiller` for `whoami` and `pwd`.
 ## Key files
 
 - `default.nix` — host imports + enabled modules
-- `disko.nix` — disk + ZFS pool layout
+- `disko.nix`: disk layout + Btrfs filesystems and subvolumes
 - `nas.nix` — NFS exports + firewall
 - `modules/time-machine.nix` — Time Machine via netatalk
-- `backups.nix` — restic backup job
+- `backups.nix`: Btrbk snapshots and replication, Btrfs scrubs, and Restic backups
 - `users.nix` — local users/groups
 - [Storage benchmark and Btrfs migration plan](storage-benchmark-and-migration.md)
+- [Rescue access](docs/recovery-access.md): standalone image build and approved SSH access
+
+## Storage and recovery
+
+The NVMe uses separate Btrfs subvolumes for root, home, var, Nix, snapshots, and
+legacy ZFS history. The two bulk HDDs use Btrfs RAID1 for data and metadata.
+The separate preservation disk is outside disko's destructive target set.
+
+Btrbk snapshots root, home, and var independently, then replicates them to bulk
+and preservation storage. Documents also replicate to preservation. These
+snapshots exclude Nix and do not replace the retained installation closure.
+
+Legacy ZFS history remains native streams at `/var/lib/unas-zfs-history`, with
+copies at `/data/legacy-zfs` and on `/preservation`. Reading that history requires
+a ZFS-capable recovery environment. A Nix generation rollback cannot undo disk
+formatting. See [host provisioning and redeployment](../../docs/install.md#nixos-host-setup-and-redeployment)
+before any disk work.
 
 ## Notes
 
@@ -68,44 +85,15 @@ and `/home/emiller` for `whoami` and `pwd`.
 
 For the firmware key sequence, SSH connection, and remote-console options, see
 [Boot UNAS from the Lexar rescue USB](docs/boot-recovery-usb.md).
-For pool identities, guarded installation, and rollback precautions, see
-[Redeploy UNAS without formatting its disks](docs/redeploy-from-rescue.md).
+The older [redeployment guide](docs/redeploy-from-rescue.md) describes ZFS pool
+recovery. Do not apply its storage assumptions to the migrated Btrfs layout.
 
 `recovery-image.nix` extends a pinned [Determinate NixOS ISO](https://docs.determinate.systems/guides/nixos-isos/)
 independently of the host flake. Determinate Nix and `fh` are installed in the
-live environment only. Supply a file containing the SSH public keys that should
-have root access:
-
-```bash
-env -u NIXPKGS_CONFIG NIX_PATH= nix-build \
-  --extra-experimental-features 'nix-command flakes' \
-  --option extra-substituters https://install.determinate.systems \
-  --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= \
-  hosts/unas/recovery-image.nix --argstr publicKeysFile /absolute/path/to/keys.pub
-```
-
-Clearing the build's Nixpkgs environment prevents this host's overlays from
-leaking into upstream packages. The cache options avoid compiling Determinate
-Nix locally. The image keeps the LTS kernel entry because upstream's optional
-latest-kernel entry disables ZFS.
-
-The ISO is under `result/iso/`. It supports UEFI and legacy USB boot. After
-writing it to a verified USB device, plug it into UNAS, connect Ethernet, and
-select the USB in the firmware boot menu. Secure Boot must be disabled. The
-default entry boots after five seconds and starts DHCP, SSH, and mDNS:
-
-```bash
-ssh root@unas-rescue.local
-```
-
-If mDNS is unavailable, find `unas-rescue` in the router's DHCP leases. SSH only
-accepts the supplied keys; local console login is passwordless. The live system
-generates fresh SSH host keys each boot, so verify a changed fingerprint at the
-console rather than disabling host-key checking globally.
-
-Booting this image does not install NixOS, format disks, or import NAS pools.
-Inspect `lsblk -f`, `/dev/disk/by-id`, and `zpool import` over SSH before deciding
-what to repair. The configured `zroot` pool contains home directories too, so
-even the OS disk must not be wiped. `/etc/unas-recovery.txt` contains further
-data-preservation notes. Do not run the host's disko formatting workflow during
-recovery.
+live environment only. The default build uses the seven canonical SSH login
+entries without a separate public-key file. See [Rescue access](docs/recovery-access.md)
+for the build command, key restrictions, and storage inspection precautions.
+The image keeps the LTS kernel entry because upstream's optional latest-kernel
+entry disables ZFS. It does not install, format disks, or import pools on boot.
+Any authorized Btrfs inspection mount needs `ro,rescue=nologreplay`; `ro` alone
+can replay the tree log. Building an image does not update physical USB media.
