@@ -1,5 +1,5 @@
 diff --git a/component-packages.nix b/component-packages.nix
-index fb0dac5..ae3d79d 100644
+index fb0dac5..9348aa4 100644
 --- a/component-packages.nix
 +++ b/component-packages.nix
 @@ -2,7 +2,7 @@
@@ -46,12 +46,14 @@ index fb0dac5..ae3d79d 100644
      "acaia" =
        ps: with ps; [
          aioacaia
-@@ -86,6 +114,16 @@
+@@ -86,6 +114,19 @@
      "aep_texas" =
        ps: with ps; [
        ];
 +    "aerosmart" =
-+      ps: with ps; [
++      ps:
++      with ps;
++      [
 +        aiohasupervisor
 +        aiousbwatcher
 +        ifaddr
@@ -59,11 +61,12 @@ index fb0dac5..ae3d79d 100644
 +        pymodbus
 +        serialx
 +        tmodbus
-+      ]; # missing inputs: aerosmart-modbus modbus-connection.optional-dependencies.tmodbus
++      ]
++      ++ modbus-connection.optional-dependencies.tmodbus; # missing inputs: aerosmart-modbus
      "aftership" =
        ps: with ps; [
          pyaftership
-@@ -216,6 +254,10 @@
+@@ -216,6 +257,10 @@
        ps: with ps; [
          aioamazondevices
        ];
@@ -74,7 +77,7 @@ index fb0dac5..ae3d79d 100644
      "alpha_vantage" =
        ps: with ps; [
          alpha-vantage
-@@ -252,6 +294,7 @@
+@@ -252,6 +297,7 @@
        ps: with ps; [
          aiohasupervisor
          fnv-hash-fast
@@ -82,7 +85,7 @@ index fb0dac5..ae3d79d 100644
          psutil-home-assistant
          sqlalchemy
        ];
-@@ -309,6 +352,9 @@
+@@ -309,6 +355,9 @@
      "anwb_energie" =
        ps: with ps; [
        ];
@@ -92,7 +95,7 @@ index fb0dac5..ae3d79d 100644
      "aosmith" =
        ps: with ps; [
          py-aosmith
-@@ -432,6 +478,7 @@
+@@ -432,6 +481,7 @@
        ps: with ps; [
          aiohasupervisor
          arwn-client
@@ -100,7 +103,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "aseko_pool_live" =
-@@ -491,6 +538,7 @@
+@@ -491,6 +541,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -108,7 +111,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -515,6 +563,7 @@
+@@ -515,6 +566,7 @@
          aiohasupervisor
          aiousbwatcher
          aurorapy
@@ -116,7 +119,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "aussie_broadband" =
-@@ -584,12 +633,14 @@
+@@ -584,12 +636,14 @@
          aiobotocore
          aiohasupervisor
          cronsim
@@ -131,7 +134,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "axle_energy" =
-@@ -628,6 +679,7 @@
+@@ -628,6 +682,7 @@
        ps: with ps; [
          aiohasupervisor
          cronsim
@@ -139,7 +142,7 @@ index fb0dac5..ae3d79d 100644
          securetar
        ];
      "baf" =
-@@ -789,6 +841,7 @@
+@@ -789,6 +844,7 @@
          bluetooth-data-tools
          dbus-fast
          habluetooth
@@ -147,20 +150,23 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "bluetooth_adapters" =
-@@ -849,6 +902,12 @@
+@@ -849,6 +905,15 @@
          serialx
          zeroconf
        ];
 +    "bluetti_modbus" =
-+      ps: with ps; [
++      ps:
++      with ps;
++      [
 +        modbus-connection
 +        pymodbus
 +        tmodbus
-+      ]; # missing inputs: bluetti-modbus modbus-connection.optional-dependencies.tmodbus
++      ]
++      ++ modbus-connection.optional-dependencies.tmodbus; # missing inputs: bluetti-modbus
      "bmw_connected_drive" =
        ps: with ps; [
        ];
-@@ -866,6 +925,9 @@
+@@ -866,6 +931,9 @@
          ifaddr
          zeroconf
        ];
@@ -170,7 +176,7 @@ index fb0dac5..ae3d79d 100644
      "brands" =
        ps: with ps; [
        ];
-@@ -1116,6 +1178,10 @@
+@@ -1116,6 +1184,10 @@
        ps: with ps; [
          chess-com-api
        ];
@@ -181,7 +187,7 @@ index fb0dac5..ae3d79d 100644
      "cielo_home" =
        ps: with ps; [
          cielo-connect-api
-@@ -1165,6 +1231,7 @@
+@@ -1165,6 +1237,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -189,7 +195,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -1301,6 +1368,7 @@
+@@ -1301,6 +1374,7 @@
          crownstone-cloud
          crownstone-sse
          crownstone-uart
@@ -197,7 +203,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "currencylayer" =
-@@ -1344,6 +1412,9 @@
+@@ -1344,6 +1418,9 @@
          pydeako
          zeroconf
        ];
@@ -207,7 +213,7 @@ index fb0dac5..ae3d79d 100644
      "debugpy" =
        ps: with ps; [
          debugpy
-@@ -1427,6 +1498,7 @@
+@@ -1427,6 +1504,7 @@
          aiohasupervisor
          aiousbwatcher
          denon-rs232
@@ -215,7 +221,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "denonavr" =
-@@ -1585,12 +1657,14 @@
+@@ -1585,12 +1663,14 @@
        ps: with ps; [
          aiohasupervisor
          dropmqttapi
@@ -230,7 +236,7 @@ index fb0dac5..ae3d79d 100644
          python-dropbox-api
          securetar
        ];
-@@ -1603,11 +1677,13 @@
+@@ -1603,11 +1683,13 @@
          aiohasupervisor
          aiousbwatcher
          dsmr-parser
@@ -244,7 +250,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "duckdns" =
-@@ -1681,6 +1757,9 @@
+@@ -1681,6 +1763,9 @@
        ps: with ps; [
          pyeconet
        ];
@@ -254,7 +260,7 @@ index fb0dac5..ae3d79d 100644
      "ecospar" =
        ps: with ps; [
        ];
-@@ -1705,6 +1784,7 @@
+@@ -1705,6 +1790,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -262,7 +268,7 @@ index fb0dac5..ae3d79d 100644
          pysml
          serialx
        ];
-@@ -1822,6 +1902,9 @@
+@@ -1822,6 +1908,9 @@
        ps: with ps; [
          energyzero
        ];
@@ -272,7 +278,7 @@ index fb0dac5..ae3d79d 100644
      "enigma2" =
        ps: with ps; [
          openwebifpy
-@@ -1831,6 +1914,7 @@
+@@ -1831,6 +1920,7 @@
          aiohasupervisor
          aiousbwatcher
          enocean-async
@@ -280,7 +286,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "enphase_envoy" =
-@@ -1981,6 +2065,7 @@
+@@ -1981,6 +2071,7 @@
          dbus-fast
          eurotronic-cometblue-ha
          habluetooth
@@ -288,7 +294,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "event" =
-@@ -1993,6 +2078,9 @@
+@@ -1993,6 +2084,9 @@
        ps: with ps; [
          pyeverlights
        ];
@@ -298,7 +304,7 @@ index fb0dac5..ae3d79d 100644
      "evil_genius_labs" =
        ps: with ps; [
          pyevilgenius
-@@ -2001,6 +2089,35 @@
+@@ -2001,6 +2095,35 @@
        ps: with ps; [
          evohome-async
        ];
@@ -334,14 +340,7 @@ index fb0dac5..ae3d79d 100644
      "ezviz" =
        ps: with ps; [
          ha-ffmpeg
-@@ -2142,18 +2259,16 @@
-         ritassist
-       ];
-     "flexit" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
+@@ -2148,6 +2271,7 @@
          aiohasupervisor
          aiousbwatcher
          flexit-modbus
@@ -349,14 +348,7 @@ index fb0dac5..ae3d79d 100644
          modbus-connection
          pymodbus
          serialx
-         tmodbus
--      ]
--      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
-     "flexit_bacnet" =
-       ps: with ps; [
-         flexit-bacnet
-@@ -2165,9 +2280,37 @@
+@@ -2165,9 +2289,37 @@
        ps: with ps; [
          pyflic
        ];
@@ -395,7 +387,7 @@ index fb0dac5..ae3d79d 100644
        ];
      "flo" =
        ps: with ps; [
-@@ -2209,6 +2352,9 @@
+@@ -2209,6 +2361,9 @@
        ps: with ps; [
          foobot-async
        ];
@@ -405,26 +397,20 @@ index fb0dac5..ae3d79d 100644
      "forecast_solar" =
        ps: with ps; [
          forecast-solar
-@@ -2278,16 +2424,12 @@
-       ]
-       ++ fritzconnection.optional-dependencies.qr;
-     "fronius" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
+@@ -2283,11 +2438,10 @@
+       [
          fronius-modbus
          modbus-connection
 -        pyfronius
          pymodbus
          tmodbus
--      ]
+       ]
 -      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: fronius-solarapi modbus-connection.optional-dependencies.tmodbus
++      ++ modbus-connection.optional-dependencies.tmodbus; # missing inputs: fronius-solarapi
      "frontend" =
        ps: with ps; [
          home-assistant-frontend
-@@ -2310,6 +2452,7 @@
+@@ -2310,6 +2464,7 @@
      "fully_kiosk" =
        ps: with ps; [
          aiohasupervisor
@@ -432,7 +418,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
          python-fullykiosk
        ];
-@@ -2501,6 +2644,7 @@
+@@ -2501,6 +2656,7 @@
          bluetooth-data-tools
          dbus-fast
          habluetooth
@@ -440,7 +426,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          pyturbojpeg
-@@ -2519,6 +2663,7 @@
+@@ -2519,6 +2675,7 @@
        ps: with ps; [
          aiohasupervisor
          cronsim
@@ -448,7 +434,7 @@ index fb0dac5..ae3d79d 100644
          python-google-drive-api
          securetar
        ];
-@@ -2567,15 +2712,14 @@
+@@ -2567,15 +2724,14 @@
        ];
      "google_travel_time" =
        ps: with ps; [
@@ -466,7 +452,7 @@ index fb0dac5..ae3d79d 100644
      "govee_ble" =
        ps: with ps; [
          aioesphomeapi
-@@ -2618,6 +2762,9 @@
+@@ -2618,6 +2774,9 @@
      "gpslogger" =
        ps: with ps; [
        ];
@@ -476,7 +462,7 @@ index fb0dac5..ae3d79d 100644
      "graphite" =
        ps: with ps; [
        ];
-@@ -2638,6 +2785,7 @@
+@@ -2638,6 +2797,7 @@
        ps: with ps; [
          aiohasupervisor
          greencell-client
@@ -484,7 +470,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "greeneye_monitor" =
-@@ -2681,6 +2829,7 @@
+@@ -2681,6 +2841,7 @@
      "hardkernel" =
        ps: with ps; [
          aiohasupervisor
@@ -492,7 +478,7 @@ index fb0dac5..ae3d79d 100644
          psutil-home-assistant
        ];
      "hardware" =
-@@ -2702,9 +2851,13 @@
+@@ -2702,9 +2863,13 @@
      "harvey" =
        ps: with ps; [
        ];
@@ -506,7 +492,7 @@ index fb0dac5..ae3d79d 100644
        ];
      "havana_shade" =
        ps: with ps; [
-@@ -2712,6 +2865,9 @@
+@@ -2712,6 +2877,9 @@
      "haveibeenpwned" =
        ps: with ps; [
        ];
@@ -516,7 +502,7 @@ index fb0dac5..ae3d79d 100644
      "hddtemp" =
        ps: with ps; [
        ];
-@@ -2741,6 +2897,9 @@
+@@ -2741,6 +2909,9 @@
        ps: with ps; [
          pyhelty
        ];
@@ -526,7 +512,7 @@ index fb0dac5..ae3d79d 100644
      "heos" =
        ps: with ps; [
          pyheos
-@@ -2816,51 +2975,57 @@
+@@ -2816,13 +2987,16 @@
      "homeassistant_alerts" =
        ps: with ps; [
          aiohasupervisor
@@ -539,57 +525,50 @@ index fb0dac5..ae3d79d 100644
          ha-silabs-firmware-client
 +        ifaddr
          psutil-home-assistant
++        pygbl
          serialx
          universal-silabs-flasher
--      ];
-+      ]; # missing inputs: pygbl
-     "homeassistant_green" =
-       ps: with ps; [
+       ];
+@@ -2831,7 +3005,9 @@
          aiohasupervisor
          aiousbwatcher
          ha-silabs-firmware-client
 +        ifaddr
          psutil-home-assistant
++        pygbl
          serialx
          universal-silabs-flasher
--      ];
-+      ]; # missing inputs: pygbl
-     "homeassistant_hardware" =
-       ps: with ps; [
+       ];
+@@ -2840,6 +3016,8 @@
          aiohasupervisor
          aiousbwatcher
          ha-silabs-firmware-client
 +        ifaddr
++        pygbl
          serialx
          universal-silabs-flasher
--      ];
-+      ]; # missing inputs: pygbl
-     "homeassistant_sky_connect" =
-       ps: with ps; [
-         aiohasupervisor
-         aiousbwatcher
-         ha-silabs-firmware-client
-+        ifaddr
-         psutil-home-assistant
-         serialx
-         universal-silabs-flasher
--      ];
-+      ]; # missing inputs: pygbl
-     "homeassistant_yellow" =
-       ps: with ps; [
+       ];
+@@ -2848,7 +3026,9 @@
          aiohasupervisor
          aiousbwatcher
          ha-silabs-firmware-client
 +        ifaddr
          psutil-home-assistant
++        pygbl
          serialx
          universal-silabs-flasher
--      ];
-+      ]; # missing inputs: pygbl
-     "homee" =
-       ps: with ps; [
-         pyhomee
-@@ -2953,9 +3118,14 @@
+       ];
+@@ -2857,7 +3037,9 @@
+         aiohasupervisor
+         aiousbwatcher
+         ha-silabs-firmware-client
++        ifaddr
+         psutil-home-assistant
++        pygbl
+         serialx
+         universal-silabs-flasher
+       ];
+@@ -2953,9 +3135,14 @@
        ps: with ps; [
          python-hpilo
        ];
@@ -604,7 +583,7 @@ index fb0dac5..ae3d79d 100644
        ];
      "html5" =
        ps: with ps; [
-@@ -3068,6 +3238,9 @@
+@@ -3068,6 +3255,9 @@
        ps: with ps; [
          pydrawise
        ];
@@ -614,7 +593,7 @@ index fb0dac5..ae3d79d 100644
      "hyperion" =
        ps: with ps; [
          hyperion-py
-@@ -3078,8 +3251,7 @@
+@@ -3078,8 +3268,7 @@
        ];
      "ialarm" =
        ps: with ps; [
@@ -624,7 +603,7 @@ index fb0dac5..ae3d79d 100644
      "iammeter" =
        ps: with ps; [
          iammeter
-@@ -3266,6 +3438,7 @@
+@@ -3266,6 +3455,7 @@
        ps: with ps; [
          aiohasupervisor
          elkoep-aio-mqtt
@@ -632,7 +611,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "influxdb" =
-@@ -3333,6 +3506,7 @@
+@@ -3333,6 +3523,7 @@
          aiohasupervisor
          aiousbwatcher
          home-assistant-frontend
@@ -640,21 +619,10 @@ index fb0dac5..ae3d79d 100644
          insteon-frontend-home-assistant
          pyinsteon
          serialx
-@@ -3542,15 +3716,19 @@
-         pyjvcprojector
-       ];
-     "kaco_modbus" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
-         kaco-modbus
-         modbus-connection
-         pymodbus
+@@ -3551,6 +3742,13 @@
          tmodbus
--      ]
--      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
+       ]
+       ++ modbus-connection.optional-dependencies.tmodbus;
 +    "kaco_rs485" =
 +      ps: with ps; [
 +        aiohasupervisor
@@ -665,7 +633,7 @@ index fb0dac5..ae3d79d 100644
      "kaiser_nienhaus" =
        ps: with ps; [
        ];
-@@ -3797,6 +3975,7 @@
+@@ -3797,6 +3995,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -673,7 +641,7 @@ index fb0dac5..ae3d79d 100644
          serialx
          ultraheat-api
        ];
-@@ -3953,6 +4132,7 @@
+@@ -3953,6 +4152,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -681,7 +649,7 @@ index fb0dac5..ae3d79d 100644
          lg-rs232-tv
          serialx
        ];
-@@ -3964,6 +4144,9 @@
+@@ -3964,6 +4164,9 @@
        ps: with ps; [
          aiolibrenms
        ];
@@ -691,7 +659,7 @@ index fb0dac5..ae3d79d 100644
      "lichess" =
        ps: with ps; [
          aiolichess
-@@ -4098,7 +4281,7 @@
+@@ -4098,7 +4301,7 @@
        ];
      "london_air" =
        ps: with ps; [
@@ -700,7 +668,7 @@ index fb0dac5..ae3d79d 100644
      "london_underground" =
        ps: with ps; [
          london-tube-status
-@@ -4124,6 +4307,7 @@
+@@ -4124,6 +4327,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -708,7 +676,7 @@ index fb0dac5..ae3d79d 100644
          loqedapi
          matter-ble-proxy
          matter-python-client
-@@ -4135,6 +4319,9 @@
+@@ -4135,6 +4339,9 @@
          securetar
          serialx
        ];
@@ -718,7 +686,7 @@ index fb0dac5..ae3d79d 100644
      "lovelace" =
        ps: with ps; [
        ];
-@@ -4196,6 +4383,7 @@
+@@ -4196,6 +4403,7 @@
      "manual_mqtt" =
        ps: with ps; [
          aiohasupervisor
@@ -726,7 +694,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "map_tiles" =
-@@ -4208,6 +4396,18 @@
+@@ -4208,6 +4416,18 @@
        ps: with ps; [
          infrared-protocols
        ];
@@ -745,7 +713,7 @@ index fb0dac5..ae3d79d 100644
      "martec" =
        ps: with ps; [
        ];
-@@ -4236,6 +4436,7 @@
+@@ -4236,6 +4456,7 @@
          bluetooth-data-tools
          dbus-fast
          habluetooth
@@ -753,7 +721,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          serialx
-@@ -4415,6 +4616,9 @@
+@@ -4415,6 +4636,9 @@
        ps: with ps; [
          pymiele
        ];
@@ -763,7 +731,7 @@ index fb0dac5..ae3d79d 100644
      "mijndomein_energie" =
        ps: with ps; [
        ];
-@@ -4499,6 +4703,7 @@
+@@ -4499,6 +4723,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -771,21 +739,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -4516,18 +4721,16 @@
-         pymochad
-       ];
-     "modbus" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
-         modbus-connection
-         pymodbus
-         tmodbus
--      ]
--      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
-     "modem_callerid" =
+@@ -4528,6 +4753,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -793,7 +747,7 @@ index fb0dac5..ae3d79d 100644
          phone-modem
          serialx
        ];
-@@ -4556,6 +4759,7 @@
+@@ -4556,6 +4782,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -801,7 +755,7 @@ index fb0dac5..ae3d79d 100644
          pymonoprice
          serialx
        ];
-@@ -4576,6 +4780,7 @@
+@@ -4576,6 +4803,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -809,7 +763,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          monzopy
-@@ -4673,26 +4878,31 @@
+@@ -4673,26 +4901,31 @@
      "mqtt" =
        ps: with ps; [
          aiohasupervisor
@@ -841,7 +795,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "msteams" =
-@@ -4708,7 +4918,9 @@
+@@ -4708,7 +4941,9 @@
        ];
      "music_assistant" =
        ps: with ps; [
@@ -851,7 +805,7 @@ index fb0dac5..ae3d79d 100644
          music-assistant-client
          mutagen
        ];
-@@ -4738,6 +4950,7 @@
+@@ -4738,6 +4973,7 @@
      "mysensors" =
        ps: with ps; [
          aiohasupervisor
@@ -859,7 +813,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
          pymysensors
        ];
-@@ -4772,6 +4985,9 @@
+@@ -4772,6 +5008,9 @@
        ps: with ps; [
          webio-api
        ];
@@ -869,10 +823,14 @@ index fb0dac5..ae3d79d 100644
      "neato" =
        ps: with ps; [
          pybotvac
-@@ -4788,8 +5004,15 @@
+@@ -4787,9 +5026,19 @@
+       ps: with ps; [
        ];
      "neopool" =
-       ps: with ps; [
+-      ps: with ps; [
++      ps:
++      with ps;
++      [
 +        aiohasupervisor
 +        aiousbwatcher
 +        ifaddr
@@ -882,11 +840,12 @@ index fb0dac5..ae3d79d 100644
 +        pymodbus
 +        serialx
 +        tmodbus
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
++      ]
++      ++ modbus-connection.optional-dependencies.tmodbus;
      "ness_alarm" =
        ps: with ps; [
          nessclient
-@@ -4816,6 +5039,7 @@
+@@ -4816,6 +5065,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -894,7 +853,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5053,6 +5277,35 @@
+@@ -5053,6 +5303,35 @@
        ps: with ps; [
          ohme
        ];
@@ -930,7 +889,7 @@ index fb0dac5..ae3d79d 100644
      "olimpia_splendid" =
        ps: with ps; [
        ];
-@@ -5106,6 +5359,7 @@
+@@ -5106,6 +5385,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -938,7 +897,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5134,6 +5388,7 @@
+@@ -5134,6 +5414,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -946,16 +905,15 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5351,7 +5606,7 @@
-         zeroconf
-         zha
-         zha-quirks
--      ];
-+      ]; # missing inputs: pygbl
-     "otp" =
-       ps: with ps; [
-         pyotp
-@@ -5388,6 +5643,7 @@
+@@ -5344,6 +5625,7 @@
+         ha-silabs-firmware-client
+         ifaddr
+         psutil-home-assistant
++        pygbl
+         pyroute2
+         python-otbr-api
+         serialx
+@@ -5388,6 +5670,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -963,7 +921,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5431,6 +5687,7 @@
+@@ -5431,6 +5714,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -971,7 +929,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5516,9 +5773,14 @@
+@@ -5516,9 +5800,14 @@
      "pglab" =
        ps: with ps; [
          aiohasupervisor
@@ -986,7 +944,7 @@ index fb0dac5..ae3d79d 100644
      "philips_js" =
        ps: with ps; [
          ha-philipsjs
-@@ -5571,6 +5833,7 @@
+@@ -5571,6 +5860,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -994,7 +952,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5818,6 +6081,7 @@
+@@ -5818,6 +6108,7 @@
      "qbus" =
        ps: with ps; [
          aiohasupervisor
@@ -1002,7 +960,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
          qbusmqttapi
        ];
-@@ -5906,6 +6170,7 @@
+@@ -5906,6 +6197,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -1010,7 +968,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -5923,7 +6188,6 @@
+@@ -5923,7 +6215,6 @@
        ];
      "radio_browser" =
        ps: with ps; [
@@ -1018,7 +976,7 @@ index fb0dac5..ae3d79d 100644
          radios
        ];
      "radio_frequency" =
-@@ -5938,6 +6202,9 @@
+@@ -5938,6 +6229,9 @@
        ps: with ps; [
          pyrainbird
        ];
@@ -1028,7 +986,7 @@ index fb0dac5..ae3d79d 100644
      "rainforest_eagle" =
        ps: with ps; [
          aioeagle
-@@ -5948,6 +6215,7 @@
+@@ -5948,6 +6242,7 @@
          aiohasupervisor
          aioraven
          aiousbwatcher
@@ -1036,20 +994,17 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "rainmachine" =
-@@ -5992,10 +6260,11 @@
+@@ -5992,7 +6287,9 @@
          aiohasupervisor
          aiousbwatcher
          ha-silabs-firmware-client
 +        ifaddr
          psutil-home-assistant
++        pygbl
          serialx
          universal-silabs-flasher
--      ];
-+      ]; # missing inputs: pygbl
-     "raspyrfm" =
-       ps: with ps; [
-         raspyrfm-client
-@@ -6070,6 +6339,7 @@
+       ];
+@@ -6070,6 +6367,7 @@
        ];
      "reolink" =
        ps: with ps; [
@@ -1057,7 +1012,7 @@ index fb0dac5..ae3d79d 100644
          reolink-aio
        ];
      "repairs" =
-@@ -6098,6 +6368,7 @@
+@@ -6098,6 +6396,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1065,7 +1020,7 @@ index fb0dac5..ae3d79d 100644
          pyrfxtrx
          serialx
        ];
-@@ -6123,8 +6394,7 @@
+@@ -6123,8 +6422,7 @@
        ];
      "rituals_perfume_genie" =
        ps: with ps; [
@@ -1075,7 +1030,7 @@ index fb0dac5..ae3d79d 100644
      "rmvtransport" =
        ps: with ps; [
          pyrmvtransport
-@@ -6165,6 +6435,7 @@
+@@ -6165,6 +6463,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1083,7 +1038,7 @@ index fb0dac5..ae3d79d 100644
          momonga
          serialx
        ];
-@@ -6191,6 +6462,7 @@
+@@ -6191,6 +6490,7 @@
          aiohasupervisor
          aiorussound
          aiousbwatcher
@@ -1091,7 +1046,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "russound_rnet" =
-@@ -6209,6 +6481,7 @@
+@@ -6209,6 +6509,7 @@
          bluetooth-data-tools
          dbus-fast
          habluetooth
@@ -1099,7 +1054,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "ruuvitag_ble" =
-@@ -6251,8 +6524,7 @@
+@@ -6251,8 +6552,7 @@
        ];
      "saj" =
        ps: with ps; [
@@ -1109,7 +1064,7 @@ index fb0dac5..ae3d79d 100644
      "samsam" =
        ps: with ps; [
        ];
-@@ -6260,6 +6532,7 @@
+@@ -6260,6 +6560,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1117,7 +1072,7 @@ index fb0dac5..ae3d79d 100644
          samsung-exlink
          serialx
        ];
-@@ -6330,6 +6603,9 @@
+@@ -6330,6 +6631,9 @@
      "script" =
        ps: with ps; [
        ];
@@ -1127,7 +1082,7 @@ index fb0dac5..ae3d79d 100644
      "search" =
        ps: with ps; [
        ];
-@@ -6348,6 +6624,9 @@
+@@ -6348,6 +6652,9 @@
        ps: with ps; [
          sense-energy
        ];
@@ -1137,7 +1092,7 @@ index fb0dac5..ae3d79d 100644
      "sensibo" =
        ps: with ps; [
          pysensibo
-@@ -6497,6 +6776,7 @@
+@@ -6497,6 +6804,7 @@
          aiohasupervisor
          asyncssh
          cronsim
@@ -1145,7 +1100,7 @@ index fb0dac5..ae3d79d 100644
          securetar
        ];
      "sharkiq" =
-@@ -6547,9 +6827,14 @@
+@@ -6547,9 +6855,14 @@
      "silla_prism" =
        ps: with ps; [
          aiohasupervisor
@@ -1160,7 +1115,7 @@ index fb0dac5..ae3d79d 100644
      "simplefin" =
        ps: with ps; [
          simplefin4py
-@@ -6582,6 +6867,9 @@
+@@ -6582,6 +6895,9 @@
        ps: with ps; [
          sisyphus-control
        ];
@@ -1170,7 +1125,7 @@ index fb0dac5..ae3d79d 100644
      "sky_hub" =
        ps: with ps; [
          pyskyqhub
-@@ -6666,6 +6954,9 @@
+@@ -6666,6 +6982,9 @@
        ps: with ps; [
          pysmarty2
        ];
@@ -1180,7 +1135,7 @@ index fb0dac5..ae3d79d 100644
      "smhi" =
        ps: with ps; [
          pysmhi
-@@ -6682,6 +6973,7 @@
+@@ -6682,6 +7001,7 @@
          bluetooth-data-tools
          dbus-fast
          habluetooth
@@ -1188,14 +1143,10 @@ index fb0dac5..ae3d79d 100644
          pysmlight
          serialx
        ];
-@@ -6735,15 +7027,16 @@
-         zeroconf
-       ];
-     "sofar" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
+@@ -6738,8 +7058,12 @@
+       ps:
+       with ps;
+       [
 +        aiohasupervisor
 +        aiousbwatcher
 +        ifaddr
@@ -1204,35 +1155,16 @@ index fb0dac5..ae3d79d 100644
 +        serialx
          sofar-modbus
          tmodbus
--      ]
--      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
-     "solaredge" =
-       ps: with ps; [
-         aiosolaredge
-@@ -6753,18 +7046,16 @@
-         sqlalchemy
-       ];
-     "solaredge_modbus" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
+       ]
+@@ -6758,6 +7082,7 @@
+       [
          aiohasupervisor
          aiousbwatcher
 +        ifaddr
          modbus-connection
          pymodbus
          serialx
-         solaredged
-         tmodbus
--      ]
--      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
-     "solarlog" =
-       ps: with ps; [
-         solarlog-cli
-@@ -6777,6 +7068,9 @@
+@@ -6777,6 +7102,9 @@
        ps: with ps; [
          solax
        ];
@@ -1242,7 +1174,7 @@ index fb0dac5..ae3d79d 100644
      "soma" =
        ps: with ps; [
          pysoma
-@@ -6931,19 +7225,45 @@
+@@ -6931,6 +7259,35 @@
          discovery30303
          ifaddr
        ];
@@ -1278,22 +1210,7 @@ index fb0dac5..ae3d79d 100644
      "steinway_lyngdorf" =
        ps: with ps; [
        ];
-     "stiebel_eltron" =
--      ps:
--      with ps;
--      [
-+      ps: with ps; [
-         modbus-connection
-         pymodbus
-         pystiebeleltron
-         tmodbus
--      ]
--      ++ modbus-connection.optional-dependencies.tmodbus;
-+      ]; # missing inputs: modbus-connection.optional-dependencies.tmodbus
-     "stookwijzer" =
-       ps: with ps; [
-         stookwijzer
-@@ -7069,6 +7389,7 @@
+@@ -7069,6 +7426,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -1301,7 +1218,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -7154,6 +7475,10 @@
+@@ -7154,6 +7512,10 @@
        ps: with ps; [
          tami4edgeapi
        ];
@@ -1312,7 +1229,7 @@ index fb0dac5..ae3d79d 100644
      "tankerkoenig" =
        ps: with ps; [
          aiotankerkoenig
-@@ -7166,6 +7491,7 @@
+@@ -7166,6 +7528,7 @@
        ps: with ps; [
          aiohasupervisor
          hatasmota
@@ -1320,7 +1237,7 @@ index fb0dac5..ae3d79d 100644
          paho-mqtt
        ];
      "tautulli" =
-@@ -7188,12 +7514,8 @@
+@@ -7188,12 +7551,8 @@
          aiotedee
        ];
      "telegram" =
@@ -1335,7 +1252,7 @@ index fb0dac5..ae3d79d 100644
      "telegram_bot" =
        ps:
        with ps;
-@@ -7205,6 +7527,7 @@
+@@ -7205,6 +7564,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1343,7 +1260,7 @@ index fb0dac5..ae3d79d 100644
          pyteleinfo
          serialx
        ];
-@@ -7356,6 +7679,9 @@
+@@ -7356,6 +7716,9 @@
        ps: with ps; [
          ttn-client
        ];
@@ -1353,7 +1270,7 @@ index fb0dac5..ae3d79d 100644
      "thingspeak" =
        ps: with ps; [
          thingspeak
-@@ -7460,6 +7786,7 @@
+@@ -7460,6 +7823,7 @@
          bluetooth-data-tools
          dbus-fast
          habluetooth
@@ -1361,7 +1278,7 @@ index fb0dac5..ae3d79d 100644
          serialx
          togrill-bluetooth
        ];
-@@ -7478,6 +7805,7 @@
+@@ -7478,6 +7842,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1369,7 +1286,7 @@ index fb0dac5..ae3d79d 100644
          serialx
          tonewinner-rs232
        ];
-@@ -7498,6 +7826,7 @@
+@@ -7498,6 +7863,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -1377,7 +1294,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -7707,6 +8036,7 @@
+@@ -7707,6 +8073,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1385,7 +1302,7 @@ index fb0dac5..ae3d79d 100644
          serialx
          upb-lib
        ];
-@@ -7751,6 +8081,7 @@
+@@ -7751,6 +8118,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1393,7 +1310,7 @@ index fb0dac5..ae3d79d 100644
          serialx
        ];
      "usgs_earthquakes_feed" =
-@@ -7797,6 +8128,7 @@
+@@ -7797,6 +8165,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1401,7 +1318,7 @@ index fb0dac5..ae3d79d 100644
          serialx
          velbus-aio
        ];
-@@ -7988,6 +8320,7 @@
+@@ -7988,6 +8357,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -1409,7 +1326,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -8109,6 +8442,7 @@
+@@ -8109,6 +8479,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -1417,7 +1334,7 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -8227,6 +8561,9 @@
+@@ -8227,6 +8598,9 @@
        ps: with ps; [
          pymitv
        ];
@@ -1427,7 +1344,7 @@ index fb0dac5..ae3d79d 100644
      "xmpp" =
        ps: with ps; [
          emoji
-@@ -8257,6 +8594,7 @@
+@@ -8257,6 +8631,7 @@
          hass-nabucasa
          hassil
          home-assistant-intents
@@ -1435,21 +1352,16 @@ index fb0dac5..ae3d79d 100644
          matter-ble-proxy
          matter-python-client
          mutagen
-@@ -8387,11 +8725,12 @@
+@@ -8387,6 +8762,8 @@
          aiohasupervisor
          aiousbwatcher
          ha-silabs-firmware-client
 +        ifaddr
++        pygbl
          serialx
          universal-silabs-flasher
          zha
-         zha-quirks
--      ];
-+      ]; # missing inputs: pygbl
-     "zhong_hong" =
-       ps: with ps; [
-         zhong-hong-hvac
-@@ -8429,6 +8768,7 @@
+@@ -8429,6 +8806,7 @@
        ps: with ps; [
          aiohasupervisor
          aiousbwatcher
@@ -1457,7 +1369,7 @@ index fb0dac5..ae3d79d 100644
          serialx
          zwave-js-server-python
        ];
-@@ -8477,6 +8817,7 @@
+@@ -8477,6 +8855,7 @@
      "alert"
      "alexa"
      "alexa_devices"
@@ -1465,7 +1377,7 @@ index fb0dac5..ae3d79d 100644
      "altruist"
      "amberelectric"
      "ambient_network"
-@@ -8539,6 +8880,7 @@
+@@ -8539,6 +8918,7 @@
      "bayesian"
      "besen"
      "binary_sensor"
@@ -1473,7 +1385,7 @@ index fb0dac5..ae3d79d 100644
      "bitvis"
      "blackbird"
      "blebox"
-@@ -8612,6 +8954,7 @@
+@@ -8612,6 +8992,7 @@
      "date"
      "datetime"
      "deako"
@@ -1481,15 +1393,7 @@ index fb0dac5..ae3d79d 100644
      "debugpy"
      "deconz"
      "decora_wifi"
-@@ -8732,7 +9075,6 @@
-     "fitbit"
-     "fivem"
-     "fjaraskupan"
--    "flexit"
-     "flexit_bacnet"
-     "flic"
-     "flipr"
-@@ -8756,7 +9098,6 @@
+@@ -8756,7 +9137,6 @@
      "fritz"
      "fritzbox"
      "fritzbox_callmonitor"
@@ -1497,7 +1401,7 @@ index fb0dac5..ae3d79d 100644
      "frontend"
      "frontier_silicon"
      "fuelprices_dk"
-@@ -8805,9 +9146,7 @@
+@@ -8805,9 +9185,7 @@
      "google_sheets"
      "google_tasks"
      "google_translate"
@@ -1507,7 +1411,7 @@ index fb0dac5..ae3d79d 100644
      "govee_ble"
      "govee_light_local"
      "gpsd"
-@@ -8820,6 +9159,7 @@
+@@ -8820,6 +9198,7 @@
      "greeneye_monitor"
      "group"
      "growatt_server"
@@ -1515,19 +1419,7 @@ index fb0dac5..ae3d79d 100644
      "guardian"
      "guntamatic"
      "habitica"
-@@ -8848,11 +9188,6 @@
-     "home_connect"
-     "homeassistant"
-     "homeassistant_alerts"
--    "homeassistant_connect_zbt2"
--    "homeassistant_green"
--    "homeassistant_hardware"
--    "homeassistant_sky_connect"
--    "homeassistant_yellow"
-     "homee"
-     "homekit"
-     "homekit_controller"
-@@ -8882,7 +9217,6 @@
+@@ -8882,7 +9261,6 @@
      "hydrawise"
      "hyperion"
      "hypontech"
@@ -1535,12 +1427,7 @@ index fb0dac5..ae3d79d 100644
      "iaqualink"
      "ibeacon"
      "icloud"
-@@ -8946,11 +9280,11 @@
-     "juicenet"
-     "justnimbus"
-     "jvc_projector"
--    "kaco_modbus"
-     "kaleidescape"
+@@ -8951,6 +9329,7 @@
      "karakeep"
      "keenetic_ndms2"
      "kegtron"
@@ -1548,7 +1435,7 @@ index fb0dac5..ae3d79d 100644
      "keymitt_ble"
      "kiosker"
      "kira"
-@@ -9010,7 +9344,6 @@
+@@ -9010,7 +9389,6 @@
      "logbook"
      "logger"
      "lojack"
@@ -1556,7 +1443,7 @@ index fb0dac5..ae3d79d 100644
      "london_underground"
      "lookin"
      "loqed"
-@@ -9029,6 +9362,7 @@
+@@ -9029,6 +9407,7 @@
      "manual_mqtt"
      "map_tiles"
      "marantz_infrared"
@@ -1564,23 +1451,7 @@ index fb0dac5..ae3d79d 100644
      "marytts"
      "mastodon"
      "matrix"
-@@ -9069,7 +9403,6 @@
-     "moat"
-     "mobile_app"
-     "mochad"
--    "modbus"
-     "modem_callerid"
-     "modern_forms"
-     "moehlenhoff_alpha2"
-@@ -9109,7 +9442,6 @@
-     "nasweb"
-     "neato"
-     "nederlandse_spoorwegen"
--    "neopool"
-     "ness_alarm"
-     "nest"
-     "netatmo"
-@@ -9132,6 +9464,7 @@
+@@ -9132,6 +9511,7 @@
      "nmap_tracker"
      "nmbs"
      "no_ip"
@@ -1588,15 +1459,7 @@ index fb0dac5..ae3d79d 100644
      "nobo_hub"
      "nordpool"
      "notify"
-@@ -9189,7 +9522,6 @@
-     "orvibo"
-     "osoenergy"
-     "osram_infrared"
--    "otbr"
-     "otp"
-     "ouman_eh_800"
-     "ourgroceries"
-@@ -9212,6 +9544,7 @@
+@@ -9212,6 +9592,7 @@
      "persistent_notification"
      "person"
      "pglab"
@@ -1604,15 +1467,7 @@ index fb0dac5..ae3d79d 100644
      "philips_js"
      "pi_hole"
      "picnic"
-@@ -9277,7 +9610,6 @@
-     "rainmachine"
-     "random"
-     "rapt_ble"
--    "raspberry_pi"
-     "rdw"
-     "recollect_waste"
-     "recorder"
-@@ -9302,7 +9634,6 @@
+@@ -9302,7 +9683,6 @@
      "ridwell"
      "ring"
      "risco"
@@ -1620,7 +1475,7 @@ index fb0dac5..ae3d79d 100644
      "rmvtransport"
      "roborock"
      "roku"
-@@ -9319,7 +9650,6 @@
+@@ -9319,7 +9699,6 @@
      "ruuvitag_ble"
      "rympro"
      "sabnzbd"
@@ -1628,7 +1483,7 @@ index fb0dac5..ae3d79d 100644
      "samsung_exlink"
      "samsung_infrared"
      "samsungtv"
-@@ -9357,10 +9687,12 @@
+@@ -9357,10 +9736,12 @@
      "sighthound"
      "signal_messenger"
      "silla_prism"
@@ -1641,25 +1496,7 @@ index fb0dac5..ae3d79d 100644
      "sky_remote"
      "skybell"
      "slack"
-@@ -9382,9 +9714,7 @@
-     "snmp"
-     "snoo"
-     "snooz"
--    "sofar"
-     "solaredge"
--    "solaredge_modbus"
-     "solarlog"
-     "solarman"
-     "solax"
-@@ -9412,7 +9742,6 @@
-     "statsd"
-     "steam_online"
-     "steamist"
--    "stiebel_eltron"
-     "stookwijzer"
-     "stream"
-     "streamlabswater"
-@@ -9446,6 +9775,7 @@
+@@ -9446,6 +9827,7 @@
      "tailscale"
      "tailwind"
      "tami4"
@@ -1667,7 +1504,7 @@ index fb0dac5..ae3d79d 100644
      "tankerkoenig"
      "tasmota"
      "tautulli"
-@@ -9515,6 +9845,7 @@
+@@ -9515,6 +9897,7 @@
      "twilio"
      "twinkly"
      "twitch"
@@ -1675,16 +1512,8 @@ index fb0dac5..ae3d79d 100644
      "uhoo"
      "uk_transport"
      "ukraine_alarm"
-@@ -9630,7 +9961,6 @@
-     "zeroconf"
-     "zerproc"
-     "zeversolar"
--    "zha"
-     "zhong_hong"
-     "zimi"
-     "zinvolt"
 diff --git a/default.nix b/default.nix
-index 77afb35..0415ab1 100644
+index 77afb35..caadb0a 100644
 --- a/default.nix
 +++ b/default.nix
 @@ -12,6 +12,9 @@
@@ -1697,7 +1526,7 @@ index 77afb35..0415ab1 100644
  
    # Look up dependencies of specified components in component-packages.nix
    extraComponents ? [ ],
-@@ -29,10 +32,45 @@
+@@ -29,10 +32,159 @@
  }:
  
  let
@@ -1740,10 +1569,124 @@ index 77afb35..0415ab1 100644
 +        dependencies = old.dependencies ++ [ self.requests ];
 +      });
 +
++      pygbl = self.callPackage ./python-modules/pygbl { };
++
++      # Keep the radio stack aligned with HA's ZHA and hardware requirements.
++      aiospinel = super.aiospinel.overridePythonAttrs rec {
++        version = "1.3.0";
++        src = fetchFromGitHub {
++          owner = "home-assistant-libs";
++          repo = "aiospinel";
++          tag = "v${version}";
++          hash = "sha256-l3RHQVpKJwMRRcC3+NUS650lEv1+gnLfrxjkeToa/I0=";
++        };
++      };
++
++      aiosqlite = super.aiosqlite.overridePythonAttrs rec {
++        version = "0.22.1";
++        src = fetchFromGitHub {
++          owner = "omnilib";
++          repo = "aiosqlite";
++          tag = "v${version}";
++          hash = "sha256-voOOFo1OwaRQ3JsDHlBrngP+8ajf0kTNKXJyOaJiTs4=";
++        };
++        dependencies = [ ];
++      };
++
++      bellows = super.bellows.overridePythonAttrs (old: rec {
++        version = "1.2.1";
++        src = fetchFromGitHub {
++          owner = "zigpy";
++          repo = "bellows";
++          tag = version;
++          hash = "sha256-5Ysj5mHoUdlSapYwW07qqsLH7svYCtUb9tNzHzi/KB8=";
++        };
++        dependencies = old.dependencies ++ [ self.serialx ];
++      });
++
++      universal-silabs-flasher = super.universal-silabs-flasher.overridePythonAttrs (old: rec {
++        version = "1.3.0";
++        src = fetchFromGitHub {
++          owner = "NabuCasa";
++          repo = "universal-silabs-flasher";
++          tag = "v${version}";
++          hash = "sha256-xpeq9W88jp7RM+rzy8T3d/PpuGAeF5RPMgm6EwWc2wI=";
++        };
++        postPatch = lib.replaceStrings [ old.version ] [ version ] old.postPatch;
++        dependencies = (lib.subtractLists [ self.coloredlogs ] old.dependencies) ++ [
++          self.aiospinel
++          self.colorlog
++          self.pygbl
++        ];
++      });
++
++      zha = (super.zha.override { pytest-asyncio_0 = self.pytest-asyncio; }).overridePythonAttrs rec {
++        version = "2.4.2";
++        src = fetchFromGitHub {
++          owner = "zigpy";
++          repo = "zha";
++          tag = version;
++          hash = "sha256-0d3bh1gHCQ4YC4NSi4gKXRzsyTazwY8AC9f/sbbwPrA=";
++        };
++        pythonImportsCheck = [ "zha.zigbee.device" ];
++      };
++
++      zha-quirks = super.zha-quirks.overridePythonAttrs (old: rec {
++        version = "2.4.1";
++        src = fetchFromGitHub {
++          owner = "zigpy";
++          repo = "zha-device-handlers";
++          tag = version;
++          hash = "sha256-lQdiViqRVj10djcq67j1H0l37AA+T/8m8WaFcJwzJVg=";
++        };
++        postPatch = lib.replaceStrings [ old.version ] [ version ] old.postPatch;
++        dependencies = [
++          self.zha
++          self.zigpy
++        ];
++      });
++
++      zigpy = super.zigpy.overridePythonAttrs rec {
++        version = "2.4.1";
++        src = fetchFromGitHub {
++          owner = "zigpy";
++          repo = "zigpy";
++          tag = version;
++          hash = "sha256-B0qqlnQPLJ91clfUuOeLrY8dAij1cojezQnV7J483zQ=";
++        };
++      };
++
++      zigpy-deconz = super.zigpy-deconz.overridePythonAttrs (old: rec {
++        version = "1.1.1";
++        src = fetchFromGitHub {
++          owner = "zigpy";
++          repo = "zigpy-deconz";
++          tag = version;
++          hash = "sha256-xlqxH8j98RyKdSnOhdPKpQMn2z3TbHod9wvq7Lx2OsQ=";
++        };
++        postPatch = lib.replaceStrings [ old.version ] [ version ] old.postPatch;
++      });
++
++      zigpy-ziggurat = super.zigpy-ziggurat.overridePythonAttrs (old: rec {
++        version = "1.2.0";
++        src = fetchFromGitHub {
++          owner = "zigpy";
++          repo = "zigpy-ziggurat";
++          tag = "v${version}";
++          hash = "sha256-Tf5nAYK/UpqegRFSDCmr0fX40X5BmsLlc+ftggK0Am0=";
++        };
++        dependencies = lib.subtractLists [ self.mashumaro ] old.dependencies;
++      });
++
++      zigpy-znp = super.zigpy-znp.overridePythonAttrs (old: {
++        # Teach the fake coordinator to accept Zigpy's new Green Power broadcasts.
++        patches = (old.patches or [ ]) ++ [ ./python-modules/zigpy-znp-green-power-tests.patch ];
++      });
++
        aionotion = super.aionotion.overridePythonAttrs rec {
          version = "2024.03.0";
          src = fetchFromGitHub {
-@@ -73,8 +111,6 @@ let
+@@ -73,8 +225,6 @@ let
          };
        });
  
@@ -1752,7 +1695,7 @@ index 77afb35..0415ab1 100644
        notifications-android-tv = super.notifications-android-tv.overridePythonAttrs (oldAttrs: rec {
          version = "0.1.5";
          format = "setuptools";
-@@ -152,7 +188,7 @@ let
+@@ -152,7 +302,7 @@ let
    extraBuildInputs = extraPackages python3Packages;
  
    # Don't forget to run update-component-packages.py after updating
@@ -1761,7 +1704,7 @@ index 77afb35..0415ab1 100644
  
  in
  python3Packages.buildPythonApplication rec {
-@@ -173,13 +209,16 @@ python3Packages.buildPythonApplication rec {
+@@ -173,13 +323,16 @@ python3Packages.buildPythonApplication rec {
      owner = "home-assistant";
      repo = "core";
      tag = version;
@@ -1770,7 +1713,7 @@ index 77afb35..0415ab1 100644
    };
  
 -  # Secondary source is pypi sdist for translations
-+  # Core no longer publishes an sdist; translations are distributed in its wheel.
++  # Use the PyPI wheel to supply the generated component translations.
    sdist = fetchPypi {
      inherit pname version;
 -    hash = "sha256-hBD+y0NKuUs/dyTNgFhAUPDO64VsFu5wICwkA31iI4o=";
@@ -1781,7 +1724,7 @@ index 77afb35..0415ab1 100644
    };
  
    build-system = with python3Packages; [
-@@ -188,9 +227,11 @@ python3Packages.buildPythonApplication rec {
+@@ -188,9 +341,11 @@ python3Packages.buildPythonApplication rec {
  
    pythonRelaxDeps = true;
  
@@ -1795,7 +1738,7 @@ index 77afb35..0415ab1 100644
    '';
  
    # leave this in, so users don't have to constantly update their downstream patch handling
-@@ -260,7 +301,7 @@ python3Packages.buildPythonApplication rec {
+@@ -260,7 +415,7 @@ python3Packages.buildPythonApplication rec {
      hass-nabucasa
      home-assistant-bluetooth
      home-assistant-intents
@@ -1804,7 +1747,7 @@ index 77afb35..0415ab1 100644
      ifaddr
      infrared-protocols
      jinja2
-@@ -275,6 +316,7 @@ python3Packages.buildPythonApplication rec {
+@@ -275,6 +430,7 @@ python3Packages.buildPythonApplication rec {
      pyjwt
      pymicro-vad
      pyopenssl
@@ -1812,7 +1755,7 @@ index 77afb35..0415ab1 100644
      pyspeex-noise
      python-slugify
      pyturbojpeg
-@@ -285,6 +327,7 @@ python3Packages.buildPythonApplication rec {
+@@ -285,6 +441,7 @@ python3Packages.buildPythonApplication rec {
      sqlalchemy
      standard-aifc
      standard-telnetlib
@@ -1820,7 +1763,39 @@ index 77afb35..0415ab1 100644
      typing-extensions
      ulid-transform
      urllib3
-@@ -325,7 +368,37 @@ python3Packages.buildPythonApplication rec {
+@@ -321,11 +478,42 @@ python3Packages.buildPythonApplication rec {
+     unidiff
+     # Used in tests/common.py
+     paho-mqtt
++    # Required by both core and component tests.
++    (python3Packages.buildPythonPackage {
++      pname = "pytest-homeassistant";
++      version = "2026.11.0";
++      inherit src;
++      sourceRoot = "source/packages/pytest-homeassistant";
++      pyproject = true;
++      build-system = [ python3Packages.setuptools ];
++      nativeBuildInputs = [ python3Packages.pyprojectVersionPatchHook ];
++      pythonRelaxDeps = true;
++      # Core is imported from the source tree during its own test build.
++      pythonRemoveDeps = [ "homeassistant" ];
++      dependencies = with python3Packages; [
++        bleak-retry-connector
++        freezegun
++        paho-mqtt
++        pytest
++        pytest-aiohttp
++        pytest-asyncio
++        pytest-freezer
++        pytest-socket
++        pytest-xdist
++        requests-mock
++        respx
++        syrupy
++      ];
++      doCheck = false;
++    })
+   ];
  
    nativeCheckInputs =
      requirementsTest
@@ -1828,38 +1803,11 @@ index 77afb35..0415ab1 100644
 +    ++ [
 +      versionCheckHook
 +      git
-+      (python3Packages.buildPythonPackage {
-+        pname = "pytest-homeassistant";
-+        version = "2026.11.0";
-+        inherit src;
-+        sourceRoot = "source/packages/pytest-homeassistant";
-+        pyproject = true;
-+        build-system = [ python3Packages.setuptools ];
-+        nativeBuildInputs = [ python3Packages.pyprojectVersionPatchHook ];
-+        pythonRelaxDeps = true;
-+        # Core is imported from the source tree during its own test build.
-+        pythonRemoveDeps = [ "homeassistant" ];
-+        dependencies = with python3Packages; [
-+          bleak-retry-connector
-+          freezegun
-+          paho-mqtt
-+          pytest
-+          pytest-aiohttp
-+          pytest-asyncio
-+          pytest-freezer
-+          pytest-socket
-+          pytest-xdist
-+          requests-mock
-+          respx
-+          syrupy
-+        ];
-+        doCheck = false;
-+      })
 +    ]
      ++ (with python3Packages; [
        # Used in tests/non_packaged_scripts/test_alexa_locales.py
        beautifulsoup4
-@@ -337,6 +410,7 @@ python3Packages.buildPythonApplication rec {
+@@ -337,6 +525,7 @@ python3Packages.buildPythonApplication rec {
        mypy
        # Used in tests/scripts/check_requirements/test_gate.py
        pygithub
@@ -1867,7 +1815,7 @@ index 77afb35..0415ab1 100644
      ])
      ++ lib.concatMap (component: getPackages component python3Packages) [
        # some components are needed even if tests in tests/components are disabled
-@@ -358,7 +432,7 @@ python3Packages.buildPythonApplication rec {
+@@ -358,7 +547,7 @@ python3Packages.buildPythonApplication rec {
  
    disabledTestPaths = [
      # we neither run nor distribute hassfest
@@ -1876,7 +1824,7 @@ index 77afb35..0415ab1 100644
      # we don't care about code quality
      "tests/pylint"
      # redundant component import test, which would make debugpy & sentry expensive to review
-@@ -378,6 +452,8 @@ python3Packages.buildPythonApplication rec {
+@@ -378,6 +567,8 @@ python3Packages.buildPythonApplication rec {
    preCheck = ''
      export HOME="$TEMPDIR"
      export PYTHONASYNCIODEBUG=1
@@ -1957,8 +1905,124 @@ index 7b64ce9..41387e4 100644
   
 + @cache
 + def is_docker_env() -> bool:
+diff --git a/python-modules/pygbl/default.nix b/python-modules/pygbl/default.nix
+new file mode 100644
+index 0000000..f9e87bb
+--- /dev/null
++++ b/python-modules/pygbl/default.nix
+@@ -0,0 +1,50 @@
++{
++  lib,
++  buildPythonPackage,
++  fetchPypi,
++  setuptools,
++  setuptools-scm,
++  pyelftools,
++  cryptography,
++  lz4,
++  pytestCheckHook,
++  pytest-timeout,
++}:
++
++buildPythonPackage (finalAttrs: {
++  pname = "pygbl";
++  version = "1.2.0";
++  pyproject = true;
++
++  src = fetchPypi {
++    inherit (finalAttrs) pname version;
++    hash = "sha256-/T7Jr7tP/6rmAtOsJAHaN48YaOtT99wiID+T3qb107U=";
++  };
++
++  build-system = [
++    setuptools
++    setuptools-scm
++  ];
++
++  dependencies = [ pyelftools ];
++
++  optional-dependencies = {
++    crypto = [ cryptography ];
++    lz4 = [ lz4 ];
++  };
++
++  nativeCheckInputs = [
++    pytestCheckHook
++    pytest-timeout
++    cryptography
++    lz4
++  ];
++
++  pythonImportsCheck = [ "pygbl" ];
++
++  meta = {
++    description = "Parser for Silicon Labs GBL and EBL firmware images";
++    homepage = "https://github.com/zigpy/pygbl";
++    license = lib.licenses.asl20;
++  };
++})
+diff --git a/python-modules/zigpy-znp-green-power-tests.patch b/python-modules/zigpy-znp-green-power-tests.patch
+new file mode 100644
+index 0000000..60d3d74
+--- /dev/null
++++ b/python-modules/zigpy-znp-green-power-tests.patch
+@@ -0,0 +1,54 @@
++diff --git a/tests/application/test_joining.py b/tests/application/test_joining.py
++index 886a92d..4565e9d 100644
++--- a/tests/application/test_joining.py
+++++ b/tests/application/test_joining.py
++@@ -39,7 +39,7 @@ async def test_permit_join(device, mocker, make_application):
++         request=zdo_request_matcher(
++             dst_addr=t.AddrModeAddress(t.AddrMode.Broadcast, 0xFFFC),
++             command_id=zdo_t.ZDOCmd.Mgmt_Permit_Joining_req,
++-            TSN=2,
+++            TSN=4,
++             zdo_PermitDuration=10,
++             zdo_TC_Significant=0,
++         ),
++diff --git a/tests/application/test_startup.py b/tests/application/test_startup.py
++index 8394a86..9564016 100644
++--- a/tests/application/test_startup.py
+++++ b/tests/application/test_startup.py
++@@ -103,8 +103,9 @@ async def test_endpoints(device, make_application):
++
++     await app.startup(auto_form=False)
++
++-    # We currently just register two endpoints
++-    assert len(endpoints) == 2
+++    # Register the ZHA, ZLL, and Green Power endpoints.
+++    assert len(endpoints) == 3
+++    assert {request.Endpoint for request in endpoints} == {1, 2, 0xF2}
++     assert 1 in app._device.endpoints
++     assert 2 in app._device.endpoints
++
++diff --git a/tests/conftest.py b/tests/conftest.py
++index 58b2690..210c912 100644
++--- a/tests/conftest.py
+++++ b/tests/conftest.py
++@@ -594,6 +594,20 @@ class BaseZStackDevice(BaseServerZNP):
++             c.ZDO.MgmtPermitJoinRsp.Callback(Src=0x0000, Status=t.ZDOStatus.SUCCESS),
++         ]
++
+++    @reply_to(
+++        c.AF.DataRequestExt.Req(
+++            partial=True,
+++            DstAddrModeAddress=t.AddrModeAddress(
+++                mode=t.AddrMode.Broadcast, address=0xFFFD
+++            ),
+++            DstEndpoint=0xF2,
+++            SrcEndpoint=0xF2,
+++            ClusterId=0x0021,
+++        )
+++    )
+++    def on_green_power_broadcast(self, req):
+++        return [c.AF.DataRequestExt.Rsp(Status=t.Status.SUCCESS)]
+++
++     @reply_to(c.AF.DataRequestExt.Req(partial=True, DstEndpoint=0))
++     def on_zdo_request(self, req):
++         kwargs = deserialize_zdo_command(req.ClusterId, req.Data[1:])
 diff --git a/update-component-packages.py b/update-component-packages.py
-index ec8d4c5..b17ab4e 100755
+index ec8d4c5..b5ba880 100755
 --- a/update-component-packages.py
 +++ b/update-component-packages.py
 @@ -110,8 +110,8 @@ def parse_components(version: str = "master"):
@@ -1972,3 +2036,12 @@ index ec8d4c5..b17ab4e 100755
  
          config = Config(
              root=pathlib.Path(core_path),
+@@ -152,6 +152,8 @@ def repository_root() -> str:
+ def has_extra(package: str, extra: str):
+     cmd = [
+         "nix-instantiate",
++        # Inspect the attribute without instantiating unsupported host packages.
++        "--eval",
+         repository_root(),
+         "-A",
+         f"{package}.optional-dependencies.{extra}",

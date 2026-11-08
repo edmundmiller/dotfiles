@@ -104,20 +104,20 @@ HA state lives in `/var/lib/hass` and is backed up nightly by restic (see `hosts
 
 ### What's Backed Up
 
-| Data                                           | Location                                                           | Recoverable from Nix?                                                                  |
-| ---------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Device pairings (Zigbee, BLE, Matter, HomeKit) | `/var/lib/hass/.storage/`                                          | ❌ No — must restore from backup                                                       |
-| Integration configs (API keys, tokens)         | `/var/lib/hass/.storage/`                                          | ❌ No                                                                                  |
-| Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry`                           | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                       |
-| Automations (UI-created)                       | `/var/lib/hass/automations.yaml`                                   | ❌ No                                                                                  |
-| Automations (Nix-declared)                     | `_domains/*.nix`                                                   | ✅ Yes — rebuilt from Nix                                                              |
-| HA config (recorder, helpers)                  | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
-| HTTP config (port, trusted proxies)            | `/var/lib/hass/.storage/http`                                      | ❌ No — manage under Settings > System > Network; restore from backup                  |
-| Extra components (ecobee, cast, etc.)          | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                              |
-| Recorder history (energy, temps, states)       | PostgreSQL (`hass` db), dumped to `/var/backup/hass/recorder.dump` | ❌ No — restore the nightly restic dump                                                |
-| HACS integrations                              | `/var/lib/hass/custom_components/`                                 | Partial — HACS itself is Nix-managed, but HACS-installed integrations need re-download |
-| Blueprints (Nix-managed)                       | `blueprints/`                                                      | ✅ Yes                                                                                 |
-| Lovelace dashboards                            | `/var/lib/hass/.storage/lovelace*`                                 | ❌ No                                                                                  |
+| Data                                           | Location                                                           | Recoverable from Nix?                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Device pairings (Zigbee, BLE, Matter, HomeKit) | `/var/lib/hass/.storage/`                                          | ❌ No — must restore from backup                                                   |
+| Integration configs (API keys, tokens)         | `/var/lib/hass/.storage/`                                          | ❌ No                                                                              |
+| Entity/device registry (names, areas, IDs)     | `/var/lib/hass/.storage/core.*_registry`                           | Partial — `devices.yaml` + `apply-devices.py` can reassign areas                   |
+| Automations (UI-created)                       | `/var/lib/hass/automations.yaml`                                   | ❌ No                                                                              |
+| Automations (Nix-declared)                     | `_domains/*.nix`                                                   | ✅ Yes — rebuilt from Nix                                                          |
+| HA config (recorder, helpers)                  | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                          |
+| HTTP config (port, trusted proxies)            | `/var/lib/hass/.storage/http`                                      | ❌ No — manage under Settings > System > Network; restore from backup              |
+| Extra components (ecobee, cast, etc.)          | `default.nix`                                                      | ✅ Yes — rebuilt from Nix                                                          |
+| Recorder history (energy, temps, states)       | PostgreSQL (`hass` db), dumped to `/var/backup/hass/recorder.dump` | ❌ No — restore the nightly restic dump                                            |
+| Marketplace integrations                       | `/var/lib/hass/custom_components/`                                 | Partial — Marketplace is built in; downloaded integrations may need reinstallation |
+| Blueprints (Nix-managed)                       | `blueprints/`                                                      | ✅ Yes                                                                             |
+| Lovelace dashboards                            | `/var/lib/hass/.storage/lovelace*`                                 | ❌ No                                                                              |
 
 ### Backup Schedule
 

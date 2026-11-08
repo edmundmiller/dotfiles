@@ -127,8 +127,8 @@ let
     src = pkgs.fetchFromGitHub {
       owner = "AboveColin";
       repo = "HA-Jev";
-      tag = "1.3.2";
-      hash = "sha256-h1Vr3rS1csFhQxNod6gMxK3VruIXNYZ8hIzxE47PKAQ=";
+      rev = "eb0ad4b7d8f0c496672f923717fbd9df60888460";
+      hash = "sha256-isPRPXldQvl3MgjOZQFp4yEIZJtZZiZUEd4zp0MJ7fE=";
     };
   };
 in
