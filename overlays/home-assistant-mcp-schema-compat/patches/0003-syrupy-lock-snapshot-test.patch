@@ -1,0 +1,31 @@
+diff --git a/tests/conftest.py b/tests/conftest.py
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -9,3 +9,3 @@ _XDIST_TWO = ["--numprocesses", "2"]
+ @pytest.fixture(
+-    params=[_NO_ARGS, _XDIST_ZERO, _XDIST_TWO],
++    params=[_NO_ARGS, _XDIST_ZERO, [*_XDIST_TWO, "--snapshot-file-lock"]],
+     ids=["no_plugin", "xdist_zero", "xdist_two"],
+diff --git a/tests/integration/test_snapshot_marker.py b/tests/integration/test_snapshot_marker.py
+--- a/tests/integration/test_snapshot_marker.py
++++ b/tests/integration/test_snapshot_marker.py
+@@ -4,3 +4,3 @@
+ def assert_marker_outcomes(result, plugin_args, *, passed, deselected):
+-    if plugin_args == ["--numprocesses", "2"]:
++    if plugin_args[:2] == ["--numprocesses", "2"]:
+         result.assert_outcomes(passed=passed)
+diff --git a/tests/integration/test_snapshot_option_update.py b/tests/integration/test_snapshot_option_update.py
+--- a/tests/integration/test_snapshot_option_update.py
++++ b/tests/integration/test_snapshot_option_update.py
+@@ -123,3 +123,3 @@ def run_testcases(testdir, testcases_initial):
+ def test_update_failure_shows_snapshot_diff(
+-    run_testcases, testcases_updated, plugin_args_fails_xdist
++    run_testcases, testcases_updated, plugin_args
+ ):
+@@ -127,4 +127,4 @@ def test_update_failure_shows_snapshot_diff(
+     testdir.makepyfile(**testcases_updated)
+-    result = testdir.runpytest("-vv", *plugin_args_fails_xdist)
+-    result.stdout.re_match_lines(
++    result = testdir.runpytest("-vv", *plugin_args)
++    result.stdout.re_match_lines_random(
+         (
