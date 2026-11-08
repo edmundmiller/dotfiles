@@ -76,6 +76,14 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertEqual(self.deployed["piSkills"]["pistack"], "/fixture/pistack")
         self.assertEqual(self.deployed["piSkills"]["agentFiles"], [])
 
+    def test_pi_does_not_load_project_environments_automatically(self) -> None:
+        packages = self.deployed["piApproval"]["settings"]["packages"]
+        sources = [item if isinstance(item, str) else item["source"] for item in packages]
+        self.assertNotIn("~/.config/dotfiles/packages/pi-packages/pi-direnv", sources)
+        self.assertFalse(any(source.startswith("npm:pi-direnv") for source in sources))
+        links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
+        self.assertNotIn('".pi/agent/extensions/direnv.ts"', links)
+
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = OMP_CORE.read_text()
         normalized_core = " ".join(core.split())

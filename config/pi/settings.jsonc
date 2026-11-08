@@ -41,8 +41,6 @@
       ],
       "skills": [],
     },
-    // Auto-load direnv env at session start
-    "~/.config/dotfiles/packages/pi-packages/pi-direnv",
     // Rex location, installed guide, pane captures, and native task status.
     // Automatic integration stays dormant outside Rex terminals.
     "~/.config/dotfiles/packages/pi-packages/pi-rex",
