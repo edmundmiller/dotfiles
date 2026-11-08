@@ -1,0 +1,2 @@
+# Pi is an Omarchy-managed coding agent, so delegate updates to Omarchy.
+export PI_SELF_UPDATE_COMMAND="omarchy update mise"

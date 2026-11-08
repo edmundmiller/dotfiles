@@ -10,6 +10,12 @@
   },
   "files": [
     {
+      "source": "config/uwsm/env.d/90-pi-self-update",
+      "target": ".config/uwsm/env.d/90-pi-self-update",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/hypr/autostart.lua",
       "target": ".config/hypr/autostart.lua",
       "mode": "0644",
