@@ -6,15 +6,15 @@
   autoPatchelfHook,
 }:
 let
-  version = "0.0.14";
+  version = "0.0.15";
   targets = {
     aarch64-darwin = {
       name = "darwin-arm64";
-      hash = "sha512-hKGXyIEL/0CsJi7H7aB6ttn2L6vM0lQLCFLGybet4gLNdXOtqh6ZbRQKJrpnr7gVFIA8Y4ihn/jeZ9gd5Gvz0g==";
+      hash = "sha512-eDNPUD/RILDp8IN3ueY1MuAdlreu8yJhJGQPHCMMHCraxPgl5oVxD4CQuZE6894h8P+gsIGa7NXSlPLgTFFCfQ==";
     };
     x86_64-linux = {
       name = "linux-x64-baseline";
-      hash = "sha512-0V5uE0//4yCWrv7uo/atw8eDGTliGlBAkHozkDh3afiprP/v1w1oKYjMf4TBS6osNU6SYiSz8QNigFOY2Z7XMA==";
+      hash = "sha512-ZI7PsalhkdISb22MNayHufMXRXAdy8ntBGdM/96bCgyV4QRJnPbMmwNYOZntv1bfWYMF3UDdGu/Xgs0fV8nfUQ==";
     };
   };
   target = targets.${stdenv.hostPlatform.system};
