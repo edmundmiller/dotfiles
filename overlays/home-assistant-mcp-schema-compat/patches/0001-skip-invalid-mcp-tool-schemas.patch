@@ -1,13 +1,13 @@
 diff --git a/homeassistant/components/mcp/coordinator.py b/homeassistant/components/mcp/coordinator.py
-index b11c026..7525b94 100644
+index b366dcb..1502a46 100644
 --- a/homeassistant/components/mcp/coordinator.py
 +++ b/homeassistant/components/mcp/coordinator.py
-@@ -252,9 +252,12 @@ class ModelContextProtocolCoordinator(DataUpdateCoordinator[list[llm.Tool]]):
+@@ -310,9 +310,12 @@ class ModelContextProtocolCoordinator(DataUpdateCoordinator[list[llm.Tool]]):
              try:
-                 parameters = from_openapi(tool.inputSchema)
+                 parameters = from_openapi(tool.input_schema)
              except Exception as err:
 -                raise UpdateFailed(
--                    f"Error converting schema {err}: {tool.inputSchema}"
+-                    f"Error converting schema {err}: {tool.input_schema}"
 -                ) from err
 +                _LOGGER.warning(
 +                    "Skipping MCP tool %s because its schema is invalid: %s",
@@ -19,44 +19,43 @@ index b11c026..7525b94 100644
                  ModelContextProtocolTool(
                      tool.name,
 diff --git a/tests/components/mcp/test_init.py b/tests/components/mcp/test_init.py
-index 845e33d..37a6465 100644
+index 0fd4a95..3de8f12 100644
 --- a/tests/components/mcp/test_init.py
 +++ b/tests/components/mcp/test_init.py
-@@ -386,20 +386,31 @@ async def test_call_tool_fails(
+@@ -620,18 +620,27 @@ async def test_call_tool_fails(
          )
  
  
+-@pytest.mark.usefixtures("fake_mcp_server")
 -async def test_convert_tool_schema_fails(
--    hass: HomeAssistant, config_entry: MockConfigEntry, mock_mcp_client: Mock
 +async def test_invalid_tool_schema_is_skipped(
-+    hass: HomeAssistant,
-+    config_entry: MockConfigEntry,
-+    mock_mcp_client: Mock,
+     hass: HomeAssistant,
+     config_entry: MockConfigEntry,
++    fake_mcp_server: FakeMcpServer,
 +    caplog: pytest.LogCaptureFixture,
  ) -> None:
 -    """Test a failure converting an MCP tool schema to a Home Assistant schema."""
-+    """Test a tool with an invalid schema does not hide subsequent valid tools."""
-     mock_mcp_client.return_value.list_tools.return_value = ListToolsResult(
--        tools=[SEARCH_MEMORY_TOOL]
-+        tools=[Tool(name="invalid_tool", inputSchema={}), SEARCH_MEMORY_TOOL]
-     )
- 
-     with patch(
-         "homeassistant.components.mcp.coordinator.from_openapi",
+-    with patch(
+-        "homeassistant.components.mcp.coordinator.from_openapi",
 -        side_effect=ValueError,
-+        side_effect=[ValueError("Invalid schema"), vol.Schema({"query": str})],
-     ):
-         await hass.config_entries.async_setup(config_entry.entry_id)
+-    ):
+-        await hass.config_entries.async_setup(config_entry.entry_id)
 -        assert config_entry.state is ConfigEntryState.SETUP_RETRY
++    """Test an invalid tool does not hide subsequent valid tools."""
++    fake_mcp_server.tools = [
++        Tool(
++            name="invalid_tool",
++            inputSchema={"type": "object", "properties": {"x": {"type": "not_a_type"}}},
++        ),
++        SEARCH_MEMORY_TOOL,
++    ]
++    await hass.config_entries.async_setup(config_entry.entry_id)
 +    assert config_entry.state is ConfigEntryState.LOADED
 +
 +    api = next(api for api in llm.async_get_apis(hass) if api.name == TEST_API_NAME)
 +    api_instance = await api.async_get_api_instance(create_llm_context())
 +    assert [tool.name for tool in api_instance.tools] == ["search_memory"]
-+    assert (
-+        "Skipping MCP tool invalid_tool because its schema is invalid: Invalid schema"
-+        in caplog.text
-+    )
++    assert "Skipping MCP tool invalid_tool because its schema is invalid" in caplog.text
  
  
  async def test_oauth_implementation_not_available(

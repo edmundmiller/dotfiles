@@ -26,20 +26,6 @@ let
       dontCheckManifest = true;
     });
 
-  # HACS - Home Assistant Community Store
-  # https://github.com/hacs/integration
-  hacs = buildHassComponent {
-    owner = "hacs";
-    domain = "hacs";
-    version = "2.0.5";
-    src = pkgs.fetchFromGitHub {
-      owner = "hacs";
-      repo = "integration";
-      tag = "2.0.5";
-      hash = "sha256-xj+H75A6iwyGzMvYUjx61aGiH5DK/qYLC6clZ4cGDac=";
-    };
-  };
-
   # Adaptive Lighting - sun-synchronized color temperature & brightness
   # https://github.com/basnijholt/adaptive-lighting
   adaptive-lighting = buildHassComponent {
@@ -294,6 +280,8 @@ in
           "ecobee"
           "met"
           "radio_browser"
+          # Built-in replacement for HACS; Core migrates its existing state.
+          "marketplace"
           # Optional config-flow energy inputs; credentials and policy wiring are pending.
           "smart_meter_texas"
           "co2signal"
@@ -312,7 +300,6 @@ in
 
         customComponents = [
           adaptive-lighting
-          hacs
           eight-sleep
           fitbark
           openclaw-integration

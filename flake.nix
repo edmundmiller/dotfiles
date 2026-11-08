@@ -26,7 +26,7 @@
     nixpkgs-jj.url = "github:NixOS/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     nixpkgs-node.url = "nixpkgs/nixos-25.11"; # newer Node 24 LTS while nixos-unstable catches up
     # Home Assistant and its Python closure can advance without upgrading the host.
-    nixpkgs-hass.url = "github:NixOS/nixpkgs/b1b875982b17dabde9b4a37f3e229e74913e6db3";
+    nixpkgs-hass.url = "github:NixOS/nixpkgs/5773db2da198349e2e8e7b642f7f94bebb857e9c";
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
