@@ -201,6 +201,21 @@ ssh nuc "sudo python3 /var/lib/hass/apply-devices.py /var/lib/hass/devices.yaml"
 
 The script is idempotent — it creates missing areas and only updates devices whose area differs. It also runs automatically as a systemd oneshot after HA starts (`hass-apply-devices.service`).
 
+### Shared electrical supply: Dishwasher and Trashcan
+
+Edmund confirmed on 2026-11-05 that these Nanoleaf Essentials bulbs share one
+physical power switch:
+
+| Bulb       | Light entity               | Matter node |
+| ---------- | -------------------------- | ----------- |
+| Dishwasher | `light.kitchen_dishwasher` | 30          |
+| Trashcan   | `light.kitchen_trashcan`   | 29          |
+
+Switching this supply power-cycles both bulbs. Dishwasher-only electrical
+recovery is not possible with this switch. Approval to recover Dishwasher alone
+does not authorize a shared-switch cycle; that requires approval covering both
+bulbs. A Matter light off/on command does not interrupt the electrical supply.
+
 ## Module Options
 
 ```nix
