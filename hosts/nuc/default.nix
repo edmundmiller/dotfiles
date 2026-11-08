@@ -1572,6 +1572,7 @@ in
     ./backups.nix
     ./ups.nix
     ./hermes-cadu.nix
+    ./amp-orbs.nix
     {
       systemd.services = lib.mkMerge [
         # Keep the native gateway's provider and Buzz credentials explicit at

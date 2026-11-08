@@ -56,7 +56,10 @@ elif path.endswith("ci.yml/runs"):
     result = responses[min(index, len(responses) - 1)]
 elif path.endswith("deploy-nuc.yml/dispatches"):
     payload = json.load(sys.stdin)
-    assert payload == {"ref": "main", "inputs": {"expected_sha": "a" * 40}}
+    inputs = {"expected_sha": "a" * 40}
+    if state.get("orb_pilot"):
+        inputs["orb_pilot"] = "true"
+    assert payload == {"ref": "main", "inputs": inputs}
     with (root / "dispatches").open("a") as out:
         out.write(json.dumps(payload) + "\n")
     if state.get("kill_owner"):
@@ -135,6 +138,18 @@ class NucShippingTests(unittest.TestCase):
         self.assertEqual(receipt["status"], "active")
         self.assertEqual(receipt["nucShipping"]["state"], "dispatched")
         self.assertNotEqual(self.request("--no-deploy").returncode, 0)
+
+    def test_pilot_checks_are_opt_in_and_cannot_change_on_replay(self):
+        self.github["orb_pilot"] = True
+        self.save_github()
+        result = self.request("--orb-pilot")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(json.loads(result.stdout)["orbPilot"])
+        self.assertEqual(self.request("--orb-pilot").returncode, 0)
+        self.assertNotEqual(self.request().returncode, 0)
+        requests = (self.root / "dispatches").read_text().splitlines()
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(json.loads(requests[0])["inputs"]["orb_pilot"], "true")
 
     def test_no_deploy_is_offline_and_cannot_be_rearmed_by_replay(self):
         self.github["auth_error"] = True
@@ -344,6 +359,15 @@ class NucShippingTests(unittest.TestCase):
         ):
             self.assertIn(
                 f"- name: {name}\n        if: inputs.operation == 'deploy'\n",
+                deployment,
+            )
+        for name in (
+            "Check live orb pilot capacity before activation",
+            "Verify live orb pilot backend",
+        ):
+            self.assertIn(
+                f"- name: {name}\n"
+                "        if: inputs.operation == 'deploy' && inputs.orb_pilot\n",
                 deployment,
             )
 

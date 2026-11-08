@@ -15,6 +15,10 @@ on:
         options:
           - deploy
           - ha-diagnostics
+      orb_pilot:
+        description: Run NUC orb capacity preflight and live container-backend smoke tests
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -130,6 +134,12 @@ jobs:
           audience: ${{ vars.TS_AUDIENCE }}
           tags: tag:github-nuc-deploy
           ping: nuc.cinnamon-rooster.ts.net
+      - name: Check live orb pilot capacity before activation
+        if: inputs.operation == 'deploy' && inputs.orb_pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- preflight' < scripts/amp-orb-pilot.sh
       - name: Fetch, build, activate and verify on the NUC
         if: inputs.operation == 'deploy'
         shell: bash
@@ -138,6 +148,12 @@ jobs:
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
             env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$DEPLOY_SHA"
+      - name: Verify live orb pilot backend
+        if: inputs.operation == 'deploy' && inputs.orb_pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- verify' < scripts/amp-orb-pilot.sh
       - name: Record deployed revision
         if: inputs.operation == 'deploy'
         run: |

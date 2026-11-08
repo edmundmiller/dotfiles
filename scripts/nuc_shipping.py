@@ -110,6 +110,8 @@ def shipping_command(args, receipt, path):
             raise ValueError(
                 "NUC shipping already recorded for another revision or owner"
             )
+        if shipping.get("orbPilot", False) != args.orb_pilot:
+            raise ValueError("NUC shipping already recorded with different pilot checks")
         if args.no_deploy and shipping["state"] in ("dispatch_unknown", "dispatched"):
             raise ValueError(
                 "NUC shipping already submitted: cancel the identified GitHub run to revoke it"
@@ -138,6 +140,7 @@ def shipping_command(args, receipt, path):
             "sha": args.sha,
             "ownerThread": args.thread,
             "deploymentAuthority": args.deployment_authority,
+            "orbPilot": args.orb_pilot,
             "state": "request_pending",
             "nextAction": "Submit the authorized request after confirming GitHub access and exact main.",
         }
@@ -162,9 +165,12 @@ def shipping_command(args, receipt, path):
         nextAction="Reconcile dispatch before any retry; acceptance is not deployment success.",
     )
     save_shipping_receipt(path, receipt)
+    inputs = {"expected_sha": shipping["sha"]}
+    if shipping.get("orbPilot", False):
+        inputs["orb_pilot"] = "true"
     github_api(
         f"{API_ROOT}/actions/workflows/deploy-nuc.yml/dispatches",
-        {"ref": "main", "inputs": {"expected_sha": shipping["sha"]}},
+        {"ref": "main", "inputs": inputs},
     )
     shipping["state"] = "dispatched"
     save_shipping_receipt(path, receipt)
@@ -182,6 +188,11 @@ def main():
     )
     request.add_argument("--sha", required=True)
     request.add_argument("--thread", required=True)
+    request.add_argument(
+        "--orb-pilot",
+        action="store_true",
+        help="Run the approved pilot capacity and backend tests during deployment",
+    )
     request.add_argument(
         "--no-deploy",
         action="store_true",

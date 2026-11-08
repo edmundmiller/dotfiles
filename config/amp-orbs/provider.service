@@ -1,0 +1,19 @@
+[Unit]
+Description=Amp rootless orb provider pilot
+Wants=network-online.target
+After=network-online.target
+ConditionUser=amp-orbs
+ConditionFileIsExecutable=%h/.amp/bin/amp
+ConditionPathExists=%h/.config/amp/orb-provider-ready
+
+[Service]
+Type=simple
+Environment=PATH=%h/.amp/bin:/run/wrappers/bin:/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin
+Environment=CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf
+ExecStart=%h/.amp/bin/amp orb provider /etc/amp-orbs/dispatch
+Restart=on-failure
+RestartSec=10
+UMask=0077
+
+[Install]
+WantedBy=default.target
