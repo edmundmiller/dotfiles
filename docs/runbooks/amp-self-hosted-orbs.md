@@ -125,6 +125,14 @@ activation. The post-deploy `verify` mode checks actual rootless resource limits
 disk resume, and snapshot cloning with Amp's image. It deletes only its disposable
 smoke containers and snapshot. This is backend evidence, not an Amp thread test.
 
+To investigate lifecycle failures without rebuilding or restarting anything,
+dispatch the same workflow with `operation=orb-diagnostics` and its exact
+published main SHA. It streams `scripts/amp-orb-pilot.sh diagnostics` through
+the existing OIDC route. It reads controller state, only labeled containers'
+running/start/finish fields, and recent controller journal entries. Amp's
+redactor runs in the dedicated account before journal text leaves the NUC.
+It does not print container environments, stop containers, or touch HA.
+
 The module enables account lingering, installs Amp's mutable CLI independently,
 and places the dispatcher at `/etc/amp-orbs/dispatch`. Provider registration must
 run on the NUC in this account so the CLI stores its token there. Never paste the
