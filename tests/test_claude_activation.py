@@ -66,6 +66,56 @@ class ClaudeActivationTests(unittest.TestCase):
                         not fail,
                     )
 
+    def test_agento11y_injection_failure_keeps_credentials_and_continues(self) -> None:
+        module = AGENTO11Y_HOST.read_text()
+        start = module.index('config_dir="$HOME/.config/agento11y"')
+        end = module.index("${pkgs.llm-agents.codex}/bin/codex plugin marketplace add", start)
+        block = module[start:end] + 'echo continued\n'
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            op = home / "op"
+            op.write_text(
+                '#!/bin/sh\n'
+                'set -eu\n'
+                'if [ "${FAIL_INJECT:-0}" = 1 ]; then\n'
+                '  echo "error initializing client: authorization timeout" >&2; exit 1\n'
+                'fi\n'
+                'while [ "$1" != --out-file ]; do shift; done\n'
+                'echo fresh > "$2"\n'
+            )
+            op.chmod(0o755)
+            block = block.replace("${pkgs._1password-cli}/bin/op", str(op))
+            block = block.replace("${../../config/agento11y/config.env.tpl}", "/dev/null")
+            config = home / ".config/agento11y/config.env"
+            for existing, fail, expected, warning in [
+                (None, False, "fresh\n", None),
+                ("stale\n", True, "stale\n", "keeping existing"),
+                (None, True, None, "no credentials"),
+            ]:
+                with self.subTest(existing=existing, fail=fail):
+                    if config.exists():
+                        config.unlink()
+                    if existing is not None:
+                        config.parent.mkdir(parents=True, exist_ok=True)
+                        config.write_text(existing)
+                    result = subprocess.run(
+                        ["bash", "-c", f"(\nset -eu\n{block})"],
+                        env={**os.environ, "HOME": directory, "FAIL_INJECT": str(int(fail))},
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout, "continued\n")
+                    if expected is None:
+                        self.assertFalse(config.exists())
+                    else:
+                        self.assertEqual(config.read_text(), expected)
+                    if warning is None:
+                        self.assertNotIn("WARNING", result.stderr)
+                    else:
+                        self.assertIn(warning, result.stderr)
+                    self.assertEqual(list(config.parent.glob("config.env.*")), [])
+
     def test_seqeratop_enables_agento11y_after_install(self) -> None:
         module = AGENTO11Y_HOST.read_text()
         install = module.index("agento11y claude install --json")

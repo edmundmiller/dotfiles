@@ -28,9 +28,16 @@
               tmp="$(mktemp "$config_dir/config.env.XXXXXX")"
               trap 'rm -f "$tmp"' EXIT
               export OP_BIOMETRIC_UNLOCK_ENABLED="''${OP_BIOMETRIC_UNLOCK_ENABLED:-true}"
-              ${pkgs._1password-cli}/bin/op inject --force \
-                --in-file ${../../config/agento11y/config.env.tpl} --out-file "$tmp"
-              mv "$tmp" "$config_dir/config.env"
+              # A missed 1Password prompt must not abort the rest of activation,
+              # including linkGeneration. Keep the previous credentials instead.
+              if ${pkgs._1password-cli}/bin/op inject --force \
+                --in-file ${../../config/agento11y/config.env.tpl} --out-file "$tmp"; then
+                mv "$tmp" "$config_dir/config.env"
+              elif [ -e "$config_dir/config.env" ]; then
+                echo "WARNING: 1Password injection failed; keeping existing $config_dir/config.env" >&2
+              else
+                echo "WARNING: 1Password injection failed; agento11y has no credentials until the next rebuild" >&2
+              fi
 
               ${pkgs.llm-agents.codex}/bin/codex plugin marketplace add grafana/agento11y \
                 --ref 733c5ad8675dacbadab529bb24625ef25c3b8508 --json
