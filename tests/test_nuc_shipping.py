@@ -13,6 +13,7 @@ import tempfile
 import textwrap
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/nuc_shipping.py"
@@ -512,6 +513,7 @@ class HaMonitorTests(unittest.TestCase):
         }
         self.exists = False
         self.channels = "intended"
+        self.api_failure_path = None
         self.writes = []
         self.pings = [
             {"type": "success", "date": (self.now - timedelta(seconds=seconds)).isoformat(),
@@ -527,6 +529,8 @@ class HaMonitorTests(unittest.TestCase):
 
     def api(self, req, **_kwargs):
         path = req.full_url.removeprefix("https://healthchecks.io/api/v3")
+        if path == self.api_failure_path:
+            raise HTTPError(req.full_url, 403, "private-reason", {}, io.BytesIO(b"private-response"))
         if req.data is not None:
             self.assertEqual(path, "/checks/")
             self.writes.append(json.loads(req.data))
@@ -595,6 +599,27 @@ class HaMonitorTests(unittest.TestCase):
         self.pings[0]["body_url"] = None
         self.pings[1]["date"] = (self.now - timedelta(minutes=6)).isoformat()
         self.assertEqual(self.invoke("status", "--require-live")[0], 1)
+        self.assertEqual(self.writes, [])
+
+    def test_failure_reports_safe_cause_and_prior_monitor_presence_without_writes(self):
+        for path, phase, exists in (
+            ("/checks/?slug=nuc-ha-runtime", "find_monitor", None),
+            ("/checks/a6bbb4df-b118-4262-9881-9939f3ac7e76", "read_reference_check", True),
+        ):
+            with self.subTest(phase=phase):
+                self.exists = True
+                self.api_failure_path = path
+                code, report = self.invoke("status")
+                self.assertEqual(code, 2)
+                self.assertEqual(report["phase"], phase)
+                self.assertEqual(report["http_status"], 403)
+                self.assertEqual(report["monitor_existed_before_setup"], exists)
+        self.key.unlink()
+        code, report = self.invoke("status")
+        self.assertEqual(code, 2)
+        self.assertEqual(report["phase"], "read_api_key")
+        self.assertEqual(report["error_type"], "FileNotFoundError")
+        self.assertIsNone(report["http_status"])
         self.assertEqual(self.writes, [])
 
     def test_signal_correlation_distinguishes_false_alarms_and_coverage_gaps(self):

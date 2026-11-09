@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 API = "https://healthchecks.io/api/v3"
@@ -28,19 +29,26 @@ def request(key, path, payload=None):
 
 
 def inspect(args):
+    args.phase = "read_api_key"
     key = Path(args.api_key_file).read_text().strip()
+    args.phase = "find_monitor"
+    checks = request(key, f"/checks/?slug={SLUG}")["checks"]
+    args.monitor_exists = bool(checks)
+    if len(checks) > 1:
+        raise ValueError("Heartbeat slug is ambiguous")
+    args.phase = "read_reference_check"
     reference = request(key, f"/checks/{REFERENCE}")
     channels = reference["channels"]
+    args.phase = "list_notification_channels"
     available = request(key, "/channels/")["channels"]
+    args.phase = "validate_notification_channels"
     assigned = set(channels.split(",")) - {""}
     if not assigned or not assigned <= {channel["id"] for channel in available}:
         raise ValueError("Existing NUC notification channels are missing")
-    checks = request(key, f"/checks/?slug={SLUG}")["checks"]
-    if len(checks) > 1:
-        raise ValueError("Heartbeat slug is ambiguous")
     if not checks and args.action == "setup":
         # A retry first reads the slug again. Never blindly retry a POST after
         # an uncertain result, and never modify the reference check or channels.
+        args.phase = "create_monitor"
         check = request(
             key,
             "/checks/",
@@ -59,6 +67,7 @@ def inspect(args):
         check = checks[0]
     else:
         raise ValueError("Heartbeat has not been provisioned")
+    args.phase = "validate_monitor"
     if (
         check["slug"] != SLUG
         or check["timeout"] != 300
@@ -86,6 +95,7 @@ def inspect(args):
 
     cutoff = datetime.now(UTC) - timedelta(hours=args.since_hours)
     uuid = check["uuid"]
+    args.phase = "read_ping_history"
     pings = request(key, f"/checks/{uuid}/pings/")["pings"]
     result["pings"] = [
         {"type": ping["type"], "date": ping["date"], "has_body": bool(ping["body_url"])}
@@ -93,7 +103,9 @@ def inspect(args):
         if datetime.fromisoformat(ping["date"]) >= cutoff
     ]
     result["ping_history_oldest_available"] = pings[-1]["date"] if pings else None
+    args.phase = "read_status_changes"
     result["flips"] = request(key, f"/checks/{uuid}/flips/?start={int(cutoff.timestamp())}")
+    args.phase = "read_health_journal"
     journal = subprocess.run(
         ["journalctl", "-u", "hass-health.service", "--since", cutoff.isoformat(), "-o", "cat", "--no-pager"],
         check=True, capture_output=True, text=True, timeout=20,
@@ -132,6 +144,7 @@ def inspect(args):
         state = preceding[-1]["status"] if preceding else "uncorrelated"
         correlation[f"{ping['type']}_{state}"] += 1
     result["ping_report_correlation"] = dict(correlation)
+    args.phase = "read_timer_state"
     result["timer_active"] = subprocess.run(
         ["systemctl", "is-active", "--quiet", "hass-health.timer"],
         check=False, timeout=10,
@@ -147,6 +160,7 @@ def main():
     parser.add_argument("--since-hours", type=int, choices=range(1, 25), default=2)
     parser.add_argument("--require-live", action="store_true")
     args = parser.parse_args()
+    args.monitor_exists = None
     try:
         result = inspect(args)
         print(json.dumps(result, sort_keys=True))
@@ -166,9 +180,18 @@ def main():
                 and not any(ping["has_body"] for ping in result["pings"])
             ) else 1
         return 0
-    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         # Never print API responses, credential contents, addresses, or journal lines.
-        print(json.dumps({"status": "unknown", "error": "Monitor inspection failed. For uncertain setup, read the existing slug before retrying; never blindly repeat a write."}))
+        if isinstance(error, HTTPError):
+            error.close()
+        print(json.dumps({
+            "status": "unknown",
+            "phase": args.phase,
+            "error_type": type(error).__name__,
+            "http_status": error.code if isinstance(error, HTTPError) else None,
+            "monitor_existed_before_setup": args.monitor_exists,
+            "error": "Monitor inspection failed. For uncertain setup, read the existing slug before retrying; never blindly repeat a write.",
+        }))
         return 2
 
 
