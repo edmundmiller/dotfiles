@@ -97,6 +97,12 @@
 
     llm-agents.url = "github:numtide/llm-agents.nix";
     llm-agents.inputs.systems.follows = "systems";
+    # Newer llm-agents revision for agents upgraded ahead of the shared input
+    # (overlays/codex and overlays/pi). It keeps its own nixpkgs so those
+    # packages still substitute from cache.numtide.com. Bump the rev here, then
+    # run `nix flake lock`.
+    llm-agents-edge.url = "github:numtide/llm-agents.nix/2add2fd83bf01a23357d401ba24155e35d9d93d2";
+    llm-agents-edge.inputs.systems.follows = "systems";
 
     hunk = {
       url = "github:modem-dev/hunk/v0.24.0";
@@ -358,8 +364,10 @@
             jujutsu = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.jujutsu;
           };
 
-          # Needs `inputs`, so it cannot be auto-imported by mapModules.
+          # Need `inputs`, so they cannot be auto-imported by mapModules.
+          codex = import ./overlays/codex inputs;
           ghui = import ./overlays/ghui inputs;
+          pi = import ./overlays/pi inputs;
           hermes-agent = import ./overlays/hermes-agent { inherit inputs; };
           home-assistant-mcp-schema-compat = import ./overlays/home-assistant-mcp-schema-compat {
             inherit inputs;

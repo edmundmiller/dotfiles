@@ -66,10 +66,14 @@ fresh shell to discard exports an earlier loader may already have injected.
 
 ## Pi 1.0 and native MCP
 
-`overlays/pi/default.nix` selects an independently pinned upstream Pi package.
-This includes the codemode worker and native platform assets without upgrading
-the other agents in the shared `llm-agents` input. Check the effective version
-with `nix eval --raw .#pi.version`, then build with `nix build .#pi`.
+`overlays/pi/default.nix` selects the upstream Pi package from the locked
+`llm-agents-edge` flake input, which Codex shares. This includes the codemode
+worker and native platform assets without upgrading the other agents in the
+shared `llm-agents` input. When the local pins match that input's Pi release,
+the overlay uses upstream's build unchanged so it substitutes from
+`cache.numtide.com`; otherwise it rebuilds the upstream recipe from the local
+pins. Check the effective version with `nix eval --raw .#pi.version`, then
+build with `nix build .#pi`.
 
 Pi 1.5.0 uses the upstream build recipe with local `overlays/pi/hashes.json`
 and `package-lock.json` pins. The wrapped CLI defaults `PI_SELF_UPDATE_COMMAND`

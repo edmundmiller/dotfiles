@@ -1,10 +1,24 @@
-final: prev:
+inputs: final: prev:
 let
   # Reuse the upstream build recipe without upgrading the other agents.
-  source = builtins.getFlake "github:numtide/llm-agents.nix/8a5736991e143964a1494333354822ceadd32b05";
+  source = inputs.llm-agents-edge;
   upstream = source.packages.${final.stdenv.hostPlatform.system}.pi;
   buildPkgs = source.inputs.nixpkgs.legacyPackages.${final.stdenv.hostPlatform.system};
   versionData = final.lib.importJSON ./hashes.json;
+  # Registry tarballs are immutable per version and npmDepsHash covers the
+  # resolved dependencies, so matching pins can use upstream's cached build.
+  matchesUpstream =
+    upstream.version == versionData.version
+    && (upstream.npmDepsHash or null) == versionData.npmDepsHash;
+  updater = final.writeShellApplication {
+    name = "pi-update";
+    runtimeInputs = [
+      final.python3
+      buildPkgs.nodejs_24
+      buildPkgs.prefetch-npm-deps
+    ];
+    text = ''exec python3 ${./update.py} "$@"'';
+  };
   src = final.runCommand "pi-${versionData.version}-src-with-lock" { } ''
     mkdir -p $out
     tar -xzf ${
@@ -19,25 +33,22 @@ let
 in
 {
   llm-agents = (prev.llm-agents or { }) // {
-    pi = upstream.overrideAttrs (old: {
-      inherit src;
-      inherit (versionData) version npmDepsHash;
-      npmDeps = old.npmDeps.overrideAttrs {
+    pi = upstream.overrideAttrs (
+      old:
+      final.lib.optionalAttrs (!matchesUpstream) {
         inherit src;
-        name = "pi-${versionData.version}-npm-deps";
-        outputHash = versionData.npmDepsHash;
-      };
-      passthru = (old.passthru or { }) // {
-        updater = final.writeShellApplication {
-          name = "pi-update";
-          runtimeInputs = [
-            final.python3
-            buildPkgs.nodejs_24
-            buildPkgs.prefetch-npm-deps
-          ];
-          text = ''exec python3 ${./update.py} "$@"'';
+        inherit (versionData) version npmDepsHash;
+        npmDeps = old.npmDeps.overrideAttrs {
+          inherit src;
+          name = "pi-${versionData.version}-npm-deps";
+          outputHash = versionData.npmDepsHash;
         };
-      };
-    });
+      }
+      // {
+        passthru = (old.passthru or { }) // {
+          inherit updater;
+        };
+      }
+    );
   };
 }
