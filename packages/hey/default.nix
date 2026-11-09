@@ -2,6 +2,8 @@
   clang,
   lib,
   mise,
+  # An absolute mise outside the store, such as Homebrew's.
+  misePath ? lib.getExe mise,
   my,
   python3,
   stdenvNoCC,
@@ -22,7 +24,7 @@ stdenvNoCC.mkDerivation {
 
   buildPhase = ''
     runHook preBuild
-    bash build hey ${lib.getExe mise}
+    bash build hey ${misePath}
     runHook postBuild
   '';
 

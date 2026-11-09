@@ -17,6 +17,7 @@ let
 
   claudeEnabled = attrByPath [ "modules" "shell" "claude" "enable" ] false config;
   containersEnabled = attrByPath [ "modules" "services" "containers" "enable" ] false config;
+  miseHomebrew = attrByPath [ "modules" "shell" "mise" "homebrew" ] false config;
 
   aliasPathFor =
     dir:
@@ -91,35 +92,45 @@ in
         envFiles = mkBefore autoEnvFiles;
       };
 
-      user.packages = with pkgs; [
-        zsh
-        antidote
-        unstable.atuin
-        bat
-        btop
-        eza
-        fd
-        unstable.fzf
-        gh
-        git-lfs
-        glow
-        (ripgrep.override { withPCRE2 = true; })
-        lazygit
-        neovim
-        procs
-        difftastic
-        hyperfine
-        just
-        sd
-        unstable.yazi
-        zoxide
-        mise
-        nushell
-        my.hey # Thin compatibility spelling for project-local mise tasks
-        my.jsongrep # `jg` path-query tool for JSON/YAML/TOML
-        jq
-        my.zsh-bench
-      ];
+      user.packages =
+        with pkgs;
+        [
+          zsh
+          antidote
+          unstable.atuin
+          bat
+          btop
+          eza
+          fd
+          unstable.fzf
+          gh
+          git-lfs
+          glow
+          (ripgrep.override { withPCRE2 = true; })
+          lazygit
+          neovim
+          procs
+          difftastic
+          hyperfine
+          just
+          sd
+          unstable.yazi
+          zoxide
+          nushell
+          my.jsongrep # `jg` path-query tool for JSON/YAML/TOML
+          jq
+          my.zsh-bench
+        ]
+        # hey: thin compatibility spelling for project-local mise tasks.
+        ++ (
+          if miseHomebrew then
+            [ (pkgs.my.hey.override { misePath = "${config.homebrew.prefix}/bin/mise"; }) ]
+          else
+            [
+              pkgs.mise
+              pkgs.my.hey
+            ]
+        );
 
       env = {
         ZDOTDIR = "$XDG_CONFIG_HOME/zsh";

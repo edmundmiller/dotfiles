@@ -34,7 +34,11 @@
         druk.enable = true;
         skillkit.enable = true;
         direnv.enable = true;
-        mise.enable = true;
+        mise = {
+          enable = true;
+          # Frontier's min_version is ahead of nixpkgs' mise.
+          homebrew = true;
+        };
         git.enable = true;
         git.hunk.enable = true;
         jj.enable = true;
