@@ -34,6 +34,14 @@ in
         source = "${configDir}/mise";
         recursive = true;
       };
+    }
+    # Shims load the cwd's mise.toml first, so an untrusted checkout breaks every
+    # shimmed tool. Older mise rejects the setting as unknown.
+    // optionalAttrs (versionAtLeast pkgs.mise.version "2026.11.2") {
+      "mise/conf.d/settings.toml".text = ''
+        [settings]
+        activate_shims = false
+      '';
     };
   };
 }
