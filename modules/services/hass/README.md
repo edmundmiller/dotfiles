@@ -64,6 +64,67 @@ provides those defaults. Run the isolated CLI tests with
 `uv run --with websockets==15.0.1 python modules/services/hass/_tests/test_hass_health.py`.
 `hey check modules/services/hass` also runs them through Nix.
 
+## Continuous runtime monitoring
+
+NUC enables `hass-health.timer`, which runs the same read-only health check every
+two minutes. It waits twelve minutes after host boot for integration startup
+retries. No automatic restart, configuration write, or Repair dismissal occurs.
+The monitor checks HA connectivity/authentication, the running version, every
+enabled integration, five critical entities, and retained automation/script errors.
+Timeouts and incomplete inspection also fail the check.
+
+The check reports success or failure to Healthchecks.io under slug
+`nuc-ha-runtime`, using the existing project ping key through a systemd credential.
+The HA token is also a systemd credential. Neither secret goes in the Nix store
+or process arguments. Only the result is sent externally, not HA reports or
+trace data. The privacy-filtered report stays in the local systemd journal.
+
+Before activating the timer, create a Healthchecks.io check in the project that
+owns the existing `healthchecks-ping-key`, with name `nuc/ha-runtime`, slug
+`nuc-ha-runtime`, period 5 minutes, grace 5 minutes, and the project's intended
+notification channels. The approved GitHub deployment uses
+`nuc_shipping.py request --ha-monitor` to provision it before activation, copying
+only the notification channels assigned to the existing NUC Gatus dead-man's
+switch. Missing channels, ambiguous slugs, and conflicting existing settings
+fail closed. A replay reads an existing check instead of modifying it. The timer
+deliberately does not auto-create checks with
+an unspecified cadence. Failure pings alert immediately; missing pings detect a
+stopped timer, host outage, or broken notification path after ten minutes.
+Check creation and host activation require explicit authorization. Verify the
+actual notification channels and a received success ping before calling it live.
+
+The monitor's `expectedWarnings` exempts only the existing
+`backup/automatic_backup_failed@2026-04-17T04:28:36.370422+00:00` warning from
+alert failure. It remains in the report and in HA's Repairs UI. A new creation
+date, another Repair, or an escalation to error still fails. Ordinary
+`hass-health health` stays strict unless `--expected-warning DOMAIN/ISSUE_ID@CREATED`
+is explicitly supplied. This exemption does not establish restic backup health.
+
+After authorized deployment, inspect `systemctl list-timers hass-health`,
+`systemctl status hass-health.service`, and `journalctl -u hass-health.service`.
+Verify the external check's status and last ping too. Stopping or starting the
+timer changes live monitoring; starting the service also writes a Healthchecks
+ping. Those actions are not read-only diagnostics.
+
+The deployment waits 280 seconds for automatic timer runs, then verifies an
+active timer, two recent successful heartbeats, fresh local HA reports, and no
+heartbeat bodies. `operation=ha-monitor-diagnostics` in the same guarded workflow
+is read-only. It returns heartbeat metadata, notification channel kinds, status
+changes, local health counts, and ping/report correlation counts. Full HA report
+contents, notification addresses, keys, and ping bodies remain on NUC. A failure
+ping matching a healthy report is a possible false alarm; a success matching an
+unhealthy report is a possible false negative. An unmatched ping is a coverage
+gap, not proof of either. Correlation uses the preceding 90 seconds, so unavailable
+or delayed API history must be reported separately.
+
+Initially assess signal quality over 24 hours after first live verification,
+sampling every two hours. Compare alerts with HA check failures and local report
+availability, not just the external status. API ping history can be capped, while
+local journal counts and status changes cover the requested window. Stop the
+bounded follow-up after the final assessment; this does not stop the persistent
+NUC timer. Physical device outcomes and restic backup freshness remain outside
+this monitor's coverage. No monitoring follow-up authorizes automatic repairs.
+
 ## FitBark
 
 [FitBark](https://github.com/saubury/ha-fitbark) is Nix-managed. Do not install

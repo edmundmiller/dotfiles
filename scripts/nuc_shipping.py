@@ -116,6 +116,8 @@ def shipping_command(args, receipt, path):
             raise ValueError("NUC shipping already recorded with different pilot checks")
         if shipping.get("recoverOrbPilot", False) != args.recover_orb_pilot:
             raise ValueError("NUC shipping already recorded with different pilot recovery")
+        if shipping.get("haMonitor", False) != args.ha_monitor:
+            raise ValueError("NUC shipping already recorded with different HA monitor setup")
         if args.no_deploy and shipping["state"] in ("dispatch_unknown", "dispatched"):
             raise ValueError(
                 "NUC shipping already submitted: cancel the identified GitHub run to revoke it"
@@ -146,6 +148,7 @@ def shipping_command(args, receipt, path):
             "deploymentAuthority": args.deployment_authority,
             "orbPilot": args.orb_pilot,
             "recoverOrbPilot": args.recover_orb_pilot,
+            "haMonitor": args.ha_monitor,
             "state": "request_pending",
             "nextAction": "Submit the authorized request after confirming GitHub access and exact main.",
         }
@@ -175,6 +178,8 @@ def shipping_command(args, receipt, path):
         inputs["orb_pilot"] = "true"
     if shipping.get("recoverOrbPilot", False):
         inputs["recover_orb_pilot"] = "true"
+    if shipping.get("haMonitor", False):
+        inputs["ha_monitor"] = "true"
     github_api(
         f"{API_ROOT}/actions/workflows/deploy-nuc.yml/dispatches",
         {"ref": "main", "inputs": inputs},
@@ -204,6 +209,11 @@ def main():
         "--recover-orb-pilot",
         action="store_true",
         help="Stop only dedicated pilot containers and release inherited locks; preserve disks",
+    )
+    request.add_argument(
+        "--ha-monitor",
+        action="store_true",
+        help="Create the approved HA heartbeat using existing channels and verify live timer runs",
     )
     request.add_argument(
         "--no-deploy",

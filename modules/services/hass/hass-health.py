@@ -165,7 +165,16 @@ def health(ha, args, now):
             for issue in ha.request("repairs/list_issues")["issues"]
             if not issue.get("ignored")
         ]
-        return check("unhealthy" if issues else "healthy", issues=issues)
+        failures = [
+            issue
+            for issue in issues
+            if issue["severity"] != "warning"
+            or f"{issue['domain']}/{issue['issue_id']}@{issue['created']}"
+            not in args.expected_warning
+        ]
+        return check(
+            "unhealthy" if failures else "healthy", issues=issues, failures=failures
+        )
 
     def entities():
         states = {state["entity_id"]: state for state in ha.request("get_states")}
@@ -291,6 +300,13 @@ def parser():
         "--entity",
         action="append",
         help="Critical entity ID; repeat to supply an explicit list.",
+    )
+    status.add_argument(
+        "--expected-warning",
+        action="append",
+        default=[],
+        metavar="DOMAIN/ISSUE_ID@CREATED",
+        help="Report this exact dated Repair warning without failing; repeat as needed. Errors always fail.",
     )
     status.add_argument("--since-hours", type=positive_number, default=24)
     traces = commands.add_parser(

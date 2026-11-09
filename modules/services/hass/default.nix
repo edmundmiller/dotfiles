@@ -149,7 +149,7 @@ in
     ./_domains/sleep
     ./_domains/tv.nix
     ./_domains/vacation.nix
-    ./observability.nix
+    ./_observability.nix
     ./sweep-unmanaged.nix
     ./validate-config.nix
   ];

@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -15,7 +15,12 @@ on:
         options:
           - deploy
           - ha-diagnostics
+          - ha-monitor-diagnostics
           - orb-diagnostics
+      ha_monitor:
+        description: Create the HA heartbeat with existing NUC notification channels and verify live timer runs (requires approval)
+        default: false
+        type: boolean
       orb_pilot:
         description: Run NUC orb capacity preflight and live container-backend smoke tests
         default: false
@@ -158,6 +163,19 @@ jobs:
           set -euo pipefail
           test "$ORB_PILOT" = true
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- recover' < scripts/amp-orb-pilot.sh
+      - name: Configure approved HA heartbeat before activation
+        if: inputs.operation == 'deploy' && inputs.ha_monitor
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Expand hostname on NUC, not the GitHub runner.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            uname -a
+            exec sudo -n uv run --no-project python - setup
+          ' < modules/services/hass/monitor-healthchecks.py
       - name: Fetch, build, activate and verify on the NUC
         if: inputs.operation == 'deploy'
         shell: bash
@@ -177,6 +195,25 @@ jobs:
         run: |
           printf 'Deployed dotfiles [%s](https://github.com/edmundmiller/dotfiles/commit/%s) to NUC.\n' \
             "$DEPLOY_SHA" "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+      - name: Allow two automatic HA monitor runs
+        if: inputs.operation == 'deploy' && inputs.ha_monitor
+        run: sleep 280
+      - name: Inspect HA heartbeat and privacy-filtered runtime aggregates
+        if: (inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics'
+        env:
+          REQUIRE_LIVE: ${{ inputs.operation == 'deploy' && inputs.ha_monitor && '--require-live' || '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The helper exports only heartbeat metadata and local journal aggregates.
+          # Credentials and complete HA reports never leave NUC.
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "
+            set -eu
+            test \"\$(hostname)\" = nuc
+            printf 'configurationRevision=%s\\n' \"\$(nixos-version --configuration-revision)\"
+            systemctl show hass-health.service -p ActiveState -p SubState -p Result -p ExecMainStatus
+            exec sudo -n uv run --no-project python - status $REQUIRE_LIVE
+          " < modules/services/hass/monitor-healthchecks.py
       - name: Restart Bluetooth once and allow automatic HA retry
         if: inputs.operation == 'ha-diagnostics' && inputs.restart_bluetooth
         shell: bash

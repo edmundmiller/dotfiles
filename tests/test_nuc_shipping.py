@@ -1,14 +1,18 @@
 """Real CLI/receipt and workflow shell tests; only GitHub and sleep are simulated."""
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime, timedelta
+import io
 import json
 import os
 from pathlib import Path
+import runpy
 import subprocess
 import sys
 import tempfile
 import textwrap
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/nuc_shipping.py"
@@ -61,6 +65,8 @@ elif path.endswith("deploy-nuc.yml/dispatches"):
         inputs["orb_pilot"] = "true"
     if state.get("recover_orb_pilot"):
         inputs["recover_orb_pilot"] = "true"
+    if state.get("ha_monitor"):
+        inputs["ha_monitor"] = "true"
     assert payload == {"ref": "main", "inputs": inputs}
     with (root / "dispatches").open("a") as out:
         out.write(json.dumps(payload) + "\n")
@@ -163,6 +169,16 @@ class NucShippingTests(unittest.TestCase):
         self.assertTrue(json.loads(result.stdout)["recoverOrbPilot"])
         self.assertNotEqual(self.request("--orb-pilot").returncode, 0)
         self.assertEqual(self.request("--orb-pilot", "--recover-orb-pilot").returncode, 0)
+        self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
+
+    def test_ha_monitor_setup_is_opt_in_and_cannot_change_on_replay(self):
+        self.github["ha_monitor"] = True
+        self.save_github()
+        result = self.request("--ha-monitor")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(json.loads(result.stdout)["haMonitor"])
+        self.assertNotEqual(self.request().returncode, 0)
+        self.assertEqual(self.request("--ha-monitor").returncode, 0)
         self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
 
     def test_no_deploy_is_offline_and_cannot_be_rearmed_by_replay(self):
@@ -390,6 +406,16 @@ class NucShippingTests(unittest.TestCase):
             deployment,
         )
         self.assertIn("default: false", triggers.split("restart_bluetooth:", 1)[1])
+        self.assertIn("default: false", triggers.split("ha_monitor:", 1)[1])
+        for name in (
+            "Configure approved HA heartbeat before activation",
+            "Allow two automatic HA monitor runs",
+        ):
+            self.assertIn(
+                f"- name: {name}\n"
+                "        if: inputs.operation == 'deploy' && inputs.ha_monitor\n",
+                deployment,
+            )
         self.assertIn(
             "- name: Release inherited pilot locks before activation\n"
             "        if: inputs.operation == 'deploy' && inputs.recover_orb_pilot\n",
@@ -470,6 +496,120 @@ class NucShippingTests(unittest.TestCase):
                 self.assertEqual(result.returncode, code, result.stderr)
                 self.assertEqual(json.loads(result.stdout), report)
                 self.assertIn("backup_repair", (self.root / "summary").read_text())
+
+
+class HaMonitorTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.key = Path(temp.name) / "key"
+        self.key.write_text("private-api-key")
+        self.now = datetime.now(UTC)
+        self.check = {
+            "uuid": "monitor", "name": "nuc/ha-runtime", "slug": "nuc-ha-runtime",
+            "timeout": 300, "grace": 300, "channels": "intended",
+            "status": "up", "n_pings": 2, "last_ping": self.now.isoformat(),
+        }
+        self.exists = False
+        self.channels = "intended"
+        self.writes = []
+        self.pings = [
+            {"type": "success", "date": (self.now - timedelta(seconds=seconds)).isoformat(),
+             "body_url": None, "remote_addr": "private-address"}
+            for seconds in (0, 120)
+        ]
+        self.reports = [
+            {"schema_version": 1, "observed_at": (self.now - timedelta(seconds=seconds + 1)).isoformat(),
+             "status": "healthy", "checks": {"repairs": {"status": "healthy", "issues": ["private-HA-report"]}}}
+            for seconds in (120, 0)
+        ]
+        self.timer_active = True
+
+    def api(self, req, **_kwargs):
+        path = req.full_url.removeprefix("https://healthchecks.io/api/v3")
+        if req.data is not None:
+            self.assertEqual(path, "/checks/")
+            self.writes.append(json.loads(req.data))
+            self.exists = True
+            result = self.check
+        elif path == "/checks/a6bbb4df-b118-4262-9881-9939f3ac7e76":
+            result = {"channels": self.channels}
+        elif path == "/channels/":
+            result = {"channels": [{"id": "intended", "kind": "email"}, {"id": "unrelated", "kind": "sms"}]}
+        elif path == "/checks/?slug=nuc-ha-runtime":
+            result = {"checks": [self.check] if self.exists else []}
+        elif path == "/checks/monitor/pings/":
+            result = {"pings": self.pings}
+        elif path.startswith("/checks/monitor/flips/?start="):
+            result = []
+        else:
+            self.fail(f"Unexpected request path: {path}")
+        return io.StringIO(json.dumps(result))
+
+    def command(self, args, **_kwargs):
+        if args[0] == "journalctl":
+            return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, self.reports)))
+        self.assertEqual(args, ["systemctl", "is-active", "--quiet", "hass-health.timer"])
+        return subprocess.CompletedProcess(args, 0 if self.timer_active else 3)
+
+    def invoke(self, action, *extra):
+        output = io.StringIO()
+        with patch("urllib.request.urlopen", side_effect=self.api), patch("subprocess.run", side_effect=self.command), patch("sys.stdout", output), patch("sys.argv", ["monitor-healthchecks.py", action, "--api-key-file", str(self.key), *extra]):
+            with self.assertRaises(SystemExit) as exit_status:
+                runpy.run_path(str(ROOT / "modules/services/hass/monitor-healthchecks.py"), run_name="__main__")
+        self.assertNotIn("private", output.getvalue())
+        return exit_status.exception.code, json.loads(output.getvalue())
+
+    def test_setup_inherits_only_intended_channels_and_replay_does_not_write(self):
+        code, report = self.invoke("setup")
+        self.assertEqual(code, 0)
+        self.assertEqual(report["notification_channel_kinds"], ["email"])
+        self.assertEqual(len(self.writes), 1)
+        self.assertEqual(self.writes[0]["channels"], "intended")
+        self.assertEqual(self.writes[0]["unique"], ["slug"])
+        self.assertEqual(self.writes[0]["timeout"], 300)
+        self.assertEqual(self.writes[0]["grace"], 300)
+        self.assertEqual(self.invoke("setup")[0], 0)
+        self.assertEqual(len(self.writes), 1)
+
+    def test_missing_channels_or_conflicting_settings_fail_without_writes(self):
+        self.channels = ""
+        self.assertEqual(self.invoke("setup")[0], 2)
+        self.channels = "intended"
+        self.exists = True
+        self.check["timeout"] = 86400
+        self.assertEqual(self.invoke("setup")[0], 2)
+        self.assertEqual(self.writes, [])
+
+    def test_live_verification_requires_recent_reports_pings_and_active_timer(self):
+        self.exists = True
+        code, report = self.invoke("status", "--require-live")
+        self.assertEqual(code, 0)
+        self.assertEqual(report["ping_report_correlation"], {"success_healthy": 2})
+        self.assertEqual(report["journal"]["statuses"], {"healthy": 2})
+        self.timer_active = False
+        self.assertEqual(self.invoke("status", "--require-live")[0], 1)
+        self.timer_active = True
+        self.pings[0]["body_url"] = "private-body-url"
+        self.assertEqual(self.invoke("status", "--require-live")[0], 1)
+        self.pings[0]["body_url"] = None
+        self.pings[1]["date"] = (self.now - timedelta(minutes=6)).isoformat()
+        self.assertEqual(self.invoke("status", "--require-live")[0], 1)
+        self.assertEqual(self.writes, [])
+
+    def test_signal_correlation_distinguishes_false_alarms_and_coverage_gaps(self):
+        self.exists = True
+        self.pings[0]["type"] = "fail"
+        self.pings[1]["date"] = (self.now - timedelta(minutes=4)).isoformat()
+        code, report = self.invoke("status")
+        self.assertEqual(code, 0)
+        self.assertEqual(report["ping_report_correlation"], {"fail_healthy": 1, "success_uncorrelated": 1})
+        self.reports[-1]["status"] = "unhealthy"
+        self.reports[-1]["checks"]["integrations"] = {"status": "unhealthy"}
+        _, report = self.invoke("status")
+        self.assertEqual(report["ping_report_correlation"]["fail_unhealthy"], 1)
+        self.assertEqual(report["journal"]["failing_checks"], {"integrations": 1})
+        self.assertEqual(self.writes, [])
 
 
 if __name__ == "__main__":

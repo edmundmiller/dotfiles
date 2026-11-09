@@ -268,6 +268,13 @@ python3 scripts/nuc_shipping.py --receipt "$receipt" request \
   --deployment-authority "$authorization_reference"
 ```
 
+For the explicitly approved HA runtime monitor rollout, add `--ha-monitor`.
+This default-off flag provisions `nuc/ha-runtime` using the existing NUC Gatus
+notification channels before activation, then verifies two live automatic timer
+runs and received heartbeats. It cannot change on a replay of a recorded request.
+Later `operation=ha-monitor-diagnostics` runs only read heartbeat metadata and
+local HA health aggregates. See the [HA monitoring contract](../../modules/services/hass/README.md#continuous-runtime-monitoring).
+
 The request command checks current main, records a pre-dispatch claim, and sends
 `expected_sha` to the existing workflow. It never reads or waits for CI. An
 authentication failure before dispatch leaves `request_pending`, which can be

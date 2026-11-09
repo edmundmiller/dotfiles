@@ -171,6 +171,53 @@ class HassHealthTest(unittest.TestCase):
             ["restic_backup_freshness", "physical_device_outcomes"],
         )
 
+    def test_expected_warning_is_retained_but_new_or_escalated_repairs_fail(self):
+        warning = {
+            "domain": "backup",
+            "issue_id": "automatic_backup_failed",
+            "created": "2026-04-17T04:28:36.370422+00:00",
+            "severity": "warning",
+        }
+        self.responses["repairs/list_issues"] = {"issues": [warning]}
+        code, _ = self.health()
+        self.assertEqual(code, 1, "Diagnostics must stay strict by default")
+        expected = (
+            "--expected-warning",
+            "backup/automatic_backup_failed@2026-04-17T04:28:36.370422+00:00",
+        )
+        code, report = self.health(*expected)
+        self.assertEqual(code, 0)
+        self.assertEqual(report["checks"]["repairs"]["issues"], [warning])
+        self.assertEqual(report["checks"]["repairs"]["failures"], [])
+
+        for change in (
+            {"created": "2026-11-09T04:28:36.370422+00:00"},
+            {"severity": "error"},
+            {"domain": "other"},
+            {"issue_id": "other_failure"},
+        ):
+            with self.subTest(change=change):
+                unexpected = warning | change
+                self.responses["repairs/list_issues"] = {
+                    "issues": [warning, unexpected]
+                }
+                code, report = self.health(*expected)
+                self.assertEqual(code, 1)
+                self.assertEqual(
+                    report["checks"]["repairs"]["failures"], [unexpected]
+                )
+
+        self.responses["repairs/list_issues"] = {"issues": [warning]}
+        self.responses["config_entries/get"][0]["state"] = "setup_retry"
+        code, report = self.health(*expected)
+        self.assertEqual(code, 1)
+        self.assertEqual(report["checks"]["integrations"]["status"], "unhealthy")
+        self.denied = "repairs/list_issues"
+        self.responses["config_entries/get"][0]["state"] = "loaded"
+        code, report = self.health(*expected)
+        self.assertEqual(code, 2)
+        self.assertEqual(report["checks"]["repairs"]["status"], "unknown")
+
     def test_ignored_integrations_are_excluded_but_enabled_unloaded_entries_fail(self):
         self.responses["config_entries/get"].append(
             {
