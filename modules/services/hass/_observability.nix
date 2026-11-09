@@ -38,6 +38,7 @@ in
         description = "Inspect HA runtime health and report to Healthchecks.io";
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
+        unitConfig.ConditionPathExists = "/var/lib/hass-health/${cfg.slug}.ready";
         serviceConfig = {
           Type = "oneshot";
           DynamicUser = true;
@@ -79,6 +80,8 @@ in
       systemd.timers.hass-health = lib.mkIf cfg.enable {
         description = "Inspect HA runtime health every two minutes";
         wantedBy = [ "timers.target" ];
+        # Ordinary deployments must not arm a heartbeat before approved setup.
+        unitConfig.ConditionPathExists = "/var/lib/hass-health/${cfg.slug}.ready";
         timerConfig = {
           # Let integrations finish their startup retries after a host boot.
           OnBootSec = "12min";

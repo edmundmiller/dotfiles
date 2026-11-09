@@ -505,6 +505,9 @@ class HaMonitorTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.key = Path(temp.name) / "key"
         self.key.write_text("private-api-key")
+        self.ready = Path(temp.name) / "state" / "nuc-ha-runtime.ready"
+        self.ready.parent.mkdir()
+        self.ready.touch()
         self.now = datetime.now(UTC)
         self.check = {
             "uuid": "monitor", "name": "nuc/ha-runtime", "slug": "nuc-ha-runtime",
@@ -558,15 +561,18 @@ class HaMonitorTests(unittest.TestCase):
 
     def invoke(self, action, *extra):
         output = io.StringIO()
-        with patch("urllib.request.urlopen", side_effect=self.api), patch("subprocess.run", side_effect=self.command), patch("sys.stdout", output), patch("sys.argv", ["monitor-healthchecks.py", action, "--api-key-file", str(self.key), *extra]):
+        with patch("urllib.request.urlopen", side_effect=self.api), patch("subprocess.run", side_effect=self.command), patch("sys.stdout", output), patch("sys.argv", ["monitor-healthchecks.py", action, "--api-key-file", str(self.key), "--ready-file", str(self.ready), *extra]):
             with self.assertRaises(SystemExit) as exit_status:
                 runpy.run_path(str(ROOT / "modules/services/hass/monitor-healthchecks.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
         return exit_status.exception.code, json.loads(output.getvalue())
 
     def test_setup_inherits_only_intended_channels_and_replay_does_not_write(self):
+        self.ready.unlink()
         code, report = self.invoke("setup")
         self.assertEqual(code, 0)
+        self.assertTrue(self.ready.is_file())
+        self.assertTrue(report["provisioned"])
         self.assertEqual(report["notification_channel_kinds"], ["email"])
         self.assertEqual(len(self.writes), 1)
         self.assertEqual(self.writes[0]["channels"], "intended")
@@ -577,12 +583,24 @@ class HaMonitorTests(unittest.TestCase):
         self.assertEqual(len(self.writes), 1)
 
     def test_missing_channels_or_conflicting_settings_fail_without_writes(self):
-        self.channels = ""
-        self.assertEqual(self.invoke("setup")[0], 2)
+        self.ready.unlink()
+        for channels, reference_count, missing_count in (("", 0, 0), ("missing", 1, 1)):
+            with self.subTest(channels=channels):
+                self.channels = channels
+                code, report = self.invoke("setup")
+                self.assertEqual(code, 2)
+                self.assertEqual(report["notification_channels"], {
+                    "reference_count": reference_count,
+                    "available_count": 2,
+                    "missing_reference_count": missing_count,
+                    "available_kinds": ["email", "sms"],
+                })
+                self.assertFalse(self.ready.exists())
         self.channels = "intended"
         self.exists = True
         self.check["timeout"] = 86400
         self.assertEqual(self.invoke("setup")[0], 2)
+        self.assertFalse(self.ready.exists())
         self.assertEqual(self.writes, [])
 
     def test_live_verification_requires_recent_reports_pings_and_active_timer(self):
@@ -621,6 +639,17 @@ class HaMonitorTests(unittest.TestCase):
         self.assertEqual(report["error_type"], "FileNotFoundError")
         self.assertIsNone(report["http_status"])
         self.assertEqual(self.writes, [])
+
+    def test_read_only_status_cannot_arm_an_unprovisioned_timer(self):
+        self.ready.unlink()
+        self.exists = True
+        code, report = self.invoke("status", "--require-live")
+        self.assertEqual(code, 1)
+        self.assertFalse(report["provisioned"])
+        self.assertFalse(self.ready.exists())
+        self.assertEqual(self.writes, [])
+        self.assertEqual(self.invoke("setup")[0], 0)
+        self.assertEqual(self.invoke("status", "--require-live")[0], 0)
 
     def test_signal_correlation_distinguishes_false_alarms_and_coverage_gaps(self):
         self.exists = True

@@ -43,7 +43,14 @@ def inspect(args):
     available = request(key, "/channels/")["channels"]
     args.phase = "validate_notification_channels"
     assigned = set(channels.split(",")) - {""}
-    if not assigned or not assigned <= {channel["id"] for channel in available}:
+    available_ids = {channel["id"] for channel in available}
+    args.notification_channels = {
+        "reference_count": len(assigned),
+        "available_count": len(available),
+        "missing_reference_count": len(assigned - available_ids),
+        "available_kinds": sorted({channel["kind"] for channel in available}),
+    }
+    if not assigned or not assigned <= available_ids:
         raise ValueError("Existing NUC notification channels are missing")
     if not checks and args.action == "setup":
         # A retry first reads the slug again. Never blindly retry a POST after
@@ -91,8 +98,15 @@ def inspect(args):
         ),
     }
     if args.action == "setup":
+        # Only approved setup can arm the timer. Ordinary deployments and
+        # read-only inspection must not start an unprovisioned heartbeat.
+        args.phase = "record_provisioning"
+        args.ready_file.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        args.ready_file.touch(mode=0o644)
+        result["provisioned"] = True
         return result
 
+    result["provisioned"] = args.ready_file.is_file()
     cutoff = datetime.now(UTC) - timedelta(hours=args.since_hours)
     uuid = check["uuid"]
     args.phase = "read_ping_history"
@@ -157,10 +171,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("setup", "status"))
     parser.add_argument("--api-key-file", default="/run/agenix/healthchecks-api-key")
+    parser.add_argument("--ready-file", type=Path, default=Path(f"/var/lib/hass-health/{SLUG}.ready"))
     parser.add_argument("--since-hours", type=int, choices=range(1, 25), default=2)
     parser.add_argument("--require-live", action="store_true")
     args = parser.parse_args()
     args.monitor_exists = None
+    args.notification_channels = None
     try:
         result = inspect(args)
         print(json.dumps(result, sort_keys=True))
@@ -168,6 +184,7 @@ def main():
             recent = datetime.now(UTC) - timedelta(minutes=5)
             return 0 if (
                 args.action == "status"
+                and result["provisioned"]
                 and result["timer_active"]
                 and result["monitor"]["status"] == "up"
                 and result["monitor"]["n_pings"] >= 2
@@ -190,6 +207,7 @@ def main():
             "error_type": type(error).__name__,
             "http_status": error.code if isinstance(error, HTTPError) else None,
             "monitor_existed_before_setup": args.monitor_exists,
+            "notification_channels": args.notification_channels,
             "error": "Monitor inspection failed. For uncertain setup, read the existing slug before retrying; never blindly repeat a write.",
         }))
         return 2

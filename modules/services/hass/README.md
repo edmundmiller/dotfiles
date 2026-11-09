@@ -87,7 +87,14 @@ notification channels. The approved GitHub deployment uses
 only the notification channels assigned to the existing NUC Gatus dead-man's
 switch. Missing channels, ambiguous slugs, and conflicting existing settings
 fail closed. A replay reads an existing check instead of modifying it. The timer
-deliberately does not auto-create checks with
+and service require the root-owned `/var/lib/hass-health/nuc-ha-runtime.ready`
+marker, written only after approved setup validates the external check and its
+notification channels. Ordinary deployments skip an unprovisioned monitor;
+leaving the workflow's `ha_monitor` flag false does not provision or arm it.
+The approved rollout explicitly starts the timer after activation, including
+when an earlier deployment skipped it. Read-only inspection never writes the
+marker. Failed channel validation reports counts and kinds, not identifiers or
+notification addresses. The timer deliberately does not auto-create checks with
 an unspecified cadence. Failure pings alert immediately; missing pings detect a
 stopped timer, host outage, or broken notification path after ten minutes.
 Check creation and host activation require explicit authorization. Verify the
