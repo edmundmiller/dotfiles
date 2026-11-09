@@ -57,12 +57,29 @@ nix develop -c statix check .
 
 **Symptom:** `darwin-rebuild: command not found` after a macOS update.
 
-```bash
-# Use the full path
-sudo /run/current-system/sw/bin/darwin-rebuild switch --flake .
-# Or let hey handle it (it builds via nix as fallback)
-hey re
-```
+`hey re` builds `.#darwinConfigurations.<host>.system` once, as you (warm
+user eval cache). For `switch` and `check` it then runs
+`sudo darwin-rebuild --flake <tmp>#hey --impure <action>` on a generated
+flake whose only output is that prebuilt system, so root does a trivial
+evaluation instead of re-evaluating the whole config with a cold cache.
+`build` needs no root. When `/run/current-system/sw/bin/darwin-rebuild` is
+missing, the freshly built system's `darwin-rebuild` is used. Other actions
+and profile flags (`--rollback`, `-p`, `-G`, `--list-generations`,
+`--dry-run`) go straight to upstream `darwin-rebuild --flake <checkout>`.
+
+### 6. Rebuild seems stuck or very slow
+
+**Symptom:** `hey re` prints `waiting for the system-evaluation lock held by
+pid ...`, or warns about memory pressure / swap.
+
+`hey re` and `hey test` serialize full-system evaluations per user, because
+concurrent evaluations (for example from many agent sessions) slow each other
+down 10-20x. The message names the holder's pid, task and checkout; let it
+finish or stop it. A lock left by a killed process is reclaimed
+automatically. The lock lives at `~/.cache/hey/system-eval.lock`.
+
+The memory warning is advisory: with swap nearly full, close other Nix
+evaluations or agent sessions before rebuilding.
 
 ## General Debugging Steps
 

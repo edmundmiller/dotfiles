@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 
 
@@ -314,6 +315,7 @@ class MiseTasksTests(unittest.TestCase):
             TEST_OVERRIDES=str(self.root / "caller-tools"),
             TEST_PRIVILEGED_LOG=str(self.root / "privileged-calls"),
             NIX_CONFIG="experimental-features = nix-command flakes",
+            XDG_CACHE_HOME=str(Path(self.temp.name) / "cache"),
         )
         for key in (
             "GH_TOKEN",
@@ -335,16 +337,9 @@ class MiseTasksTests(unittest.TestCase):
             path.chmod(0o755)
             return path
 
-        activation = executable(
-            "darwin-rebuild",
-            'echo activation >> "$TEST_LOG"\nexit "$TEST_ACTIVATION_EXIT"\n',
-            profile,
-        )
-        executable(
-            "nixos-rebuild",
-            activation.read_text().split("set -euo pipefail\n", 1)[1],
-            profile,
-        )
+        activation_body = 'echo activation >> "$TEST_LOG"\nexit "$TEST_ACTIVATION_EXIT"\n'
+        activation = executable("darwin-rebuild", activation_body, profile)
+        executable("nixos-rebuild", activation_body, profile)
         executable("sudo", 'echo sudo >> "$TEST_PRIVILEGED_LOG"\nexec "$@"\n', wrappers)
         executable("sudo", 'echo unsafe-sudo >> "$TEST_LOG"\nexit 96\n', profile)
         executable("systemctl", 'echo post >> "$TEST_LOG"\nexit 0\n', profile)
@@ -368,9 +363,20 @@ case "$1" in
     fi
     exit "$TEST_ARCHIVE_EXIT" ;;
   build)
-    echo build >> "$TEST_LOG"
-    mkdir -p "$MISE_PROJECT_ROOT/result/sw/bin"
-    ln -s "$MISE_PROJECT_ROOT/host-profile/activation" "$MISE_PROJECT_ROOT/result/sw/bin/darwin-rebuild" ;;
+    system="$MISE_PROJECT_ROOT/built-system"
+    installable="${!#}"
+    if [[ "$installable" == *"#darwinConfigurations.hey.system" ]]; then
+      # hey's prebuilt flake must name the system it just built.
+      grep -qF "outPath = builtins.storePath \\"$system\\";" "${installable%%#*}/flake.nix" || exit 95
+      echo resolve >> "$TEST_LOG"
+    else
+      echo build >> "$TEST_LOG"
+      mkdir -p "$system/sw/bin"
+      : > "$system/activate"
+      printf '#!%s\n%s' "$BASH" "$TEST_ACTIVATION_BODY" > "$system/sw/bin/darwin-rebuild"
+      chmod +x "$system/sw/bin/darwin-rebuild"
+    fi
+    printf '[{"drvPath":"%s.drv","outputs":{"out":"%s"}}]\n' "$system" "$system" ;;
   *) exit 93 ;;
 esac
 """,
@@ -390,6 +396,7 @@ esac
             .replace("^/usr/bin/sudo", f'^"{wrappers / "sudo"}"')
         )
         common.write_text(source)
+        self.env["TEST_ACTIVATION_BODY"] = activation_body
         (self.root / "flake.lock").write_text("{}\n")
         (self.root / "flake.nix").write_text("{}\n")
         git = shutil.which("git")
@@ -501,8 +508,10 @@ esac
                         ) and not (
                             os_name == "macos" and case in ("no-auth", "auth-failure")
                         ):
-                            if os_name == "macos" and case == "fallback":
-                                expected.append("build")
+                            if os_name == "macos":
+                                # Evaluate once as the caller; root switches
+                                # to that prebuilt system via darwin-rebuild.
+                                expected += ["build", "resolve"]
                             expected.append("activation")
                             if os_name == "linux" and case != "activation-failure":
                                 expected.append("post")
@@ -631,6 +640,288 @@ exec "$@"
                         self.assertNotIn("fixture-token", result.stdout + result.stderr)
         invalid = self.run_command("mise", "run", "dev", "unknown")
         self.assertEqual(invalid.returncode, 2, invalid.stderr)
+
+
+@unittest.skipUnless(shutil.which("nu") and shutil.which("bash"), "nu and bash required")
+class SystemRebuildTests(unittest.TestCase):
+    """`system-rebuild` against fake Nix, sudo and darwin-rebuild boundaries.
+
+    Privileged and host-changing tools are logging stubs; the Nushell
+    orchestration is the production code with only fixed host paths remapped.
+    """
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        base = Path(self.temp.name).resolve()
+        self.flake = base / "flake with spaces"
+        self.tools = base / "tools"
+        self.profile = base / "current-system-bin"
+        self.wrappers = base / "wrappers"
+        self.system = base / "store" / "built-system"
+        self.log = base / "operations"
+        self.cache = base / "cache"
+        for directory in (self.flake, self.tools, self.profile, self.wrappers):
+            directory.mkdir()
+        lib = self.flake / "bin/hey.d/.lib"
+        lib.mkdir(parents=True)
+        shutil.copy2(ROOT / "bin/hey.d/.lib/wait-homebrew-idle.sh", lib)
+        self.bash = shutil.which("bash")
+        (lib / "common.nu").write_text(
+            (ROOT / "bin/hey.d/.lib/common.nu")
+            .read_text()
+            .replace("$nu.os-info.name", "$env.TEST_OS")
+            .replace("/run/current-system/sw/bin", str(self.profile))
+            .replace("/run/wrappers/bin", str(self.wrappers))
+            .replace("/nix/var/nix/profiles/default/bin", str(base / "no-profile"))
+            .replace("^/usr/bin/sudo", f'^"{self.wrappers / "sudo"}"')
+        )
+        # Each stub logs: tool, whether it runs under (fake) sudo, arguments.
+        record = (
+            'args="$*"\n'
+            'printf "%s\\t%s\\t%s\\n" "${0##*/}" "${FAKE_ROOT:-0}" "$args" >> "$TEST_LOG"\n'
+        )
+        self.executable("sudo", 'export FAKE_ROOT=1\nexec "$@"\n', self.wrappers)
+        self.executable("gh", "exit 1\n")
+        if not shutil.which("ps"):
+            # Nix build sandboxes have no ps; the lock then falls back to kill -0.
+            self.executable("ps", "exit 0\n")
+        # Fake Nix: the host config "evaluates" to TEST_SYSTEM; a prebuilt
+        # flake evaluates to whatever store path its flake.nix names.
+        self.executable(
+            "nix",
+            record
+            + """
+case "$1" in
+  eval) echo aarch64-darwin ;;
+  flake) ;;
+  build)
+    installable="${!#}"
+    if [[ "$installable" == *"#darwinConfigurations.TestHost.system" ]]; then
+      out="$TEST_SYSTEM"
+      mkdir -p "$out/sw/bin"
+      : > "$out/activate"
+      cp "$TEST_DARWIN_REBUILD" "$out/sw/bin/darwin-rebuild"
+    else
+      out=$(sed -n 's/.*outPath = builtins.storePath "\\(.*\\)";/\\1/p' "${installable%%#*}/flake.nix")
+    fi
+    link=result
+    while (($#)); do
+      case "$1" in
+        --no-link) link= ;;
+        --out-link) link="$2"; shift ;;
+      esac
+      shift
+    done
+    [[ -z "$link" ]] || ln -sfn "$out" "$link"
+    printf '[{"drvPath":"%s.drv","outputs":{"out":"%s"}}]\\n' "$out" "$out" ;;
+  *) exit 93 ;;
+esac
+""",
+        )
+        # Upstream darwin-rebuild stand-in: shows which system its --flake names.
+        darwin_rebuild = self.executable(
+            "darwin-rebuild-stub",
+            record
+            + """
+while (($#)); do
+  if [[ "$1" == --flake ]]; then
+    flake="${2%%#*}/flake.nix"
+    [[ -f "$flake" ]] && echo "flake-system: $(grep -o 'storePath "[^"]*"' "$flake" | tr '\\n' ' ')" >> "$TEST_LOG"
+  fi
+  shift
+done
+exit "${TEST_ACTIVATION_EXIT:-0}"
+""",
+            base,
+        )
+        self.current = self.profile / "darwin-rebuild"
+        shutil.copy2(darwin_rebuild, self.current)
+        self.env = {
+            "PATH": f"{self.tools}:{os.environ['PATH']}",
+            "HOME": str(base),
+            "XDG_CACHE_HOME": str(self.cache),
+            "MISE_PROJECT_ROOT": str(self.flake),
+            "FLAKE_HOST": "TestHost",
+            "TEST_OS": "macos",
+            "TEST_LOG": str(self.log),
+            "TEST_SYSTEM": str(self.system),
+            "TEST_DARWIN_REBUILD": str(darwin_rebuild),
+        }
+        self.lock = self.cache / "hey/system-eval.lock"
+        self.host_build = (
+            "build --json --out-link {link} --no-write-lock-file "
+            f"{self.flake}#darwinConfigurations.TestHost.system"
+        )
+
+    def executable(self, name, body, directory=None):
+        path = (directory or self.tools) / name
+        path.write_text(f"#!{self.bash}\nset -euo pipefail\n{body}")
+        path.chmod(0o755)
+        return path
+
+    def nu(self, script):
+        return subprocess.Popen(
+            [shutil.which("nu"), "--no-config-file", "--commands",
+             f"use '{self.flake}/bin/hey.d/.lib/common.nu' *; {script}"],
+            cwd=self.flake,
+            env=self.env,
+            # Nixpkgs bash sources /etc/bashrc (resetting PATH) when stdin is a socket.
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+    def rebuild(self, *args):
+        quoted = " ".join(f"'{arg}'" for arg in args)
+        process = self.nu(f"system-rebuild (context) {quoted}")
+        stdout, stderr = process.communicate(timeout=120)
+        return process.returncode, stdout, stderr
+
+    def operations(self):
+        if not self.log.exists():
+            return []
+        return [
+            tuple(line.split("\t"))
+            for line in self.log.read_text().splitlines()
+            # nix eval/flake archive are context and pre-fetch, not the rebuild.
+            if not line.startswith(("nix\t0\teval", "nix\t0\tflake"))
+        ]
+
+    def assert_prebuilt_activation(self, action):
+        code, _, stderr = self.rebuild(action)
+        self.assertEqual(code, 0, stderr)
+        build, resolve, activate, flake_system = self.operations()
+        # The full host config is evaluated exactly once, by the caller.
+        self.assertEqual(build[:2], ("nix", "0"))
+        link = build[2].split()[3]
+        self.assertEqual(build[2], self.host_build.format(link=link))
+        self.assertEqual(Path(link).name, "system")
+        # The caller confirms the generated flake resolves to that system.
+        prebuilt = resolve[2].split()[-1].split("#")[0]
+        self.assertEqual(
+            resolve,
+            ("nix", "0", "build --json --no-link --impure --no-write-lock-file "
+             f"{prebuilt}#darwinConfigurations.hey.system"),
+        )
+        # Root runs only upstream darwin-rebuild, on that trivial flake.
+        self.assertEqual(
+            activate,
+            ("darwin-rebuild", "1",
+             f"--flake {prebuilt}#hey --no-write-lock-file --impure {action}"),
+        )
+        self.assertEqual(
+            flake_system,
+            (f'flake-system: storePath "{self.system}.drv" storePath "{self.system}" ',),
+        )
+        self.assertFalse(Path(prebuilt).exists(), "temporary flake left behind")
+        self.assertFalse(self.lock.exists())
+
+    def test_switch_evaluates_once_as_caller_then_switches_prebuilt_system(self):
+        self.assert_prebuilt_activation("switch")
+
+    def test_check_uses_the_same_prebuilt_system(self):
+        self.assert_prebuilt_activation("check")
+
+    def test_build_needs_no_root_and_leaves_result_link(self):
+        code, stdout, stderr = self.rebuild("build", "-L")
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(
+            self.operations(),
+            [("nix", "0", f"build --json --out-link {self.flake}/result "
+              "--no-write-lock-file -L "
+              f"{self.flake}#darwinConfigurations.TestHost.system")],
+        )
+        self.assertEqual((self.flake / "result").resolve(), self.system)
+        self.assertIn(str(self.system), stdout)
+
+    def test_profile_flags_keep_upstream_darwin_rebuild(self):
+        code, _, stderr = self.rebuild("switch", "--rollback")
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(
+            self.operations(),
+            [("darwin-rebuild", "1",
+              f"--flake {self.flake}#TestHost --no-write-lock-file switch --rollback")],
+        )
+
+    def test_missing_current_darwin_rebuild_uses_the_built_one(self):
+        self.current.unlink()
+        code, _, stderr = self.rebuild("changelog")
+        self.assertEqual(code, 0, stderr)
+        build, activate = self.operations()
+        self.assertEqual(
+            build,
+            ("nix", "0", "build --json --no-link --no-write-lock-file "
+             f"{self.flake}#darwinConfigurations.TestHost.system"),
+        )
+        self.assertEqual(
+            activate,
+            ("darwin-rebuild", "1",
+             f"--flake {self.flake}#TestHost --no-write-lock-file changelog"),
+        )
+
+    def test_activation_failure_propagates_and_releases_lock(self):
+        self.env["TEST_ACTIVATION_EXIT"] = "43"
+        code, _, stderr = self.rebuild("switch")
+        self.assertEqual(code, 43, stderr)
+        self.assertFalse(self.lock.exists())
+
+    def test_rebuild_waits_for_live_lock_holder_and_reclaims_it_after_exit(self):
+        holder = subprocess.Popen(["sleep", "60"])
+        self.addCleanup(holder.kill)
+        started = subprocess.run(
+            ["ps", "-o", "lstart=", "-p", str(holder.pid)],
+            env=self.env, capture_output=True, text=True,
+        ).stdout.strip()
+        self.lock.mkdir(parents=True)
+        (self.lock / "owner.nuon").write_text(
+            f'{{pid: {holder.pid}, started: "{started}", label: "other session", '
+            f'cwd: "/elsewhere", acquired: "earlier"}}'
+        )
+        process = self.nu("system-rebuild (context) switch")
+        self.addCleanup(process.kill)
+        waiting = process.stderr.readline()
+        while "waiting for the system-evaluation lock" not in waiting:
+            self.assertNotEqual(waiting, "", "rebuild exited without waiting")
+            waiting = process.stderr.readline()
+        self.assertIn(f"pid {holder.pid} (other session) in /elsewhere", waiting)
+        time.sleep(3)
+        self.assertEqual(self.operations(), [], "built while another evaluation held the lock")
+        holder.kill()
+        holder.wait()
+        _, stderr = process.communicate(timeout=120)
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertIn("reclaiming stale system-evaluation lock", stderr)
+        self.assertEqual(self.operations()[-2][2].split()[-1], "switch")
+        self.assertFalse(self.lock.exists())
+
+    def test_memory_pressure_warnings(self):
+        def warnings(mem, level=0, evaluators="[]"):
+            process = self.nu(
+                f"memory-pressure-warnings {mem} {level} {evaluators} | to json"
+            )
+            stdout, stderr = process.communicate(timeout=60)
+            self.assertEqual(process.returncode, 0, stderr)
+            return json.loads(stdout)
+
+        healthy = "{total: 1000, available: 500, 'swap total': 1000, 'swap used': 500}"
+        self.assertEqual(warnings(healthy), [])
+        # 84% is below the threshold; 85% reaches it.
+        self.assertEqual(warnings(healthy.replace("used': 500", "used': 840")), [])
+        swap_full = warnings(healthy.replace("used': 500", "used': 900"))
+        self.assertEqual(len(swap_full), 1)
+        self.assertIn("swap is 90% full", swap_full[0])
+        low_memory = warnings("{total: 1000, available: 50, 'swap total': 0, 'swap used': 0}")
+        self.assertEqual(len(low_memory), 1)
+        self.assertIn("memory is available", low_memory[0])
+        self.assertEqual(warnings(healthy, 4), ["macOS reports CRITICAL memory pressure"])
+        self.assertEqual(warnings(healthy, 2), ["macOS reports memory pressure (warn)"])
+        self.assertEqual(
+            warnings(healthy, 1, "['123 nix build .#darwinConfigurations.X.system']"),
+            ["1 other full-system evaluation(s) running:",
+             "  123 nix build .#darwinConfigurations.X.system"],
+        )
 
 
 if __name__ == "__main__":
