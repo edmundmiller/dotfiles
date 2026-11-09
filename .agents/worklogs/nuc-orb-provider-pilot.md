@@ -159,3 +159,20 @@ but lock inheritance is still a hypothesis. Extend the same read-only diagnostic
 to check lock availability and descriptor-9 holders by process name, without
 printing process arguments or environments. Confirm ownership before repairing
 the dispatch lock. Keep hosted default and the single existing test unchanged.
+
+## Confirmed inherited lock and repair
+
+https://github.com/edmundmiller/dotfiles/actions/runs/42566435145 attempt 2
+confirmed `dispatchLock=held`. PID 2950962, fuse-overlayfs, and PIDs 2950968 and
+2950991, conmon, retained dispatch descriptor 9. Prevent all Podman commands in
+dispatch and smoke tests from inheriting that descriptor, without removing
+serialization. A regression using real flock and a detached helper blocked on
+unchanged dispatch and passed with descriptor closure.
+
+The repair also prepares explicit `--orb-pilot --recover-orb-pilot` shipping.
+After capacity passes, stop only the dedicated controller and labeled pilot
+containers, preserve disks, and verify the original lock is released. Do not
+unlink locks or kill arbitrary processes. Deploy the fix and run backend smoke
+before restarting the controller, then retest the same authorized thread and
+its existing sentinel. No new thread, home-service restart, or default change.
+Live recovery and the repaired end-to-end lifecycle remain unverified.

@@ -59,6 +59,8 @@ elif path.endswith("deploy-nuc.yml/dispatches"):
     inputs = {"expected_sha": "a" * 40}
     if state.get("orb_pilot"):
         inputs["orb_pilot"] = "true"
+    if state.get("recover_orb_pilot"):
+        inputs["recover_orb_pilot"] = "true"
     assert payload == {"ref": "main", "inputs": inputs}
     with (root / "dispatches").open("a") as out:
         out.write(json.dumps(payload) + "\n")
@@ -150,6 +152,18 @@ class NucShippingTests(unittest.TestCase):
         requests = (self.root / "dispatches").read_text().splitlines()
         self.assertEqual(len(requests), 1)
         self.assertEqual(json.loads(requests[0])["inputs"]["orb_pilot"], "true")
+
+    def test_pilot_recovery_requires_checks_and_cannot_change_on_replay(self):
+        self.assertNotEqual(self.request("--recover-orb-pilot").returncode, 0)
+        self.assertFalse((self.root / "dispatches").exists())
+        self.github.update(orb_pilot=True, recover_orb_pilot=True)
+        self.save_github()
+        result = self.request("--orb-pilot", "--recover-orb-pilot")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(json.loads(result.stdout)["recoverOrbPilot"])
+        self.assertNotEqual(self.request("--orb-pilot").returncode, 0)
+        self.assertEqual(self.request("--orb-pilot", "--recover-orb-pilot").returncode, 0)
+        self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
 
     def test_no_deploy_is_offline_and_cannot_be_rearmed_by_replay(self):
         self.github["auth_error"] = True
@@ -376,6 +390,11 @@ class NucShippingTests(unittest.TestCase):
             deployment,
         )
         self.assertIn("default: false", triggers.split("restart_bluetooth:", 1)[1])
+        self.assertIn(
+            "- name: Release inherited pilot locks before activation\n"
+            "        if: inputs.operation == 'deploy' && inputs.recover_orb_pilot\n",
+            deployment,
+        )
 
     def test_bluetooth_recovery_checks_host_and_preserves_ha_process(self):
         setup = r"""

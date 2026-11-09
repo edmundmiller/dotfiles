@@ -20,6 +20,10 @@ on:
         description: Run NUC orb capacity preflight and live container-backend smoke tests
         default: false
         type: boolean
+      recover_orb_pilot:
+        description: Stop only dedicated pilot containers, preserving disks, before pilot deployment (requires approval and orb_pilot)
+        default: false
+        type: boolean
       restart_bluetooth:
         description: Restart Bluetooth once before HA diagnostics (requires explicit approval)
         default: false
@@ -145,6 +149,15 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- preflight' < scripts/amp-orb-pilot.sh
+      - name: Release inherited pilot locks before activation
+        if: inputs.operation == 'deploy' && inputs.recover_orb_pilot
+        env:
+          ORB_PILOT: ${{ inputs.orb_pilot }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$ORB_PILOT" = true
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- recover' < scripts/amp-orb-pilot.sh
       - name: Fetch, build, activate and verify on the NUC
         if: inputs.operation == 'deploy'
         shell: bash

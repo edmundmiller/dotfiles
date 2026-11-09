@@ -1247,7 +1247,8 @@
                       pkgs.python3
                       pkgs.ripgrep
                       self.packages.${system}.hey
-                    ];
+                    ]
+                    ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.util-linux ];
                   }
                   ''
                     export HOME=$TMPDIR
@@ -1262,6 +1263,7 @@
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
                       tests/test_validation.py \
                       tests/test_nuc_shipping.py \
+                      tests/test_amp_orb_dispatch.py \
                       tests/test_candidate_ci.py \
                       tests/test_orb_setup.py \
                       tests/test_mise_tasks.py \

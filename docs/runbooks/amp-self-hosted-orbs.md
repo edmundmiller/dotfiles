@@ -83,6 +83,8 @@ extra swap allowance, sets 1 GiB shared memory and a PID limit, and requires
 20 GiB free before spawn or snapshot. Its lock serializes lifecycle jobs.
 It implements disk snapshots and repeatable lifecycle jobs, refuses containers
 without its ownership label, and passes bootstrap tokens only through exec.
+Podman commands close the lock descriptor before execution so detached conmon
+and fuse-overlayfs processes cannot keep the lifecycle lock after dispatch exits.
 
 The live NUC reported about 6 GiB available RAM across two preflights. The pilot
 uses 3 GiB for lighter workloads so it can retain 2 GiB of host headroom without
@@ -124,6 +126,15 @@ online CPUs, 5 GiB available RAM, and 100 GiB free on local `/var/lib` storage b
 activation. The post-deploy `verify` mode checks actual rootless resource limits,
 disk resume, and snapshot cloning with Amp's image. It deletes only its disposable
 smoke containers and snapshot. This is backend evidence, not an Amp thread test.
+
+For an explicitly approved inherited-lock repair, add `--recover-orb-pilot` to
+the shipping request alongside `--orb-pilot`. After live capacity passes, the
+workflow stops the dedicated provider and only its labeled containers, preserving
+all disks and images. It verifies the existing lock is released without unlinking
+it, then activates the tested dispatcher and runs backend verification before
+starting the provider again. This interrupts pilot shell processes, not home
+services. A failure leaves the controller stopped for investigation. It is not
+enabled by default or by diagnostic-only requests.
 
 To investigate lifecycle failures without rebuilding or restarting anything,
 dispatch the same workflow with `operation=orb-diagnostics` and its exact

@@ -105,6 +105,8 @@ def shipping_command(args, receipt, path):
         return
     if not re.fullmatch(r"[0-9a-f]{40}", args.sha):
         raise ValueError("NUC shipping requires an exact 40-character lowercase SHA")
+    if args.recover_orb_pilot and not args.orb_pilot:
+        raise ValueError("Pilot recovery requires --orb-pilot capacity and backend checks")
     if shipping:
         if (shipping["sha"], shipping["ownerThread"]) != (args.sha, args.thread):
             raise ValueError(
@@ -112,6 +114,8 @@ def shipping_command(args, receipt, path):
             )
         if shipping.get("orbPilot", False) != args.orb_pilot:
             raise ValueError("NUC shipping already recorded with different pilot checks")
+        if shipping.get("recoverOrbPilot", False) != args.recover_orb_pilot:
+            raise ValueError("NUC shipping already recorded with different pilot recovery")
         if args.no_deploy and shipping["state"] in ("dispatch_unknown", "dispatched"):
             raise ValueError(
                 "NUC shipping already submitted: cancel the identified GitHub run to revoke it"
@@ -141,6 +145,7 @@ def shipping_command(args, receipt, path):
             "ownerThread": args.thread,
             "deploymentAuthority": args.deployment_authority,
             "orbPilot": args.orb_pilot,
+            "recoverOrbPilot": args.recover_orb_pilot,
             "state": "request_pending",
             "nextAction": "Submit the authorized request after confirming GitHub access and exact main.",
         }
@@ -168,6 +173,8 @@ def shipping_command(args, receipt, path):
     inputs = {"expected_sha": shipping["sha"]}
     if shipping.get("orbPilot", False):
         inputs["orb_pilot"] = "true"
+    if shipping.get("recoverOrbPilot", False):
+        inputs["recover_orb_pilot"] = "true"
     github_api(
         f"{API_ROOT}/actions/workflows/deploy-nuc.yml/dispatches",
         {"ref": "main", "inputs": inputs},
@@ -192,6 +199,11 @@ def main():
         "--orb-pilot",
         action="store_true",
         help="Run the approved pilot capacity and backend tests during deployment",
+    )
+    request.add_argument(
+        "--recover-orb-pilot",
+        action="store_true",
+        help="Stop only dedicated pilot containers and release inherited locks; preserve disks",
     )
     request.add_argument(
         "--no-deploy",

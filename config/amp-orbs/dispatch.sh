@@ -8,6 +8,12 @@ fail() {
   exit 1
 }
 
+# Podman starts long-lived conmon/fuse-overlayfs children. Only this shell owns
+# the lifecycle lock; its children must not retain the descriptor after exit.
+podman() {
+  command podman "$@" 9>&-
+}
+
 [[ ${ORB_ID:-} =~ ^amp-[a-zA-Z0-9_.-]+$ ]] || fail "invalid ORB_ID"
 case "${ORB_OPERATION:-}" in spawn | pause | delete) ;; *) fail "invalid operation" ;; esac
 [[ $(id -u) != 0 ]] || fail "run as a dedicated non-root account"

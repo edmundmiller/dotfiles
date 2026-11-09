@@ -21,6 +21,29 @@ case "${1:-}" in
     fi
     echo 'PASS: live NUC pilot capacity preflight'
     ;;
+  recover)
+    # Explicit approved maintenance only. Never delete containers, images or disks.
+    home=/var/lib/amp-orbs
+    uid=$(id -u amp-orbs)
+    sudo -n -u amp-orbs env HOME="$home" XDG_RUNTIME_DIR="/run/user/$uid" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+      CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf bash -s <<'RECOVER'
+    set -euo pipefail
+    cd "$HOME"
+    systemctl --user stop amp-orb-provider.service
+    containers=$(podman ps -a --filter label=io.dotfiles.amp-orb=true --format '{{.Names}}')
+    while IFS= read -r container; do
+      test -n "$container" || continue
+      test "$(podman inspect --format '{{index .Config.Labels "io.dotfiles.amp-orb"}}' "$container")" = true
+      podman stop --time 10 "$container"
+    done <<<"$containers"
+    # Do not unlink the lock: that would allow two independently locked inodes.
+    exec 9>"$HOME/.local/state/amp-orbs/dispatch.lock"
+    flock -n 9 || { echo 'FAIL: inherited pilot lock still held after container stop' >&2; exit 1; }
+    echo 'PASS: pilot containers stopped, disks retained, dispatch lock released'
+    echo 'Controller remains stopped until the post-deployment backend verification succeeds.'
+RECOVER
+    ;;
   verify)
     home=/var/lib/amp-orbs
     uid=$(id -u amp-orbs)
@@ -35,6 +58,8 @@ case "${1:-}" in
     cd "$HOME"
     test "$(podman info --format '{{.Host.Security.Rootless}}')" = true
     mkdir -p "$HOME/.local/state/amp-orbs"
+    # Match dispatch: detached Podman helpers must not inherit the smoke lock.
+    podman() { command podman "$@" 9>&-; }
     exec 9>"$HOME/.local/state/amp-orbs/dispatch.lock"
     flock -x -w 240 9
     running=$(podman ps --format '{{.Names}}')
@@ -112,5 +137,5 @@ DIAGNOSTICS
       _UID="$uid" _SYSTEMD_USER_UNIT=amp-orb-provider.service |
       sudo -n -u amp-orbs env HOME="$home" bash -c 'cd "$HOME"; exec .amp/bin/amp orb redact-output'
     ;;
-  *) echo 'Usage: amp-orb-pilot.sh preflight|verify|diagnostics' >&2; exit 2 ;;
+  *) echo 'Usage: amp-orb-pilot.sh preflight|recover|verify|diagnostics' >&2; exit 2 ;;
 esac
