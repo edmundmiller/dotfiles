@@ -7,13 +7,16 @@ import json
 import os
 from pathlib import Path
 import runpy
+import socket
 import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError
+from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/nuc_shipping.py"
@@ -409,7 +412,7 @@ class NucShippingTests(unittest.TestCase):
         self.assertIn("default: false", triggers.split("restart_bluetooth:", 1)[1])
         self.assertIn("default: false", triggers.split("ha_monitor:", 1)[1])
         for name in (
-            "Configure approved HA heartbeat before activation",
+            "Configure approved HA monitor before activation",
             "Allow two automatic HA monitor runs",
         ):
             self.assertIn(
@@ -504,166 +507,178 @@ class HaMonitorTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.key = Path(temp.name) / "key"
-        self.key.write_text("private-api-key")
-        self.ready = Path(temp.name) / "state" / "nuc-ha-runtime.ready"
+        self.key.write_text("private-ha-token")
+        self.ready = Path(temp.name) / "state" / "nuc-ha-runtime-gatus.ready"
         self.ready.parent.mkdir()
         self.ready.touch()
         self.now = datetime.now(UTC)
-        self.check = {
-            "uuid": "monitor", "name": "nuc/ha-runtime", "slug": "nuc-ha-runtime",
-            "timeout": 300, "grace": 300, "channels": "intended",
-            "status": "up", "n_pings": 2, "last_ping": self.now.isoformat(),
-        }
-        self.exists = False
-        self.channels = "intended"
-        self.api_failure_path = None
-        self.writes = []
-        self.pings = [
-            {"type": "success", "date": (self.now - timedelta(seconds=seconds)).isoformat(),
-             "body_url": None, "remote_addr": "private-address"}
+        self.status = Path(temp.name) / "status.json"
+        self.samples = [
+            {"schema_version": 1, "kind": "ha_monitor_sample", "observed_at": (self.now - timedelta(seconds=seconds + 1)).isoformat(), "success": True, "service_result": "success"}
+            for seconds in (0, 120)
+        ]
+        self.status.write_text(json.dumps(self.samples[0]))
+        self.probes = [
+            {"success": True, "timestamp": (self.now - timedelta(seconds=seconds)).isoformat(), "hostname": "private-address", "errors": ["private-error"]}
             for seconds in (0, 120)
         ]
         self.reports = [
-            {"schema_version": 1, "observed_at": (self.now - timedelta(seconds=seconds + 1)).isoformat(),
+            {"schema_version": 1, "observed_at": (self.now - timedelta(seconds=seconds + 2)).isoformat(),
              "status": "healthy", "checks": {"repairs": {"status": "healthy", "issues": ["private-HA-report"]}}}
             for seconds in (120, 0)
         ]
         self.timer_active = True
+        self.server_active = True
+        self.api_failure = False
 
-    def api(self, req, **_kwargs):
-        path = req.full_url.removeprefix("https://healthchecks.io/api/v3")
-        if path == self.api_failure_path:
-            raise HTTPError(req.full_url, 403, "private-reason", {}, io.BytesIO(b"private-response"))
-        if req.data is not None:
-            self.assertEqual(path, "/checks/")
-            self.writes.append(json.loads(req.data))
-            self.exists = True
-            result = self.check
-        elif path == "/checks/a6bbb4df-b118-4262-9881-9939f3ac7e76":
-            result = {"channels": self.channels}
-        elif path == "/channels/":
-            result = {"channels": [{"id": "intended", "kind": "email"}, {"id": "unrelated", "kind": "sms"}]}
-        elif path == "/checks/?slug=nuc-ha-runtime":
-            result = {"checks": [self.check] if self.exists else []}
-        elif path == "/checks/monitor/pings/":
-            result = {"pings": self.pings}
-        elif path.startswith("/checks/monitor/flips/?start="):
-            result = []
-        else:
-            self.fail(f"Unexpected request path: {path}")
-        return io.StringIO(json.dumps(result))
+    def api(self, url, **_kwargs):
+        self.assertIsInstance(url, str)  # No Request carrying a POST or credentials.
+        self.assertTrue(url.startswith("http://127.0.0.1:8084/"))
+        if self.api_failure:
+            raise HTTPError(url, 503, "private-reason", {}, io.BytesIO(b"private-response"))
+        response = io.StringIO(json.dumps({"results": self.probes, "events": [{"timestamp": self.now.isoformat(), "type": "HEALTHY", "extra": "private"}]}))
+        response.status = 200
+        return response
 
     def command(self, args, **_kwargs):
         if args[0] == "journalctl":
-            return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, self.reports)))
-        self.assertEqual(args, ["systemctl", "is-active", "--quiet", "hass-health.timer"])
-        return subprocess.CompletedProcess(args, 0 if self.timer_active else 3)
+            return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, self.reports + self.samples)))
+        active = self.timer_active if args[-1] == "hass-health.timer" else self.server_active
+        return subprocess.CompletedProcess(args, 0 if active else 3)
 
     def invoke(self, action, *extra):
         output = io.StringIO()
-        with patch("urllib.request.urlopen", side_effect=self.api), patch("subprocess.run", side_effect=self.command), patch("sys.stdout", output), patch("sys.argv", ["monitor-healthchecks.py", action, "--api-key-file", str(self.key), "--ready-file", str(self.ready), *extra]):
+        with patch("urllib.request.urlopen", side_effect=self.api), patch("subprocess.run", side_effect=self.command), patch("sys.stdout", output), patch("sys.argv", ["monitor-gatus.py", action, "--token-file", str(self.key), "--ready-file", str(self.ready), "--status-file", str(self.status), *extra]):
             with self.assertRaises(SystemExit) as exit_status:
-                runpy.run_path(str(ROOT / "modules/services/hass/monitor-healthchecks.py"), run_name="__main__")
+                runpy.run_path(str(ROOT / "modules/services/hass/monitor-gatus.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
         return exit_status.exception.code, json.loads(output.getvalue())
 
-    def test_setup_inherits_only_intended_channels_and_replay_does_not_write(self):
+    def test_setup_arms_only_after_local_backend_and_credential_validation(self):
         self.ready.unlink()
+        self.api_failure = True
+        self.assertEqual(self.invoke("setup")[0], 2)
+        self.assertFalse(self.ready.exists())
+        self.api_failure = False
         code, report = self.invoke("setup")
         self.assertEqual(code, 0)
         self.assertTrue(self.ready.is_file())
         self.assertTrue(report["provisioned"])
-        self.assertEqual(report["notification_channel_kinds"], ["email"])
-        self.assertEqual(len(self.writes), 1)
-        self.assertEqual(self.writes[0]["channels"], "intended")
-        self.assertEqual(self.writes[0]["unique"], ["slug"])
-        self.assertEqual(self.writes[0]["timeout"], 300)
-        self.assertEqual(self.writes[0]["grace"], 300)
         self.assertEqual(self.invoke("setup")[0], 0)
-        self.assertEqual(len(self.writes), 1)
 
-    def test_missing_channels_or_conflicting_settings_fail_without_writes(self):
+    def test_missing_credential_cannot_arm_monitor(self):
         self.ready.unlink()
-        for channels, reference_count, missing_count in (("", 0, 0), ("missing", 1, 1)):
-            with self.subTest(channels=channels):
-                self.channels = channels
-                code, report = self.invoke("setup")
-                self.assertEqual(code, 2)
-                self.assertEqual(report["notification_channels"], {
-                    "reference_count": reference_count,
-                    "available_count": 2,
-                    "missing_reference_count": missing_count,
-                    "available_kinds": ["email", "sms"],
-                })
-                self.assertFalse(self.ready.exists())
-        self.channels = "intended"
-        self.exists = True
-        self.check["timeout"] = 86400
+        self.key.unlink()
         self.assertEqual(self.invoke("setup")[0], 2)
         self.assertFalse(self.ready.exists())
-        self.assertEqual(self.writes, [])
 
     def test_live_verification_requires_recent_reports_pings_and_active_timer(self):
-        self.exists = True
         code, report = self.invoke("status", "--require-live")
         self.assertEqual(code, 0)
-        self.assertEqual(report["ping_report_correlation"], {"success_healthy": 2})
+        self.assertEqual(report["probe_report_correlation"], {"success_healthy": 2})
         self.assertEqual(report["journal"]["statuses"], {"healthy": 2})
         self.timer_active = False
         self.assertEqual(self.invoke("status", "--require-live")[0], 1)
         self.timer_active = True
-        self.pings[0]["body_url"] = "private-body-url"
+        self.server_active = False
         self.assertEqual(self.invoke("status", "--require-live")[0], 1)
-        self.pings[0]["body_url"] = None
-        self.pings[1]["date"] = (self.now - timedelta(minutes=6)).isoformat()
+        self.server_active = True
+        self.probes[0]["timestamp"] = (self.now - timedelta(minutes=6)).isoformat()
+        self.probes[1]["timestamp"] = (self.now - timedelta(minutes=7)).isoformat()
         self.assertEqual(self.invoke("status", "--require-live")[0], 1)
-        self.assertEqual(self.writes, [])
 
-    def test_failure_reports_safe_cause_and_prior_monitor_presence_without_writes(self):
-        for path, phase, exists in (
-            ("/checks/?slug=nuc-ha-runtime", "find_monitor", None),
-            ("/checks/a6bbb4df-b118-4262-9881-9939f3ac7e76", "read_reference_check", True),
-        ):
-            with self.subTest(phase=phase):
-                self.exists = True
-                self.api_failure_path = path
-                code, report = self.invoke("status")
-                self.assertEqual(code, 2)
-                self.assertEqual(report["phase"], phase)
-                self.assertEqual(report["http_status"], 403)
-                self.assertEqual(report["monitor_existed_before_setup"], exists)
-        self.key.unlink()
+    def test_backend_errors_are_sanitized(self):
+        self.api_failure = True
         code, report = self.invoke("status")
         self.assertEqual(code, 2)
-        self.assertEqual(report["phase"], "read_api_key")
-        self.assertEqual(report["error_type"], "FileNotFoundError")
-        self.assertIsNone(report["http_status"])
-        self.assertEqual(self.writes, [])
+        self.assertEqual(report["error_type"], "HTTPError")
+        self.assertEqual(report["http_status"], 503)
 
     def test_read_only_status_cannot_arm_an_unprovisioned_timer(self):
         self.ready.unlink()
-        self.exists = True
         code, report = self.invoke("status", "--require-live")
         self.assertEqual(code, 1)
         self.assertFalse(report["provisioned"])
         self.assertFalse(self.ready.exists())
-        self.assertEqual(self.writes, [])
         self.assertEqual(self.invoke("setup")[0], 0)
         self.assertEqual(self.invoke("status", "--require-live")[0], 0)
+        # Several Gatus probes of a single completion are not two timer runs.
+        self.samples = self.samples[:1]
+        self.assertEqual(self.invoke("status", "--require-live")[0], 1)
 
     def test_signal_correlation_distinguishes_false_alarms_and_coverage_gaps(self):
-        self.exists = True
-        self.pings[0]["type"] = "fail"
-        self.pings[1]["date"] = (self.now - timedelta(minutes=4)).isoformat()
+        self.probes[0]["success"] = False
+        self.probes[1]["timestamp"] = (self.now - timedelta(minutes=10)).isoformat()
         code, report = self.invoke("status")
         self.assertEqual(code, 0)
-        self.assertEqual(report["ping_report_correlation"], {"fail_healthy": 1, "success_uncorrelated": 1})
+        self.assertEqual(report["probe_report_correlation"], {"failure_healthy": 1, "success_stale_or_missing_sample": 1})
         self.reports[-1]["status"] = "unhealthy"
         self.reports[-1]["checks"]["integrations"] = {"status": "unhealthy"}
+        self.samples[0]["success"] = False
+        self.samples[0]["service_result"] = "exit-code"
         _, report = self.invoke("status")
-        self.assertEqual(report["ping_report_correlation"]["fail_unhealthy"], 1)
+        self.assertEqual(report["probe_report_correlation"]["failure_unhealthy"], 1)
         self.assertEqual(report["journal"]["failing_checks"], {"integrations": 1})
-        self.assertEqual(self.writes, [])
+        self.assertEqual(report["failed_samples_not_observed"], 0)
+        self.samples[0]["service_result"] = "timeout"
+        self.assertEqual(self.invoke("status")[1]["probe_report_correlation"]["failure_timeout"], 1)
+        self.probes = self.probes[1:]
+        self.assertEqual(self.invoke("status")[1]["failed_samples_not_observed"], 1)
+
+    def test_publish_covers_success_exit_code_timeout_and_signal(self):
+        for result in ("success", "exit-code", "timeout", "signal"):
+            with self.subTest(result=result), patch.dict(os.environ, {"SERVICE_RESULT": result}):
+                code, report = self.invoke("publish")
+                self.assertEqual(code, 0)
+                self.assertEqual(report["success"], result == "success")
+                self.assertEqual(json.loads(self.status.read_text()), report)
+                self.assertEqual(self.status.stat().st_mode & 0o777, 0o644)
+
+    def test_http_status_rejects_failed_missing_invalid_stale_and_future_samples(self):
+        with socket.socket() as reservation:
+            reservation.bind(("127.0.0.1", 0))
+            port = reservation.getsockname()[1]
+        process = subprocess.Popen(
+            [sys.executable, str(ROOT / "modules/services/hass/monitor-gatus.py"), "serve", "--port", str(port), "--status-file", str(self.status)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+        )
+        try:
+            url = f"http://127.0.0.1:{port}/health"
+            deadline = time.monotonic() + 5
+            while True:
+                try:
+                    with urlopen(url, timeout=1) as response:
+                        self.assertEqual(response.status, 200)
+                        self.assertEqual(set(json.load(response)), {"status", "fresh", "sampled_at"})
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise
+                    time.sleep(0.01)
+            for state in ("failure", "missing", "invalid", "stale", "future"):
+                with self.subTest(state=state):
+                    sample = self.samples[0].copy()
+                    if state == "failure":
+                        sample["success"] = False
+                    if state in ("stale", "future"):
+                        sample["observed_at"] = (datetime.now(UTC) + timedelta(seconds=-301 if state == "stale" else 60)).isoformat()
+                    self.status.write_text(json.dumps(sample))
+                    if state == "missing":
+                        self.status.unlink()
+                    if state == "invalid":
+                        self.status.write_text("not JSON")
+                    with self.assertRaises(HTTPError) as error:
+                        urlopen(url, timeout=1)
+                    self.assertEqual(error.exception.code, 503)
+                    body = json.load(error.exception)
+                    self.assertNotEqual(body["status"], "healthy")
+                    error.exception.close()
+            self.status.write_text(json.dumps(self.samples[0]))
+            with urlopen(url, timeout=1) as response:
+                self.assertEqual(response.status, 200)
+        finally:
+            process.terminate()
+            process.communicate(timeout=5)
 
 
 if __name__ == "__main__":

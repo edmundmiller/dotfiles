@@ -8,6 +8,9 @@
 }:
 let
   cfg = config.modules.services.hass.healthcheck;
+  readyFile = "/var/lib/hass-health/nuc-ha-runtime-gatus.ready";
+  statusFile = "/run/hass-health/status.json";
+  statusPort = 8124;
   healthCommand = pkgs.writeShellScriptBin "hass-health" ''
     export HASS_EXPECTED_VERSION="''${HASS_EXPECTED_VERSION-${config.services.home-assistant.package.version}}"
     export HASS_CRITICAL_ENTITIES="''${HASS_CRITICAL_ENTITIES-climate.main_floor climate.master_suite script.goodnight script.good_morning script.get_ready_for_bed}"
@@ -18,9 +21,18 @@ in
   options.modules.services.hass.healthcheck = {
     enable = lib.my.mkBoolOpt false;
     tokenFile = lib.my.mkOpt lib.types.str "";
-    pingKeyFile = lib.my.mkOpt lib.types.str "";
-    slug = lib.my.mkOpt (lib.types.strMatching "[a-z0-9_-]+") "ha-runtime";
     expectedWarnings = lib.my.mkOpt (lib.types.listOf lib.types.str) [ ];
+  }
+  // lib.my.mkRegistry {
+    gatus = {
+      name = "Home Assistant Runtime";
+      group = "Smart Home";
+      order = 15;
+      url = "http://127.0.0.1:${toString statusPort}/health";
+      interval = "60s";
+      conditions = [ "[STATUS] == 200" ];
+      alerts = true;
+    };
   };
 
   config = lib.optionalAttrs (!isDarwin) (
@@ -29,25 +41,25 @@ in
 
       assertions = [
         {
-          assertion = !cfg.enable || (cfg.tokenFile != "" && cfg.pingKeyFile != "");
-          message = "HA health monitoring requires tokenFile and pingKeyFile.";
+          assertion = !cfg.enable || (cfg.tokenFile != "" && config.modules.services.gatus.enable);
+          message = "HA health monitoring requires tokenFile and Gatus.";
         }
       ];
 
       systemd.services.hass-health = lib.mkIf cfg.enable {
-        description = "Inspect HA runtime health and report to Healthchecks.io";
+        description = "Inspect HA runtime health for Gatus";
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
-        unitConfig.ConditionPathExists = "/var/lib/hass-health/${cfg.slug}.ready";
+        unitConfig.ConditionPathExists = readyFile;
         serviceConfig = {
           Type = "oneshot";
           DynamicUser = true;
-          LoadCredential = [
-            "ha-token:${cfg.tokenFile}"
-            "ping-key:${cfg.pingKeyFile}"
-          ];
+          LoadCredential = [ "ha-token:${cfg.tokenFile}" ];
+          RuntimeDirectory = "hass-health";
+          RuntimeDirectoryMode = "0755";
+          RuntimeDirectoryPreserve = "yes";
           TimeoutStartSec = "90s";
-          TimeoutStopSec = "45s";
+          TimeoutStopSec = "10s";
           NoNewPrivileges = true;
           ProtectSystem = "strict";
           ProtectHome = true;
@@ -63,25 +75,30 @@ in
                 ]) cfg.expectedWarnings
               )}
           '';
-          # SERVICE_RESULT also covers timeouts and signals, unlike EXIT_STATUS.
-          # Send no HA report or credentials to the external monitor.
-          ExecStopPost = pkgs.writeShellScript "hass-health-ping" ''
-            set -eu
-            result=fail
-            if [ "$SERVICE_RESULT" = success ]; then result=0; fi
-            key=$(cat "$CREDENTIALS_DIRECTORY/ping-key")
-            printf 'url = "https://hc-ping.com/%s/${cfg.slug}/%s"\n' "$key" "$result" \
-              | ${pkgs.curl}/bin/curl --config - --fail --silent --show-error \
-                  --max-time 10 --retry 2 --retry-max-time 30 > /dev/null
-          '';
+          # Capture timeout/signal failures too, without publishing HA contents.
+          ExecStopPost = "${pkgs.python3}/bin/python3 ${./monitor-gatus.py} publish --status-file ${statusFile}";
+        };
+      };
+
+      systemd.services.hass-health-http = lib.mkIf cfg.enable {
+        description = "Serve freshness-aware HA status to local Gatus";
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.ConditionPathExists = readyFile;
+        serviceConfig = {
+          DynamicUser = true;
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          ExecStart = "${pkgs.python3}/bin/python3 ${./monitor-gatus.py} serve --status-file ${statusFile} --port ${toString statusPort}";
         };
       };
 
       systemd.timers.hass-health = lib.mkIf cfg.enable {
         description = "Inspect HA runtime health every two minutes";
         wantedBy = [ "timers.target" ];
-        # Ordinary deployments must not arm a heartbeat before approved setup.
-        unitConfig.ConditionPathExists = "/var/lib/hass-health/${cfg.slug}.ready";
+        # Ordinary deployments must not arm the monitor before approved setup.
+        unitConfig.ConditionPathExists = readyFile;
         timerConfig = {
           # Let integrations finish their startup retries after a host boot.
           OnBootSec = "12min";

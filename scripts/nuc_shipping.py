@@ -213,7 +213,7 @@ def main():
     request.add_argument(
         "--ha-monitor",
         action="store_true",
-        help="Create the approved HA heartbeat using existing channels and verify live timer runs",
+        help="Arm the approved HA runtime monitor for Gatus and verify live timer runs",
     )
     request.add_argument(
         "--no-deploy",

@@ -18,7 +18,7 @@ on:
           - ha-monitor-diagnostics
           - orb-diagnostics
       ha_monitor:
-        description: Create the HA heartbeat with existing NUC notification channels and verify live timer runs (requires approval)
+        description: Arm the local HA runtime monitor for Gatus and verify live timer runs (requires approval)
         default: false
         type: boolean
       orb_pilot:
@@ -163,7 +163,7 @@ jobs:
           set -euo pipefail
           test "$ORB_PILOT" = true
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- recover' < scripts/amp-orb-pilot.sh
-      - name: Configure approved HA heartbeat before activation
+      - name: Configure approved HA monitor before activation
         if: inputs.operation == 'deploy' && inputs.ha_monitor
         shell: bash
         run: |
@@ -175,7 +175,7 @@ jobs:
             test "$(hostname)" = nuc
             uname -a
             exec sudo -n uv run --no-project python - setup
-          ' < modules/services/hass/monitor-healthchecks.py
+          ' < modules/services/hass/monitor-gatus.py
       - name: Fetch, build, activate and verify on the NUC
         if: inputs.operation == 'deploy'
         shell: bash
@@ -205,25 +205,25 @@ jobs:
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
             set -eu
             test "$(hostname)" = nuc
-            exec sudo -n systemctl start hass-health.timer
+            exec sudo -n systemctl start hass-health-http.service hass-health.timer
           '
           sleep 280
-      - name: Inspect HA heartbeat and privacy-filtered runtime aggregates
+      - name: Inspect Gatus history and privacy-filtered HA runtime aggregates
         if: (inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics'
         env:
           REQUIRE_LIVE: ${{ inputs.operation == 'deploy' && inputs.ha_monitor && '--require-live' || '' }}
         shell: bash
         run: |
           set -euo pipefail
-          # The helper exports only heartbeat metadata and local journal aggregates.
+          # The helper exports only Gatus probe metadata and local journal aggregates.
           # Credentials and complete HA reports never leave NUC.
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "
             set -eu
             test \"\$(hostname)\" = nuc
             printf 'configurationRevision=%s\\n' \"\$(nixos-version --configuration-revision)\"
             systemctl show hass-health.service -p ActiveState -p SubState -p Result -p ExecMainStatus
-            exec sudo -n uv run --no-project python - status $REQUIRE_LIVE
-          " < modules/services/hass/monitor-healthchecks.py
+            exec sudo -n uv run --no-project python - status --since-hours 24 $REQUIRE_LIVE
+          " < modules/services/hass/monitor-gatus.py
       - name: Restart Bluetooth once and allow automatic HA retry
         if: inputs.operation == 'ha-diagnostics' && inputs.restart_bluetooth
         shell: bash

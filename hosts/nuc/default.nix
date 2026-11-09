@@ -2548,8 +2548,6 @@ in
         healthcheck = {
           enable = true;
           tokenFile = config.age.secrets.ha-hermes-token.path;
-          pingKeyFile = config.age.secrets.healthchecks-ping-key.path;
-          slug = "nuc-ha-runtime";
           # Retain this existing notice, but alert on new or escalated Repairs.
           expectedWarnings = [ "backup/automatic_backup_failed@2026-04-17T04:28:36.370422+00:00" ];
         };

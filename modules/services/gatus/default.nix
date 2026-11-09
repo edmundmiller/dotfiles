@@ -99,6 +99,10 @@ let
         storage = {
           type = "sqlite";
           path = "/var/lib/gatus/data.db";
+          # Keep at least 24 hours of the one-minute HA runtime probes/events
+          # for agent assessment instead of only the default 100 results.
+          maximum-number-of-results = 1500;
+          maximum-number-of-events = 1500;
         };
 
         # Every endpoint carries an `order`; the combined list is sorted once and

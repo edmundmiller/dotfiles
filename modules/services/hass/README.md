@@ -73,32 +73,35 @@ The monitor checks HA connectivity/authentication, the running version, every
 enabled integration, five critical entities, and retained automation/script errors.
 Timeouts and incomplete inspection also fail the check.
 
-The check reports success or failure to Healthchecks.io under slug
-`nuc-ha-runtime`, using the existing project ping key through a systemd credential.
-The HA token is also a systemd credential. Neither secret goes in the Nix store
-or process arguments. Only the result is sent externally, not HA reports or
-trace data. The privacy-filtered report stays in the local systemd journal.
+Gatus probes `Home Assistant Runtime` once a minute. `hass-health.service` writes
+only its completion time, success/failure, and systemd result to a local runtime
+file, including failures caused by timeout or signal. `hass-health-http.service`
+serves status and sample time on loopback port 8124, without an HA credential.
+Only a successful sample no more than five minutes old returns HTTP 200.
+Failure, missing or unreadable data, a future timestamp, and stale data return 503. A stopped timer therefore cannot leave a permanently green cached result.
+Before the first sample, including the twelve-minute boot allowance, the status
+is unknown rather than healthy. HA reports and trace data stay in the journal;
+the HA token stays in a systemd credential, never in process arguments or the
+Nix store. This monitor sends no report to an external backend.
 
-Before activating the timer, create a Healthchecks.io check in the project that
-owns the existing `healthchecks-ping-key`, with name `nuc/ha-runtime`, slug
-`nuc-ha-runtime`, period 5 minutes, grace 5 minutes, and the project's intended
-notification channels. The approved GitHub deployment uses
-`nuc_shipping.py request --ha-monitor` to provision it before activation, copying
-only the notification channels assigned to the existing NUC Gatus dead-man's
-switch. Missing channels, ambiguous slugs, and conflicting existing settings
-fail closed. A replay reads an existing check instead of modifying it. The timer
-and service require the root-owned `/var/lib/hass-health/nuc-ha-runtime.ready`
-marker, written only after approved setup validates the external check and its
-notification channels. Ordinary deployments skip an unprovisioned monitor;
-leaving the workflow's `ha_monitor` flag false does not provision or arm it.
-The approved rollout explicitly starts the timer after activation, including
-when an earlier deployment skipped it. Read-only inspection never writes the
-marker. Failed channel validation reports counts and kinds, not identifiers or
-notification addresses. The timer deliberately does not auto-create checks with
-an unspecified cadence. Failure pings alert immediately; missing pings detect a
-stopped timer, host outage, or broken notification path after ten minutes.
-Check creation and host activation require explicit authorization. Verify the
-actual notification channels and a received success ping before calling it live.
+The approved GitHub deployment uses `nuc_shipping.py request --ha-monitor` to
+validate Gatus availability and the HA credential before writing the root-owned
+`/var/lib/hass-health/nuc-ha-runtime-gatus.ready` marker. The timer, check service,
+and loopback server require this marker. Ordinary deployments skip an unarmed
+monitor; leaving `ha_monitor` false does not create the marker. Approved rollout
+explicitly starts the server and timer after activation. Read-only diagnostics
+never arm, start, or restart anything. Gatus endpoint configuration alone does
+not establish that the monitor is live.
+
+The existing Gatus SQLite history retains 1,500 results and 1,500 events per
+endpoint, enough for over 24 hours of this one-minute probe. This retention also
+applies to the other existing Gatus endpoints. Agents read the local endpoint API
+`/api/v1/endpoints/smart-home_home-assistant-runtime/statuses?pageSize=1500`
+through the guarded workflow. It includes timestamped probe outcomes and
+HEALTHY/UNHEALTHY transitions even with no alert provider. Telegram is disabled
+on the NUC; this change enables no push notification route. The existing Gatus
+dead-man's switch remains unchanged and covers Gatus/host availability, not HA
+runtime state. No Healthchecks check, plan, or notification channel is modified.
 
 The monitor's `expectedWarnings` exempts only the existing
 `backup/automatic_backup_failed@2026-04-17T04:28:36.370422+00:00` warning from
@@ -109,28 +112,29 @@ is explicitly supplied. This exemption does not establish restic backup health.
 
 After authorized deployment, inspect `systemctl list-timers hass-health`,
 `systemctl status hass-health.service`, and `journalctl -u hass-health.service`.
-Verify the external check's status and last ping too. Stopping or starting the
-timer changes live monitoring; starting the service also writes a Healthchecks
-ping. Those actions are not read-only diagnostics.
+Verify fresh successful Gatus probes and an active loopback server too. Stopping
+or starting the timer or server changes live monitoring. Those actions are not
+read-only diagnostics.
 
 The deployment waits 280 seconds for automatic timer runs, then verifies an
-active timer, two recent successful heartbeats, fresh local HA reports, and no
-heartbeat bodies. `operation=ha-monitor-diagnostics` in the same guarded workflow
-is read-only. It returns heartbeat metadata, notification channel kinds, status
-changes, local health counts, and ping/report correlation counts. Full HA report
-contents, notification addresses, keys, and ping bodies remain on NUC. A failure
-ping matching a healthy report is a possible false alarm; a success matching an
-unhealthy report is a possible false negative. An unmatched ping is a coverage
-gap, not proof of either. Correlation uses the preceding 90 seconds, so unavailable
-or delayed API history must be reported separately.
+active timer/server, two recent successful probes, and at least two local HA
+reports and completion samples. `operation=ha-monitor-diagnostics` is read-only.
+It returns Gatus outcomes/events, local report counts, failure categories, and
+probe/report correlation counts, never HA report contents. It identifies timeout
+or signal failures separately from HA failures. A failed probe matching a healthy
+report is a possible false alarm; a successful probe matching an unhealthy report
+is a possible false negative. Missing samples or reports are coverage gaps, not
+proof of either. Failed completion samples never seen by Gatus are counted too;
+a just-completed check may not have been probed yet.
 
-Initially assess signal quality over 24 hours after first live verification,
-sampling every two hours. Compare alerts with HA check failures and local report
-availability, not just the external status. API ping history can be capped, while
-local journal counts and status changes cover the requested window. Stop the
-bounded follow-up after the final assessment; this does not stop the persistent
-NUC timer. Physical device outcomes and restic backup freshness remain outside
-this monitor's coverage. No monitoring follow-up authorizes automatic repairs.
+Assess the first 24 hours after verified activation with read-only two-hour
+samples and a final 24-hour history inspection. Compare transitions and missing
+coverage against HA evidence, not just green probes. Startup unknowns and
+truncated history must be reported separately. Physical device outcomes and
+restic backup freshness remain outside this monitor's coverage.
+
+Stop the bounded follow-up after the final assessment; this does not stop the
+persistent NUC timer. No monitoring follow-up authorizes automatic repairs.
 
 ## FitBark
 
