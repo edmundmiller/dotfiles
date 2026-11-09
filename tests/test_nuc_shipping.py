@@ -530,9 +530,17 @@ class HaMonitorTests(unittest.TestCase):
         self.timer_active = True
         self.server_active = True
         self.api_failure = False
+        self.served_status = "healthy"
 
     def api(self, url, **_kwargs):
         self.assertIsInstance(url, str)  # No Request carrying a POST or credentials.
+        if url == "http://127.0.0.1:8124/health":
+            body = json.dumps({"status": self.served_status, "extra": "private-response"})
+            if self.served_status != "healthy":
+                raise HTTPError(url, 503, "private-reason", {}, io.BytesIO(body.encode()))
+            response = io.StringIO(body)
+            response.status = 200
+            return response
         self.assertTrue(url.startswith("http://127.0.0.1:8084/"))
         if self.api_failure:
             raise HTTPError(url, 503, "private-reason", {}, io.BytesIO(b"private-response"))
@@ -593,6 +601,19 @@ class HaMonitorTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(report["error_type"], "HTTPError")
         self.assertEqual(report["http_status"], 503)
+
+    def test_diagnostics_distinguish_healthy_sample_from_unreadable_http_sample(self):
+        self.served_status = "unknown"
+        self.probes[0]["success"] = False
+        code, report = self.invoke("status")
+        self.assertEqual(code, 0)
+        self.assertEqual(report["local_status"]["status"], "healthy")
+        self.assertEqual(report["local_http"], {"http_status": 503, "status": "unknown"})
+        self.assertEqual(report["probe_report_correlation"]["failure_healthy"], 1)
+        self.probes[0]["success"] = True
+        self.assertEqual(self.invoke("status", "--require-live")[0], 1)
+        self.served_status = "private-unexpected-status"
+        self.assertEqual(self.invoke("status")[1]["local_http"]["status"], "invalid")
 
     def test_read_only_status_cannot_arm_an_unprovisioned_timer(self):
         self.ready.unlink()

@@ -77,6 +77,10 @@ Gatus probes `Home Assistant Runtime` once a minute. `hass-health.service` write
 only its completion time, success/failure, and systemd result to a local runtime
 file, including failures caused by timeout or signal. `hass-health-http.service`
 serves status and sample time on loopback port 8124, without an HA credential.
+The first timer check starts the server after creating its runtime directory.
+The server gets a read-only mount of that directory at `/run/hass-health-status`.
+This avoids systemd's `/run/private` isolation for preserved dynamic-user runtime
+directories without sharing the checker's user identity or credential directory.
 Only a successful sample no more than five minutes old returns HTTP 200.
 Failure, missing or unreadable data, a future timestamp, and stale data return 503. A stopped timer therefore cannot leave a permanently green cached result.
 Before the first sample, including the twelve-minute boot allowance, the status
@@ -89,7 +93,7 @@ validate Gatus availability and the HA credential before writing the root-owned
 `/var/lib/hass-health/nuc-ha-runtime-gatus.ready` marker. The timer, check service,
 and loopback server require this marker. Ordinary deployments skip an unarmed
 monitor; leaving `ha_monitor` false does not create the marker. Approved rollout
-explicitly starts the server and timer after activation. Read-only diagnostics
+explicitly starts the timer after activation. Read-only diagnostics
 never arm, start, or restart anything. Gatus endpoint configuration alone does
 not establish that the monitor is live.
 

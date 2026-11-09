@@ -205,7 +205,7 @@ jobs:
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
             set -eu
             test "$(hostname)" = nuc
-            exec sudo -n systemctl start hass-health-http.service hass-health.timer
+            exec sudo -n systemctl start hass-health.timer
           '
           sleep 280
       - name: Inspect Gatus history and privacy-filtered HA runtime aggregates

@@ -82,7 +82,10 @@ in
 
       systemd.services.hass-health-http = lib.mkIf cfg.enable {
         description = "Serve freshness-aware HA status to local Gatus";
-        wantedBy = [ "multi-user.target" ];
+        # The first timer run creates the private runtime directory. Do not
+        # start the reader before that directory exists or bypass boot grace.
+        wantedBy = [ "hass-health.service" ];
+        after = [ "hass-health.service" ];
         unitConfig.ConditionPathExists = readyFile;
         serviceConfig = {
           DynamicUser = true;
@@ -90,7 +93,10 @@ in
           ProtectSystem = "strict";
           ProtectHome = true;
           PrivateTmp = true;
-          ExecStart = "${pkgs.python3}/bin/python3 ${./monitor-gatus.py} serve --status-file ${statusFile} --port ${toString statusPort}";
+          # DynamicUser + preserved RuntimeDirectory lives below /run/private.
+          # Expose only this credential-free directory at a readable mountpoint.
+          BindReadOnlyPaths = [ "/run/hass-health:/run/hass-health-status" ];
+          ExecStart = "${pkgs.python3}/bin/python3 ${./monitor-gatus.py} serve --status-file /run/hass-health-status/status.json --port ${toString statusPort}";
         };
       };
 

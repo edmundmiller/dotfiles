@@ -135,6 +135,19 @@ def inspect(args):
     failed_samples = [item for item in recent_samples if not item["success"]]
     fresh_cutoff = datetime.now(UTC) - timedelta(seconds=MAX_AGE)
     active = lambda unit: subprocess.run(["systemctl", "is-active", "--quiet", unit], check=False, timeout=10).returncode == 0
+    try:
+        try:
+            response = urlopen(f"http://127.0.0.1:{args.port}/health", timeout=10)
+        except HTTPError as error:
+            response = error
+        with response:
+            served_status = json.load(response).get("status")
+            local_http = {
+                "http_status": response.status,
+                "status": served_status if served_status in ("healthy", "unhealthy", "unknown") else "invalid",
+            }
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        local_http = {"error_type": type(error).__name__}
     return {
         "observed_at": datetime.now(UTC).isoformat(),
         "backend": "gatus",
@@ -142,6 +155,8 @@ def inspect(args):
         "timer_active": active("hass-health.timer"),
         "status_server_active": active("hass-health-http.service"),
         "local_status": read_status(args.status_file),
+        "local_http": local_http,
+        "isolated_status_directory": args.status_file.resolve().is_relative_to("/run/private"),
         "probes": probes_in_window,
         "events": [{key: event[key] for key in ("timestamp", "type")} for event in endpoint.get("events", []) if timestamp(event["timestamp"]) >= cutoff],
         "oldest_available_probe": probes[0]["timestamp"] if probes else None,
@@ -188,6 +203,7 @@ def main():
                 and result["timer_active"]
                 and result["status_server_active"]
                 and result["local_status"]["status"] == "healthy"
+                and result["local_http"] == {"http_status": 200, "status": "healthy"}
                 and len(result["probes"]) >= 2
                 and all(probe["success"] and timestamp(probe["timestamp"]) >= cutoff for probe in result["probes"][-2:])
                 and result["journal"]["fresh_successful_samples"] >= 2
