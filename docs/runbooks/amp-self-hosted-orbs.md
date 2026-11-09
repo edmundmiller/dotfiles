@@ -10,8 +10,8 @@ update_when: Amp's dispatch contract or the selected host and isolation policy c
 
 ## Recommendation
 
-Keep Amp-hosted orbs as the default and the Mac desktop app unchanged. Pilot a
-single small orb on the NUC after a live capacity check. Keep the existing runners.
+Keep Amp-hosted orbs as the default and the Mac desktop app unchanged. Allow up
+to two bounded small orbs on the NUC after live capacity checks. Keep the existing runners.
 Do not put a provider on the NAS during storage recovery or change Meshify's sleep
 policy to make it an always-on provider. A provider adds separate thread checkouts;
 it does not give those threads the host's working tree or service credentials.
@@ -78,17 +78,30 @@ administration are separate. Confirm the workspace plan before assuming savings.
 ## Prepared pilot
 
 `config/amp-orbs/dispatch.sh` uses rootless Podman under a dedicated account.
-It admits one running managed container, caps it at two CPUs and 3 GiB with no
-extra swap allowance, sets 1 GiB shared memory and a PID limit, and requires
-20 GiB free before spawn or snapshot. Its lock serializes lifecycle jobs.
+It admits at most two running managed containers. New containers have two CPUs
+and 2 GiB RAM with no extra swap allowance. Existing 3-GiB containers retain their
+limits and disks. Admission caps assigned memory at 5 GiB and CPU at four cores,
+so two legacy 3-GiB containers cannot run together. It reserves four host CPUs and
+checks that available host RAM covers every running container's unused allowance,
+the incoming container's full limit, and another 2 GiB for host services. Missing
+resource readings fail closed. An already-running orb can reconnect without
+another capacity reservation. These are admission checks, not a promise that
+unrelated host workloads cannot later consume the remaining RAM.
+
+Containers retain 1 GiB shared memory and a PID limit. Spawn and snapshot require
+20 GiB free in container storage. The lifecycle lock also serializes admission.
 It implements disk snapshots and repeatable lifecycle jobs, refuses containers
 without its ownership label, and passes bootstrap tokens only through exec.
 Podman commands close the lock descriptor before execution so detached conmon
 and fuse-overlayfs processes cannot keep the lifecycle lock after dispatch exits.
 
-The live NUC reported about 6 GiB available RAM across two preflights. The pilot
-uses 3 GiB for lighter workloads so it can retain 2 GiB of host headroom without
-stopping existing services. Large builds should continue using hosted orbs.
+At 2026-11-09 20:55:55 UTC, the live NUC reported eight CPUs, 7,279,944 KiB
+available RAM, no swap, and a 1.23 one-minute load average. The existing 3-GiB orb
+used 486,002,688 bytes, and orb storage had 51,724,672 KiB free. A second 2-GiB orb
+fits that sample while a pair of 3-GiB allocations would not retain 2 GiB of host
+headroom at their full limits. Each spawn rechecks current capacity. Large builds
+should continue using hosted orbs. Do not archive unfinished review work merely
+to free a slot or automatically prune retained disks.
 
 The dispatcher grants no host mounts, container socket, host networking, devices,
 or privileged mode. These limits do not isolate the LAN or prevent kernel

@@ -103,6 +103,17 @@ SMOKE
     home=/var/lib/amp-orbs
     uid=$(id -u amp-orbs)
     printf 'configurationRevision=%s\n' "$(nixos-version --configuration-revision)"
+    date -u +capacitySampleUTC=%FT%TZ
+    printf 'CPUs=%s Load=%s\n' "$(getconf _NPROCESSORS_ONLN)" "$(cat /proc/loadavg)"
+    awk '/^(MemTotal|MemAvailable|SwapTotal|SwapFree):/' /proc/meminfo
+    for resource in cpu memory io; do
+      printf '%sPressure\n' "$resource"
+      cat "/proc/pressure/$resource"
+    done
+    df -Pk /var/lib "$home"
+    sudo -n zfs get -Hp -o name,property,value quota,used,available zroot/system/amp-orbs
+    systemctl show home-assistant.service -p ActiveState -p MainPID -p ActiveEnterTimestamp
+    sha256sum /etc/amp-orbs/dispatch
     # Print only selected state fields, never inspect container environments.
     sudo -n -u amp-orbs env HOME="$home" XDG_RUNTIME_DIR="/run/user/$uid" \
       DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
@@ -128,7 +139,10 @@ SMOKE
     containers=$(podman ps -a --filter label=io.dotfiles.amp-orb=true --format '{{.Names}}')
     while IFS= read -r container; do
       test -n "$container" || continue
-      podman inspect --format '{{.Name}} running={{.State.Running}} started={{.State.StartedAt}} finished={{.State.FinishedAt}}' "$container"
+      podman inspect --format '{{.Name}} running={{.State.Running}} started={{.State.StartedAt}} finished={{.State.FinishedAt}} memoryLimitBytes={{.HostConfig.Memory}} cpuNanoLimit={{.HostConfig.NanoCpus}}' "$container"
+      if test "$(podman inspect --format '{{.State.Running}}' "$container")" = true; then
+        podman stats --no-stream --format '{{.Name}} memoryUsageBytes={{.ContainerStats.MemUsage}} memoryLimitBytes={{.ContainerStats.MemLimit}}' "$container"
+      fi
     done <<<"$containers"
 DIAGNOSTICS
     # Amp redacts known token formats and this account's stored credentials
