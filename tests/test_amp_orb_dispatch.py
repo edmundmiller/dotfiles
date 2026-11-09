@@ -26,9 +26,12 @@ class OrbDispatchTests(unittest.TestCase):
             ("second orb", {"amp-existing": legacy}, required_kib, 8, 20 * 1024 ** 2, True),
             ("headroom short by 1 KiB", {"amp-existing": legacy}, required_kib - 1, 8, 20 * 1024 ** 2, False),
             ("third orb", {"amp-one": small, "amp-two": small}, 20 * gib // 1024, 8, 20 * 1024 ** 2, False),
-            ("resume exceeds aggregate cap", {"amp-existing": legacy, "amp-test": dict(legacy, running=False)}, 20 * gib // 1024, 8, 20 * 1024 ** 2, False),
+            ("resume resizes only stopped target", {"amp-existing": legacy, "amp-test": dict(legacy, running=False)}, required_kib, 8, 20 * 1024 ** 2, True),
+            ("rejected resume leaves stopped target intact", {"amp-existing": legacy, "amp-test": dict(legacy, running=False)}, required_kib - 1, 8, 20 * 1024 ** 2, False),
+            ("aggregate cap", {"amp-existing": dict(legacy, memory=4 * gib)}, 20 * gib // 1024, 8, 20 * 1024 ** 2, False),
             ("resume legacy with small", {"amp-existing": small, "amp-test": dict(legacy, running=False)}, required_kib, 8, 20 * 1024 ** 2, True),
             ("already running under pressure", {"amp-test": legacy, "amp-existing": small}, 1, 8, 20 * 1024 ** 2, True),
+            ("unknown target state", {"amp-test": dict(legacy, running="unknown")}, required_kib, 8, 20 * 1024 ** 2, False),
             ("insufficient CPU headroom", {}, 20 * gib // 1024, 4, 20 * 1024 ** 2, False),
             ("storage short by 1 KiB", {}, 20 * gib // 1024, 8, 20 * 1024 ** 2 - 1, False),
             ("unknown usage", {"amp-existing": dict(legacy, used="unavailable")}, required_kib, 8, 20 * 1024 ** 2, False),
@@ -78,9 +81,11 @@ elif args[0] == 'ps':
     for name, container in containers.items():
         if container['running']:
             print(name)
-elif args[0] == 'create':
+elif args[0] in ('create', 'update'):
     memory = args[args.index('--memory') + 1]
     assert memory == args[args.index('--memory-swap') + 1]
+    if args[0] == 'update':
+        assert not containers[os.environ['ORB_ID']]['running']
     containers[os.environ['ORB_ID']] = dict(running=False,
         memory=int(memory[:-1]) * 1024 ** 3,
         cpu=int(args[args.index('--cpus') + 1]) * 1000000000, used=0)
@@ -106,9 +111,11 @@ elif args[0] != 'exec':
                 after = json.loads(state.read_text())
                 if accepted:
                     self.assertTrue(after['amp-test']['running'])
-                    if 'amp-test' not in containers:
+                    if not containers.get('amp-test', {}).get('running', False):
                         self.assertEqual(after['amp-test']['memory'], 2 * gib)
                         self.assertEqual(after['amp-test']['cpu'], 2000000000)
+                    else:
+                        self.assertEqual(after['amp-test'], containers['amp-test'])
                     for existing, config in containers.items():
                         if existing != 'amp-test':
                             self.assertEqual(after[existing], config)

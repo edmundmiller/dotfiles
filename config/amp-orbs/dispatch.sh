@@ -46,11 +46,7 @@ check_capacity() {
   local running_orbs running memory cpu extra used available cpus
   local count=1 assigned_memory=$((2 * 1024 * 1024 * 1024)) assigned_cpu=2000000000
   # Repeated spawn of an already running orb allocates no additional resources.
-  if [[ $exists == true ]]; then
-    if [[ $(podman inspect --format '{{.State.Running}}' "$ORB_ID") == true ]]; then return; fi
-    read -r assigned_memory assigned_cpu extra <<<"$(podman inspect --format '{{.HostConfig.Memory}} {{.HostConfig.NanoCpus}}' "$ORB_ID")"
-  fi
-  [[ $assigned_memory =~ ^[1-9][0-9]*$ && $assigned_cpu =~ ^[1-9][0-9]*$ && -z ${extra:-} ]] || fail "cannot determine resumed orb limits"
+  if [[ $target_running == true ]]; then return; fi
   local remaining=$assigned_memory
   # Include every running container in this dedicated account, not just labels.
   running_orbs=$(podman ps --format '{{.Names}}')
@@ -68,7 +64,7 @@ check_capacity() {
     remaining=$((remaining + memory - used))
   done <<<"$running_orbs"
   ((count <= 2)) || fail "provider already has two active orbs"
-  # Keep legacy 3-GiB containers intact, but never admit two of them together.
+  # Existing running 3-GiB orbs stay intact; stopped orbs adopt 2 GiB on resume.
   ((assigned_memory <= 5 * 1024 * 1024 * 1024 && assigned_cpu <= 4000000000)) || fail "aggregate orb limits exceed 5 GiB or 4 CPUs"
   cpus=$(getconf _NPROCESSORS_ONLN)
   [[ $cpus =~ ^[0-9]+$ ]] && ((assigned_cpu <= (cpus - 4) * 1000000000)) || fail "less than four CPUs reserved for the host"
@@ -83,6 +79,11 @@ case "$ORB_OPERATION" in
   spawn)
     : "${ORB_TOKEN:?missing ORB_TOKEN}" "${ORB_IMAGE:?missing ORB_IMAGE}"
     [[ -z ${ORB_TYPE:-} || $ORB_TYPE == small ]] || fail "only the small type is supported"
+    target_running=false
+    if [[ $exists == true ]]; then
+      target_running=$(podman inspect --format '{{.State.Running}}' "$ORB_ID")
+      [[ $target_running == true || $target_running == false ]] || fail "cannot determine orb state"
+    fi
     # The lifecycle lock also serializes admission, including resume.
     check_capacity
     check_space
@@ -101,6 +102,10 @@ case "$ORB_OPERATION" in
       podman create --name "$ORB_ID" --label "$label=true" \
         --platform linux/amd64 --init --cpus 2 --memory 2g --memory-swap 2g \
         --pids-limit 512 --shm-size 1g --entrypoint sleep "$image" infinity
+    elif [[ $target_running == false ]]; then
+      # Apply the small type's current limits before restart, never during work.
+      # Podman update changes resource configuration without replacing the disk.
+      podman update --cpus 2 --memory 2g --memory-swap 2g "$ORB_ID"
     fi
     podman start "$ORB_ID"
     # Do not store the short-lived token in container configuration or images.

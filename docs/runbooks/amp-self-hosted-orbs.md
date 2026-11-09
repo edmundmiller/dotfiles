@@ -79,10 +79,11 @@ administration are separate. Confirm the workspace plan before assuming savings.
 
 `config/amp-orbs/dispatch.sh` uses rootless Podman under a dedicated account.
 It admits at most two running managed containers. New containers have two CPUs
-and 2 GiB RAM with no extra swap allowance. Existing 3-GiB containers retain their
-limits and disks. Admission caps assigned memory at 5 GiB and CPU at four cores,
-so two legacy 3-GiB containers cannot run together. It reserves four host CPUs and
-checks that available host RAM covers every running container's unused allowance,
+and 2 GiB RAM with no extra swap allowance. Running 3-GiB containers keep their
+limits until they stop. After admission succeeds, stopped containers adopt the
+current 2-GiB/two-CPU limits before restarting, without replacing their disks.
+Admission caps assigned memory at 5 GiB and CPU at four cores. It reserves four
+host CPUs and checks that available host RAM covers every running container's unused allowance,
 the incoming container's full limit, and another 2 GiB for host services. Missing
 resource readings fail closed. An already-running orb can reconnect without
 another capacity reservation. These are admission checks, not a promise that
