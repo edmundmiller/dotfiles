@@ -146,3 +146,16 @@ unknown until controller/container diagnostics are inspected. Add a read-only
 `orb-diagnostics` workflow operation on the existing OIDC route, publish through
 candidate CI, then dispatch that diagnostic operation only. No activation or
 home-service restart is needed. Keep the same test thread for further checks.
+
+## Pause diagnostic result
+
+Read-only diagnostics ran successfully without activation:
+https://github.com/edmundmiller/dotfiles/actions/runs/42565222440
+The dedicated controller is active and the original test container is running
+with its original start time. Both pause jobs reached this controller but took
+240,098 and 240,104 milliseconds without stopping the container. Other spawn
+attempts also took about 240 seconds. This matches the dispatch lock timeout,
+but lock inheritance is still a hypothesis. Extend the same read-only diagnostic
+to check lock availability and descriptor-9 holders by process name, without
+printing process arguments or environments. Confirm ownership before repairing
+the dispatch lock. Keep hosted default and the single existing test unchanged.

@@ -85,6 +85,21 @@ SMOKE
     set -euo pipefail
     cd "$HOME"
     systemctl --user show amp-orb-provider.service -p ActiveState -p SubState -p MainPID
+    lock="$HOME/.local/state/amp-orbs/dispatch.lock"
+    if test -f "$lock"; then
+      if (exec 8<"$lock"; flock -n 8); then
+        echo 'dispatchLock=available'
+      else
+        echo 'dispatchLock=held'
+      fi
+      # Only inspect the dispatch descriptor and process names, never argv or env.
+      for fd in /proc/[0-9]*/fd/9; do
+        test "$(readlink "$fd" 2>/dev/null || true)" = "$lock" || continue
+        pid=${fd#/proc/}
+        pid=${pid%%/*}
+        printf 'dispatchLockFD9PID=%s command=%s\n' "$pid" "$(cat "/proc/$pid/comm" 2>/dev/null || true)"
+      done
+    fi
     containers=$(podman ps -a --filter label=io.dotfiles.amp-orb=true --format '{{.Names}}')
     while IFS= read -r container; do
       test -n "$container" || continue
