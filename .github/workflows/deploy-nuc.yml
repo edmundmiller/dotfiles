@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -9,12 +9,13 @@ on:
         required: true
         type: string
       operation:
-        description: Deploy this revision or only inspect the running HA instance
+        description: Deploy this revision or inspect HA or the orb provider without activation
         type: choice
         default: deploy
         options:
           - deploy
           - ha-diagnostics
+          - orb-diagnostics
       orb_pilot:
         description: Run NUC orb capacity preflight and live container-backend smoke tests
         default: false
@@ -187,6 +188,12 @@ jobs:
           '
           # HA 2026.11 caps setup-retry backoff at 600s; allow another minute for setup.
           sleep 660
+      - name: Inspect orb provider without activation
+        if: inputs.operation == 'orb-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- diagnostics' < scripts/amp-orb-pilot.sh
       - name: Inspect running HA without activation
         if: inputs.operation == 'ha-diagnostics'
         shell: bash

@@ -74,5 +74,28 @@ case "${1:-}" in
     fi
 SMOKE
     ;;
-  *) echo 'Usage: amp-orb-pilot.sh preflight|verify' >&2; exit 2 ;;
+  diagnostics)
+    home=/var/lib/amp-orbs
+    uid=$(id -u amp-orbs)
+    printf 'configurationRevision=%s\n' "$(nixos-version --configuration-revision)"
+    # Print only selected state fields, never inspect container environments.
+    sudo -n -u amp-orbs env HOME="$home" XDG_RUNTIME_DIR="/run/user/$uid" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+      CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf bash -s <<'DIAGNOSTICS'
+    set -euo pipefail
+    cd "$HOME"
+    systemctl --user show amp-orb-provider.service -p ActiveState -p SubState -p MainPID
+    containers=$(podman ps -a --filter label=io.dotfiles.amp-orb=true --format '{{.Names}}')
+    while IFS= read -r container; do
+      test -n "$container" || continue
+      podman inspect --format '{{.Name}} running={{.State.Running}} started={{.State.StartedAt}} finished={{.State.FinishedAt}}' "$container"
+    done <<<"$containers"
+DIAGNOSTICS
+    # Amp redacts known token formats and this account's stored credentials
+    # before journal text reaches the workflow. Do not use tracing or raw logs.
+    sudo -n journalctl --no-pager --since '-30 min' -n 120 -o short-iso \
+      _UID="$uid" _SYSTEMD_USER_UNIT=amp-orb-provider.service |
+      sudo -n -u amp-orbs env HOME="$home" bash -c 'cd "$HOME"; exec .amp/bin/amp orb redact-output'
+    ;;
+  *) echo 'Usage: amp-orb-pilot.sh preflight|verify|diagnostics' >&2; exit 2 ;;
 esac

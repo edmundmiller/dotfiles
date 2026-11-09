@@ -1,8 +1,9 @@
 # NUC orb provider pilot
 
-Status: initial host wiring deployed; provider not registered or ready. A smaller
-pilot is being prepared after the second run failed its capacity gate. Current
-publication and deployment evidence stays in the existing agent-run receipt.
+Status: host wiring deployed and registered; actual provider bootstrap passed.
+Archive/restore did not establish a container restart. Read-only controller
+diagnostics are being prepared to investigate pause handling. Current publication
+and deployment evidence stays in the existing agent-run receipt.
 
 Request and approval:
 https://ampcode.com/threads/T-01a1bb8c-9138-71d1-9002-41a01abffe05
@@ -18,7 +19,8 @@ gate and hosted orbs as default. Do not ask for the same approval again.
 The pilot is a workspace provider named
 `nuc-orbs`, a dedicated rootless Podman account, bounded local storage, and one
 active 2-CPU/3-GiB orb. Leave public portals disabled. Keep existing runners,
-the Mac app, NAS duties, and Meshify sleep unchanged. Do not create another thread
+the Mac app, NAS duties, and Meshify sleep unchanged. Edmund later explicitly
+approved one disposable end-to-end test thread. Do not create additional threads
 or silently switch this orb to a runner. The approval does not authorize changes
 to HA/Matter, tailnet policy, unrelated services, or destructive cleanup.
 
@@ -125,3 +127,22 @@ Reduce the pilot allocation from 4 GiB to 3 GiB for lighter workloads. Require
 stop unrelated services, loosen the storage gate, or alter the hosted default.
 Publish through candidate CI, then submit a new exact-main deployment under the
 existing scoped approval. Preserve both earlier run outcomes in the receipt.
+
+## Registered provider and actual thread test
+
+The 3-GiB pilot deployed and passed live backend tests:
+https://github.com/edmundmiller/dotfiles/actions/runs/42528615990
+Edmund completed dedicated-account sign-in and registration. `nuc-orbs` exists
+in workspace `the-millers` and is not the default.
+
+The one authorized disposable no-project thread booted and executed tools:
+https://ampcode.com/threads/T-01a1be9e-892d-71c2-99b1-2cc8e7d714f4
+It observed memory.max=3221225472, cpu.max=200000/100000, UID 1000, a writable
+HOME and scratch directory, and no host home/workspace bind in its namespace.
+
+The sentinel remained intact after archive/restore, but PID 1 still started at
+2026-11-09T04:44:25.8Z. Do not claim a pause/restart. The actual cause remains
+unknown until controller/container diagnostics are inspected. Add a read-only
+`orb-diagnostics` workflow operation on the existing OIDC route, publish through
+candidate CI, then dispatch that diagnostic operation only. No activation or
+home-service restart is needed. Keep the same test thread for further checks.
