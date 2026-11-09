@@ -370,6 +370,60 @@ class NucShippingTests(unittest.TestCase):
                 "        if: inputs.operation == 'deploy' && inputs.orb_pilot\n",
                 deployment,
             )
+        self.assertIn(
+            "- name: Restart Bluetooth once and allow automatic HA retry\n"
+            "        if: inputs.operation == 'ha-diagnostics' && inputs.restart_bluetooth\n",
+            deployment,
+        )
+        self.assertIn("default: false", triggers.split("restart_bluetooth:", 1)[1])
+
+    def test_bluetooth_recovery_checks_host_and_preserves_ha_process(self):
+        setup = r"""
+            sleep() { :; }
+            tailscale() { bash -c "$3"; }
+            hostname() { printf '%s\n' "$TARGET_HOST"; }
+            nixos-version() { printf 'unchanged-revision\n'; }
+            systemctl() {
+              case "$*" in
+                'show home-assistant.service -p MainPID --value')
+                  cat "$GITHUB_FIXTURE/ha-pid" ;;
+                'show bluetooth.service -p MainPID -p ActiveEnterTimestamp')
+                  printf 'MainPID=%s\n' "$(cat "$GITHUB_FIXTURE/bluetooth-pid")" ;;
+                'is-active --quiet home-assistant.service'|'is-active --quiet bluetooth.service')
+                  return 0 ;;
+                *) return 77 ;;
+              esac
+            }
+            sudo() {
+              test "$*" = '-n systemctl restart bluetooth.service' || return 78
+              pid=$(cat "$GITHUB_FIXTURE/bluetooth-pid")
+              printf '%s\n' "$((pid + 1))" > "$GITHUB_FIXTURE/bluetooth-pid"
+              if test "$CHANGE_HA_PID" = true; then
+                printf '201\n' > "$GITHUB_FIXTURE/ha-pid"
+              fi
+            }
+            export -f hostname nixos-version systemctl sudo
+        """
+        for host, change_ha, accepted in (
+            ("nuc", "false", True),
+            ("another-host", "false", False),
+            ("nuc", "true", False),
+        ):
+            with self.subTest(host=host, change_ha=change_ha):
+                (self.root / "bluetooth-pid").write_text("100\n")
+                (self.root / "ha-pid").write_text("200\n")
+                result = self.workflow_shell(
+                    "Restart Bluetooth once and allow automatic HA retry",
+                    setup=textwrap.dedent(setup)
+                    + f'export TARGET_HOST="{host}" CHANGE_HA_PID="{change_ha}"\n',
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                self.assertEqual(
+                    (self.root / "bluetooth-pid").read_text(),
+                    "101\n" if host == "nuc" else "100\n",
+                )
+                if change_ha == "false":
+                    self.assertEqual((self.root / "ha-pid").read_text(), "200\n")
 
     def test_diagnostics_preserve_unhealthy_and_unknown_results_without_activation(self):
         workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()

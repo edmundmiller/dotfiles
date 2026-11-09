@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-diagnostics' && 'Inspect HA' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -17,6 +17,10 @@ on:
           - ha-diagnostics
       orb_pilot:
         description: Run NUC orb capacity preflight and live container-backend smoke tests
+        default: false
+        type: boolean
+      restart_bluetooth:
+        description: Restart Bluetooth once before HA diagnostics (requires explicit approval)
         default: false
         type: boolean
 
@@ -159,6 +163,30 @@ jobs:
         run: |
           printf 'Deployed dotfiles [%s](https://github.com/edmundmiller/dotfiles/commit/%s) to NUC.\n' \
             "$DEPLOY_SHA" "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+      - name: Restart Bluetooth once and allow automatic HA retry
+        if: inputs.operation == 'ha-diagnostics' && inputs.restart_bluetooth
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Expand these variables on NUC, not on the GitHub runner.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            export PATH="/run/wrappers/bin:$PATH"
+            test "$(hostname)" = nuc
+            revision=$(nixos-version --configuration-revision)
+            ha_pid=$(systemctl show home-assistant.service -p MainPID --value)
+            systemctl is-active --quiet home-assistant.service
+            printf "configurationRevisionBefore=%s\nhaMainPIDBefore=%s\n" "$revision" "$ha_pid"
+            systemctl show bluetooth.service -p MainPID -p ActiveEnterTimestamp
+            sudo -n systemctl restart bluetooth.service
+            systemctl is-active --quiet bluetooth.service
+            systemctl show bluetooth.service -p MainPID -p ActiveEnterTimestamp
+            test "$(nixos-version --configuration-revision)" = "$revision"
+            test "$(systemctl show home-assistant.service -p MainPID --value)" = "$ha_pid"
+          '
+          # HA 2026.11 caps setup-retry backoff at 600s; allow another minute for setup.
+          sleep 660
       - name: Inspect running HA without activation
         if: inputs.operation == 'ha-diagnostics'
         shell: bash
@@ -202,7 +230,7 @@ jobs:
             "$RUNNER_TEMP/ha-health.json" > /dev/null
           jq . "$RUNNER_TEMP/ha-health.json"
           {
-            printf '## Read-only HA diagnostics\n\nNo deployment, restart, or HA write was requested.\n\n```json\n'
+            printf '## Read-only HA diagnostics\n\nThis step only reads HA. Any approved Bluetooth service restart is recorded in the preceding step.\n\n```json\n'
             jq . "$RUNNER_TEMP/ha-health.json"
             printf '\n```\n'
           } >> "$GITHUB_STEP_SUMMARY"

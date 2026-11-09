@@ -228,6 +228,21 @@ workflow summary preserves the JSON report. Exit codes remain `0` for healthy,
 Repair can therefore make a successful inspection report an unhealthy result.
 Physical device behavior and restic freshness still need separate checks.
 
+### One-time Bluetooth recovery
+
+With separate approval to restart Bluetooth, use `operation=ha-diagnostics`
+and `restart_bluetooth=true`, keeping `orb_pilot=false`. The restart flag defaults
+to false and has no effect in deployment mode. This interrupts BLE connections
+and discovery, but does not request an HA restart, configuration activation,
+config-entry change, or Repair dismissal.
+
+The recovery step verifies the NUC hostname, restarts only `bluetooth.service`
+once, checks it is active, and verifies the host revision and HA PID are unchanged.
+It then waits 660 seconds before the normal read-only inspection. HA 2026.11 caps
+its setup-retry backoff at 600 seconds; the additional minute allows setup to run.
+The health report retains its actual unhealthy or unknown result, including the
+Backup Repair, even when the Bluetooth restart itself succeeds.
+
 ### Ship from an Amp orb
 
 The dotfiles Amp project's custom Ship prompt authorizes publication and NUC
