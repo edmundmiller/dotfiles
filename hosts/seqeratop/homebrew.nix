@@ -33,7 +33,7 @@
     "linear" # Linear app
     "superset"
     "lookaway"
-    "vibeproxy" # AI subscription proxy on :8317; omp.vibeproxy wires omp to it
+    "vibeproxy" # AI subscription proxy on :8317
 
     # Media
     "helium"

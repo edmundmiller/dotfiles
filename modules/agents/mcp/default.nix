@@ -9,7 +9,6 @@ let
   cfg = config.modules.agents.mcp;
   runtimes = [
     "pi"
-    "omp"
     "claude"
     "codex"
     "opencode"

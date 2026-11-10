@@ -104,7 +104,6 @@ class PiPermissionSystemConfigTests(unittest.TestCase):
         """A `.source` link would hand the extension trailing commas."""
         for module in (
             ROOT / "modules/agents/pi/lib/_home-files.nix",
-            ROOT / "modules/agents/omp/default.nix",
         ):
             with self.subTest(module=module.name):
                 text = module.read_text()
@@ -122,7 +121,6 @@ class PiPermissionSystemConfigTests(unittest.TestCase):
         following activation and aborts the whole Home Manager run."""
         for module in (
             ROOT / "modules/agents/pi/lib/_home-files.nix",
-            ROOT / "modules/agents/omp/default.nix",
         ):
             with self.subTest(module=module.name):
                 text = module.read_text()
@@ -130,11 +128,9 @@ class PiPermissionSystemConfigTests(unittest.TestCase):
                 block = block.split("};", 1)[0]
                 self.assertIn("force = true;", block)
 
-    def test_both_modules_parse_the_policy_through_readJsonc(self) -> None:
+    def test_pi_module_parses_the_policy_through_readJsonc(self) -> None:
         pi = (ROOT / "modules/agents/pi/default.nix").read_text()
-        omp = (ROOT / "modules/agents/omp/default.nix").read_text()
-        for text in (pi, omp):
-            self.assertIn('readJsonc "${configDir}/pi/pi-permission-system.jsonc"', text)
+        self.assertIn('readJsonc "${configDir}/pi/pi-permission-system.jsonc"', pi)
 
 
 if __name__ == "__main__":

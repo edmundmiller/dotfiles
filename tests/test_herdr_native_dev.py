@@ -83,12 +83,12 @@ def expected_hunk_argv(repo, *args):
             "herdr-dev-hunk", str(repo), *args]
 
 
-@pytest.mark.parametrize("agent", [None, "pi", "omp", "claude", "codex", "opencode"])
+@pytest.mark.parametrize("agent", [None, "pi", "claude", "codex", "opencode"])
 def test_open_creates_agent_then_explicit_hunk_tab(native_cli, agent):
     repo, invoke = native_cli
     result, calls = invoke("open", repo, *(["--agent", agent] if agent else []))
     assert result.returncode == 0, result.stderr
-    selected = agent or "omp"
+    selected = agent or "pi"
     assert [call[:2] for call in calls] == [["do", "space.new"], ["do", "tab.new"]]
     assert json.loads(calls[0][2]) == {"folder": str(repo), "tab": selected, "argv": [selected]}
     assert json.loads(calls[1][2]) == {

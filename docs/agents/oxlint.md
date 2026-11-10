@@ -31,7 +31,7 @@ nix shell .#oxlint-plugin-jev --command oxlint-jev path/to/dir
 The wrapper uses `--disable-nested-config` and the store config at
 `$out/share/oxlint-jev.json`. Built-in Oxlint categories are off, so this
 path only asks Jev. It is not a pre-commit hook. CLI ignore patterns exclude
-`.agents`, `.claude`, `.codex`, `.omp`, `.opencode`, and `.pi` under the
+`.agents`, `.claude`, `.codex`, `.opencode`, and `.pi` under the
 invocation directory. Run from the checkout root to apply these exclusions.
 
 ### English rules

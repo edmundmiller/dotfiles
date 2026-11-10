@@ -1,6 +1,6 @@
 # Shared agent configuration
 
-`core.md` supplies startup instructions for OMP, Codex, Claude, Pi, and OpenCode;
+`core.md` supplies startup instructions for Codex, Claude, Pi, and OpenCode;
 its limit is 400 words. Keep task procedures in skills or scoped guides.
 Unslop writing rules live in `skills/catalog/unslop/`; do not copy them into
 `core.md`.
@@ -13,9 +13,8 @@ Unslop writing rules live in `skills/catalog/unslop/`; do not copy them into
   synchronized only for enabled modules and explicitly targeted skills.
 - Claude does not discover that shared directory. The
   [Claude module](../../modules/agents/claude/default.nix) selects shared skills
-  to link into `~/.claude/skills`, preserving one canonical copy for OMP discovery.
-- OMP conditional rules live in `config/omp/rules/` (TTSR). Other runtimes use
-  their native scoped instructions, skills, hooks, and checks.
+  to link into `~/.claude/skills`, preserving one canonical copy.
+- Runtimes use their native scoped instructions, skills, hooks, and checks.
 - OpenCode loads its global `AGENTS.md`, not the legacy `instructions` array.
 
 Package and runtime deployment belong to the matching `modules/agents/` module;

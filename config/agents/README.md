@@ -29,13 +29,12 @@ This configuration is shared across agent runtimes with generated skill targets:
 | Claude   | Targeted shared links | `~/.claude/agents/`         | `~/.claude/CLAUDE.md`          |
 | Codex    | `~/.agents/skills/`   | Native profiles             | `~/.codex/AGENTS.md`           |
 | OpenCode | `~/.agents/skills/`   | `~/.config/opencode/agent/` | `~/.config/opencode/AGENTS.md` |
-| OMP      | `~/.agents/skills/`   | Native commands and TTSR    | `~/.omp/agent/AGENTS.md`       |
 | Pi       | `~/.agents/skills/`   | Native prompts and agents   | `~/.pi/agent/AGENTS.md`        |
 
 The [Claude module](../../modules/agents/claude/default.nix) selects which skills
 to link under `~/.claude/skills` from the canonical copies in `~/.agents/skills`.
-The rest of the shared catalog stays out of Claude's native directory so OMP
-does not load duplicate copies.
+The rest of the shared catalog stays out of Claude's native directory so no
+runtime loads duplicate copies.
 
 Hermes loads external skills from `~/.hermes/skills/` via `config/hermes/config.yml`.
 Generated bundles exist for supported skill targets. Activation always syncs
@@ -87,8 +86,7 @@ Agent modes are specialized configurations for different tasks:
 
 ## Startup context
 
-All supported coding runtimes receive `core.md`. OMP alone adds its tested,
-conditional TTSR layer. Procedures belong in skills or scoped documents; hard
+All supported coding runtimes receive `core.md`. Procedures belong in skills or scoped documents; hard
 requirements belong in hooks, lints, policies, and tests. Validate the wiring:
 
 ```bash

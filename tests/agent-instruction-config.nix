@@ -17,7 +17,7 @@ let
     };
     modules = {
       agents =
-        lib.genAttrs [ "omp" "codex" "claude" "pi" "opencode" ] (_: {
+        lib.genAttrs [ "codex" "claude" "pi" "opencode" ] (_: {
           enable = true;
         })
         // {
@@ -72,7 +72,6 @@ let
       lib = moduleLib;
       config.home.homeDirectory = config.user.home;
     };
-  files = (load "omp").home.file;
   skillsConfig =
     (
       ((import (root + "/skills/flake.nix")).outputs inputs.skills-catalog.inputs)
@@ -99,7 +98,6 @@ in
     rendered = interviewSkills.ask-matt.transform { original = originalAskMatt; };
   };
   instructions = {
-    ".omp/agent/AGENTS.md" = files.".omp/agent/AGENTS.md".text;
     ".codex/AGENTS.md" = (load "codex").home.file.".codex/AGENTS.md".text;
     ".claude/CLAUDE.md" = (load "claude").home.file.".claude/CLAUDE.md".text;
     ".pi/agent/AGENTS.md" = (home "pi").home.file.".pi/agent/AGENTS.md".text;
@@ -107,8 +105,6 @@ in
       builtins.readFile
         (home "opencode").xdg.configFile."opencode/AGENTS.md".source;
   };
-  ompRules = lib.filter (lib.hasPrefix ".omp/agent/rules/") (builtins.attrNames files);
-  fixAgentsPrompt = builtins.readFile files.".omp/agent/commands/fix-agents-md.md".source;
   piApproval = {
     settings = builtins.fromJSON (home "pi").home.file.".pi/agent/settings.json".text;
     policy = (home "pi").home.file.".pi/agent/extensions/pi-permission-system/config.json";

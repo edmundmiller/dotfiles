@@ -2452,7 +2452,6 @@ in
       # Claude's CLI is a backend here; keep its existing permissions/settings.
       claude.pstack.enable = true;
       codex.enable = true;
-      omp.enable = false;
       opencode.enable = true;
       pi.enable = true;
     };
@@ -2824,12 +2823,7 @@ in
       ProtectSystem = "strict";
       ProtectHome = "read-only";
       BindPaths = [ "${millDocsCodingAgentAcpxDir}:/home/emiller/.acpx" ];
-      ReadWritePaths = [
-        millDocsCodingAgentStateDir
-        "/home/emiller/.omp/agent"
-        "/home/emiller/.omp/logs"
-        "/home/emiller/.omp/run"
-      ];
+      ReadWritePaths = [ millDocsCodingAgentStateDir ];
       NoNewPrivileges = true;
       PrivateTmp = true;
     };

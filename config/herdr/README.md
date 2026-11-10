@@ -75,7 +75,7 @@ app files.
 
 Bindings without a native equivalent remain unmapped: reload-config, last-pane,
 resize mode, edit-scrollback, file-viewer-in-tab, jj workspace lifecycle,
-Projects, smart rename, timeline, GitHub plugin actions, embedded browser and
+Projects, timeline, GitHub plugin actions, embedded browser and
 cliamp. The native worktree dialog uses `~/.herdr/worktrees`, not the legacy
 `~/.local/share/herdr/worktrees`. Neither existing worktrees nor sessions move.
 Native recovery starts shells, not the original agents. The old terminal-toast
@@ -93,7 +93,6 @@ herdr-app check config/herdr/native/mods/dotfiles-prefix
 
 ```sh
 herdr-dev open /path/to/checkout --agent pi
-herdr-dev open /path/to/checkout --agent omp
 herdr-dev hunk
 herdr-dev hunk --staged
 herdr-dev hunk --branch origin/main
@@ -101,7 +100,7 @@ herdr-dev hunk --branch origin/main
 
 `open` validates an existing Git checkout, runs its executable
 `scripts/qmd-seed-worktree.sh` if present, then creates an agent space and a
-Hunk tab. The default agent is OMP, matching the old Workspace Manager layout.
+Hunk tab. The default agent is Pi.
 Hunk reviews the invoking directory beside the focused local terminal pane.
 The panel uses the focused pane's directory. Remote and composition panes are
 rejected. Failures report partial resources and never close or delete them.
@@ -148,7 +147,7 @@ these app-owned bindings. No keybinding change or restart is needed.
 ### Compatibility limits
 
 The legacy plugin ecosystem is retained, not converted to mods. Projects,
-Vercel Sandbox, safe jj creation/removal, smart rename, timelines and old review
+Vercel Sandbox, safe jj creation/removal, timelines and old review
 boxes remain legacy-only. Their options are inactive under the native backend.
 Use `backend = "legacy"` when those capabilities are required. CLI tools such
 as Hunk remain usable independently. No backend switch migrates or deletes
@@ -297,7 +296,6 @@ Custom/current mappings:
 | `prefix+a`                        | New jj workspace                                   |
 | `prefix+d`                        | Remove clean closed-PR jj workspace                |
 | `prefix+D`                        | Abandon clean jj workspace with typed confirmation |
-| `prefix+t`                        | Smart rename current agent tab                     |
 | `prefix+T`                        | Agent timeline                                     |
 | `prefix+R`                        | Refresh GitHub PR status                           |
 | `prefix+P`                        | Open issue or PR in Ghzinga                        |
@@ -310,7 +308,7 @@ Herdr defaults still provide other common actions. `prefix+a` creates a task-nam
 
 Export `AGENT` as the executable name or path in the pane's shell environment,
 without arguments. The agent pane runs `exec "$AGENT"`; an unset or empty
-value reports an error rather than falling back to OMP. Use an executable
+value reports an error rather than falling back to a default agent. Use an executable
 wrapper if the selected agent needs startup arguments.
 
 With jj 0.46 or newer, `prefix+a` creates a colocated child with its own Git
@@ -358,7 +356,6 @@ Current and potential repo uses:
 - The patched jj workspace plugin applies the same named layout explicitly after creating its generic Herdr workspace. Keep this integration for colocated children too; a backing Git worktree does not make the plugin emit Herdr's native `worktree.created` event.
 - `worktree.opened` would fit rehydrating plugin-owned state when an existing checkout opens. No separate hook is needed now because layout state persists and a newly opened workspace emits `workspace.created`.
 - `worktree.removed` would fit deleting plugin-owned per-checkout cache. Do not use it to replace the explicit safe removal in the `done` skill; no such cache exists today.
-- Smart rename should remain on `workspace.created` and `tab.created`; it is workspace/tab lifecycle, not Git checkout lifecycle.
 
 Inspect the version-matched event schema with `herdr api schema --json`. Event
 hooks receive `HERDR_PLUGIN_EVENT`, `HERDR_PLUGIN_EVENT_JSON`, and
@@ -371,7 +368,6 @@ Repo-owned plugins are composed into a local package and registered by `modules/
 - `dotfiles.agent-read-command` — copies a `herdr agent read ...` command from pane/tab context menus.
 - `dotfiles.github-link-preview` — opens GitHub issue/PR previews in a Herdr side pane.
 - `nathanflurry.jj-workspace` — built from a pinned upstream revision plus lifecycle-safety and Workspace Manager integration patches under `packages/herdr-plugin-jj-workspace/`.
-- `tab-smart-rename` — built from pinned upstream plus OMP and automatic-worker patches under `packages/herdr-tab-smart-rename/`. It reuses OMP's configured provider and authentication; no separate key is required.
 
 Herdr 0.8.0 makes installed/linked plugins and enabled state global per user.
 The module therefore owns one `~/.config/herdr/plugins.json`, not per-session
@@ -414,7 +410,7 @@ credential with `gh auth status --hostname github.com` or `gh auth login
 --hostname github.com`.
 
 `kryptamine/herdr-auto-title` is intentionally excluded: it requires Herdr
-0.8.2 or newer and duplicates the managed OMP-backed smart-rename worker.
+0.8.2 or newer.
 
 Workspace Manager reads the Nix-managed `config/herdr/workspace-manager.yml`.
 Its path matcher covers native Herdr worktrees but not Review Boxes under
@@ -444,8 +440,6 @@ Its managed config selects Codex in a Node 24 Sandbox. Use `prefix+S` to start,
 compute, and `prefix+E` to inspect the pane-to-Sandbox mapping. The focused Git
 worktree must be linked with `vercel link`; Vercel and Codex authentication stay
 in their official interactive flows and are never copied from host credentials.
-
-The smart-rename worker starts idempotently during activation and on `workspace.created` or `tab.created`. `prefix+t` remains the explicit current-tab override.
 
 ## Seqera Studios as machines
 

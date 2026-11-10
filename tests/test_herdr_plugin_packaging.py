@@ -140,20 +140,12 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     assert "pkgs.my.herdr-vercel-sandbox-plugin" in module
     assert "vercelSandbox.enable" in module
     assert "install_plugin vercel-labs herdr-vercel-sandbox-plugin" not in module
-    assert '"agentKind": "omp"' in module
+    assert '"agentKind": "codex"' in module
     assert '"allowCandidateAgents": true' in module
-    assert '"omp"' in module
     assert '"opencode"' in module
-    assert '"17.2.12"' in module
     assert '"0.0.0-beta-202608091410"' in module
     assert 'command = "vercel.sandbox.start-codex"' in module
-    assert 'command = "vercel.sandbox.start-omp"' in module
     assert 'command = "vercel.sandbox.start-opencode"' in module
-    assert re.search(
-        r"key = \"prefix\+S\".*?command = \"vercel\.sandbox\.start-omp\"",
-        module,
-        re.DOTALL,
-    )
     assert re.search(
         r"key = \"prefix\+alt\+c\".*?command = \"vercel\.sandbox\.start-codex\"",
         module,
@@ -162,30 +154,6 @@ def test_vercel_sandbox_plugin_is_mtp_scoped_and_agent_selectable() -> None:
     assert 'command = "vercel.sandbox.apply-changes"' in module
     assert "herdr.vercelSandbox.enable = true;" in host
     assert "my.vercel" in host
-
-
-def test_smart_rename_is_packaged_started_and_bound() -> None:
-    package = ROOT / "packages" / "herdr-tab-smart-rename"
-    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
-    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
-    commands = config["keys"]["command"]
-
-    assert (package / "default.nix").is_file()
-    assert (package / "package-harness.json").is_file()
-    assert len(list((package / "patches").glob("*.patch"))) == 2
-    assert "pkgs.my.herdr-tab-smart-rename" in module
-    assert "install_plugin iurysza herdr-tab-smart-rename" not in module
-    assert "home.activation.herdr-smart-rename" in module
-    assert 'entryAfter [ "herdr-plugin-registry" ]' in module
-    assert "plugin action invoke start --plugin tab-smart-rename" in module
-    assert "deferring smart rename worker start" in module
-    assert {
-        "key": "prefix+t",
-        "type": "plugin_action",
-        "command": "tab-smart-rename.rename-now",
-        "description": "smart rename current tab",
-    } in commands
-    assert 'command = "tab-smart-rename.rename-now"' not in module
 
 
 def test_auto_title_hook_is_pinned_and_installed_for_codex_and_claude() -> None:
@@ -225,8 +193,7 @@ def test_requested_marketplace_plugins_are_installed_with_build_toolchains() -> 
     ):
         assert spec in module
 
-    # The marketplace auto-title plugin requires Herdr >=0.8.2 and would race
-    # the repo-owned OMP-backed smart rename worker.
+    # The marketplace auto-title plugin requires Herdr >=0.8.2.
     assert "install_plugin kryptamine herdr-auto-title" not in module
 
     # Node and Bun are plugin runtimes; Go is only needed while installing.
@@ -252,7 +219,7 @@ def test_marketplace_plugin_source_match_includes_exact_subdir() -> None:
     assert '"$herdr_cmd" plugin install "$spec" --yes "\'\'${ref_args[@]}"' in marketplace_activation
 
 
-def test_smart_rename_binding_is_cleaned_before_reapplying_canonical_config() -> None:
+def test_canonical_bindings_are_cleaned_before_reapplying_config() -> None:
     module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
     assert 'command["command"]' in module
@@ -363,15 +330,3 @@ def test_writable_config_reads_managed_values_from_tracked_template() -> None:
     assert 'managed_section("ui")' in activation
     assert '"settings": "prefix+comma"' not in activation
     assert '"agent_panel_sort": \'"priority"\'' not in activation
-
-
-def test_omp_integration_install_isolates_pi_agent_dir() -> None:
-    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
-
-    # Herdr 0.8 refuses to install OMP when Pi and OMP resolve to the same
-    # extension directory. Activation can inherit PI_CODING_AGENT_DIR from a
-    # wrapped OMP, so the OMP install must clear it and rely on PI_CONFIG_DIR.
-    assert "PI_CODING_AGENT_DIR= PI_CONFIG_DIR=.omp install_integration omp" in module
-    assert 'PI_CODING_AGENT_DIR="$HOME/.omp/agent" install_integration omp' not in module
-    # Pi keeps its own absolute override, which wins over any ambient value.
-    assert 'PI_CODING_AGENT_DIR="$HOME/.pi/agent" install_integration pi' in module

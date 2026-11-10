@@ -16,7 +16,6 @@ import tomlkit
 
 TARGETS = {
     "pi": (".pi/agent/mcp.json", ("mcpServers",)),
-    "omp": (".omp/agent/mcp.json", ("mcpServers",)),
     "claude": (".claude.json", ("mcpServers",)),
     "codex": (".codex/config.toml", ("mcp_servers",)),
     "opencode": (".config/opencode/opencode.jsonc", ("mcp", "servers")),
@@ -37,11 +36,11 @@ def render(agent, server):
             "args": server["args"],
             "env": server["env"],
         }
-        if agent in {"claude", "omp"}:
+        if agent == "claude":
             result["type"] = "stdio"
     else:
         result = {"url": server["url"]}
-        if agent in {"claude", "omp", "opencode"}:
+        if agent in {"claude", "opencode"}:
             result["type"] = "remote" if agent == "opencode" else "http"
         token = server["bearerTokenEnv"]
         if token:
@@ -129,18 +128,6 @@ def reconcile(home, manifest, dry_run=False, detach_store_links=False):
         cursor.update(desired)
         if agent == "pi":
             data["autoEnableCodemode"] = True
-        if agent == "omp":
-            # OMP can rediscover excluded servers from another client's config.
-            disabled = [
-                name for name in data.get("disabledServers", []) if name not in owned
-            ]
-            if agent in manifest["agents"]:
-                disabled.extend(sorted(set(manifest["servers"]) - set(desired)))
-            data["disabledServers"] = disabled
-            if "enabledServers" in data:
-                data["enabledServers"] = [
-                    name for name in data["enabledServers"] if name not in owned
-                ]
         output = (
             tomlkit.dumps(data)
             if agent == "codex"

@@ -70,7 +70,6 @@ export default class DotfilesDev extends View {
       .bg(t.surface)
       .child(div().font_semibold().text_color(t.foreground).child("Dev tools"))
       .child(button("dev-pi", "Open checkout with Pi + Hunk", ["open", "--agent", "pi"]))
-      .child(button("dev-omp", "Open checkout with OMP + Hunk", ["open", "--agent", "omp"]))
       .child(button("dev-hunk", "Review current checkout", ["hunk"]))
       .child(button("dev-hunk-staged", "Review staged changes", ["hunk", "--staged"]))
       .child(

@@ -198,7 +198,7 @@
         };
         normalizeTarget = target: targetAliases.${target} or target;
         # Deploy shared skills only to ~/.agents/skills. Claude deployment is
-        # intentionally disabled so OMP cannot discover duplicate copies.
+        # intentionally disabled so no runtime discovers duplicate copies.
         defaultSkillTargets = [ "agents" ];
         targetsForSkill = skill: map normalizeTarget (skill.meta.targets or defaultSkillTargets);
         targetDefs = {
@@ -353,20 +353,18 @@
 
           - Treat `/skill-name` references as references to the named skill, not as
             literal slash commands. Load the skill with the runtime's Agent Skills
-            mechanism. Amp: call the `skill` tool. OMP: read `skill://<name>`. Pi: use
-            `read` on the skill path advertised in the available-skills list. Codex:
-            load the skill from its advertised path using the native Agent Skills
-            mechanism.
+            mechanism. Amp: call the `skill` tool. Pi: use `read` on the skill path
+            advertised in the available-skills list. Codex: load the skill from its
+            advertised path using the native Agent Skills mechanism.
           - Ask a decision frontier through the runtime's native interview surface. Amp:
             ask the complete frontier directly in chat because Amp has no agent-callable
-            structured question tool. OMP: use `ask`. Pi: use `ask_user`. Codex: use
+            structured question tool. Pi: use `ask_user`. Codex: use
             `request_user_input`, splitting a frontier only when the tool's question limit
             requires it. Preserve recommendations, option tradeoffs, and multi-select intent.
           - Delegate independent work through the native subagent surface. Amp: use `Task`
             for bounded in-turn work and `create_thread` only for durable asynchronous work.
-            OMP: use `task`. Pi has no baseline subagent surface: do not call `subagent` or
-            launch nested agent processes; execute the work inline and sequentially, or hand
-            the workflow to OMP when delegation is required. Codex: use `spawn_agent`,
+            Pi has no baseline subagent surface: do not call `subagent` or launch nested
+            agent processes; execute the work inline and sequentially. Codex: use `spawn_agent`,
             `wait_agent`, `interrupt_agent`, and `list_agents`. Preserve requested parallelism
             where the runtime supports it, and keep concurrent writers on disjoint files or
             in isolated worktrees.

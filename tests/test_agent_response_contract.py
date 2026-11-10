@@ -164,25 +164,6 @@ class AgentResponseContractTests(unittest.TestCase):
         self.assertIn("jj diff --git -r @", workspace_skill)
         self.assertIn("Run `jj root --ignore-working-copy`", done_skill)
 
-    def test_omp_jj_rule_triggers_at_herdr_decision_points(self) -> None:
-        rule = (ROOT / "config/omp/rules/working-with-jj.md").read_text()
-        condition_line = next(
-            line for line in rule.splitlines() if line.startswith("condition: ")
-        )
-        condition = json.loads(condition_line.removeprefix("condition: "))
-
-        for command in (
-            "HERDR_ENV=1 hey agent-start --repo . --task demo",
-            "herdr agent list",
-            "hunk diff",
-            "jj status",
-            "git commit -m demo",
-        ):
-            with self.subTest(command=command):
-                self.assertRegex(command, condition)
-
-        self.assertNotRegex("git status", condition)
-
     def test_implementers_and_reviewers_share_current_behavioral_criteria(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()
         normalized = " ".join(core.split())

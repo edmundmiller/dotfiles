@@ -10,16 +10,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
 CLAUDE_MODULE = ROOT / "modules" / "agents" / "claude" / "default.nix"
 PI_SETTINGS_CHECK = ROOT / "modules" / "agents" / "pi" / "test-settings-json.sh"
 PI_SETTINGS_VALIDATOR = ROOT / "modules" / "agents" / "pi" / "validate-settings-json.py"
 OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
 BOOTSTRAP = ROOT / "bin" / "bootstrap"
-OMP_CORE = ROOT / "config" / "agents" / "core.md"
+CORE = ROOT / "config" / "agents" / "core.md"
 LEGACY_RULES = ROOT / "config" / "agents" / "rules"
-FIX_AGENTS_COMMAND = ROOT / "config" / "omp" / "commands" / "fix-agents-md.md"
-THREAD_INTROSPECTION = ROOT / "config" / "omp" / "prompts" / "thread-introspection.md"
 CODING_STANDARDS = ROOT / "CODING_STANDARDS.md"
 TEST_QUALITY_SKILL = ROOT / "skills" / "catalog" / "test-quality" / "SKILL.md"
 GITHUB_CLI_MEDIA_SKILL = (
@@ -88,7 +85,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertNotIn(".pi/agent/extensions/direnv.ts", approval["homeFiles"])
 
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
-        core = OMP_CORE.read_text()
+        core = CORE.read_text()
         normalized_core = " ".join(core.split())
 
         self.assertLessEqual(len(core.split()), 400)
@@ -108,18 +105,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
                     self.assertIn("treat it as if it were a `CLAUDE.md` file", content)
                 else:
                     self.assertEqual(core, content)
-        self.assertNotIn(
-            ".omp/agent/rules/incremental-architecture.md", self.deployed["ompRules"]
-        )
-        for rule_name in (
-            "working-with-jj.md",
-            "commit-house-style.md",
-            "pr-house-style.md",
-            "ci-watch.md",
-        ):
-            self.assertIn(f".omp/agent/rules/{rule_name}", self.deployed["ompRules"])
-
-        self.assertNotIn("If no `CLAUDE.md` file is found", OMP_CORE.read_text())
+        self.assertNotIn("If no `CLAUDE.md` file is found", CORE.read_text())
         self.assertNotIn('"instructions"', OPENCODE_CONFIG.read_text())
         self.assertFalse(LEGACY_RULES.exists())
         self.assertNotIn("For ADHD resources", core)
@@ -238,7 +224,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         )
 
     def test_shared_skill_source_routes_stay_selective(self) -> None:
-        core = OMP_CORE.read_text()
+        core = CORE.read_text()
         standard = CODING_STANDARDS.read_text()
         skill = TEST_QUALITY_SKILL.read_text()
         github_skill = GITHUB_CLI_MEDIA_SKILL.read_text()
@@ -360,9 +346,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
         self.assertEqual([], offenders)
 
-    def test_omp_installs_fix_agents_md_prompt_template(self) -> None:
-        self.assertEqual(FIX_AGENTS_COMMAND.read_text(), self.deployed["fixAgentsPrompt"])
-
     def test_opencode_module_uses_standard_config_path_without_legacy_cleanup(self) -> None:
         module = (ROOT / "modules/agents/opencode/default.nix").read_text()
         self.assertIn('"opencode/AGENTS.md"', module)
@@ -376,17 +359,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertNotIn("<<'PY'", shell)
         self.assertIn("validate-settings-json.py", shell)
         self.assertTrue(PI_SETTINGS_VALIDATOR.is_file())
-
-    def test_thread_introspection_cannot_recreate_global_startup_rules(self) -> None:
-        prompt = THREAD_INTROSPECTION.read_text()
-        module = OMP_MODULE.read_text()
-
-        self.assertNotIn("config/agents/rules", prompt)
-        self.assertIn(
-            "Never edit `config/agents/core.md` from session mining.",
-            prompt,
-        )
-        self.assertNotIn('path.startswith("config/agents/rules/")', module)
 
     def test_validation_routes_core_checks_and_hooks_validate_skills(self) -> None:
         flake = (ROOT / "flake.nix").read_text()
