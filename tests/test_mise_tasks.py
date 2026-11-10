@@ -34,6 +34,8 @@ class MiseTasksTests(unittest.TestCase):
             "MISE_SYSTEM_CONFIG_FILE": str(empty_config),
             "MISE_TASK_OUTPUT": "interleave",
             "MISE_AUTO_INSTALL": "0",
+            # Tests run without a terminal; never route fake sudo to a real Rex pane.
+            "HEY_REX": "0",
         }
 
     def run_command(self, *args, cwd=None):

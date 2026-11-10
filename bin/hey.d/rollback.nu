@@ -7,7 +7,7 @@ use .lib/common.nu *
 def main [] {
   let ctx = (context)
   if $ctx.os_name == "macos" {
-    with-sudo-path { ^sudo $ctx.darwin_rebuild --rollback }
+    with-sudo-path { run-sudo $ctx.darwin_rebuild --rollback }
   } else {
     with-sudo-path { ^nixos-rebuild --sudo --rollback switch }
   }

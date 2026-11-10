@@ -83,6 +83,39 @@ export def with-sudo-path [body: closure] {
   }
 }
 
+# Runs argv as root. Agent sessions have no terminal for sudo's password
+# prompt, so when sudo has no cached credentials either, the command runs in a
+# Rex pane beside the caller. Its output is copied back here and the pane is
+# closed whether it succeeds or fails. HEY_REX=0 keeps the plain sudo call.
+export def --wrapped run-sudo [...argv: string] {
+  if not (sudo-wants-rex) {
+    ^/usr/bin/sudo ...$argv
+    return
+  }
+  let session = $env.REX_SESSION
+  let anchor = if ($env.REX_BLOCK? | is-empty) { [] } else { [-b $env.REX_BLOCK] }
+  print -e "hey: sudo needs a password; enter it in the Rex pane that opens beside this one."
+  # --shell none skips the login shell, so pass the caller's PATH through sudo.
+  let path = ([$env.PATH] | flatten | str join (char esep))
+  # --keep-open leaves the pane for capture; Rex closes a successful one at exit.
+  let run = (
+    ^rex split -s $session ...$anchor --wait --keep-open --json --label "hey: sudo" --shell none -- /usr/bin/env $"PATH=($path)" /usr/bin/sudo ...$argv
+    | complete
+  )
+  let block = ($run.stdout | from json | get -o block_ids.0)
+  if $block != null {
+    print (^rex capture -s $session -b $block --trim | complete).stdout
+    ^rex block close -s $session $block | complete | ignore
+  }
+  if $run.exit_code != 0 {
+    error make {msg: $"sudo ($argv | first) failed in the Rex pane with exit ($run.exit_code)"}
+  }
+}
+
+def sudo-wants-rex [] {
+  (($env.HEY_REX? | default "1") != "0") and (not (is-terminal --stdin)) and ($env.REX_SESSION? | is-not-empty) and ((which rex) | is-not-empty) and ((^/usr/bin/sudo -n true | complete).exit_code != 0)
+}
+
 export def sudo-path [] {
   let path_prefixes = ([
     "/run/wrappers/bin"
@@ -400,7 +433,7 @@ export def darwin-rebuild-prebuilt [
     } else {
       $system.out | path join "sw" "bin" "darwin-rebuild"
     }
-    with-sudo-path { ^/usr/bin/sudo $darwin_rebuild --flake $"($flake)#hey" ...$root_args --impure $action }
+    with-sudo-path { run-sudo $darwin_rebuild --flake $"($flake)#hey" ...$root_args --impure $action }
   } catch {|err|
     ^rm -rf $work
     $err.raw
@@ -481,7 +514,7 @@ export def system-rebuild [ctx: record, action: string, ...args: string] {
             }
             $fallback
           }
-          with-sudo-path { ^/usr/bin/sudo $darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
+          with-sudo-path { run-sudo $darwin_rebuild --flake $"($ctx.flake_dir)#($ctx.flake_host)" ...$agent_rebuild_args $action ...$args }
         }
       }
     } else {
