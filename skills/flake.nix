@@ -995,8 +995,50 @@
                 herdr.path = "herdr";
               }
               // lib.optionalAttrs rexEnabled {
-                rex.from = "rex";
-                rex.path = "rex";
+                rex = {
+                  from = "rex";
+                  path = "rex";
+                  transform =
+                    { original, ... }:
+                    ''
+                      ${original}
+
+                      ## Temporary task panes and sessions
+
+                      These lifecycle rules override the built-in guide's `--keep-open` examples for
+                      temporary agent work. Reuse the current session instead of creating a session
+                      for each command.
+
+                      Treat one-shot tests, builds, checks, and probes as ephemeral. Record the server,
+                      session, and returned block IDs when creating them. Preserve focus with
+                      `--focus=false`.
+
+                      For a synchronous one-shot command, use `rex run --wait` without `--keep-open`.
+                      If an asynchronous job needs `--keep-open` so its result can be inspected, save
+                      the output and check `process.last_exit`, then close only that completed block
+                      with `rex block close -s SESSION BLOCK`. Close it after handling success or
+                      failure; keeping evidence does not require keeping the pane. Apply the same
+                      cleanup if Rex retains a failed synchronous command.
+
+                      Verify the block is absent with `rex block ls -s SESSION --json` before removing
+                      it from the ledger. Process exit alone is not cleanup. Before reporting completion
+                      or handing off, reconcile every owned ephemeral resource: save its result, close
+                      it, and verify absence; retain running jobs with an explicit next owner/action.
+                      If cleanup fails, keep the ID in the ledger and report the blocker.
+
+                      For temporary sessions you created solely for these jobs, inspect the session
+                      before cleanup. Once every job has finished and results are saved, use
+                      `rex kill SESSION` only if every remaining pane is yours and ephemeral, then
+                      verify absence with `rex ls --json`. Never close the session hosting your agent
+                      or a session containing user/persistent work. Uncertain ownership means preserve
+                      it, not guess from age or label.
+
+                      Keep running jobs in the process ledger until their results are handled. Leave
+                      persistent servers, interactive agents, reviews, user-created panes, and anything
+                      the user asked to keep open alone. Never sweep tabs by age or label, close a
+                      whole tab containing unowned panes, or use cleanup to kill a running job.
+                    '';
+                };
               }
               // lib.optionalAttrs diffityEnabled {
                 diffity-diff.from = "diffity";
