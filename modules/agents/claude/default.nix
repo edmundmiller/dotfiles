@@ -100,7 +100,7 @@ in
             ]
             ''
               ${pkgs.coreutils}/bin/mkdir -p "$HOME/.claude/skills"
-              for skill in test-quality github-cli-media lore pe-verify writing-git-commits writing-pull-requests herdr-jj-workflow${optionalString config.modules.desktop.apps.tldraw.enable " tldraw-offline"}; do
+              for skill in test-quality github-cli-media lore pe-verify version-control${optionalString config.modules.desktop.apps.tldraw.enable " tldraw-offline"}; do
                 shared="$HOME/.agents/skills/$skill"
                 if [ ! -f "$shared/SKILL.md" ]; then
                   echo "ERROR: shared skill is missing: $shared/SKILL.md" >&2

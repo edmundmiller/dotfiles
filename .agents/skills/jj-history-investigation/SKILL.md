@@ -492,4 +492,4 @@ jj log -r 'description(frontmatter) & description(copyright)'
 ## Related Skills
 
 - `using-jj-workspaces` - Isolated jj agent workspaces
-- `writing-git-commits` - Focused commit messages and commit splitting
+- `version-control` - Commit, PR, and jj house style

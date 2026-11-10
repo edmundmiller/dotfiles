@@ -1,6 +1,6 @@
 ---
 name: herdr-jj-workflow
-description: Runs Herdr task workspaces with the selected agent, jj, Hunk, and durable receipts from creation through cleanup. Use for creating, resuming, reviewing, publishing, shipping, or removing a Herdr jj task workspace, or before mutating version control where `jj root` succeeds.
+description: Runs Herdr task workspaces with the selected agent, jj, Hunk, and durable receipts from creation through cleanup. Use for creating, resuming, reviewing, publishing, shipping, or removing a Herdr jj task workspace.
 ---
 
 # Herdr + jj task workflow
@@ -14,15 +14,6 @@ Use one durable Herdr workspace per issue, PR, or task. Share one stable name ac
 Treat that name as durable. Treat Herdr workspace, tab, and pane IDs as live handles; re-read them after lifecycle changes.
 
 Use Hunk from the task checkout's own Git root. For a non-colocated jj workspace, use `jj diff --git -r @` in the agent pane and record findings plus check output in the worklog when present, otherwise in the final handoff. "Review surface" below means either path.
-
-## Before mutating version control
-
-Run `jj root --ignore-working-copy` first. When it succeeds, follow this skill:
-
-- Use jj commands; jj snapshots automatically. Do not stage or commit with Git.
-- A Codex Desktop Git worktree stays on Git. Never initialize jj inside it.
-- Use read-only jj commands for inspection.
-- Use `done` for authorized publication and cleanup; it proves remote equality.
 
 ## When to use
 
