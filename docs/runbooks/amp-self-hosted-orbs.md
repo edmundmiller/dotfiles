@@ -1,6 +1,6 @@
 ---
 purpose: Choose and stage a self-hosted Amp orb provider without disrupting home services.
-applies_to: NUC provider pilot, NAS recovery, and Meshify execution choices.
+applies_to: NUC and UNAS rootless providers, storage safety, and Meshify execution choices.
 entrypoint: Submit the authorized exact-revision NUC deployment with --orb-pilot.
 verification: Exercise spawn, pause, resume, snapshots, and delete in the approved account.
 update_when: Amp's dispatch contract or the selected host and isolation policy changes.
@@ -12,14 +12,54 @@ update_when: Amp's dispatch contract or the selected host and isolation policy c
 
 Keep Amp-hosted orbs as the default and the Mac desktop app unchanged. Allow up
 to two bounded small orbs on the NUC after live capacity checks. Keep the existing runners.
-Do not put a provider on the NAS during storage recovery or change Meshify's sleep
-policy to make it an always-on provider. A provider adds separate thread checkouts;
+UNAS can provide the same bounded capacity after its separate activation and
+registration gates below. Do not change Meshify's sleep policy to make it an
+always-on provider. A provider adds separate thread checkouts;
 it does not give those threads the host's working tree or service credentials.
 
-`hosts/nuc/amp-orbs.nix` installs the candidate account, storage, CLI, dispatcher,
-and user unit. The controller waits for registration before it starts. Repository
+`hosts/_amp-orbs.nix` declares the dedicated account, CLI installer, dispatcher,
+and user unit for both hosts. `hosts/nuc/amp-orbs.nix` owns its ZFS storage;
+`hosts/unas/amp-orbs.nix` owns its bounded NVMe storage. The controller waits for
+registration before it starts. Repository
 wiring is not proof that the host adopted it. See the task checkpoint for current
 authorization and delivery evidence.
+
+## UNAS storage and activation gates
+
+UNAS restoration was accepted on November 8. A read-only November 10 inventory
+confirmed the accepted migration closure, 12 online logical CPUs, 31.15 GiB
+OS-visible RAM, 29.16 GiB available RAM, and 389.09 GiB free on the NVMe Btrfs
+filesystem. These are point samples, not reserved resources or activation authority.
+No failed units or active backup/restore processes were observed; backup timers
+remain armed. Recheck them before an approved deployment.
+
+The NVMe filesystem has no qgroups enabled. Do not enable quotas across the
+restored NAS to bound this one workload. The UNAS module creates only a sibling
+`@amp-orbs` subvolume on the verified NVMe filesystem. It preallocates a 64-GiB
+NOCOW file, formats that new file as ext4 without discarding its allocation,
+and mounts it at `/var/lib/amp-orbs`. It never formats a block device. The
+initializer requires at least 100 GiB free before allocation and refuses an
+unexpected filesystem identity, unrelated contents, or an existing account home
+that the mount would hide. Existing images must have the expected size, type
+and label; they are never reformatted automatically.
+
+The image bounds CLI state, images, snapshots and checkouts together. The same
+dispatcher retains its two-orb, two-CPU/2-GiB-per-orb admission limits, 2-GiB
+host reserve and 20-GiB storage floor. Neither bulk nor preservation storage is
+used. Hourly Btrbk snapshots select `@root`, `@home` and `@var`; they do not
+recurse into the separate `@amp-orbs` subvolume. Existing Restic include paths
+also exclude it. Do not add orb images to NAS replication or change existing
+backup policies. Retained orb disks are not independently backed up: commit and
+publish valuable work, and never prune unfinished or retained work automatically.
+
+The Nix configuration does not register a provider or create its readiness marker.
+After exact-candidate validation and separately approved `hey unas` activation,
+verify the bounded mount, actual rootless limits, backup/share continuity and
+disk-preserving lifecycle. Then register `unas-orbs` with its own token in the
+dedicated account through private interactive input. Never copy the NUC provider
+token: independent controllers cannot share local disks or snapshots. Provider
+registration and workspace settings changes need explicit approval. Keep public
+portals disabled and do not change the default provider during installation.
 
 ## Evidence and limits
 
@@ -114,7 +154,8 @@ The NUC module creates only `zroot/system/amp-orbs`, mounted at `/var/lib/amp-or
 with a 64-GiB quota. CLI state, images, snapshots, and checkouts share this limit.
 It refuses to mount over a non-empty existing home or adopt a dataset with a
 different mountpoint or quota. The dispatcher's free-space check is an additional
-admission guard. Do not use the recovering NAS or add GPU/USB passthrough.
+admission guard. UNAS uses its separate bounded local image described above;
+do not use bulk/preservation storage or add GPU/USB passthrough.
 
 The candidate user unit is `config/amp-orbs/provider.service`. It runs only the
 provider controller. Rootless containers and images persist in the dedicated

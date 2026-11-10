@@ -12,6 +12,7 @@
     ../_home.nix
     inputs.rex.nixosModules.default
     ./hardware-configuration.nix
+    ./amp-orbs.nix
     ./nas.nix
     ./disko.nix
 
