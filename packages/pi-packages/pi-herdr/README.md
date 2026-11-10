@@ -19,7 +19,7 @@ layout, pane, and agent control comes from the official
 ## Command
 
 - `/review-box <pr>` — create or resume one PR-keyed Herdr workspace.
-- `/review-box <pr> --agent pi` — use Pi instead of the default OMP review tab.
+- `/review-box <pr> --agent omp` — use OMP instead of the default Pi review tab.
 
 The Review Box contains Hunk, Critique, agent-review, and manual approval tabs.
 Its manifest lives under `$XDG_STATE_HOME/pi-herdr/review-boxes` (or

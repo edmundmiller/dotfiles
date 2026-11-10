@@ -52,7 +52,7 @@ describe("decision branches (VAL-BRIDGE-001, 004, 005, 014, 015, 016, 017, 019, 
     expect(m!.worktreePath).toBeTruthy();
     expect(m!.workspaceId).toBeTruthy();
     expect(m!.diffTarget).toContain("origin/main...HEAD");
-    expect(m!.agent).toBe("omp");
+    expect(m!.agent).toBe("pi");
     expect(m!.updatedAt).toBeTruthy();
     // ISO-8601 parseable
     expect(() => new Date(m!.updatedAt as string).toISOString()).not.toThrow();

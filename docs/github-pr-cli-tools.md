@@ -20,7 +20,7 @@ It uses an isolated detached worktree under the repository's shared
 
 - **Hunk** for the primary diff and inline findings.
 - **Critique** for an independent visual diff.
-- **OMP Review** for agent preparation, or **Pi Review** with `--agent pi`.
+- **Pi Review** for agent preparation.
 - **Approve** for visible, human-triggered `gh pr review` commands.
 
 ```text

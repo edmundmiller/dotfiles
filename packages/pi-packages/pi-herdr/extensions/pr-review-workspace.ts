@@ -352,7 +352,7 @@ export async function createHerdrReviewWorkspace(
   }
 ): Promise<{ workspaceId: string }> {
   const { worktreePath, prNumber, title, prUrl, diffTarget, diffBase } = opts;
-  const agent = opts.agent ?? "omp";
+  const agent = opts.agent ?? "pi";
 
   const workspaceLabel = truncate(`PR #${prNumber} ${title}`, 56);
   const workspace = await runHerdr(exec, [
@@ -437,7 +437,7 @@ export type OpenReviewBoxOpts = {
   worktreeName?: string;
   /** Extra instruction appended to the review prompt. */
   prompt?: string;
-  /** Review agent tab. Defaults to sticky manifest value or "omp". */
+  /** Review agent tab. Defaults to Pi; OMP is no longer installed, so stored "omp" is ignored. */
   agent?: "omp" | "pi";
   /** Override the state directory (testing). */
   stateRoot?: string;
@@ -647,7 +647,7 @@ export async function openReviewBox(
     const manifest = await readManifest(manifestPath);
     const diffBase = opts.base ?? `origin/${pr.baseRefName}`;
     const diffTarget = `${diffBase}...HEAD`;
-    const agent = opts.agent ?? manifest?.agent ?? "omp";
+    const agent = opts.agent ?? "pi";
 
     // ── Branch 1: manifest matches repo + PR + worktree exists ──────
     if (

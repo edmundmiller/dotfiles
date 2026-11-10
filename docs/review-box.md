@@ -10,7 +10,7 @@ update_when: The ghui action, bridge JSON contract, manifest schema, tabs, or re
 
 A Review Box promotes one GitHub pull request into one Herdr workspace. ghui sends the selected pull request to `review-box`; the bridge revalidates it with one read-only `gh pr view`, resolves the configured repository root, and delegates workspace creation or recovery to pi-herdr.
 
-The workspace contains **Hunk**, **Critique**, **OMP Review**, and **Approve** tabs. Repeating promotion resumes the existing workspace. A changed head SHA refreshes it; a missing workspace or worktree is restored from the surviving state.
+The workspace contains **Hunk**, **Critique**, **Pi Review**, and **Approve** tabs. Repeating promotion resumes the existing workspace. A changed head SHA refreshes it; a missing workspace or worktree is restored from the surviving state.
 
 ## Invoke the bridge
 

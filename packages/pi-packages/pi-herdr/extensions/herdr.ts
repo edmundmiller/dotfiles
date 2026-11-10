@@ -125,13 +125,13 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_pr_review_workspace",
     label: "Herdr PR Review Workspace",
     description:
-      "Create a PR review git worktree, open a Herdr workspace with Hunk, start an OMP review tab, and add an approval tab.",
+      "Create a PR review git worktree, open a Herdr workspace with Hunk, start a Pi review tab, and add an approval tab.",
     parameters: Type.Object({
       pr: Type.String({
         description: "Pull request number, URL, or branch accepted by `gh pr view`.",
       }),
       repo: Type.Optional(
-        Type.String({ description: "Repository path. Defaults to the current OMP/Pi cwd." })
+        Type.String({ description: "Repository path. Defaults to the current Pi cwd." })
       ),
       base: Type.Optional(
         Type.String({
@@ -143,12 +143,12 @@ export default function herdrExtension(pi: ExtensionAPI) {
       ),
       prompt: Type.Optional(
         Type.String({
-          description: "Optional extra instruction appended to the OMP review prompt.",
+          description: "Optional extra instruction appended to the review prompt.",
         })
       ),
       agent: Type.Optional(
         Type.Union([Type.Literal("omp"), Type.Literal("pi")], {
-          description: "Review agent tab. Defaults to OMP; Pi is an explicit override.",
+          description: "Review agent tab. Defaults to Pi; OMP is an explicit override.",
         })
       ),
     }),
@@ -165,7 +165,7 @@ export default function herdrExtension(pi: ExtensionAPI) {
       const argv = args.trim().split(/\s+/).filter(Boolean);
       const pr = argv[0];
       if (!pr) {
-        ctx.ui.notify("Usage: /review-box <pr-number|url|branch> [--agent omp|pi]", "info");
+        ctx.ui.notify("Usage: /review-box <pr-number|url|branch> [--agent pi|omp]", "info");
         return;
       }
       const agentIndex = argv.indexOf("--agent");
