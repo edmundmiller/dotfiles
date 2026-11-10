@@ -8,25 +8,25 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.agents.plannotator;
-  version = "0.28.10";
+  version = "0.28.60";
   piExtensionVersion = version;
   system = pkgs.stdenv.hostPlatform.system;
   releases = {
     aarch64-darwin = {
       asset = "plannotator-darwin-arm64";
-      hash = "sha256-G2qOU+WHqKqOeyZbi0DFDVhFoUhyyI43O/T0OZddORQ=";
+      hash = "sha256-aoERZj+/nwNongNSRBAkxT268IzGOyxPxN6G5QCTBkY=";
     };
     x86_64-darwin = {
       asset = "plannotator-darwin-x64";
-      hash = "sha256-q23UxhcwjtoqaTW8zw7DC7DNx2r/M5zYDjbZ5Y7CyTg=";
+      hash = "sha256-GoDeGBLrH5VYg+SeSI4t721aH58yjrRhXuOe4lxZbfA=";
     };
     aarch64-linux = {
       asset = "plannotator-linux-arm64";
-      hash = "sha256-OAz9zN/Rq9FfeXumslm6bzvP11Xbl0FHC/9Jhie0wMM=";
+      hash = "sha256-MmBGD0hC/y6yKkqc+SSEzgPMrMwHTVTPtkYDpFQHV7M=";
     };
     x86_64-linux = {
       asset = "plannotator-linux-x64";
-      hash = "sha256-2EpKOhZe+CqDF2X+pmwsjErVs7ys75hsgHM4uoDS8Ls=";
+      hash = "sha256-He0h4JpRUW+G4BhoeuJSeDnzduz+brYAJHlZDJfR4AM=";
     };
   };
   release = releases.${system} or (throw "Plannotator does not publish a binary for ${system}");
@@ -104,6 +104,21 @@ in
 
       # Upstream registers the Inbox tool and reply wake only when opted in.
       env.PLANNOTATOR_INBOX_TOOL = "1";
+
+      # Hosts opt in with `modules.agents.mcp.servers.plannotator-inbox.enable`.
+      # Pi and OMP already get the Inbox tool from the Plannotator extension.
+      modules.agents.mcp.servers.plannotator-inbox = {
+        transport = mkDefault "stdio";
+        command = mkDefault (getExe cfg.package);
+        args = mkDefault [
+          "inbox"
+          "mcp"
+        ];
+        excludeAgents = mkDefault [
+          "pi"
+          "omp"
+        ];
+      };
 
       modules.agents.pi.extraPackages = mkIf piEnabled [
         {
