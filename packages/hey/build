@@ -3,9 +3,18 @@ set -euo pipefail
 
 output="${1:?usage: build OUTPUT /absolute/path/to/mise}"
 mise="${2:?usage: build OUTPUT /absolute/path/to/mise}"
+entrypoint="${3:-main.bend}"
 if [[ $mise != /* ]]; then
   echo 'build: mise must be an absolute executable path' >&2
   exit 2
+fi
+move=/usr/bin/false
+if [[ $entrypoint == macos-main.bend ]]; then
+  move="${4:-$(command -v mv)}"
+  if [[ $move != /* ]] || ! "$move" --version | grep -q 'GNU coreutils'; then
+    echo 'build: macos tasks require an absolute GNU coreutils mv executable' >&2
+    exit 2
+  fi
 fi
 source_dir="$(dirname "$0")"
 build_dir="$(mktemp -d)"
@@ -20,8 +29,19 @@ mise_literal=$(
   done
 )
 
+move_literal=$(
+  LC_ALL=C
+  for ((i = 0; i < ${#move}; i++)); do
+    printf '\\%03o' "'${move:i:1}"
+  done
+)
+
 bend "$source_dir/PROOF.bend"
-bend "$source_dir/main.bend" -o "$build_dir/generated.c"
-clang -O2 -pthread -I"$build_dir" \
-  "-DHEY_MISE=\"$mise_literal\"" \
+bend "$source_dir/$entrypoint" -o "$build_dir/generated.c"
+stack_words=4096
+if [[ $entrypoint != main.bend ]]; then
+  stack_words=1048576 # 8 MiB for bounded OS text inputs in the task engine.
+fi
+clang -O2 -pthread -I"$build_dir" -I"$source_dir" \
+  "-DHEY_STACK_BASE_WORDS=$stack_words" "-DHEY_MISE=\"$mise_literal\"" "-DHEY_MV=\"$move_literal\"" \
   "$source_dir/launcher.c" -o "$output" -lm

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Sync the skills pin and activate the host"
+#MISE alias="skills-sync"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task skills:sync "$@"

@@ -1,18 +1,14 @@
-# Shared Nushell task logic
+# Task effect helpers
 
-Nushell modules target the `nu` version in the repo dev shell. Syntax check:
+This hidden directory is excluded from mise task discovery. Its shell helpers
+are invoked explicitly by native Bend controllers in `packages/hey/`; it is not
+a second task implementation layer.
 
-```sh
-nix develop --command nu --commands 'use bin/hey.d/.lib/common.nu *; print ok'
-```
+`wait-homebrew-idle.sh` performs the Homebrew process wait used by
+`packages/hey/system-rebuild.bend`. Keep rebuild policy and sequencing in Bend.
+Caller tests substitute a disposable wait helper, so do not remove that fixture
+or let it wait on the developer's real processes.
 
-Executable entrypoints live in `bin/hey.d/`; this directory holds shared helpers.
-For long Nix operations, `AGENT=1` selects concise progress and useful failure
-output, including `--show-trace` on failure.
-
-`hey check` delegates to `scripts/validation.py`, also used by CI. Do not add
-another selector here. It runs in a disposable source snapshot. Credentials
-resolved from `gh` belong only in Nix child environments, never output or Prek.
-Changes to check selection also require
-`python3 -m unittest tests/test_validation.py tests/test_mise_tasks.py`;
-run `hey check bin/hey.d` for the affected repository checks.
+Run `hey check bin/hey.d packages/hey` after changing a helper or its caller.
+Host activation remains separately authorized. Do not add Nushell fallbacks or
+another validation selector here.

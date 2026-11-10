@@ -18,7 +18,7 @@ hey zbench-baseline     # Show saved baseline (no run)
 hey zbench-history      # Show TSV history
 ```
 
-All commands accept extra zsh-bench args: `hey zbench --iters 4` for quick runs. Run from the intended checkout: both installed `hey` and `./bin/hey` execute that project's mise tasks. No host rebuild is needed for task edits. The Nushell entrypoints in `bin/hey.d/zbench/` use `def --wrapped ... [...args]` so flags such as `--iters` pass through to `zsh-bench`.
+All commands accept extra zsh-bench args: `hey zbench --iters 4` for quick runs. Run from the intended checkout: both installed `hey` and `./bin/hey` execute that project's mise tasks. No host rebuild is needed for task edits. The thin entrypoints in `bin/hey.d/zbench/` call the native Bend benchmark controller. Flags such as `--iters` pass through to `zsh-bench`.
 
 ## Metrics & Thresholds
 
@@ -57,7 +57,7 @@ benchmarks/zsh-bench/
     └── <Host>.tsv           # Append-only history (timestamp, git_rev, metrics)
 packages/zsh-bench/           # Nix package (romkatv/zsh-bench with internal/ helpers)
 bin/hey.d/zbench/            # Project-local task entrypoints
-bin/hey.d/.lib/zbench.nu      # Shared Nushell benchmark implementation
+packages/hey/desktop-tasks.bend # Bend benchmark controller
 bin/zbench-report             # Python — parse, compare, format results
 ```
 

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Inspect agent task receipts"
+#MISE alias="agent-sweep"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task agent:sweep "$@"

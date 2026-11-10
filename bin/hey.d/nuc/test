@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Dry-activate the NUC"
+#MISE alias="nuc-test"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task nuc:test "$@"

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Complete an agent task receipt"
+#MISE alias="agent-complete"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task agent:complete "$@"

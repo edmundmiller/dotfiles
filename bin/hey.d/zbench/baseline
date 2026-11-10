@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Show the Zsh benchmark baseline"
+#MISE alias="zbench-baseline"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task zbench:baseline "$@"

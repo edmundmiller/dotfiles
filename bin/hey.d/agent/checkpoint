@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Record an agent task checkpoint"
+#MISE alias="agent-checkpoint"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task agent:checkpoint "$@"

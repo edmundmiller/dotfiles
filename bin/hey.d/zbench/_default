@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Benchmark Zsh startup"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop zbench "$@"

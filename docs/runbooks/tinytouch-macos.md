@@ -8,7 +8,7 @@ update_when: The pinned CLI release, installer checksum, or pairing procedure ch
 
 # tinyTouch on macOS
 
-The [setup task](../../bin/hey.d/tinytouch-setup.nu) pins the official macOS CLI
+The [setup task](../../bin/hey.d/tinytouch-setup) pins the official macOS CLI
 and its installer checksum. The upstream installer verifies the architecture's
 download against its release manifest and keeps the signed bundle under
 `~/Library/Application Support/tinyTouch/`, with a command in

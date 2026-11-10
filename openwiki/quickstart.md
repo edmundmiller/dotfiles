@@ -25,7 +25,7 @@ The flake defines Linux (`x86_64-linux`) and Apple Silicon (`aarch64-darwin`) pa
 | -------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | macOS                | `MacTraitor-Pro` (`mactraitorpro`) and `Seqeratop` (`seqeratop`, also aliased as `L19W56QXR4`)                  | `flake.nix`, `hosts/mactraitorpro/`, `hosts/seqeratop/` |
 | NixOS                | `nuc` home server, `unas` NAS, and `meshify` workstation                                                        | `flake.nix`, `hosts/`                                   |
-| Deployment           | deploy-rs nodes for NUC and UNAS; NUC rebuilds normally use `hey`                                               | `flake.nix`, `bin/hey.d/.lib/remote.nu`                 |
+| Deployment           | deploy-rs nodes for NUC and UNAS; NUC rebuilds normally use `hey`                                               | `flake.nix`, `packages/hey/nuc-tasks.bend`              |
 | Shared configuration | platform-neutral modules, Home Manager aliases, package overlays, services, desktop configuration, and security | `default.nix`, `modules/`, `packages/`, `overlays/`     |
 
 [Architecture](architecture.md) constructs these host outputs; host files enable and parameterize [services and agents](services-and-agents.md). [Operations](operations.md) is the supported lifecycle path for applying either type of output.

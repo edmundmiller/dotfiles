@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Reinstall and patch Skillkit"
+#MISE alias="skillkit-sync"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop skillkit:sync "$@"

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Search nixpkgs"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task search "$@"

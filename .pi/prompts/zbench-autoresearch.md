@@ -30,7 +30,7 @@ Files in scope:
 - config/zsh/completion.zsh
 - config/zsh/keybinds.zsh
 - config/zsh/prompt.zsh
-- bin/hey.d/.lib/zbench.nu and bin/hey.d/zbench/ only if the benchmark harness itself needs fixing
+- packages/hey/desktop-tasks.bend and bin/hey.d/zbench/ only if the benchmark controller needs fixing
 
 Important context:
 
@@ -54,7 +54,10 @@ Hypotheses to investigate:
 
 Correctness checks:
 After promising changes, run:
-nix develop --command nu --no-config-file --commands 'use bin/hey.d/.lib/zbench.nu *; print ok'
+hey check config/zsh modules/shell/zsh
+
+If the benchmark controller changed, also run:
+hey check packages/hey bin/hey.d/zbench bin/zbench-report
 
 Loop behavior:
 

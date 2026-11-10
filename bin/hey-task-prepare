@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+output=$(nix build --no-link --print-out-paths --no-write-lock-file "$root#hey")
+exec "$output/libexec/hey/prepare" "$@"

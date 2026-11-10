@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Rebuild the current host with activation guards"
+#MISE raw=true
+#MISE raw_args=true
+#MISE alias='re'
+exec hey-task rebuild "$@"

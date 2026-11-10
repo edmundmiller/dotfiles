@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Open a Nix REPL for this flake"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop repl "$@"

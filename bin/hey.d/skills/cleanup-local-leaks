@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Remove project-local skills leaked into global skills"
+#MISE alias="skills-cleanup-local-leaks"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop skills:cleanup-local-leaks "$@"

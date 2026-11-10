@@ -18,7 +18,6 @@ let
     # Keep caller overrides first; only this updater needs these fallbacks.
     export PATH="''${PATH:+$PATH:}${
       lib.makeBinPath [
-        pkgs.nushell
         pkgs.mise
         pkgs.nix
         pkgs.git

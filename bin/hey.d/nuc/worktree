@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Deploy an isolated NUC snapshot; defaults to dry-activate"
+#MISE alias=["nuc-worktree", "nuc-wt"]
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-snapshot nuc:worktree "$@"

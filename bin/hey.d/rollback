@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Roll back the current host generation"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task rollback "$@"

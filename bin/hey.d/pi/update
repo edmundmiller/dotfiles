@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Pin an exact Pi release and rebuild the current host"
+#MISE alias='pi-update'
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task pi:update "$@"

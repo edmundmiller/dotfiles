@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Flash Ergodox firmware"
+#MISE alias="ergodox-flash"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop ergodox:flash "$@"

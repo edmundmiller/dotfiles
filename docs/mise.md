@@ -8,34 +8,34 @@ update_when: Task discovery, shell integration, or migration behavior changes.
 
 # Project-local commands with mise
 
-Nix installs mise, Nushell, and the system toolchain. Mise owns project
-environment variables and discovers executable scripts in `bin/hey.d/`.
-Each Nu script owns its command's typed `main` and `#MISE` metadata.
+Mise owns project environment variables and discovers executable file tasks in
+`bin/hey.d/`. Thin Bash entrypoints carry `#MISE` metadata and call native Bend
+controllers in `packages/hey/`; task execution does not require Nushell.
 `mise.toml` sets `[task_config].includes = ["bin/hey.d"]`.
-`bin/hey.d/.lib/` contains shared deployment, rebuild, and benchmark logic.
-Mise skips dot-prefixed subdirectories, so helpers are never discovered as tasks.
+Mise skips dot-prefixed subdirectories. Mechanical helpers such as the Homebrew
+process wait remain hidden in `.lib/`; typed task policy stays in Bend.
 There is no global task catalog or second dispatcher.
 
 Related tasks live in subdirectories. Mise turns the path into a colon-separated
-name: `nuc/status.nu` is `nuc:status`. A directory's `_default.nu` keeps its short
-entrypoint: `nuc/_default.nu` is `nuc`. Common commands such as `check`, `dev`,
+name: `nuc/status` is `nuc:status`. A directory's `_default` keeps its short
+entrypoint: `nuc/_default` is `nuc`. Common commands such as `check`, `dev`,
 and `rebuild` stay at the root. For example:
 
 ```text
 bin/hey.d/
   check
   dev
-  rebuild.nu
+  rebuild
   ergodox/
-    build.nu
-    flash.nu
+    build
+    flash
   nuc/
-    _default.nu
-    status.nu
-    worktree.nu
+    _default
+    status
+    worktree
   skills/
-    sync.nu
-    update.nu
+    sync
+    update
 ```
 
 ```sh
@@ -56,10 +56,12 @@ remain aliases, so `hey nuc-status` and `mise run nuc:status` run the same file.
 `re`, `u`, and `nuc-wt` also remain aliases. From outside dotfiles use
 `mise --cd "$DOTFILES" run <task>`.
 An inherited `FLAKE_DIR` no longer redirects a task into another checkout.
-The packaged shim contains no deployment implementation, so task edits do not
-require reinstalling it.
-Tasks preserve the caller's tool order on PATH after mise applies the project's
-environment. Importing a Nushell helper does not prepend the system profile.
+The dispatcher only forwards arguments. Native controllers are packaged
+separately; checkout launchers build the current `#hey` package before executing
+them. Source edits need no host activation, though compilation may run on first
+use. Tasks preserve the caller's tool order on PATH after mise applies the
+project environment. Privileged operations add their required paths only in the
+selected child environment.
 
 Tasks keep the existing guards, argument parsing, and terminal access for sudo,
 SSH and interactive commands. A task name is not permission to run it. Rebuilds,
@@ -71,8 +73,8 @@ deployment, cleanup and publication still require authorization under
 This repo's `mise.toml` replaces `.envrc`. Entering the directory sets the
 Beads variable and adds `bin` to PATH. It does not evaluate the flake or install
 Git hooks. Enter `mise run dev` when you need the Nix shell and
-its hook setup. `dev` resolves GitHub credentials for Nix, then restores the
-caller's `NIX_CONFIG` before entering the shell or running the requested command.
+its hook setup. `dev` resolves GitHub credentials for the Nix child without
+changing the caller's `NIX_CONFIG`.
 
 Move `.envrc.local` values into an ignored `mise.local.toml` `[env]` table.
 `DOTFILES_DIRENV_MODE` is retired; `dev` and `dev full` replace its shell modes.

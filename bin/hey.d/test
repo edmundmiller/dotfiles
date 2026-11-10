@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Test a host generation without making it the boot default"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task test "$@"

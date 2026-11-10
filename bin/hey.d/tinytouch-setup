@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#MISE description="Install the pinned tinyTouch Mac CLI and optionally pair HID"
+#MISE raw=true
+#MISE raw_args=true
+set -euo pipefail
+
+# Keep the signed upstream bundle intact for macOS Keychain helper access.
+version=0.1.35
+installer_sha256=57b8c972045bfb1c811176112700a69817bab58ed055379d7287cdbcdcf09a4b
+
+fail() {
+  printf '%s\n' "$*" >&2
+  exit 1
+}
+
+pair=false
+port_args=()
+while (($#)); do
+  case $1 in
+    --pair) pair=true ;;
+    --port) (($# > 1)) || fail "tinyTouch --port requires a value"; port_args=(--port "$2"); shift ;;
+    --port=*) port_args=(--port "${1#--port=}") ;;
+    *) printf 'Usage: hey tinytouch-setup [--pair [--port <usb-serial-path>]]\n' >&2; exit 2 ;;
+  esac
+  shift
+done
+
+[[ $(uname -s) == Darwin ]] || fail "tinyTouch setup requires macOS; Meshify is not supported by the upstream helper"
+if ((${#port_args[@]})) && [[ $pair != true ]]; then
+  fail "tinyTouch --port requires --pair"
+fi
+
+install_dir="$HOME/.local/bin"
+cli="$install_dir/tinytouch"
+expected="tinyTouch CLI $version"
+if [[ ! -x $cli ]] || [[ $("$cli" --version 2>/dev/null || true) != "$expected" ]]; then
+  release_root="https://github.com/ZimengXiong/tinyTouch/releases/download/v$version"
+  installer=$(mktemp "${TMPDIR:-/tmp}/tinytouch-install.XXXXXX")
+  trap 'rm -f "$installer"' EXIT
+  if ! download_error=$(curl --fail --silent --show-error --location --output "$installer" "$release_root/install.sh" 2>&1); then
+    fail "tinyTouch installer download failed; the installed CLI was not replaced
+$download_error"
+  fi
+  if command -v sha256sum >/dev/null; then
+    actual_sha256=$(sha256sum "$installer")
+  else
+    actual_sha256=$(shasum -a 256 "$installer")
+  fi
+  [[ ${actual_sha256%% *} == "$installer_sha256" ]] || fail "tinyTouch installer checksum mismatch; refusing to execute it"
+  mkdir -p "$install_dir"
+  TINYTOUCH_RELEASE_ROOT="$release_root" TINYTOUCH_INSTALL_DIR="$install_dir" /bin/sh "$installer" ||
+    fail "tinyTouch installation failed; inspect the installer output before retrying"
+  rm -f "$installer"
+  trap - EXIT
+fi
+
+printf '%s is installed at %s\n' "$expected" "$cli"
+if [[ $pair == true ]]; then
+  printf "Use this Mac's password in the hidden prompt. Touch only when prompted.\n"
+  exec "$cli" "${port_args[@]}" setup --mode hid --skip-enroll
+fi
+printf "Run hey tinytouch-setup --pair in Terminal to save this Mac's password in Keychain and install its helper.\n"

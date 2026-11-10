@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Show flake outputs"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task show "$@"

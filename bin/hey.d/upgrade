@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Update flake inputs and rebuild the host"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task upgrade "$@"

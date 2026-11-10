@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Bump the parent skills input"
+#MISE alias="skills-bump"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task skills:bump "$@"

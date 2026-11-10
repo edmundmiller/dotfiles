@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Log in to Scintillate"
+#MISE alias="login-scintillate"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-login login:scintillate "$@"

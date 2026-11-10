@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Compare Zsh benchmarks"
+#MISE alias="zbench-compare"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop zbench:compare "$@"

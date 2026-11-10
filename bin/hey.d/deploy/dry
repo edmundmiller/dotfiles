@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Dry-run a deployment"
+#MISE alias="deploy-dry"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task deploy:dry "$@"
