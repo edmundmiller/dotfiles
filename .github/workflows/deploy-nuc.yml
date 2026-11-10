@@ -254,6 +254,20 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- diagnostics' < scripts/amp-orb-pilot.sh
+      - name: Inspect retained critical entity failures without activation
+        if: inputs.operation == 'ha-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Only the five configured entity IDs, failure states and times leave NUC.
+          # No HA API credential is needed; the existing journal stays on NUC.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
+            exec sudo -n uv run --no-project python -
+          ' < modules/services/hass/critical-entity-history.py
       - name: Inspect running HA without activation
         if: inputs.operation == 'ha-diagnostics'
         shell: bash

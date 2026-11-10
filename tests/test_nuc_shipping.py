@@ -504,6 +504,54 @@ class NucShippingTests(unittest.TestCase):
                 self.assertIn("backup_repair", (self.root / "summary").read_text())
 
 
+class CriticalEntityHistoryTests(unittest.TestCase):
+    def invoke(self, lines=(), error=None):
+        output = io.StringIO()
+        journal = subprocess.CompletedProcess(
+            [], 0, "private journal text\n" + "\n".join(map(json.dumps, lines))
+        )
+        with patch("subprocess.run", return_value=journal, side_effect=error), patch("sys.stdout", output):
+            with self.assertRaises(SystemExit) as exit_status:
+                runpy.run_path(str(ROOT / "modules/services/hass/critical-entity-history.py"), run_name="__main__")
+        self.assertNotIn("private", output.getvalue())
+        return exit_status.exception.code, json.loads(output.getvalue())
+
+    def test_only_bounded_allowlisted_entity_failures_leave_the_host(self):
+        def report(at, status, failures=()):
+            return {
+                "schema_version": 1, "observed_at": at,
+                "checks": {
+                    "critical_entities": {"status": status, "failures": list(failures)},
+                    "repairs": {"details": "private repair"},
+                },
+            }
+
+        code, result = self.invoke([
+            report("2026-11-10T02:51:58Z", "unhealthy", [{"entity_id": "climate.main_floor", "state": "missing"}]),
+            report("2026-11-10T16:59:00Z", "healthy"),
+            report("2026-11-10T06:21:00Z", "unhealthy", [
+                {"entity_id": "climate.master_suite", "state": "unavailable", "attributes": "private attributes"},
+                {"entity_id": "private.person", "state": "unavailable"},
+                {"entity_id": "script.goodnight", "state": "private state"},
+            ]),
+            report("2026-11-10T02:51:59Z", "unhealthy", [{"entity_id": "script.good_morning", "state": "unknown"}]),
+            report("2026-11-11T02:52:00Z", "unhealthy"),
+        ])
+        self.assertEqual(code, 0)
+        self.assertEqual(result["retained_reports"], 3)
+        self.assertEqual(result["last_report"], {"observed_at": "2026-11-10T16:59:00+00:00", "status": "healthy"})
+        self.assertEqual(result["omitted_unrecognized_failures"], 2)
+        self.assertEqual(result["nonhealthy_critical_reports"], [
+            {"observed_at": "2026-11-10T02:51:59+00:00", "status": "unhealthy", "failures": [{"entity_id": "script.good_morning", "state": "unknown"}]},
+            {"observed_at": "2026-11-10T06:21:00+00:00", "status": "unhealthy", "failures": [{"entity_id": "climate.master_suite", "state": "unavailable"}]},
+        ])
+
+    def test_empty_or_unreadable_history_is_not_reported_as_healthy(self):
+        self.assertEqual(self.invoke()[0], 2)
+        code, result = self.invoke(error=subprocess.CalledProcessError(1, ["journalctl"], stderr="private error"))
+        self.assertEqual((code, result), (2, {"status": "unknown", "error_type": "CalledProcessError"}))
+
+
 class HaMonitorTests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
