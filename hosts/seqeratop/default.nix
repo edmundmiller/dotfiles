@@ -125,6 +125,7 @@
             seqera.enable = true;
             linear.enable = false;
             openaiDeveloperDocs.enable = true;
+            plannotator-inbox.enable = true;
           };
         };
         pi = {
