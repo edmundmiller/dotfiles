@@ -59,6 +59,8 @@
     "~/.config/dotfiles/packages/pi-packages/pi-ast-grep",
     // Cross-agent thread reader (agents:// URIs)
     "~/.config/dotfiles/packages/pi-packages/pi-xurl",
+    // Direct Pi-to-Pi messages and blocking questions; /intercom opens the peer picker.
+    { "source": "npm:pi-intercom@0.18.1", "skills": [] },
     // Pin the permission API validated with Pi 1.5.0; the bridge enforces asks even in yolo mode.
     "npm:@gotgenes/pi-permission-system@42.0.0",
     // JJ baseline guardrail: stop editing described dirty changes without explicit intent.
