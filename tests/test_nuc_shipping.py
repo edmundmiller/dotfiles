@@ -276,7 +276,9 @@ class NucShippingTests(unittest.TestCase):
             env=self.env | {"WORKFLOW_TEST": "1", "DEPLOY_SHA": SHA},
             capture_output=True,
             text=True,
-            timeout=20,
+            # A hang guard, not a speed check: the timeout test spawns the fake
+            # gh 180 times, which takes over 20s on a loaded Mac.
+            timeout=120,
         )
 
     def test_workflow_waits_for_missing_and_running_ci_then_succeeds(self):
