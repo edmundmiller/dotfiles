@@ -239,6 +239,41 @@
       },
       "additionalProperties": false
     },
+    "piStatus": {
+      "type": "object",
+      "description": "pi-status terminal title configuration",
+      "properties": {
+        "separator": { "type": "string" },
+        "ghosttySupport": { "type": "boolean" },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "enum": [
+                  "spinner",
+                  "pi_symbol",
+                  "session",
+                  "cwd",
+                  "model",
+                  "thinking",
+                  "tokens",
+                  "turn",
+                  "git_branch",
+                  "tools_count",
+                  "current_tool"
+                ]
+              },
+              "enabled": { "type": "boolean" }
+            },
+            "required": ["id", "enabled"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "images": {
       "type": "object",
       "description": "Image handling settings",
