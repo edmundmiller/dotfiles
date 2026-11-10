@@ -1,13 +1,8 @@
----
-name: stack-maintenance
-description: Maintains dependent GitHub PR stacks. Use for restacking, repairing PR bases, or coordinating stack merges and merge queues.
----
-
-# Stack Maintenance
+# PR stacks
 
 Keep stacked GitHub pull requests boring: map the real stack, act from the bottom, verify after every remote action, and rewrite branches only with a lease.
 
-Use this skill for PR chains, dependent branches, branch retargeting, merge queues, stale parent branches, and review/merge triage. Prefer existing stack tools (`gh stack`, `gh pr stack`, `jj spr`) when the repository has them; fall back to plain `gh` and `git` only after confirming the tool is unavailable or insufficient.
+Use this reference for PR chains, dependent branches, branch retargeting, merge queues, stale parent branches, and review/merge triage. Prefer existing stack tools (`gh stack`, `gh pr stack`, `jj spr`) when the repository has them; fall back to plain `gh` and `git` only after confirming the tool is unavailable or insufficient.
 
 ## Rules From Prior Stacked PR Incidents
 

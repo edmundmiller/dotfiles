@@ -18,6 +18,7 @@ Run `jj root --ignore-working-copy`. When it succeeds, the repo is jj: follow
 | Create or edit a pull request title or body              | [pull requests](references/pull-requests.md) |
 | Any mutation in a jj repo                                | [jj](references/jj.md)                       |
 | Undo an accidental or partial change, keeping valid work | [rollback](references/rollback.md)           |
+| Restack, retarget, or merge dependent PRs                | [stacks](references/stacks.md)               |
 
 ## House style
 

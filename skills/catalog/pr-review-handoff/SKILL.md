@@ -28,7 +28,7 @@ Load matching specialist skills when available:
 
 - Use Codex task tools to list and read today's tasks.
 - Use the runtime's native PR review surface for diff inspection only.
-- Use `stack-maintenance` for stack mapping, ancestry, and safe restacking only.
+- Use `version-control`'s stacks reference for stack mapping, ancestry, and safe restacking only.
 - Use `gh-fix-ci` or the repository's CI workflow for current-head failures.
 - Use the Slack skill only for the final draft or explicitly authorized send.
 
