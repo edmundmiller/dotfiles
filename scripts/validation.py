@@ -51,7 +51,6 @@ CHECKS = {
         "tests/test_validation.py",
         ".github/workflows/*",
         ".codex/hooks.json",
-        ".omp/hooks/*",
     ],
     "hey-native": ["bin/hey", "packages/hey/*", "packages/bend/*"],
     "hass-health-tests": ["modules/services/hass/*"],
@@ -131,10 +130,8 @@ CHECKS = {
         "config/agents/core.md",
         "config/codex/config.toml",
         "config/opencode/opencode.jsonc",
-        "config/omp/*",
         "modules/agents/claude/*",
         "modules/agents/codex/*",
-        "modules/agents/omp/*",
         "modules/agents/opencode/*",
         "modules/agents/pi/*",
         "modules/agents/plannotator/*",
@@ -335,8 +332,7 @@ def package_plan(root, files, full=False, packages=()):
     workspace = root / "packages/pi-packages"
     available = {
         p.parent.name: json.loads(p.read_text())
-        for pattern in ("pi-*/package.json", "omp-*/package.json")
-        for p in workspace.glob(pattern)
+        for p in workspace.glob("pi-*/package.json")
     }
     shared = full or matches(
         files,

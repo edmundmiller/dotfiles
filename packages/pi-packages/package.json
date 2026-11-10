@@ -1,8 +1,7 @@
 {
   "private": true,
   "workspaces": [
-    "pi-*",
-    "omp-*"
+    "pi-*"
   ],
   "devDependencies": {
     "@marcfargas/pi-test-harness": "0.5.0",

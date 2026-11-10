@@ -257,19 +257,16 @@ class ValidationTests(unittest.TestCase):
         self.assertFalse(
             json.loads((v.ROOT / ".codex/hooks.json").read_text())["hooks"].get("Stop")
         )
-        self.assertFalse((v.ROOT / ".omp/hooks/post/completion-gate.ts").exists())
         self.assertFalse((v.ROOT / "scripts/codex-validate-stop").exists())
 
     def test_full_includes_clean_sources_and_does_not_imply_platform_checks(self):
-        self.package("omp-example")
+        self.package("pi-example")
         self.commit()
         selected = self.selection("--full")
         self.assertIn("tracked.md", selected["files"])
         self.assertIn("validation-tests", selected["checks"])
         self.assertIn("agent-instruction-tests", selected["checks"])
-        self.assertNotIn("omp-thin-harness-tests", selected["checks"])
-        self.assertNotIn("omp-config", selected["checks"])
-        self.assertIn("omp-example", selected["packages"])
+        self.assertIn("pi-example", selected["packages"])
         self.assertIsNone(selected["platform"])
         self.assertNotIn("trmnl-agent-message-render", selected["checks"])
         self.assertFalse(
@@ -292,7 +289,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_shared_lock_and_tests_only_changes_check_all_packages(self):
         self.package("pi-a")
-        self.package("omp-b")
+        self.package("pi-b")
         for file in [
             "packages/pi-packages/bun.lock",
             "packages/pi-packages/tests/example.test.ts",
@@ -300,18 +297,18 @@ class ValidationTests(unittest.TestCase):
         ]:
             with self.subTest(file=file):
                 packages, integration = v.package_plan(self.root, [file])
-                self.assertEqual(packages, ["omp-b", "pi-a"])
+                self.assertEqual(packages, ["pi-a", "pi-b"])
                 self.assertTrue(integration)
 
     def test_transitive_dependents_not_unrelated_packages(self):
         self.package("pi-a")
-        self.package("omp-b", {"@test/pi-a": "workspace:*"})
-        self.package("pi-c", {"@test/omp-b": "workspace:*"})
+        self.package("pi-b", {"@test/pi-a": "workspace:*"})
+        self.package("pi-c", {"@test/pi-b": "workspace:*"})
         self.package("pi-unrelated")
         packages, integration = v.package_plan(
             self.root, ["packages/pi-packages/pi-a/index.ts"]
         )
-        self.assertEqual(packages, ["omp-b", "pi-a", "pi-c"])
+        self.assertEqual(packages, ["pi-a", "pi-b", "pi-c"])
         self.assertTrue(integration)
 
     def test_removed_package_and_unknown_explicit_package(self):

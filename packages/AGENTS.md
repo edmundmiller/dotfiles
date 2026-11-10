@@ -14,7 +14,7 @@ the package, matching `default.nix`, rather than large inline source rewrites.
 
 Check ownership: AST rules in `ast-grep/rules/`, cross-file/path policy in root
 tests/flake checks, implementation tests beside the tool, upstream checks in
-the package harness. `hey check` routes repository policy and changed Pi/OMP
+the package harness. `hey check` routes repository policy and changed Pi
 package typechecks/tests (including dependents). `pkg-check` still owns upstream
 patch tests; package builds and host activation are distinct checks/actions.
 

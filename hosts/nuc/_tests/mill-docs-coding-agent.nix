@@ -20,18 +20,6 @@ let
       msg = "Mill Docs coding agent must bind writable acpx state into its protected home.";
     }
     {
-      test = builtins.elem "/home/emiller/.omp/agent" service.serviceConfig.ReadWritePaths;
-      msg = "Mill Docs coding agent must allow OMP to update its SQLite state.";
-    }
-    {
-      test = builtins.elem "/home/emiller/.omp/run" service.serviceConfig.ReadWritePaths;
-      msg = "Mill Docs coding agent must allow OMP to register daemon presence.";
-    }
-    {
-      test = builtins.elem "/home/emiller/.omp/logs" service.serviceConfig.ReadWritePaths;
-      msg = "Mill Docs coding agent must allow OMP to write diagnostic logs.";
-    }
-    {
       test = builtins.any (
         credential: pkgs.lib.hasPrefix "openai-api-key:" credential
       ) service.serviceConfig.LoadCredential;

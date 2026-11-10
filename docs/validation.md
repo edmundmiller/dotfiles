@@ -14,7 +14,7 @@ Run them inside the checkout, or use `mise --cd <checkout> run check`.
 
 | Command                            | Scope                                                                              |
 | ---------------------------------- | ---------------------------------------------------------------------------------- |
-| `hey check`                        | Changed files, affected repository tests, Pi/OMP packages and dependents           |
+| `hey check`                        | Changed files, affected repository tests, Pi packages and dependents               |
 | `hey check path...`                | The same routing, limited to changed task-owned paths                              |
 | `hey check --plan`                 | JSON selection only; no check execution or source snapshot                         |
 | `hey check --full`                 | All portable checks, formatting/lint, all workspace packages and integration tests |
@@ -192,7 +192,7 @@ not copied. Native Darwin verification remains a separate
 NUC cannot certify it. An unpushed or dirty candidate must be transferred to that
 Mac worktree explicitly; runner availability alone does not transfer source.
 
-Pi/OMP workspace manifests and lock/config changes select every package.
+Pi workspace manifests and lock/config changes select every package.
 Package edits select that package and transitive workspace consumers, then run
 their declared typecheck/test scripts and integration tests. Dependencies install
 with the frozen lockfile inside the snapshot. `bin/qa-changed` is only a
@@ -203,9 +203,7 @@ separate: it clones upstream, applies carried patches and runs upstream tests.
 ## Hooks and migration
 
 Commit hooks retain fast formatting/lint. Shared agent instruction checks run
-without installing a model harness. OMP is disabled on all configured hosts;
-its package exports and runtime/config-registry checks are retired. Its source
-configuration remains for reference, and existing session data is untouched.
+without installing a model harness.
 Pre-push safety (identity, submodules, HA assertions, runtime drift), Beads sync,
 and deployment guards remain separate from source validation. Commit/push hooks
 can mutate supported state; `hey check` does not run those stages.
@@ -214,5 +212,5 @@ Claude Code plugins and their validators are removed. If the retired
 `Validate Claude Code Plugins` status was required in GitHub settings, an
 administrator must remove that requirement before merging; deleting source
 does not change branch protections. Re-enter the dev shell to regenerate
-installed Git hooks; restart existing Codex/OMP sessions to unload old stop hooks.
+installed Git hooks; restart existing Codex sessions to unload old stop hooks.
 Generated OpenWiki pages and historical worklogs are not workflow authorities.

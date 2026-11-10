@@ -16,7 +16,6 @@ let
     paths = [
       pkgs.my.herdr-plugins
       pkgs.my.herdr-plugin-jj-workspace
-      pkgs.my.herdr-tab-smart-rename
     ]
     ++ optional cfg.vercelSandbox.enable pkgs.my.herdr-vercel-sandbox-plugin;
   };
@@ -49,20 +48,7 @@ let
       "/sbin"
     ]
   );
-  # Herdr inherits OMP's environment, where PI_CODING_AGENT_DIR points at OMP's
-  # own agent dir; drop it so Pi panes use their own default agent dir.
-  herdrPackages = optional (cfg.package != null) (
-    pkgs.symlinkJoin {
-      name = "herdr-isolated-agent-dirs";
-      paths = [ cfg.package ];
-      nativeBuildInputs = [ pkgs.makeWrapper ];
-      postBuild = ''
-        rm "$out/bin/herdr"
-        makeWrapper ${escapeShellArg (lib.getExe cfg.package)} "$out/bin/herdr" \
-          --run 'if [ "''${PI_CONFIG_DIR-}" = .omp ] && [ "''${PI_CODING_AGENT_DIR-}" = "''${HOME-}/.omp/agent" ]; then unset PI_CODING_AGENT_DIR; fi'
-      '';
-    }
-  );
+  herdrPackages = optional (cfg.package != null) cfg.package;
 
   herdrConfigTemplate = cfg.configFile;
   # Pi's built-in theme can be too low-contrast in some Herdr/Ghostty stacks
@@ -229,7 +215,6 @@ in
     key = mkOpt str "H";
     mainCodingAgent = mkOpt (enum [
       "pi"
-      "omp"
       "claude"
       "codex"
       "opencode"
@@ -298,15 +283,6 @@ in
         description = ''
           Automatically install Herdr's OpenCode integration when
           `modules.agents.opencode.enable` is true.
-        '';
-      };
-
-      omp.enable = mkOption {
-        type = bool;
-        default = true;
-        description = ''
-          Automatically install Herdr's OMP integration when
-          `modules.agents.omp.enable` is true.
         '';
       };
 
@@ -401,25 +377,13 @@ in
     // optionalAttrs cfg.vercelSandbox.enable {
       "herdr/plugins/config/vercel.sandbox/config.json".text = ''
         {
-          "agentKind": "omp",
+          "agentKind": "codex",
           "allowCandidateAgents": true,
           "agentArgs": {
             "codex": [],
-            "omp": [],
             "opencode": []
           },
           "customAgents": {
-            "omp": {
-              "title": "OMP",
-              "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools bun@1.3.14 @oh-my-pi/pi-coding-agent@17.2.12",
-              "launchCommand": "env PATH=/vercel/sandbox/.herdr-tools/node_modules/.bin:$PATH PI_CONFIG_DIR=.omp PI_CODING_AGENT_DIR=/vercel/sandbox/.omp/agent /vercel/sandbox/.herdr-tools/node_modules/.bin/omp",
-              "versionCommand": "PATH=/vercel/sandbox/.herdr-tools/node_modules/.bin:$PATH /vercel/sandbox/.herdr-tools/node_modules/.bin/omp --version",
-              "expectedVersion": "17.2.12",
-              "authenticationMode": "device-code",
-              "herdrDetectionIdentifier": "omp",
-              "interactiveTTY": true,
-              "resumeSupported": true
-            },
             "opencode": {
               "title": "OpenCode",
               "installationCommand": "npm install --prefix /vercel/sandbox/.herdr-tools opencode-ai@1.18.18",
@@ -532,6 +496,7 @@ in
               "vercel.sandbox.start-agent",
               "vercel.sandbox.start-codex",
               "vercel.sandbox.start-omp",
+              "tab-smart-rename.rename-now",
               "vercel.sandbox.start-opencode",
               "vercel.sandbox.apply-changes",
               "vercel.sandbox.reconnect",
@@ -644,12 +609,6 @@ in
 
           ${optionalString cfg.vercelSandbox.enable ''
             command_block.extend([
-                "",
-                "[[keys.command]]",
-                'key = "prefix+S"',
-                'type = "plugin_action"',
-                'command = "vercel.sandbox.start-omp"',
-                'description = "start OMP in a Vercel Sandbox"',
                 "",
                 "[[keys.command]]",
                 'key = "prefix+alt+c"',
@@ -916,19 +875,6 @@ in
           done
         '';
 
-        home.activation.herdr-smart-rename = lib.hm.dag.entryAfter [ "herdr-plugin-registry" ] ''
-          export PATH=$PATH:${escapeShellArg launchPath}
-          herdr_cmd=${escapeShellArg cfg.command}
-          if ! start_output=$("$herdr_cmd" plugin action invoke start --plugin tab-smart-rename 2>&1); then
-            if printf '%s\n' "$start_output" | ${pkgs.gnugrep}/bin/grep -Eqi "Connection refused|protocol_mismatch|server_not_running"; then
-              echo "herdr: warning: runtime unavailable; deferring smart rename worker start" >&2
-            else
-              printf '%s\n' "$start_output" >&2
-              exit 1
-            fi
-          fi
-        '';
-
         home.activation.herdr-marketplace-plugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           export PATH=$PATH:${escapeShellArg launchPath}:${escapeShellArg "${pkgs.go}/bin"}
           export SSL_CERT_FILE=${escapeShellArg caBundle}
@@ -1059,8 +1005,7 @@ in
           install_plugin persiyanov herdr-reviewr
           install_plugin ChmaraX herdr-nvim
           install_plugin plannotator herdr-annotate
-          # Do not install kryptamine/herdr-auto-title: it requires a newer
-          # Herdr and would race the managed OMP-backed smart-rename worker.
+          # Do not install kryptamine/herdr-auto-title: it requires a newer Herdr.
           install_plugin nicosuave memex
           install_plugin jhochenbaum herdr-hunk-diff
           install_plugin thanhdat77 herdr-navigator
@@ -1116,17 +1061,6 @@ in
               ${optionalString (cfg.integrations.opencode.enable && config.modules.agents.opencode.enable) ''
                 ${pkgs.coreutils}/bin/mkdir -p "$HOME/.config/opencode"
                 install_integration opencode
-              ''}
-
-              ${optionalString (cfg.integrations.omp.enable && config.modules.agents.omp.enable) ''
-                ${pkgs.coreutils}/bin/mkdir -p "$HOME/.omp/agent/extensions"
-                # Herdr 0.8 refuses to install OMP when Pi and OMP resolve to the
-                # same extension directory. Activation may inherit
-                # PI_CODING_AGENT_DIR=~/.omp/agent from the wrapped OMP that
-                # launched the rebuild, which makes both sides resolve there.
-                # Clear it so Pi falls back to ~/.pi/agent while PI_CONFIG_DIR
-                # keeps OMP on ~/.omp/agent.
-                PI_CODING_AGENT_DIR= PI_CONFIG_DIR=.omp install_integration omp
               ''}
 
               ${optionalString (cfg.integrations.hermes.enable && config.modules.agents.hermes.enable) ''

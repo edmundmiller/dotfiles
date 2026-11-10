@@ -91,8 +91,7 @@ in
       { lib, ... }:
       {
         # Claude does not discover ~/.agents/skills natively. Expose the shared
-        # skills it needs through Claude's own directory. OMP may scan both
-        # providers, but name-based discovery keeps one canonical entry.
+        # skills it needs through Claude's own directory.
         home.activation.claude-shared-skill-links = mkIf cfg.enable (
           lib.hm.dag.entryAfter
             [

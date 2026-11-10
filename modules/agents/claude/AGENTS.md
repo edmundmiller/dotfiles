@@ -15,8 +15,7 @@ marketplace without changing existing permissions, hooks, instructions, or MCP.
 
 `claude-shared-skill-links` in [default.nix](default.nix) selects Claude's links
 into the canonical `~/.agents/skills` tree. Other Claude skill copies are
-removed because OMP scans both locations; the full catalog must not be duplicated
-there. `skills/flake.nix` owns shared skill sources and selection.
+removed; the full catalog must not be duplicated there. `skills/flake.nix` owns shared skill sources and selection.
 
 `claude-session-budget-hooks` upserts `config/claude/session-budget-hook.py` into
 the live settings on `SessionStart`, `UserPromptSubmit`, and `Stop`. The hook only

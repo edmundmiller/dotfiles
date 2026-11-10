@@ -15,8 +15,6 @@ TASKS = ROOT / "bin/hey.d"
 FLAKE = ROOT / "flake.nix"
 ORB_SETUP = ROOT / ".agents" / "setup"
 AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
-OMP_MODULE = ROOT / "modules" / "agents" / "omp" / "default.nix"
-OMP_GO_COMMAND = ROOT / "config" / "omp" / "commands" / "go.md"
 CODEX_CONFIG = ROOT / "config" / "codex" / "config.toml"
 LUNA_PROFILE = ROOT / "config" / "codex" / "agents" / "luna_worker.toml"
 AUTONOMOUS_SKILL = ROOT / "skills" / "catalog" / "autonomous-agent-loop" / "SKILL.md"
@@ -118,15 +116,11 @@ class AgentRunTests(unittest.TestCase):
 
     def test_packaged_agent_run_is_receipt_only_and_repo_explicit(self) -> None:
         wrapper = "\n".join(path.read_text() for path in TASKS.glob("agent/*.nu"))
-        module = OMP_MODULE.read_text()
 
         self.assertNotIn("context", wrapper)
-        self.assertNotIn("AGENT_RUN_ROOT", wrapper + module)
+        self.assertNotIn("AGENT_RUN_ROOT", wrapper)
         self.assertNotIn("agent-review", wrapper)
         self.assertNotIn("agent-worklog-check", wrapper)
-        self.assertIn("pkgs.jujutsu", module)
-        self.assertNotIn("pkgs.jj", module)
-        self.assertIn("exec python3 ${../../../bin/agent-run}", module)
 
     def test_completion_contract_stays_aligned_across_canonical_sources(self) -> None:
         sources = {
@@ -208,37 +202,10 @@ class AgentRunTests(unittest.TestCase):
         for destination in ("`AGENTS.md`", "existing skill", "prompt template", "repo doc"):
             self.assertIn(destination, skill)
 
-    def test_omp_go_command_requires_parent_worker_return_and_landing_contract(self) -> None:
-        command = OMP_GO_COMMAND.read_text().lower()
-
-        for phrase in (
-            "wait for every worker",
-            "structured return envelope",
-            "landing proof",
-            "keep the issue open through `done`",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, command)
-
-        for field in (
-            "status",
-            "changed_paths",
-            "verification",
-            "landing_state",
-            "next_action",
-        ):
-            with self.subTest(field=field):
-                self.assertIn(field, command)
-
-        for state in ("continue", "partial", "landed", "blocked"):
-            with self.subTest(state=state):
-                self.assertIn(state, command)
-
     def test_return_contract_uses_structured_wording_without_machine_readable_claims(self) -> None:
         sources = {
             "worker": LUNA_PROFILE.read_text(),
             "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
-            "omp go command": OMP_GO_COMMAND.read_text(),
         }
 
         for name, source in sources.items():

@@ -1,17 +1,4 @@
 {
-  "config/omp/extensions/_lib/lazy-extension.mjs": {
-    "anti-slop/no-reflect-get": {
-      "count": 1
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 2
-    }
-  },
-  "config/omp/extensions/permission-policy-guard/hooks/pre/protect-permission-policy.js": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 2
-    }
-  },
   "config/pi/extensions/commit-review.ts": {
     "anti-slop/no-known-value-widening": {
       "count": 3
@@ -229,14 +216,6 @@
     },
     "anti-slop/require-safety-comment-for-type-assertion": {
       "count": 2
-    }
-  },
-  "packages/pi-packages/omp-skillopt-sleep/extensions/skillopt-sleep.ts": {
-    "anti-slop/no-unsafe-dictionary-type": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 3
     }
   },
   "packages/pi-packages/pi-agentmap/tests/extension.test.ts": {

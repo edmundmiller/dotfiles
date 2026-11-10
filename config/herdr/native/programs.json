@@ -1,6 +1,5 @@
 {
   "programs": {
-    "omp": { "name": "OMP", "run": ["omp"] },
     "pi": { "name": "Pi", "run": ["pi"] }
   }
 }

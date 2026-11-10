@@ -17,7 +17,6 @@ let
     ".agents/**"
     ".claude/**"
     ".codex/**"
-    ".omp/**"
     ".opencode/**"
     ".pi/**"
   ];

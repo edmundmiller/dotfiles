@@ -92,9 +92,6 @@ dotfilesLib.my.mkServiceVmTest {
           home.activation.herdr-plugin-registry = lib.mkForce (
             lib.hm.dag.entryAfter [ "writeBoundary" ] ": skipped in VM test"
           );
-          home.activation.herdr-smart-rename = lib.mkForce (
-            lib.hm.dag.entryAfter [ "writeBoundary" ] ": skipped in VM test"
-          );
           home.activation.herdr-marketplace-plugins = lib.mkForce (
             lib.hm.dag.entryAfter [ "writeBoundary" ] ": skipped in VM test"
           );
@@ -140,7 +137,6 @@ dotfilesLib.my.mkServiceVmTest {
         claude.enable = false;
         codex.enable = false;
         opencode.enable = false;
-        omp.enable = false;
         hermes.enable = false;
       };
       # Pin the template explicitly. The module default points at

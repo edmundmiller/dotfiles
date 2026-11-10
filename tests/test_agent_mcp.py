@@ -13,7 +13,6 @@ import tomlkit
 SCRIPT = Path(__file__).resolve().parents[1] / "config/agents/reconcile_mcp.py"
 PATHS = {
     "pi": ".pi/agent/mcp.json",
-    "omp": ".omp/agent/mcp.json",
     "claude": ".claude.json",
     "codex": ".codex/config.toml",
     "opencode": ".config/opencode/opencode.jsonc",
@@ -30,19 +29,6 @@ EXPECTED = {
         "remote": {
             "url": "https://mcp.example.test/v1",
             "exposure": "codemode",
-            "headers": {"Authorization": "Bearer ${MCP_TEST_TOKEN}"},
-        },
-    },
-    "omp": {
-        "tools": {
-            "type": "stdio",
-            "command": "tool-runner",
-            "args": ["--mode", "safe"],
-            "env": {"WORKSPACE": "/work/demo"},
-        },
-        "remote": {
-            "type": "http",
-            "url": "https://mcp.example.test/v1",
             "headers": {"Authorization": "Bearer ${MCP_TEST_TOKEN}"},
         },
     },
@@ -215,7 +201,7 @@ command = "obsolete-runner"
                 data["amp.mcpServers" if agent == "amp" else "mcpServers"] = servers
             self.write(relative, "// User-owned settings\n" + json.dumps(data))
 
-    def test_six_adapters_have_exact_stdio_and_bearer_http_shapes(self):
+    def test_adapters_have_exact_stdio_and_bearer_http_shapes(self):
         self.run_cli()
         for agent in PATHS:
             with self.subTest(agent=agent):
@@ -324,36 +310,6 @@ command = "obsolete-runner"
         self.run_cli()
         self.run_cli()
         self.assertEqual(self.snapshot(), before)
-
-    def test_omp_exclusions_block_inherited_servers_and_release_only_owned_names(self):
-        self.write(
-            PATHS["omp"],
-            json.dumps(
-                {
-                    "disabledServers": ["personal", "tools"],
-                    "enabledServers": ["remote", "other"],
-                }
-            ),
-        )
-        self.run_cli()
-        self.assertEqual(self.read_config("omp")["disabledServers"], ["personal"])
-        self.assertEqual(self.read_config("omp")["enabledServers"], ["other"])
-        self.manifest["servers"]["remote"]["excludeAgents"] = ["omp"]
-        self.run_cli()
-        self.assertEqual(
-            self.read_config("omp")["disabledServers"], ["personal", "remote"]
-        )
-        del self.manifest["servers"]["remote"]
-        self.run_cli()
-        self.assertEqual(self.read_config("omp")["disabledServers"], ["personal"])
-        self.manifest["servers"]["tools"]["enable"] = False
-        self.run_cli()
-        self.assertEqual(
-            self.read_config("omp")["disabledServers"], ["personal", "tools"]
-        )
-        self.manifest["agents"].remove("omp")
-        self.run_cli()
-        self.assertEqual(self.read_config("omp")["disabledServers"], ["personal"])
 
     def test_dry_run_creates_nothing_and_does_not_update_existing_configs(self):
         for seeded in (False, True):

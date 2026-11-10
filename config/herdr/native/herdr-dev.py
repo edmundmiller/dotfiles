@@ -177,7 +177,7 @@ def main():
     """Expose only open and hunk; guarded native jj lifecycle is not ported."""
     parser = argparse.ArgumentParser(
         prog="herdr-dev",
-        description="Native agent + Hunk workflow (default agent: omp).",
+        description="Native agent + Hunk workflow (default agent: pi).",
         epilog="jj workspace creation/removal is unsupported; open an existing Git checkout instead.",
     )
     commands = parser.add_subparsers(dest="command", required=True)
@@ -186,7 +186,7 @@ def main():
     )
     opening.add_argument("folder")
     opening.add_argument(
-        "--agent", choices=("pi", "omp", "claude", "codex", "opencode"), default="omp"
+        "--agent", choices=("pi", "claude", "codex", "opencode"), default="pi"
     )
     hunk = commands.add_parser(
         "hunk", help="Review the invoking Git cwd beside the focused local pane"
