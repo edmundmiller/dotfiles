@@ -7,11 +7,13 @@ the agent-skills platform mismatch requires Linux/NUC evaluation.
 
 ## Deployment provenance
 
-`hey nuc-wt build` builds an isolated snapshot of the current worktree on NUC;
-`vm` builds its VM. Uncommitted snapshots allow only those two actions.
-`hey nuc-wt` defaults to dry-activate; `test` and `switch` activate and require a
-clean commit. Use the printed `NUC_WORKTREE_REMOTE_DIR` for checks on that exact
-snapshot. Active leases protect builds; pruning retains five recent snapshots.
+`hey nuc-wt build` builds an isolated snapshot on NUC; `vm` builds its VM.
+`validate` runs the full, NixOS/KVM and flake gates in an isolated user service.
+These three actions accept uncommitted snapshots and do not activate a host.
+`hey nuc-wt` defaults to dry-activate. All activation modes require a clean
+commit. Use `NUC_WORKTREE_REMOTE_DIR` for checks on that exact snapshot; validation
+also prints its report directory and unit. Active leases protect snapshots;
+pruning retains five completed snapshots. See the runbook for service ownership.
 
 `hey nuc` is the deployment interface. Manual GitHub deployments use
 `hey nuc revision <SHA>` after authorized dispatch and successful exact-head CI,

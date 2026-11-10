@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Compatibility entrypoint for changed-source validation"
+#MISE raw=true
+#MISE raw_args=true
+#MISE hide=true
+exec hey-task qa-changed "$@"

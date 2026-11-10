@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Prepare local agents-workspace pin changes without publishing or deploying"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-prepare agents:prepare "$@"

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Save a Zsh benchmark"
+#MISE alias="zbench-save"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop zbench:save "$@"

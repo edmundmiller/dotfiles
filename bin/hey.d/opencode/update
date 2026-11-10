@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Update OpenCode"
+#MISE alias="opencode-update"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task opencode:update "$@"

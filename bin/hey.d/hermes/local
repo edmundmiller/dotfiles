@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Rebuild and check local Hermes on Darwin"
+#MISE alias="hermes-local"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-hermes hermes:local "$@"

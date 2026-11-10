@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Update the skills catalog"
+#MISE alias="skills-update"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task skills:update "$@"

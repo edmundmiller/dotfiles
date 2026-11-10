@@ -114,9 +114,9 @@ send this parameter fragment as a whole-ruleset replacement.
 Separately approve replacing the Amp project's saved custom Ship prompt with
 the reviewed `.agents/ship.md`. Editing the source file alone does not update
 Amp settings. Do not activate the old direct-main Ship prompt as a workaround.
-Legacy commands that combine direct main publication with activation, such as
-`hey agents-rollout`, are not this route. Prepare their source changes locally
-and submit the resulting dotfiles candidate instead.
+Direct main publication combined with activation is not this route.
+`hey agents:prepare` prepares local pin changes only. Review them and submit
+the resulting dotfiles candidate; deployment remains separately authorized.
 
 ## Authorized rollout and recovery
 

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Log in to Betty"
+#MISE alias="login-betty"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-login login:betty "$@"

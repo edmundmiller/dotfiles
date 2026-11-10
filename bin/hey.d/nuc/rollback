@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Roll back the NUC generation"
+#MISE alias="nuc-rollback"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task nuc:rollback "$@"

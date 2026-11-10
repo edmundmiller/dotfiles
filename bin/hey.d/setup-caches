@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Preview or apply approved Nix cache configuration"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop setup-caches "$@"

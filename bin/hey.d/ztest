@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run focused Zsh tests"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop ztest "$@"

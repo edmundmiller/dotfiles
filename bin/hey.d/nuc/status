@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Show NUC system status"
+#MISE alias="nuc-status"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task nuc:status "$@"

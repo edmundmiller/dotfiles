@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Check the NUC deploy path with remote dry-activate"
+#MISE alias="deploy-check"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task deploy:check "$@"

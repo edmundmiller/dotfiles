@@ -1,3 +1,11 @@
+---
+purpose: Preserve guarded command entrypoints for agent-run system operations.
+applies_to: Darwin, NixOS, cleanup and skills operation callers.
+entrypoint: Use project-local hey or mise tasks.
+verification: Native task, caller and permission-policy checks.
+update_when: Command ownership or operation authority boundaries change.
+---
+
 # ADR 0001: Agents use `hey` for guarded repo operations
 
 ## Status
@@ -14,8 +22,8 @@ Those commands bypass repo-specific checks, rollback semantics, host-awareness r
 
 `hey` is the supported interface for routine agent-initiated repo operations that mutate or deploy system state.
 
-The implementation now uses native Nushell file tasks in `bin/hey.d/`, with
-shared guards in `bin/hey.d/.lib/`. `hey` is a compatibility spelling for `mise run`;
+Thin mise file tasks in `bin/hey.d/` call native Bend controllers and guards in
+`packages/hey/`. `hey` is a compatibility spelling for `mise run`;
 either spelling invokes the same guarded operation. Tasks are project-local,
 so callers outside the checkout must use `mise --cd <checkout> run <task>`.
 This migration does not authorize activation or relax the command policy below.

@@ -114,9 +114,9 @@ HEAD and merge-base; the wrapper compares them with live GitHub `origin/main`
 before activation. Old synced snapshots without metadata and stale worktrees
 are rejected. Every synced snapshot carries a fail-closed
 `system.configurationRevision` with the exact dotfiles and agents-workspace
-revisions. Dirty worktrees are refused for activation; `build` and `vm` remain
+revisions. Dirty worktrees are refused for activation; `build`, `vm` and `validate` remain
 available for testing, carry a `-dirty` provenance marker, and do not take the
-lock. Unique remote directories keep concurrent syncs from interleaving before
+activation lock. Unique remote directories keep concurrent syncs from interleaving before
 the activation lock is acquired. Each run prunes older revision-scoped
 snapshots before syncing so at most five recent snapshots remain for follow-up
 checks; legacy task directories do not match the cleanup boundary. An active
@@ -144,41 +144,25 @@ overwrites stale diagnostics safely. After explicit review, bypass only the
 stale-source check with `NUC_DEPLOY_ALLOW_STALE=1 hey nuc-wt switch`; the shared
 lock still applies.
 
-## Roll out agents-workspace
+## Prepare an agents-workspace pin
 
-Run the rollout from a clean dotfiles host after committing the
-agents-workspace change. The default deployment mode also requires tailnet
-access to the NUC:
+Use a clean dotfiles checkout and a clean agents-workspace checkout:
 
 ```bash
-hey agents-rollout
+hey agents:prepare --workspace "$HOME/src/personal/agents-workspace"
 ```
 
-The command pushes `agents-workspace`, updates and commits its exact source pin
-and lock entry in dotfiles, pushes dotfiles, builds the pinned pair on the NUC,
-and only then switches the NUC. It uses the same isolated worktree,
-source-provenance, and deployment-lock path as `hey nuc`; it does not depend on
-a checkout on the NUC.
-Deployment modes also verify the NUC's tailnet SSH identity before either
-repository is pushed; ship-only mode does not require NUC access.
+This updates only the local `flake.nix` pin and `flake.lock`. The workspace HEAD
+must already be available from GitHub for the lock update to resolve it. The
+command does not pull, rebase, commit, push, build on the NUC or activate a host.
+Review both files after success. If the lock update fails, inspect the local
+pin changes before retrying; the command may have changed `flake.nix`.
 
-Use a narrower final stage when needed:
-
-```bash
-hey agents-rollout --deploy-mode none          # ship and pin only
-hey agents-rollout --deploy-mode build         # ship, pin, and remote-build
-hey agents-rollout --deploy-mode dry-activate  # build, then preview activation
-```
-
-Production deployment remains operator-triggered, either through `hey` or the
-manual GitHub workflow below. The agents-workspace Amp project can join the tailnet with
-Amp OIDC as an ephemeral `tag:amp-agents-workspace` node; the tailnet grants
-that project tag Tailscale SSH access only as `emiller` on `tag:nuc` hosts.
-From that project's orb, use its `scripts/deploy-nuc` wrapper. It passes the
-orb checkout through `--workspace`, while this command remains the owner of
-pinning, pushing, building, and activation. Keep broader CI on ship-only mode
-unless it receives an equally narrow workload identity and an explicit
-deployment approval boundary.
+The former `agents-rollout` and `deploy:agents` commands are removed. Callers
+must separate local pin preparation from publication and deployment. Publish
+through [candidate CI](candidate-ci.md), then request deployment separately
+through the exact-revision workflow below. External agents-workspace wrappers
+must use these separate boundaries rather than invoking the retired rollout.
 
 ## Manual GitHub deployment
 

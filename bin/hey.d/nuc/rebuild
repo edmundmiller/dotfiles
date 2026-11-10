@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Rebuild the NUC"
+#MISE alias="rebuild-nuc"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task nuc:rebuild "$@"

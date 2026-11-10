@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Collect Nix garbage and optionally keep generations"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task gc "$@"

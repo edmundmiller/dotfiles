@@ -28,6 +28,11 @@ runner needs Python 3.11+, Git, Nix and Prek; package QA needs Bun/Node.
 CI invokes `python3 scripts/validation.py`, the exact implementation
 behind `hey check`, without starting the host-oriented `hey` environment.
 
+`hey-native` builds the native dispatcher and task controllers, including their
+process, policy, snapshot, transient-service and cleanup fixtures. Caller tests
+cover mise discovery, aliases and the Pi updater separately. Nu task modules and
+the former `hey-nuc-deploy-mode` check are retired; no task check needs Nushell.
+
 Selection includes committed branch changes relative to the merge-base with
 `origin/main`, plus staged, unstaged and untracked files. Without `origin/main`,
 it uses `HEAD` and checks working changes. `--base-ref REF` makes the baseline

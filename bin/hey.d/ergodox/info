@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Show Ergodox firmware information"
+#MISE alias="ergodox-info"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-desktop ergodox:info "$@"

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Adopt an agent workspace"
+#MISE alias="agent-adopt"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task agent:adopt "$@"

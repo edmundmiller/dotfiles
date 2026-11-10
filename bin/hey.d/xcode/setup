@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Prepare Metal and optionally select an installed Xcode"
+#MISE alias='xcode-setup'
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-macos xcode:setup "$@"

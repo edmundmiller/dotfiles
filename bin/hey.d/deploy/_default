@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Deploy a host with deploy-rs"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task deploy "$@"

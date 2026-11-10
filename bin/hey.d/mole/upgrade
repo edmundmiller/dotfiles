@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Upgrade only Mole through Homebrew"
+#MISE alias="mole-upgrade"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task mole:upgrade "$@"

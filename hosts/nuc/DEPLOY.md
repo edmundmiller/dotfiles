@@ -1,7 +1,7 @@
 ---
 purpose: Route NUC deployment and recovery to the supported hey commands.
 applies_to: Building, activating, or rolling back the NUC configuration.
-entrypoint: Read docs/runbooks/deploy-nuc.md and bin/hey.d/nuc/_default.nu.
+entrypoint: Read docs/runbooks/deploy-nuc.md and packages/hey/nuc-tasks.bend.
 verification: Run hey nuc-wt build and inspect services after authorized activation.
 update_when: NUC deployment transport, source isolation, or recovery changes.
 ---
@@ -9,7 +9,8 @@ update_when: NUC deployment transport, source isolation, or recovery changes.
 # NUC deployment
 
 The canonical procedure is [the NUC deployment runbook](../../docs/runbooks/deploy-nuc.md).
-`bin/hey.d/nuc/` owns the commands, with shared guards in `bin/hey.d/.lib/remote.nu`.
+`bin/hey.d/nuc/` contains mise entrypoints. Native controllers and guards live in
+`packages/hey/nuc-*.bend` and `packages/hey/snapshot-*.bend`.
 
 `hey nuc` runs `nixos-rebuild` locally when invoked on the NUC. From another
 host it syncs the worktree to a unique `/tmp/dotfiles-worktree-*` directory,
@@ -24,8 +25,8 @@ hey nuc-wt switch         # activate and select the boot generation
 hey nuc                  # deploy, choosing local or remote by hostname
 ```
 
-Activation modes require a clean commit; dirty snapshots support only build
-and VM checks. `test` and `switch` affect the live host and require deployment authorization.
+Activation modes require a clean commit; dirty snapshots support build, VM and
+validation checks. `test` and `switch` affect the live host and require deployment authorization.
 Do not evaluate `nixosConfigurations.nuc` on macOS; use the remote build.
 
 ## Recovery and verification
@@ -43,5 +44,5 @@ hey nuc-rollback          # changes the live host; authorize first
 ```
 
 Private GitHub inputs use `nix-private-github` and the root-owned token file.
-Never print the token. Automatic upgrades are separately configured in
-`hosts/_server.nix`; they fetch the published GitHub flake rather than this worktree.
+Never print the token. Automatic NUC upgrades are disabled. Follow the runbook
+for separately authorized exact-revision deployment and its CI requirements.

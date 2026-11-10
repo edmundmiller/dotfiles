@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Start an agent task receipt"
+#MISE alias="agent-start"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task agent:start "$@"

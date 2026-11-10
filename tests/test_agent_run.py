@@ -59,13 +59,6 @@ class AgentRunTests(unittest.TestCase):
             check=False,
         )
 
-    def test_hey_uses_the_packaged_agent_run_command(self) -> None:
-        for command in ("start", "adopt", "checkpoint", "complete", "sweep"):
-            with self.subTest(command=command):
-                wrapper = (TASKS / "agent" / f"{command}.nu").read_text()
-                self.assertIn(f"^agent-run {command} ...$args", wrapper)
-                self.assertNotIn("python3 bin/agent-run", wrapper)
-
     def test_hey_and_git_hooks_use_the_nix_owned_prek_config(self) -> None:
         flake = FLAKE.read_text()
         hey = (TASKS / "check").read_text()
@@ -113,14 +106,6 @@ class AgentRunTests(unittest.TestCase):
         self.assertIn('swapfile="/swapfile"', setup)
         self.assertIn('sudo fallocate -l 4G "$swapfile"', setup)
         self.assertIn('sudo /usr/sbin/swapon "$swapfile"', setup)
-
-    def test_packaged_agent_run_is_receipt_only_and_repo_explicit(self) -> None:
-        wrapper = "\n".join(path.read_text() for path in TASKS.glob("agent/*.nu"))
-
-        self.assertNotIn("context", wrapper)
-        self.assertNotIn("AGENT_RUN_ROOT", wrapper)
-        self.assertNotIn("agent-review", wrapper)
-        self.assertNotIn("agent-worklog-check", wrapper)
 
     def test_completion_contract_stays_aligned_across_canonical_sources(self) -> None:
         sources = {

@@ -1021,10 +1021,20 @@
                 enable = true;
                 name = "hey-hermes-local-status";
                 description = "Accept managed and launchctl Hermes gateway status output";
-                entry = "${pkgs.nushell}/bin/nu ${./.}/bin/tests/hey-hermes-local-status.nu";
+                entry = toString (
+                  pkgs.writeShellScript "hey-hermes-local-status" ''
+                    export PATH=${
+                      lib.makeBinPath [
+                        self.packages.${system}.bend
+                        pkgs.clang
+                      ]
+                    }:$PATH
+                    exec ${pkgs.python3}/bin/python3 -B ${./.}/packages/hey/test_gateway_status.py
+                  ''
+                );
                 language = "system";
                 pass_filenames = false;
-                files = "^(bin/hey\\.d/\\.lib/hermes\\.nu|bin/hey\\.d/hermes/local\\.nu|bin/tests/hey-hermes-local-status\\.nu)$";
+                files = "^(packages/hey/(gateway-status\\.bend|test_gateway_status\\.py|hermes-.*\\.bend)|bin/hey\\.d/hermes/local)$";
                 stages = [ "pre-commit" ];
               };
               pi-runtime-wrapper = {
@@ -1236,6 +1246,7 @@
               validation-tests =
                 pkgs.runCommand "validation-tests"
                   {
+                    HEY_TEST_TASK_BINARY = "${self.packages.${system}.hey}/libexec/hey/task";
                     PI_SELF_UPDATE_TEST_LAUNCHER =
                       (import ./modules/agents/pi/lib/_runtime-wrapper.nix {
                         inherit lib;
@@ -1247,13 +1258,14 @@
                       }).selfUpdate;
                     nativeBuildInputs = [
                       pkgs.bash
+                      pkgs.clang
                       pkgs.git
                       pkgs.jq
                       pkgs.mise
-                      pkgs.nushell
                       pkgs.python3
                       pkgs.ripgrep
                       self.packages.${system}.hey
+                      self.packages.${system}.bend
                     ]
                     ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.util-linux ];
                   }
@@ -1568,23 +1580,6 @@
                     NIX_PRIVATE_GITHUB=${wrapper}/bin/nix-private-github \
                       python ${./bin/tests/test_nix_private_github_deploy_guard.py}
                     touch $out
-                  '';
-
-              hey-nuc-deploy-mode =
-                pkgs.runCommand "hey-nuc-deploy-mode-check"
-                  {
-                    nativeBuildInputs = [
-                      pkgs.bash
-                      pkgs.coreutils
-                      pkgs.git
-                      pkgs.nushell
-                      pkgs.rsync
-                    ];
-                  }
-                  ''
-                    HOSTNAME=nix-check DOTFILES_TEST_ROOT=${./.} \
-                        nu ${./.}/bin/tests/hey-nuc-deploy-mode.nu
-                        touch "$out"
                   '';
 
               hermes-cron-executor-source-tests =

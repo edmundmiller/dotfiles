@@ -94,6 +94,21 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(selected["files"], ["config/tmux/old", "new"])
         self.assertIn("zunit-tests", selected["checks"])
 
+    def test_native_task_sources_select_native_and_caller_checks_without_the_retired_nu_gate(self):
+        cases = {
+            "packages/hey/nuc-policy.bend": {"hey-native", "validation-tests", "nuc-deployment-provenance"},
+            "bin/hey-task-nuc": {"hey-native", "validation-tests"},
+            "bin/prune-nuc-deploy-snapshots": {"hey-native"},
+            "bin/write-nuc-deploy-revision": {"hey-native", "nuc-deployment-provenance"},
+            "bin/hey.d/agent/start": {"agent-run-tests", "validation-tests"},
+        }
+        for path, required in cases.items():
+            with self.subTest(path=path):
+                self.write(path, "fixture source\\n")
+                checks = set(self.selection(path)["checks"])
+                self.assertTrue(required <= checks, checks)
+                self.assertNotIn("hey-nuc-deploy-mode", checks)
+
     def test_hunk_changes_select_runtime_config_compatibility(self):
         patterns = v.CHECKS["hunk-config-compatibility"]
         for file in (

@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -13,11 +14,90 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def compile_native_tasks(destination, boundaries, *, fake_platform=False):
+    source = destination.parent / "native-task-source"
+    shutil.copytree(ROOT / "packages/hey", source)
+    replacements = boundaries | {"/usr/bin/env": shutil.which("env")}
+    for path in source.glob("*.bend"):
+        text = path.read_text()
+        for original, replacement in replacements.items():
+            text = text.replace(original, str(replacement))
+        path.write_text(text)
+    if fake_platform:
+        posix = source / "posix.c"
+        text = posix.read_text()
+        original = '''static Term hey_platform_name(Env e, Term *f, IoWork *w) {
+  struct utsname info;
+  if (uname(&info)) hey_posix_failure("uname", "");
+  return io_str(e, info.sysname, strlen(info.sysname));
+}'''
+        replacement = '''static Term hey_platform_name(Env e, Term *f, IoWork *w) {
+  const char *fixture = getenv("TEST_OS");
+  const char *name = fixture && !strcmp(fixture, "macos") ? "Darwin" : "Linux";
+  return io_str(e, name, strlen(name));
+}'''
+        if text.count(original) != 1:
+            raise RuntimeError("native platform boundary changed; update the fixture")
+        posix.write_text(text.replace(original, replacement))
+    subprocess.run(
+        ["bash", str(source / "build"), str(destination), "/unused/mise", "task-main.bend"],
+        check=True,
+    )
+
+
 @unittest.skipUnless(
-    shutil.which("hey") and shutil.which("mise") and shutil.which("nu"),
-    "installed hey, mise and nu required",
+    shutil.which("hey") and shutil.which("mise"),
+    "installed hey and mise required",
 )
 class MiseTasksTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if os.environ.get("HEY_TEST_TASK_BINARY"):
+            cls.task_binary = Path(os.environ["HEY_TEST_TASK_BINARY"])
+            if not cls.task_binary.is_file() or not os.access(cls.task_binary, os.X_OK):
+                raise RuntimeError("HEY_TEST_TASK_BINARY is not an executable file")
+            cls.desktop_binary = cls.task_binary.with_name("desktop")
+            if not cls.desktop_binary.is_file() or not os.access(cls.desktop_binary, os.X_OK):
+                raise RuntimeError("HEY_TEST_TASK_BINARY has no executable desktop task sibling")
+            cls.macos_binary = cls.task_binary.with_name("macos")
+            if not cls.macos_binary.is_file() or not os.access(cls.macos_binary, os.X_OK):
+                raise RuntimeError("HEY_TEST_TASK_BINARY has no executable macOS task sibling")
+            cls.hermes_binary = cls.task_binary.with_name("hermes")
+            if not cls.hermes_binary.is_file() or not os.access(cls.hermes_binary, os.X_OK):
+                raise RuntimeError("HEY_TEST_TASK_BINARY has no executable Hermes task sibling")
+            for family in ("login", "prepare", "nuc", "snapshot"):
+                binary = cls.task_binary.with_name(family)
+                if not binary.is_file() or not os.access(binary, os.X_OK):
+                    raise RuntimeError(f"HEY_TEST_TASK_BINARY has no executable {family} task sibling")
+                setattr(cls, f"{family}_binary", binary)
+            return
+        cls.native_build = tempfile.TemporaryDirectory(prefix="hey mise native ")
+        cls.addClassCleanup(cls.native_build.cleanup)
+        cls.task_binary = Path(cls.native_build.name) / "hey-task"
+        subprocess.run(
+            ["bash", str(ROOT / "packages/hey/build"), str(cls.task_binary), "/unused/mise", "task-main.bend"],
+            check=True,
+        )
+        cls.desktop_binary = Path(cls.native_build.name) / "desktop"
+        subprocess.run(
+            ["bash", str(ROOT / "packages/hey/build"), str(cls.desktop_binary), "/unused/mise", "desktop-main.bend"],
+            check=True,
+        )
+        cls.macos_binary = Path(cls.native_build.name) / "macos"
+        subprocess.run(
+            ["bash", str(ROOT / "packages/hey/build"), str(cls.macos_binary), "/unused/mise", "macos-main.bend"],
+            check=True,
+        )
+        cls.hermes_binary = Path(cls.native_build.name) / "hermes"
+        subprocess.run(
+            ["bash", str(ROOT / "packages/hey/build"), str(cls.hermes_binary), "/unused/mise", "hermes-main.bend"],
+            check=True,
+        )
+        for family in ("login", "prepare", "nuc", "snapshot"):
+            binary = Path(cls.native_build.name) / family
+            subprocess.run(["bash", str(ROOT / "packages/hey/build"), str(binary), "/unused/mise", f"{family}-main.bend"], check=True)
+            setattr(cls, f"{family}_binary", binary)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -51,13 +131,24 @@ class MiseTasksTests(unittest.TestCase):
     def copy_project(self):
         shutil.copy2(ROOT / "mise.toml", self.root)
         shutil.copytree(ROOT / "bin/hey.d", self.root / "bin/hey.d")
+        runner = self.root / "bin/hey-task"
+        runner.symlink_to(self.task_binary)
+        (self.root / "bin/hey-task-desktop").symlink_to(self.desktop_binary)
+        (self.root / "bin/hey-task-macos").symlink_to(self.macos_binary)
+        (self.root / "bin/hey-task-hermes").symlink_to(self.hermes_binary)
+        (self.root / "bin/hey-task-login").symlink_to(self.login_binary)
+        (self.root / "bin/hey-task-prepare").symlink_to(self.prepare_binary)
+        (self.root / "bin/hey-task-nuc").symlink_to(self.nuc_binary)
+        (self.root / "bin/hey-task-snapshot").symlink_to(self.snapshot_binary)
         (self.root / "scripts").mkdir()
         shutil.copy2(ROOT / "scripts/validation.py", self.root / "scripts")
 
     def test_discovery_preserves_task_catalog_and_excludes_shared_helpers(self):
+        self.assertEqual(list((ROOT / "bin/hey.d").rglob("*.nu")), [])
         self.copy_project()
         # An executable and a TOML task would both be discovered in a visible directory.
         helpers = self.root / "bin/hey.d/.lib"
+        helpers.mkdir(exist_ok=True)
         decoy = helpers / "not-a-task"
         decoy.write_text("#!/bin/sh\nexit 99\n")
         decoy.chmod(0o755)
@@ -70,7 +161,7 @@ class MiseTasksTests(unittest.TestCase):
             'agent:sweep': ['agent-sweep'],
             'check': [],
             'deploy': [],
-            'deploy:agents': ['agents-rollout'],
+            'agents:prepare': [],
             'deploy:check': ['deploy-check'],
             'deploy:dry': ['deploy-dry'],
             'dev': [],
@@ -229,6 +320,81 @@ class MiseTasksTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(json.loads(result.stdout), expected)
 
+    def test_agent_tasks_select_agent_run_with_literal_repo_arguments_and_no_extra_policy(self):
+        self.copy_project()
+        mise = shutil.which("mise")
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        log = self.root / "agent-commands.jsonl"
+        program = tools / "agent-run"
+        program.write_text(
+            f"#!{sys.executable}\nimport json, os, sys\n"
+            "with open(os.environ['TEST_AGENT_LOG'], 'a') as log:\n"
+            "    log.write(json.dumps([sys.argv[1:], os.getcwd(), os.environ.get('AGENT_RUN_ROOT')]) + '\\n')\n"
+            "raise SystemExit(int(os.environ['TEST_AGENT_EXIT']))\n"
+        )
+        program.chmod(0o755)
+        for name in ("agent-review", "agent-worklog-check"):
+            tripwire = tools / name
+            tripwire.write_text(
+                f"#!{sys.executable}\nimport json, os\n"
+                "with open(os.environ['TEST_AGENT_LOG'], 'a') as log:\n"
+                f"    log.write(json.dumps(['forbidden', {name!r}]) + '\\n')\n"
+                "raise SystemExit(91)\n"
+            )
+            tripwire.chmod(0o755)
+        self.env.update(PATH=str(tools) + os.pathsep + self.env["PATH"], TEST_AGENT_LOG=str(log),
+                        AGENT_RUN_ROOT="/stale-agent-root", TEST_AGENT_EXIT="0")
+        explicit_repo = str(self.root / "explicit receipt repo")
+        literal = ["--repo", explicit_repo, "", "a b", "$(touch must-not-exist)"]
+        for command in ("start", "adopt", "checkpoint", "complete", "sweep"):
+            for task in (f"agent:{command}", f"agent-{command}"):
+                with self.subTest(task=task):
+                    log.unlink(missing_ok=True)
+                    result = self.run_command(mise, "run", task, *literal)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual([json.loads(row) for row in log.read_text().splitlines()],
+                                     [[[command, *literal], str(self.root), "/stale-agent-root"]])
+                    self.assertFalse((self.root / "must-not-exist").exists())
+        self.env["TEST_AGENT_EXIT"] = "19"
+        result = self.run_command(mise, "run", "agent-start", *literal)
+        self.assertEqual(result.returncode, 19, result.stderr)
+        self.assertFalse((self.root / ".agents").exists())
+
+    def test_skills_sync_updates_only_the_catalog_pin_before_guarded_rebuild(self):
+        self.copy_project()
+        mise = shutil.which("mise")
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        log = self.root / "skills-commands.jsonl"
+        nix = tools / "nix"
+        nix.write_text(
+            f"#!{sys.executable}\nimport json, os, sys\n"
+            "args = sys.argv[1:]\nassert args == ['flake', 'update', 'skills-catalog']\n"
+            "with open(os.environ['TEST_SKILLS_LOG'], 'a') as log:\n"
+            "    log.write(json.dumps(['nix', args, os.getcwd()]) + '\\n')\n"
+            "raise SystemExit(int(os.environ['TEST_SYNC_EXIT']))\n"
+        )
+        nix.chmod(0o755)
+        rebuild = self.root / "bin/hey.d/rebuild"
+        rebuild.write_text(
+            f"#!{sys.executable}\nimport json, os\n"
+            "with open(os.environ['TEST_SKILLS_LOG'], 'a') as log:\n"
+            "    log.write(json.dumps(['rebuild', [], os.getcwd()]) + '\\n')\n"
+        )
+        self.env.update(PATH=str(tools) + os.pathsep + self.env["PATH"],
+                        TEST_SKILLS_LOG=str(log), FLAKE_DIR="/wrong-checkout")
+        for exit_code in (0, 23):
+            with self.subTest(exit_code=exit_code):
+                log.unlink(missing_ok=True)
+                self.env["TEST_SYNC_EXIT"] = str(exit_code)
+                result = self.run_command(mise, "run", "skills-sync")
+                self.assertEqual(result.returncode, exit_code, result.stderr)
+                expected = [["nix", ["flake", "update", "skills-catalog"], str(self.root)]]
+                if exit_code == 0:
+                    expected.append(["rebuild", [], str(self.root)])
+                self.assertEqual([json.loads(row) for row in log.read_text().splitlines()], expected)
+
     def test_task_names_and_aliases_reach_the_parser_without_running_operations(self):
         self.copy_project()
         for task, parameter in [
@@ -242,8 +408,9 @@ class MiseTasksTests(unittest.TestCase):
             ("nuc-logs", "unit"),
             ("ergodox:flash", "hex"),
             ("ergodox-flash", "hex"),
-            ("deploy:agents", "dotfiles_msg"),
-            ("agents-rollout", "dotfiles_msg"),
+            ("agents:prepare", "--workspace"),
+            ("login-betty", "no parameters"),
+            ("login-scintillate", "no parameters"),
             ("zbench", "args"),
             ("zbench:save", "args"),
             ("pi:update", "version"),
@@ -273,7 +440,7 @@ class MiseTasksTests(unittest.TestCase):
             'exit "$TEST_UPDATE_EXIT"\n'
         )
         nix.chmod(0o755)
-        rebuild = self.root / "bin/hey.d/rebuild.nu"
+        rebuild = self.root / "bin/hey.d/rebuild"
         rebuild.write_text(
             f"#!{shutil.which('bash')}\nprintf 'rebuilt %s\\n' \"$MISE_PROJECT_ROOT\"\n"
         )
@@ -293,14 +460,6 @@ class MiseTasksTests(unittest.TestCase):
     )
     def test_packaged_pi_update_runs_real_guards_with_only_boundary_mocks(self):
         self.copy_project()
-        # Nix's test harness patches shebangs. Restore the checkout's env lookup
-        # while using an env executable that exists inside its sandbox.
-        for name in ("pi/update.nu", "rebuild.nu"):
-            task = self.root / "bin/hey.d" / name
-            task.write_text(
-                f"#!{shutil.which('env')} -S nu --no-config-file\n"
-                + task.read_text().split("\n", 1)[1]
-            )
         tools = self.root / "fake-tools"
         tools.mkdir()
         log = self.root / "operations"
@@ -384,20 +543,22 @@ esac
 """,
         )
         (profile / "nix").symlink_to(tools / "nix")
-        # Remap fixed host/privilege boundaries in the fixture, never on the host.
-        # All guard and orchestration functions remain the production implementation.
-        common = self.root / "bin/hey.d/.lib/common.nu"
-        source = (
-            common.read_text()
-            .replace("$nu.os-info.name", "$env.TEST_OS")
-            .replace("/run/current-system/sw/bin", str(profile))
-            .replace("/run/wrappers/bin", str(wrappers))
-            .replace(
-                "/nix/var/nix/profiles/default/bin", str(self.root / "nix-profile")
-            )
-            .replace("^/usr/bin/sudo", f'^"{wrappers / "sudo"}"')
+        native = self.root / "guarded-hey-task"
+        compile_native_tasks(
+            native,
+            {
+                "/run/current-system/sw/bin": profile,
+                "/run/wrappers/bin": wrappers,
+                "/nix/var/nix/profiles/default/bin": self.root / "nix-profile",
+                "/usr/bin/sudo": wrappers / "sudo",
+            },
+            fake_platform=True,
         )
-        common.write_text(source)
+        runner = self.root / "bin/hey-task"
+        runner.unlink()
+        runner.symlink_to(native)
+        wait = self.root / "bin/hey.d/.lib/wait-homebrew-idle.sh"
+        wait.write_text(f"#!{bash}\nexit 0\n")
         self.env["TEST_ACTIVATION_BODY"] = activation_body
         (self.root / "flake.lock").write_text("{}\n")
         (self.root / "flake.nix").write_text("{}\n")
@@ -476,7 +637,7 @@ esac
                     else:
                         (tools / "sudo").unlink(missing_ok=True)
                     Path(self.env["TEST_PRIVILEGED_LOG"]).unlink(missing_ok=True)
-                    for name in ("nu", "mise"):
+                    for name in ("mise",):
                         if case == "caller-tools":
                             executable(
                                 name,
@@ -555,7 +716,7 @@ esac
                                 .read_text()
                                 .splitlines()
                             ),
-                            {"nu", "mise"},
+                            {"mise"},
                         )
 
     def test_environment_and_dev_credentials_stay_scoped(self):
@@ -644,13 +805,12 @@ exec "$@"
         self.assertEqual(invalid.returncode, 2, invalid.stderr)
 
 
-@unittest.skipUnless(shutil.which("nu") and shutil.which("bash"), "nu and bash required")
+@unittest.skipUnless(
+    shutil.which("bend") and shutil.which("clang") and shutil.which("bash"),
+    "Bend, clang and bash required",
+)
 class SystemRebuildTests(unittest.TestCase):
-    """`system-rebuild` against fake Nix, sudo and darwin-rebuild boundaries.
-
-    Privileged and host-changing tools are logging stubs; the Nushell
-    orchestration is the production code with only fixed host paths remapped.
-    """
+    """Run native rebuild policy with remapped host and privilege boundaries."""
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -667,16 +827,18 @@ class SystemRebuildTests(unittest.TestCase):
             directory.mkdir()
         lib = self.flake / "bin/hey.d/.lib"
         lib.mkdir(parents=True)
-        shutil.copy2(ROOT / "bin/hey.d/.lib/wait-homebrew-idle.sh", lib)
         self.bash = shutil.which("bash")
-        (lib / "common.nu").write_text(
-            (ROOT / "bin/hey.d/.lib/common.nu")
-            .read_text()
-            .replace("$nu.os-info.name", "$env.TEST_OS")
-            .replace("/run/current-system/sw/bin", str(self.profile))
-            .replace("/run/wrappers/bin", str(self.wrappers))
-            .replace("/nix/var/nix/profiles/default/bin", str(base / "no-profile"))
-            .replace("^/usr/bin/sudo", f'^"{self.wrappers / "sudo"}"')
+        (lib / "wait-homebrew-idle.sh").write_text(f"#!{self.bash}\nexit 0\n")
+        self.native = base / "hey-task"
+        compile_native_tasks(
+            self.native,
+            {
+                "/run/current-system/sw/bin": self.profile,
+                "/run/wrappers/bin": self.wrappers,
+                "/nix/var/nix/profiles/default/bin": base / "no-profile",
+                "/usr/bin/sudo": self.wrappers / "sudo",
+            },
+            fake_platform=True,
         )
         # Each stub logs: tool, whether it runs under (fake) sudo, arguments.
         record = (
@@ -729,7 +891,10 @@ esac
 while (($#)); do
   if [[ "$1" == --flake ]]; then
     flake="${2%%#*}/flake.nix"
-    [[ -f "$flake" ]] && echo "flake-system: $(grep -o 'storePath "[^"]*"' "$flake" | tr '\\n' ' ')" >> "$TEST_LOG"
+    if [[ "$2" == *"#hey" ]]; then
+      [[ -f "$flake" ]] || exit 96
+      echo "flake-system: $(grep -o 'storePath "[^"]*"' "$flake" | tr '\\n' ' ')" >> "$TEST_LOG"
+    fi
   fi
   shift
 done
@@ -751,6 +916,11 @@ exit "${TEST_ACTIVATION_EXIT:-0}"
             "TEST_DARWIN_REBUILD": str(darwin_rebuild),
         }
         self.lock = self.cache / "hey/system-eval.lock"
+        self.env.update(GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1")
+        (self.flake / "flake.lock").write_text("{}\n")
+        (self.flake / "flake.nix").write_text("{}\n")
+        subprocess.run(["git", "init", "--quiet", str(self.flake)], env=self.env, check=True)
+        subprocess.run(["git", "-C", str(self.flake), "add", "flake.lock", "flake.nix"], env=self.env, check=True)
         self.host_build = (
             "build --json --out-link {link} --no-write-lock-file "
             f"{self.flake}#darwinConfigurations.TestHost.system"
@@ -762,10 +932,9 @@ exit "${TEST_ACTIVATION_EXIT:-0}"
         path.chmod(0o755)
         return path
 
-    def nu(self, script):
+    def native_process(self, *args):
         return subprocess.Popen(
-            [shutil.which("nu"), "--no-config-file", "--commands",
-             f"use '{self.flake}/bin/hey.d/.lib/common.nu' *; {script}"],
+            [self.native, "rebuild", *args],
             cwd=self.flake,
             env=self.env,
             # Nixpkgs bash sources /etc/bashrc (resetting PATH) when stdin is a socket.
@@ -776,8 +945,7 @@ exit "${TEST_ACTIVATION_EXIT:-0}"
         )
 
     def rebuild(self, *args):
-        quoted = " ".join(f"'{arg}'" for arg in args)
-        process = self.nu(f"system-rebuild (context) {quoted}")
+        process = self.native_process(*args)
         stdout, stderr = process.communicate(timeout=120)
         return process.returncode, stdout, stderr
 
@@ -881,13 +1049,15 @@ exit "${TEST_ACTIVATION_EXIT:-0}"
             f'{{pid: {holder.pid}, started: "{started}", label: "other session", '
             f'cwd: "/elsewhere", acquired: "earlier"}}'
         )
-        process = self.nu("system-rebuild (context) switch")
+        process = self.native_process("switch")
         self.addCleanup(process.kill)
         waiting = process.stderr.readline()
         while "waiting for the system-evaluation lock" not in waiting:
             self.assertNotEqual(waiting, "", "rebuild exited without waiting")
             waiting = process.stderr.readline()
-        self.assertIn(f"pid {holder.pid} (other session) in /elsewhere", waiting)
+        self.assertIn(f"pid {holder.pid}", waiting)
+        self.assertIn("other session", waiting)
+        self.assertIn("/elsewhere", waiting)
         time.sleep(3)
         self.assertEqual(self.operations(), [], "built while another evaluation held the lock")
         holder.kill()
@@ -898,32 +1068,6 @@ exit "${TEST_ACTIVATION_EXIT:-0}"
         self.assertEqual(self.operations()[-2][2].split()[-1], "switch")
         self.assertFalse(self.lock.exists())
 
-    def test_memory_pressure_warnings(self):
-        def warnings(mem, level=0, evaluators="[]"):
-            process = self.nu(
-                f"memory-pressure-warnings {mem} {level} {evaluators} | to json"
-            )
-            stdout, stderr = process.communicate(timeout=60)
-            self.assertEqual(process.returncode, 0, stderr)
-            return json.loads(stdout)
-
-        healthy = "{total: 1000, available: 500, 'swap total': 1000, 'swap used': 500}"
-        self.assertEqual(warnings(healthy), [])
-        # 84% is below the threshold; 85% reaches it.
-        self.assertEqual(warnings(healthy.replace("used': 500", "used': 840")), [])
-        swap_full = warnings(healthy.replace("used': 500", "used': 900"))
-        self.assertEqual(len(swap_full), 1)
-        self.assertIn("swap is 90% full", swap_full[0])
-        low_memory = warnings("{total: 1000, available: 50, 'swap total': 0, 'swap used': 0}")
-        self.assertEqual(len(low_memory), 1)
-        self.assertIn("memory is available", low_memory[0])
-        self.assertEqual(warnings(healthy, 4), ["macOS reports CRITICAL memory pressure"])
-        self.assertEqual(warnings(healthy, 2), ["macOS reports memory pressure (warn)"])
-        self.assertEqual(
-            warnings(healthy, 1, "['123 nix build .#darwinConfigurations.X.system']"),
-            ["1 other full-system evaluation(s) running:",
-             "  123 nix build .#darwinConfigurations.X.system"],
-        )
 
 
 if __name__ == "__main__":

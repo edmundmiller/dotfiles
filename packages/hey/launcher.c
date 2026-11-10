@@ -1,8 +1,12 @@
-// Synchronous Bend 2.0.40 embedding: only IO.args_bytes and exec are used.
+// Synchronous Bend 2.0.40 embedding for dispatch and native tasks.
 // Do not start its event loop, install signal handlers, or parse RTS options.
 #define main bend_runtime_main
 #include "generated.c"
 #undef main
+
+#ifndef HEY_STACK_BASE_WORDS
+#define HEY_STACK_BASE_WORDS 4096
+#endif
 
 int main(int argc, char** argv) {
   io_argc = argc;
@@ -22,7 +26,7 @@ int main(int argc, char** argv) {
   // List.append uses two evaluation words per argument. Leave room for the
   // main/IO frames and compiler changes, followed by a guard page. Unlike
   // pool_stack(), this changes neither signal dispositions nor the altstack.
-  u64 stack_size = (((u64)argc * 8 + 4096) * sizeof(Term) + 16383) & ~16383ull;
+  u64 stack_size = (((u64)argc * 8 + HEY_STACK_BASE_WORDS) * sizeof(Term) + 16383) & ~16383ull;
   io_stk = pool_mmap(stack_size + 16384);
   if (mprotect((char*)io_stk + stack_size, 16384, PROT_NONE)) {
     perror("hey: stack guard");
@@ -35,5 +39,5 @@ int main(int argc, char** argv) {
   while (io_runs != NULL) {
     io_step(e, io_pop(&io_runs));
   }
-  return 126; // A successful exec never returns.
+  return 126; // A successful exec or IO.exit never returns.
 }

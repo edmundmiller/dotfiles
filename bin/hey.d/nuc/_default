@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Build, validate or activate the NUC with provenance guards"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task-nuc nuc "$@"

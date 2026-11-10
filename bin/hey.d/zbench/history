@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Show Zsh benchmark history"
+#MISE alias="zbench-history"
+#MISE raw=true
+#MISE raw_args=true
+exec hey-task zbench:history "$@"
