@@ -17,7 +17,7 @@ import {
 } from "./helpers.js";
 
 // Goldens record the default Pi review tab; a host or repo default must not leak in.
-delete process.env.HERDR_MAIN_CODING_AGENT;
+delete process.env.DEFAULT_CODING_AGENT;
 
 let env: Env | null = null;
 afterEach(() => {

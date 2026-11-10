@@ -26,19 +26,19 @@ describe("pi-herdr review workspace helpers", () => {
     expect(commands).toEqual(["review-box"]);
   });
 
-  test("review agent prefers the flag, then HERDR_MAIN_CODING_AGENT, then pi", () => {
-    const previous = process.env.HERDR_MAIN_CODING_AGENT;
+  test("review agent prefers the flag, then DEFAULT_CODING_AGENT, then pi", () => {
+    const previous = process.env.DEFAULT_CODING_AGENT;
     try {
-      delete process.env.HERDR_MAIN_CODING_AGENT;
+      delete process.env.DEFAULT_CODING_AGENT;
       expect(resolveReviewAgent()).toBe("pi");
-      process.env.HERDR_MAIN_CODING_AGENT = "claude";
+      process.env.DEFAULT_CODING_AGENT = "claude";
       expect(resolveReviewAgent()).toBe("claude");
       expect(resolveReviewAgent("codex")).toBe("codex");
       expect(reviewTabLabel("claude")).toBe("Claude Review");
       expect(() => resolveReviewAgent("pi; rm -rf ~")).toThrow("review agent must be a command name");
     } finally {
-      if (previous === undefined) delete process.env.HERDR_MAIN_CODING_AGENT;
-      else process.env.HERDR_MAIN_CODING_AGENT = previous;
+      if (previous === undefined) delete process.env.DEFAULT_CODING_AGENT;
+      else process.env.DEFAULT_CODING_AGENT = previous;
     }
   });
 

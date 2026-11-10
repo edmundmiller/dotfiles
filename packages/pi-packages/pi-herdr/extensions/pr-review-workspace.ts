@@ -377,8 +377,8 @@ export async function createHerdrReviewWorkspace(
     diffTarget,
     hunkTab: "Hunk",
   })}${opts.extraPrompt ? `\n\nExtra instruction:\n${opts.extraPrompt}` : ""}`;
-  // The tab already runs in the worktree, and Pi, Claude and Codex take the prompt positionally.
-  const reviewCommand = `${agent} ${shellQuote(reviewPrompt)}`;
+  // coding-agent (modules/agents) knows each agent's way to start with a first prompt.
+  const reviewCommand = `coding-agent --agent ${agent} ${shellQuote(reviewPrompt)}`;
 
   await createTabAndRun(exec, workspaceId, worktreePath, "Hunk", hunkDiffCommand(diffTarget));
   if (initialTabId) await runHerdr(exec, ["tab", "close", initialTabId]);
@@ -435,7 +435,7 @@ export type OpenReviewBoxOpts = {
   worktreeName?: string;
   /** Extra instruction appended to the review prompt. */
   prompt?: string;
-  /** Review agent command. Defaults to HERDR_MAIN_CODING_AGENT, then Pi; see resolveReviewAgent. */
+  /** Review agent command. Defaults to DEFAULT_CODING_AGENT, then Pi; see resolveReviewAgent. */
   agent?: string;
   /** Override the state directory (testing). */
   stateRoot?: string;
@@ -443,10 +443,10 @@ export type OpenReviewBoxOpts = {
 
 // ─── Review agent ─────────────────────────────────────────────────────
 
-// An explicit choice wins, then the host default from Herdr's mainCodingAgent,
-// which a repo can override with direnv or mise. Stored manifests do not pin it.
+// An explicit choice wins, then the host default (modules.agents.default), which
+// a repo can override with direnv or mise. Stored manifests do not pin it.
 export const resolveReviewAgent = (explicit?: string): string => {
-  const agent = explicit?.trim() || process.env.HERDR_MAIN_CODING_AGENT?.trim() || "pi";
+  const agent = explicit?.trim() || process.env.DEFAULT_CODING_AGENT?.trim() || "pi";
   if (!/^[A-Za-z0-9._-]+$/.test(agent)) {
     throw new Error(`review agent must be a command name, got ${JSON.stringify(agent)}`);
   }

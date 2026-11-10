@@ -149,7 +149,7 @@ export default function herdrExtension(pi: ExtensionAPI) {
       agent: Type.Optional(
         Type.String({
           description:
-            "Review agent command, such as pi, claude or codex. Defaults to $HERDR_MAIN_CODING_AGENT, then pi.",
+            "Review agent command, such as pi, claude or codex. Defaults to $DEFAULT_CODING_AGENT, then pi.",
         })
       ),
     }),
