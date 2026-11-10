@@ -70,7 +70,7 @@ Agent runtimes such as Codex Desktop can create Git worktrees before the agent s
 - Repository-wide operation recovery can affect concurrent work. Inspect `jj op log` and coordinate before `jj undo` or `jj op restore`.
 - In Herdr, task names are durable; workspace, tab, and pane IDs are live handles. Re-read them after lifecycle changes.
 - Before using Hunk, confirm `jj root --ignore-working-copy` and `git rev-parse --show-toplevel` both resolve to this child checkout, not its primary workspace.
-- Existing non-colocated jj children stay non-colocated. Follow `herdr-jj-workflow` to convert one in place with `jj git colocation enable`, or keep reviewing with `jj diff --git -r @` in the agent pane. Record findings plus check output in the worklog when present, otherwise in the final handoff.
+- Existing non-colocated jj children stay non-colocated. Follow the `version-control` skill's jj reference to convert one in place with `jj git colocation enable`, or keep reviewing with `jj diff --git -r @` in the agent pane. Record findings plus check output in the worklog when present, otherwise in the final handoff.
 
 Stay on one task per workspace. Read other changes with `jj diff -r`, `jj file show -r`, and `jj log -r`; do not use `jj edit` merely to inspect.
 

@@ -17,7 +17,6 @@ Run `jj root --ignore-working-copy`. When it succeeds, the repo is jj: follow
 | Commit, split, squash, reword, or reorder history  | [commits](references/commits.md)             |
 | Create or edit a pull request title or body        | [pull requests](references/pull-requests.md) |
 | Any mutation in a jj repo                          | [jj](references/jj.md)                       |
-| Herdr jj task workspace lifecycle                  | the `herdr-jj-workflow` skill                |
 
 ## House style
 
