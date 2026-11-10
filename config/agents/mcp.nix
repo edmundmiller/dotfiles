@@ -1,16 +1,10 @@
+# Prefer hosted HTTP servers: stdio servers start one process per agent session.
 { lib, pkgs }:
-let
-  github = pkgs.writeShellScript "github-mcp" ''
-    set -eu
-    GITHUB_PERSONAL_ACCESS_TOKEN="$(${pkgs.gh}/bin/gh auth token)"
-    export GITHUB_PERSONAL_ACCESS_TOKEN
-    exec ${pkgs.github-mcp-server}/bin/github-mcp-server stdio
-  '';
-in
 {
+  # GITHUB_PAT comes from `gh auth token` in the login environment.
   github = {
-    transport = lib.mkDefault "stdio";
-    command = lib.mkDefault (toString github);
+    url = lib.mkDefault "https://api.githubcopilot.com/mcp/";
+    bearerTokenEnv = lib.mkDefault "GITHUB_PAT";
   };
   browse = {
     transport = lib.mkDefault "stdio";
@@ -21,10 +15,6 @@ in
   notion.url = lib.mkDefault "https://mcp.notion.com/mcp";
   seqera.url = lib.mkDefault "https://mcp.seqera.io/mcp";
   superlogical.url = lib.mkDefault "https://www.superlogical.com/rex/community-mcp";
-  fff = {
-    transport = lib.mkDefault "stdio";
-    command = lib.mkDefault "${pkgs.my.fff-mcp}/bin/fff-mcp";
-  };
   openaiDeveloperDocs.url = lib.mkDefault "https://developers.openai.com/mcp";
   homeassistant = {
     url = lib.mkDefault "https://homeassistant.cinnamon-rooster.ts.net/api/mcp";

@@ -107,6 +107,10 @@ in
           message = "MCP server names must contain only letters, digits, underscores or hyphens and must not collide after hyphen normalization.";
         }
       ];
+    # Hosted GitHub MCP authenticates with the gh CLI token from the shell environment.
+    env.GITHUB_PAT = lib.mkIf (
+      cfg.enable && (cfg.servers.github.enable or false)
+    ) "$(gh auth token 2>/dev/null)";
     home.file.".config/agents/mcp.json".source = manifest;
     home-manager.users.${config.user.name} = { lib, ... }: {
       home.activation.host-mcp-detach =

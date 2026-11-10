@@ -192,7 +192,6 @@ in
             github.enable = true;
             linear.enable = false;
             notion.enable = true;
-            fff.enable = true;
             openaiDeveloperDocs.enable = true;
           };
         };
