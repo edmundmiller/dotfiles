@@ -120,7 +120,6 @@
             github.enable = true;
             seqera.enable = true;
             linear.enable = false;
-            fff.enable = true;
             openaiDeveloperDocs.enable = true;
           };
         };

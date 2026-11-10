@@ -65,10 +65,11 @@ OMP can inherit servers from other clients. Its adapter also reconciles
 catalog names in `disabledServers` and `enabledServers`, so an exclusion cannot
 reappear through discovery. Unrelated names in those lists remain user-owned.
 
-Authentication remains local to the runtime or credential launcher. The GitHub
-stdio launcher reads `gh auth token` at process start, exports it only to the
-server process as `GITHUB_PERSONAL_ACCESS_TOKEN`, and starts
-`github-mcp-server stdio`. Do not put resolved credentials in the catalog,
+Authentication remains local to the runtime or credential launcher. Prefer
+hosted HTTP servers over stdio launchers: every agent session starts its own
+stdio process. GitHub uses the hosted `https://api.githubcopilot.com/mcp/`
+endpoint with `bearerTokenEnv = "GITHUB_PAT"`; the shell environment sets
+`GITHUB_PAT` from `gh auth token`. Do not put resolved credentials in the catalog,
 generated manifest, Nix store, or command arguments. HTTP bearer registrations
 refer to environment variable names; adapters render each client's syntax.
 
