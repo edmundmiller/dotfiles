@@ -57,10 +57,8 @@ let
   };
   codexEnabled = config.modules.agents.codex.enable;
   piEnabled = config.modules.agents.pi.enable;
-  ompEnabled = config.modules.agents.omp.enable;
   herdrEnabled = config.modules.shell.herdr.enable;
-  supportedAgentEnabled = piEnabled || ompEnabled || herdrEnabled;
-  ompCommand = lib.getExe config.modules.agents.omp.package;
+  supportedAgentEnabled = piEnabled || herdrEnabled;
 in
 {
   options.modules.agents.plannotator = {
@@ -69,7 +67,6 @@ in
       default = supportedAgentEnabled;
       defaultText = literalExpression ''
         config.modules.agents.pi.enable
-        || config.modules.agents.omp.enable
         || config.modules.shell.herdr.enable
       '';
       description = "Install Plannotator and configure each enabled supported agent.";
@@ -106,7 +103,7 @@ in
       env.PLANNOTATOR_INBOX_TOOL = "1";
 
       # Hosts opt in with `modules.agents.mcp.servers.plannotator-inbox.enable`.
-      # Pi and OMP already get the Inbox tool from the Plannotator extension.
+      # Pi already gets the Inbox tool from the Plannotator extension.
       modules.agents.mcp.servers.plannotator-inbox = {
         transport = mkDefault "stdio";
         command = mkDefault (getExe cfg.package);
@@ -114,10 +111,7 @@ in
           "inbox"
           "mcp"
         ];
-        excludeAgents = mkDefault [
-          "pi"
-          "omp"
-        ];
+        excludeAgents = mkDefault [ "pi" ];
       };
 
       modules.agents.pi.extraPackages = mkIf piEnabled [
@@ -128,35 +122,6 @@ in
           extensions = [ ];
         }
       ];
-
-      home-manager.users.${config.user.name} =
-        { lib, ... }:
-        {
-          home.activation.omp-plannotator-plugin = lib.mkIf ompEnabled (
-            lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-              export PI_SKIP_VERSION_CHECK=1
-              export PI_CONFIG_DIR=.omp
-              export PI_CODING_AGENT_DIR="$HOME/.omp/agent"
-              export PI_PERMISSION_SYSTEM_CONFIG_PATH="$HOME/.omp/agent/extensions/pi-permission-system/config.json"
-              plannotator_dir="$HOME/.omp/plugins/node_modules/@plannotator/pi-extension"
-              ${ompCommand} plugin uninstall @plannotator/pi-extension --json >/dev/null 2>&1 || true
-              ${ompCommand} plugin install npm:@plannotator/pi-extension@${version} --force --json >/dev/null
-              ${pkgs.gnugrep}/bin/grep -F 'import { Type } from "@earendil-works/pi-ai";' "$plannotator_dir/index.ts" >/dev/null
-              ${pkgs.gnugrep}/bin/grep -F 'import { Key } from "@earendil-works/pi-tui";' "$plannotator_dir/index.ts" >/dev/null
-              ${pkgs.gnused}/bin/sed -i \
-                -e 's|import { Type } from "@earendil-works/pi-ai";|const { Type } = globalThis.__dotfilesOmpLazyPluginHost;|' \
-                -e 's|import { Key } from "@earendil-works/pi-tui";|const { Key } = globalThis.__dotfilesOmpLazyPluginHost;|' \
-                "$plannotator_dir/index.ts"
-              ${pkgs.bun}/bin/bun build "$plannotator_dir/index.ts" \
-                --outfile "$plannotator_dir/omp-lazy-bundle.js" \
-                --target bun \
-                --external @anthropic-ai/claude-agent-sdk \
-                --external @earendil-works/pi-agent-core \
-                --external @earendil-works/pi-coding-agent \
-                --external @opencode-ai/sdk
-            ''
-          );
-        };
     })
   ];
 }

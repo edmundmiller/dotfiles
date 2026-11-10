@@ -290,7 +290,7 @@ class PlannotatorSourceContractTests(unittest.TestCase):
         self.assertIn('env.PLANNOTATOR_INBOX_TOOL = "1";', module)
         self.assertIn("npm:@plannotator/pi-extension@${piExtensionVersion}", module)
         self.assertIn("extensions = [ ];", module)
-        self.assertIn("omp-plannotator-plugin", module)
+        self.assertNotIn("omp-plannotator-plugin", module)
         self.assertNotIn("plannotator-claude-plugin", module)
         self.assertNotIn("claudeEnabled", module)
         self.assertIn("herdrEnabled = config.modules.shell.herdr.enable;", module)

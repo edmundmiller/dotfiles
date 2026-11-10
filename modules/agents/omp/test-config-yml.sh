@@ -117,7 +117,6 @@ REQUIRED_LAZY_EXTENSIONS = {
 }
 REQUIRED_LAZY_LOADERS = {
     "~/.omp/agent/extensions/lazy-agent-browser.mjs",
-    "~/.omp/agent/extensions/lazy-plannotator.mjs",
 }
 
 for path, expected_value in REQUIRED_TTSR.items():
