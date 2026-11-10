@@ -1,9 +1,4 @@
----
-name: surgical-rollback
-description: Removes an offending or unauthorized delta while preserving valid and pre-existing work. Use when asked to undo an accidental implementation, revert only part of a change, or retain desired local work while reversing a commit.
----
-
-# Surgical Rollback
+# Rollback
 
 Rollback follows provenance, not the size of the current diff.
 
@@ -33,7 +28,3 @@ Freeze further implementation. Identify the rollback the user authorized, the pr
 - **Whole-worktree reset:** use the pre-turn baseline and enumerated delta; a dirty file is not proof of agent ownership.
 - **Revert loses desired local work:** preserve the exact patch before the authorized revert and verify its requested restoration afterward.
 - **Contract correction removes valid downstream behavior:** remove only the incorrect fields or flow and check that accepted logic still works.
-
-## Provenance
-
-Forged by Lore from six beats in five native OMP sessions (2026-07-17 through 2026-09-01), theme `surgical-rollback-preserves-valid-work`. Evidence and dossier remain in the private local Lore corpus; transcript paths and project identities are intentionally omitted here.

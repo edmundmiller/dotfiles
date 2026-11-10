@@ -12,11 +12,12 @@ Run `jj root --ignore-working-copy`. When it succeeds, the repo is jj: follow
 
 ## Route
 
-| Task                                               | Read                                         |
-| -------------------------------------------------- | -------------------------------------------- |
-| Commit, split, squash, reword, or reorder history  | [commits](references/commits.md)             |
-| Create or edit a pull request title or body        | [pull requests](references/pull-requests.md) |
-| Any mutation in a jj repo                          | [jj](references/jj.md)                       |
+| Task                                                     | Read                                         |
+| -------------------------------------------------------- | -------------------------------------------- |
+| Commit, split, squash, reword, or reorder history        | [commits](references/commits.md)             |
+| Create or edit a pull request title or body              | [pull requests](references/pull-requests.md) |
+| Any mutation in a jj repo                                | [jj](references/jj.md)                       |
+| Undo an accidental or partial change, keeping valid work | [rollback](references/rollback.md)           |
 
 ## House style
 
