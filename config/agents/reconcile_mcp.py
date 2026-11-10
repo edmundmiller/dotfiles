@@ -81,7 +81,8 @@ def reconcile(home, manifest, dry_run=False, detach_store_links=False):
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
     plans = []
     # Reconcile removed agents too, so disabling a target removes only our entries.
-    for agent in sorted(set(manifest["agents"]) | set(state)):
+    # State from a removed runtime (e.g. OMP) has no target left to clean; drop it.
+    for agent in sorted(set(manifest["agents"]) | (set(state) & set(TARGETS))):
         relative, keys = TARGETS[agent]
         path = home / relative
         if agent == "amp" and path.with_suffix(".jsonc").exists():
