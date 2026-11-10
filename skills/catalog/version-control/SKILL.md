@@ -1,6 +1,6 @@
 ---
 name: version-control
-description: Routes Git and jj work to Edmund's house style. Use before committing, splitting, rewording, or reordering commits, before `gh pr create` or `gh pr edit`, or before other version-control mutations.
+description: Routes Git, jj, and GitHub PR work to Edmund's house style. Use before committing or rewriting history, writing PRs, restacking PRs, partial reverts, jj workspace or history work, or other version-control mutations.
 ---
 
 # Version control
@@ -12,14 +12,17 @@ Run `jj root --ignore-working-copy`. When it succeeds, the repo is jj: follow
 
 ## Route
 
-| Task                                                     | Read                                         |
-| -------------------------------------------------------- | -------------------------------------------- |
-| Commit, split, squash, reword, or reorder history        | [commits](references/commits.md)             |
-| Create or edit a pull request title or body              | [pull requests](references/pull-requests.md) |
-| Any mutation in a jj repo                                | [jj](references/jj.md)                       |
-| Undo an accidental or partial change, keeping valid work | [rollback](references/rollback.md)           |
-| Restack, retarget, or merge dependent PRs                | [stacks](references/stacks.md)               |
-| Create, resume, review, or close a jj task workspace     | [workspaces](references/workspaces.md)       |
+| Task                                                     | Read                                              |
+| -------------------------------------------------------- | ------------------------------------------------- |
+| Commit, split, squash, reword, or reorder history        | [commits](references/commits.md)                  |
+| Create or edit a pull request title or body              | [pull requests](references/pull-requests.md)      |
+| Any mutation in a jj repo                                | [jj](references/jj.md)                            |
+| Undo an accidental or partial change, keeping valid work | [rollback](references/rollback.md)                |
+| Restack, retarget, or merge dependent PRs                | [stacks](references/stacks.md)                    |
+| Create, resume, review, or close a jj task workspace     | [workspaces](references/workspaces.md)            |
+| Investigate, annotate, split, or clean up jj history     | [history](references/history.md)                  |
+| Merge two jj repositories or recover diverged histories  | [merging repositories](references/merge-repos.md) |
+| Land, publish, verify landing, or clean up a task        | the `done` skill                                  |
 
 ## House style
 

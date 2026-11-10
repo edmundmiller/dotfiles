@@ -1,13 +1,8 @@
----
-name: jj-merge-repos
-description: Merges two separate Jujutsu (jj) repositories into one. Use when combining repos, rebasing one repo onto another, or recovering from diverged histories.
----
-
 # Merging JJ Repositories
 
 Guide for merging two separate Jujutsu repositories into a single unified repo.
 
-## When to Use This Skill
+## When to use
 
 - Combining two unrelated repositories into one
 - Recovering from diverged histories (local vs remote rewrites)
