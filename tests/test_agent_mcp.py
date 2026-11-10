@@ -244,6 +244,15 @@ command = "obsolete-runner"
         for agent in PATHS:
             self.assertEqual(self.servers(agent), personal)
 
+    def test_state_for_a_removed_runtime_is_dropped(self):
+        state = self.home / ".local/state/agents/mcp-managed.json"
+        state.parent.mkdir(parents=True)
+        state.write_text(json.dumps({"retired-agent": ["tools"]}))
+        self.run_cli()
+        self.assertNotIn("retired-agent", json.loads(state.read_text()))
+        for agent in PATHS:
+            self.assertIn("tools", self.servers(agent))
+
     def test_preserves_unrelated_servers_settings_auth_and_quoted_toml_tables(self):
         self.seed_configs()
         self.run_cli()
