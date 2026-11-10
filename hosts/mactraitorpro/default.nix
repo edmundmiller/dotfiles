@@ -183,6 +183,7 @@ in
             amp = {
               enable = true;
               url = "https://ampcode.com/mcp";
+              excludeAgents = [ "amp" ];
             };
             browse.enable = true;
             exa = {
