@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
 import { createLazyAgentBrowser } from "../config/omp/extensions/lazy-agent-browser.mjs";
-import { createLazyPlannotator } from "../config/omp/extensions/lazy-plannotator.mjs";
 
 function createExtensionApi() {
   const commands = new Map();
@@ -27,86 +26,6 @@ function createExtensionApi() {
     },
   };
 }
-
-describe("lazy Plannotator", () => {
-  test("registers Inbox before first use and preserves session lifecycle", async () => {
-    const previous = process.env.PLANNOTATOR_INBOX_TOOL;
-    process.env.PLANNOTATOR_INBOX_TOOL = "1";
-    try {
-      const extension = createExtensionApi();
-      const sessions = [];
-      let stopped = false;
-      const factory = createLazyPlannotator(async () => ({
-        default(api) {
-          api.registerTool({
-            name: "plannotator_inbox",
-            async execute() {
-              return { content: [{ type: "text", text: "Inbox connected" }] };
-            },
-          });
-          api.on("session_start", (event) => {
-            sessions.push(event);
-          });
-          api.on("session_shutdown", () => {
-            stopped = true;
-          });
-        },
-      }));
-      await factory(extension.api);
-      const start = extension.handlers.get("session_start")[0];
-      await start({ type: "session_start" }, { cwd: "/tmp/project" });
-      expect(extension.tools.has("plannotator_inbox")).toBe(true);
-      await start({ type: "session_start", reason: "resume" }, { cwd: "/tmp/project" });
-      expect(sessions).toEqual([
-        { type: "session_start", reason: "reload" },
-        { type: "session_start", reason: "resume" },
-      ]);
-      await extension.handlers.get("session_shutdown")[0]({});
-      expect(stopped).toBe(true);
-    } finally {
-      if (previous === undefined) delete process.env.PLANNOTATOR_INBOX_TOOL;
-      else process.env.PLANNOTATOR_INBOX_TOOL = previous;
-    }
-  });
-
-  test("loads once on the first existing command and replays session start", async () => {
-    const extension = createExtensionApi();
-    const calls = [];
-    let imports = 0;
-    const factory = createLazyPlannotator(async () => {
-      imports += 1;
-      return {
-        default(pi) {
-          pi.on("session_start", async (event, ctx) => {
-            calls.push(["session_start", event.reason, ctx.cwd]);
-          });
-          pi.registerCommand("plannotator-review", {
-            description: "real review command",
-            async handler(args, ctx) {
-              calls.push(["review", args, ctx.cwd]);
-            },
-          });
-        },
-      };
-    });
-
-    await factory(extension.api);
-
-    expect(imports).toBe(0);
-    expect(extension.commands.has("plannotator-review")).toBe(true);
-
-    const context = { cwd: "/tmp/project" };
-    await extension.commands.get("plannotator-review").handler("--git", context);
-    await extension.commands.get("plannotator-review").handler("--git", context);
-
-    expect(imports).toBe(1);
-    expect(calls).toEqual([
-      ["session_start", "reload", "/tmp/project"],
-      ["review", "--git", "/tmp/project"],
-      ["review", "--git", "/tmp/project"],
-    ]);
-  });
-});
 
 describe("lazy agent browser", () => {
   test("loads on browser intent, forwards lifecycle, and delegates the native tool", async () => {

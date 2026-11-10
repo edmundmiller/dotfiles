@@ -20,7 +20,7 @@ cached MCP metadata so removed servers cannot reappear from `agent.db`.
 - LSP selects pinned Effect LS for projects using `@effect/tsgo`, standard TS LS
   otherwise. Nextflow uses the Nix launcher; Vale uses pinned binaries and each
   project's `.vale.ini`.
-- Plannotator and browser-native registrars load eagerly; full graphs load on
+- Browser-native registrars load eagerly; full graphs load on
   use. Preserve command/tool schemas, lifecycle replay, host import bridges,
   disabled original extension IDs, and the browser guard.
 - Darwin review-loop wiring uses `ctx.hasUI` and builds the Glimpse host skipped

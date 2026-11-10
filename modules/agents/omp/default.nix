@@ -98,7 +98,6 @@ let
     mkdir -p "$out/_lib"
     cp ${../../../config/omp/extensions/_lib/lazy-extension.mjs} "$out/_lib/lazy-extension.mjs"
     cp ${../../../config/omp/extensions/lazy-agent-browser.mjs} "$out/lazy-agent-browser.mjs"
-    cp ${../../../config/omp/extensions/lazy-plannotator.mjs} "$out/lazy-plannotator.mjs"
   '';
   agentRun = pkgs.writeShellApplication {
     name = "agent-run";
@@ -606,8 +605,6 @@ in
         "${lazyExtensionBundle}/_lib/lazy-extension.mjs";
       home.file.".omp/agent/extensions/lazy-agent-browser.mjs".source =
         "${lazyExtensionBundle}/lazy-agent-browser.mjs";
-      home.file.".omp/agent/extensions/lazy-plannotator.mjs".source =
-        "${lazyExtensionBundle}/lazy-plannotator.mjs";
       # Same JSONC-vs-JSON.parse trap as the Pi copy: the extension strips
       # comments but not trailing commas, so the raw file fails closed to {}.
       home.file.".omp/agent/extensions/pi-permission-system/config.json" = {
