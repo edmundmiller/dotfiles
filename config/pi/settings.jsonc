@@ -22,6 +22,15 @@
   "doubleEscapeAction": "tree",
   "editorPaddingX": 1,
   "terminal": { "showTerminalProgress": true },
+  // Rex supplies the app icon and activity state beside the terminal title.
+  "piStatus": {
+    "components": [
+      { "id": "spinner", "enabled": false },
+      { "id": "pi_symbol", "enabled": false },
+      { "id": "session", "enabled": true },
+      { "id": "cwd", "enabled": true },
+    ],
+  },
   // Use Pi's native compaction, retry, message delivery, image, and skill defaults.
   // Keep integrations and explicit commands; pi-goal-x owns goal continuation.
   // Avoid automatic coaching, model switching, and overlapping context/tool rewriting.

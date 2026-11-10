@@ -79,6 +79,16 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertEqual(self.deployed["piSkills"]["pistack"], "/fixture/pistack")
         self.assertEqual(self.deployed["piSkills"]["agentFiles"], [])
 
+    def test_pi_titles_leave_icons_and_activity_to_the_terminal(self) -> None:
+        components = {
+            item["id"]: item["enabled"]
+            for item in self.deployed["piApproval"]["settings"]["piStatus"]["components"]
+        }
+        self.assertFalse(components["spinner"])
+        self.assertFalse(components["pi_symbol"])
+        self.assertTrue(components["session"])
+        self.assertTrue(components["cwd"])
+
     def test_pi_does_not_load_project_environments_automatically(self) -> None:
         approval = self.deployed["piApproval"]
         packages = approval["settings"]["packages"]
