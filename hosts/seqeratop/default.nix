@@ -335,6 +335,14 @@
     # Override the primary user for this host
     system.primaryUser = "edmundmiller";
 
+    # Touch ID for sudo. reattach moves panes started by the Rex or tmux server
+    # into the GUI session, where pam_tid can reach the sensor. It needs the
+    # lid open or the Magic Keyboard connected.
+    security.pam.services.sudo_local = {
+      touchIdAuth = true;
+      reattach = true;
+    };
+
     # Source checkouts contain hundreds of thousands of duplicated dependency
     # files. Keep them out of Spotlight's semantic index.
     system.activationScripts.spotlightExcludeSrc.text = ''
