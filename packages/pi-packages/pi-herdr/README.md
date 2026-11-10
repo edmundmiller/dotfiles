@@ -1,7 +1,7 @@
 ---
-purpose: Operate and verify the Pi/OMP integration for Herdr workspaces and PR Review Boxes.
+purpose: Operate and verify the Pi integration for Herdr workspaces and PR Review Boxes.
 applies_to: Changes to the pi-herdr extension, Review Box lifecycle, or runtime packaging.
-entrypoint: Run `/review-box <pr-number|url|branch>` from Pi or OMP.
+entrypoint: Run `/review-box <pr-number|url|branch>` from Pi.
 verification: Run the focused Bun test, typecheck, and Pi RPC command-discovery smoke test.
 update_when: Review Box tabs, persistence, commands, or runtime package wiring changes.
 ---
@@ -19,9 +19,8 @@ layout, pane, and agent control comes from the official
 ## Command
 
 - `/review-box <pr>` — create or resume one PR-keyed Herdr workspace.
-- `/review-box <pr> --agent pi` — use Pi instead of the default OMP review tab.
 
-The Review Box contains Hunk, Critique, agent-review, and manual approval tabs.
+The Review Box contains Hunk, Critique, Pi review, and manual approval tabs.
 Its manifest lives under `$XDG_STATE_HOME/pi-herdr/review-boxes` (or
 `~/.local/state/pi-herdr/review-boxes`). Repeating the command focuses the
 existing workspace. A new PR head refreshes the checkout and rebuilds its tabs.

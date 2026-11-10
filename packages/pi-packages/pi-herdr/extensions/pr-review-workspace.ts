@@ -348,11 +348,9 @@ export async function createHerdrReviewWorkspace(
     diffTarget: string;
     diffBase: string;
     extraPrompt?: string;
-    agent?: "omp" | "pi";
   }
 ): Promise<{ workspaceId: string }> {
   const { worktreePath, prNumber, title, prUrl, diffTarget, diffBase } = opts;
-  const agent = opts.agent ?? "omp";
 
   const workspaceLabel = truncate(`PR #${prNumber} ${title}`, 56);
   const workspace = await runHerdr(exec, [
@@ -377,10 +375,7 @@ export async function createHerdrReviewWorkspace(
     diffTarget,
     hunkTab: "Hunk",
   })}${opts.extraPrompt ? `\n\nExtra instruction:\n${opts.extraPrompt}` : ""}`;
-  const reviewCommand =
-    agent === "pi"
-      ? `pi ${shellQuote(reviewPrompt)}`
-      : `omp --cwd ${shellQuote(worktreePath)} ${shellQuote(reviewPrompt)}`;
+  const reviewCommand = `pi ${shellQuote(reviewPrompt)}`;
 
   await createTabAndRun(exec, workspaceId, worktreePath, "Hunk", hunkDiffCommand(diffTarget));
   if (initialTabId) await runHerdr(exec, ["tab", "close", initialTabId]);
@@ -389,7 +384,7 @@ export async function createHerdrReviewWorkspace(
     exec,
     workspaceId,
     worktreePath,
-    agent === "pi" ? "Pi Review" : "OMP Review",
+    "Pi Review",
     reviewCommand
   );
   await createTabAndRun(exec, workspaceId, worktreePath, "Approve", buildApprovalCommand(prUrl));
@@ -437,8 +432,6 @@ export type OpenReviewBoxOpts = {
   worktreeName?: string;
   /** Extra instruction appended to the review prompt. */
   prompt?: string;
-  /** Review agent tab. Defaults to sticky manifest value or "omp". */
-  agent?: "omp" | "pi";
   /** Override the state directory (testing). */
   stateRoot?: string;
 };
@@ -471,6 +464,7 @@ export const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest 
   typeof value.worktreePath === "string" &&
   typeof value.workspaceId === "string" &&
   typeof value.diffTarget === "string" &&
+  // "omp" is accepted from manifests written before OMP was removed.
   (value.agent === "omp" || value.agent === "pi") &&
   typeof value.updatedAt === "string";
 
@@ -647,7 +641,7 @@ export async function openReviewBox(
     const manifest = await readManifest(manifestPath);
     const diffBase = opts.base ?? `origin/${pr.baseRefName}`;
     const diffTarget = `${diffBase}...HEAD`;
-    const agent = opts.agent ?? manifest?.agent ?? "omp";
+    const agent = "pi" as const;
 
     // ── Branch 1: manifest matches repo + PR + worktree exists ──────
     if (
@@ -678,7 +672,6 @@ export async function openReviewBox(
           diffTarget,
           diffBase,
           extraPrompt: opts.prompt,
-          agent,
         });
         await writeManifest(manifestPath, {
           ...manifest,
@@ -726,7 +719,6 @@ export async function openReviewBox(
         diffTarget,
         diffBase,
         extraPrompt: opts.prompt,
-        agent,
       });
       await writeManifest(manifestPath, {
         ...manifest,
@@ -770,7 +762,6 @@ export async function openReviewBox(
       diffTarget,
       diffBase,
       extraPrompt: opts.prompt,
-      agent,
     });
     await writeManifest(manifestPath, {
       schemaVersion: 1,

@@ -110,7 +110,7 @@
       "--cwd",
       "<TEMP>/widget/.pi/worktrees/pr-42-feature-branch",
       "--label",
-      "OMP Review",
+      "Pi Review",
       "--no-focus"
     ],
     "cwd": "<CWD>",
@@ -118,7 +118,7 @@
   },
   {
     "cmd": "herdr",
-    "args": ["pane", "rename", "wABC-3", "OMP Review"],
+    "args": ["pane", "rename", "wABC-3", "Pi Review"],
     "cwd": "<CWD>",
     "timeout": 10000
   },
@@ -128,7 +128,7 @@
       "pane",
       "run",
       "wABC-3",
-      "omp --cwd '<TEMP>/widget/.pi/worktrees/pr-42-feature-branch' '/review\n\nReview PR #42: Fix all the bugs\nURL: https://github.com/acme/widget/pull/42\nRepo: <TEMP>/widget/.pi/worktrees/pr-42-feature-branch\nDiff: origin/main...HEAD\n\nA Herdr tab named Hunk is open with the Hunk diff.\nUse Hunk as the review surface.\nStart with hunk session review --repo . --json, then include patches only as needed.\nLeave inline Hunk comments for actionable findings using hunk_comments action=apply or hunk session comment apply.\nPrioritize bugs, regressions, missing tests, and merge risks.\nDo not edit code unless asked.\nEnd with an approve/request-changes recommendation.'"
+      "pi '/review\n\nReview PR #42: Fix all the bugs\nURL: https://github.com/acme/widget/pull/42\nRepo: <TEMP>/widget/.pi/worktrees/pr-42-feature-branch\nDiff: origin/main...HEAD\n\nA Herdr tab named Hunk is open with the Hunk diff.\nUse Hunk as the review surface.\nStart with hunk session review --repo . --json, then include patches only as needed.\nLeave inline Hunk comments for actionable findings using hunk_comments action=apply or hunk session comment apply.\nPrioritize bugs, regressions, missing tests, and merge risks.\nDo not edit code unless asked.\nEnd with an approve/request-changes recommendation.'"
     ],
     "cwd": "<CWD>",
     "timeout": 10000
