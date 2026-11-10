@@ -22,6 +22,13 @@ their inventories.
   catalog updates. Details: [command policy](docs/adr/0001-agent-command-policy.md).
   `hey` forwards to project-local `mise run`; equivalent mise tasks are supported.
   Run from this checkout or use `mise --cd <checkout> run <task>`.
+- `hey re` needs a TTY for sudo and runs long; a piped bash call reports the
+  pipeline's status and fakes success. Run it as a supervised PTY in the current
+  terminal session (Rex or Herdr; never a nested one), never through the bash
+  tool. Never enter a sudo password: ask the user and stop the process if it
+  cannot progress. Trust only `hey`'s own unpiped exit status. Diagnose Nix
+  failures from the first failing derivation, not the
+  `1 dependency failed` tail.
 - Edit repository sources, not generated files or deployed Nix store symlinks.
   Some agent configs are intentionally writable; their scoped guides identify them.
 - Keep decrypted secrets out of Git, logs, command arguments, and Nix output.
