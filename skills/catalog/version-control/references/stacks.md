@@ -2,7 +2,7 @@
 
 Keep stacked GitHub pull requests boring: map the real stack, act from the bottom, verify after every remote action, and rewrite branches only with a lease.
 
-Use this reference for PR chains, dependent branches, branch retargeting, merge queues, stale parent branches, and review/merge triage. Prefer existing stack tools (`gh stack`, `gh pr stack`, `jj spr`) when the repository has them; fall back to plain `gh` and `git` only after confirming the tool is unavailable or insufficient.
+Use this reference for PR chains, dependent branches, branch retargeting, merge queues, stale parent branches, and review/merge triage. Prefer existing stack tools (`gh stack`, `gh pr stack`, `jj spr`) when the repository has them — for `gh stack`, read [gh-stack](gh-stack.md) first, since it blocks under a PTY without the right flags; fall back to plain `gh` and `git` only after confirming the tool is unavailable or insufficient.
 
 ## Rules From Prior Stacked PR Incidents
 
