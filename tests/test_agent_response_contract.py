@@ -21,6 +21,12 @@ class AgentResponseContractTests(unittest.TestCase):
         ):
             self.assertIn(expected, normalized)
 
+    def test_rex_startup_routes_through_cleanup_policy(self) -> None:
+        core = " ".join((ROOT / "config/agents/core.md").read_text().split())
+        self.assertIn("load the `rex` skill", core)
+        self.assertNotIn("first read `rex __internal skill`", core)
+        self.assertIn("one active-process ledger", core)
+
     def test_rex_cleanup_has_a_verified_completion_gate(self) -> None:
         skill = " ".join(
             (ROOT / "skills/flake.nix").read_text().split()
