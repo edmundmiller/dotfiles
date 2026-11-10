@@ -11,6 +11,7 @@ import {
   slugify,
 } from "./herdr.js";
 import herdrExtension from "./herdr.js";
+import { resolveReviewAgent, reviewTabLabel } from "./pr-review-workspace.js";
 
 describe("pi-herdr review workspace helpers", () => {
   test("registers only Review Box tools and commands", () => {
@@ -23,6 +24,22 @@ describe("pi-herdr review workspace helpers", () => {
     } as ExtensionAPI);
     expect(tools).toEqual(["herdr_pr_review_workspace"]);
     expect(commands).toEqual(["review-box"]);
+  });
+
+  test("review agent prefers the flag, then HERDR_MAIN_CODING_AGENT, then pi", () => {
+    const previous = process.env.HERDR_MAIN_CODING_AGENT;
+    try {
+      delete process.env.HERDR_MAIN_CODING_AGENT;
+      expect(resolveReviewAgent()).toBe("pi");
+      process.env.HERDR_MAIN_CODING_AGENT = "claude";
+      expect(resolveReviewAgent()).toBe("claude");
+      expect(resolveReviewAgent("codex")).toBe("codex");
+      expect(reviewTabLabel("claude")).toBe("Claude Review");
+      expect(() => resolveReviewAgent("pi; rm -rf ~")).toThrow("review agent must be a command name");
+    } finally {
+      if (previous === undefined) delete process.env.HERDR_MAIN_CODING_AGENT;
+      else process.env.HERDR_MAIN_CODING_AGENT = previous;
+    }
   });
 
   test("slugify makes branch/path safe PR slugs", () => {

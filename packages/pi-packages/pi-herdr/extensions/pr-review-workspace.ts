@@ -348,11 +348,11 @@ export async function createHerdrReviewWorkspace(
     diffTarget: string;
     diffBase: string;
     extraPrompt?: string;
-    agent?: "omp" | "pi";
+    agent?: string;
   }
 ): Promise<{ workspaceId: string }> {
   const { worktreePath, prNumber, title, prUrl, diffTarget, diffBase } = opts;
-  const agent = opts.agent ?? "pi";
+  const agent = resolveReviewAgent(opts.agent);
 
   const workspaceLabel = truncate(`PR #${prNumber} ${title}`, 56);
   const workspace = await runHerdr(exec, [
@@ -377,10 +377,8 @@ export async function createHerdrReviewWorkspace(
     diffTarget,
     hunkTab: "Hunk",
   })}${opts.extraPrompt ? `\n\nExtra instruction:\n${opts.extraPrompt}` : ""}`;
-  const reviewCommand =
-    agent === "pi"
-      ? `pi ${shellQuote(reviewPrompt)}`
-      : `omp --cwd ${shellQuote(worktreePath)} ${shellQuote(reviewPrompt)}`;
+  // The tab already runs in the worktree, and Pi, Claude and Codex take the prompt positionally.
+  const reviewCommand = `${agent} ${shellQuote(reviewPrompt)}`;
 
   await createTabAndRun(exec, workspaceId, worktreePath, "Hunk", hunkDiffCommand(diffTarget));
   if (initialTabId) await runHerdr(exec, ["tab", "close", initialTabId]);
@@ -389,7 +387,7 @@ export async function createHerdrReviewWorkspace(
     exec,
     workspaceId,
     worktreePath,
-    agent === "pi" ? "Pi Review" : "OMP Review",
+    reviewTabLabel(agent),
     reviewCommand
   );
   await createTabAndRun(exec, workspaceId, worktreePath, "Approve", buildApprovalCommand(prUrl));
@@ -409,7 +407,7 @@ export type ReviewBoxManifest = {
   worktreePath: string;
   workspaceId: string;
   diffTarget: string;
-  agent: "omp" | "pi";
+  agent: string;
   updatedAt: string;
 };
 
@@ -419,7 +417,7 @@ export type ReviewBoxResult = {
   worktreePath: string;
   workspaceId: string;
   diffTarget: string;
-  agent: "omp" | "pi";
+  agent: string;
 };
 
 export type OpenReviewBoxOpts = {
@@ -437,11 +435,26 @@ export type OpenReviewBoxOpts = {
   worktreeName?: string;
   /** Extra instruction appended to the review prompt. */
   prompt?: string;
-  /** Review agent tab. Defaults to Pi; OMP is no longer installed, so stored "omp" is ignored. */
-  agent?: "omp" | "pi";
+  /** Review agent command. Defaults to HERDR_MAIN_CODING_AGENT, then Pi; see resolveReviewAgent. */
+  agent?: string;
   /** Override the state directory (testing). */
   stateRoot?: string;
 };
+
+// ─── Review agent ─────────────────────────────────────────────────────
+
+// An explicit choice wins, then the host default from Herdr's mainCodingAgent,
+// which a repo can override with direnv or mise. Stored manifests do not pin it.
+export const resolveReviewAgent = (explicit?: string): string => {
+  const agent = explicit?.trim() || process.env.HERDR_MAIN_CODING_AGENT?.trim() || "pi";
+  if (!/^[A-Za-z0-9._-]+$/.test(agent)) {
+    throw new Error(`review agent must be a command name, got ${JSON.stringify(agent)}`);
+  }
+  return agent;
+};
+
+export const reviewTabLabel = (agent: string): string =>
+  `${agent[0]?.toUpperCase()}${agent.slice(1)} Review`;
 
 // ─── Manifest helpers (moved from herdr.ts) ───────────────────────────
 
@@ -471,7 +484,7 @@ export const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest 
   typeof value.worktreePath === "string" &&
   typeof value.workspaceId === "string" &&
   typeof value.diffTarget === "string" &&
-  (value.agent === "omp" || value.agent === "pi") &&
+  typeof value.agent === "string" &&
   typeof value.updatedAt === "string";
 
 const readManifest = async (path: string): Promise<ReviewBoxManifest | undefined> => {
@@ -647,7 +660,7 @@ export async function openReviewBox(
     const manifest = await readManifest(manifestPath);
     const diffBase = opts.base ?? `origin/${pr.baseRefName}`;
     const diffTarget = `${diffBase}...HEAD`;
-    const agent = opts.agent ?? "pi";
+    const agent = resolveReviewAgent(opts.agent);
 
     // ── Branch 1: manifest matches repo + PR + worktree exists ──────
     if (

@@ -3,6 +3,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
+// Goldens record the default Pi review tab; a host or repo default must not leak in.
+delete process.env.HERDR_MAIN_CODING_AGENT;
+
 /**
  * Golden recording-exec tests for the resume, refresh, and restore decision
  * paths — extending the create-path golden test in pr-review-workspace.test.ts.
