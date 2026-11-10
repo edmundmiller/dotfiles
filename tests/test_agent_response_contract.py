@@ -21,6 +21,20 @@ class AgentResponseContractTests(unittest.TestCase):
         ):
             self.assertIn(expected, normalized)
 
+    def test_rex_cleanup_has_a_verified_completion_gate(self) -> None:
+        skill = " ".join(
+            (ROOT / "skills/flake.nix").read_text().split()
+        )
+        for expected in (
+            "override the built-in guide's `--keep-open` examples",
+            "Verify the block is absent",
+            "before removing it from the ledger",
+            "temporary sessions you created solely for these jobs",
+            "Never close the session hosting your agent",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, skill)
+
     def test_repository_checks_run_the_response_contract(self) -> None:
         flake = (ROOT / "flake.nix").read_text()
 
