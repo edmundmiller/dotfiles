@@ -65,7 +65,7 @@ not install this workflow on the NUC; remote use requires the helper, agent,
 jj, and configuration on that server first.
 
 Review, publish, and cleanup follow the
-[Rex jj skill](../../skills/catalog/using-rex-jj-workspaces/SKILL.md).
+[jj workspaces reference](../../skills/catalog/version-control/references/workspaces.md).
 There is deliberately no delete-workspace key. Cleanup requires explicit
 authority, preserved changes, and a closed or merged PR before forgetting a
 workspace or removing its directory. Closing a session alone is not cleanup.

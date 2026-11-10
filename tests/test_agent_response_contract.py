@@ -154,12 +154,12 @@ class AgentResponseContractTests(unittest.TestCase):
     def test_version_control_procedure_lives_in_selective_workflows(self) -> None:
         workflow = (ROOT / "AGENT_WORKFLOW.md").read_text()
         workspace_skill = (
-            ROOT / ".agents/skills/using-jj-workspaces/SKILL.md"
+            ROOT / "skills/catalog/version-control/references/workspaces.md"
         ).read_text()
         done_skill = (ROOT / "skills/catalog/done/SKILL.md").read_text()
 
         self.assertIn("If Herdr already created the current jj task workspace", workflow)
-        for expected in ("`prefix+a`", "jj root --ignore-working-copy", "hey agent-start"):
+        for expected in ("rex-jj new", "jj root --ignore-working-copy", "hey agent-start"):
             self.assertIn(expected, workspace_skill)
         self.assertIn("jj diff --git -r @", workspace_skill)
         self.assertIn("Run `jj root --ignore-working-copy`", done_skill)

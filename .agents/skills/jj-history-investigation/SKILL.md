@@ -491,5 +491,5 @@ jj log -r 'description(frontmatter) & description(copyright)'
 
 ## Related Skills
 
-- `using-jj-workspaces` - Isolated jj agent workspaces
+- `version-control` workspaces reference - Isolated jj agent workspaces
 - `version-control` - Commit, PR, and jj house style
