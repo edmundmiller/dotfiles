@@ -632,11 +632,13 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
                 message = f"2026-11-10 {at[:8]} {level} (MainThread) {logger}{body}"
                 if at == "06:15:00":
                     message = "\x1b[33m" + message + "\x1b[0m"
+                if at in {"06:15:00", "15:41:00"}:
+                    message = list(message.encode("utf-8"))
             return self.record(f"2026-11-10T{at}+00:00", message)
 
         code, result = self.invoke([
             record("06:14:59.999999", "ERROR climate.master_suite timed out"),
-            record("06:15:00", "WARNING [homeassistant.components.homekit_controller.connection] timed out private 192.0.2.42"),
+            record("06:15:00", "WARNING [homeassistant.components.homekit_controller.connection] timed out private café 192.0.2.42"),
             record("06:38:00", "ERROR climate.master_suite connection reset private"),
             record("06:38:00.000001", "ERROR climate.master_suite timed out"),
             record("07:00:00", "ERROR climate.master_suite timed out"),
@@ -647,7 +649,9 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             record("13:48:00", "ERROR [homeassistant.components.homekit_controller] private error"),
             record("15:40:00", "WARNING climate.master_suite unavailable and timed out"),
             record("15:41:00", "INFO [homeassistant.components.homekit_controller] Last ERROR for climate.master_suite: timeout; connection recovered"),
-            record("15:42:00", [112, 114, 105, 118, 97, 116, 101]),
+            record("15:42:00", [255]),
+            record("15:43:00", [True, 2]),
+            record("15:44:00", ["private", "messages"]),
         ])
         self.assertEqual(code, 0)
         self.assertEqual(result["mapping"], {
@@ -656,7 +660,8 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             "integration_state": "loaded", "entity_disabled": False, "integration_disabled": False,
         })
         journal = result["journal"]
-        self.assertEqual((journal["retained_records_in_windows"], journal["matched_records"], journal["nontext_messages_not_classified"]), (10, 6, 1))
+        self.assertEqual((journal["retained_records_in_windows"], journal["matched_records"], journal["nontext_messages_not_classified"]), (12, 6, 3))
+        self.assertEqual(journal["decoded_byte_messages"], 2)
         self.assertEqual((journal["first_match"], journal["last_match"]), ("2026-11-10T06:15:00+00:00", "2026-11-10T15:40:00+00:00"))
         self.assertEqual({(row["scope"], row["category"]): row["count"] for row in journal["category_counts"]}, {
             ("entity_or_config_entry", "authentication"): 1,

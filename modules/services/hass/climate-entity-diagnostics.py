@@ -75,6 +75,7 @@ def journal_summary(text, entity_mapping):
     matched_times = []
     window_records = 0
     binary_messages = 0
+    decoded_byte_messages = 0
     domain = re.escape(entity_mapping["integration_domain"])
     platform = re.escape(entity_mapping["platform"])
     logger = re.compile(r"\[homeassistant\.components\.(?:" + domain + "|" + platform + r")(?:\.[^\]]*)?\]")
@@ -89,6 +90,13 @@ def journal_summary(text, entity_mapping):
             continue
         window_records += 1
         message = record.get("MESSAGE")
+        if isinstance(message, list) and all(
+                type(value) is int and 0 <= value <= 255 for value in message):
+            try:
+                message = bytes(message).decode("utf-8")
+                decoded_byte_messages += 1
+            except UnicodeDecodeError:
+                pass
         if not isinstance(message, str):
             binary_messages += 1
             continue
@@ -114,6 +122,7 @@ def journal_summary(text, entity_mapping):
     return {
         "windows": [{"start": start.isoformat(), "end": end.isoformat()} for start, end in WINDOWS],
         "retained_records_in_windows": window_records,
+        "decoded_byte_messages": decoded_byte_messages,
         "nontext_messages_not_classified": binary_messages,
         "matched_records": len(matched_times),
         "first_match": min(matched_times) if matched_times else None,
