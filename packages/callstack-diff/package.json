@@ -27,7 +27,7 @@
     "oxlint": "1.77.0",
     "oxlint-tsgolint": "7.0.2001",
     "vite": "8.2.1",
-    "vitest": "4.1.10",
+    "vitest": "4.1.11",
     "vitest-evals": "0.16.1"
   }
 }
