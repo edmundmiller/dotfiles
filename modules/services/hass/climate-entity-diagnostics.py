@@ -92,15 +92,22 @@ def journal_summary(text, entity_mapping):
         if not isinstance(message, str):
             binary_messages += 1
             continue
-        if not re.search(r"\b(?:ERROR|WARNING|CRITICAL)\b", message):
+        message = re.sub(r"\x1b\[[0-9;]*m", "", message)
+        header = re.match(
+            r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:[.,]\d+)? "
+            r"(?:ERROR|WARNING|CRITICAL) \([^\r\n)]+\) (\[[^\r\n\]]+\]) (.*)",
+            message, re.S,
+        )
+        if not header:
             continue
-        if identity.search(message):
+        component, body = header.groups()
+        if identity.search(body):
             scope = "entity_or_config_entry"
-        elif logger.search(message):
+        elif logger.fullmatch(component):
             scope = "integration_wide_not_entity_specific"
         else:
             continue
-        categories = [code for code, pattern in CATEGORIES if re.search(pattern, message, re.I)]
+        categories = [code for code, pattern in CATEGORIES if re.search(pattern, body, re.I)]
         for category in categories or ["unclassified_warning_or_error"]:
             counts[scope, category] += 1
         matched_times.append(observed.isoformat())
@@ -113,7 +120,7 @@ def journal_summary(text, entity_mapping):
         "last_match": max(matched_times) if matched_times else None,
         "category_counts": [{"scope": scope, "category": category, "count": count}
                             for (scope, category), count in sorted(counts.items())],
-        "coverage": "Retained warning/error messages matching the entity/config entry or mapped component logger only. Integration-wide errors are not attributed to this thermostat. Category counts can overlap. Zero matches do not prove absence of transport errors or journal retention.",
+        "coverage": "Retained warning/error headers matching the entity/config entry or mapped component logger only. Integration-wide errors are not attributed to this thermostat. Category counts can overlap. Retention is aggregated, not verified for each window. Separate traceback records are not reconstructed and can lose category attribution. Zero matches do not prove absence of errors or journal retention.",
     }
 
 
@@ -129,8 +136,8 @@ def main():
         entity_mapping = mapping(socket)
     try:
         journal = subprocess.run(
-            ["journalctl", "-u", "home-assistant.service", "--since", WINDOWS[0][0].isoformat(),
-             "--until", WINDOWS[-1][1].isoformat(), "-o", "json", "--no-pager"],
+            ["journalctl", "-u", "home-assistant.service", "--since", WINDOWS[0][0].strftime("%Y-%m-%d %H:%M:%S UTC"),
+             "--until", WINDOWS[-1][1].strftime("%Y-%m-%d %H:%M:%S UTC"), "-o", "json", "--no-pager"],
             capture_output=True, text=True, check=True, timeout=20,
         )
         summary = journal_summary(journal.stdout, entity_mapping)

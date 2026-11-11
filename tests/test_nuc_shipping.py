@@ -626,6 +626,12 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
 
     def test_runtime_mapping_and_bounded_error_categories_are_private(self):
         def record(at, message):
+            if isinstance(message, str):
+                level, body = message.split(" ", 1)
+                logger = "" if body.startswith("[") else "[homeassistant.core] "
+                message = f"2026-11-10 {at[:8]} {level} (MainThread) {logger}{body}"
+                if at == "06:15:00":
+                    message = "\x1b[33m" + message + "\x1b[0m"
             return self.record(f"2026-11-10T{at}+00:00", message)
 
         code, result = self.invoke([
@@ -640,7 +646,7 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             record("09:44:00", "ERROR [homeassistant.components.homekit_controller] 429 too many requests"),
             record("13:48:00", "ERROR [homeassistant.components.homekit_controller] private error"),
             record("15:40:00", "WARNING climate.master_suite unavailable and timed out"),
-            record("15:41:00", "INFO [homeassistant.components.homekit_controller] timed out"),
+            record("15:41:00", "INFO [homeassistant.components.homekit_controller] Last ERROR for climate.master_suite: timeout; connection recovered"),
             record("15:42:00", [112, 114, 105, 118, 97, 116, 101]),
         ])
         self.assertEqual(code, 0)

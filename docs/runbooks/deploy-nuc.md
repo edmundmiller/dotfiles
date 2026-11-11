@@ -235,7 +235,10 @@ extraction or activate a revision. It reads the entity registry's platform and
 linked config entry, then categorizes retained warnings/errors in bounded windows
 around the November 10, 2026 failures. Credentials, titles, attributes and raw
 messages stay on NUC. Entity/config-entry matches are distinct from integration-wide
-errors; signature categories do not prove a cause. Empty or inaccessible retention
+errors; signature categories do not prove a cause. Retention is aggregated across
+the windows, not verified for each outage. Separate traceback records are not
+reconstructed, so categories can be missed. Zero matches do not prove absent errors.
+Empty or inaccessible retention
 returns `2`, preserving a successful mapping when possible. This branch neither
 changes nor dismisses the dated Backup Repair. It needs publication of the reader
 and workflow, not host deployment.
