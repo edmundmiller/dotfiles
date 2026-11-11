@@ -1,12 +1,27 @@
 ---
 purpose: Boot UNAS from the Lexar rescue USB and choose a headless recovery method.
 applies_to: UNAS firmware boot selection and remote access to the live rescue system.
-entrypoint: Connect the Lexar and Ethernet before powering on UNAS.
+entrypoint: Verify current media contents and a bootable rescue image before selecting USB boot.
 verification: Confirm the rescue hostname over SSH; firmware shortcuts still need confirmation on UNAS.
 update_when: The motherboard, firmware boot sequence, or rescue image changes.
 ---
 
 # Boot UNAS from the Lexar rescue USB
+
+## Media status at BIOS acceptance, November 10, 2026
+
+At BIOS acceptance, the Lexar contained the FAT32 `UNAS_BIOS` partition and the
+BIOS 2601 CAP, not a bootable rescue system. Its original full-device rescue image and checksum
+receipts remain preserved on NUC-local storage. Do not follow the boot steps
+below with BIOS-only media. Recheck the stick's current contents before use.
+Restoring that image or preparing a
+different rescue stick requires exact-device approval and verification; it was
+not part of the accepted BIOS update. Preserve the saved image unchanged.
+
+See the [accepted firmware record](../README.md#accepted-firmware-update-november-10-2026).
+The boot instructions below apply only to verified bootable rescue media.
+
+## Rescue boot prerequisites
 
 The live recovery system identifies an ASUS ROG STRIX H470-I GAMING motherboard.
 It successfully booted the Lexar in UEFI mode with Secure Boot disabled. The
