@@ -14,7 +14,7 @@ import tempfile
 import textwrap
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
@@ -503,6 +503,37 @@ class NucShippingTests(unittest.TestCase):
                 self.assertEqual(json.loads(result.stdout), report)
                 self.assertIn("backup_repair", (self.root / "summary").read_text())
 
+    def test_climate_diagnostics_is_isolated_and_preserves_read_failures(self):
+        name = "Inspect climate mapping and categorized retained errors without activation"
+        workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
+        self.assertIn(f"- name: {name}\n        if: inputs.operation == 'ha-climate-diagnostics'\n", workflow)
+        self.assertIn("          - ha-climate-diagnostics\n", workflow)
+        sudo = self.root / "sudo"
+        sudo.write_text(
+            f"#!{sys.executable}\n"
+            "import os, sys\n"
+            "assert sys.argv[1:] == ['-n', 'uv', 'run', '--no-project', '--script', '-']\n"
+            "sys.stdin.read()\n"
+            "print('{\"mapping\":{\"entity_id\":\"climate.master_suite\"}}')\n"
+            "sys.exit(int(os.environ['READ_CODE']))\n"
+        )
+        sudo.chmod(0o755)
+        setup = r"""
+            tailscale() { bash -c "$3"; }
+            hostname() { printf '%s\n' "$TARGET_HOST"; }
+            nixos-version() { printf 'unchanged-revision\n'; }
+            export -f hostname nixos-version
+        """
+        for host, code in (("nuc", 0), ("nuc", 2), ("another-host", 0)):
+            with self.subTest(host=host, code=code):
+                result = self.workflow_shell(name, setup=textwrap.dedent(setup) + f'export TARGET_HOST="{host}" READ_CODE={code}\n')
+                self.assertEqual(result.returncode, code if host == "nuc" else 1, result.stderr)
+                if host == "nuc":
+                    self.assertEqual(json.loads(result.stdout)["mapping"]["entity_id"], "climate.master_suite")
+                    self.assertIn("unchanged-revision", result.stderr)
+                else:
+                    self.assertEqual(result.stdout, "")
+
 
 class CriticalEntityHistoryTests(unittest.TestCase):
     def invoke(self, lines=(), error=None):
@@ -550,6 +581,98 @@ class CriticalEntityHistoryTests(unittest.TestCase):
         self.assertEqual(self.invoke()[0], 2)
         code, result = self.invoke(error=subprocess.CalledProcessError(1, ["journalctl"], stderr="private error"))
         self.assertEqual((code, result), (2, {"status": "unknown", "error_type": "CalledProcessError"}))
+
+
+class ClimateEntityDiagnosticsTests(unittest.TestCase):
+    def invoke(self, lines=(), error=None, denied=False):
+        socket = MagicMock()
+        socket.__enter__.return_value = socket
+
+        def receive_command(raw):
+            message = json.loads(raw)
+            if message["type"] not in ("auth", "config/entity_registry/get", "config_entries/get"):
+                raise PermissionError("Fixture rejects non-read commands")
+            if message["type"] == "config/entity_registry/get" and message.get("entity_id") != "climate.master_suite":
+                raise PermissionError("Fixture rejects unrelated entities")
+
+        socket.send.side_effect = receive_command
+        socket.recv.side_effect = list(map(json.dumps, [
+            {"type": "auth_required"}, {"type": "auth_ok"},
+            {"id": 1, "type": "result", "success": not denied, "result": {
+                "entity_id": "climate.master_suite", "platform": "homekit_controller",
+                "config_entry_id": "a" * 32, "disabled_by": None,
+                "unique_id": "private-device", "name": "private-title",
+            }, "error": {"message": "private-error"}},
+            {"id": 2, "type": "result", "success": True, "result": [
+                {"entry_id": "b" * 32, "domain": "ecobee", "state": "setup_error"},
+                {"entry_id": "a" * 32, "domain": "homekit_controller", "state": "loaded", "title": "private-title", "data": {"password": "private-password"}},
+            ]},
+        ]))
+        client = MagicMock()
+        client.connect.return_value = socket
+        modules = {name: MagicMock() for name in ("websockets", "websockets.sync")}
+        modules["websockets.sync.client"] = client
+        journal = subprocess.CompletedProcess([], 0, "\n".join(map(json.dumps, lines)))
+        output = io.StringIO()
+        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("subprocess.run", return_value=journal, side_effect=error), patch("sys.stdout", output):
+            with self.assertRaises(SystemExit) as exit_status:
+                runpy.run_path(str(ROOT / "modules/services/hass/climate-entity-diagnostics.py"), run_name="__main__")
+        self.assertNotIn("private", output.getvalue())
+        self.assertNotIn("192.0.2.42", output.getvalue())
+        return exit_status.exception.code, json.loads(output.getvalue())
+
+    def record(self, at, message):
+        return {"__REALTIME_TIMESTAMP": str(round(datetime.fromisoformat(at).timestamp() * 1_000_000)), "MESSAGE": message}
+
+    def test_runtime_mapping_and_bounded_error_categories_are_private(self):
+        def record(at, message):
+            return self.record(f"2026-11-10T{at}+00:00", message)
+
+        code, result = self.invoke([
+            record("06:14:59.999999", "ERROR climate.master_suite timed out"),
+            record("06:15:00", "WARNING [homeassistant.components.homekit_controller.connection] timed out private 192.0.2.42"),
+            record("06:38:00", "ERROR climate.master_suite connection reset private"),
+            record("06:38:00.000001", "ERROR climate.master_suite timed out"),
+            record("07:00:00", "ERROR climate.master_suite timed out"),
+            record("08:49:00", "WARNING " + "a" * 32 + " Unauthorized 401 private"),
+            record("08:50:00", "ERROR [homeassistant.components.homekit_controller_extra] timed out"),
+            record("08:51:00", "ERROR climate.master_suite_backup timed out"),
+            record("09:44:00", "ERROR [homeassistant.components.homekit_controller] 429 too many requests"),
+            record("13:48:00", "ERROR [homeassistant.components.homekit_controller] private error"),
+            record("15:40:00", "WARNING climate.master_suite unavailable and timed out"),
+            record("15:41:00", "INFO [homeassistant.components.homekit_controller] timed out"),
+            record("15:42:00", [112, 114, 105, 118, 97, 116, 101]),
+        ])
+        self.assertEqual(code, 0)
+        self.assertEqual(result["mapping"], {
+            "entity_id": "climate.master_suite", "platform": "homekit_controller",
+            "config_entry_id": "a" * 32, "integration_domain": "homekit_controller",
+            "integration_state": "loaded", "entity_disabled": False, "integration_disabled": False,
+        })
+        journal = result["journal"]
+        self.assertEqual((journal["retained_records_in_windows"], journal["matched_records"], journal["nontext_messages_not_classified"]), (10, 6, 1))
+        self.assertEqual((journal["first_match"], journal["last_match"]), ("2026-11-10T06:15:00+00:00", "2026-11-10T15:40:00+00:00"))
+        self.assertEqual({(row["scope"], row["category"]): row["count"] for row in journal["category_counts"]}, {
+            ("entity_or_config_entry", "authentication"): 1,
+            ("entity_or_config_entry", "connection_failure"): 1,
+            ("entity_or_config_entry", "timeout"): 1,
+            ("entity_or_config_entry", "unavailable"): 1,
+            ("integration_wide_not_entity_specific", "rate_limited"): 1,
+            ("integration_wide_not_entity_specific", "timeout"): 1,
+            ("integration_wide_not_entity_specific", "unclassified_warning_or_error"): 1,
+        })
+
+    def test_incomplete_reads_preserve_mapping_without_exposing_errors(self):
+        code, result = self.invoke()
+        self.assertEqual(code, 2)
+        self.assertEqual(result["mapping"]["platform"], "homekit_controller")
+        self.assertEqual(result["journal"]["matched_records"], 0)
+        self.assertIsNone(result["journal"]["first_match"])
+        code, result = self.invoke(error=subprocess.CalledProcessError(1, ["journalctl"], stderr="private error"))
+        self.assertEqual(code, 2)
+        self.assertEqual(result["mapping"]["platform"], "homekit_controller")
+        self.assertEqual(result["journal"], {"status": "unknown", "error_type": "CalledProcessError"})
+        self.assertEqual(self.invoke(denied=True), (2, {"status": "unknown", "error_type": "ValueError"}))
 
 
 class HaMonitorTests(unittest.TestCase):

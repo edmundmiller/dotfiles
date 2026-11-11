@@ -228,6 +228,18 @@ workflow summary preserves the JSON report. Exit codes remain `0` for healthy,
 Repair can therefore make a successful inspection report an unhealthy result.
 Physical device behavior and restic freshness still need separate checks.
 
+For the separately approved `climate.master_suite` investigation, use
+`operation=ha-climate-diagnostics`, the exact current `expected_sha`, and all
+mutation flags false. This isolated branch does not repeat the consumed history
+extraction or activate a revision. It reads the entity registry's platform and
+linked config entry, then categorizes retained warnings/errors in bounded windows
+around the November 10, 2026 failures. Credentials, titles, attributes and raw
+messages stay on NUC. Entity/config-entry matches are distinct from integration-wide
+errors; signature categories do not prove a cause. Empty or inaccessible retention
+returns `2`, preserving a successful mapping when possible. This branch neither
+changes nor dismisses the dated Backup Repair. It needs publication of the reader
+and workflow, not host deployment.
+
 ### One-time Bluetooth recovery
 
 With separate approval to restart Bluetooth, use `operation=ha-diagnostics`

@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -15,6 +15,7 @@ on:
         options:
           - deploy
           - ha-diagnostics
+          - ha-climate-diagnostics
           - ha-monitor-diagnostics
           - orb-diagnostics
       ha_monitor:
@@ -254,6 +255,20 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- diagnostics' < scripts/amp-orb-pilot.sh
+      - name: Inspect climate mapping and categorized retained errors without activation
+        if: inputs.operation == 'ha-climate-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Fixed entity, registry-linked integration and categorized errors only.
+          # Token and raw journal remain on NUC; the old history read is not repeated.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
+            exec sudo -n uv run --no-project --script -
+          ' < modules/services/hass/climate-entity-diagnostics.py
       - name: Inspect retained critical entity failures without activation
         if: inputs.operation == 'ha-diagnostics'
         shell: bash
