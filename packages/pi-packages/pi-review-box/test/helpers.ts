@@ -365,6 +365,7 @@ export async function runCli(
     HOME: env.home,
     XDG_STATE_HOME: env.stateHome,
     XDG_CONFIG_HOME: env.configHome,
+    DEFAULT_CODING_AGENT: "pi",
     ...opts.extraEnv,
   };
 

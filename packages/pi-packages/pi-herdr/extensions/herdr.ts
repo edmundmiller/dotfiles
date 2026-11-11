@@ -2,7 +2,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import { basename, dirname } from "node:path";
 
-import { fetchPrInfo, openReviewBox } from "./pr-review-workspace.js";
+import { fetchPrInfo, openReviewBox, reviewTabLabel } from "./pr-review-workspace.js";
 import type { ExecFn, PrInfo, ReviewBoxResult } from "./pr-review-workspace.js";
 // Re-export shared helpers, types, primitives, and the decision flow from the
 // extracted module for backward compatibility and bridge consumption.
@@ -64,7 +64,7 @@ type ReviewWorkspaceParams = {
   base?: string;
   worktreeName?: string;
   prompt?: string;
-  agent?: "omp" | "pi";
+  agent?: string;
 };
 
 type ReviewBoxOptions = {
@@ -117,7 +117,7 @@ const reviewBoxSummary = (result: ReviewBoxResult): string =>
     `${result.action[0]?.toUpperCase()}${result.action.slice(1)} Herdr Review Box for PR #${result.pr.number}.`,
     `Worktree: ${result.worktreePath}`,
     `Diff: ${result.diffTarget}`,
-    `Tabs: Hunk, Critique, ${result.agent === "pi" ? "Pi Review" : "OMP Review"}, Approve`,
+    `Tabs: Hunk, Critique, ${reviewTabLabel(result.agent)}, Approve`,
   ].join("\n");
 
 export default function herdrExtension(pi: ExtensionAPI) {
@@ -125,13 +125,13 @@ export default function herdrExtension(pi: ExtensionAPI) {
     name: "herdr_pr_review_workspace",
     label: "Herdr PR Review Workspace",
     description:
-      "Create a PR review git worktree, open a Herdr workspace with Hunk, start an OMP review tab, and add an approval tab.",
+      "Create a PR review git worktree, open a Herdr workspace with Hunk, start a review agent tab, and add an approval tab.",
     parameters: Type.Object({
       pr: Type.String({
         description: "Pull request number, URL, or branch accepted by `gh pr view`.",
       }),
       repo: Type.Optional(
-        Type.String({ description: "Repository path. Defaults to the current OMP/Pi cwd." })
+        Type.String({ description: "Repository path. Defaults to the current Pi cwd." })
       ),
       base: Type.Optional(
         Type.String({
@@ -143,12 +143,13 @@ export default function herdrExtension(pi: ExtensionAPI) {
       ),
       prompt: Type.Optional(
         Type.String({
-          description: "Optional extra instruction appended to the OMP review prompt.",
+          description: "Optional extra instruction appended to the review prompt.",
         })
       ),
       agent: Type.Optional(
-        Type.Union([Type.Literal("omp"), Type.Literal("pi")], {
-          description: "Review agent tab. Defaults to OMP; Pi is an explicit override.",
+        Type.String({
+          description:
+            "Review agent command, such as pi, claude or codex. Defaults to $DEFAULT_CODING_AGENT, then pi.",
         })
       ),
     }),
@@ -165,16 +166,15 @@ export default function herdrExtension(pi: ExtensionAPI) {
       const argv = args.trim().split(/\s+/).filter(Boolean);
       const pr = argv[0];
       if (!pr) {
-        ctx.ui.notify("Usage: /review-box <pr-number|url|branch> [--agent omp|pi]", "info");
+        ctx.ui.notify("Usage: /review-box <pr-number|url|branch> [--agent <command>]", "info");
         return;
       }
       const agentIndex = argv.indexOf("--agent");
-      const agentValue = agentIndex >= 0 ? argv[agentIndex + 1] : undefined;
-      if (agentValue !== undefined && agentValue !== "omp" && agentValue !== "pi") {
-        ctx.ui.notify("--agent must be omp or pi", "error");
+      const agent = agentIndex >= 0 ? argv[agentIndex + 1] : undefined;
+      if (agentIndex >= 0 && !agent) {
+        ctx.ui.notify("--agent needs a command name", "error");
         return;
       }
-      const agent = agentValue === "pi" ? "pi" : agentValue === "omp" ? "omp" : undefined;
       try {
         const result = await openPrReviewWorkspace(pi, { pr, agent }, ctx.cwd);
         ctx.ui.notify(reviewBoxSummary(result), "info");

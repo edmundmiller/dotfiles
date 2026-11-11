@@ -1,13 +1,8 @@
----
-name: jj-history-investigation
-description: Investigate jj commit history, split commits, annotate file changes, and clean up redundant commits. Use when debugging history, splitting large commits, or explicitly authorized history rewrites.
----
-
 # Jujutsu (jj) History Investigation and Manipulation
 
 ## Overview
 
-When working with complex jj repositories, you may need to investigate historical commits, split monolithic changes into focused commits, or clean up messy history. This skill documents efficient techniques for:
+When working with complex jj repositories, you may need to investigate historical commits, split monolithic changes into focused commits, or clean up messy history. This reference documents efficient techniques for:
 
 - **Investigating commit history**: Finding when changes were made and why
 - **Using jj annotate**: Tracking down who/when specific lines were added
@@ -489,7 +484,4 @@ jj log -r 'description(frontmatter) & description(copyright)'
 - [jj Revset Language](https://jj-vcs.github.io/jj/latest/revsets/)
 - [jj Conflict Resolution](https://jj-vcs.github.io/jj/latest/conflicts/)
 
-## Related Skills
-
-- `using-jj-workspaces` - Isolated jj agent workspaces
-- `writing-git-commits` - Focused commit messages and commit splitting
+See also [workspaces](workspaces.md) and [merging repositories](merge-repos.md).

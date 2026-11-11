@@ -17,7 +17,7 @@ jj root --ignore-working-copy
 
 ### Inside Rex
 
-Use the `using-rex-jj-workspaces` skill. Rex is the daily driver; its `rex-jj`
+Use the `version-control` skill's workspaces reference. Rex's `rex-jj`
 helper owns creation and receipts. In a Rex-created task, read
 `.jj/rex-session.json` and reuse its `receiptPath` instead of creating another
 workspace. Keep Herdr's bindings and bootstrap out of Rex sessions.

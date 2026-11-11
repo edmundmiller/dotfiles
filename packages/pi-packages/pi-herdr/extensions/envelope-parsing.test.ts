@@ -51,6 +51,7 @@ let repoRoot: string;
 let stateRoot: string;
 let worktreePath: string;
 let oldXdgStateHome: string | undefined;
+let oldDefaultAgent: string | undefined;
 
 beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), "pi-herdr-envelope-"));
@@ -60,11 +61,15 @@ beforeEach(() => {
   mkdirSync(join(repoRoot, ".git"), { recursive: true });
   oldXdgStateHome = process.env.XDG_STATE_HOME;
   process.env.XDG_STATE_HOME = join(tempDir, "state");
+  oldDefaultAgent = process.env.DEFAULT_CODING_AGENT;
+  delete process.env.DEFAULT_CODING_AGENT;
 });
 
 afterEach(() => {
   if (oldXdgStateHome === undefined) delete process.env.XDG_STATE_HOME;
   else process.env.XDG_STATE_HOME = oldXdgStateHome;
+  if (oldDefaultAgent === undefined) delete process.env.DEFAULT_CODING_AGENT;
+  else process.env.DEFAULT_CODING_AGENT = oldDefaultAgent;
   rmSync(tempDir, { recursive: true, force: true });
 });
 
@@ -175,7 +180,7 @@ describe("openReviewBox resume path with envelope responses", () => {
       worktreePath,
       workspaceId: F.workspaceId,
       diffTarget: "origin/main...HEAD",
-      agent: "omp",
+      agent: "pi",
       updatedAt: "2025-01-01T00:00:00.000Z",
     };
     const { writeFileSync } = await import("node:fs");

@@ -126,7 +126,6 @@ in
         acpx.enable = true;
         cliamp.enable = true;
         herdr.enable = true;
-        herdr.mainCodingAgent = "pi";
         rex.enable = true;
         herald.enable = true;
         tmux.jmux.enable = false;
@@ -175,6 +174,7 @@ in
       };
 
       agents = {
+        default = "amp";
         browse.enable = true;
         mcp = {
           enable = true;

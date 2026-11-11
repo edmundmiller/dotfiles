@@ -47,7 +47,6 @@
         cliamp.enable = true;
         tmux.jmux.enable = false;
         herdr.enable = true;
-        herdr.mainCodingAgent = "pi";
         rex.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;
@@ -117,6 +116,7 @@
       };
 
       agents = {
+        default = "pi";
         mcp = {
           enable = true;
           agents.amp = true;

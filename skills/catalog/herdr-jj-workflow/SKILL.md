@@ -5,6 +5,10 @@ description: Runs Herdr task workspaces with the selected agent, jj, Hunk, and d
 
 # Herdr + jj task workflow
 
+Check `HERDR_BACKEND` and the host configuration before controlling Herdr. Native uses `herdr-app` and `hc`, not the legacy `herdr workspace` protocol. In dotfiles, read `config/herdr/README.md` for native commands. Use `herdr-dev open PATH` for an existing checkout and Hunk; its agent follows `DEFAULT_CODING_AGENT` unless explicitly overridden. Native jj creation and guarded cleanup are not ported. Keep existing checkouts, task bookmarks, receipts and commit approval gates; report unsupported lifecycle operations instead of switching to the old TUI or bypassing cleanup guards.
+
+The lifecycle commands below apply only to an explicitly selected legacy backend. Do not launch legacy Herdr to make them available in a native session.
+
 Use one durable Herdr workspace per issue, PR, or task. Share one stable name across the checkout, jj workspace, jj bookmark, Herdr workspace label, and PR head when a PR exists:
 
 - `issue-N-slug`

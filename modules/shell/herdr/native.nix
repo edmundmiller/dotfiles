@@ -14,6 +14,7 @@ let
   legacyCleanupAgents = lib.filter (agent: agentEnabled.${agent}) (lib.attrNames agentEnabled);
   herdrDev = pkgs.writeShellScriptBin "herdr-dev" ''
     export PATH=${lib.escapeShellArg "${config.user.home}/.local/bin"}:$PATH
+    export DEFAULT_CODING_AGENT="''${DEFAULT_CODING_AGENT:-${config.modules.agents.default}}"
     export HERDR_APP_COMMAND=${lib.escapeShellArg cfg.native.appCommand}
     exec ${pkgs.python3}/bin/python3 ${nativeSource}/herdr-dev.py "$@"
   '';

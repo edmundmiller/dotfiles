@@ -12,6 +12,8 @@
 import { mkdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { Type, type Static } from "@sinclair/typebox";
+import { Value } from "@sinclair/typebox/value";
 
 // ─── Constants ───────────────────────────────────────────────────────
 
@@ -27,21 +29,22 @@ export type ExecFn = (
 
 // ─── Types ───────────────────────────────────────────────────────────
 
-export type PrInfo = {
-  number: number;
-  title: string;
-  baseRefName: string;
-  headRefName: string;
-  headRefOid: string;
-  url: string;
+const prInfoSchema = Type.Object({
+  number: Type.Number(),
+  title: Type.String(),
+  baseRefName: Type.String(),
+  headRefName: Type.String(),
+  headRefOid: Type.String(),
+  url: Type.String(),
   /** Present when fetched with `state` in the --json field list (bridge use). */
-  state?: string;
-};
+  state: Type.Optional(Type.String()),
+});
+export type PrInfo = Static<typeof prInfoSchema>;
 
 // ─── Exported shared helpers ─────────────────────────────────────────
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+  Value.Check(Type.Record(Type.String(), Type.Unknown()), value);
 
 export const slugify = (value: string): string =>
   value
@@ -66,13 +69,13 @@ export const findStringKey = (value: unknown, keys: Set<string>): string | undef
   // envelope shape is present (id is a string AND result is a record),
   // search result first so we prefer data fields over the envelope id.
   // This prevents extracting "cli:workspace:create" as the workspace id.
-  if (typeof value.id === "string" && isRecord(value.result)) {
+  if (Value.Check(Type.String(), value.id) && isRecord(value.result)) {
     const found = findStringKey(value.result, keys);
     if (found) return found;
   }
 
   for (const [key, item] of Object.entries(value)) {
-    if (keys.has(key) && typeof item === "string" && item) return item;
+    if (keys.has(key) && Value.Check(Type.String(), item) && item) return item;
     const found = findStringKey(item, keys);
     if (found) return found;
   }
@@ -82,26 +85,10 @@ export const findStringKey = (value: unknown, keys: Set<string>): string | undef
 export const parsePrInfo = (stdout: string): PrInfo => {
   const parsed: unknown = JSON.parse(stdout);
   if (!isRecord(parsed)) throw new Error("gh pr view returned non-object JSON");
-  const { number, title, baseRefName, headRefName, headRefOid, url, state } = parsed;
-  if (
-    typeof number !== "number" ||
-    typeof title !== "string" ||
-    typeof baseRefName !== "string" ||
-    typeof headRefName !== "string" ||
-    typeof headRefOid !== "string" ||
-    typeof url !== "string"
-  ) {
+  if (!Value.Check(prInfoSchema, parsed)) {
     throw new Error("gh pr view returned incomplete PR metadata");
   }
-  return {
-    number,
-    title,
-    baseRefName,
-    headRefName,
-    headRefOid,
-    url,
-    ...(typeof state === "string" ? { state } : {}),
-  };
+  return parsed;
 };
 
 export const buildReviewPrompt = (input: {
@@ -348,11 +335,11 @@ export async function createHerdrReviewWorkspace(
     diffTarget: string;
     diffBase: string;
     extraPrompt?: string;
-    agent?: "omp" | "pi";
+    agent?: string;
   }
 ): Promise<{ workspaceId: string }> {
   const { worktreePath, prNumber, title, prUrl, diffTarget, diffBase } = opts;
-  const agent = opts.agent ?? "omp";
+  const agent = resolveReviewAgent(opts.agent);
 
   const workspaceLabel = truncate(`PR #${prNumber} ${title}`, 56);
   const workspace = await runHerdr(exec, [
@@ -377,21 +364,13 @@ export async function createHerdrReviewWorkspace(
     diffTarget,
     hunkTab: "Hunk",
   })}${opts.extraPrompt ? `\n\nExtra instruction:\n${opts.extraPrompt}` : ""}`;
-  const reviewCommand =
-    agent === "pi"
-      ? `pi ${shellQuote(reviewPrompt)}`
-      : `omp --cwd ${shellQuote(worktreePath)} ${shellQuote(reviewPrompt)}`;
+  // coding-agent (modules/agents) knows each agent's way to start with a first prompt.
+  const reviewCommand = `coding-agent --agent ${agent} ${shellQuote(reviewPrompt)}`;
 
   await createTabAndRun(exec, workspaceId, worktreePath, "Hunk", hunkDiffCommand(diffTarget));
   if (initialTabId) await runHerdr(exec, ["tab", "close", initialTabId]);
   await createTabAndRun(exec, workspaceId, worktreePath, "Critique", critiqueDiffCommand(diffBase));
-  await createTabAndRun(
-    exec,
-    workspaceId,
-    worktreePath,
-    agent === "pi" ? "Pi Review" : "OMP Review",
-    reviewCommand
-  );
+  await createTabAndRun(exec, workspaceId, worktreePath, reviewTabLabel(agent), reviewCommand);
   await createTabAndRun(exec, workspaceId, worktreePath, "Approve", buildApprovalCommand(prUrl));
   await runHerdr(exec, ["workspace", "focus", workspaceId]);
 
@@ -400,18 +379,19 @@ export async function createHerdrReviewWorkspace(
 
 // ─── Manifest types ──────────────────────────────────────────────────
 
-export type ReviewBoxManifest = {
-  schemaVersion: 1;
-  repoRoot: string;
-  prNumber: number;
-  prUrl: string;
-  headRefOid: string;
-  worktreePath: string;
-  workspaceId: string;
-  diffTarget: string;
-  agent: "omp" | "pi";
-  updatedAt: string;
-};
+const reviewBoxManifestSchema = Type.Object({
+  schemaVersion: Type.Literal(1),
+  repoRoot: Type.String(),
+  prNumber: Type.Number(),
+  prUrl: Type.String(),
+  headRefOid: Type.String(),
+  worktreePath: Type.String(),
+  workspaceId: Type.String(),
+  diffTarget: Type.String(),
+  agent: Type.String(),
+  updatedAt: Type.String(),
+});
+export type ReviewBoxManifest = Static<typeof reviewBoxManifestSchema>;
 
 export type ReviewBoxResult = {
   action: "created" | "restored" | "resumed" | "refreshed";
@@ -419,7 +399,7 @@ export type ReviewBoxResult = {
   worktreePath: string;
   workspaceId: string;
   diffTarget: string;
-  agent: "omp" | "pi";
+  agent: string;
 };
 
 export type OpenReviewBoxOpts = {
@@ -437,11 +417,26 @@ export type OpenReviewBoxOpts = {
   worktreeName?: string;
   /** Extra instruction appended to the review prompt. */
   prompt?: string;
-  /** Review agent tab. Defaults to sticky manifest value or "omp". */
-  agent?: "omp" | "pi";
+  /** Review agent command. Defaults to DEFAULT_CODING_AGENT, then Pi; see resolveReviewAgent. */
+  agent?: string;
   /** Override the state directory (testing). */
   stateRoot?: string;
 };
+
+// ─── Review agent ─────────────────────────────────────────────────────
+
+// An explicit choice wins, then the host default (modules.agents.default), which
+// a repo can override with direnv or mise. Stored manifests do not pin it.
+export const resolveReviewAgent = (explicit?: string): string => {
+  const agent = explicit?.trim() || process.env.DEFAULT_CODING_AGENT?.trim() || "pi";
+  if (!/^[A-Za-z0-9._-]+$/.test(agent)) {
+    throw new Error(`review agent must be a command name, got ${JSON.stringify(agent)}`);
+  }
+  return agent;
+};
+
+export const reviewTabLabel = (agent: string): string =>
+  `${agent[0]?.toUpperCase()}${agent.slice(1)} Review`;
 
 // ─── Manifest helpers (moved from herdr.ts) ───────────────────────────
 
@@ -462,17 +457,7 @@ const manifestPathFor = (pr: PrInfo, stateRoot: string): string =>
   join(stateRoot, `${manifestKeyFor(pr)}.json`);
 
 export const isReviewBoxManifest = (value: unknown): value is ReviewBoxManifest =>
-  isRecord(value) &&
-  value.schemaVersion === 1 &&
-  typeof value.repoRoot === "string" &&
-  typeof value.prNumber === "number" &&
-  typeof value.prUrl === "string" &&
-  typeof value.headRefOid === "string" &&
-  typeof value.worktreePath === "string" &&
-  typeof value.workspaceId === "string" &&
-  typeof value.diffTarget === "string" &&
-  (value.agent === "omp" || value.agent === "pi") &&
-  typeof value.updatedAt === "string";
+  Value.Check(reviewBoxManifestSchema, value);
 
 const readManifest = async (path: string): Promise<ReviewBoxManifest | undefined> => {
   let content: string;
@@ -647,7 +632,7 @@ export async function openReviewBox(
     const manifest = await readManifest(manifestPath);
     const diffBase = opts.base ?? `origin/${pr.baseRefName}`;
     const diffTarget = `${diffBase}...HEAD`;
-    const agent = opts.agent ?? manifest?.agent ?? "omp";
+    const agent = resolveReviewAgent(opts.agent);
 
     // ── Branch 1: manifest matches repo + PR + worktree exists ──────
     if (
@@ -658,17 +643,20 @@ export async function openReviewBox(
     ) {
       const exists = await workspaceExists(exec, manifest.workspaceId);
       const headChanged = manifest.headRefOid !== pr.headRefOid;
+      const agentChanged = manifest.agent !== agent;
 
-      // ── Refresh: head changed ──
-      if (headChanged) {
-        await refreshCheckout(
-          exec,
-          repoRoot,
-          manifest.worktreePath,
-          pr.baseRefName,
-          prIdentifier,
-          Boolean(opts.base)
-        );
+      // Agent changes rebuild live tabs, but must not force-checkout review edits.
+      if (headChanged || (exists && agentChanged)) {
+        if (headChanged) {
+          await refreshCheckout(
+            exec,
+            repoRoot,
+            manifest.worktreePath,
+            pr.baseRefName,
+            prIdentifier,
+            Boolean(opts.base)
+          );
+        }
         if (exists) await runHerdr(exec, ["workspace", "close", manifest.workspaceId]);
         const { workspaceId } = await createHerdrReviewWorkspace(exec, {
           worktreePath: manifest.worktreePath,

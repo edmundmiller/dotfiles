@@ -21,8 +21,8 @@ interface GenerateCommitMessageConfig {
 
 const USER_AGENTS_DIR = path.join(homedir(), ".pi", "agent", "agents");
 
-const DEFAULT_PROMPT = "Write and stage commits according to the writing-git-commits skill";
-const DEFAULT_SKILL = "writing-git-commits";
+const DEFAULT_PROMPT = "Write and stage commits according to the version-control skill";
+const DEFAULT_SKILL = "version-control";
 const DEFAULT_AGENT_CANDIDATES = ["general", "worker", "default", "scout"] as const;
 
 /** Maximum output cost per million tokens for "cheap" models */
@@ -34,11 +34,11 @@ const FALLBACK_AGENT_CONTENT = `---
 name: ${FALLBACK_AGENT_NAME}
 description: Focused subagent for writing and staging git commits
 tools: read, bash
-skills: writing-git-commits
+skills: version-control
 ---
 
 Create and stage clean, atomic, conventional commits for the current repository.
-Use the writing-git-commits skill and keep commits scoped, descriptive, and safe.
+Use the version-control skill and keep commits scoped, descriptive, and safe.
 `;
 
 /** Default configuration values */

@@ -250,7 +250,7 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn("agent-browser-after.png", github_skill)
         self.assertIn("claude-shared-skill-links", claude_module)
         self.assertIn(
-            'for skill in test-quality github-cli-media lore pe-verify${optionalString config.modules.desktop.apps.tldraw.enable " tldraw-offline"}; do',
+            'for skill in test-quality github-cli-media lore pe-verify version-control${optionalString config.modules.desktop.apps.tldraw.enable " tldraw-offline"}; do',
             claude_module,
         )
         self.assertIn('shared="$HOME/.agents/skills/$skill"', claude_module)

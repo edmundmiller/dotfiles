@@ -24,6 +24,10 @@ let
           );
         }
         {
+          options.modules.agents.default = lib.mkOption {
+            type = lib.types.str;
+            default = "amp";
+          };
           options.modules.shell.tmux = lib.mkOption {
             type = lib.types.attrsOf lib.types.anything;
             default = {
@@ -83,6 +87,8 @@ let
       "t3-spaces"
       "t3-tabs"
     ]
+    && cfg.modules.shell.herdr.package == null
+    && !(cfg.home.configFile ? "herdr/config.toml")
     && builtins.elem "herdr-dev" (map lib.getName cfg.user.packages);
   coreOnly =
     cfg:

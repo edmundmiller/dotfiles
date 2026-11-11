@@ -213,12 +213,6 @@ in
     command = mkOpt str "herdr";
     configFile = mkOpt (nullOr (either str path)) null;
     key = mkOpt str "H";
-    mainCodingAgent = mkOpt (enum [
-      "pi"
-      "claude"
-      "codex"
-      "opencode"
-    ]) "pi";
     vercelSandbox.enable = mkBoolOpt false;
     tnote.enable = mkBoolOpt true;
     projects.enable = mkOption {
@@ -304,7 +298,6 @@ in
 
     user.packages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
     environment.systemPackages = herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote;
-    env.HERDR_MAIN_CODING_AGENT = cfg.mainCodingAgent;
     env.HERDR_BACKEND = "legacy";
 
     home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;
@@ -336,7 +329,7 @@ in
           # the user's GUI launchd domain so Accessibility/Screen Recording
           # grants are checked in the same context as a local GUI terminal.
           export PI_COMPUTER_USE_GUI_SESSION_LAUNCH="''${PI_COMPUTER_USE_GUI_SESSION_LAUNCH:-1}"
-          export HERDR_MAIN_CODING_AGENT=${escapeShellArg cfg.mainCodingAgent}
+          export DEFAULT_CODING_AGENT=${escapeShellArg config.modules.agents.default}
           ${optionalString (config.modules.shell.git.hunk.theme.dark != null) ''
             export HUNK_THEME_DARK=${escapeShellArg config.modules.shell.git.hunk.theme.dark}
           ''}

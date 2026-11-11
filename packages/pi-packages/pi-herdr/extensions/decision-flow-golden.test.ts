@@ -198,7 +198,7 @@ function seedManifest(headRefOid: string): void {
     worktreePath,
     workspaceId: F.workspaceId,
     diffTarget: `origin/${F.baseRefName}...HEAD`,
-    agent: "omp",
+    agent: "pi",
     updatedAt: "2025-01-01T00:00:00.000Z",
   };
   writeFileSync(join(stateRoot, `${manifestKey}.json`), JSON.stringify(manifest, null, 2) + "\n");
@@ -225,7 +225,7 @@ describe("decision-flow golden equivalence", () => {
     const tool = tools["herdr_pr_review_workspace"];
     expect(tool).toBeDefined();
 
-    await tool.execute("test-call-id", { pr: F.prIdentifier }, undefined, undefined, {
+    await tool.execute("test-call-id", { pr: F.prIdentifier, agent: "pi" }, undefined, undefined, {
       cwd: repoRoot,
     });
 
@@ -244,7 +244,7 @@ describe("decision-flow golden equivalence", () => {
     const tool = tools["herdr_pr_review_workspace"];
     expect(tool).toBeDefined();
 
-    await tool.execute("test-call-id", { pr: F.prIdentifier }, undefined, undefined, {
+    await tool.execute("test-call-id", { pr: F.prIdentifier, agent: "pi" }, undefined, undefined, {
       cwd: repoRoot,
     });
 
@@ -263,7 +263,7 @@ describe("decision-flow golden equivalence", () => {
     const tool = tools["herdr_pr_review_workspace"];
     expect(tool).toBeDefined();
 
-    await tool.execute("test-call-id", { pr: F.prIdentifier }, undefined, undefined, {
+    await tool.execute("test-call-id", { pr: F.prIdentifier, agent: "pi" }, undefined, undefined, {
       cwd: repoRoot,
     });
 

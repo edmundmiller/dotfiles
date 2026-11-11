@@ -43,7 +43,7 @@ update_when: Universal invariants change.
   step stops the rest.
 - Follow repository publication policy; use `done` for authorized landing.
   Create PRs only when requested or required by policy.
-  Stack only when asked; use stack-maintenance.
+  Stack only when asked; use version-control.
 - Diagnosis or planning does not authorize implementation or publication.
 - Communicate concisely: lead with the outcome, separate evidence from
   uncertainty, and state blockers with the smallest action that resolves them.

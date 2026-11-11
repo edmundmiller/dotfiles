@@ -92,7 +92,8 @@ herdr-app check config/herdr/native/mods/dotfiles-prefix
 ```
 
 ```sh
-herdr-dev open /path/to/checkout --agent pi
+herdr-dev open /path/to/checkout
+herdr-dev open /path/to/checkout --agent amp
 herdr-dev hunk
 herdr-dev hunk --staged
 herdr-dev hunk --branch origin/main
@@ -100,7 +101,9 @@ herdr-dev hunk --branch origin/main
 
 `open` validates an existing Git checkout, runs its executable
 `scripts/qmd-seed-worktree.sh` if present, then creates an agent space and a
-Hunk tab. The default agent is Pi.
+Hunk tab. The default agent follows `DEFAULT_CODING_AGENT`, with Pi as the
+fallback. MacTraitor-Pro selects Amp and Seqeratop selects Pi. `--agent` overrides
+that default. This helper uses native app commands, never the legacy TUI.
 Hunk reviews the invoking directory beside the focused local terminal pane.
 The panel uses the focused pane's directory. Remote and composition panes are
 rejected. Failures report partial resources and never close or delete them.

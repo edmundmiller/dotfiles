@@ -49,6 +49,7 @@ let stateRoot: string;
 let worktreePath: string;
 let lockPath: string;
 let oldXdgStateHome: string | undefined;
+let oldDefaultAgent: string | undefined;
 
 beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), "pi-herdr-orb-"));
@@ -59,11 +60,15 @@ beforeEach(() => {
   mkdirSync(join(repoRoot, ".git"), { recursive: true });
   oldXdgStateHome = process.env.XDG_STATE_HOME;
   process.env.XDG_STATE_HOME = join(tempDir, "state");
+  oldDefaultAgent = process.env.DEFAULT_CODING_AGENT;
+  delete process.env.DEFAULT_CODING_AGENT;
 });
 
 afterEach(() => {
   if (oldXdgStateHome === undefined) delete process.env.XDG_STATE_HOME;
   else process.env.XDG_STATE_HOME = oldXdgStateHome;
+  if (oldDefaultAgent === undefined) delete process.env.DEFAULT_CODING_AGENT;
+  else process.env.DEFAULT_CODING_AGENT = oldDefaultAgent;
   rmSync(tempDir, { recursive: true, force: true });
 });
 
@@ -156,7 +161,7 @@ function createExecStub(
   return { exec, calls };
 }
 
-function seedManifest(headRefOid: string): void {
+function seedManifest(headRefOid: string, agent = "pi"): void {
   mkdirSync(stateRoot, { recursive: true });
   const manifest = {
     schemaVersion: 1,
@@ -167,7 +172,7 @@ function seedManifest(headRefOid: string): void {
     worktreePath,
     workspaceId: F.workspaceId,
     diffTarget: `origin/${F.baseRefName}...HEAD`,
-    agent: "omp",
+    agent,
     updatedAt: "2025-01-01T00:00:00.000Z",
   };
   writeFileSync(join(stateRoot, `${manifestKey}.json`), JSON.stringify(manifest, null, 2) + "\n");
@@ -267,6 +272,54 @@ describe("openReviewBox", () => {
       (c) => c.cmd === "herdr" && c.args[0] === "workspace" && c.args[1] === "focus"
     );
     expect(focusCalls).toHaveLength(1);
+  });
+
+  test.each([
+    { previous: "omp", host: "amp", explicit: undefined, expected: "amp" },
+    { previous: "omp", host: "pi", explicit: undefined, expected: "pi" },
+    { previous: "pi", host: "amp", explicit: undefined, expected: "amp" },
+    { previous: "amp", host: "amp", explicit: "pi", expected: "pi" },
+  ])("live $previous review migrates to $expected without changing checkout", async (choice) => {
+    seedManifest(F.headRefOid, choice.previous);
+    seedWorktree();
+    const dirtyPath = join(worktreePath, "uncommitted.txt");
+    writeFileSync(dirtyPath, "keep my review edits\n");
+    const previousDefault = process.env.DEFAULT_CODING_AGENT;
+    process.env.DEFAULT_CODING_AGENT = choice.host;
+    try {
+      const { exec, calls } = createExecStub({ workspaceGetSucceeds: true });
+      const options = {
+        pr: prInfo,
+        repoRoot,
+        sharedRoot: repoRoot,
+        prIdentifier: "42",
+        stateRoot,
+        agent: choice.explicit,
+      };
+      const result = await openReviewBox(exec, options);
+      expect(result.action).toBe("refreshed");
+      expect(result.agent).toBe(choice.expected);
+      expect(result.worktreePath).toBe(worktreePath);
+      expect(readFileSync(dirtyPath, "utf8")).toBe("keep my review edits\n");
+      expect(calls.filter((call) => call.cmd === "git" || call.cmd === "gh")).toEqual([]);
+      expect(
+        calls.some((call) =>
+          call.args.some((arg) => arg.startsWith(`coding-agent --agent ${choice.expected} `))
+        )
+      ).toBe(true);
+      const manifest = JSON.parse(readFileSync(join(stateRoot, `${manifestKey}.json`), "utf8"));
+      expect(manifest.agent).toBe(choice.expected);
+      expect(manifest.headRefOid).toBe(F.headRefOid);
+      calls.length = 0;
+      const resumed = await openReviewBox(exec, options);
+      expect(resumed.action).toBe("resumed");
+      expect(calls.some((call) => call.args[1] === "create" || call.args[1] === "close")).toBe(
+        false
+      );
+    } finally {
+      if (previousDefault === undefined) delete process.env.DEFAULT_CODING_AGENT;
+      else process.env.DEFAULT_CODING_AGENT = previousDefault;
+    }
   });
 
   test("refresh path: head changed → closes old, creates new, action refreshed", async () => {

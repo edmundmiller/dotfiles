@@ -191,7 +191,7 @@ describe("pr-review-workspace golden equivalence", () => {
     const tool = tools["herdr_pr_review_workspace"];
     expect(tool).toBeDefined();
 
-    await tool.execute("test-call-id", { pr: F.prIdentifier }, undefined, undefined, {
+    await tool.execute("test-call-id", { pr: F.prIdentifier, agent: "pi" }, undefined, undefined, {
       cwd: repoRoot,
     });
 

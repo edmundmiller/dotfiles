@@ -61,7 +61,7 @@ print(json.dumps(reply))
 '''
     )
     fake_app.chmod(0o755)
-    env = {**os.environ, "PATH": str(bindir) + os.pathsep + os.environ["PATH"], "APP_LOG": str(log)}
+    env = {**os.environ, "PATH": str(bindir) + os.pathsep + os.environ["PATH"], "APP_LOG": str(log), "DEFAULT_CODING_AGENT": ""}
 
     def invoke(*args, **extra_env):
         result = subprocess.run(
@@ -83,7 +83,7 @@ def expected_hunk_argv(repo, *args):
             "herdr-dev-hunk", str(repo), *args]
 
 
-@pytest.mark.parametrize("agent", [None, "pi", "claude", "codex", "opencode"])
+@pytest.mark.parametrize("agent", [None, "pi", "amp", "claude", "codex", "opencode"])
 def test_open_creates_agent_then_explicit_hunk_tab(native_cli, agent):
     repo, invoke = native_cli
     result, calls = invoke("open", repo, *(["--agent", agent] if agent else []))
@@ -99,6 +99,20 @@ def test_open_creates_agent_then_explicit_hunk_tab(native_cli, agent):
         "agent": {"space": "space-created", "tab": "agent-created", "terminal": "t10"},
         "hunk": {"tab": "hunk-created", "terminal": "t11"},
     }
+
+
+@pytest.mark.parametrize("default,explicit,expected", [
+    ("amp", None, "amp"),
+    ("pi", None, "pi"),
+    ("amp", "pi", "pi"),
+    ("pi", "amp", "amp"),
+])
+def test_open_uses_host_default_unless_overridden(native_cli, default, explicit, expected):
+    repo, invoke = native_cli
+    result, calls = invoke("open", repo, *(["--agent", explicit] if explicit else []),
+                           DEFAULT_CODING_AGENT=default, AGENT="1")
+    assert result.returncode == 0, result.stderr
+    assert json.loads(calls[0][2])["argv"] == [expected]
 
 
 @pytest.mark.parametrize("invalid", ["missing", "file", "nonrepo"])

@@ -50,6 +50,11 @@ dotfilesLib.my.mkServiceVmTest {
 
         options.modules.shell.cliamp.enable = lib.mkEnableOption "cliamp";
 
+        options.modules.agents.default = lib.mkOption {
+          type = lib.types.str;
+          default = "pi";
+        };
+
         options.modules.shell.git.hunk.theme = {
           dark = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
