@@ -69,9 +69,12 @@ class AgentResponseContractTests(unittest.TestCase):
             "Do not infer authority",
             "Inspect the live source of truth before acting",
             "Do not claim completion without fresh evidence",
+            "Follow repository publication policy",
+            "Create PRs only when requested or required by policy",
         ):
             self.assertIn(expected, normalized)
         self.assertNotIn("Ask only about two-way-door changes", normalized)
+        self.assertNotIn("fixes to merged code get separate PRs", normalized)
 
     def test_codex_defaults_keep_responses_and_reasoning_summaries_concise(self) -> None:
         config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())

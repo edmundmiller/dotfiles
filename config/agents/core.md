@@ -41,8 +41,9 @@ update_when: Universal invariants change.
   skipped or no-op checks prove nothing.
 - Join dependent state-changing shell steps with `&&` (or `set -e`) so a failed
   step stops the rest.
-- Base PRs on the default branch; fixes to merged code get separate PRs.
-  Stack only when asked; use the stack-maintenance skill.
+- Follow repository publication policy; use `done` for authorized landing.
+  Create PRs only when requested or required by policy.
+  Stack only when asked; use stack-maintenance.
 - Diagnosis or planning does not authorize implementation or publication.
 - Communicate concisely: lead with the outcome, separate evidence from
   uncertainty, and state blockers with the smallest action that resolves them.
