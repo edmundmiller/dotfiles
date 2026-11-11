@@ -17,6 +17,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 from urllib.request import urlopen
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/nuc_shipping.py"
@@ -534,6 +535,41 @@ class NucShippingTests(unittest.TestCase):
                 else:
                     self.assertEqual(result.stdout, "")
 
+    def test_recurrence_workflow_transports_only_bounded_read_arguments(self):
+        name = "Inspect one bounded climate recurrence without activation"
+        workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
+        self.assertIn(f"- name: {name}\n        if: inputs.operation == 'ha-climate-recurrence'\n", workflow)
+        self.assertIn("ping: ${{ inputs.operation != 'ha-climate-recurrence' &&", workflow)
+        sudo = self.root / "sudo"
+        sudo.write_text(
+            f"#!{sys.executable}\n"
+            "import os, sys\n"
+            "assert sys.argv[1:] == ['-n', 'uv', 'run', '--no-project', '--script', '-', "
+            "'--incident-start', os.environ['INCIDENT_START'], '--incident-cutoff', os.environ['INCIDENT_CUTOFF'], "
+            "'--recovered-at', os.environ['RECOVERED_AT']]\n"
+            "sys.stdin.read()\n"
+            "print('{\"snapshot\":1}')\n"
+            "sys.exit(int(os.environ['READ_CODE']))\n"
+        )
+        sudo.chmod(0o755)
+        setup = r"""
+            tailscale() { bash -c "$3"; }
+            hostname() { printf '%s\n' "$TARGET_HOST"; }
+            nixos-version() { printf 'unchanged-revision\n'; }
+            export -f hostname nixos-version
+        """
+        self.env.update(INCIDENT_START="2026-11-01T06:59:00.123456Z", INCIDENT_CUTOFF="2026-11-01T07:12:00+00:00", RECOVERED_AT="")
+        for host, code in (("nuc", 0), ("nuc", 2), ("another-host", 0)):
+            with self.subTest(host=host, code=code):
+                result = self.workflow_shell(name, setup=textwrap.dedent(setup) + f'export TARGET_HOST="{host}" READ_CODE={code}\n')
+                self.assertEqual(result.returncode, code if host == "nuc" else 1, result.stderr)
+                self.assertEqual(result.stdout, '{"snapshot":1}\n' if host == "nuc" else "")
+        for start, cutoff, recovered in (("", "2026-11-01T07:12:00Z", ""),
+                                         ("2026-11-01T06:59:00Z", "2026-11-01T07:12:00Z", "'; exit 0 #")):
+            self.env.update(INCIDENT_START=start, INCIDENT_CUTOFF=cutoff, RECOVERED_AT=recovered)
+            result = self.workflow_shell(name, setup="tailscale() { echo unexpected-host-read; };\n")
+            self.assertEqual((result.returncode, result.stdout), (2, ""))
+
 
 class CriticalEntityHistoryTests(unittest.TestCase):
     def invoke(self, lines=(), error=None):
@@ -584,7 +620,7 @@ class CriticalEntityHistoryTests(unittest.TestCase):
 
 
 class ClimateEntityDiagnosticsTests(unittest.TestCase):
-    def invoke(self, lines=(), error=None, denied=False):
+    def invoke(self, lines=(), error=None, denied=False, args=(), state_error=None, state=None):
         socket = MagicMock()
         socket.__enter__.return_value = socket
 
@@ -613,8 +649,23 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
         modules = {name: MagicMock() for name in ("websockets", "websockets.sync")}
         modules["websockets.sync.client"] = client
         journal = subprocess.CompletedProcess([], 0, "\n".join(map(json.dumps, lines)))
+        state = state if state is not None else {
+            "entity_id": "climate.master_suite", "state": "heat",
+            "last_changed": "2026-11-01T07:02:00Z", "last_updated": "2026-11-01T07:03:00Z",
+            "attributes": {"private": "192.0.2.42"}, "context": {"user_id": "private"},
+        }
+
+        def state_response(request, **_kwargs):
+            if request.full_url != "http://127.0.0.1:8123/api/states/climate.master_suite" or request.get_method() != "GET":
+                raise PermissionError("Fixture rejects unrelated state or writes")
+            if state_error:
+                raise state_error
+            response = MagicMock()
+            response.__enter__.return_value = io.StringIO(json.dumps(state))
+            return response
+
         output = io.StringIO()
-        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("subprocess.run", return_value=journal, side_effect=error), patch("sys.stdout", output):
+        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("subprocess.run", return_value=journal, side_effect=error), patch("urllib.request.urlopen", side_effect=state_response), patch.object(sys, "argv", ["reader", *args]), patch("sys.stdout", output):
             with self.assertRaises(SystemExit) as exit_status:
                 runpy.run_path(str(ROOT / "modules/services/hass/climate-entity-diagnostics.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
@@ -684,6 +735,100 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
         self.assertEqual(result["mapping"]["platform"], "homekit_controller")
         self.assertEqual(result["journal"], {"status": "unknown", "error_type": "CalledProcessError"})
         self.assertEqual(self.invoke(denied=True), (2, {"status": "unknown", "error_type": "ValueError"}))
+
+    def test_recurrence_scopes_tracebacks_checker_timing_and_snapshot_are_private(self):
+        args = ["--incident-start", "2026-11-01T06:59:00Z", "--incident-cutoff", "2026-11-01T07:12:00Z",
+                "--recovered-at", "2026-11-01T07:05:00Z"]
+
+        def warning(at, logger, body, level="WARNING"):
+            local = datetime.fromisoformat(at.replace("Z", "+00:00")).astimezone(ZoneInfo("America/Chicago"))
+            return self.record(at, f"{local:%Y-%m-%d %H:%M:%S} {level} (MainThread) [{logger}] {body}")
+
+        byte_warning = warning("2026-11-01T07:00:00Z", "aiohomekit.controller.ip.connection",
+                               "private café 192.0.2.42\nTraceback (most recent call last):\nTimeoutError")
+        byte_warning["MESSAGE"] = list(byte_warning["MESSAGE"].encode())
+        checker = self.record("2026-11-01T07:01:01Z", json.dumps({
+            "schema_version": 1, "observed_at": "2026-11-01T07:01:00Z",
+            "checks": {"critical_entities": {"status": "unhealthy", "failures": [
+                {"entity_id": "climate.master_suite", "state": "unavailable"},
+                {"entity_id": "private", "state": "private"},
+            ]}, "repairs": {"private": "private"}},
+        })) | {"_SYSTEMD_UNIT": "hass-health.service"}
+        code, result = self.invoke([
+            warning("2026-11-01T06:53:59.999999Z", "aiohomekit", "timeout"),
+            warning("2026-11-01T06:54:00Z", "homeassistant.core", "climate.master_suite unavailable private"),
+            warning("2026-11-01T06:59:59Z", "homeassistant.components.homekit_controller", "connection reset private"),
+            byte_warning, checker,
+            warning("2026-11-01T07:02:00Z", "aiohomekit_extra", "timeout private"),
+            warning("2026-11-01T07:03:00Z", "aiohomekit", "Last ERROR: timeout", "INFO"),
+            warning("2026-11-01T07:04:00Z", "aiohomekit", "private failure"),
+            self.record("2026-11-01T07:04:01Z", "Traceback (most recent call last):\nTimeoutError private"),
+            warning("2026-11-01T07:10:00Z", "aiohomekit", "authentication failed"),
+            warning("2026-11-01T07:10:00.000001Z", "aiohomekit", "timeout"),
+        ], args=args)
+        self.assertEqual(code, 0)
+        incident = result["incident"]
+        self.assertEqual((incident["window_start"], incident["window_end"]),
+                         ("2026-11-01T06:54:00+00:00", "2026-11-01T07:10:00+00:00"))
+        # Fall-back crosses the repeated Chicago 01:00 hour; wall-clock subtraction would be wrong.
+        self.assertEqual((incident["america_chicago_start"], incident["america_chicago_end"]),
+                         ("2026-11-01T01:54:00-05:00", "2026-11-01T01:10:00-06:00"))
+        self.assertTrue(incident["full_recovery_margin_included"])
+        self.assertFalse(incident["truncated_at_30_minutes"])
+        self.assertEqual(result["current_state"]["state"], "heat")
+        self.assertEqual(result["current_state"]["last_changed"], "2026-11-01T07:02:00+00:00")
+        self.assertEqual(result["transport_metadata"]["association"], "unknown")
+        self.assertFalse(result["transport_metadata"]["collected"])
+        journal = result["journal"]
+        self.assertEqual((journal["retained_records_in_windows"], journal["matched_records"], journal["decoded_byte_messages"]), (8, 5, 1))
+        self.assertEqual([event["scope"] for event in journal["events"]], [
+            "entity_or_config_entry", "integration_wide_not_entity_specific",
+            "homekit_library_not_entity_specific", "homekit_library_not_entity_specific",
+            "homekit_library_not_entity_specific",
+        ])
+        self.assertEqual(journal["events"][2]["exception_types"], ["TimeoutError"])
+        self.assertEqual(journal["events"][3]["categories"], ["unclassified_warning_or_error"])
+        self.assertEqual(journal["checker_reports"], [{"observed_at": "2026-11-01T07:01:00+00:00",
+                         "critical_entities_status": "unhealthy", "entity_failures": ["unavailable"]}])
+        self.assertEqual(journal["retention_by_window"][0]["first_retained_ha_record"], "2026-11-01T06:54:00+00:00")
+        self.assertEqual(journal["retention_by_window"][0]["last_retained_ha_record"], "2026-11-01T07:10:00+00:00")
+
+    def test_recurrence_caps_window_and_does_not_export_unbounded_events(self):
+        args = ["--incident-start", "2026-11-01T06:59:00.123456Z", "--incident-cutoff", "2026-11-01T08:00:00Z"]
+        records = [self.record("2026-11-01T06:59:00.123456Z", "2026-11-01 06:59:00 ERROR (MainThread) [aiohomekit] timeout private") for _ in range(101)]
+        records += [self.record("2026-11-01T07:24:00.123456Z", "retained INFO private"),
+                    self.record("2026-11-01T07:24:00.123457Z", "out of bounds private")]
+        code, result = self.invoke(records, args=args)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["incident"]["window_start"], "2026-11-01T06:54:00.123456+00:00")
+        self.assertEqual(result["incident"]["window_end"], "2026-11-01T07:24:00.123456+00:00")
+        self.assertTrue(result["incident"]["truncated_at_30_minutes"])
+        self.assertEqual(result["incident"]["recovery_status"], "unrecovered_at_cutoff_as_reported")
+        journal = result["journal"]
+        self.assertEqual((journal["retained_records_in_windows"], journal["matched_records"], len(journal["events"]), journal["matching_events_not_exported"]), (102, 101, 100, 1))
+        self.assertEqual(journal["category_counts"], [{"scope": "homekit_library_not_entity_specific", "category": "timeout", "count": 101}])
+
+    def test_recurrence_invalid_bounds_and_partial_reads_do_not_claim_health(self):
+        valid = ["--incident-start", "2026-11-01T06:59:00Z", "--incident-cutoff", "2026-11-01T07:02:00Z"]
+        for args in (
+            valid[:2], [*valid, "--recovered-at", "2026-11-01T07:03:00Z"],
+            [*valid[:3], "2026-11-01T06:58:00Z"],
+            ["--incident-start", "2026-11-01T06:59:00-06:00", *valid[2:]],
+            ["--incident-start", "2026-11-01T06:59:00", *valid[2:]],
+            [*valid[:3], "2099-11-01T07:02:00Z"],
+        ):
+            with self.subTest(args=args):
+                self.assertEqual(self.invoke(args=args), (2, {"status": "unknown", "error_type": "ValueError"}))
+        code, result = self.invoke(args=[*valid, "--recovered-at", "2026-11-01T07:01:00Z"])
+        self.assertEqual(code, 2)
+        self.assertFalse(result["incident"]["full_recovery_margin_included"])
+        self.assertEqual(result["journal"]["retention_by_window"][0]["retained_ha_records"], 0)
+        code, result = self.invoke([self.record("2026-11-01T07:00:00Z", "retained private")],
+                                   args=valid, state_error=OSError("private 192.0.2.42"))
+        self.assertEqual(code, 2)
+        self.assertEqual(result["current_state"], {"status": "unknown", "error_type": "OSError"})
+        self.assertEqual(result["mapping"]["integration_domain"], "homekit_controller")
+        self.assertEqual(result["journal"]["retained_records_in_windows"], 1)
 
 
 class HaMonitorTests(unittest.TestCase):

@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -16,8 +16,18 @@ on:
           - deploy
           - ha-diagnostics
           - ha-climate-diagnostics
+          - ha-climate-recurrence
           - ha-monitor-diagnostics
           - orb-diagnostics
+      incident_start:
+        description: Recurrence only; UTC time of human/checker-confirmed climate.master_suite incident
+        type: string
+      incident_cutoff:
+        description: Recurrence only; explicit UTC capture cutoff, never in the future
+        type: string
+      recovered_at:
+        description: Recurrence only; optional reported UTC recovery within incident bounds
+        type: string
       ha_monitor:
         description: Arm the local HA runtime monitor for Gatus and verify live timer runs (requires approval)
         default: false
@@ -148,7 +158,7 @@ jobs:
           oauth-client-id: ${{ vars.TS_CLIENT_ID }}
           audience: ${{ vars.TS_AUDIENCE }}
           tags: tag:github-nuc-deploy
-          ping: nuc.cinnamon-rooster.ts.net
+          ping: ${{ inputs.operation != 'ha-climate-recurrence' && 'nuc.cinnamon-rooster.ts.net' || '' }}
       - name: Check live orb pilot capacity before activation
         if: inputs.operation == 'deploy' && inputs.orb_pilot
         shell: bash
@@ -269,6 +279,30 @@ jobs:
             printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
             exec sudo -n uv run --no-project --script -
           ' < modules/services/hass/climate-entity-diagnostics.py
+      - name: Inspect one bounded climate recurrence without activation
+        if: inputs.operation == 'ha-climate-recurrence'
+        shell: bash
+        env:
+          INCIDENT_START: ${{ inputs.incident_start }}
+          INCIDENT_CUTOFF: ${{ inputs.incident_cutoff }}
+          RECOVERED_AT: ${{ inputs.recovered_at }}
+        run: |
+          set -euo pipefail
+          # Restrict shell transport to timestamp characters; the reader validates UTC and bounds.
+          for value in "$INCIDENT_START" "$INCIDENT_CUTOFF"; do
+            [[ "$value" =~ ^[0-9T:+.Z-]+$ ]] || exit 2
+          done
+          [[ -z "$RECOVERED_AT" || "$RECOVERED_AT" =~ ^[0-9T:+.Z-]+$ ]] || exit 2
+          # One snapshot only; no ping, wait, retry, recovery or live configuration change.
+          # shellcheck disable=SC2029
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "
+            set -eu
+            test \"\$(hostname)\" = nuc
+            printf 'configurationRevision=%s\n' \"\$(nixos-version --configuration-revision)\" >&2
+            exec sudo -n uv run --no-project --script - \\
+              --incident-start '$INCIDENT_START' --incident-cutoff '$INCIDENT_CUTOFF' \\
+              --recovered-at '$RECOVERED_AT'
+          " < modules/services/hass/climate-entity-diagnostics.py
       - name: Inspect retained critical entity failures without activation
         if: inputs.operation == 'ha-diagnostics'
         shell: bash

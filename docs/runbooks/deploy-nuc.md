@@ -243,6 +243,47 @@ returns `2`, preserving a successful mapping when possible. This branch neither
 changes nor dismisses the dated Backup Repair. It needs publication of the reader
 and workflow, not host deployment.
 
+### Climate recurrence preparation
+
+`operation=ha-climate-recurrence` is a separate, manual read; it does not reuse
+the consumed historical requests. Publication and each capture need explicit
+authority. Record a unique capture claim, exact published main SHA, latest passing
+exact-main CI, unchanged diagnostic/monitor sources and absence of a competing
+shared workflow before dispatch. Never cancel another owner's work. Leave all
+mutation flags false. One dispatch takes one snapshot; no automatic waiting,
+second snapshot, retry, schedule, or monitor is added. A recovery snapshot needs
+its own allowance, with at most two snapshots for an explicitly approved incident.
+
+Use existing checker evidence naming `climate.master_suite` or a human-reported
+recurrence, not aggregate failures alone. Supply `incident_start` and
+`incident_cutoff` as explicit UTC ISO timestamps ending in `Z` or `+00:00`.
+Neither bound may be in the future. Optional `recovered_at` must fall within
+those bounds. The reader adds a five-minute lead and, when recovery is reported,
+up to five minutes after recovery, limited by the cutoff and a **30-minute total**
+window. Longer incidents retain only the first 30 minutes including the lead;
+the output marks truncation and whether the recovery margin was included.
+No reported recovery is labeled unrecovered at the supplied cutoff, not proof
+of the entity's later state. Times are exported in UTC and America/Chicago.
+
+The supported fixed-entity state API and registry/config-entry APIs export only
+state, update times and allowlisted mapping/disabled flags. That current snapshot
+does not establish state or mapping during an earlier outage. Retained HA and
+checker journals are restricted to the same window, with counts and first/last
+retained timestamps; at most 100 categorized events and 100 checker reports are
+exported, with omitted counts. `aiohomekit` library warnings/errors are separate
+from mapped-component and entity/config-entry text matches. Only traceback text
+inside the same journal message is associated. Missing categories, sparse
+retention, separate traceback records and library-wide attribution cannot prove
+absent errors or physical cause. This does not query Gatus again or rescore the
+completed assessment; use its existing timing evidence for alignment.
+
+No device maker/model or entity-to-endpoint association is established by this
+export. Socket, route and neighbor collection is therefore disabled and reported
+as unknown. The recurrence branch also skips the shared action's optional ping.
+It does not change live logging/settings, probe a device, reconnect, reload,
+restart, activate a revision or dismiss the dated Backup Repair. No recurrence
+or live capture is implied by local preparation or publication.
+
 ### One-time Bluetooth recovery
 
 With separate approval to restart Bluetooth, use `operation=ha-diagnostics`
