@@ -18,10 +18,17 @@
         "path": "~/.claude/pstack-marketplace"
       },
       "autoUpdate": false
+    },
+    "thimble": {
+      "source": {
+        "source": "github",
+        "repo": "safety-research/thimble"
+      }
     }
   },
   "enabledPlugins": {
-    "pstack@cursor-plugins": true
+    "pstack@cursor-plugins": true,
+    "thimble@thimble": true
   },
   "permissions": {
     "defaultMode": "auto",
