@@ -47,7 +47,7 @@ def validation_base():
 
 
 def github(endpoint, paginate=False):
-    command = ["gh", "api", "--hostname", "github.com", f"repos/{REPOSITORY}/{endpoint}"]
+    command = ["gh", "api", "--hostname", "github.com", f"repos/{REPOSITORY}/{endpoint}".rstrip("/")]
     if paginate:
         command += ["--paginate", "--slurp"]
     return json.loads(subprocess.check_output(command, text=True, timeout=30))

@@ -122,7 +122,7 @@ elif '/attempts/' in endpoint:
         state['run'].update(status='in_progress', conclusion=None, run_attempt=3)
         Path(os.environ['TYPES_FIXTURE']).write_text(json.dumps(state))
 elif '/actions/workflows/' in endpoint: result = {'workflow_runs':[state['run']]}
-elif endpoint.endswith('/'): result = {'permissions':{'push':True}}
+elif endpoint == 'repos/edmundmiller/dotfiles': result = {'permissions':{'push':True}}
 else: raise AssertionError(endpoint)
 print(json.dumps(result))
 ''')
