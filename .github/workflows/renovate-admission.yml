@@ -1,6 +1,12 @@
 name: Renovate types admission
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact stable Bun types version to admit without running other Renovate updates
+        type: string
+        required: true
   workflow_run:
     workflows: [Renovate, CI]
     types: [completed]
@@ -17,9 +23,11 @@ concurrency:
 jobs:
   prepare:
     if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
       github.event.workflow_run.path == '.github/workflows/renovate.yml' &&
       github.event.workflow_run.head_branch == 'main' &&
-      github.event.workflow_run.conclusion == 'success'
+      github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     outputs:
       selected: ${{ steps.select.outputs.selected }}
@@ -32,11 +40,16 @@ jobs:
         with:
           extra-conf: accept-flake-config = true
       - id: select
-        name: Select a new unheld types-only proposal
+        name: Select only the requested types update or a new unheld proposal
         env:
           GH_TOKEN: ${{ github.token }}
+          TYPES_VERSION: ${{ inputs.version }}
         run: |
-          python3 scripts/renovate_admission.py select > "$RUNNER_TEMP/selection.json"
+          args=()
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            args=(--version "$TYPES_VERSION")
+          fi
+          python3 scripts/renovate_admission.py select "${args[@]}" > "$RUNNER_TEMP/selection.json"
           selected=$(jq -r '.selected | if type == "boolean" then . else error("Invalid selection") end' "$RUNNER_TEMP/selection.json")
           printf 'selected=%s\n' "$selected" >> "$GITHUB_OUTPUT"
       - name: Generate without write credentials or install scripts
@@ -69,6 +82,7 @@ jobs:
       - name: Validate artifacts and commit without a write credential
         env:
           GH_TOKEN: ${{ github.token }}
+          TYPES_VERSION: ${{ inputs.version }}
         run: |
           mkdir "$RUNNER_TEMP/types-record"
           python3 scripts/renovate_admission.py stage --bundle "$RUNNER_TEMP/types-bundle" > "$RUNNER_TEMP/types-record/record.json"

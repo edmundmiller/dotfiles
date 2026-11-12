@@ -504,7 +504,7 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertEqual(pilot["matchFileNames"], ["packages/callstack-diff/package.json"])
         self.assertEqual(pilot["matchDepNames"], ["@types/bun"])
         self.assertEqual(pilot["matchDepTypes"], ["devDependencies"])
-        self.assertEqual(pilot["matchUpdateTypes"], ["patch"])
+        self.assertEqual(pilot["matchUpdateTypes"], ["minor", "patch"])
         self.assertFalse(pilot["dependencyDashboardApproval"])
         self.assertEqual(pilot["groupSlug"], "callstack-types-patches")
         self.assertEqual(pilot["prConcurrentLimit"], 0)

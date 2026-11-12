@@ -64,8 +64,8 @@ def manifest_version(before, after):
     a, b = [tuple(map(int, match.groups())) for match in versions]
     expected = copy.deepcopy(before)
     expected["devDependencies"]["@types/bun"] = new
-    if a[:2] != b[:2] or b[2] <= a[2] or expected != after:
-        raise ValueError("Only an increasing @types/bun patch is allowed")
+    if a[0] != b[0] or b <= a or expected != after:
+        raise ValueError("Only an increasing @types/bun minor or patch is allowed")
     return new
 
 
@@ -77,6 +77,10 @@ def validate_lock(before, after, version):
         metadata = copy.deepcopy(before["packages"][name][2])
         if name == "@types/bun":
             metadata["dependencies"]["bun-types"] = version
+        elif ("undici-types" in before["packages"]
+              and entry[2] == metadata | {"dependencies": metadata["dependencies"] | {"undici-types": "*"}}):
+            # Bun 1.4 types also reference the already-pinned undici types.
+            metadata = entry[2]
         if (len(entry) != 4 or entry[:3] != [f"{name}@{version}", "", metadata]
                 or not re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", entry[3])):
             raise ValueError("Unexpected types dependency metadata or registry")
@@ -147,6 +151,11 @@ def proposal(number):
     ci.git("fetch", "--no-tags", "origin", source)
     version = manifest_version(json.loads(read_at("HEAD", "package.json")),
                                json.loads(read_at(source, "package.json")))
+    release_age(version)
+    return source
+
+
+def release_age(version):
     for name in ("@types%2fbun", "bun-types"):
         metadata = json.loads(run("curl", "--fail", "--silent", "--show-error",
                                   "--max-time", "30", f"https://registry.npmjs.org/{name}",
@@ -154,30 +163,43 @@ def proposal(number):
         released = datetime.fromisoformat(metadata["time"][version])
         if datetime.now(timezone.utc) - released < timedelta(days=3):
             raise ValueError("Types release has not passed the three-day stability window")
-    return source
 
 
-def select():
-    prs = ci.github(f"pulls?state=open&head=edmundmiller:{BRANCH}&per_page=100")
-    if not prs:
-        return {"selected": False}
-    if len(prs) != 1:
-        raise ValueError("Ambiguous types proposal")
-    number = prs[0]["number"]
-    source = prs[0]["head"]["sha"]
-    ci.git("fetch", "--no-tags", "origin", source)
-    if json.loads(read_at("HEAD", "package.json")) == json.loads(read_at(source, "package.json")):
-        # A retained proposal already applied to main is a no-op, not a daily failure.
-        return {"selected": False}
-    source = proposal(number)
+def manual_release(version):
+    if ci.github(f"pulls?state=open&head=edmundmiller:{BRANCH}&per_page=100"):
+        raise ValueError("Manual admission must not bypass an existing types proposal or hold")
+    release_age(version)
+
+
+def select(version=None):
     base = ci.git("rev-parse", "HEAD")
+    if version is None:
+        prs = ci.github(f"pulls?state=open&head=edmundmiller:{BRANCH}&per_page=100")
+        if not prs:
+            return {"selected": False}
+        if len(prs) != 1:
+            raise ValueError("Ambiguous types proposal")
+        number = prs[0]["number"]
+        source = prs[0]["head"]["sha"]
+        ci.git("fetch", "--no-tags", "origin", source)
+        if json.loads(read_at(base, "package.json")) == json.loads(read_at(source, "package.json")):
+            # A retained proposal already applied to main is a no-op, not a daily failure.
+            return {"selected": False}
+        source = proposal(number)
+        version = manifest_version(json.loads(read_at(base, "package.json")),
+                                   json.loads(read_at(source, "package.json")))
+    else:
+        number, source = None, base
+        before = json.loads(read_at(base, "package.json"))
+        after = copy.deepcopy(before)
+        after["devDependencies"]["@types/bun"] = version
+        manifest_version(before, after)
+        manual_release(version)
     if ci.remote_sha("refs/heads/main") != base:
         raise ValueError("Main moved; wait for the next Renovate run")
     # A different outstanding candidate must finish before this lane starts.
     if ci.github(f"git/matching-refs/heads/candidate/{base}/"):
         raise ValueError("An outstanding candidate already owns this base")
-    version = manifest_version(json.loads(read_at(base, "package.json")),
-                               json.loads(read_at(source, "package.json")))
     return {"selected": True, "base": base, "source": source,
             "pr": number, "version": version}
 
@@ -211,13 +233,22 @@ def stage(bundle):
     if set(record) != {"selected", "base", "source", "pr", "version"} or not record["selected"]:
         raise ValueError("Invalid proposal record")
     if (ci.git("status", "--porcelain") or ci.git("rev-parse", "HEAD") != record["base"]
-            or ci.remote_sha("refs/heads/main") != record["base"]
-            or proposal(record["pr"]) != record["source"]):
+            or ci.remote_sha("refs/heads/main") != record["base"]):
         raise ValueError("Main or proposal moved, or proposal is held")
-    proposed = manifest_version(json.loads(read_at(record["base"], "package.json")),
-                                json.loads(read_at(record["source"], "package.json")))
-    if proposed != record["version"]:
-        raise ValueError("Artifact version differs from the selected proposal")
+    if record["pr"] is None:
+        if (os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
+                or os.environ.get("GITHUB_REF") != "refs/heads/main"
+                or os.environ.get("TYPES_VERSION") != record["version"]
+                or record["source"] != record["base"]):
+            raise ValueError("Manual selection must bind the trusted main dispatch and version")
+        manual_release(record["version"])
+    else:
+        if proposal(record["pr"]) != record["source"]:
+            raise ValueError("Proposal moved or is held")
+        proposed = manifest_version(json.loads(read_at(record["base"], "package.json")),
+                                    json.loads(read_at(record["source"], "package.json")))
+        if proposed != record["version"]:
+            raise ValueError("Artifact version differs from the selected proposal")
     for name in FILES:
         (PACKAGE / name).write_bytes((bundle / name).read_bytes())
     binary = tools()
@@ -227,11 +258,13 @@ def stage(bundle):
     record["run"] = int(os.environ["GITHUB_RUN_ID"])
     record["attempt"] = int(os.environ["GITHUB_RUN_ATTEMPT"])
     ci.git("add", "--", *[str(PACKAGE / f) for f in sorted(FILES)])
+    source = (f"Source-PR: https://github.com/{ci.REPOSITORY}/pull/{record['pr']}"
+              if record["pr"] is not None else "Source: isolated manual types dispatch")
     ci.git("-c", "user.name=Renovate types admission", "-c",
            "user.email=renovate@users.noreply.github.com", "commit", "--no-gpg-sign", "-m",
            f"chore(callstack-diff): update Bun types to {record['version']}\n\n"
            f"Renovate-Types-Run: {record['run']}/{record['attempt']}\n"
-           f"Source-PR: https://github.com/{ci.REPOSITORY}/pull/{record['pr']}")
+           f"{source}")
     record["sha"] = ci.git("rev-parse", "HEAD")
     return record
 
@@ -254,7 +287,7 @@ def land(event):
         raise ValueError("Invalid types candidate ancestry or provenance")
     run_id, attempt = map(int, provenance[0])
     origin = ci.github(f"actions/runs/{run_id}")
-    if (origin["path"] != WORKFLOW or origin["event"] != "workflow_run"
+    if (origin["path"] != WORKFLOW or origin["event"] not in {"workflow_run", "workflow_dispatch"}
             or origin["head_sha"] != base or origin["head_branch"] != "main"
             or origin["run_attempt"] != attempt or origin["status"] != "completed"
             or origin["conclusion"] != "success"):
@@ -268,8 +301,14 @@ def land(event):
             raise ValueError("Invalid candidate provenance artifact")
         record = json.loads(files[0].read_text())
     if (record["base"] != base or record["sha"] != sha or record["run"] != run_id
-            or record["attempt"] != attempt or proposal(record["pr"]) != record["source"]):
+            or record["attempt"] != attempt):
         raise ValueError("Publisher record does not bind this candidate and current proposal")
+    if record["pr"] is None:
+        if origin["event"] != "workflow_dispatch" or record["source"] != base:
+            raise ValueError("Manual candidate requires the trusted main dispatch")
+        manual_release(record["version"])
+    elif origin["event"] != "workflow_run" or proposal(record["pr"]) != record["source"]:
+        raise ValueError("Scheduled candidate requires its current unheld proposal")
     if ci.remote_sha("refs/heads/main") != base:
         raise ValueError("Main moved; regenerate on the next Renovate run")
     ci.passing_candidate(base, sha)
@@ -288,7 +327,8 @@ def land(event):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("select")
+    select_parser = commands.add_parser("select")
+    select_parser.add_argument("--version", help="Select an exact types version without a PR")
     prepare_parser = commands.add_parser("prepare")
     prepare_parser.add_argument("--selection", type=Path, required=True)
     prepare_parser.add_argument("--output", type=Path, required=True)
@@ -303,7 +343,7 @@ def main():
     try:
         result = None
         if args.command == "select":
-            result = select()
+            result = select(args.version)
         elif args.command == "prepare":
             prepare(json.loads(args.selection.read_text()), args.output)
         elif args.command == "stage":

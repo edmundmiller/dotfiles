@@ -43,7 +43,7 @@ These are update proposals. Only the types-only pilot can be admitted automatica
 | `renovate/nix-flake-inputs`               | Versioned flake inputs                              |
 | `renovate/repo-local-nix-package-patches` | Regex-managed Nix package patches plus hash refresh |
 | `renovate/herdr`, `renovate/hunk`         | Overlay/harness and flake tag                       |
-| `renovate/callstack-types-patches`        | Future stable callstack `@types/bun` patches        |
+| `renovate/callstack-types-patches`        | Future stable callstack `@types/bun` minors/patches |
 | Major updates                             | Explicit dashboard selection, separate from minors  |
 
 Grouping runtime and development dependencies together avoids competing updates
@@ -98,8 +98,8 @@ submitting fresh candidate CI. This policy change does not repair existing PRs.
 
 ## Types-only candidate pilot
 
-Only future stable `@types/bun` patches in callstack-diff and their required
-`bun-types` patch dependency skip Dashboard selection and can land unattended.
+Only future stable same-major `@types/bun` minors and patches in callstack-diff
+and their matching `bun-types` dependency skip Dashboard selection and can land unattended.
 Native Renovate automerge remains off. `.github/workflows/renovate-admission.yml`
 uses trusted default-branch code and `scripts/candidate_ci.py` for exact-candidate
 submission and normal fast-forward landing. No merge API or deployment is used.
@@ -114,13 +114,25 @@ edit on current main, resolves `bun.lock` with pinned Bun and regenerates
 no write credential. A separate job revalidates the artifact and reproducibility
 and commits only those three files before supplying the publishing credential.
 
-The dedicated proposal branch and exact pilot labels are required, but labels
-and author identity are not authorization. The controller checks the semantic
-manifest and lock diff, same-major/minor increasing stable patch and three-day
-registry release age of both packages. Extra dependencies, registry changes,
+Scheduled admission requires the dedicated proposal branch and exact pilot labels,
+but labels and author identity are not authorization. The controller checks the
+semantic manifest and lock diff, increasing same-major stable version and three-day
+registry release age of both packages. Bun types may add a reference to the existing
+unchanged `undici-types` lock entry. Other extra dependencies, registry changes,
 production changes, scripts or extra files are held. Any additional hold/security
 label blocks admission. Proposals created before the workflow's introduction,
 including #266/#236 and #271, are excluded. No existing PR is merged or closed.
+
+For an authorized immediate run, dispatch `renovate-admission.yml` on `main` with
+the exact stable `version` input. This reconstructs only that types update without
+running general Renovate or requiring a proposal or Dashboard click. Any existing
+dedicated types proposal blocks manual admission so it cannot bypass a hold.
+Selection, staging and landing all recheck that exclusion and release age. The
+publisher record must bind the trusted main dispatch and requested version.
+Generation, package builds, provider-bound checks and exact-SHA landing are the
+same as scheduled admission. Missing permissions stop the run without changing
+credentials or settings. The historical `callstack-types-patches` branch name stays
+unchanged so this expansion does not replace existing proposal branches.
 
 The shared selector routes callstack manifest/lock/generated-file changes to a
 Nix check with frozen development installation, `lint:setup`, deterministic lint

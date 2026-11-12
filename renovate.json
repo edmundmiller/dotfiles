@@ -172,12 +172,12 @@
       "automerge": false
     },
     {
-      "description": "Prepare future callstack Bun types patches without a Dashboard click; the candidate controller owns admission.",
+      "description": "Prepare future callstack Bun types minors and patches without a Dashboard click; the candidate controller owns admission.",
       "matchManagers": ["npm"],
       "matchFileNames": ["packages/callstack-diff/package.json"],
       "matchDepNames": ["@types/bun"],
       "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["patch"],
+      "matchUpdateTypes": ["minor", "patch"],
       "dependencyDashboardApproval": false,
       "prConcurrentLimit": 0,
       "branchConcurrentLimit": 0,

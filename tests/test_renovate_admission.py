@@ -38,6 +38,7 @@ class TypesAdmissionTests(unittest.TestCase):
                                   for name, metadata in (
                                       ("@types/bun", {"dependencies": {"bun-types": "1.3.13"}}),
                                       ("bun-types", {"dependencies": {"@types/node": "*"}}))}}
+        self.lock["packages"]["undici-types"] = ["undici-types@8.3.0", "", {}, "sha512-" + "b" * 86 + "=="]
         self.write(PACKAGE + "bun.lock", json.dumps(self.lock))
         self.write(PACKAGE + "bun.nix", "generated 1.3.13\n")
         self.git("add", ".")
@@ -85,6 +86,8 @@ else:
     for name in ('@types/bun', 'bun-types'):
         lock['packages'][name][0] = name + '@' + version
     lock['packages']['@types/bun'][2]['dependencies']['bun-types'] = version
+    if version == '1.4.4':
+        lock['packages']['bun-types'][2]['dependencies']['undici-types'] = '*'
     Path('bun.lock').write_text(json.dumps(lock))
 ''')
         self.tool("bun2nix", common + '''
@@ -97,7 +100,7 @@ Path(args[args.index('-o') + 1]).write_text('generated ' + version + '\\n')
         for name in ("deadnix", "nixfmt"):
             self.tool(name, common + "assert not os.environ.get('GH_TOKEN')\n")
         self.tool("curl", common + f"state=json.loads(Path({str(self.temp / 'github.json')!r}).read_text())\n"
-                  "print(json.dumps({'time': {'1.3.14':state['released']}}))\n")
+                  "print(json.dumps({'time': {v:state['released'] for v in ('1.3.14','1.4.0','1.4.4')}}))\n")
         self.tool("gh", common + '''
 state = json.loads(Path(os.environ['TYPES_FIXTURE']).read_text())
 args = sys.argv[1:]
@@ -106,7 +109,7 @@ if args[:2] == ['run','download']:
     sys.exit(0)
 assert args[:3] == ['api','--hostname','github.com'], args
 endpoint = args[3]
-if '/pulls?' in endpoint: result = [state['pr']]
+if '/pulls?' in endpoint: result = state.get('prs', [state['pr']])
 elif '/files?' in endpoint: result = [state['files']]
 elif '/pulls/' in endpoint: result = state['pr']
 elif endpoint.endswith('/status'): result = {'statuses':state['statuses']}
@@ -152,8 +155,8 @@ print(json.dumps(result))
         return subprocess.run([sys.executable, str(self.repo / "scripts/renovate_admission.py"), *args],
                               cwd=self.repo, env=self.env, text=True, capture_output=True, timeout=20)
 
-    def prepare(self):
-        selected = self.cli("select")
+    def prepare(self, version=None):
+        selected = self.cli("select", *(["--version", version] if version else []))
         self.assertEqual(selected.returncode, 0, selected.stderr)
         selection = self.temp / "selection.json"
         selection.write_text(selected.stdout)
@@ -163,8 +166,8 @@ print(json.dumps(result))
         self.git("reset", "--hard", self.base)
         return bundle
 
-    def candidate(self):
-        bundle = self.prepare()
+    def candidate(self, version=None):
+        bundle = self.prepare(version)
         staged = self.cli("stage", "--bundle", str(bundle))
         self.assertEqual(staged.returncode, 0, staged.stderr)
         record = json.loads(staged.stdout)
@@ -229,6 +232,7 @@ print(json.dumps(result))
         for name, mutate in (
             ("package.json", lambda x: x["scripts"].update(test="untrusted")),
             ("bun.lock", lambda x: x["packages"]["bun-types"][2]["dependencies"].update(extra="*")),
+            ("bun.lock", lambda x: x["packages"]["undici-types"].__setitem__(0, "undici-types@9.0.0")),
         ):
             path = bundle / name
             original = path.read_text()
@@ -244,8 +248,8 @@ print(json.dumps(result))
         self.assertNotEqual(self.cli("stage", "--bundle", str(bundle)).returncode, 0)
         self.assertEqual(self.git("rev-parse", "HEAD"), self.base)
 
-    def test_minor_major_range_prerelease_and_downgrade_are_not_patch_admission(self):
-        for version in ("1.3.12", "1.4.0", "2.0.0", "1.3.14-beta.1", "^1.3.14"):
+    def test_major_range_prerelease_and_downgrade_are_not_types_admission(self):
+        for version in ("1.3.12", "1.2.99", "2.0.0", "1.3.14-beta.1", "^1.3.14"):
             self.git("checkout", "--detach", self.state["pr"]["head"]["sha"])
             manifest = json.loads((self.repo / PACKAGE / "package.json").read_text())
             manifest["devDependencies"]["@types/bun"] = version
@@ -260,6 +264,66 @@ print(json.dumps(result))
                 self.assertNotEqual(result.returncode, 0)
                 self.assertRegex(result.stderr, "Only an increasing|Types versions must")
                 self.assertEqual(self.remote_main(), self.base)
+
+    def test_scheduled_minor_reuses_existing_undici_without_other_lock_drift(self):
+        self.git("checkout", "--detach", self.state["pr"]["head"]["sha"])
+        manifest = json.loads((self.repo / PACKAGE / "package.json").read_text())
+        manifest["devDependencies"]["@types/bun"] = "1.4.4"
+        self.write(PACKAGE + "package.json", json.dumps(manifest))
+        self.git("commit", "--quiet", "-am", "minor proposal")
+        self.state["pr"]["head"]["sha"] = self.git("rev-parse", "HEAD")
+        self.git("push", "origin", "HEAD:refs/heads/renovate/callstack-types-patches")
+        self.git("checkout", "--detach", self.base)
+        self.save()
+        sha = self.candidate()
+        result = self.landing()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.remote_main(), sha)
+        lock = json.loads((self.repo / PACKAGE / "bun.lock").read_text())
+        self.assertEqual(lock["packages"]["undici-types"], self.lock["packages"]["undici-types"])
+        self.assertEqual(lock["packages"]["bun-types"][2]["dependencies"]["undici-types"], "*")
+
+    def test_manual_minor_lands_only_with_dispatch_provenance_and_no_proposal(self):
+        self.state["prs"] = []
+        self.state["origin"]["event"] = "workflow_dispatch"
+        self.env.update(GITHUB_EVENT_NAME="workflow_dispatch", GITHUB_REF="refs/heads/main",
+                        TYPES_VERSION="1.4.0")
+        self.save()
+        sha = self.candidate("1.4.0")
+        self.assertEqual(self.remote_main(), self.base)
+        self.state["origin"]["event"] = "workflow_run"
+        self.assertNotEqual(self.landing().returncode, 0)
+        self.state["origin"]["event"] = "workflow_dispatch"
+        self.state["prs"] = [self.state["pr"]]
+        self.assertNotEqual(self.landing().returncode, 0)
+        self.assertEqual(self.remote_main(), self.base)
+        self.state["prs"] = []
+        result = self.landing()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.remote_main(), sha)
+        manifest = json.loads((self.repo / PACKAGE / "package.json").read_text())
+        self.assertEqual(manifest["devDependencies"]["@types/bun"], "1.4.0")
+
+    def test_manual_selection_cannot_bypass_dispatch_input_or_holds(self):
+        self.assertNotEqual(self.cli("select", "--version", "1.4.0").returncode, 0)
+        self.state["prs"] = []
+        self.save()
+        for version in ("1.3.13", "1.2.99", "2.0.0", "1.4.0-beta.1", "^1.4.0"):
+            self.assertNotEqual(self.cli("select", "--version", version).returncode, 0)
+        self.state["released"] = "2099-01-01T00:00:00Z"
+        self.save()
+        self.assertNotEqual(self.cli("select", "--version", "1.4.0").returncode, 0)
+        self.state["released"] = "2024-01-01T00:00:00Z"
+        self.save()
+        bundle = self.prepare("1.4.0")
+        trusted = self.env | {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REF": "refs/heads/main",
+                              "TYPES_VERSION": "1.4.0"}
+        for env in ({"GITHUB_EVENT_NAME": "workflow_run"}, {"GITHUB_REF": "refs/heads/untrusted"},
+                    {"TYPES_VERSION": "1.4.4"}):
+            self.env = trusted | env
+            result = self.cli("stage", "--bundle", str(bundle))
+            self.assertNotEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(self.git("rev-parse", "HEAD"), self.base)
 
     def test_failed_stale_wrong_provider_or_forged_provenance_never_lands(self):
         self.candidate()
