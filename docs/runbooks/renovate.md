@@ -18,7 +18,8 @@ a second runner would duplicate PRs.
 - Config schedule: Monday 04:00 through 08:59 America/Chicago. The daily Action
   still runs. Existing branches can update outside that window. Routine updates
   need Dependency Dashboard approval before Renovate creates a branch or PR.
-  This selects work to prepare, not permission to publish it to main.
+  The types-only pilot below is the sole routine exception. Dashboard selection
+  chooses work to prepare; it is not a required safety gate for pilot admission.
 - Auth: repository secret `RENOVATE_TOKEN` (a fine-grained PAT). Pull requests
   and the Dependency Dashboard issue are authored as that token's user
   (`edmundmiller` today), **not** `app/renovate`.
@@ -31,7 +32,7 @@ a second runner would duplicate PRs.
 
 ## Expected PR shape
 
-These are update proposals, not automatically admitted commits.
+These are update proposals. Only the types-only pilot can be admitted automatically.
 
 | Branch / group                            | Contents                                            |
 | ----------------------------------------- | --------------------------------------------------- |
@@ -42,6 +43,7 @@ These are update proposals, not automatically admitted commits.
 | `renovate/nix-flake-inputs`               | Versioned flake inputs                              |
 | `renovate/repo-local-nix-package-patches` | Regex-managed Nix package patches plus hash refresh |
 | `renovate/herdr`, `renovate/hunk`         | Overlay/harness and flake tag                       |
+| `renovate/callstack-types-patches`        | Future stable callstack `@types/bun` patches        |
 | Major updates                             | Explicit dashboard selection, separate from minors  |
 
 Grouping runtime and development dependencies together avoids competing updates
@@ -94,14 +96,56 @@ Package integration must regenerate the owner's actual locks, generated Nix
 dependencies and hashes, run focused tests and build the affected package before
 submitting fresh candidate CI. This policy change does not repair existing PRs.
 
-Recommended next decision: keep Renovate as an update proposer and authorize a
-separate, narrow candidate-admission controller only after package generation
-and hosted build coverage are complete for an explicit dependency allowlist.
-That controller must reconcile onto exact main, submit the existing candidate
-route, require its latest hosted checks from the expected provider, and normally
-fast-forward the same passing SHA. A moved main needs a new candidate. No blanket
-bypass, mandatory PR, merge API, or deployment permission is needed. Native
-Renovate automerge stays off; this controller is not implemented or enabled here.
+## Types-only candidate pilot
+
+Only future stable `@types/bun` patches in callstack-diff and their required
+`bun-types` patch dependency skip Dashboard selection and can land unattended.
+Native Renovate automerge remains off. `.github/workflows/renovate-admission.yml`
+uses trusted default-branch code and `scripts/candidate_ci.py` for exact-candidate
+submission and normal fast-forward landing. No merge API or deployment is used.
+
+Only this fixed proposal branch is exempt from concurrent proposal limits so a
+held backlog above the ordinary cap cannot starve the pilot. The ordinary
+four-PR cap, two-per-hour limit, release age and schedule remain unchanged.
+
+After a successful Renovate run, preparation reconstructs the allowed manifest
+edit on current main, resolves `bun.lock` with pinned Bun and regenerates
+`bun.nix` with pinned bun2nix. Installation scripts are disabled. Preparation has
+no write credential. A separate job revalidates the artifact and reproducibility
+and commits only those three files before supplying the publishing credential.
+
+The dedicated proposal branch and exact pilot labels are required, but labels
+and author identity are not authorization. The controller checks the semantic
+manifest and lock diff, same-major/minor increasing stable patch and three-day
+registry release age of both packages. Extra dependencies, registry changes,
+production changes, scripts or extra files are held. Any additional hold/security
+label blocks admission. Proposals created before the workflow's introduction,
+including #266/#236 and #271, are excluded. No existing PR is merged or closed.
+
+The shared selector routes callstack manifest/lock/generated-file changes to a
+Nix check with frozen development installation, `lint:setup`, deterministic lint
+and tests, and generator reproducibility. The same check builds the production
+package and exercises its installed CLI against a known call-tree fixture.
+Live-model evals are excluded. Linux evidence does not authorize Mac activation.
+
+The publishing job uploads a SHA-bound `types-candidate-ATTEMPT` record. On CI
+completion the controller verifies the record and its successful publisher attempt,
+the latest exact-candidate CI attempt and both Actions checks from provider 15368.
+An unrelated candidate at the same base blocks selection. Main/proposal movement,
+artifact failure and failed/missing checks hold admission. A moved main requires
+regeneration on a later Renovate run; no old green result certifies a new SHA.
+Failed candidates remain as evidence and need triage before reusing that base.
+
+Only publishing steps receive the existing `RENOVATE_TOKEN`. Its real permissions
+must be verified in the separately authorized hosted rollout. Default
+`GITHUB_TOKEN` pushes cannot trigger downstream push CI. Missing permission stops
+admission; do not broaden credentials or change repository rules automatically.
+
+Pi, acpx, runtime changes and all-owner lock maintenance stay outside the pilot.
+The generic refresh still misses JS-only hashes for other owners. Acpx needs
+`npmDepsHash` refresh and Pi's legacy npm `workspace:*` artifact failure needs
+repair before either can be admitted. No backlog cleanup, token/settings change,
+Darwin activation or deployment is included.
 
 ## Verify
 
@@ -112,8 +156,15 @@ Configuration validation does not prove artifact generation, hosted builds, or
 automatic admission. Do not run Renovate against the live repository just to
 validate local configuration.
 
+For the pilot, also run `python3 -m unittest tests.test_renovate_admission
+tests.test_candidate_ci tests.test_validation` and
+`hey check scripts/renovate_admission.py .github/workflows/renovate-admission.yml
+packages/callstack-diff`. Controller tests use disposable Git remotes and simulated
+GitHub/registry/tooling. They do not prove live token permissions or hosted landing.
+The Nix package check uses the actual pinned tools and installed CLI.
+
 After separately authorized publication, inspect the Dependency Dashboard and
-latest scheduled Renovate run. Check that routine updates wait for selection,
+latest scheduled Renovate run. Check that non-pilot routine updates wait for selection,
 package groups do not overlap locks, and artifact failures remain visible.
 Manual workflow dispatch and dashboard actions cause external writes and require
 their own authority. A green Renovate run can still report `renovate/artifacts`

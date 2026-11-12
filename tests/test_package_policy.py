@@ -498,10 +498,18 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertIn("digest", actions["matchUpdateTypes"])
         herdr = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "herdr")
         hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
-        self.assertEqual(config["packageRules"][-2]["groupSlug"], "herdr")
-        self.assertEqual(config["packageRules"][-1]["groupSlug"], "hunk")
         self.assertFalse(herdr["automerge"])
         self.assertFalse(hunk["automerge"])
+        pilot = config["packageRules"][-1]
+        self.assertEqual(pilot["matchFileNames"], ["packages/callstack-diff/package.json"])
+        self.assertEqual(pilot["matchDepNames"], ["@types/bun"])
+        self.assertEqual(pilot["matchDepTypes"], ["devDependencies"])
+        self.assertEqual(pilot["matchUpdateTypes"], ["patch"])
+        self.assertFalse(pilot["dependencyDashboardApproval"])
+        self.assertEqual(pilot["groupSlug"], "callstack-types-patches")
+        self.assertEqual(pilot["prConcurrentLimit"], 0)
+        self.assertEqual(pilot["branchConcurrentLimit"], 0)
+        self.assertEqual(config["prConcurrentLimit"], 4)
 
         digest_rule = next(
             rule

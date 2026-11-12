@@ -157,6 +157,20 @@ class ValidationTests(unittest.TestCase):
                 self.assertFalse(checks & set(self.selection(paths[0])["checks"]))
                 self.assertFalse(checks & set(self.selection("--full")["checks"]))
 
+    def test_callstack_manifest_lock_and_generator_select_package_evidence(self):
+        for path in (
+            "packages/callstack-diff/package.json",
+            "packages/callstack-diff/bun.lock",
+            "packages/callstack-diff/bun.nix",
+            "scripts/renovate_admission.py",
+            ".github/workflows/renovate-admission.yml",
+        ):
+            with self.subTest(path=path):
+                self.write(path, "changed")
+                self.assertIn("callstack-diff", self.selection(path)["checks"])
+        self.write("packages/acpx/package.json", "{}")
+        self.assertNotIn("callstack-diff", self.selection("packages/acpx")["checks"])
+
     def test_flue_and_repair_changes_select_observability_and_policy(self):
         self.write("renovate.json", "{}")
         selected = self.selection("renovate.json")

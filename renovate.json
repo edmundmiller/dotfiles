@@ -170,6 +170,21 @@
       "groupSlug": "hunk",
       "labels": ["dependencies", "nix", "packages", "flue-review"],
       "automerge": false
+    },
+    {
+      "description": "Prepare future callstack Bun types patches without a Dashboard click; the candidate controller owns admission.",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["packages/callstack-diff/package.json"],
+      "matchDepNames": ["@types/bun"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch"],
+      "dependencyDashboardApproval": false,
+      "prConcurrentLimit": 0,
+      "branchConcurrentLimit": 0,
+      "groupName": "callstack types patches",
+      "groupSlug": "callstack-types-patches",
+      "labels": ["dependencies", "javascript", "renovate-types-pilot"],
+      "automerge": false
     }
   ],
   "osvVulnerabilityAlerts": true,

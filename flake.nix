@@ -1174,6 +1174,42 @@
             // {
               hey-native = self.packages.${system}.hey;
 
+              callstack-diff = self.packages.${system}.callstack-diff.overrideAttrs (old: {
+                pname = "callstack-diff-checks";
+                bunInstallFlags = lib.filter (flag: flag != "--production") old.bunInstallFlags;
+                nativeBuildInputs = old.nativeBuildInputs ++ [
+                  pkgs.git
+                  pkgs.deadnix
+                  pkgs.nixfmt
+                ];
+                doCheck = true;
+                checkPhase = ''
+                  runHook preCheck
+                  export HOME=$TMPDIR
+                  export GIT_CONFIG_COUNT=1
+                  export GIT_CONFIG_KEY_0=commit.gpgsign
+                  export GIT_CONFIG_VALUE_0=false
+                  # The package-only source cannot follow the development skill symlink.
+                  cp --remove-destination ${./skills/catalog/callstack-diff/SKILL.md} SKILL.md
+                  bun run lint:setup
+                  bun run lint
+                  bun run test
+                  # The install hook puts a no-op bun2nix on PATH.
+                  ${inputs.bun2nix.packages.${system}.bun2nix}/bin/bun2nix -l bun.lock -o "$TMPDIR/generated-bun.nix"
+                  deadnix --edit "$TMPDIR/generated-bun.nix"
+                  nixfmt "$TMPDIR/generated-bun.nix"
+                  cmp bun.nix "$TMPDIR/generated-bun.nix"
+                  runHook postCheck
+                '';
+                installCheckPhase = old.installCheckPhase + ''
+                  HOME=$TMPDIR ${self.packages.${system}.callstack-diff}/bin/csd \
+                    PiService.createAgentSession \
+                    --root ${./packages/callstack-diff/tests/fixtures/after} --theme none >tree.txt
+                  grep -Fx 'PiService.createAgentSession(options)' tree.txt
+                  grep -Fx '│   ├── AuthStorage.create()' tree.txt
+                '';
+              });
+
               package-harness-tests =
                 pkgs.runCommand "package-harness-tests"
                   {
@@ -1272,6 +1308,7 @@
                       tests/test_nuc_shipping.py \
                       tests/test_amp_orb_dispatch.py \
                       tests/test_candidate_ci.py \
+                      tests/test_renovate_admission.py \
                       tests/test_orb_setup.py \
                       tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \
