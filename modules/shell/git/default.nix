@@ -137,7 +137,7 @@ in
 
       # Use home-manager's xdg.configFile directly for proper activation
       home-manager.users.${config.user.name} =
-        { lib, ... }:
+        { lib, ... }@homeArgs:
         {
           home.activation.git-ai-trace-cleanup = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             if ${pkgs.git}/bin/git config --global --get trace2.eventTarget 2>/dev/null | ${pkgs.gnugrep}/bin/grep -q '\.git-ai'; then
@@ -145,6 +145,32 @@ in
               ${pkgs.git}/bin/git config --global --unset-all trace2.eventNesting || true
             fi
           '';
+
+          # Manage only this extension; programs.gh.extensions owns the whole
+          # directory and programs.gh would make the writable config immutable.
+          xdg.dataFile."gh/extensions/gh-stack" = {
+            source = "${pkgs.my.gh-stack}/bin";
+            force = true;
+          };
+
+          home.activation.gh-stack-migrate =
+            lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]
+              ''
+                extension="${homeArgs.config.xdg.dataHome}/gh/extensions/gh-stack"
+                backup="${homeArgs.config.xdg.dataHome}/gh/gh-stack.pre-nix"
+                if [ -e "$extension" ] || [ -L "$extension" ]; then
+                  case "$(${pkgs.coreutils}/bin/readlink -f "$extension" 2>/dev/null || true)" in
+                    /nix/store/*-gh-stack-*/bin) ;;
+                    *)
+                      if [ -e "$backup" ] || [ -L "$backup" ]; then
+                        echo "gh-stack migration: backup already exists at $backup; refusing to overwrite" >&2
+                        exit 1
+                      fi
+                      run ${pkgs.coreutils}/bin/mv "$extension" "$backup"
+                      ;;
+                  esac
+                fi
+              '';
 
           home.activation.gh-config-seed = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             config="$HOME/.config/gh/config.yml"
