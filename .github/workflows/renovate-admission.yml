@@ -16,6 +16,9 @@ permissions:
   actions: read
   pull-requests: read
 
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
 concurrency:
   group: renovate-types-admission
   cancel-in-progress: false
