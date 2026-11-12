@@ -13,6 +13,19 @@ for nix_env in \
   fi
 done
 
-nix_bin="$(command -v nix)" || return 1
+nix_bin="$(command -v nix || true)"
+if [[ -z "$nix_bin" ]]; then
+  # A restored orb can retain the Nix store while its profile links are broken.
+  # Prefer the newest version if previous Nix builds are also present.
+  nix_bin="$(
+    for candidate in "${NIX_STORE_DIR:-/nix/store}"/*-nix-*/bin/nix; do
+      [[ -x "$candidate" ]] || continue
+      nix_package="${candidate%/bin/nix}"
+      printf '%s\t%s\n' "${nix_package##*-nix-}" "$candidate"
+    done | LC_ALL=C sort -V | tail -n 1 | cut -f 2-
+  )"
+  [[ -n "$nix_bin" ]] || return 1
+  export PATH="${nix_bin%/nix}:$PATH"
+fi
 # Resolve a previous ~/.local/bin/nix link before refreshing it.
 nix_bin="$(readlink -f "$nix_bin")"

@@ -12,6 +12,53 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class OrbSetupTests(unittest.TestCase):
+    @unittest.skipIf(
+        Path("/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh").exists(),
+        "system Nix profile takes precedence over store discovery",
+    )
+    def test_recovers_nix_from_store_when_profile_is_broken(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            home.mkdir()
+            (home / ".nix-profile").symlink_to(root / "missing-profile")
+            store = root / "store"
+            tools = root / "tools"
+            tools.mkdir()
+            for tool in ("readlink", "sort", "tail", "cut"):
+                (tools / tool).symlink_to(shutil.which(tool))
+            bash = shutil.which("bash")
+            nix = store / "example-nix-2.35.3/bin/nix"
+            nix.parent.mkdir(parents=True)
+            nix.write_text(f'#!{bash}\necho "fixture Nix"\n')
+            nix.chmod(0o755)
+            env = {
+                "HOME": str(home),
+                "PATH": str(tools),
+                "NIX_STORE_DIR": str(store),
+            }
+            command = (
+                'source "$1" && test "$(command -v nix)" = "$nix_bin" '
+                '&& nix --version'
+            )
+            result = subprocess.run(
+                [bash, "-c", command, "bash", str(ROOT / ".agents/nix-env.sh")],
+                env=env, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "fixture Nix")
+
+            other = store / "another-nix-2.36/bin/nix"
+            other.parent.mkdir(parents=True)
+            other.write_text(f'#!{bash}\necho "newer fixture Nix"\n')
+            other.chmod(0o755)
+            result = subprocess.run(
+                [bash, "-c", command, "bash", str(ROOT / ".agents/nix-env.sh")],
+                env=env, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "newer fixture Nix")
+
     def test_single_user_setup_resume_and_login_are_repeatable(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -91,6 +138,24 @@ esac""",
                 (home / ".bash_profile").read_text().count("# dotfiles orb agent shell"),
                 1,
             )
+
+            if not Path("/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh").exists():
+                store_nix = root / "store/example-nix-2.35.3/bin/nix"
+                store_nix.parent.mkdir(parents=True)
+                shutil.copy2(profile / "bin/nix", store_nix)
+                shutil.rmtree(profile)
+                profile.symlink_to(root / "missing-profile")
+                (home / ".local/bin/nix").unlink()
+                for tool in ("git", "readlink", "sort", "tail", "cut", "mkdir", "ln"):
+                    (tools / tool).symlink_to(shutil.which(tool))
+                env.update(
+                    PATH=str(tools),
+                    NIX_STORE_DIR=str(root / "store"),
+                    ORB_TEST_PROFILE="loaded",
+                )
+                for _ in range(2):
+                    self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
+                    self.assertEqual((home / ".local/bin/nix").resolve(), store_nix)
 
 
 if __name__ == "__main__":
