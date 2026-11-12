@@ -158,6 +158,10 @@ class ValidationTests(unittest.TestCase):
                 self.assertFalse(checks & set(self.selection("--full")["checks"]))
 
     def test_flue_and_repair_changes_select_observability_and_policy(self):
+        self.write("renovate.json", "{}")
+        selected = self.selection("renovate.json")
+        self.assertIn("package-policy-tests", selected["checks"])
+        self.assertFalse(selected["flue"])
         for path in (
             ".flue/observability.ts",
             ".flue/tests/observability.test.ts",

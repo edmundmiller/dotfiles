@@ -282,14 +282,7 @@ jobs:
           gh auth setup-git
           git push origin "HEAD:refs/heads/$HEAD_REF"
 
-      - name: Enable auto-merge after patch validation
-        env:
-          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Record candidate admission requirement
         run: |
-          set -euo pipefail
-          test -n "$GH_TOKEN" || {
-            echo "RENOVATE_TOKEN repository secret is required" >&2
-            exit 1
-          }
-          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash
+          echo "Patch validation completed; main unchanged." >> "$GITHUB_STEP_SUMMARY"
+          echo "Publication requires separately authorized candidate CI and exact-green-SHA fast-forward landing. See docs/runbooks/candidate-ci.md." >> "$GITHUB_STEP_SUMMARY"

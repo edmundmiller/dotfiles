@@ -9,11 +9,9 @@
   "schedule": ["* 4-8 * * 1"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 6am on monday"],
-    "automerge": true,
-    "automergeType": "branch"
+    "schedule": ["* 4-8 * * 1"],
+    "automerge": false
   },
-  "allowedCommands": ["^nix run --accept-flake-config \\.#renovate-update-nix-hashes$"],
   "postUpgradeTasks": {
     "commands": ["nix run --accept-flake-config .#renovate-update-nix-hashes"],
     "fileFilters": [
@@ -109,18 +107,7 @@
       "enabled": false
     },
     {
-      "description": "Group versioned first-party flake inputs so a Flue agent can review them together.",
-      "matchManagers": ["nix"],
-      "matchUpdateTypes": ["major", "minor", "patch", "pin"],
-      "matchDepNames": ["agents-workspace", "skills-catalog", "/.*-repo$/"],
-      "groupName": "@packages flake inputs",
-      "groupSlug": "packages-flake-inputs",
-      "labels": ["dependencies", "nix", "@packages", "flue-review"],
-      "automerge": true,
-      "automergeType": "branch"
-    },
-    {
-      "description": "Group remaining versioned Nix flake input bumps. Exclude lockFileMaintenance so it stays on its own Monday branch.",
+      "description": "Group versioned Nix flake inputs sharing flake.lock. Lock maintenance stays on its own Monday branch.",
       "matchManagers": ["nix"],
       "matchUpdateTypes": ["major", "minor", "patch", "pin"],
       "groupName": "Nix flake inputs",
@@ -128,26 +115,20 @@
       "labels": ["dependencies", "nix"]
     },
     {
-      "description": "Group non-major npm and bun dependencies, peer dependencies, and optional dependencies.",
+      "description": "Keep non-major JavaScript runtime and development updates together per manifest/lockfile owner.",
       "matchManagers": ["npm", "bun"],
-      "matchDepTypes": ["dependencies", "optionalDependencies", "peerDependencies"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "groupName": "JavaScript package dependencies",
-      "groupSlug": "javascript-package-dependencies",
-      "labels": ["dependencies", "javascript"],
-      "automerge": true,
-      "automergeType": "branch"
+      "groupName": "{{packageFileDir}} dependencies",
+      "groupSlug": "{{packageFileDir}} dependencies",
+      "labels": ["dependencies", "javascript"]
     },
     {
-      "description": "Group non-major npm and bun devDependencies on their own branch.",
+      "description": "Pi packages share the root Bun workspace lockfile, including packages with legacy npm locks.",
       "matchManagers": ["npm", "bun"],
-      "matchDepTypes": ["devDependencies"],
+      "matchFileNames": ["packages/pi-packages/**"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "groupName": "JavaScript devDependencies",
-      "groupSlug": "javascript-dev-dependencies",
-      "labels": ["dependencies", "javascript"],
-      "automerge": true,
-      "automergeType": "branch"
+      "groupName": "Pi workspace dependencies",
+      "groupSlug": "pi-workspace-dependencies"
     },
     {
       "description": "Group non-major GitHub Actions and pin/digest refreshes.",
@@ -155,9 +136,7 @@
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "GitHub Actions",
       "groupSlug": "github-actions",
-      "labels": ["dependencies", "github_actions"],
-      "automerge": true,
-      "automergeType": "branch"
+      "labels": ["dependencies", "github_actions"]
     },
     {
       "description": "Group only repo-local Nix package patches so hash refresh stays small enough to finish.",
@@ -165,9 +144,7 @@
       "matchUpdateTypes": ["patch", "pin", "digest"],
       "groupName": "repo-local Nix package patches",
       "groupSlug": "repo-local-nix-package-patches",
-      "labels": ["dependencies", "nix", "packages"],
-      "automerge": true,
-      "automergeType": "branch"
+      "labels": ["dependencies", "nix", "packages"]
     },
     {
       "description": "Keep major updates on the Dependency Dashboard until explicitly approved.",
@@ -177,13 +154,7 @@
       "labels": ["dependencies", "major"]
     },
     {
-      "description": "Automerge low-risk non-major updates after the stability window and CI pass. Do not set groupSlug here; that previously collapsed unrelated PRs onto renovate/low-risk-non-major.",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true,
-      "automergeType": "branch"
-    },
-    {
-      "description": "Let the patch-repair workflow validate Herdr before enabling platform automerge.",
+      "description": "Keep Herdr patch validation and repair separate from candidate admission.",
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["herdr"],
       "groupName": "Herdr",
@@ -192,7 +163,7 @@
       "automerge": false
     },
     {
-      "description": "Let the patch-repair workflow validate Hunk before enabling platform automerge.",
+      "description": "Keep Hunk patch validation and repair separate from candidate admission.",
       "matchManagers": ["nix", "custom.regex"],
       "matchDepNames": ["hunk"],
       "groupName": "Hunk",
@@ -202,15 +173,19 @@
     }
   ],
   "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "automerge": false
+  },
   "dependencyDashboard": true,
-  "prCreation": "not-pending",
+  "dependencyDashboardApproval": true,
+  "prCreation": "immediate",
   "internalChecksFilter": "strict",
   "minimumReleaseAge": "3 days",
   "separateMajorMinor": true,
   "separateMultipleMajor": true,
   "automerge": false,
-  "automergeType": "branch",
   "platformAutomerge": false,
+  "pruneStaleBranches": false,
   "rebaseWhen": "conflicted",
   "prHourlyLimit": 2,
   "prConcurrentLimit": 4

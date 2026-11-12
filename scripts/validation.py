@@ -61,6 +61,7 @@ CHECKS = {
         "packages/*/patches/*",
     ],
     "package-policy-tests": [
+        "renovate.json",
         "packages/*",
         "bin/check-package-layout",
         "bin/check-patch-locality",

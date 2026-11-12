@@ -426,16 +426,27 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertTrue(config["lockFileMaintenance"]["enabled"])
         self.assertEqual(config["timezone"], "America/Chicago")
         self.assertEqual(config["schedule"], ["* 4-8 * * 1"])
-        self.assertEqual(config["lockFileMaintenance"]["schedule"], ["before 6am on monday"])
-        self.assertTrue(config["lockFileMaintenance"]["automerge"])
-        self.assertEqual(config["lockFileMaintenance"]["automergeType"], "branch")
+        self.assertEqual(config["lockFileMaintenance"]["schedule"], config["schedule"])
         self.assertEqual(config["minimumReleaseAge"], "3 days")
         self.assertEqual(config["prHourlyLimit"], 2)
         self.assertLessEqual(config["prConcurrentLimit"], 5)
+        self.assertTrue(config["dependencyDashboardApproval"])
+        # Bare renovate branches do not trigger CI. Waiting for checks before
+        # creating their PR would delay the event that starts those checks.
+        self.assertEqual(config["prCreation"], "immediate")
         self.assertFalse(config["automerge"])
         self.assertFalse(config["platformAutomerge"])
+        self.assertFalse(config["pruneStaleBranches"], "Existing PRs/branches are on hold")
+        for policy in [config["lockFileMaintenance"], config["vulnerabilityAlerts"], *config["packageRules"]]:
+            self.assertFalse(policy.get("automerge", False), "Use exact-SHA candidate admission")
+        repair = (ROOT / ".github/workflows/renovate-patch-repair.yml").read_text()
+        self.assertNotIn("gh pr merge", repair)
+        self.assertIn("docs/runbooks/candidate-ci.md", repair)
+        self.assertIn("main unchanged", repair)
+        # Command execution is allowed by the self-hosted runner, not repo config.
+        self.assertNotIn("allowedCommands", config)
+        self.assertIn("RENOVATE_ALLOWED_COMMANDS", workflow)
         self.assertEqual(config["postUpgradeTasks"]["commands"], [command])
-        self.assertRegex(command, config["allowedCommands"][0])
         self.assertIn("nix run --accept-flake-config", workflow)
         self.assertIn("renovate-update-nix-hashes", workflow)
         self.assertIn("accept-flake-config = true", workflow)
@@ -452,7 +463,7 @@ class PackagePolicyTest(unittest.TestCase):
         grouped_without_name = [
             rule
             for rule in config["packageRules"]
-            if "groupSlug" in rule and "groupName" not in rule
+            if rule.get("groupSlug") and "groupName" not in rule
         ]
         self.assertEqual(
             grouped_without_name,
@@ -461,36 +472,30 @@ class PackagePolicyTest(unittest.TestCase):
         )
 
         slugs = [rule.get("groupSlug") for rule in config["packageRules"]]
-        self.assertLess(slugs.index("javascript-package-dependencies"), slugs.index("herdr"))
-        self.assertLess(slugs.index("javascript-dev-dependencies"), slugs.index("herdr"))
         javascript = next(
             rule
             for rule in config["packageRules"]
-            if rule.get("groupSlug") == "javascript-package-dependencies"
+            if rule.get("groupName") == "{{packageFileDir}} dependencies"
         )
-        dev_dependencies = next(
+        workspace = next(
             rule
             for rule in config["packageRules"]
-            if rule.get("groupSlug") == "javascript-dev-dependencies"
+            if rule.get("groupSlug") == "pi-workspace-dependencies"
         )
+        self.assertNotIn("matchDepTypes", javascript, "Runtime/dev updates share locks")
+        self.assertEqual(javascript["groupSlug"], javascript["groupName"])
+        self.assertEqual(javascript["matchManagers"], ["npm", "bun"])
         self.assertEqual(
-            javascript["matchDepTypes"],
-            ["dependencies", "optionalDependencies", "peerDependencies"],
-        )
-        self.assertEqual(dev_dependencies["matchDepTypes"], ["devDependencies"])
-        self.assertEqual(dev_dependencies["matchManagers"], ["npm", "bun"])
-        self.assertEqual(
-            dev_dependencies["matchUpdateTypes"],
+            javascript["matchUpdateTypes"],
             ["minor", "patch", "pin", "digest"],
         )
-        self.assertTrue(dev_dependencies["automerge"])
-        self.assertEqual(dev_dependencies["automergeType"], "branch")
+        self.assertEqual(workspace["matchFileNames"], ["packages/pi-packages/**"])
+        self.assertGreater(config["packageRules"].index(workspace), config["packageRules"].index(javascript))
+        self.assertLess(slugs.index("pi-workspace-dependencies"), slugs.index("herdr"))
         actions = next(
             rule for rule in config["packageRules"] if rule.get("groupSlug") == "github-actions"
         )
         self.assertIn("digest", actions["matchUpdateTypes"])
-        self.assertTrue(actions["automerge"])
-        self.assertEqual(actions["automergeType"], "branch")
         herdr = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "herdr")
         hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
         self.assertEqual(config["packageRules"][-2]["groupSlug"], "herdr")
