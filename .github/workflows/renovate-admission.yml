@@ -1,0 +1,108 @@
+name: Renovate types admission
+
+on:
+  workflow_run:
+    workflows: [Renovate, CI]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: renovate-types-admission
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: >-
+      github.event.workflow_run.path == '.github/workflows/renovate.yml' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      selected: ${{ steps.select.outputs.selected }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v20
+        with:
+          extra-conf: accept-flake-config = true
+      - id: select
+        name: Select a new unheld types-only proposal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/renovate_admission.py select > "$RUNNER_TEMP/selection.json"
+          selected=$(jq -r '.selected | if type == "boolean" then . else error("Invalid selection") end' "$RUNNER_TEMP/selection.json")
+          printf 'selected=%s\n' "$selected" >> "$GITHUB_OUTPUT"
+      - name: Generate without write credentials or install scripts
+        if: steps.select.outputs.selected == 'true'
+        run: python3 scripts/renovate_admission.py prepare --selection "$RUNNER_TEMP/selection.json" --output "$RUNNER_TEMP/types-bundle"
+      - uses: actions/upload-artifact@v4
+        if: steps.select.outputs.selected == 'true'
+        with:
+          name: types-generation-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/types-bundle
+          if-no-files-found: error
+
+  submit:
+    name: Publish candidate
+    needs: prepare
+    if: needs.prepare.outputs.selected == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v20
+        with:
+          extra-conf: accept-flake-config = true
+      - uses: actions/download-artifact@v4
+        with:
+          name: types-generation-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/types-bundle
+      - name: Validate artifacts and commit without a write credential
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir "$RUNNER_TEMP/types-record"
+          python3 scripts/renovate_admission.py stage --bundle "$RUNNER_TEMP/types-bundle" > "$RUNNER_TEMP/types-record/record.json"
+      - name: Submit exact candidate
+        env:
+          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh auth setup-git --hostname github.com
+          python3 scripts/renovate_admission.py submit --record "$RUNNER_TEMP/types-record/record.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: types-candidate-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/types-record/record.json
+          if-no-files-found: error
+
+  land:
+    if: >-
+      github.event.workflow_run.path == '.github/workflows/ci.yml' &&
+      startsWith(github.event.workflow_run.head_branch, 'candidate/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@v20
+        with:
+          extra-conf: accept-flake-config = true
+      - name: Land only the exact successful candidate
+        env:
+          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh auth setup-git --hostname github.com
+          python3 scripts/renovate_admission.py land --event "$GITHUB_EVENT_PATH" | tee "$RUNNER_TEMP/types-landing.json"
+          cat "$RUNNER_TEMP/types-landing.json" >> "$GITHUB_STEP_SUMMARY"
