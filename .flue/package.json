@@ -14,7 +14,7 @@
     "@types/node": "22.20.5",
     "evlog": "2.33.1",
     "flue-evlog": "file:../packages/flue-evlog",
-    "hono": "4.13.13",
+    "hono": "4.13.16",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
     "zod": "4.6.7"
