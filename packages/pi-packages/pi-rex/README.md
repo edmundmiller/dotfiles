@@ -119,7 +119,10 @@ bun run --cwd pi-rex test
 
 Tests cover lifecycle reports, quiet non-TUI modes, guidance injection, capture
 targeting, truncation, failures, cancellation during session replacement, and
-forking the selected branch without changing the source session.
+forking the selected branch without changing the source session. Fork tests also
+simulate a timeout or API error after launch. Both must retain a resumable branch
+and tell the user to inspect Rex before retrying, without reporting success.
+These are command-contract tests, not proof that a Rex server created a pane.
 Native Rex indicators still need a Mac smoke test. Run Pi in an unfocused Rex
 tab, start a task, exercise a permission prompt, finish a response, and interrupt
 a second task. Confirm working, blocked, done, and idle states in Rex.

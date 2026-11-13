@@ -1,0 +1,38 @@
+diff --git a/rex-undo/lib.lua b/rex-undo/lib.lua
+--- a/rex-undo/lib.lua
++++ b/rex-undo/lib.lua
+@@ -16,3 +16,6 @@
+ function M.ensure_dirs()
+   rex.exec({ "mkdir", "-p", M.claude_dir })
++  -- Config actions write with the server's umask, not the supervisor's.
++  local r = rex.exec({ "chmod", "700", M.state_dir, M.claude_dir })
++  assert(r and r.ok, "rex-undo: cannot make state directories private")
+ end
+diff --git a/hooks/claude-session-start.sh b/hooks/claude-session-start.sh
+--- a/hooks/claude-session-start.sh
++++ b/hooks/claude-session-start.sh
+@@ -23,5 +23,7 @@
+ dir=${XDG_STATE_HOME:-$HOME/.local/state}/rex-undo/claude
++umask 077
+ mkdir -p "$dir" || exit 0
++chmod 700 "$dir/.." "$dir" || exit 0
+ file=$dir/${REX_BLOCK#block:}.json
+ printf '%s\n' "$input" >"$file.$$" && mv "$file.$$" "$file"
+ rm -f "$file.$$"
+diff --git a/tests/run.lua b/tests/run.lua
+--- a/tests/run.lua
++++ b/tests/run.lua
+@@ -28,3 +28,13 @@
++test("state directories are private even when they already exist", function()
++  lib.ensure_dirs()
++  assert(rex.exec({ "chmod", "755", lib.state_dir, lib.claude_dir }).ok)
++  lib.ensure_dirs()
++  for _, dir in ipairs({ lib.state_dir, lib.claude_dir }) do
++    local r = rex.exec({ "find", dir, "-prune", "-perm", "0700" })
++    assert(r and r.ok and r.stdout == dir .. "\n", "state directory isn't private: " .. dir)
++  end
++end)
++
+ -- Loads a fresh watcher and lets it take its first snapshot of SID.
+ local function start_watcher(blocks, v)
+   mock.sessions[SID] = true

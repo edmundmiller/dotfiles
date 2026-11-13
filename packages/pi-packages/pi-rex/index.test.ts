@@ -311,8 +311,10 @@ test.each([
   ["command", "tab"],
   ["ctrl+alt+f", "split"],
   ["ctrl+alt+t", "tab"],
+  ["timeout", "split"],
+  ["API error", "tab"],
 ])(
-  "%s forks the selected branch into a Rex %s without changing the source",
+  "%s preserves the selected Pi branch when opening a Rex %s without changing the source",
   async (trigger, placement) => {
     const directory = await mkdtemp(join(tmpdir(), "pi-rex-fork-"));
     const source = join(directory, "source.jsonl");
@@ -349,10 +351,19 @@ test.each([
       const manager = SessionManager.open(source, directory);
       manager.branch("chosen");
       let launched: string[] = [];
+      let launches = 0;
       const app = setup(async (command, args) => {
         expect(command).toBe("rex");
+        launches++;
         launched = args;
-        return { stdout: "{}", stderr: "", code: 0, killed: false };
+        // A reply can fail after Rex has created the terminal. Keep the saved
+        // branch in both cases rather than deleting it or retrying the launch.
+        return {
+          stdout: "{}",
+          stderr: trigger === "API error" ? "connection lost" : "",
+          code: trigger === "API error" ? 1 : 0,
+          killed: trigger === "timeout",
+        };
       });
       app.ctx.sessionManager = manager;
       app.ctx.cwd = "/project with spaces";
@@ -363,10 +374,19 @@ test.each([
       };
       if (trigger === "picker") await app.command("fork");
       else if (trigger === "command") await app.command("fork tab");
+      else if (trigger === "timeout" || trigger === "API error")
+        await app.command(`fork ${placement}`);
       else await app.shortcut(trigger);
-      expect(app.notifications.at(-1)).toContain(
-        `new Rex ${placement === "split" ? "split pane" : "tab"}`
-      );
+      if (trigger === "timeout" || trigger === "API error") {
+        expect(app.notifications).toHaveLength(1);
+        expect(app.notifications[0]).toContain("Check Rex before retrying");
+        expect(app.notifications[0]).not.toContain("Opened a fork");
+      } else {
+        expect(app.notifications.at(-1)).toContain(
+          `new Rex ${placement === "split" ? "split pane" : "tab"}`
+        );
+      }
+      expect(launches).toBe(1);
       const separator = launched.indexOf("--");
       expect(launched.slice(0, separator)).toEqual([
         "run",
@@ -379,6 +399,8 @@ test.each([
         ...(placement === "split" ? ["-b", "block:agent", "--split=right"] : []),
       ]);
       const forkFile = launched[separator + 3];
+      if (trigger === "timeout" || trigger === "API error")
+        expect(app.notifications[0]).toContain(forkFile);
       expect(launched.slice(separator + 1)).toEqual([
         "pi",
         "--session",

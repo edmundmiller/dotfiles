@@ -12,6 +12,30 @@ let
   rexJj = pkgs.writeShellScriptBin "rex-jj" ''
     exec ${pkgs.python3}/bin/python3 ${../../config/rex/jj-workspace.py} "$@"
   '';
+  undoRoot = "${pkgs.my.rex-undo}/share/rex-undo-extension";
+  # Config loads outside a login shell, without env.zsh's app-bundle PATH.
+  undoRex = pkgs.writeShellScript "rex-undo-rex" ''
+    if command -v rex >/dev/null 2>&1; then exec rex "$@"; fi
+    for cli in \
+      "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" \
+      "$HOME/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" \
+      "$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS/rex"; do
+      if [ -x "$cli" ]; then exec "$cli" "$@"; fi
+    done
+    echo "rex-undo: cannot find the Rex CLI" >&2
+    exit 127
+  '';
+  undoSetup = optionalString isDarwin ''
+    dofile("${undoRoot}/rex-undo/undo.lua").setup{
+      dir = "${undoRoot}/rex-undo",
+      rex = "${undoRex}",
+      key = "cmd+shift+t",
+      history = 50,
+    }
+  '';
+  undoHook = pkgs.writeShellScript "rex-undo-claude-session-start" ''
+    exec /bin/sh ${undoRoot}/hooks/claude-session-start.sh
+  '';
   themeFile =
     {
       catppuccin = ../../config/rex/themes-catppuccin.json;
@@ -97,7 +121,7 @@ in
       # and installs neorex on Darwin.
       # The Linux Rex server is configured separately through services.rex.
       home.configFile."rex/init.lua".text =
-        builtins.replaceStrings [ "@rexJj@" ] [ "${rexJj}/bin/rex-jj" ]
+        builtins.replaceStrings [ "@rexJj@" "-- @rexUndo@" ] [ "${rexJj}/bin/rex-jj" undoSetup ]
           (builtins.readFile "${config.dotfiles.configDir}/rex/init.lua");
       "user.packages" = [ rexJj ] ++ optionals isDarwin [ pkgs.my.neorex ];
       modules.agents.mcp.servers.superlogical.enable = mkDefault true;
@@ -116,10 +140,10 @@ in
           # Merge Rex status hooks into the runtime-mutated Claude and Codex hook
           # files. Existing hooks are kept; stale rex-agent-status entries are replaced.
           home.activation.rexAgentStatusHooks = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            ${pkgs.python3}/bin/python3 - "$HOME" ${lib.escapeShellArg agentStatusCmd} ${lib.escapeShellArg agentHooks} <<'PY'
+            ${pkgs.python3}/bin/python3 - "$HOME" ${lib.escapeShellArg agentStatusCmd} ${lib.escapeShellArg agentHooks} ${lib.escapeShellArg (toString undoHook)} <<'PY'
             import json, pathlib, sys
 
-            home, cmd, spec = pathlib.Path(sys.argv[1]), sys.argv[2], json.loads(sys.argv[3])
+            home, cmd, spec, undo_hook = pathlib.Path(sys.argv[1]), sys.argv[2], json.loads(sys.argv[3]), sys.argv[4]
             for agent, conf in spec.items():
                 path = home / conf["file"]
                 if not path.is_file() or path.is_symlink():
@@ -132,11 +156,17 @@ in
                         entry["hooks"] = [
                             h for h in entry.get("hooks", [])
                             if "rex-agent-status" not in h.get("command", "")
+                            and not (agent == "claude" and event == "SessionStart" and (
+                                "rex-undo-claude-session-start" in h.get("command", "")
+                                or ("rex-undo" in h.get("command", "") and "claude-session-start.sh" in h.get("command", ""))
+                            ))
                         ]
                         if entry["hooks"]:
                             entries.append(entry)
                     command = f"{cmd} {agent} {state}" + (f" '{msg}'" if msg else "")
                     entries.append({"hooks": [{"type": "command", "command": command, "timeout": 5}]})
+                    if agent == "claude" and event == "SessionStart":
+                        entries.append({"hooks": [{"type": "command", "command": undo_hook, "timeout": 5}]})
                     hooks[event] = entries
                 tmp = path.with_suffix(path.suffix + ".tmp")
                 tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

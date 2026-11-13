@@ -2,6 +2,10 @@
 -- Match tmux/Herdr's prefix without launching either multiplexer inside Rex.
 -- Reload on the server host with: rex config reload
 
+-- The Nix module loads the pinned macOS extension here. A source-only config
+-- leaves this marker inert, so validation never starts an unmanaged watcher.
+-- @rexUndo@
+
 -- Keep the NUC host's existing app identity across config reloads.
 rex.host({
   id = "host:fa2e06a4-e832-41db-a474-a56f5f04ee0b",

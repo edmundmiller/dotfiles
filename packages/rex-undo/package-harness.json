@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/lakshaybhushan/rex-undo-extension.git",
+  "ref": "2447794e02bbc3ed49cafc41da046278a86d9401",
+  "patches": ["patches/0001-private-state-directories.patch"],
+  "checks": [["sh", "-c", "export PATH=/usr/bin:/bin:$PATH; exec sh tests/run.sh"]]
+}

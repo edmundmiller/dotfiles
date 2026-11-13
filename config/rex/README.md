@@ -9,6 +9,50 @@ On macOS, this module installs `neorex`. Inside a Rex pane, `neorex file.txt`
 runs Neovim headless and opens `:split` and `:vsplit` as Rex panes. Floats render
 inside their parent pane.
 
+## Reopen closed panes
+
+On macOS, the Rex module loads [rex-undo](https://github.com/lakshaybhushan/rex-undo-extension)
+from a revision-pinned Nix package. `Cmd+Shift+T` reopens the most recently closed
+pane, tab, or session. The palette exposes **Reopen Closed Pane**,
+**Show Closed Panes**, and **Clear Closed Panes**. The corresponding CLI actions
+are `rex do undo_close`, `rex do undo_history`, and `rex do undo_clear`.
+
+This starts programs again. It does not recover their processes or scrollback.
+Commands with side effects run again. Agents resume when their conversation can
+be identified, but may fall back to the latest conversation in the directory.
+Agent startup flags, such as model and permission mode, are not preserved.
+Inspect the history before reopening an agent worker or a destructive command.
+Closing a worker is not a safe pause/resume operation for the Spaces coordinator.
+
+The watcher retains the latest 50 closes under
+`${XDG_STATE_HOME:-~/.local/state}/rex-undo`. History and logs contain command
+lines, which can include credentials. A carried patch makes the state and Claude
+record directories owner-only, including when Rex's config loader creates them.
+`undo_clear` empties the history, ID map, and watcher log. It does not erase agent
+transcripts or the separate Claude conversation records.
+
+Nix calls the Lua `setup` entry point directly and merges the optional Claude
+SessionStart hook into an existing, regular `~/.claude/settings.json`, preserving
+other hooks. It leaves missing or symlinked settings alone, like the status-hook
+activation below. The package supplies lsof and SQLite paths and selects Apple's
+`/usr/bin/perl` for kernel argv inspection. Homebrew Perl lacks `syscall` support.
+It does not run upstream's installer or uninstaller, reload Rex, or delete history.
+Linux configuration does not load this macOS-only extension.
+
+Apply only through an authorized `hey re` and `rex config reload`. On an upgrade,
+the old watcher keeps its loaded code. Before reloading, stop that supervisor and
+its `rex do` child using upstream's `lib/watcher.sh` `watcher_stop` helper against
+the state directory, or restart Rex at a time when ending terminals is acceptable.
+Do not run upstream's installer against the Nix-managed config. To disable undo,
+remove its module wiring, stop its watcher, and rebuild when authorized. Retain
+or clear history separately according to whether it is still needed.
+
+The package build runs the Lua regression tests. `pkg-check rex-undo` on macOS
+also runs upstream's concurrent-supervisor and scratch-home installer tests.
+Those use mocked Rex APIs and executables, not a real undo in the app. A native
+smoke test still needs close/reopen checks for a pane, tab, session, and agent
+conversation, plus repeated reloads without duplicate watchers.
+
 ## Daily jj workflow
 
 Rex owns task sessions; jj owns their checkouts. Set `AGENT` to one executable
