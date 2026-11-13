@@ -3,6 +3,9 @@ let
   home = "/var/lib/amp-orbs";
 in
 {
+  # Amp's mutable Linux CLI uses the generic ELF loader, not a Nix store loader.
+  programs.nix-ld.enable = true;
+
   # Each host supplies amp-orb-storage.service for its bounded local storage.
   # Never reuse a personal account, host checkout, or rootful Podman socket.
   users.groups.amp-orbs = { };

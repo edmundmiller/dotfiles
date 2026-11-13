@@ -18,7 +18,9 @@ always-on provider. A provider adds separate thread checkouts;
 it does not give those threads the host's working tree or service credentials.
 
 `hosts/_amp-orbs.nix` declares the dedicated account, CLI installer, dispatcher,
-and user unit for both hosts. `hosts/nuc/amp-orbs.nix` owns its ZFS storage;
+and user unit for both hosts. It enables `programs.nix-ld` so Amp's downloaded
+Linux CLI can run without patching its mutable executable after each update.
+`hosts/nuc/amp-orbs.nix` owns its ZFS storage;
 `hosts/unas/amp-orbs.nix` owns its bounded NVMe storage. The controller waits for
 registration before it starts. Repository
 wiring is not proof that the host adopted it. See the task checkpoint for current
