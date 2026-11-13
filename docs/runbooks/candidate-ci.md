@@ -2,7 +2,7 @@
 purpose: Admit the exact hosted-CI-tested commit to main without mandatory PRs.
 applies_to: Authorized dotfiles publication and main ruleset rollout.
 entrypoint: python3 scripts/candidate_ci.py submit --base BASE --sha SHA
-verification: python3 -m unittest tests.test_candidate_ci tests.test_validation
+verification: python3 -m unittest tests.test_candidate_ci tests.test_ci_check_cache tests.test_validation
 update_when: Candidate refs, required contexts, publication, or live policy changes.
 ---
 
@@ -74,6 +74,46 @@ does not claim to eliminate all duplicate builds or prove lower hosted cost.
 Use the existing [NUC handoff](deploy-nuc.md#ship-from-an-amp-orb) only when
 deployment is authorized. Hosted skill publication still needs served-artifact
 parity; host activation is not hosted-skill delivery evidence.
+
+## Candidate output reuse
+
+Linux candidate validation optionally exports its successful portable Nix check
+outputs to a three-day run artifact. Main still runs the same selector, hooks,
+package tests and `nix build` commands. Before validation, it imports outputs
+only from the latest successful exact `candidate/BASE/SHA` push run of `ci.yml`,
+with both required contexts successful in that attempt. Artifacts are bound to
+that run, SHA and attempt, not searched by name across PRs or workflows. Only
+candidate pushes publish; PRs neither publish nor consume this handoff.
+
+GitHub's ordinary branch caches cannot flow from candidate branches to main.
+Its public-repository caches and artifacts are readable by other users, so
+neither a whole-store cache nor an unrestricted closure artifact is safe for
+our private `tnote`, `agents-workspace` and Rex inputs. The existing Security
+workflow's magic-cache configuration is not a candidate-to-main solution.
+
+`scripts/ci_check_cache.py` accepts only empty nonexecutable files or empty
+directories with no store references. It compares each complete Nix export to
+the canonical empty encoding, including metadata. Only public check names and
+their store/deriver hashes leave the runner. No source, derivation contents,
+dependency closures, logs, netrc files or credentials enter the artifact.
+Nonempty outputs such as the callstack package are deliberately excluded.
+The standard read-only Actions token downloads artifacts; existing private-input
+credentials and repository settings do not change.
+
+Nix still computes the current derivation. An imported exact output is a cache
+hit, not a separate check-skipping rule. Different outputs build normally.
+Missing, expired, malformed or unavailable artifacts fall back to ordinary
+validation. No cache result can make a failed validation pass. A Nix export
+format change also causes a cache miss rather than publishing unknown bytes.
+Herdr VM, Darwin and service VM jobs retain their existing behavior.
+
+For hosted evidence, retain the candidate's `Check cache: exported` count,
+main's `Check cache: imported` count and source run URL, and both jobs' timed
+validation logs at the identical SHA. Confirm cacheable checks do not rebuild,
+noncacheable work still runs, and both required contexts pass. Local fixture
+timings are not a hosted speedup claim. Publishing the candidate and landing
+its exact green SHA require explicit publication approval; no deployment or
+settings changes are needed. Roll back through a normal candidate revert.
 
 ## Live changes requiring separate approval
 

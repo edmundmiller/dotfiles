@@ -34,6 +34,8 @@ CHECKS = {
         "tests/test_amp_orb_dispatch.py",
         "scripts/candidate_ci.py",
         "tests/test_candidate_ci.py",
+        "scripts/ci_check_cache.py",
+        "tests/test_ci_check_cache.py",
         "scripts/renovate_admission.py",
         "tests/test_renovate_admission.py",
         "scripts/beads_filter.py",
@@ -515,6 +517,8 @@ def nix_env(token=""):
 
 def execute(root, selection, github_token=""):
     failures = []
+    cache_directory = os.environ.get("CI_CHECK_CACHE_DIR", "")
+    cache_outputs = []
 
     def run(label, command, cwd=root, env=None, capture=False):
         display = shlex.join(command if len(command) < 40 else command[:8])
@@ -582,7 +586,16 @@ def execute(root, selection, github_token=""):
         )
     if system:
         for name in selection["checks"]:
-            run(name, build + [f".#checks.{system}.{name}"], env=env)
+            outputs = run(
+                name,
+                build
+                + (["--print-out-paths"] if cache_directory else [])
+                + [f".#checks.{system}.{name}"],
+                env=env,
+                capture=bool(cache_directory),
+            )
+            if cache_directory and outputs:
+                cache_outputs.extend(f"{name}={path}" for path in outputs.splitlines())
     target = selection["platform"]
     if target == "darwin":
         for host in ("MacTraitor-Pro", "Seqeratop"):
@@ -700,6 +713,20 @@ def execute(root, selection, github_token=""):
     if failures:
         print("FAILED: " + ", ".join(failures), file=sys.stderr)
         return 1
+    if cache_directory:
+        # Cache publication is optional; only the real check results decide CI.
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "scripts.ci_check_cache",
+                "save",
+                cache_directory,
+                *cache_outputs,
+            ],
+            cwd=root,
+            check=False,
+        )
     print("PASS: selected validation completed; working tree untouched.")
     return 0
 
