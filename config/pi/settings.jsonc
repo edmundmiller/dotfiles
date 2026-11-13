@@ -53,6 +53,8 @@
     // Rex location, installed guide, pane captures, and native task status.
     // Automatic integration stays dormant outside Rex terminals.
     "~/.config/dotfiles/packages/pi-packages/pi-rex",
+    // Thimble's Pi-native TypeScript evidence, labeling, and coverage tools.
+    "~/.pi/agent/packages/pi-thimble",
     // Force non-interactive bash defaults + block interactive hang patterns
     "~/.config/dotfiles/packages/pi-packages/pi-non-interactive",
     // ast-grep outline/search/rewrite/scan tools - vendored from https://github.com/joelhooks/pi-ast-grep

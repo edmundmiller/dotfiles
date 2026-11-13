@@ -1,0 +1,31 @@
+{
+  "name": "pi-thimble",
+  "version": "0.1.0",
+  "description": "Thimble's evidence, labels, and coverage with Pi-native analysis tools.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "thimble"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=1.3.0 <2",
+    "@earendil-works/pi-tui": ">=1.3.0 <2",
+    "typebox": "^1.3.27"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.3.0",
+    "@earendil-works/pi-tui": "1.3.0",
+    "typebox": "1.3.27"
+  }
+}

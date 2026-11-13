@@ -1,0 +1,8 @@
+pi-thimble contains a TypeScript adaptation of safety-research/thimble's
+source readers, labeling, quote-evidence validation, and coverage contracts.
+Upstream: https://github.com/safety-research/thimble
+Reference revision: 258863f92d112677447df3df226df8e2013429fc
+License: Apache-2.0. Copyright the Thimble contributors.
+
+Modified for Pi: native TypeScript engine and TUI, Pi session/provider APIs,
+working-folder source confinement, bounded regex execution and label runs.
