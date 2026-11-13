@@ -50,6 +50,9 @@ jobs:
     name: Checks (Linux)
     needs: plan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     env:
       VALIDATION_BASE: ${{ needs.plan.outputs.base }}
     steps:
@@ -63,8 +66,16 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: accept-flake-config = true
+      - name: Restore exact successful candidate check outputs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m scripts.ci_check_cache restore
       - name: Validate (same runner as hey check)
         env:
+          CI_CHECK_CACHE_DIR: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/candidate/') && format('{0}/empty-check-cache', runner.temp) || '' }}
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
           REX_TOKEN: ${{ secrets.REX_TOKEN }}
         run: |
@@ -83,6 +94,15 @@ jobs:
           unset REX_TOKEN
           export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
+      - name: Retain only empty candidate check outputs
+        if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/candidate/')
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: empty-checks-v1-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/empty-check-cache/checks.json
+          retention-days: 3
+          if-no-files-found: warn
 
   # Preserve the contexts required by main without weakening branch protection.
   required-checks:
