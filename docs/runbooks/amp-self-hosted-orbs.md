@@ -12,8 +12,8 @@ update_when: Amp's dispatch contract or the selected host and isolation policy c
 
 Keep Amp-hosted orbs as the default and the Mac desktop app unchanged. Allow up
 to two bounded small orbs on the NUC after live capacity checks. Keep the existing runners.
-UNAS can provide the same bounded capacity after its separate activation and
-registration gates below. Do not change Meshify's sleep policy to make it an
+UNAS allows one active small orb after its separate activation and registration
+gates below. Do not change Meshify's sleep policy to make it an
 always-on provider. A provider adds separate thread checkouts;
 it does not give those threads the host's working tree or service credentials.
 
@@ -43,9 +43,10 @@ unexpected filesystem identity, unrelated contents, or an existing account home
 that the mount would hide. Existing images must have the expected size, type
 and label; they are never reformatted automatically.
 
-The image bounds CLI state, images, snapshots and checkouts together. The same
-dispatcher retains its two-orb, two-CPU/2-GiB-per-orb admission limits, 2-GiB
-host reserve and 20-GiB storage floor. Neither bulk nor preservation storage is
+The image bounds CLI state, images, snapshots and checkouts together. The NAS
+controller sets `AMP_ORB_MAX_ACTIVE=1`, limiting starts and resumes to one active
+orb with two CPUs and 2 GiB RAM. The NUC retains its two-orb default. Both retain
+the 2-GiB host reserve and 20-GiB storage floor. Neither bulk nor preservation storage is
 used. Hourly Btrbk snapshots select `@root`, `@home` and `@var`; they do not
 recurse into the separate `@amp-orbs` subvolume. Existing Restic include paths
 also exclude it. Do not add orb images to NAS replication or change existing
@@ -118,7 +119,8 @@ administration are separate. Confirm the workspace plan before assuming savings.
 ## Prepared pilot
 
 `config/amp-orbs/dispatch.sh` uses rootless Podman under a dedicated account.
-It admits at most two running managed containers. New containers have two CPUs
+It admits at most two running managed containers on the NUC and one on UNAS.
+New containers have two CPUs
 and 2 GiB RAM with no extra swap allowance. Running 3-GiB containers keep their
 limits until they stop. After admission succeeds, stopped containers adopt the
 current 2-GiB/two-CPU limits before restarting, without replacing their disks.
