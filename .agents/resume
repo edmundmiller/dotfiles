@@ -27,12 +27,15 @@ unset github_token nix_config
 
 mkdir -p "$HOME/.local/bin"
 ln -sfn "$nix_bin" "$HOME/.local/bin/nix"
-for command in agent-run hey jj prek; do
+for command in agent-run hey jj mise prek; do
   ln -sfn "$agent_env/bin/$command" "$HOME/.local/bin/$command"
 done
 
 PATH="$HOME/.local/bin:$PATH"
-for command in agent-run nix hey jj prek; do
+# Trust only this checkout, including after a snapshot updates its config.
+mise trust "$repo_root/mise.toml"
+
+for command in agent-run nix hey jj mise prek; do
   command -v "$command" >/dev/null
 done
 

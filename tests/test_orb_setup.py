@@ -1,5 +1,6 @@
 """Exercise Orb lifecycle scripts with an existing single-user Nix install."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -100,14 +101,37 @@ esac""",
             )
             for command in ("agent-run", "hey", "jj", "prek"):
                 script(home / "agent-env/bin" / command, f"echo {command}")
+            (home / "agent-env/bin/mise").symlink_to(shutil.which("mise"))
+            config = "[env]\nORB_TRUST_PROBE = \"{{ 'trusted' }}\"\n"
+            (repo / "mise.toml").write_text(config)
+            unrelated = root / "unrelated"
+            unrelated.mkdir()
+            (unrelated / "mise.toml").write_text(config)
             env = {
                 **os.environ,
                 "HOME": str(home),
-                "PATH": f"{profile / 'bin'}:{tools}:{os.environ['PATH']}",
+                "PATH": f"{home / '.local/bin'}:{profile / 'bin'}:{tools}:{os.environ['PATH']}",
                 "AMP_ORB": "1",
+                "MISE_DATA_DIR": str(root / "mise-data"),
+                "MISE_STATE_DIR": str(root / "mise-state"),
+                "MISE_CONFIG_DIR": str(root / "mise-config"),
+                "MISE_CACHE_DIR": str(root / "mise-cache"),
+                "MISE_PARANOID": "1",
             }
             env.pop("BASH_ENV", None)
             env.pop("DOTFILES_AGENT_ENV_ACTIVE", None)
+            env.pop("MISE_TRUSTED_CONFIG_PATHS", None)
+
+            def assert_untrusted(cwd):
+                result = subprocess.run(
+                    [shutil.which("mise"), "env", "--json"],
+                    cwd=cwd,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn("not trusted", result.stderr)
 
             def run(*args):
                 result = subprocess.run(
@@ -117,14 +141,25 @@ esac""",
                 return result.stdout
 
             run("git", "init", "--quiet")
+            assert_untrusted(repo)
+            assert_untrusted(unrelated)
             for _ in range(2):
                 self.assertIn("Orb setup complete.", run(bash, ".agents/setup"))
                 self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
                 self.assertEqual(
+                    json.loads(run(str(home / ".local/bin/mise"), "env", "--json"))[
+                        "ORB_TRUST_PROBE"
+                    ],
+                    "trusted",
+                )
+                assert_untrusted(unrelated)
+                self.assertEqual(
                     (home / ".local/bin/nix").resolve(), profile / "bin/nix"
                 )
                 for command in ("agent-run", "hey", "jj", "prek"):
-                    self.assertEqual(run(str(home / ".local/bin" / command)).strip(), command)
+                    self.assertEqual(
+                        run(str(home / ".local/bin" / command)).strip(), command
+                    )
                 self.assertEqual(
                     run(
                         bash,
@@ -135,7 +170,9 @@ esac""",
                     "fixture Nix",
                 )
             self.assertEqual(
-                (home / ".bash_profile").read_text().count("# dotfiles orb agent shell"),
+                (home / ".bash_profile")
+                .read_text()
+                .count("# dotfiles orb agent shell"),
                 1,
             )
 
