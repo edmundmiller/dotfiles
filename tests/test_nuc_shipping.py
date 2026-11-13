@@ -277,8 +277,7 @@ class NucShippingTests(unittest.TestCase):
             env=self.env | {"WORKFLOW_TEST": "1", "DEPLOY_SHA": SHA},
             capture_output=True,
             text=True,
-            # A hang guard, not a speed check: the timeout test spawns the fake
-            # gh 180 times, which takes over 20s on a loaded Mac.
+            # A hang guard, not a speed check on a loaded machine.
             timeout=120,
         )
 
@@ -327,11 +326,28 @@ class NucShippingTests(unittest.TestCase):
             )
 
     def test_workflow_timeout_main_move_and_post_wait_rerun_fail_closed(self):
-        # Accelerate only the clock. Exercise all 180 production loop iterations.
-        result = self.workflow_shell("Wait for exact-main CI in GitHub")
+        # Avoid starting Python twice per iteration while exercising the real
+        # workflow loop and jq expression against a perpetually pending run.
+        setup = r'''
+sleep() { [[ "$*" == "30" ]] || return 1; printf x >> "$GITHUB_FIXTURE/sleeps"; }
+gh() {
+    if [[ "$*" == "api repos/edmundmiller/dotfiles/git/ref/heads/main --jq .object.sha" ]]; then
+        printf '%s\n' "$DEPLOY_SHA"
+    elif [[ "$*" == "api repos/edmundmiller/dotfiles/actions/workflows/ci.yml/runs?branch=main&event=push&head_sha=$DEPLOY_SHA&per_page=1" ]]; then
+        printf x >> "$GITHUB_FIXTURE/ci_reads"
+        printf '%s\n' '{"workflow_runs": []}'
+    else
+        echo "unexpected gh arguments: $*" >&2
+        return 1
+    fi
+}
+'''
+        result = self.workflow_shell("Wait for exact-main CI in GitHub", setup=setup)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("timed out", result.stderr)
-        self.assertEqual((self.root / "ci_reads").read_text(), "180")
+        self.assertEqual((self.root / "ci_reads").read_text(), "x" * 180)
+        self.assertEqual((self.root / "sleeps").read_text(), "x" * 179)
+        (self.root / "ci_reads").unlink()
         self.github["main"] = "b" * 40
         self.save_github()
         result = self.workflow_shell("Wait for exact-main CI in GitHub")
