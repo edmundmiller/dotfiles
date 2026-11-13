@@ -547,10 +547,12 @@ test("Worker errors, early exits and cancellation remove SQLite copies after the
           : mode === "exit"
             ? "process.exit(0);"
             : `
-        // Detect deletion while still alive, not just eventual cleanup.
-        for (;;) {
+        // Keep the worker alive and detect premature deletion without the tight
+        // synchronous filesystem loop that makes Bun termination flaky on Linux.
+        // Busy CPU cancellation is exercised by the large-CSV test above.
+        setInterval(() => {
           if (!existsSync(workerData.database)) writeFileSync(${JSON.stringify(join(fixture, "deleted-too-early"))}, "bad");
-        }
+        }, 1);
       `
       }
     `
