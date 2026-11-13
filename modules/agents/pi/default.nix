@@ -366,6 +366,7 @@ in
             sessionSearchFiles
             ;
           piPstack = pkgs.my.pistack;
+          piThimble = pkgs.my.pi-thimble;
           inherit (settings) piSettingsValidated;
         };
 

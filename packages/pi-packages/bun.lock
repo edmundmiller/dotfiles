@@ -207,6 +207,20 @@
         "@earendil-works/pi-coding-agent": ">=1.0.0 <2",
       },
     },
+    "pi-thimble": {
+      "name": "pi-thimble",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@earendil-works/pi-coding-agent": "1.3.0",
+        "@earendil-works/pi-tui": "1.3.0",
+        "typebox": "1.3.27",
+      },
+      "peerDependencies": {
+        "@earendil-works/pi-coding-agent": ">=1.3.0 <2",
+        "@earendil-works/pi-tui": ">=1.3.0 <2",
+        "typebox": "^1.3.27",
+      },
+    },
     "pi-xurl": {
       "name": "pi-xurl",
       "version": "0.1.0",
@@ -1148,6 +1162,8 @@
     "pi-review-box": ["pi-review-box@workspace:pi-review-box"],
 
     "pi-rex": ["pi-rex@workspace:pi-rex"],
+
+    "pi-thimble": ["pi-thimble@workspace:pi-thimble"],
 
     "pi-xurl": ["pi-xurl@workspace:pi-xurl"],
 
