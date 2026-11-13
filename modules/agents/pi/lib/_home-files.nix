@@ -4,6 +4,7 @@
   agentCore,
   piPkgDeps,
   piPstack,
+  piThimble,
   piSettingsValidated,
   piPermissionSystemConfig,
   promptLinks,
@@ -22,6 +23,7 @@ promptLinks
     force = true;
   };
   ".pi/agent/packages/pistack".source = piPstack;
+  ".pi/agent/packages/pi-thimble".source = piThimble;
 }
 // sessionSearchFiles
 // {
