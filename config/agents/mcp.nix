@@ -12,7 +12,10 @@
     args = lib.mkDefault [ "mcp" ];
   };
   linear.url = lib.mkDefault "https://mcp.linear.app/mcp";
-  notion.url = lib.mkDefault "https://mcp.notion.com/mcp";
+  notion = {
+    url = lib.mkDefault "https://mcp.notion.com/mcp";
+    excludeAgents = lib.mkDefault [ "amp" ];
+  };
   seqera.url = lib.mkDefault "https://mcp.seqera.io/mcp";
   superlogical.url = lib.mkDefault "https://www.superlogical.com/rex/community-mcp";
   openaiDeveloperDocs.url = lib.mkDefault "https://developers.openai.com/mcp";
