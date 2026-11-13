@@ -14,6 +14,10 @@ podman() {
   command podman "$@" 9>&-
 }
 
+# NUC keeps its existing two-orb ceiling; NAS opts into one via its user unit.
+max_active=${AMP_ORB_MAX_ACTIVE:-2}
+[[ $max_active == 1 || $max_active == 2 ]] || fail "invalid active orb limit"
+
 [[ ${ORB_ID:-} =~ ^amp-[a-zA-Z0-9_.-]+$ ]] || fail "invalid ORB_ID"
 case "${ORB_OPERATION:-}" in spawn | pause | delete) ;; *) fail "invalid operation" ;; esac
 [[ $(id -u) != 0 ]] || fail "run as a dedicated non-root account"
@@ -63,7 +67,7 @@ check_capacity() {
     assigned_cpu=$((assigned_cpu + cpu))
     remaining=$((remaining + memory - used))
   done <<<"$running_orbs"
-  ((count <= 2)) || fail "provider already has two active orbs"
+  ((count <= max_active)) || fail "provider already has $max_active active orbs"
   # Existing running 3-GiB orbs stay intact; stopped orbs adopt 2 GiB on resume.
   ((assigned_memory <= 5 * 1024 * 1024 * 1024 && assigned_cpu <= 4000000000)) || fail "aggregate orb limits exceed 5 GiB or 4 CPUs"
   cpus=$(getconf _NPROCESSORS_ONLN)

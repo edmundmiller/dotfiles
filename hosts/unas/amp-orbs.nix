@@ -1,4 +1,9 @@
-{ pkgs, utils, ... }:
+{
+  lib,
+  pkgs,
+  utils,
+  ...
+}:
 let
   home = "/var/lib/amp-orbs";
   backing = "/.btrfs/@amp-orbs";
@@ -8,6 +13,15 @@ let
 in
 {
   imports = [ ../_amp-orbs.nix ];
+
+  # Keep occasional NAS use to one small orb without changing NUC admission.
+  systemd.user.units."amp-orb-provider.service".text = lib.mkForce (
+    builtins.readFile ../../config/amp-orbs/provider.service
+    + ''
+      [Service]
+      Environment=AMP_ORB_MAX_ACTIVE=1
+    ''
+  );
 
   # A sibling subvolume stays outside Btrbk's @root/@home/@var snapshots.
   # A preallocated image bounds writes without enabling filesystem-wide qgroups.

@@ -37,7 +37,15 @@ class OrbDispatchTests(unittest.TestCase):
             ("unknown usage", {"amp-existing": dict(legacy, used="unavailable")}, required_kib, 8, 20 * 1024 ** 2, False),
             ("unbounded container", {"amp-existing": dict(legacy, memory=0)}, required_kib, 8, 20 * 1024 ** 2, False),
         ]
-        for name, containers, available, cpus, disk, accepted in cases:
+        cases = [(2, *case) for case in cases] + [
+            (1, "NAS first orb", {}, 4 * gib // 1024, 12, 20 * 1024 ** 2, True),
+            (1, "NAS host reserve short by 1 KiB", {}, 4 * gib // 1024 - 1, 12, 20 * 1024 ** 2, False),
+            (1, "NAS second orb", {"amp-existing": small}, 20 * gib // 1024, 12, 20 * 1024 ** 2, False),
+            (1, "NAS stopped orb resumes", {"amp-test": dict(small, running=False)}, 4 * gib // 1024, 12, 20 * 1024 ** 2, True),
+            (1, "NAS second orb resume rejected", {"amp-existing": small, "amp-test": dict(small, running=False)}, 20 * gib // 1024, 12, 20 * 1024 ** 2, False),
+            (1, "NAS already running under pressure", {"amp-test": small}, 1, 12, 20 * 1024 ** 2, True),
+        ]
+        for max_active, name, containers, available, cpus, disk, accepted in cases:
             with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 tools = root / "bin"
@@ -105,6 +113,7 @@ elif args[0] != 'exec':
                     env=dict(os.environ, PATH=f"{tools}:{os.environ['PATH']}",
                         HOME=str(root), XDG_STATE_HOME=str(root / 'state'),
                         FIXTURE_ROOT=str(root), ORB_ID='amp-test',
+                        AMP_ORB_MAX_ACTIVE=str(max_active),
                         ORB_OPERATION='spawn', ORB_IMAGE='fixture', ORB_TOKEN='fixture'),
                     capture_output=True, text=True, timeout=5)
                 self.assertEqual(result.returncode == 0, accepted, result.stderr)
