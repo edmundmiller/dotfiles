@@ -101,6 +101,11 @@ in
 
       # Upstream registers the Inbox tool and reply wake only when opted in.
       env.PLANNOTATOR_INBOX_TOOL = "1";
+      # Nix owns integrations and updates. Opening the Inbox must not add
+      # Codex hooks or rewrite the host-owned MCP configuration.
+      env.PLANNOTATOR_INBOX_CONNECT = "0";
+      env.PLANNOTATOR_INBOX_NOTES = "0";
+      env.PLANNOTATOR_AUTO_UPDATE = "0";
 
       # Hosts opt in with `modules.agents.mcp.servers.plannotator-inbox.enable`.
       # Pi already gets the Inbox tool from the Plannotator extension.
