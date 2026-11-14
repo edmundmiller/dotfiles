@@ -110,6 +110,6 @@
     // Retain nested AGENTS.md discovery. This package also injects workflow
     // selection guidance when a project contains .pi/workflows (not explicit-only).
     "npm:@howaboua/pi-markdown-workflows",
-    { "source": "npm:@plannotator/pi-extension@0.28.10", "extensions": [] },
+    { "source": "npm:@plannotator/pi-extension@0.28.66", "extensions": [] },
   ],
 }

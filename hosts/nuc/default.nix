@@ -2448,6 +2448,15 @@ in
           linear.enable = false;
           notion.enable = true;
           openaiDeveloperDocs.enable = true;
+          plannotator-inbox = {
+            enable = true;
+            excludeAgents = [
+              "pi"
+              "claude"
+              "codex"
+              "opencode"
+            ];
+          };
         };
       };
       # Claude's CLI is a backend here; keep its existing permissions/settings.
@@ -2457,6 +2466,10 @@ in
       pi.enable = true;
     };
     services = {
+      plannotator = {
+        enable = true;
+        allowedLogins = [ "edmundmiller@github" ];
+      };
       audiobookshelf = {
         enable = true;
         tailscaleService.enable = true;
