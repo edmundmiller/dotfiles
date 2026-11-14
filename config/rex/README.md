@@ -9,6 +9,162 @@ On macOS, this module installs `neorex`. Inside a Rex pane, `neorex file.txt`
 runs Neovim headless and opens `:split` and `:vsplit` as Rex panes. Floats render
 inside their parent pane.
 
+## Rex Spaces MVP
+
+`space.lua` runs in Rex's embedded Lua runtime and starts one persistent Pi head
+conversation in a Rex session. Tell the head a goal; it delegates bounded jobs
+into visible background tabs, waits for
+their reports, and returns a combined answer. It uses the installed Pi and its
+configured model, authentication, extensions, permissions, and repository guidance.
+Pi Intercom supplies live worker-to-head questions through an automatically started
+local broker. No additional model key, global Pi settings change, or rebuild is needed.
+
+Keep the Mac fully awake during jobs. On a laptop, open the lid or use supported
+powered clamshell mode with an external display. `new`, `open`, and `delegate`
+reject a closed lid when macOS reports that it causes sleep, before creating state
+or tabs. A closed lid in supported docked mode is allowed. This check does not
+change power settings or prevent later manual sleep or closing the lid.
+An incoming Intercom question wakes an idle agent, not a sleeping Mac. Time spent
+asleep can break model connections and exhaust the ten-minute ask timeout.
+
+Install the pinned Intercom package once on the Mac running Rex. This prefix is
+private runtime data, not Pi's global package configuration:
+
+```sh
+npm install --prefix "${XDG_DATA_HOME:-$HOME/.local/share}/rex/space-intercom" \
+  --legacy-peer-deps --no-audit --no-fund --save-exact pi-intercom@0.18.1
+```
+
+Then, from your project's directory on the Mac:
+
+```sh
+rex do "$HOME/.config/dotfiles/config/rex/space.lua" \
+  command=new name=my-project cwd="$PWD" \
+  goal='Review the CLI and tests in parallel, then summarize the findings. Do not edit files.'
+```
+
+Select `my-project` in Rex's session picker, then chat in the `head` tab. Creation
+does not switch the Mac app's selected session. Worker tabs preserve head focus.
+The CLI prints the exact session, head block, and state directory as JSON.
+Use the returned directory for subsequent commands:
+
+```sh
+rex do "$HOME/.config/dotfiles/config/rex/space.lua" \
+  space="$HOME/.local/share/rex/spaces/my-project" command=status
+rex do "$HOME/.config/dotfiles/config/rex/space.lua" \
+  space="$HOME/.local/share/rex/spaces/my-project" command=open
+```
+
+`open` reuses a live head without duplicating it, or resumes its saved Pi
+conversation in a new tab or session if it was closed. It does not replay the
+initial goal. Defaults follow `XDG_DATA_HOME`; `space=/path` overrides them.
+Keep the source checkout at its current location while these sessions use it.
+The Lua coordinator is source-run only, not installed in the Nix profile yet.
+It uses Rex's JSON, session/layout API, and subprocess streaming, plus macOS's
+`lockf` for launch serialization. There is no Python runtime dependency or separate
+Lua installation. Arguments use Rex's `key=value` syntax; pass `--args` with a JSON
+object to preserve strings that look like numbers or booleans.
+
+The head receives these commands in its persistent system prompt:
+
+```sh
+rex do /path/to/space.lua space=/path/to/space command=delegate task=api-check \
+  prompt='Read the API module only. Report concrete bugs with file references. Do not edit.'
+rex do /path/to/space.lua space=/path/to/space command=wait timeout=5
+```
+
+The actual head prompt pins the saved Rex endpoint and current session explicitly,
+so worker launches cannot accidentally resolve against another local Rex server.
+At most four workers can be active or unresolved. Task slugs cannot be reused.
+`wait` exits 0 when all jobs exit successfully, 1 when a job fails or is
+interrupted, and 2 with unfinished or unknown jobs. With Intercom enabled it yields
+after at most five seconds, even if a longer timeout is requested. This lets the
+head consume queued questions at its next model boundary instead of waiting for
+a blocked worker to finish. The head handles pending asks and waits again.
+`done` means Pi exited 0, not that the head independently verified its claims.
+The head must read the reports and check the requested acceptance criteria.
+
+### Worker questions
+
+Each space has a random routing scope and stable head address in
+`space.json` under `intercom`. The launcher explicitly loads the saved extension
+path and sets `PI_INTERCOM_SCOPE_ID` and a distinct `PI_INTERCOM_STABLE_ID` for
+the head and each worker. Other spaces and unrelated Pi sessions cannot discover
+or address these peers through this broker scope. This is routing isolation,
+not an operating-system security boundary against processes running as you.
+
+The worker prompt provides the exact head address and tells workers to call
+`intercom` with `action: "ask"` for a blocking clarification. The head replies
+with `action: "reply"`, using the sender's full ID if several asks are pending.
+The reply returns to the worker's original tool call, and the worker continues
+the same task. Both transcripts retain the exchange. Progress updates use
+`send`, not blocking asks. An unavailable head, delivery failure or ask timeout
+is a blocker, never permission to guess. The upstream ask timeout defaults to
+ten minutes. Idle heads wake on incoming questions; busy heads receive them at
+a safe turn boundary. Intercom's existing inbound-trigger configuration applies.
+
+To upgrade a space made before Intercom was added:
+
+```sh
+rex do "$HOME/.config/dotfiles/config/rex/space.lua" \
+  space="$HOME/.local/share/rex/spaces/my-project" command=enable-intercom
+```
+
+Then quit the head in Pi when idle and run `open` to resume it. Do not interrupt
+active work. Existing workers keep their original configuration; newly delegated
+workers use Intercom. Enabling it again preserves the scope and head address.
+`new` and `enable-intercom` accept `intercom=/path/to/pi-intercom/index.ts` for
+another local installation. A missing extension fails with an install command
+before creating the space. No extension is injected into unrelated Pi sessions.
+
+Spaces created by the Python prototype keep the same state and Pi transcripts.
+Quit an idle old head in Pi, then use the Lua `command=open` above. The resumed
+head loads the current Lua commands instead of its old Python launcher instructions.
+Do not restart a busy head or running workers just to switch launchers.
+
+### State and boundaries
+
+State is private to the current user under `~/.local/share/rex/spaces/<name>`:
+`space.json` stores the goal, project directory, exact local Rex endpoint and IDs;
+`head.jsonl` stores the head conversation; `tasks/<slug>/` stores the prompt,
+worker transcript, streamed output and atomic exit result. Results survive closing
+Rex. A lost launch response remains unresolved rather than silently launching
+another worker. Inspect the saved IDs and Rex before repairing that state or
+retrying. The helper never closes tabs or deletes state automatically.
+
+This is a local, file-backed coordinator, not a sandbox. Workers share the same
+checkout and user permissions. Assign disjoint edit ownership or serialize writes.
+The approval boundaries in the prompts are instructions, not access controls;
+Pi's existing permission setup still applies. Workers are one-shot processes.
+Workers can initiate questions and receive their matching replies while running;
+upstream print mode does not handle arbitrary new inbound requests while busy.
+There is no automatic worktree isolation, scheduler, remote launching, or cloud
+execution. Final reports and exit states remain file-backed, independent of the
+broker's in-memory message delivery.
+
+The design takes the single goal conversation and worker delegation from
+[Amp Spaces](https://ampcode.com/news/spaces),
+[Claude Projects](https://claude.com/resources/articles/projects-redesigned), and
+[Cursor Projects](https://cursor.com/changelog/projects). Visible local jobs and
+durable context follow [Pasky's Pi workflow](https://github.com/pasky/pi-agent-config#how-i-work-with-ai-agents).
+[Pi Intercom](https://github.com/nicobailon/pi-intercom), recommended in the Alex JC
+and Nicopreme references, supplies directed peer communication. Rex's installed agent guide
+and [session export example](https://www.superlogical.com/rex/docs/automate/lua-scripts#example-export-the-session)
+establish the session/block IDs used to track the work.
+
+Run `python3 -m unittest tests.test_rex_space -v` for real isolated Rex-server
+checks with a deterministic Pi stand-in. They cover parallel jobs, focus,
+quoting, working directories, failures, restart/resume, and worker limits without
+model usage or changes to the live Rex server. A simulated macOS power probe also
+checks launch rejection without partial state, plus open-lid and supported docked
+controls; it does not simulate hardware sleep. The Python test harness invokes
+`rex do space.lua`; the coordinator itself is Lua. For a model-backed smoke test,
+give the head two facts that it must not include in its worker prompts. Have it
+delegate two read-only jobs that ask for those facts through Intercom, then check
+each worker received the correct reply and completed in the same task. Inspect
+both saved conversations and the combined answer. These checks are distinct
+from host activation.
+
 ## Leaf document and diff reader
 
 Leaf is disabled by default. To install the reader and its native Rex palette,
