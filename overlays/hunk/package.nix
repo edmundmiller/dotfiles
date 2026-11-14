@@ -55,7 +55,7 @@ inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (
           case "$hunk_arg" in
             --extension|--disable-extension|--enable-extension)
               hunk_skip_value=true ;;
-            --extension=*|--disable-extension=*|--enable-extension=*|--no-extensions|--fast|--experimental)
+            --extension=*|--disable-extension=*|--enable-extension=*|--no-extensions|--experimental)
               ;;
             open|session|markup|skill|extension|ext|update|completion|daemon|mcp)
               hunk_load_extensions=false

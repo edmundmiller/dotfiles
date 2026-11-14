@@ -1,5 +1,5 @@
 diff --git a/packages/hunk/src/ui/staticDiffPager.test.ts b/packages/hunk/src/ui/staticDiffPager.test.ts
-index cce346b..4018716 100644
+index bd2d432f..fd4a65a8 100644
 --- a/packages/hunk/src/ui/staticDiffPager.test.ts
 +++ b/packages/hunk/src/ui/staticDiffPager.test.ts
 @@ -1,5 +1,6 @@
@@ -70,7 +70,7 @@ index cce346b..4018716 100644
      const patchText =
        "diff --git a/a.ts b/a.ts\n--- a/a.ts\n+++ b/a.ts\n@@ -1 +1 @@\n-const value = 1;\n+const value = 2;\n";
 diff --git a/packages/hunk/src/ui/staticDiffPager.ts b/packages/hunk/src/ui/staticDiffPager.ts
-index 8c0a563..53629af 100644
+index 8c0a563c..53629afe 100644
 --- a/packages/hunk/src/ui/staticDiffPager.ts
 +++ b/packages/hunk/src/ui/staticDiffPager.ts
 @@ -442,11 +442,20 @@ export async function renderStaticDiff(

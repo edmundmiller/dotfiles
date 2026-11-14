@@ -758,26 +758,26 @@ index 1bb92928..b9ada583 100644
    test("statSignature distinguishes present from missing paths", () => {
      const repo = createTempDir("hunk-git-statsig-");
 diff --git a/packages/hunk-git/src/index.ts b/packages/hunk-git/src/index.ts
-index 2a6d1ac6..0a9a85b7 100644
+index bfda2341..945cbecd 100644
 --- a/packages/hunk-git/src/index.ts
 +++ b/packages/hunk-git/src/index.ts
-@@ -30,6 +30,7 @@ import {
- import { createGitStatusCapability } from "./status";
- import { buildGitMetadataTargets } from "./watchTargets";
- import { gitEndpointSourceSpec, readGitFileSource } from "./source";
+@@ -35,6 +35,7 @@ import {
+   readGitFileSource,
+   type GitFileSourceSpec,
+ } from "./source";
 +import { generatedPaths } from "./generated";
  import { commitReviewInfo, comparisonReviewInfo } from "@hunk/vcs/review-info";
  import {
    HUNK_VCS_DETECTION_BASELINE_PRIORITY,
-@@ -39,6 +40,7 @@ import {
-   type ExtensionVcsExtraFile,
+@@ -46,6 +47,7 @@ import {
    type ExtensionVcsFileSourceReader,
+   type ExtensionVcsFileSourceRequest,
    type ExtensionVcsShowInput,
 +  type ExtensionVcsStashShowInput,
    type ExtensionVcsWatchPlan,
    type HunkExtensionAPI,
  } from "hunkdiff/extension";
-@@ -329,6 +331,40 @@ export interface GitVcsAdapterOptions {
+@@ -348,6 +350,40 @@ export interface GitVcsAdapterOptions {
  export function createGitVcsAdapter({
    gitExecutable = "git",
  }: Readonly<GitVcsAdapterOptions> = {}) {
@@ -818,7 +818,7 @@ index 2a6d1ac6..0a9a85b7 100644
    return {
      id: "git",
      name: "Git",
-@@ -416,41 +452,49 @@ export function createGitVcsAdapter({
+@@ -435,41 +471,49 @@ export function createGitVcsAdapter({
              gitExecutable,
              signal,
            });
@@ -889,7 +889,7 @@ index 2a6d1ac6..0a9a85b7 100644
            };
          },
          watchPlan(input, { cwd }) {
-@@ -481,7 +525,26 @@ export function createGitVcsAdapter({
+@@ -500,7 +544,26 @@ export function createGitVcsAdapter({
            const untrackedSignatures = untrackedPaths.map(
              (filePath) => `untracked:${statSignature(join(repoRoot, filePath))}`,
            );
@@ -917,7 +917,7 @@ index 2a6d1ac6..0a9a85b7 100644
          },
        },
        "revision-show": {
-@@ -507,21 +570,27 @@ export function createGitVcsAdapter({
+@@ -526,21 +589,27 @@ export function createGitVcsAdapter({
              )
            )[0];
            const patchInput: ExtensionVcsShowInput = { ...input, ref: revisionId };
@@ -955,7 +955,7 @@ index 2a6d1ac6..0a9a85b7 100644
              ...(commit ? { review: commitReviewInfo("Git", commit) } : {}),
              ...sourceCapability,
            };
-@@ -530,43 +599,42 @@ export function createGitVcsAdapter({
+@@ -549,43 +618,42 @@ export function createGitVcsAdapter({
            return buildGitWatchPlan(input, cwd, gitExecutable);
          },
          watchSignature(input, { cwd, signal }) {
@@ -1024,7 +1024,7 @@ index 2a6d1ac6..0a9a85b7 100644
              ...sourceCapability,
            };
          },
-@@ -574,14 +642,7 @@ export function createGitVcsAdapter({
+@@ -593,14 +661,7 @@ export function createGitVcsAdapter({
            return buildGitWatchPlan(input, cwd, gitExecutable);
          },
          watchSignature(input, { cwd, signal }) {
@@ -1041,7 +1041,7 @@ index 2a6d1ac6..0a9a85b7 100644
        },
      },
 diff --git a/packages/hunk/src/app/cli.test.ts b/packages/hunk/src/app/cli.test.ts
-index 151a8081..6ffd49fb 100644
+index efa55446..36117103 100644
 --- a/packages/hunk/src/app/cli.test.ts
 +++ b/packages/hunk/src/app/cli.test.ts
 @@ -15,6 +15,36 @@ import { persistResumableReview } from "../core/resumableReview";
@@ -1082,10 +1082,10 @@ index 151a8081..6ffd49fb 100644
    const dir = mkdtempSync(join(tmpdir(), prefix));
    tempDirs.push(dir);
 diff --git a/packages/hunk/src/app/cli.ts b/packages/hunk/src/app/cli.ts
-index be059e66..a9ae60ce 100644
+index dcc596cb..a615bf77 100644
 --- a/packages/hunk/src/app/cli.ts
 +++ b/packages/hunk/src/app/cli.ts
-@@ -136,6 +136,10 @@ export const COMMON_REVIEW_OPTIONS = [
+@@ -137,6 +137,10 @@ export const COMMON_REVIEW_OPTIONS = [
    },
    AUXILIARY_AGENT_OPTIONS.agentContext,
    { flag: "--pager", description: "use pager-style chrome" },
@@ -1094,18 +1094,18 @@ index be059e66..a9ae60ce 100644
 +    description: "include Git paths hidden by linguist-generated attributes",
 +  },
    AUXILIARY_AGENT_OPTIONS.experimental,
-   {
-     flag: "--fast",
-@@ -618,6 +622,7 @@ function buildCommonOptions(
+   { flag: "--line-numbers", description: "show line numbers" },
+   { flag: "--no-line-numbers", description: "hide line numbers" },
+@@ -639,6 +643,7 @@ function buildCommonOptions(
+       options.experimental || hasPrefixedReviewFlag(argv, AUXILIARY_AGENT_OPTIONS.experimental.flag)
          ? true
          : undefined,
-     fast: options.fast || hasPrefixedReviewFlag(argv, "--fast") ? true : undefined,
 +    includeGenerated: resolveBooleanFlag(argv, "--include-generated", "--no-include-generated"),
      excludeUntracked: resolveBooleanFlag(
        argv,
        AUXILIARY_AGENT_OPTIONS.excludeUntracked.flag,
 diff --git a/packages/hunk/src/core/changeset/loaders.test.ts b/packages/hunk/src/core/changeset/loaders.test.ts
-index d00a534e..21f66a95 100644
+index 6b319c0c..2903998c 100644
 --- a/packages/hunk/src/core/changeset/loaders.test.ts
 +++ b/packages/hunk/src/core/changeset/loaders.test.ts
 @@ -24,6 +24,36 @@ import { computeWatchSignature } from "../watch/signature";
@@ -1185,7 +1185,7 @@ index d00a534e..21f66a95 100644
    const previousHome = process.env.HOME;
    process.env.HOME = home;
 diff --git a/packages/hunk/src/core/resumableReview.test.ts b/packages/hunk/src/core/resumableReview.test.ts
-index ec6cf274..932a364d 100644
+index 78523bce..016d5703 100644
 --- a/packages/hunk/src/core/resumableReview.test.ts
 +++ b/packages/hunk/src/core/resumableReview.test.ts
 @@ -58,6 +58,7 @@ describe("resumable review markers", () => {
@@ -1195,8 +1195,8 @@ index ec6cf274..932a364d 100644
 +          includeGenerated: true,
            experimental: true,
            extensionPaths: ["extension.ts"],
-           fast: true,
-@@ -78,6 +79,12 @@ describe("resumable review markers", () => {
+           fileGap: 2,
+@@ -77,6 +78,12 @@ describe("resumable review markers", () => {
            wrapLines: true,
          },
        },
@@ -1210,18 +1210,18 @@ index ec6cf274..932a364d 100644
          kind: "show",
          ref: "HEAD",
 diff --git a/packages/hunk/src/core/resumableReview.ts b/packages/hunk/src/core/resumableReview.ts
-index 58dab617..91f0a785 100644
+index 2cec0e84..8d9613a3 100644
 --- a/packages/hunk/src/core/resumableReview.ts
 +++ b/packages/hunk/src/core/resumableReview.ts
-@@ -43,6 +43,7 @@ function readCommonOptions(value: unknown): CommonOptions | null {
+@@ -42,6 +42,7 @@ function readCommonOptions(value: unknown): CommonOptions | null {
+     "watch",
      "experimental",
-     "fast",
      "excludeUntracked",
 +    "includeGenerated",
      "lineNumbers",
      "wrapLines",
      "hunkHeaders",
-@@ -98,13 +99,26 @@ function readCliInput(value: unknown): CliInput | null {
+@@ -97,13 +98,26 @@ function readCliInput(value: unknown): CliInput | null {
        const range = readOptionalString(value.range);
        const pathspecs = readOptionalStrings(value.pathspecs);
        if (typeof value.staged !== "boolean" || range === null || pathspecs === null) return null;
@@ -1252,34 +1252,34 @@ index 58dab617..91f0a785 100644
      case "show": {
        const ref = readOptionalString(value.ref);
 diff --git a/packages/hunk/src/core/run/commandInputs.ts b/packages/hunk/src/core/run/commandInputs.ts
-index 33b34cbe..df6dab50 100644
+index 5f8a5a0a..1fceaf76 100644
 --- a/packages/hunk/src/core/run/commandInputs.ts
 +++ b/packages/hunk/src/core/run/commandInputs.ts
-@@ -53,6 +53,7 @@ export interface CommonOptions {
-   /** Offload eligible syntax highlighting for this launch. */
-   fast?: boolean;
+@@ -51,6 +51,7 @@ export interface CommonOptions {
+   /** Enable launch-scoped experimental review features. */
+   experimental?: boolean;
    excludeUntracked?: boolean;
 +  includeGenerated?: boolean;
    lineNumbers?: boolean;
    tabWidth?: number;
    /** Blank rows between files in the review stream, including the `─` rule. */
 diff --git a/packages/hunk/src/core/run/config.ts b/packages/hunk/src/core/run/config.ts
-index ac23e225..e0ba27a7 100644
+index 82878d36..6a04154e 100644
 --- a/packages/hunk/src/core/run/config.ts
 +++ b/packages/hunk/src/core/run/config.ts
-@@ -1160,6 +1160,7 @@ function mergeOptions(base: CommonOptions, overrides: CommonOptions): CommonOpti
+@@ -1176,6 +1176,7 @@ function mergeOptions(base: CommonOptions, overrides: CommonOptions): CommonOpti
+     watch: overrides.watch ?? base.watch,
      experimental: overrides.experimental ?? base.experimental,
-     fast: overrides.fast ?? base.fast,
      excludeUntracked: overrides.excludeUntracked ?? base.excludeUntracked,
 +    includeGenerated: overrides.includeGenerated ?? base.includeGenerated,
      lineNumbers: overrides.lineNumbers ?? base.lineNumbers,
      tabWidth: overrides.tabWidth ?? base.tabWidth,
      fileGap: overrides.fileGap ?? base.fileGap,
 diff --git a/packages/hunk/src/extension-api/types.ts b/packages/hunk/src/extension-api/types.ts
-index f6817f1f..4029b534 100644
+index 1c66655b..966b552d 100644
 --- a/packages/hunk/src/extension-api/types.ts
 +++ b/packages/hunk/src/extension-api/types.ts
-@@ -728,6 +728,8 @@ export interface ExtensionVcsLoadContext {
+@@ -738,6 +738,8 @@ export interface ExtensionVcsLoadContext {
  export interface ExtensionVcsReviewOptions {
    /** True when the user asked for tracked changes only (`--exclude-untracked`). */
    excludeUntracked?: boolean;
@@ -1289,7 +1289,7 @@ index f6817f1f..4029b534 100644
     * True when the user asked for moved lines to be detected (`--color-moved`).
     *
 diff --git a/packages/hunk/src/session/protocolSchemas.test.ts b/packages/hunk/src/session/protocolSchemas.test.ts
-index c2994f9b..567082b7 100644
+index 4fa57f58..22f43f53 100644
 --- a/packages/hunk/src/session/protocolSchemas.test.ts
 +++ b/packages/hunk/src/session/protocolSchemas.test.ts
 @@ -45,6 +45,16 @@ const _dualSelectorIsNotCliInput: CliInput = {
@@ -1310,12 +1310,12 @@ index c2994f9b..567082b7 100644
  const _targetlessCommentIsNotACommand: SessionCommentAddCommandInput = {
    kind: "session",
 diff --git a/packages/hunk/src/session/protocolSchemas.ts b/packages/hunk/src/session/protocolSchemas.ts
-index e3598080..0580ed07 100644
+index bbf74f76..0676216f 100644
 --- a/packages/hunk/src/session/protocolSchemas.ts
 +++ b/packages/hunk/src/session/protocolSchemas.ts
-@@ -73,6 +73,7 @@ const commonOptionsSchema = z.strictObject({
+@@ -72,6 +72,7 @@ const commonOptionsSchema = z.strictObject({
+   watch: z.boolean().optional(),
    experimental: z.boolean().optional(),
-   fast: z.boolean().optional(),
    excludeUntracked: z.boolean().optional(),
 +  includeGenerated: z.boolean().optional(),
    lineNumbers: z.boolean().optional(),
@@ -1402,7 +1402,7 @@ index 5f756ffa..d4d94f0b 100644
    test("adopts reloaded custom themes without replacing the committed theme", async () => {
      const { configPath, dir } = createReloadThemeRepository();
 diff --git a/website/src/content/docs/docs/reference/cli.md b/website/src/content/docs/docs/reference/cli.md
-index 29509553..d740452d 100644
+index fd225cf0..1294ed12 100644
 --- a/website/src/content/docs/docs/reference/cli.md
 +++ b/website/src/content/docs/docs/reference/cli.md
 @@ -23,6 +23,7 @@ This reference is generated from the command metadata used by Hunk itself. Run `

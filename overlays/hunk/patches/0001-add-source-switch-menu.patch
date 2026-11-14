@@ -1,8 +1,8 @@
 diff --git a/packages/hunk/src/ui/App.tsx b/packages/hunk/src/ui/App.tsx
-index 296dfe3b..04d5df7f 100644
+index c310bb95..1aa3c2bc 100644
 --- a/packages/hunk/src/ui/App.tsx
 +++ b/packages/hunk/src/ui/App.tsx
-@@ -134,6 +134,14 @@ import {
+@@ -141,6 +141,14 @@ import {
  import { StatusLine, statusLineHasContent } from "./statusLine/StatusLine";
  import type { StatusItem, StatusLineSnapshot } from "./statusLine/types";
  import { useStatusLine } from "./statusLine/useStatusLine";
@@ -17,7 +17,7 @@ index 296dfe3b..04d5df7f 100644
  
  /**
   * Who owns review keys: the file stream, the host filter prompt on the status line, or the
-@@ -1099,6 +1107,19 @@ export function App({
+@@ -1124,6 +1132,19 @@ export function App({
      setShowMenuBar(nextShowMenuBar);
    };
  
@@ -37,7 +37,7 @@ index 296dfe3b..04d5df7f 100644
    const { canRefreshCurrentInput, refreshCurrentInput, triggerRefreshCurrentInput } =
      useCurrentReviewRefreshController({
        input: bootstrap.input,
-@@ -1107,18 +1128,48 @@ export function App({
+@@ -1132,18 +1153,48 @@ export function App({
        onWatchReloadPending: publishWatchReloadPending,
        reloadContext: bootstrap.reloadContext,
        sourceLabel: bootstrap.changeset.sourceLabel,
@@ -95,7 +95,7 @@ index 296dfe3b..04d5df7f 100644
    const {
      closeExtensionTrustPrompt,
      denyRepoExtensions,
-@@ -1463,6 +1514,8 @@ export function App({
+@@ -1506,6 +1557,8 @@ export function App({
            action: exitKeyboardMode,
          }
        : undefined,
@@ -104,15 +104,15 @@ index 296dfe3b..04d5df7f 100644
      copyDecorations,
      layoutMode,
      filesPaneVisible,
-@@ -1479,6 +1532,7 @@ export function App({
+@@ -1521,6 +1574,7 @@ export function App({
+     activeMenuEntries,
      activeMenuId,
      activeMenuItemIndex,
-     activeMenuSpec,
 +    activateMenuItemByHint,
      activeMenuWidth,
      activateCurrentMenuItem,
      closeMenu,
-@@ -1491,6 +1545,7 @@ export function App({
+@@ -1533,6 +1587,7 @@ export function App({
    } = useMenuController(menus);
  
    useAppKeyboardShortcuts({
@@ -120,7 +120,7 @@ index 296dfe3b..04d5df7f 100644
      activeMenuId,
      activateCurrentMenuItem,
      closeAgentSkill,
-@@ -1523,6 +1578,7 @@ export function App({
+@@ -1568,6 +1623,7 @@ export function App({
      moveMenuItem,
      moveThemeSelector,
      openMenu,
@@ -128,18 +128,18 @@ index 296dfe3b..04d5df7f 100644
      saveConfigPromptOpen,
      saveViewPreferencesAndQuit,
      discardViewPreferencesAndQuit,
-@@ -1545,7 +1601,8 @@ export function App({
+@@ -1590,7 +1646,8 @@ export function App({
      (sum, file) => sum + file.stats.deletions,
      0,
    );
 -  const topTitle = `${bootstrap.changeset.title}  ${changedFileCount} ${changedFileLabel}  +${totalAdditions}  -${totalDeletions}`;
 +  const sourceLabel = computedSourceLabel ?? selectedSourceLabel;
 +  const topTitle = `${sourceLabel ? `${sourceLabel} · ` : ""}${bootstrap.changeset.title}  ${changedFileCount} ${changedFileLabel}  +${totalAdditions}  -${totalDeletions}`;
-   const diffHeaderStatsWidth = maxFileHeaderStatsWidth(filteredFiles);
-   const diffHeaderLabelWidth = Math.max(0, diffContentWidth - diffHeaderStatsWidth - 1);
-   const diffSeparatorWidth = Math.max(0, diffContentWidth - 2);
+   const responsiveMenuLayout = responsiveMenuSpecs(menuSpecs, terminal.width, topTitle);
+   const activeMenuSpec = activeMenuId
+     ? responsiveActiveMenuSpec(responsiveMenuLayout, activeMenuId)
 diff --git a/packages/hunk/src/ui/AppHost.interactions.test.tsx b/packages/hunk/src/ui/AppHost.interactions.test.tsx
-index cb4ed7bb..9f1fda82 100644
+index 204a5b09..1987ee3d 100644
 --- a/packages/hunk/src/ui/AppHost.interactions.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.interactions.test.tsx
 @@ -819,7 +819,7 @@ describe("App interactions", () => {
@@ -198,7 +198,7 @@ index cb4ed7bb..9f1fda82 100644
        await act(async () => {
          await setup.mockInput.pressArrow("right");
        });
-@@ -1975,7 +1979,7 @@ describe("App interactions", () => {
+@@ -2055,7 +2059,7 @@ describe("App interactions", () => {
        });
        await waitForFrame(setup, (frame) => frame.includes("Toggle files/filter focus"), 12);
  
@@ -207,7 +207,7 @@ index cb4ed7bb..9f1fda82 100644
          await act(async () => {
            await setup.mockInput.pressArrow("right");
          });
-@@ -3339,7 +3343,7 @@ describe("App interactions", () => {
+@@ -3453,7 +3457,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        let frame = setup.captureCharFrame();
@@ -216,7 +216,7 @@ index cb4ed7bb..9f1fda82 100644
        expect((frame.match(/alpha\.ts/g) ?? []).length).toBe(1);
  
        await act(async () => {
-@@ -3348,7 +3352,7 @@ describe("App interactions", () => {
+@@ -3462,7 +3466,7 @@ describe("App interactions", () => {
        await flush(setup);
  
        frame = setup.captureCharFrame();
@@ -300,10 +300,22 @@ index aaab6356..a56e1c9e 100644
 +  });
  });
 diff --git a/packages/hunk/src/ui/AppHost.responsive.test.tsx b/packages/hunk/src/ui/AppHost.responsive.test.tsx
-index 630a45be..c8f6c61c 100644
+index 3e94e42d..deb6f9b5 100644
 --- a/packages/hunk/src/ui/AppHost.responsive.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.responsive.test.tsx
-@@ -172,6 +172,12 @@ describe("responsive app", () => {
+@@ -147,9 +147,9 @@ describe("responsive app", () => {
+   });
+ 
+   test("the menu bar compacts labels before truncating the review title", async () => {
+-    const frame = await captureFrameForBootstrap(createBootstrap(), 70, 12);
++    const frame = await captureFrameForBootstrap(createBootstrap(), 88, 12);
+ 
+-    expect(frame).toContain("File  View  Nav  Agent  ?");
++    expect(frame).toContain("File  Source  View  Nav  Agent  ?");
+     expect(frame).toContain("repo working tree  2 files  +3  -2");
+     expect(frame).not.toContain("Navigate");
+   });
+@@ -180,6 +180,12 @@ describe("responsive app", () => {
        await act(async () => {
          await setup.renderOnce();
        });
@@ -316,7 +328,7 @@ index 630a45be..c8f6c61c 100644
  
        const menuFrame = setup.captureCharFrame();
        expect(menuFrame).toContain("[x] Files pane");
-@@ -316,12 +322,12 @@ describe("responsive app", () => {
+@@ -324,12 +330,12 @@ describe("responsive app", () => {
      const narrow = await captureFrameForBootstrap(createBootstrap("auto", true), 150);
      const tight = await captureFrameForBootstrap(createBootstrap("auto", true), 110);
  
@@ -332,7 +344,7 @@ index 630a45be..c8f6c61c 100644
      expect((narrow.match(/alpha\.ts/g) ?? []).length).toBe(1);
      expect(narrow).not.toMatch(/▌.*▌/);
 diff --git a/packages/hunk/src/ui/components/chrome/menu.ts b/packages/hunk/src/ui/components/chrome/menu.ts
-index 3191fa42..0da21a01 100644
+index de3ffa17..06ebd92f 100644
 --- a/packages/hunk/src/ui/components/chrome/menu.ts
 +++ b/packages/hunk/src/ui/components/chrome/menu.ts
 @@ -1,6 +1,14 @@
@@ -373,7 +385,7 @@ index 51bd77d5..04d126e4 100644
      expect(frame).toContain("beta.ts");
      expect(frame).toContain("@@ -1,1 +1,2 @@");
 diff --git a/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts b/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
-index 3f3c2c77..ec7037f1 100644
+index e2532fc2..ed42b606 100644
 --- a/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
 +++ b/packages/hunk/src/ui/hooks/useAppKeyboardShortcuts.ts
 @@ -25,6 +25,7 @@ type FocusArea = "files" | "filter" | "note";
@@ -382,9 +394,9 @@ index 3f3c2c77..ec7037f1 100644
    activateCurrentMenuItem: () => void;
 +  activateMenuItemByHint: (hint: string) => boolean;
    closeAgentSkill: () => void;
-   closeHelp: () => void;
-   closeMenu: () => void;
-@@ -74,6 +75,7 @@ export interface UseAppKeyboardShortcutsOptions {
+   /** Route keys to the feedback form while it is open; `"notMine"` when it is closed. */
+   handleFeedbackKey?: (key: KeyEvent) => KeyOwner;
+@@ -80,6 +81,7 @@ export interface UseAppKeyboardShortcutsOptions {
    moveMenuItem: (delta: number) => void;
    moveThemeSelector: (delta: number) => void;
    openMenu: (menuId: MenuId) => void;
@@ -392,7 +404,7 @@ index 3f3c2c77..ec7037f1 100644
    saveConfigPromptOpen: boolean;
    saveViewPreferencesAndQuit: () => void;
    discardViewPreferencesAndQuit: () => void;
-@@ -106,6 +108,7 @@ export interface UseAppKeyboardShortcutsOptions {
+@@ -112,6 +114,7 @@ export interface UseAppKeyboardShortcutsOptions {
   * full contract, including why a boolean cannot express it.
   */
  export function useAppKeyboardShortcuts({
@@ -400,17 +412,17 @@ index 3f3c2c77..ec7037f1 100644
    activeMenuId,
    activateCurrentMenuItem,
    closeAgentSkill,
-@@ -136,6 +139,7 @@ export function useAppKeyboardShortcuts({
-   focusArea,
+@@ -145,6 +148,7 @@ export function useAppKeyboardShortcuts({
+   queueFilterInput,
    promptActive,
    moveMenuItem,
 +  openSourceSelector,
    moveThemeSelector,
    openMenu,
    saveConfigPromptOpen,
-@@ -254,6 +258,14 @@ export function useAppKeyboardShortcuts({
-     return "mine";
-   };
+@@ -278,6 +282,14 @@ export function useAppKeyboardShortcuts({
+   const handleFeedbackFormShortcut = (key: KeyEvent): KeyOwner =>
+     handleFeedbackKeyRef.current?.(key) ?? "notMine";
  
 +  /** F9 opens the source menu without affecting normal app shortcuts. */
 +  const handleSourceSelectorShortcut = (key: KeyEvent): KeyOwner => {
@@ -423,7 +435,7 @@ index 3f3c2c77..ec7037f1 100644
    /** Escape closes the topmost open overlay (agent skill, then help). */
    const handleDialogShortcut = (key: KeyEvent): KeyOwner => {
      if (!isEscapeKey(key)) {
-@@ -470,6 +482,10 @@ export function useAppKeyboardShortcuts({
+@@ -494,6 +506,10 @@ export function useAppKeyboardShortcuts({
        return "mine";
      }
  
@@ -434,10 +446,10 @@ index 3f3c2c77..ec7037f1 100644
      return "notMine";
    };
  
-@@ -641,6 +657,7 @@ export function useAppKeyboardShortcuts({
-         handleExtensionTrustPromptShortcut,
+@@ -675,6 +691,7 @@ export function useAppKeyboardShortcuts({
          handleSaveConfigPromptShortcut,
          handleExtensionDialogShortcut,
+         handleFeedbackFormShortcut,
 +        handleSourceSelectorShortcut,
          handleMenuToggleShortcut,
          handleDialogShortcut,
@@ -474,10 +486,10 @@ index 7e77a0ec..3aea8b10 100644
      getActiveMenuId: () => liveMenuId.current,
      menuSpecs,
 diff --git a/packages/hunk/src/ui/lib/appCommands.test.ts b/packages/hunk/src/ui/lib/appCommands.test.ts
-index 8e9f3d16..730c719e 100644
+index 0058b62b..aedef719 100644
 --- a/packages/hunk/src/ui/lib/appCommands.test.ts
 +++ b/packages/hunk/src/ui/lib/appCommands.test.ts
-@@ -512,6 +512,8 @@ describe("command catalog parity", () => {
+@@ -513,6 +513,8 @@ describe("command catalog parity", () => {
        ),
      ]);
      const menus = buildAppMenus({
@@ -525,7 +537,7 @@ index 1216c3b8..e07e9a31 100644
 +  });
 +});
 diff --git a/packages/hunk/src/ui/lib/appMenus.ts b/packages/hunk/src/ui/lib/appMenus.ts
-index e8aef858..acfb41f6 100644
+index 989d33eb..a284694f 100644
 --- a/packages/hunk/src/ui/lib/appMenus.ts
 +++ b/packages/hunk/src/ui/lib/appMenus.ts
 @@ -1,6 +1,7 @@
@@ -563,7 +575,7 @@ index e8aef858..acfb41f6 100644
      file: [
        { commandId: "hunk.app.toggleFocusArea", label: "Toggle files/filter focus" },
        { commandId: "hunk.review.focusFilter", label: "Focus filter" },
-@@ -242,6 +247,13 @@ export function buildAppMenus({
+@@ -245,6 +250,13 @@ export function buildAppMenus({
  
    return {
      file: toMenuEntries(commands, specs.file),
@@ -1319,7 +1331,7 @@ index 00000000..c1ef2572
 +  return { kind: "notice", message: "Unsupported source." };
 +}
 diff --git a/test/pty/chrome.test.ts b/test/pty/chrome.test.ts
-index 5c839402..2bfc88f0 100644
+index f8bc93ad..1ef8561a 100644
 --- a/test/pty/chrome.test.ts
 +++ b/test/pty/chrome.test.ts
 @@ -190,7 +190,7 @@ describe("PTY chrome", () => {
@@ -1331,7 +1343,7 @@ index 5c839402..2bfc88f0 100644
          timeout: 15_000,
        });
  
-@@ -235,7 +235,7 @@ describe("PTY chrome", () => {
+@@ -263,7 +263,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1340,7 +1352,7 @@ index 5c839402..2bfc88f0 100644
          timeout: 15_000,
        });
  
-@@ -278,7 +278,7 @@ describe("PTY chrome", () => {
+@@ -306,7 +306,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1349,7 +1361,7 @@ index 5c839402..2bfc88f0 100644
          timeout: 15_000,
        });
  
-@@ -308,7 +308,7 @@ describe("PTY chrome", () => {
+@@ -336,7 +336,7 @@ describe("PTY chrome", () => {
      });
  
      try {
@@ -1358,7 +1370,7 @@ index 5c839402..2bfc88f0 100644
          timeout: 15_000,
        });
  
-@@ -349,7 +349,7 @@ describe("PTY chrome", () => {
+@@ -377,7 +377,7 @@ describe("PTY chrome", () => {
      });
  
      try {

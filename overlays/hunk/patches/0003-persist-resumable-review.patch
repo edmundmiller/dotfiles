@@ -1,5 +1,5 @@
 diff --git a/packages/hunk/src/app/cli.test.ts b/packages/hunk/src/app/cli.test.ts
-index 9cd026bf..151a8081 100644
+index 5fe80727..efa55446 100644
 --- a/packages/hunk/src/app/cli.test.ts
 +++ b/packages/hunk/src/app/cli.test.ts
 @@ -11,6 +11,7 @@ import {
@@ -113,10 +113,10 @@ index 9cd026bf..151a8081 100644
    test("prints the same top-level help for --help", async () => {
      const bare = await parseCli(["bun", "hunk"]);
 diff --git a/packages/hunk/src/app/cli.ts b/packages/hunk/src/app/cli.ts
-index 9eb4cc71..be059e66 100644
+index 3460732a..dcc596cb 100644
 --- a/packages/hunk/src/app/cli.ts
 +++ b/packages/hunk/src/app/cli.ts
-@@ -69,6 +69,7 @@ import {
+@@ -70,6 +70,7 @@ import {
    parseWheelScrollLines,
    type WheelScrollLines,
  } from "../core/run/wheelScrollLines";
@@ -124,7 +124,7 @@ index 9eb4cc71..be059e66 100644
  import type { ExtensionVcsHistoryReviewAction } from "../extension-api/types";
  
  /** Structured option metadata shared by Commander registration and generated CLI docs. */
-@@ -733,6 +734,26 @@ function renderSkillHelp() {
+@@ -754,6 +755,26 @@ function renderSkillHelp() {
    ].join("\n");
  }
  
@@ -151,7 +151,7 @@ index 9eb4cc71..be059e66 100644
  /** Build the top-level help text shown by bare `hunk` and `hunk --help`. */
  function renderCliHelp() {
    return [
-@@ -752,6 +773,7 @@ function renderCliHelp() {
+@@ -773,6 +794,7 @@ function renderCliHelp() {
      "  hunk gh <pr|commit|compare>             review changes hosted on GitHub",
      "  hunk stash show [ref]                   review a stash entry (git only)",
      "  hunk patch [file]                       review a patch file or stdin",
@@ -159,7 +159,7 @@ index 9eb4cc71..be059e66 100644
      "  hunk pager                              general Git pager wrapper with diff detection",
      "  hunk difftool <left> <right> [path]     review Git difftool file pairs",
      "  hunk session <subcommand>               inspect or control a live Hunk session",
-@@ -2698,6 +2720,20 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
+@@ -2774,6 +2796,20 @@ export async function parseCli(argv: string[]): Promise<ParsedCliInput> {
        await parseStandaloneCommand(command, rest);
        return { kind: "open", path, options: buildCommonOptions(options, argv) };
      }
@@ -182,10 +182,10 @@ index 9eb4cc71..be059e66 100644
      case "show":
 diff --git a/packages/hunk/src/core/resumableReview.test.ts b/packages/hunk/src/core/resumableReview.test.ts
 new file mode 100644
-index 00000000..ec6cf274
+index 00000000..78523bce
 --- /dev/null
 +++ b/packages/hunk/src/core/resumableReview.test.ts
-@@ -0,0 +1,219 @@
+@@ -0,0 +1,218 @@
 +import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 +import { tmpdir } from "node:os";
 +import { dirname, join } from "node:path";
@@ -248,7 +248,6 @@ index 00000000..ec6cf274
 +          excludeUntracked: true,
 +          experimental: true,
 +          extensionPaths: ["extension.ts"],
-+          fast: true,
 +          fileGap: 2,
 +          hunkGap: 3,
 +          hunkHeaders: false,
@@ -407,10 +406,10 @@ index 00000000..ec6cf274
 +});
 diff --git a/packages/hunk/src/core/resumableReview.ts b/packages/hunk/src/core/resumableReview.ts
 new file mode 100644
-index 00000000..58dab617
+index 00000000..2cec0e84
 --- /dev/null
 +++ b/packages/hunk/src/core/resumableReview.ts
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,216 @@
 +import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 +import { dirname, join } from "node:path";
 +import type { CliInput, CommonOptions } from "./run/commandInputs";
@@ -454,7 +453,6 @@ index 00000000..58dab617
 +    "menuBar",
 +    "watch",
 +    "experimental",
-+    "fast",
 +    "excludeUntracked",
 +    "lineNumbers",
 +    "wrapLines",
@@ -629,7 +627,7 @@ index 00000000..58dab617
 +  }
 +}
 diff --git a/packages/hunk/src/main.tsx b/packages/hunk/src/main.tsx
-index 17707b10..16b3b75a 100644
+index 2a921af9..be55da09 100644
 --- a/packages/hunk/src/main.tsx
 +++ b/packages/hunk/src/main.tsx
 @@ -4,6 +4,7 @@ import { formatCliError } from "./core/run/errors";
@@ -640,7 +638,7 @@ index 17707b10..16b3b75a 100644
  import { sanitizeTerminalLine, sanitizeTerminalText } from "./lib/terminalText";
  import { serveSessionBrokerDaemon } from "./session/broker/brokerServer";
  import { runSessionCommand } from "./session/agent/commands";
-@@ -193,6 +194,7 @@ async function main() {
+@@ -265,6 +266,7 @@ async function main() {
    if (startupPlan.kind !== "app") {
      throw new Error("Unreachable startup plan.");
    }
@@ -649,7 +647,7 @@ index 17707b10..16b3b75a 100644
    // Grammar compilation starts in the worker now so it overlaps the OpenTUI load below.
    const { warmHighlightWorkerForLaunch } = await import("./ui/diff/worker/highlightWorkerWarmup");
 diff --git a/packages/hunk/src/ui/AppHost.interactions.test.tsx b/packages/hunk/src/ui/AppHost.interactions.test.tsx
-index de23b327..2fbcfd34 100644
+index 979ea628..61e45bf6 100644
 --- a/packages/hunk/src/ui/AppHost.interactions.test.tsx
 +++ b/packages/hunk/src/ui/AppHost.interactions.test.tsx
 @@ -15,6 +15,7 @@ import type {
@@ -716,7 +714,7 @@ index 74882c18..5f756ffa 100644
      );
  
 diff --git a/packages/hunk/src/ui/AppHost.tsx b/packages/hunk/src/ui/AppHost.tsx
-index 2a7c0c75..24fa9e11 100644
+index 89c97cf3..3377c5f2 100644
 --- a/packages/hunk/src/ui/AppHost.tsx
 +++ b/packages/hunk/src/ui/AppHost.tsx
 @@ -11,6 +11,7 @@ import { resolveRuntimeCliInput } from "../core/process/terminal";
@@ -727,7 +725,7 @@ index 2a7c0c75..24fa9e11 100644
  import type { ExtensionReviewReloadResult } from "../extension-api/types";
  import type { ExtensionLoadResult } from "../extensions/types";
  import {
-@@ -433,6 +434,7 @@ export function AppHost({
+@@ -438,6 +439,7 @@ export function AppHost({
                  createUnknownVcsNotice(sessionVcs.unknownVcsId, String(reloadInput.options.vcs)),
                ]
              : configured.startupNotices;

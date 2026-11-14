@@ -8,3 +8,4 @@ agent_notes = true
 
 [keybindings]
 "hunk-commit-log.next" = "ctrl+n"
+"hunk.imagePreview.toggle" = "I"
