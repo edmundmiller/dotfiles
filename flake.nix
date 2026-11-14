@@ -22,7 +22,8 @@
     # Two inputs so I can track them separately at different rates.
     nixpkgs.url = "nixpkgs/nixos-unstable"; # Using unstable for 25.05 compatibility
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
-    # jj 0.46 needs Rust 1.97.1; upgrade it without moving the host package set.
+    # jj 0.46 needs Rust 1.97.1; mise needs Git-backed npm and native deps support.
+    # Advance these development tools without moving the host package set.
     nixpkgs-jj.url = "github:NixOS/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     nixpkgs-node.url = "nixpkgs/nixos-25.11"; # newer Node 24 LTS while nixos-unstable catches up
     # Home Assistant and its Python closure can advance without upgrading the host.
@@ -366,6 +367,21 @@
 
           jujutsu = final: _prev: {
             jujutsu = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.jujutsu;
+          };
+
+          mise = final: _prev: {
+            mise = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.mise.overrideAttrs (
+              finalAttrs: _previousAttrs: {
+                version = "2026.11.8";
+                src = final.fetchFromGitHub {
+                  owner = "jdx";
+                  repo = "mise";
+                  tag = "v${finalAttrs.version}";
+                  hash = "sha256-24Cu/xlfijza18I84X4wX62j6DQJVjky/vDRcyrO7PY=";
+                };
+                cargoHash = "sha256-tXW/bGkUfceUVY/XFwu+HUuOqhUrJzrH7Q8T2M65ygs=";
+              }
+            );
           };
 
           # Need `inputs`, so they cannot be auto-imported by mapModules.
