@@ -22,7 +22,8 @@
     # Two inputs so I can track them separately at different rates.
     nixpkgs.url = "nixpkgs/nixos-unstable"; # Using unstable for 25.05 compatibility
     nixpkgs-unstable.url = "nixpkgs/nixos-unstable"; # for packages on the edge
-    # jj 0.46 needs Rust 1.97.1; upgrade it without moving the host package set.
+    # jj 0.46 needs Rust 1.97.1; mise needs Git-backed npm and native deps support.
+    # Advance these development tools without moving the host package set.
     nixpkgs-jj.url = "github:NixOS/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     nixpkgs-node.url = "nixpkgs/nixos-25.11"; # newer Node 24 LTS while nixos-unstable catches up
     # Home Assistant and its Python closure can advance without upgrading the host.
@@ -371,6 +372,69 @@
 
           jujutsu = final: _prev: {
             jujutsu = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.jujutsu;
+          };
+
+          mise = final: _prev: {
+            mise = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.mise.overrideAttrs (
+              finalAttrs: previousAttrs: {
+                version = "2026.11.8";
+                src = final.fetchFromGitHub {
+                  owner = "jdx";
+                  repo = "mise";
+                  tag = "v${finalAttrs.version}";
+                  hash = "sha256-24Cu/xlfijza18I84X4wX62j6DQJVjky/vDRcyrO7PY=";
+                };
+                cargoHash = "sha256-tXW/bGkUfceUVY/XFwu+HUuOqhUrJzrH7Q8T2M65ygs=";
+                postPatch = previousAttrs.postPatch + ''
+                  substituteInPlace ./src/backend/gem.rs ./src/cli/completion.rs \
+                    --replace-fail '#!/bin/sh' '#!${lib.getExe' final.bash "sh"}'
+                  substituteInPlace ./src/backend/gem.rs \
+                    --replace-fail '#!/usr/bin/env bash' '#!${lib.getExe final.bash}'
+                  substituteInPlace ./src/cli/completion.rs \
+                    --replace-fail '{}:/usr/bin:/bin' '{}:${
+                      lib.makeBinPath [
+                        final.gawk
+                        final.coreutils
+                      ]
+                    }:/usr/bin:/bin'
+                  substituteInPlace ./src/toolset/running.rs \
+                    --replace-fail '"/usr/bin/sleep"' '"${lib.getExe' final.coreutils "sleep"}"'
+                '';
+                preCheck =
+                  (previousAttrs.preCheck or "")
+                  + ''
+                    # Plugin trust tests inspect every ancestor. Nix's build root
+                    # is group-writable, unlike the protected fixture directories.
+                    chmod go-w "$NIX_BUILD_TOP"
+                    # Only the test build uses the embedded public trust root.
+                    # Verify the real provenance fixtures without fetching TUF
+                    # metadata. The release binary was built with normal TUF.
+                    substituteInPlace ./crates/mise-sigstore/src/trust.rs \
+                      --replace-fail 'TrustedRoot::from_tuf(select_tuf_config(override_url)?)' \
+                        'std::future::ready(TrustedRoot::from_embedded(SigstoreInstance::PublicGood))'
+                  ''
+                  + lib.optionalString final.stdenv.hostPlatform.isLinux ''
+                    # User-namespaced Nix builds expose / with an unmapped owner.
+                    # Give tests a protected root without changing plugin trust
+                    # checks or mapping the build user to root.
+                    export CARGO_TARGET_${
+                      lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] final.stdenv.hostPlatform.rust.rustcTarget)
+                    }_RUNNER=${final.writeShellScript "mise-test-runner" ''
+                      exec ${lib.getExe final.bubblewrap} --die-with-parent --unshare-user \
+                        --ro-bind /nix /nix \
+                        --bind "$NIX_BUILD_TOP" "$NIX_BUILD_TOP" \
+                        --dev-bind /dev /dev --proc /proc \
+                        --ro-bind /bin /bin --ro-bind /etc /etc \
+                        --bind /tmp /tmp "$@"
+                    ''}
+                  '';
+                postCheck = (previousAttrs.postCheck or "") + ''
+                  substituteInPlace ./crates/mise-sigstore/src/trust.rs \
+                    --replace-fail 'std::future::ready(TrustedRoot::from_embedded(SigstoreInstance::PublicGood))' \
+                      'TrustedRoot::from_tuf(select_tuf_config(override_url)?)'
+                '';
+              }
+            );
           };
 
           # Need `inputs`, so they cannot be auto-imported by mapModules.
