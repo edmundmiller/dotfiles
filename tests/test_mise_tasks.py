@@ -88,6 +88,7 @@ class MiseTasksTests(unittest.TestCase):
             'nuc': [],
             'nuc:generations': ['nuc-generations'],
             'nuc:logs': ['nuc-logs'],
+            'nuc:orb-quota': [],
             'nuc:rebuild': ['rebuild-nuc'],
             'nuc:rollback': ['nuc-rollback'],
             'nuc:service': ['nuc-service'],

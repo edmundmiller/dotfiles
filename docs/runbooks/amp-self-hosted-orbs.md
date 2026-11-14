@@ -155,11 +155,18 @@ delegation. Validate actual limits before trusting them. Use a dedicated VM if
 untrusted repositories or stronger protection of home services are required.
 
 The NUC module creates only `zroot/system/amp-orbs`, mounted at `/var/lib/amp-orbs`
-with a 64-GiB quota. CLI state, images, snapshots, and checkouts share this limit.
+with a 175-GiB quota. CLI state, images, snapshots, and checkouts share this limit.
 It refuses to mount over a non-empty existing home or adopt a dataset with a
 different mountpoint or quota. The dispatcher's free-space check is an additional
 admission guard. UNAS uses its separate bounded local image described above;
 do not use bulk/preservation storage or add GPU/USB passthrough.
+
+For an existing NUC dataset at a former 64-GiB or 96-GiB quota, run `hey nuc:orb-quota`
+with approval before deploying the 175-GiB configuration. This changes the persistent
+ZFS property without restarting containers or deleting disks. It refuses other
+hosts, mountpoints, and quotas. The 20-GiB admission threshold stays unchanged.
+The quota does not reserve pool space; other datasets can limit available storage
+before the orbs reach 175 GiB.
 
 The candidate user unit is `config/amp-orbs/provider.service`. It runs only the
 provider controller. Rootless containers and images persist in the dedicated

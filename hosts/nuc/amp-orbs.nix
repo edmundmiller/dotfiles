@@ -29,10 +29,10 @@ in
           echo "Refusing to cover a non-empty Amp orb home" >&2
           exit 1
         fi
-        zfs create -o mountpoint=${home} -o quota=64G "$dataset"
+        zfs create -o mountpoint=${home} -o quota=175G "$dataset"
       fi
       test "$(zfs get -H -o value mountpoint "$dataset")" = ${home}
-      test "$(zfs get -H -p -o value quota "$dataset")" = 68719476736
+      test "$(zfs get -H -p -o value quota "$dataset")" = 187904819200
       test "$(zfs get -H -o value mounted "$dataset")" = yes
       chown amp-orbs:amp-orbs ${home}
       chmod 0700 ${home}
