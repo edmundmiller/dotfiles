@@ -194,6 +194,15 @@ in
             linear.enable = false;
             notion.enable = true;
             openaiDeveloperDocs.enable = true;
+            plannotator-inbox = {
+              enable = true;
+              excludeAgents = [
+                "pi"
+                "claude"
+                "codex"
+                "opencode"
+              ];
+            };
           };
         };
         pi = {
