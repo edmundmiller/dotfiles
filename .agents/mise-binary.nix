@@ -1,24 +1,36 @@
-# Checks and Orb setup need real Mise, but must not compile its Rust toolchain.
-# Keep host packages on pkgs.mise; this pin only supplies test/Orb executables.
+# Hash-pinned Mise releases without compiling the Rust toolchain.
+# Keep tooling on its existing release while hosts upgrade independently.
 {
   lib,
   fetchurl,
   runCommand,
   stdenvNoCC,
+  version ? "2026.7.5",
 }:
 let
-  version = "2026.7.5";
   releases = {
-    x86_64-linux = {
-      platform = "linux-x64-musl";
-      hash = "sha256-zd9tYQ9ApuPD5aWehguecuRrFZrSVLm9qV4Ae6Mvuyg=";
+    "2026.7.5" = {
+      x86_64-linux = {
+        platform = "linux-x64-musl";
+        hash = "sha256-zd9tYQ9ApuPD5aWehguecuRrFZrSVLm9qV4Ae6Mvuyg=";
+      };
+      aarch64-darwin = {
+        platform = "macos-arm64";
+        hash = "sha256-pFbGWQfoM0YZ13+hUr3PkCP93A2qA9R/vobQMtv1ZbA=";
+      };
     };
-    aarch64-darwin = {
-      platform = "macos-arm64";
-      hash = "sha256-pFbGWQfoM0YZ13+hUr3PkCP93A2qA9R/vobQMtv1ZbA=";
+    "2026.11.8" = {
+      x86_64-linux = {
+        platform = "linux-x64-musl";
+        hash = "sha256-H+ZEiambYie39+Z65N0yk8IOy7zXSxNnRWAQNZOD5xI=";
+      };
+      aarch64-darwin = {
+        platform = "macos-arm64";
+        hash = "sha256-PjkOy89/A+kecskgokig8UnwDXeuldN+oXNqHHtC/uY=";
+      };
     };
   };
-  release = releases.${stdenvNoCC.hostPlatform.system};
+  release = releases.${version}.${stdenvNoCC.hostPlatform.system};
   binary = fetchurl {
     url = "https://github.com/jdx/mise/releases/download/v${version}/mise-v${version}-${release.platform}";
     inherit (release) hash;
@@ -26,12 +38,13 @@ let
 in
 runCommand "mise-binary-${version}"
   {
+    inherit version;
     meta = {
-      description = "Upstream Mise binary for checks and Orb setup";
+      description = "Hash-pinned upstream Mise binary";
       homepage = "https://mise.jdx.dev";
       license = lib.licenses.mit;
       mainProgram = "mise";
-      platforms = builtins.attrNames releases;
+      platforms = builtins.attrNames releases.${version};
     };
   }
   ''

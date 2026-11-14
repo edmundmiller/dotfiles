@@ -52,8 +52,9 @@ The headless agent environment, `hey-native`, `validation-tests` and
 `orb-setup-tests` use that same Mise binary
 pin, matching the locked Nixpkgs Mise version when introduced. They still build
 the native Hey launcher and exercise real task dispatch and checkout trust.
-They do not compile Mise or its Rust dependencies. Installed host packages keep
-their existing Nixpkgs or Homebrew Mise selection. Updating the binary recipe
+They do not compile Mise or its Rust dependencies. Nix-managed hosts select
+Mise 2026.11.8 from the same binary recipe; tooling keeps its 2026.7.5 default.
+Hosts configured to use Homebrew keep that selection. Updating the binary recipe
 selects all three checks. Linux uses the upstream static musl binary; Darwin
 uses the upstream ARM64 executable.
 

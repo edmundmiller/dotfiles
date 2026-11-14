@@ -373,6 +373,10 @@
             jujutsu = inputs.nixpkgs-jj.legacyPackages.${final.stdenv.hostPlatform.system}.jujutsu;
           };
 
+          mise = final: _prev: {
+            mise = final.callPackage ./.agents/mise-binary.nix { version = "2026.11.8"; };
+          };
+
           # Need `inputs`, so they cannot be auto-imported by mapModules.
           codex = import ./overlays/codex inputs;
           ghui = import ./overlays/ghui inputs;
