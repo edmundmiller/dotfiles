@@ -63,10 +63,12 @@ in
   options.modules.agents.claude = {
     enable = mkBoolOpt false;
     pstack.enable = mkBoolOpt cfg.enable;
+    # Hosts that use Anthropic's native installer (~/.local/bin/claude) set this false.
+    package.enable = mkBoolOpt true;
   };
 
   config = mkIf (cfg.enable || cfg.pstack.enable) {
-    user.packages = mkIf cfg.enable [
+    user.packages = mkIf (cfg.enable && cfg.package.enable) [
       pkgs.llm-agents.claude-code
     ];
 
