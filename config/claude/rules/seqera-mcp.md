@@ -5,5 +5,5 @@
   search-then-execute step is gone, and no Seqera Claude skill is needed; the guidance is in the MCP server
   description, the same pattern Snowflake uses.
 - You can chat with Seqera's co-scientist directly through the MCP.
-- If the MCP is failing, use the `tw` CLI instead.
+- If the MCP is failing, use the `tw` CLI when `command -v tw` finds it; otherwise report the MCP failure.
 - Source: https://seqera.slack.com/archives/C089B7YM0AK/p1794852145695249
