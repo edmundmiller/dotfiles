@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -17,6 +17,7 @@ on:
           - ha-diagnostics
           - ha-climate-diagnostics
           - ha-climate-recurrence
+          - ha-plant-diagnostics
           - ha-monitor-diagnostics
           - orb-diagnostics
       incident_start:
@@ -265,6 +266,20 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- diagnostics' < scripts/amp-orb-pilot.sh
+      - name: Inspect plant power controls without activation
+        if: inputs.operation == 'ha-plant-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Only the two anchors' light/switch siblings and names leave NUC.
+          # Token and raw device identifiers stay on NUC. No service calls or writes.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
+            exec sudo -n uv run --no-project --script -
+          ' < modules/services/hass/plant-entity-diagnostics.py
       - name: Inspect climate mapping and categorized retained errors without activation
         if: inputs.operation == 'ha-climate-diagnostics'
         shell: bash

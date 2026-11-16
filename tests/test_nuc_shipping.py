@@ -635,6 +635,87 @@ class CriticalEntityHistoryTests(unittest.TestCase):
         self.assertEqual((code, result), (2, {"status": "unknown", "error_type": "CalledProcessError"}))
 
 
+class PlantEntityDiagnosticsTests(unittest.TestCase):
+    def invoke(self, missing_anchor=False, denied=False, same_device=False):
+        socket = MagicMock()
+        socket.__enter__.return_value = socket
+        top_device = "private-bottom-device" if same_device else "private-top-device"
+        entities = [
+            {"entity_id": "button.living_room_top_plant_light_identify", "device_id": top_device},
+            {"entity_id": "switch.outlet_42", "device_id": top_device, "original_name": "Outlet"},
+            {"entity_id": "light.disabled_control", "device_id": top_device, "disabled_by": "user"},
+            {"entity_id": "switch.plant_glow_light", "device_id": "private-bottom-device"},
+            {"entity_id": "switch.living_room_top_plant_light", "device_id": "private-decoy-device"},
+            {"entity_id": "sensor.top_power", "device_id": top_device},
+        ]
+        if missing_anchor:
+            entities.pop(0)
+        results = {
+            "config/entity_registry/list": entities,
+            "config/device_registry/list": [
+                {"id": top_device, "name": "Plant device", "identifiers": ["private-serial"]},
+                {"id": "private-bottom-device", "name_by_user": "Bottom device"},
+            ],
+            "get_states": [
+                {"entity_id": "switch.outlet_42", "state": "on", "attributes": {
+                    "friendly_name": "Top outlet", "private": "private-attribute"}},
+                {"entity_id": "switch.plant_glow_light", "state": "off"},
+                {"entity_id": "switch.living_room_top_plant_light", "state": "on"},
+            ],
+        }
+        replies = [json.dumps({"type": "auth_required"})]
+
+        def receive_command(raw):
+            message = json.loads(raw)
+            if message["type"] == "auth":
+                replies.append(json.dumps({"type": "auth_ok"}))
+            else:
+                if message["type"] not in results:
+                    raise PermissionError("Fixture rejects writes or unrelated reads")
+                replies.append(json.dumps({
+                    "id": message["id"], "type": "result", "success": not denied,
+                    "result": results[message["type"]], "error": {"message": "private-error"},
+                }))
+
+        socket.send.side_effect = receive_command
+        socket.recv.side_effect = lambda **_kwargs: replies.pop(0)
+        client = MagicMock()
+        client.connect.return_value = socket
+        modules = {name: MagicMock() for name in ("websockets", "websockets.sync")}
+        modules["websockets.sync.client"] = client
+        output = io.StringIO()
+        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("sys.stdout", output):
+            with self.assertRaises(SystemExit) as exit_status:
+                runpy.run_path(str(ROOT / "modules/services/hass/plant-entity-diagnostics.py"), run_name="__main__")
+        self.assertNotIn("private", output.getvalue())
+        return exit_status.exception.code, json.loads(output.getvalue())
+
+    def test_registry_membership_not_name_determines_power_controls(self):
+        code, result = self.invoke()
+        self.assertEqual(code, 0)
+        self.assertIs(result["same_device"], False)
+        top = result["plants"]["top_two_levels"]
+        self.assertEqual([control["entity_id"] for control in top["controls"]], [
+            "light.disabled_control", "switch.outlet_42",
+        ])
+        self.assertEqual(top["controls"][0]["disabled_by"], "user")
+        self.assertEqual(top["controls"][0]["state"], "missing")
+        self.assertEqual(top["controls"][1]["state"], "on")
+        bottom = result["plants"]["bottom_level"]
+        self.assertEqual(bottom["device_name"], "Bottom device")
+        self.assertEqual(bottom["controls"][0]["entity_id"], "switch.plant_glow_light")
+        self.assertEqual(bottom["controls"][0]["state"], "off")
+        self.assertIs(self.invoke(same_device=True)[1]["same_device"], True)
+
+    def test_missing_or_denied_registry_does_not_guess_an_entity(self):
+        for options in ({"missing_anchor": True}, {"denied": True}):
+            with self.subTest(options=options):
+                code, result = self.invoke(**options)
+                self.assertEqual(code, 2)
+                self.assertEqual(result["status"], "unknown")
+                self.assertNotIn("plants", result)
+
+
 class ClimateEntityDiagnosticsTests(unittest.TestCase):
     def invoke(self, lines=(), error=None, denied=False, args=(), state_error=None, state=None):
         socket = MagicMock()
