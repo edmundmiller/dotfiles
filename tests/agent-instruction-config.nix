@@ -50,14 +50,17 @@ let
   };
   # Force instructions and Pi approval deployment, not package builds or secrets.
   # These modules return mkIf enable bodies.
-  load =
-    name:
+  loadWith =
+    moduleConfig: name:
     let
       result =
         (import (root + "/modules/agents/${name}/default.nix") {
-          inherit config inputs;
+          inherit inputs;
+          config = moduleConfig;
           lib = moduleLib;
           pkgs.coreutils = coreutils;
+          pkgs.python3 = "/fixture/python3";
+          pkgs.llm-agents.claude-code = "/fixture/claude-code";
           pkgs.my.pi-github-tools = "/fixture/pi-github-tools";
           pkgs.my.pistack = "/fixture/pistack";
           pkgs.my.herdr.version = "0.9.1";
@@ -66,6 +69,18 @@ let
     in
     assert result.condition;
     result.content;
+  load = loadWith config;
+  t3ClaudeActivation =
+    packageEnabled:
+    let
+      selectedConfig = lib.recursiveUpdate config {
+        modules.agents.claude.package.enable = packageEnabled;
+      };
+      selectedHome = (loadWith selectedConfig "claude").home-manager.users.test {
+        lib = moduleLib;
+      };
+    in
+    selectedHome.home.activation.t3-claude-settings.content.data;
   home =
     name:
     (load name).home-manager.users.test {
@@ -92,6 +107,10 @@ let
   originalAskMatt = builtins.readFile (interviewSkills.ask-matt.absPath + "/SKILL.md");
 in
 {
+  t3Claude = {
+    nativeActivation = t3ClaudeActivation false;
+    nixActivation = t3ClaudeActivation true;
+  };
   interviews = {
     selected = builtins.attrNames interviewSkills;
     original = originalAskMatt;

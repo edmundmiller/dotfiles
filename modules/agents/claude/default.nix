@@ -80,6 +80,7 @@ in
         ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
         # Claude-only defaults; core.md is at its word limit.
         ".claude/rules/working-defaults.md".source = "${configDir}/claude/rules/working-defaults.md";
+        ".claude/rules/seqera-mcp.md".source = "${configDir}/claude/rules/seqera-mcp.md";
         ".claude/statusline.sh".source = "${statusline}/bin/claude-statusline";
         ".claude/hooks/session-budget".source = "${sessionBudgetHook}/bin/claude-session-budget";
       }
@@ -119,6 +120,20 @@ in
                 fi
               done
             ''
+        );
+
+        # T3's explicit provider path must follow the selected Claude installation.
+        home.activation.t3-claude-settings = mkIf cfg.enable (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${pkgs.python3}/bin/python3 ${./t3-claude-settings.py} \
+              "$HOME/.t3/userdata/settings.json" \
+              ${
+                if cfg.package.enable then
+                  "\"${pkgs.llm-agents.claude-code}/bin/claude\""
+                else
+                  "\"$HOME/.local/bin/claude\""
+              }
+          ''
         );
 
         home.activation.claude-settings-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
