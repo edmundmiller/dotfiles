@@ -49,6 +49,24 @@ class AgentInstructionWiringTests(unittest.TestCase):
                 raise RuntimeError(result.stderr)
             cls.deployed = json.loads(result.stdout)
 
+    def test_t3_claude_activation_follows_package_selection(self) -> None:
+        for mode, expected in (("native", ".local/bin/claude"), ("nix", None)):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                home = Path(temporary)
+                target = home / ".t3/userdata/settings.json"
+                target.parent.mkdir(parents=True)
+                target.write_text('{"providerInstances": {"claudeAgent": {"driver": "claudeAgent"}}}')
+                activation = self.deployed["t3Claude"][mode + "Activation"]
+                activation = activation.replace("/fixture/python3/bin/python3", sys.executable)
+                result = subprocess.run(
+                    ["/bin/sh", "-eu", "-c", activation],
+                    env={**os.environ, "HOME": temporary},
+                    capture_output=True, text=True, timeout=10,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                selected = json.loads(target.read_text())["providerInstances"]["claudeAgent"]["config"]["binaryPath"]
+                self.assertEqual(selected, str(home / expected) if expected else "/fixture/claude-code/bin/claude")
+
     def test_pi_uses_upstream_permissions_without_custom_gates(self) -> None:
         approval = self.deployed["piApproval"]
         packages = approval["settings"]["packages"]
@@ -383,6 +401,81 @@ class AgentInstructionWiringTests(unittest.TestCase):
         from scripts.validation import CHECKS
 
         self.assertIn("config/agents/core.md", CHECKS["agent-instruction-tests"])
+
+
+class T3ClaudeSettingsTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.target = Path(self.temporary.name) / "settings.json"
+
+    def run_sync(self, binary_path):
+        return subprocess.run(
+            [sys.executable, str(ROOT / "modules/agents/claude/t3-claude-settings.py"), str(self.target), binary_path],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+    def test_switch_installations_preserving_other_settings(self):
+        original = {
+            "favorites": [{"provider": "pi", "model": "default"}],
+            "providerInstances": {
+                "claudeAgent": {
+                    "driver": "claudeAgent",
+                    "enabled": True,
+                    "config": {"binaryPath": "/removed/claude", "extraArgs": ["--debug"]},
+                },
+                "work-claude": {"driver": "claudeAgent", "enabled": False},
+                "pi": {"driver": "pi", "config": {"binaryPath": "/custom/pi"}},
+            },
+        }
+        self.target.write_text(json.dumps(original))
+        self.target.chmod(0o600)
+        for binary_path in (
+            "/Users/example/.local/bin/claude",
+            "/nix/store/example-claude-code/bin/claude",
+            "/Users/example/.local/bin/claude",
+        ):
+            with self.subTest(binary_path=binary_path):
+                result = self.run_sync(binary_path)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                saved = json.loads(self.target.read_text())
+                self.assertEqual(saved["favorites"], original["favorites"])
+                providers = saved["providerInstances"]
+                self.assertEqual(providers["pi"], original["providerInstances"]["pi"])
+                self.assertTrue(providers["claudeAgent"]["enabled"])
+                self.assertFalse(providers["work-claude"]["enabled"])
+                self.assertEqual(providers["claudeAgent"]["config"]["extraArgs"], ["--debug"])
+                for provider in ("claudeAgent", "work-claude"):
+                    self.assertEqual(providers[provider]["config"]["binaryPath"], binary_path)
+                self.assertEqual(self.target.stat().st_mode & 0o777, 0o600)
+                before = self.target.stat().st_mtime_ns
+                self.assertEqual(self.run_sync(binary_path).returncode, 0)
+                self.assertEqual(self.target.stat().st_mtime_ns, before)
+
+    def test_missing_t3_is_not_created(self):
+        self.assertEqual(self.run_sync("/native/claude").returncode, 0)
+        self.assertFalse(self.target.exists())
+
+    def test_unconfigured_claude_is_not_enabled(self):
+        content = '{"providerInstances": {"pi": {"driver": "pi"}}}\n'
+        self.target.write_text(content)
+        self.assertEqual(self.run_sync("/native/claude").returncode, 0)
+        self.assertEqual(self.target.read_text(), content)
+
+    def test_invalid_settings_fail_without_overwriting(self):
+        for content in ("{broken", "[]", '{"providerInstances": []}'):
+            with self.subTest(content=content):
+                self.target.write_text(content)
+                self.assertNotEqual(self.run_sync("/native/claude").returncode, 0)
+                self.assertEqual(self.target.read_text(), content)
+
+    def test_default_instance_without_driver(self):
+        self.target.write_text('{"providerInstances": {"claudeAgent": {"enabled": false}}}')
+        self.assertEqual(self.run_sync("/native/claude").returncode, 0)
+        provider = json.loads(self.target.read_text())["providerInstances"]["claudeAgent"]
+        self.assertEqual(provider, {"enabled": False, "config": {"binaryPath": "/native/claude"}})
 
 
 if __name__ == "__main__":

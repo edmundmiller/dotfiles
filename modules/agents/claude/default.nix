@@ -119,6 +119,20 @@ in
             ''
         );
 
+        # T3's explicit provider path must follow the selected Claude installation.
+        home.activation.t3-claude-settings = mkIf cfg.enable (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ${pkgs.python3}/bin/python3 ${./t3-claude-settings.py} \
+              "$HOME/.t3/userdata/settings.json" \
+              ${
+                if cfg.package.enable then
+                  "\"${pkgs.llm-agents.claude-code}/bin/claude\""
+                else
+                  "\"$HOME/.local/bin/claude\""
+              }
+          ''
+        );
+
         home.activation.claude-settings-bootstrap = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" "${configDir}/claude/settings.json" "${boolToString cfg.enable}" "${boolToString cfg.pstack.enable}" <<'PY'
           import copy

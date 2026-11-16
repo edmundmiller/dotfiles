@@ -9,6 +9,12 @@ Template plugin keys win. Do not restore retired DuckDB, Plannotator, or WakaTim
 The bootstrap drops those entries when an old settings file still has them.
 See [pstack integration](../../../docs/agents/pstack.md) for usage and pin updates.
 
+`claude.package.enable` selects the Nix CLI or the native `~/.local/bin/claude`.
+Activation also syncs existing T3 Claude providers in `~/.t3/userdata/settings.json`
+to that selection through `t3-claude-settings.py`. It preserves other settings
+and disabled providers, and leaves absent T3 settings alone. Restart T3 if it
+retains the previous path. A pstack-only setup does not sync T3.
+
 `modules.agents.claude.pstack.enable` defaults to the full module's enable flag.
 It can be enabled alone, as on NUC, to merge only pstack settings and link its
 marketplace without changing existing permissions, hooks, instructions, or MCP.
