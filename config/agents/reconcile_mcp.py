@@ -43,7 +43,15 @@ def render(agent, server):
         if agent in {"claude", "opencode"}:
             result["type"] = "remote" if agent == "opencode" else "http"
         token = server["bearerTokenEnv"]
-        if token:
+        token_command = server.get("bearerTokenCommand")
+        if agent == "claude" and token_command:
+            # Claude runs this at connect time, so no inherited env is needed.
+            result["headersHelper"] = (
+                """printf '{"Authorization":"Bearer %s"}' "$("""
+                + token_command
+                + ')"'
+            )
+        elif token:
             if agent == "codex":
                 result["bearer_token_env_var"] = token
             else:

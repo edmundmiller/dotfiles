@@ -69,7 +69,9 @@ Authentication remains local to the runtime or credential launcher. Prefer
 hosted HTTP servers over stdio launchers: every agent session starts its own
 stdio process. GitHub uses the hosted `https://api.githubcopilot.com/mcp/`
 endpoint with `bearerTokenEnv = "GITHUB_PAT"`; the shell environment sets
-`GITHUB_PAT` from `gh auth token`. Do not put resolved credentials in the catalog,
+`GITHUB_PAT` from `gh auth token`. App-launched Claude sessions never inherit
+that environment, so `bearerTokenCommand` makes the Claude adapter render a
+`headersHelper` that runs the command at connect time. Do not put resolved credentials in the catalog,
 generated manifest, Nix store, or command arguments. HTTP bearer registrations
 refer to environment variable names; adapters render each client's syntax.
 

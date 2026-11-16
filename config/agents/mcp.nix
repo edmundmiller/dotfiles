@@ -5,6 +5,8 @@
   github = {
     url = lib.mkDefault "https://api.githubcopilot.com/mcp/";
     bearerTokenEnv = lib.mkDefault "GITHUB_PAT";
+    # App-launched Claude (T3, desktop) never sees the login environment.
+    bearerTokenCommand = lib.mkDefault "${lib.getExe pkgs.gh} auth token";
   };
   browse = {
     transport = lib.mkDefault "stdio";
