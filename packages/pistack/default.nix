@@ -16,7 +16,7 @@ stdenvNoCC.mkDerivation {
     owner = "cursor";
     repo = "plugins";
     rev = upstream.ref;
-    hash = "sha256-YB+9AIZJ6aR5Yx1OC22Xc6HdoxvDDjja/z2yMUt5gWs=";
+    hash = "sha256-fXXJRZnQZlTfOemfJgC0zSMxsfcvxRhGo21T09/6xic=";
   };
 
   patches = map (patch: ./. + "/${patch}") upstream.patches;
