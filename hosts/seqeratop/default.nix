@@ -146,6 +146,8 @@
         };
         agentsview.enable = true;
         claude.enable = true;
+        # Use the native installer (~/.local/bin/claude); llm-agents lags releases.
+        claude.package.enable = false;
         codex = {
           enable = true;
         };
