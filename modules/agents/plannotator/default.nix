@@ -8,25 +8,25 @@ with lib;
 with lib.my;
 let
   cfg = config.modules.agents.plannotator;
-  version = "0.28.60";
+  version = "0.28.66";
   piExtensionVersion = version;
   system = pkgs.stdenv.hostPlatform.system;
   releases = {
     aarch64-darwin = {
       asset = "plannotator-darwin-arm64";
-      hash = "sha256-aoERZj+/nwNongNSRBAkxT268IzGOyxPxN6G5QCTBkY=";
+      hash = "sha256-RKhrL3zXYsJY5QVVxmXPkziPyoqAWFabmREcPz8syQc=";
     };
     x86_64-darwin = {
       asset = "plannotator-darwin-x64";
-      hash = "sha256-GoDeGBLrH5VYg+SeSI4t721aH58yjrRhXuOe4lxZbfA=";
+      hash = "sha256-CwVVBDt/jrp2MQWRruEe28TvDTBwnZkZ/jwKZNP8gT4=";
     };
     aarch64-linux = {
       asset = "plannotator-linux-arm64";
-      hash = "sha256-MmBGD0hC/y6yKkqc+SSEzgPMrMwHTVTPtkYDpFQHV7M=";
+      hash = "sha256-/aa37UhEUE/ezSs3CZHyZBgB3ZdLNRVb9KX84yj81cc=";
     };
     x86_64-linux = {
       asset = "plannotator-linux-x64";
-      hash = "sha256-He0h4JpRUW+G4BhoeuJSeDnzduz+brYAJHlZDJfR4AM=";
+      hash = "sha256-T99icfTahaudD6+l/BYFd4XZ9ASQIxkmFJrftbXFEMI=";
     };
   };
   release = releases.${system} or (throw "Plannotator does not publish a binary for ${system}");
