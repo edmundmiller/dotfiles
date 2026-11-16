@@ -35,5 +35,7 @@ or required by that policy; committing or publishing a branch does not imply a P
 - Name the concrete outcome in the imperative. Add `type(scope)` only when
   required or genuinely clearer.
 - Keep one intent per commit and per PR.
+- Several PRs to merge or ship: handle each one individually, in order, and
+  squash after its CI passes. No integration PR unless asked.
 - Never invent rationale, links, validation, or attribution. Preserve real
   co-authors.

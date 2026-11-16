@@ -208,6 +208,18 @@ command = "obsolete-runner"
                 self.assertEqual(self.servers(agent), EXPECTED[agent])
         self.assertIs(self.read_config("pi")["autoEnableCodemode"], True)
 
+    def test_token_command_gives_claude_a_headers_helper_that_emits_the_header(self):
+        self.manifest["servers"]["remote"]["bearerTokenCommand"] = "echo tok-123"
+        self.run_cli()
+        remote = self.servers("claude")["remote"]
+        self.assertNotIn("headers", remote)
+        emitted = subprocess.run(
+            ["sh", "-c", remote["headersHelper"]], capture_output=True, text=True, check=True
+        ).stdout
+        self.assertEqual(json.loads(emitted), {"Authorization": "Bearer tok-123"})
+        for agent in set(PATHS) - {"claude"}:
+            self.assertEqual(self.servers(agent), EXPECTED[agent])
+
     def test_each_agent_exclusion_removes_previously_managed_entry(self):
         self.run_cli()
         for agent in PATHS:

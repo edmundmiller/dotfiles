@@ -78,6 +78,8 @@ in
         ".claude/agents".source = "${configDir}/agents/modes";
         # Claude's global instruction file receives the same bounded semantic core.
         ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
+        # Claude-only defaults; core.md is at its word limit.
+        ".claude/rules/working-defaults.md".source = "${configDir}/claude/rules/working-defaults.md";
         ".claude/rules/seqera-mcp.md".source = "${configDir}/claude/rules/seqera-mcp.md";
         ".claude/statusline.sh".source = "${statusline}/bin/claude-statusline";
         ".claude/hooks/session-budget".source = "${sessionBudgetHook}/bin/claude-session-budget";
@@ -301,58 +303,11 @@ in
           ''
         );
 
+        # Removes hook entries whose ~/.claude/hooks target is gone, plus the
+        # dangling links themselves; the bootstrap never prunes runtime hooks.
         home.activation.claude-stale-hook-cleanup = mkIf cfg.enable (
           lib.hm.dag.entryAfter [ "herdr-agent-integrations" ] ''
-            ${pkgs.python3}/bin/python3 - "$HOME/.claude/settings.json" <<'PY'
-            import json
-            import pathlib
-            import sys
-
-            path = pathlib.Path(sys.argv[1])
-            try:
-                data = json.loads(path.read_text(encoding="utf-8"))
-            except Exception:
-                raise SystemExit(0)
-
-            stale_git_ai = "/Users/emiller/.git-ai/bin/git-ai checkpoint claude --hook-input stdin"
-            hooks = data.get("hooks")
-            changed = False
-            if isinstance(hooks, dict):
-                for event, entries in list(hooks.items()):
-                    if not isinstance(entries, list):
-                        continue
-                    next_entries = []
-                    for entry in entries:
-                        if not isinstance(entry, dict):
-                            next_entries.append(entry)
-                            continue
-                        hook_list = entry.get("hooks")
-                        if not isinstance(hook_list, list):
-                            next_entries.append(entry)
-                            continue
-                        filtered_hooks = [
-                            hook
-                            for hook in hook_list
-                            if not (
-                                isinstance(hook, dict)
-                                and hook.get("command") == stale_git_ai
-                            )
-                        ]
-                        if filtered_hooks != hook_list:
-                            changed = True
-                        if filtered_hooks:
-                            entry = dict(entry)
-                            entry["hooks"] = filtered_hooks
-                            next_entries.append(entry)
-                    if next_entries:
-                        hooks[event] = next_entries
-                    else:
-                        hooks.pop(event, None)
-                        changed = True
-
-            if changed:
-                path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-            PY
+            ${pkgs.python3}/bin/python3 ${./claude-stale-hook-cleanup.py} "$HOME/.claude/settings.json"
           ''
         );
 

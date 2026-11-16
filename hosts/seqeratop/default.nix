@@ -281,17 +281,6 @@
         home.file.".ssh/seqera.pub".text =
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty Seqera Key\n";
 
-        # Shared config-seqera pins signingkey to the literal pubkey, which
-        # routes ssh-keygen through the 1Password SSH agent (-U) and blocks
-        # headless agents on auth prompts. Sign with the on-disk key instead.
-        xdg.configFile."git/config-seqera".source = lib.mkForce (
-          pkgs.writeText "config-seqera" ''
-            [user]
-                email = edmund.miller@seqera.io
-                signingkey = "~/.ssh/id_ed25519"
-          ''
-        );
-
         # sf CLI's bundled plugin-telemetry (3.7.2) spawns a detached
         # upload.js per invocation that finishes its upload but never exits:
         # the AppInsights reporter leaves un-unref'd libuv handles, so each

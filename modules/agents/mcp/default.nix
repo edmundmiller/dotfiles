@@ -46,6 +46,11 @@ let
         default = null;
         description = "Environment variable containing a bearer token, never the token itself.";
       };
+      bearerTokenCommand = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Shell command printing the bearer token. Used by runtimes that can fetch headers at connect time (Claude), where app-launched processes lack the shell environment.";
+      };
       excludeAgents = mkOption {
         type = types.listOf (types.enum runtimes);
         default = [ ];
@@ -90,7 +95,10 @@ in
           !server.enable
           || (
             if server.transport == "stdio" then
-              server.command != null && server.url == null && server.bearerTokenEnv == null
+              server.command != null
+              && server.url == null
+              && server.bearerTokenEnv == null
+              && server.bearerTokenCommand == null
             else
               server.url != null && server.command == null && server.args == [ ] && server.env == { }
           );

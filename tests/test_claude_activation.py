@@ -25,6 +25,54 @@ class ClaudeActivationTests(unittest.TestCase):
         )
         self.assertNotIn("<<'PY'", block)
 
+    def test_stale_hook_cleanup_drops_missing_managed_hooks_and_dangling_links(self) -> None:
+        def entry(command: str, **extra: str) -> dict:
+            return {**extra, "hooks": [{"type": "command", "command": command}]}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            claude = Path(tmp) / ".claude"
+            hooks_dir = claude / "hooks"
+            hooks_dir.mkdir(parents=True)
+            (hooks_dir / "session-budget").write_text("#!/bin/sh\n")
+            (hooks_dir / "scratch-env").symlink_to(Path(tmp) / "gone.sh")
+            settings = claude / "settings.json"
+            kept_pre = entry("/opt/runtime/pre-tool-use", matcher=".*")
+            kept_budget = entry("$HOME/.claude/hooks/session-budget")
+            kept_foreign = entry("bash '/elsewhere/.claude/hooks/missing.sh'")
+            settings.write_text(
+                json.dumps(
+                    {
+                        "model": "keep",
+                        "hooks": {
+                            "PreToolUse": [
+                                kept_pre,
+                                entry("$HOME/.claude/hooks/scratch-env", matcher="Bash"),
+                            ],
+                            "SessionStart": [entry("$HOME/.claude/hooks/scratch-env")],
+                            "Stop": [kept_budget, kept_foreign],
+                        },
+                    }
+                )
+            )
+
+            subprocess.run(
+                ["python3", str(CLAUDE_MODULE.with_name("claude-stale-hook-cleanup.py")), str(settings)],
+                check=True,
+            )
+
+            self.assertEqual(
+                json.loads(settings.read_text()),
+                {
+                    "model": "keep",
+                    "hooks": {"PreToolUse": [kept_pre], "Stop": [kept_budget, kept_foreign]},
+                },
+            )
+            self.assertFalse((hooks_dir / "scratch-env").is_symlink())
+            self.assertTrue((hooks_dir / "session-budget").exists())
+        self.assertIn(
+            "${./claude-stale-hook-cleanup.py}", CLAUDE_MODULE.read_text()
+        )
+
     def test_agento11y_plugin_enable_is_idempotent_and_reports_failures(self) -> None:
         module = AGENTO11Y_HOST.read_text()
         install = module.index("agento11y claude install --json")
