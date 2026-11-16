@@ -136,7 +136,16 @@ views:
 
               - type: custom:mushroom-entity-card
                 entity: switch.plant_glow_light
-                name: Plant Light
+                name: Plant Light - Bottom Level
+                icon: mdi:flower
+                icon_color: green
+                fill_container: true
+                tap_action:
+                  action: toggle
+
+              - type: custom:mushroom-entity-card
+                entity: switch.living_room_top_plant_light
+                name: Plant Light - Top Two Levels
                 icon: mdi:flower
                 icon_color: green
                 fill_container: true

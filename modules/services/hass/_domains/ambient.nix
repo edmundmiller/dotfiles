@@ -6,6 +6,10 @@ let
 in
 {
   services.home-assistant.config = {
+    homeassistant.customize."switch.plant_glow_light".friendly_name = "Plant Light - Bottom Level";
+    homeassistant.customize."switch.living_room_top_plant_light".friendly_name =
+      "Plant Light - Top Two Levels";
+
     scene = lib.mkAfter [
       # West-facing windows — kill lights after sunrise, natural light is enough
       {
@@ -371,11 +375,9 @@ in
 
       # --- Plant light schedule ---
       {
-        alias = "Plant Glow Light on";
+        alias = "Plant lights on";
         id = "plant_glow_light_on";
-        # Keep the broken plant light off across restarts until it is repaired.
-        initial_state = false;
-        description = "Plant light on at 8 AM daily";
+        description = "Bottom-level and top-two-level plant lights on at 8 AM daily";
         trigger = {
           platform = "time";
           at = "08:00:00";
@@ -383,14 +385,17 @@ in
         action = [
           {
             action = "switch.turn_on";
-            target.entity_id = "switch.plant_glow_light";
+            target.entity_id = [
+              "switch.plant_glow_light"
+              "switch.living_room_top_plant_light"
+            ];
           }
         ];
       }
       {
-        alias = "Plant Glow Light off";
+        alias = "Plant lights off";
         id = "plant_glow_light_off";
-        description = "Plant light off at 9 PM daily";
+        description = "Bottom-level and top-two-level plant lights off at 9 PM daily";
         trigger = {
           platform = "time";
           at = "21:00:00";
@@ -398,7 +403,10 @@ in
         action = [
           {
             action = "switch.turn_off";
-            target.entity_id = "switch.plant_glow_light";
+            target.entity_id = [
+              "switch.plant_glow_light"
+              "switch.living_room_top_plant_light"
+            ];
           }
         ];
       }

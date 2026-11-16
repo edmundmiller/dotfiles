@@ -306,7 +306,6 @@ let
 
   allowedDisabledAutomations = [
     "sync_iphone_alarm_8sleep"
-    "plant_glow_light_on"
   ];
 
   missingInitialState = filter (
@@ -1194,12 +1193,26 @@ let
       msg = "automation 'sync_iphone_alarm_8sleep' should remain present but declaratively disabled until an iOS alarm source exists";
     }
     {
-      test = plantGlowLightOn != null && (plantGlowLightOn.initial_state or null) == false;
-      msg = "automation 'plant_glow_light_on' must stay disabled across restarts until the broken plant light is repaired";
+      test =
+        plantGlowLightOn != null
+        && (plantGlowLightOn.initial_state or false)
+        && (plantGlowLightOn.trigger.at or null) == "08:00:00"
+        && hasActionTarget plantGlowLightOn.action "switch.turn_on" [
+          "switch.plant_glow_light"
+          "switch.living_room_top_plant_light"
+        ];
+      msg = "plant lights must turn on at 8 AM and remain enabled across restarts";
     }
     {
-      test = plantGlowLightOff != null && (plantGlowLightOff.initial_state or false);
-      msg = "automation 'plant_glow_light_off' must remain enabled while the broken plant light is paused";
+      test =
+        plantGlowLightOff != null
+        && (plantGlowLightOff.initial_state or false)
+        && (plantGlowLightOff.trigger.at or null) == "21:00:00"
+        && hasActionTarget plantGlowLightOff.action "switch.turn_off" [
+          "switch.plant_glow_light"
+          "switch.living_room_top_plant_light"
+        ];
+      msg = "plant lights must turn off at 9 PM and remain enabled across restarts";
     }
     {
       test =
@@ -1590,16 +1603,20 @@ let
       msg = "Sleep scene doesn't turn off switch.kitchen_dog_fountain";
     }
     {
-      test = (sleepScene.entities."switch.plant_glow_light" or null) == "off";
-      msg = "Sleep scene doesn't turn off switch.plant_glow_light";
+      test =
+        (sleepScene.entities."switch.plant_glow_light" or null) == "off"
+        && (sleepScene.entities."switch.living_room_top_plant_light" or null) == "off";
+      msg = "Sleep scene must turn off both plant lights";
     }
     {
       test = (goodMorningScene.entities."switch.kitchen_dog_fountain" or null) == "on";
       msg = "Good Morning must restore the dog fountain after Sleep turns it off";
     }
     {
-      test = (goodMorningScene.entities."switch.plant_glow_light" or null) == "off";
-      msg = "Good Morning must keep the broken plant light off";
+      test =
+        (goodMorningScene.entities."switch.plant_glow_light" or null) == "on"
+        && (goodMorningScene.entities."switch.living_room_top_plant_light" or null) == "on";
+      msg = "Good Morning must restore both plant lights after Sleep turns them off";
     }
     {
       test = !(goodMorningScene.entities ? "switch.desk_monitor");
