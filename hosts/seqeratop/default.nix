@@ -47,6 +47,8 @@
         cliamp.enable = true;
         tmux.jmux.enable = false;
         herdr.enable = true;
+        # Work laptop: don't register the NUC as an hc machine on activation.
+        herdr.native.machines = { };
         rex.enable = true;
         tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
         tmux.opensessions.enable = true;

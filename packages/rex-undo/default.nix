@@ -31,9 +31,9 @@ stdenvNoCC.mkDerivation {
   checkPhase = ''
     runHook preCheck
     # KERN_PROCARGS2 needs Apple's Perl. Homebrew Perl has no syscall support.
-    export PATH="/usr/bin:/bin:$PATH"
+    # Scope it to the tests: fixupPhase needs GNU stat, not /usr/bin/stat.
     export XDG_STATE_HOME="$TMPDIR/rex-undo-test-state"
-    luajit tests/run.lua "$PWD"
+    PATH="/usr/bin:/bin:$PATH" luajit tests/run.lua "$PWD"
     runHook postCheck
   '';
 
