@@ -78,6 +78,7 @@ in
         ".claude/agents".source = "${configDir}/agents/modes";
         # Claude's global instruction file receives the same bounded semantic core.
         ".claude/CLAUDE.md".text = agentCore + "\n" + claudeAgentsFileFallback;
+        ".claude/rules/seqera-mcp.md".source = "${configDir}/claude/rules/seqera-mcp.md";
         ".claude/statusline.sh".source = "${statusline}/bin/claude-statusline";
         ".claude/hooks/session-budget".source = "${sessionBudgetHook}/bin/claude-session-budget";
       }
