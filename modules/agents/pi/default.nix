@@ -336,6 +336,8 @@ in
     # Individual writable files (sessions, auth, cache) live alongside the
     # managed symlinks under ~/.pi/agent.
     env.PI_CODING_AGENT_DIR = "$HOME/.pi/agent";
+    # `pi update` pins the release in overlays/pi and rebuilds, instead of npm.
+    env.PI_SELF_UPDATE_COMMAND = "mise --cd ${config.user.home}/.config/dotfiles run pi:update {version}";
     # pi-notify sound after system notification
     env.PI_NOTIFY_SOUND_CMD = "afplay /System/Library/Sounds/Hero.aiff";
     # pi-github-tools PAT (from gh CLI)
