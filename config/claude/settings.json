@@ -208,7 +208,15 @@
       "Bash(git commit --no-verify:*)",
       "Bash(git commit * --no-verify*)",
       "Bash(git commit * --no-verify *)",
-      "Bash(git rebase --continue:*)"
+      "Bash(git rebase --continue:*)",
+      "Bash(sed -i*)",
+      "Bash(sed --in-place*)",
+      "Bash(sed * -i*)",
+      "Bash(sed * --in-place*)",
+      "Bash(mise trust --all*)",
+      "Bash(mise trust -a*)",
+      "Bash(mise trust * --all*)",
+      "Bash(mise trust * -a*)"
     ]
   },
   "alwaysThinkingEnabled": true

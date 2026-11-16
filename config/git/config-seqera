@@ -1,3 +1,4 @@
 [user]
 	email = edmund.miller@seqera.io
-	signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLH5ywipRADaxVcZ/kK2Pg9kwRZyj/ABEurj+5KXHty"
+# No signingkey here: a literal public key makes ssh-keygen sign through an
+# SSH agent. config-signing's on-disk ~/.ssh/id_ed25519 applies instead.
