@@ -424,6 +424,7 @@ in
           "switch.desk_pop" = "off";
           "switch.kitchen_dog_fountain" = "off";
           "switch.plant_glow_light" = "off";
+          "switch.living_room_top_plant_light" = "off";
           "cover.smartwings_window_covering" = "closed";
           "light.kitchen_trashcan" = "off";
           "light.kitchen_dishwasher" = "off";
@@ -454,7 +455,8 @@ in
             current_position = 20;
           };
           "switch.kitchen_dog_fountain" = "on";
-          "switch.plant_glow_light" = "off";
+          "switch.plant_glow_light" = "on";
+          "switch.living_room_top_plant_light" = "on";
           "switch.eve_energy_20ebu4101" = "off";
           "switch.adaptive_lighting_sleep_mode_living_space" = "off";
           "light.kitchen_trashcan" = "on";

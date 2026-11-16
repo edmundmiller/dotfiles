@@ -26,6 +26,8 @@ areas:
     - "TV"
     - "Couch Lamp"
     - "Plant Glow Light"
+    # Exact HA device name, including its trailing space
+    - "Top plant light "
     - "Balcony"
   office:
     - "Edmund Desk"
