@@ -306,6 +306,27 @@ activation unless the user specifies push-only or no-deploy. Orbs dispatch
 the GitHub workflow instead of attempting `ssh nuc` or joining the tailnet.
 The workflow runs `hey nuc revision <SHA>` on their behalf.
 
+Use the [durable Ship handoff](candidate-ci.md#durable-ship-handoff) for normal
+publication and deployment. Immediately after submitting the candidate,
+register its exact base/SHA and existing authority with `scripts/ship.py request`.
+Add `--deploy` only when activation is authorized. GitHub records the request,
+lands after candidate CI, and dispatches Deploy NUC after exact-main CI.
+Neither transition depends on an Amp completion subscription or a running Orb.
+The existing Deploy NUC guards and runtime verification remain unchanged.
+
+Keep the owner thread unarchived for result reporting, while allowing its Orb
+to pause normally. Archival disables Amp subscriptions. Missing registration
+or reporting is a named blocker, not a completed handoff. Failed Ship runs,
+deployment claims and original approval references must survive recovery.
+No hosted cost reduction is proved until the new route is published and measured.
+
+#### Manual exact-main requests and special deployment options
+
+The direct `nuc_shipping.py` route below remains available for an already
+published exact revision and explicitly approved pilot/monitor operations.
+It does not close the candidate-to-main continuation gap. Do not use it as an
+automatic fallback for missing Ship registration or shipping credentials.
+
 GitHub owns CI waiting and activation. The agent's submission stage ends after
 publishing the authorized revision, handing off one bound deployment request,
 and establishing completion reporting. It does not require CI to have started

@@ -1,99 +1,54 @@
-Publish the task's changes to origin/main and hand off an exact-revision NUC
-deployment request to GitHub Actions. This invocation authorizes publication
-and the workflow's later activation of that revision. An explicit push-only or
-no-deploy instruction overrides activation: submit no deployment request and
-report deployment skipped.
+Publish the task's changes to origin/main and deploy that exact revision to the
+NUC through GitHub Actions. This invocation authorizes publication and later
+activation of that revision. Push-only or no-deploy overrides activation.
 
-Follow repository guidance, preserve unrelated work, run task-scoped checks,
-and include approved task-owned repairs. Follow docs/runbooks/candidate-ci.md
-for publication. Commit task changes, fetch origin/main, reconcile onto its
-exact SHA, and validate the candidate locally. Use
-python3 scripts/candidate_ci.py submit --base BASE --sha SHA to publish only
-candidate/BASE/SHA. Record the base, candidate SHA, branch, original authority
-and CI subscription in the existing receipt. Subscribe to candidate CI
-completion and return "Candidate
-submitted; main unchanged" rather than watching or polling CI in the Orb.
+Follow repository guidance and docs/runbooks/candidate-ci.md. Preserve unrelated
+work, commit task-owned changes with the originating thread, reconcile onto
+fetched origin/main, and run affected checks. Submit the exact candidate with
+python3 scripts/candidate_ci.py submit --base BASE --sha SHA.
 
-On the candidate's completion event, recheck current authority and use
-python3 scripts/candidate_ci.py land --base BASE --sha SHA. It requires the latest
-exact-candidate CI attempt and both required contexts to succeed, then makes
-a non-forced fast-forward to the same SHA. Failed, missing, cancelled or
-pending checks block publication to main. If main moved, reconcile, rerun
-affected checks and submit a new candidate; never reuse old CI for a new SHA.
-No mandatory PR, merge commit, force push or admin bypass is part of this route.
-An uncertain push requires remote readback before retrying. A bypass warning
-means a write may have occurred but compliant landing is unproved; stop and
-report it. Do not change the live ruleset or Ship prompt without approval.
+Before ending the submission turn, hand the existing authority to GitHub with
+python3 scripts/ship.py request --receipt RECEIPT --base BASE --sha SHA
+--thread THREAD_URL --authority APPROVAL_REFERENCE. Add --deploy only when
+activation is authorized. Candidate submission alone is not a shipping handoff.
+Save the request state, exact base/SHA, original authority and run URL in the
+existing receipt. An uncertain dispatch requires readback, never redispatch.
 
-Record the exact published revision after landing. Green default CI certifies
-affected Linux and portable checks, not native Darwin; Mac activation still
-requires native validation of its exact candidate.
+GitHub's Ship workflow records the authority, lands only the exact passing
+candidate, and requests deployment only after successful exact-main push CI.
+Both gates, latest-attempt checks, normal fast-forward publication, stale-main,
+provenance and deployment-lock guards remain mandatory. If main moves, report
+the blocked request and reconcile a new candidate within existing authority.
+Never substitute a new SHA, bypass a gate, or fall back to direct main push.
 
-Choose the deployment route before SSH preflight. From an Amp orb, use the
-existing Deploy NUC GitHub Actions workflow, not direct SSH. Read and follow
-docs/runbooks/deploy-nuc.md, section "Ship from an Amp orb". After publication,
-use scripts/nuc_shipping.py request with the exact published SHA, existing
-receipt, owner thread, and this invocation's deployment authority. The command
-submits immediately; it does not require CI to have started or finished.
-The workflow owns waiting for successful exact-main CI and the guarded
-deployment. Neither a push nor a CI event is itself deployment authorization.
+Confirm the identified Ship dispatch registered its authorization artifact.
+Subscribe to Ship, CI and Deploy NUC completion for reporting. The initial
+Ship run captures BASE, not the candidate SHA; subscribe to that captured head
+and SHA for later continuations. Preserve the receipt/checkout for verification.
+If registration, credentials, run identity, or reporting fails, report that
+specific blocker; do not claim a completed handoff. Accepted GitHub work may
+continue despite a reporting failure.
 
-This submission stage ends when the request is accepted, its run is identified,
-and completion reporting is established. Return "Published; deployment request
-handed to GitHub" without an Orb-side gh run watch, polling loop, background
-watcher, or new Orb. Keep the receipt and checkout for result inspection.
-Submission is complete; deployment and verification remain pending. Report
-observed active/paused intervals when available, not inferred billable savings.
+Return "Ship request submitted; publication and deployment pending" with the
+run URL and observed state. No Orb watcher, polling, wait loop or new Orb is
+needed. CI events report progress; they do not supply authority or require the
+agent to land or dispatch. Keep the owner thread unarchived until result
+inspection is complete. End the turn so the Orb can pause normally; do not
+equate an idle thread with measured billable savings.
 
-Preserve the pre-dispatch claim and reconcile uncertain results with
-nuc_shipping.py reconcile instead of redispatching. The workflow checks
-expected_sha against its captured main commit before waiting. Its read-only
-wait job checks live main and latest exact-SHA main-push CI, including reruns.
-Failure, cancellation, timeout, or moved main stops deployment. The deployment
-job repeats the guards before checkout or tailnet enrollment. Keep its
-provenance and deployment-lock guards. Never omit expected_sha or replace it
-with newer main. If the guarded workflow is unavailable, report that blocker.
+On completion, inspect the saved runs and latest attempts. Verify the active
+dotfiles and agents-workspace revisions and basic host services from Deploy NUC
+logs, then check affected runtime behavior through authorized access. Report
+publication, activation and verification separately. A dispatch or green CI is
+not deployment proof. Report unavailable checks separately.
 
-Identify the deployment by workflow, requested-SHA title, actor, and dispatch
-time, not only captured head SHA. Save its run URL and authorization in the
-receipt. Confirm active ci.yml and deploy-nuc.yml reporting subscriptions for
-this same owner and the exact head. Inspect already-completed runs immediately.
-Missing or ambiguous run identity is a reporting blocker; never choose an
-unrelated latest run or submit another request. A subscription failure does
-not cancel work already accepted by GitHub. On completion, recheck the saved
-run and latest attempt before inspecting logs.
-Candidate completion may resume the original authorized landing and handoff;
-events confer no new authority, and deployment completion never submits another
-request. Dispatch acceptance is not deployment success. Do not provision SSH
-credentials, change tailnet access, or create another runner thread to bypass
-missing access.
+Revoke saved authority with python3 scripts/ship.py revoke --sha SHA, then
+cancel any in-flight Ship or Deploy NUC run and inspect actual state. Completed
+registration runs cannot be cancelled. A local no-deploy flag cannot revoke
+accepted work. Inspect a saved deployment claim before any retry.
 
-If no-deploy arrives after submission, cancel the identified workflow and verify
-its outcome. The local --no-deploy flag cannot revoke an accepted request.
-Cancellation during activation may leave a generation active; inspect actual
-state before reporting deployment prevented.
-
-Use the private nuc runner when this thread already runs there. Confirm hostname
-and uname before direct host operations. Deploy through hey nuc and retain its
-clean-source, provenance, stale-source, and deployment-lock guards. Other non-orb
-executors may use existing authorized NUC access and the documented hey route;
-otherwise use the same GitHub request handoff. Do not grant the shared runner
-sudo, copy credentials, or create another runner thread to reach this checkout.
-
-Verify the NUC's active configurationRevision and locked agents-workspace
-revision match the exact deployment. For GitHub deployments, use the identified
-workflow's revision-verification step and logs without requiring orb SSH.
-Inspect SSH/Tailscale services, the disabled auto-upgrade timer, and failed
-systemd units. Check affected services and runtime behavior through authorized
-access or evidence. Report unavailable task-specific checks separately. A
-nonzero switch may still activate a generation; inspect actual state and
-distinguish task-caused failures from pre-existing ones. Repair task-caused
-failures within scope, validate, publish the repair, and establish a new
-exact-revision request. Preserve the previous attempt's evidence. Never
-disable guards or change unrelated data to make health checks green.
-
-Report publication, activation, and verification separately, with the deployment
-run URL and any blockers. Keep the task open until authorized deployment,
-required verification, and safe cleanup are proved. This workflow does not
-authorize secret rotation, new access grants, destructive cleanup, unrelated
-repairs, or unrelated releases.
+Use docs/runbooks/deploy-nuc.md for recovery and explicitly authorized special
+deployment options. Missing workflow/credential access is a blocker, not a
+reason to provision SSH, reuse an unrelated token, change access policy, or
+weaken CI. Do not change live rulesets or this project's saved Ship prompt
+without approval. This invocation grants no unrelated deployment or cleanup.

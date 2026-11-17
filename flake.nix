@@ -1309,6 +1309,7 @@
                       tests/test_nuc_shipping.py \
                       tests/test_amp_orb_dispatch.py \
                       tests/test_candidate_ci.py \
+                      tests/test_ship.py \
                       tests/test_ci_check_cache.py \
                       tests/test_renovate_admission.py \
                       tests/test_orb_setup.py \
