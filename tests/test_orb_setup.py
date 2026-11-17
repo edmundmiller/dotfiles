@@ -79,7 +79,23 @@ class OrbSetupTests(unittest.TestCase):
                 path.chmod(0o755)
 
             # Keep privileged operations and downloads out of the test.
-            script(tools / "sudo", '[ "$1" != systemctl ]')
+            script(
+                tools / "sudo",
+                """case "$*" in
+  'sysctl -w vm.overcommit_memory=1')
+    echo 'sysctl: permission denied on key "vm.overcommit_memory"' >&2
+    exit 1 ;;
+  '/usr/sbin/swapon /swapfile') exit "${ORB_TEST_SWAP_STATUS:-0}" ;;
+  systemctl*) exit 99 ;;
+esac""",
+            )
+            # Model Linux kernel reads without touching the test host's settings.
+            bash_env = root / "bash-env"
+            script(
+                bash_env,
+                """function /usr/sbin/sysctl { echo 0; }
+function /usr/sbin/swapon { :; }""",
+            )
             script(tools / "systemctl", "exit 1")
             script(tools / "curl", "echo 'Unexpected Nix install' >&2; exit 99")
             script(tools / "gh", "exit 1")
@@ -117,8 +133,8 @@ esac""",
                 "MISE_CONFIG_DIR": str(root / "mise-config"),
                 "MISE_CACHE_DIR": str(root / "mise-cache"),
                 "MISE_PARANOID": "1",
+                "BASH_ENV": str(bash_env),
             }
-            env.pop("BASH_ENV", None)
             env.pop("DOTFILES_AGENT_ENV_ACTIVE", None)
             env.pop("MISE_TRUSTED_CONFIG_PATHS", None)
 
@@ -138,6 +154,9 @@ esac""",
                     args, cwd=repo, env=env, capture_output=True, text=True
                 )
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                if args == (bash, ".agents/setup"):
+                    self.assertIn("permission denied", result.stderr)
+                    self.assertIn("Warning: cannot set vm.overcommit_memory=1", result.stderr)
                 return result.stdout
 
             run("git", "init", "--quiet")
@@ -175,6 +194,17 @@ esac""",
                 .count("# dotfiles orb agent shell"),
                 1,
             )
+
+            failed_swap = subprocess.run(
+                [bash, ".agents/setup"],
+                cwd=repo,
+                env={**env, "ORB_TEST_SWAP_STATUS": "42"},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(failed_swap.returncode, 42, failed_swap.stderr)
+            self.assertNotIn("Make the agent shell available", failed_swap.stdout)
+            self.assertNotIn("Orb setup complete.", failed_swap.stdout)
 
             if not Path("/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh").exists():
                 store_nix = root / "store/example-nix-2.35.3/bin/nix"
