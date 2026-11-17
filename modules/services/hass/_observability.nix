@@ -96,6 +96,9 @@ in
           # DynamicUser + preserved RuntimeDirectory lives below /run/private.
           # Expose only this credential-free directory at a readable mountpoint.
           BindReadOnlyPaths = [ "/run/hass-health:/run/hass-health-status" ];
+          # Recover the reader, never HA; a healthy file still expires normally.
+          Restart = "on-failure";
+          RestartSec = "5s";
           ExecStart = "${pkgs.python3}/bin/python3 ${./monitor-gatus.py} serve --status-file /run/hass-health-status/status.json --port ${toString statusPort}";
         };
       };

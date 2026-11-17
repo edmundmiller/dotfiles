@@ -1072,6 +1072,32 @@ class HaMonitorTests(unittest.TestCase):
         self.probes = self.probes[1:]
         self.assertEqual(self.invoke("status")[1]["failed_samples_not_observed"], 1)
 
+    def test_probe_coverage_distinguishes_complete_truncated_gapped_and_stopped_history(self):
+        complete = [
+            {"timestamp": (self.now - timedelta(minutes=minutes)).isoformat(), "success": True}
+            for minutes in range(60)
+        ]
+        for state, probes in (
+            ("complete", complete),
+            ("truncated", complete[:-1]),
+            ("gapped", complete[:29] + complete[30:]),
+            ("stopped", complete[2:]),
+            ("empty", []),
+        ):
+            with self.subTest(state=state):
+                self.probes = probes
+                code, report = self.invoke("status", "--since-hours", "1")
+                self.assertEqual(code, 0)
+                coverage = report["probe_coverage"]
+                self.assertEqual(coverage["complete"], state == "complete")
+                self.assertEqual(coverage["probes"], len(probes))
+                self.assertEqual(coverage["gaps_over_90_seconds"], int(state == "gapped"))
+                if state == "gapped":
+                    self.assertEqual(coverage["longest_gap_seconds"], 120)
+                if state == "empty":
+                    self.assertIsNone(coverage["leading_gap_seconds"])
+                    self.assertIsNone(coverage["trailing_gap_seconds"])
+
     def test_publish_covers_success_exit_code_timeout_and_signal(self):
         for result in ("success", "exit-code", "timeout", "signal"):
             with self.subTest(result=result), patch.dict(os.environ, {"SERVICE_RESULT": result}):
@@ -1102,11 +1128,13 @@ class HaMonitorTests(unittest.TestCase):
                     if time.monotonic() >= deadline:
                         raise
                     time.sleep(0.01)
-            for state in ("failure", "missing", "invalid", "stale", "future"):
+            for state in ("failure", "missing", "invalid", "invalid_timestamp", "stale", "future"):
                 with self.subTest(state=state):
                     sample = self.samples[0].copy()
                     if state == "failure":
                         sample["success"] = False
+                    if state == "invalid_timestamp":
+                        sample["observed_at"] = 42
                     if state in ("stale", "future"):
                         sample["observed_at"] = (datetime.now(UTC) + timedelta(seconds=-301 if state == "stale" else 60)).isoformat()
                     self.status.write_text(json.dumps(sample))
@@ -1123,6 +1151,11 @@ class HaMonitorTests(unittest.TestCase):
             self.status.write_text(json.dumps(self.samples[0]))
             with urlopen(url, timeout=1) as response:
                 self.assertEqual(response.status, 200)
+            with self.subTest(state="stalled_client"), socket.create_connection(("127.0.0.1", port)) as stalled:
+                stalled.sendall(b"GET /health HTTP/1.1\r\nHost: localhost\r\n")
+                # An unfinished request must not wedge every subsequent probe.
+                with urlopen(url, timeout=8) as response:
+                    self.assertEqual(response.status, 200)
         finally:
             process.terminate()
             process.communicate(timeout=5)

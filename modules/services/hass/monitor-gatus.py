@@ -33,7 +33,7 @@ def read_status(path):
             "fresh": fresh,
             "sampled_at": sample["observed_at"],
         }
-    except (OSError, ValueError, KeyError, TypeError):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return {"status": "unknown", "fresh": False, "sampled_at": None}
 
 
@@ -55,6 +55,9 @@ def publish(args):
 
 def serve(args):
     class Handler(BaseHTTPRequestHandler):
+        # Bound an unfinished local request so later Gatus probes can proceed.
+        timeout = 5
+
         def do_GET(self):
             if self.path != "/health":
                 self.send_error(404)
@@ -148,8 +151,13 @@ def inspect(args):
             }
     except (OSError, ValueError, TypeError, AttributeError) as error:
         local_http = {"error_type": type(error).__name__}
+    observed_at = datetime.now(UTC)
+    probe_times = [timestamp(probe["timestamp"]) for probe in probes_in_window]
+    gaps = [(after - before).total_seconds() for before, after in zip(probe_times, probe_times[1:])]
+    leading_gap = (probe_times[0] - cutoff).total_seconds() if probe_times else None
+    trailing_gap = (observed_at - probe_times[-1]).total_seconds() if probe_times else None
     return {
-        "observed_at": datetime.now(UTC).isoformat(),
+        "observed_at": observed_at.isoformat(),
         "backend": "gatus",
         "provisioned": args.ready_file.is_file(),
         "timer_active": active("hass-health.timer"),
@@ -160,11 +168,22 @@ def inspect(args):
         "probes": probes_in_window,
         "events": [{key: event[key] for key in ("timestamp", "type")} for event in endpoint.get("events", []) if timestamp(event["timestamp"]) >= cutoff],
         "oldest_available_probe": probes[0]["timestamp"] if probes else None,
+        "probe_coverage": {
+            "since": cutoff.isoformat(),
+            "until": observed_at.isoformat(),
+            "probes": len(probe_times),
+            "complete": bool(probe_times) and 0 <= leading_gap <= 90 and 0 <= trailing_gap <= 90 and all(gap <= 90 for gap in gaps),
+            "leading_gap_seconds": leading_gap,
+            "trailing_gap_seconds": trailing_gap,
+            "longest_gap_seconds": max(gaps, default=None),
+            "gaps_over_90_seconds": sum(gap > 90 for gap in gaps),
+        },
         "probe_report_correlation": dict(correlation),
         # A failure at the end of the window may not have been probed yet.
         "failed_samples_not_observed": sum(item["observed_at"] not in observed_samples for item in failed_samples),
         "journal": {
             "reports": len(recent_reports),
+            "first_observed_at": recent_reports[0]["observed_at"] if recent_reports else None,
             "statuses": dict(Counter(item["status"] for item in recent_reports)),
             "failing_checks": dict(Counter(name for item in recent_reports for name, check in item["checks"].items() if check["status"] != "healthy")),
             "last_observed_at": recent_reports[-1]["observed_at"] if recent_reports else None,
@@ -174,7 +193,7 @@ def inspect(args):
             "fresh_successful_samples": sum(item["success"] and timestamp(item["observed_at"]) >= fresh_cutoff for item in recent_samples),
             "fresh_healthy_reports": sum(item["status"] == "healthy" and timestamp(item["observed_at"]) >= fresh_cutoff for item in recent_reports),
         },
-        "coverage": "Gatus history and local journal aggregates only. Physical outcomes and restic freshness not checked. No push notification provider is enabled by this monitor.",
+        "coverage": "Gatus probe coverage uses a 90-second gap allowance for the one-minute endpoint; it is not continuous observation. Journal counts cover retained reports only, not guaranteed retention. Physical outcomes, restic freshness, notification configuration and alert delivery are not checked.",
     }
 
 

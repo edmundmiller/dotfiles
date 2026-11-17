@@ -83,6 +83,9 @@ This avoids systemd's `/run/private` isolation for preserved dynamic-user runtim
 directories without sharing the checker's user identity or credential directory.
 Only a successful sample no more than five minutes old returns HTTP 200.
 Failure, missing or unreadable data, a future timestamp, and stale data return 503. A stopped timer therefore cannot leave a permanently green cached result.
+Idle HTTP connections time out after five seconds. systemd restarts a crashed
+HTTP reader after five seconds; it does not restart HA or rerun the checker.
+Restarting the reader does not refresh the sample or hide a stale checker.
 Before the first sample, including the twelve-minute boot allowance, the status
 is unknown rather than healthy. HA reports and trace data stay in the journal;
 the HA token stays in a systemd credential, never in process arguments or the
@@ -131,6 +134,15 @@ is a possible false negative. Missing samples or reports are coverage gaps, not
 proof of either. Failed completion samples never seen by Gatus are counted too;
 a just-completed check may not have been probed yet.
 
+Diagnostics also report `probe_coverage`: the requested interval, probe count,
+leading/trailing gaps and internal gaps over 90 seconds. `complete` means the
+one-minute probes cover that interval within this allowance, not continuous
+observation or guaranteed journal retention. A fresh healthy endpoint can coexist
+with truncated or gapped history. `journal.first_observed_at` identifies the
+first retained report in the requested window; counts alone do not prove that
+every report was retained. Notification configuration and delivery are not
+inspected by this command.
+
 Assess the first 24 hours after verified activation with read-only two-hour
 samples and a final 24-hour history inspection. Compare transitions and missing
 coverage against HA evidence, not just green probes. Startup unknowns and
@@ -139,6 +151,91 @@ restic backup freshness remain outside this monitor's coverage.
 
 Stop the bounded follow-up after the final assessment; this does not stop the
 persistent NUC timer. No monitoring follow-up authorizes automatic repairs.
+
+### Long-term operating contract
+
+Keep steady-state monitoring in the existing systemd timer and local Gatus
+probe. The bounded agent assessment is acceptance evidence, not a recurring
+production dependency. SQLite retains probe outcomes across Gatus restarts,
+while the runtime sample deliberately disappears on host reboot so old success
+cannot survive a missing new checker run. Preserve the twelve-minute boot grace,
+90-second checker timeout and atomic completion publication, including timeout
+and signal failures. A checker that stops publishing turns unhealthy after its
+five-minute freshness limit and the next Gatus probe, about six minutes after
+the last successful sample at the nominal probe cadence.
+
+Keep the bounded 1,500-result/event history rather than adding an unbounded
+incident database or collecting all device attributes. At one probe per minute,
+results cover about 25 hours, not a week. Journal eviction, outages and sampling
+can still lose diagnostic evidence; use the bounded recurrence procedure below
+promptly when attribution is needed. Do not duplicate its reader in a new agent
+poller or silently expand global history limits.
+
+Record every failure and recovery in Gatus. Keep notification debounce separate
+from those raw outcomes: the existing optional Telegram provider requires three
+failed probes, then two successful probes for a resolved notification. These
+thresholds do not suppress failed history or automatically repair HA. Retained
+trace errors can keep the check unhealthy until its trace window clears; do not
+silently exempt them to make recovery look faster.
+
+Recording is not delivered alerting. The NUC currently disables Telegram; the
+external Gatus dead-man's switch checks Gatus/host availability, not HA runtime
+health. Enabling a notification destination and testing a delivered failure and
+resolved message require separate approval. That acceptance must distinguish
+the current HA endpoint from the host dead-man's switch and account for expected
+boot/maintenance downtime. No notification provider, credentials, extra check or
+paid plan is enabled by this monitoring code.
+
+## Climate recurrence diagnostics
+
+When a user reports `climate.master_suite` unavailable or existing checker
+evidence identifies that entity, use the published `ha-climate-recurrence`
+operation in `.github/workflows/deploy-nuc.yml`. Agents prepare the inputs and
+capture scope; the user does not need to paste a request template or calculate
+UTC timestamps. An aggregate monitor failure alone does not identify this entity.
+
+1. Establish the incident start from the user's observation or an existing
+   timestamped checker report. Convert America/Chicago observations to UTC,
+   resolving an ambiguous daylight-saving time before dispatch. Do not invent
+   the start time from the time the agent began investigating.
+2. Check the current capture authority and existing receipt before submitting
+   anything. An authorized single capture means one workflow run, not a retry
+   loop or an ongoing watcher. If authority or the incident start is missing,
+   ask only for that missing decision or fact, not a prescribed approval message.
+   A recovery comparison requires its own authorized capture allowance.
+3. Verify authoritative current main, latest exact-main CI success, the approved
+   diagnostic source and absence of a competing shared-workflow request. Record
+   a fresh claim before dispatch. Set `expected_sha` to that exact main SHA,
+   `operation=ha-climate-recurrence`, `incident_start` to the established UTC
+   timestamp and `incident_cutoff` to the current UTC time recorded immediately
+   before dispatch. Supply `recovered_at` only for an evidenced recovery within
+   those bounds. Keep `ha_monitor`, `orb_pilot`, `recover_orb_pilot` and
+   `restart_bluetooth` false. Do not deploy or publish new code to bypass a guard.
+4. The reader includes a five-minute lead-in and caps the entire journal window
+   at 30 minutes, leaving at most 25 minutes after the supplied incident start.
+   Recovery includes up to five minutes afterward only within the cutoff and
+   cap. Report truncation rather than shifting the incident start. The current
+   entity state and mapping are execution-time snapshots; a queued read after
+   recovery does not establish the state during the failure.
+5. Reconcile the unique actor, dispatch time, operation title, captured SHA and
+   run identity; follow completion through the existing event subscription path.
+   Never blindly retry an ambiguous dispatch. Inspect the latest attempt and
+   logs before reporting results, distinguishing diagnostic source from actual
+   deployed revision and verifying mutation steps were skipped.
+6. Report UTC and America/Chicago bounds, state/mapping, categorized errors,
+   checker timing, retention/decoding omissions and the run link. Entity-specific,
+   integration-wide and `aiohomekit` library evidence have separate attribution
+   scopes. Zero matches do not prove absence of errors; separately stored
+   traceback records may remain unassociated. Keep raw logs, addresses,
+   attributes and credentials on-host. Passive endpoint metadata is disabled
+   while entity-to-endpoint association is unproved.
+
+This procedure grants no standing execution authority or new automation. It
+changes no live logging or settings and permits no restart, reload, active
+network probe, reconnect, packet capture or automatic remediation. Preserve
+Backup Repair, the persistent monitor, running work and disks. Do not reopen or
+rescore a completed assessment. If a guard or access check fails, report the
+specific blocker and leave the capture claim intact rather than bypassing it.
 
 ## FitBark
 
