@@ -64,6 +64,18 @@ in
     edmundmiller
     nuc
   ];
+  "gatus-email-ingest.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "gatus-email-worker.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
+  "gatus-notion-ingest.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "telegram-bot-token-scintillate.age".publicKeys = [
     edmundmiller
     nuc

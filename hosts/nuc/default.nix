@@ -2588,6 +2588,20 @@ in
         enable = true;
         tailscaleService.enable = true;
         alerting.telegram.enable = false;
+        alerting.endpoints = [ "Home Assistant Runtime" ];
+        # Family Ops owns this route; it is not deployed or enabled yet.
+        alerting.email = {
+          enable = false;
+          url = "https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email";
+          tokenFile = config.age.secrets.gatus-email-worker.path;
+          ingestTokenFile = config.age.secrets.gatus-email-ingest.path;
+        };
+        alerting.notion = {
+          enable = false;
+          ingestTokenFile = config.age.secrets.gatus-notion-ingest.path;
+          dataSourceId = "e5899731-9190-4f81-b5e0-36ccbc5a5f00";
+          evidenceUrl = "https://gatus.cinnamon-rooster.ts.net/";
+        };
         healthcheck = {
           enable = true;
           pingUrl = "https://hc-ping.com/a6bbb4df-b118-4262-9881-9939f3ac7e76";
@@ -2683,6 +2697,24 @@ in
     "d ${factoryProductPassStateDir} 0700 emiller users -"
 
   ];
+
+  # Gatus reads local ingest credentials in root ExecStartPre; receivers use
+  # systemd LoadCredential. No login user needs decrypted token access.
+  age.secrets.gatus-email-ingest = {
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
+  age.secrets.gatus-email-worker = {
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
+  age.secrets.gatus-notion-ingest = {
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
 
   age.secrets.buzz-mill-docs-agent-env = {
     owner = "emiller";

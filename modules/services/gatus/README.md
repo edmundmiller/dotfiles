@@ -8,7 +8,7 @@ update_when: Endpoint URLs, conditions, alert providers, or install steps change
 
 # Gatus Uptime Monitoring
 
-Automated service health monitoring for NUC using [Gatus](https://gatus.io/). Alerts via Telegram on downtime, pings healthchecks.io as dead man's switch.
+Automated service health monitoring for NUC using [Gatus](https://gatus.io/). Email notifications and Notion incident records are optional and disabled by default. The existing healthchecks.io timer watches Gatus and host availability separately.
 
 ## Installation
 
@@ -67,6 +67,164 @@ hey nuc
 
 ## Alerting
 
+### Notion incidents and email notifications
+
+Gatus posts debounced transitions to separate local Notion and email receivers.
+Both use `incident-delivery.py`, with independent systemd services, SQLite files
+and credentials. Neither path requires an agent or depends on the other path's
+availability. The email receiver forwards to the Family Ops Cloudflare Worker;
+it does not use SMTP or a Cloudflare account/admin API token.
+
+Both routes are disabled by default. Before an approved rollout, provision a
+database-scoped Notion connection, a dedicated Worker ingest token and separate
+local ingest tokens through encrypted/runtime secrets. The Amp Notion connection
+cannot authenticate a host daemon. The Worker route must be deployed and enabled
+separately; configuring its future URL does not make it active. Publication,
+deployment and real delivery tests are separate actions.
+
+The routes default to `alerting.endpoints = [ "Home Assistant Runtime" ]`,
+intersected with existing endpoint alert opt-ins. Cloudflare email currently
+requires exactly that scope. Telegram's existing opt-in scope is unchanged.
+Gatus triggers after three failed probes and resolves after two successful
+probes. These thresholds do not suppress raw history or perform HA repairs.
+
+#### Durable Gatus handoff
+
+The carried Gatus patch in `overlays/gatus` enables `durable-delivery` only for
+these state-only custom routes. Each has a distinct stable description,
+`gatus-email` or `gatus-notion`. Gatus excludes provider overrides from alert
+checksums, so identical descriptions and thresholds would merge route identities
+on restart. Do not rename a route or change thresholds while it has pending work.
+
+Gatus records debounced state and ordered transitions in its existing SQLite
+file before attempting the receiver. Rejected failures and recoveries remain
+pending across Gatus restarts, even if another incident occurs meanwhile.
+Each route attempts one queued transition per probe. Acknowledged transitions
+are removed only after their cursor is committed. A crash between receiver
+acceptance and cursor persistence can replay the same head; local receivers
+must remain idempotent. No event details, HA payloads or credentials enter this
+producer queue. Telegram keeps upstream behavior.
+
+Each producer route retains at most 1,000 transitions. SQLite uses FULL
+synchronization once durable delivery starts. A full or unreadable/unwritable
+producer outbox stops Gatus rather than silently discarding transitions.
+Systemd retries the process; the existing external watchdog can detect loss of
+Gatus availability. Preserve the database and reconcile the receiver before
+retrying a full queue. Monitoring has a coverage gap while stopped; this is not
+an unlimited outage buffer. Never delete producer state or change route identity
+to bypass a pending or uncertain delivery. Removed configurations leave their
+producer state in SQLite for reconciliation, not automatic replay or cleanup.
+
+The following is a disabled configuration example, not secret provisioning:
+
+```nix
+modules.services.gatus.alerting = {
+  endpoints = [ "Home Assistant Runtime" ];
+  email = {
+    enable = false;
+    url = "https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email";
+    tokenFile = "/run/agenix/gatus-email-worker";
+    ingestTokenFile = "/run/agenix/gatus-email-ingest";
+  };
+  notion = {
+    enable = false;
+    tokenFile = "/run/agenix/gatus-notion";
+    ingestTokenFile = "/run/agenix/gatus-notion-ingest";
+    dataSourceId = "<approved-data-source-id>";
+    evidenceUrl = "https://<private-gatus-host>/";
+  };
+};
+```
+
+Both receivers accept only the configured endpoint label and state, authenticated
+with their own local ingest token, and return HTTP 202 only after SQLite commits.
+The Notion receiver binds to `127.0.0.1:8125`; email binds to `127.0.0.1:8126`.
+Only the endpoint and `TRIGGERED`/`RESOLVED` state go to the Worker. Sender,
+recipient and email template belong to Family Ops, not client-supplied fields.
+
+#### Ordered Cloudflare email delivery
+
+The email queue preserves every accepted transition in FIFO order. Repeated
+states are ignored; orphan recovery sends nothing. Recovery and later incidents
+cannot pass an unacknowledged failure, even after a receiver restart. The queue
+retains at most 1,000 pending transitions plus 100 acknowledged rows. Full
+capacity rejects new transitions with HTTP 503 rather than silently dropping
+them. Accepted-state deduplication survives pruning and restarts.
+
+The Worker has no durable acceptance queue. Only HTTP 200 with a documented
+`accepted_by_provider`, `duplicate` or applicable `orphan_recovery` receipt
+acknowledges the queue head. Generic 2xx or 202 responses do not. Provider
+acceptance is not inbox delivery. A lost response retries the same head before
+any recovery; the Worker owns state-based send deduplication.
+
+HTTP 429 respects `Retry-After`, including a delay until UTC midnight under the
+Worker's daily limit. Other retryable responses and network errors back off to
+five minutes. Retry deadlines persist across restarts. HTTP 409 means delivery
+is unknown. The local queue stops replaying that head and all later transitions
+and remains unhealthy until approved operator reconciliation. Even a transient
+in-flight conflict is conservatively blocked locally. Do not delete the queue,
+clear the Worker's durable state, recreate a claim or send directly to bypass
+an uncertain result. Neither side provides an exactly-once guarantee.
+
+The payload has no source event ID or occurrence timestamp. A delayed trigger
+after recovery cannot be distinguished from a fresh incident. Queued alerts can
+also arrive after an outage has recovered. These receipt records are not exact
+physical outage boundaries or an authoritative uptime ledger.
+
+#### Notion incident records
+
+Use a dedicated Notion data source with these properties:
+
+| Property      | Type   | Purpose                                           |
+| ------------- | ------ | ------------------------------------------------- |
+| `Name`        | Title  | Configured Gatus group and endpoint name          |
+| `Incident ID` | Text   | Receiver-generated correlation ID, keep unchanged |
+| `Status`      | Select | `Open` or `Resolved`                              |
+| `Detected`    | Date   | Time the receiver accepted the debounced failure  |
+| `Recovered`   | Date   | Time the receiver accepted the debounced recovery |
+| `Evidence`    | URL    | Credential-free link to the Gatus dashboard       |
+
+Grant the Notion connection read, insert and update access only to that data
+source. Ordinary Notion write notifications are silenced; database automations
+can still run, so do not attach notification or agent automations implicitly.
+Only the configured endpoint label, incident ID, receipt dates, status and
+evidence URL are copied, not HA state, attributes, journal contents or tokens.
+Source history stays in the Gatus and HA checker stores with existing retention.
+
+Repeated failures reuse the current open incident; recovery updates its page.
+The queue and page mapping survive receiver restarts. Local state retains at
+most 1,000 open or pending incidents plus 100 delivered, resolved incidents.
+Notion records are not automatically deleted. A full queue rejects new failures
+with HTTP 503. Retries respect Notion's `Retry-After`, otherwise backing off to
+five minutes.
+
+A page-creation timeout can mean the write succeeded. The receiver uses a
+returned committed page ID or queries `Incident ID` before continuing. If the
+outcome cannot be established, it keeps querying and reports unhealthy instead
+of creating a possible duplicate. Do not delete the queue or reset its attempted
+creation flag. Inspect the committed page and obtain approval before repairing
+a live mapping.
+
+#### Delivery health and verification
+
+Gatus checks `Notion Incident Delivery` and `Email Incident Delivery`. Delivery
+errors, full capacity or an update pending five minutes make the relevant check
+fail. These endpoints are dashboard-only, not emailed: the Worker permits HA
+Runtime only and email must not recursively alert about its own failure. This
+leaves a separate delivery-health notification gap; do not imply that a red
+delivery check reaches the operator's inbox. Keep the external Healthchecks
+watchdog for host/Gatus outages.
+
+A receiver cannot backfill an outage Gatus never observed, including time while
+Gatus or the NUC is down. Actual inbox delivery still requires separate live
+acceptance. Run `hey check modules/services/gatus overlays/gatus`. The portable
+check runs patched Gatus and the generated email service command against local
+Notion and Worker fixtures. It covers partial receiver acceptance followed by a
+Gatus restart, rejected recovery with another incident and restart before retry,
+separate runtime secrets, ordered retries, rate limits, unknown delivery, privacy
+and bounds. It contacts no live account. `pkg-check gatus` separately applies
+the patch to fresh pinned upstream source and runs its focused Go tests.
+
 ### Telegram
 
 Alerts on endpoint failure (3 consecutive failures) and recovery (2 consecutive successes). The bot token is managed via agenix and injected at runtime — never in the nix store.
@@ -119,7 +277,9 @@ Edit `default.nix` and add to the `endpoints` list:
 }
 ```
 
-Alerts are automatically attached to all endpoints.
+Service-owned endpoints belong in the owning module's `registry.gatus`, with
+`alerts = true` to opt in. Email and Notion also require a name match in
+`alerting.endpoints`; they are not automatically attached to every endpoint.
 
 For services that may not always be enabled:
 
@@ -139,14 +299,17 @@ hey nuc-logs gatus 50
 **Config issues (check runtime config):**
 
 ```bash
-ssh nuc "sudo cat /run/gatus/config.yaml"
+ssh nuc "sudo test -s /run/gatus/config.yaml && sudo stat -c '%a %U' /run/gatus/config.yaml"
 ```
+
+The runtime config contains credentials. Check its existence and permissions;
+do not print it into a transcript or diagnostic log.
 
 **Telegram alerts not working:**
 
 ```bash
 # Verify secret is readable
-ssh nuc "sudo cat /run/agenix/telegram-bot-token"
+ssh nuc "sudo test -s /run/agenix/telegram-bot-token"
 
 # Check gatus logs for telegram errors
 ssh nuc "journalctl -u gatus -n 50 --no-pager" | grep -i telegram

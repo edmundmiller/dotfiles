@@ -63,6 +63,7 @@ CHECKS = {
     ],
     "hey-native": ["bin/hey", "packages/hey/*", "packages/bend/*"],
     "hass-health-tests": ["modules/services/hass/*"],
+    "gatus-alerting-tests": ["modules/services/gatus/*", "overlays/gatus/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",

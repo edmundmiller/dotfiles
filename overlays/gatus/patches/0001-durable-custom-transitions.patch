@@ -1,0 +1,237 @@
+diff --git a/alerting/alert/alert.go b/alerting/alert/alert.go
+index 7a627df..0d5fa33 100644
+--- a/alerting/alert/alert.go
++++ b/alerting/alert/alert.go
+@@ -53,6 +53,10 @@ type Alert struct {
+ 	// or not for provider.ParseWithDefaultAlert to work. Use Alert.IsSendingOnResolved() for a non-pointer
+ 	SendOnResolved *bool `yaml:"send-on-resolved,omitempty"`
+ 
++	// DurableDelivery persists state-only custom transitions until their receiver acknowledges them.
++	// Requires SQLite storage; descriptions are stable per-route identities. Reminders are unsupported.
++	DurableDelivery bool `yaml:"durable-delivery,omitempty"`
++
+ 	// ProviderOverride is an optional field that can be used to override the provider's configuration
+ 	// It is freeform so that it can be used for any provider-specific configuration.
+ 	ProviderOverride map[string]any `yaml:"provider-override,omitempty"`
+@@ -74,6 +78,9 @@ type Alert struct {
+ 
+ // ValidateAndSetDefaults validates the alert's configuration and sets the default value of fields that have one
+ func (alert *Alert) ValidateAndSetDefaults() error {
++	if alert.DurableDelivery && (alert.Type != TypeCustom || alert.GetDescription() == "" || !alert.IsSendingOnResolved() || alert.MinimumReminderInterval != 0) {
++		return errors.New("durable-delivery requires a described custom alert, send-on-resolved and no reminders")
++	}
+ 	if alert.FailureThreshold <= 0 {
+ 		alert.FailureThreshold = 3
+ 	}
+@@ -125,6 +132,9 @@ func (alert *Alert) Checksum() string {
+ 		strconv.Itoa(alert.FailureThreshold) + "_" +
+ 		alert.GetDescription()),
+ 	)
++	if alert.DurableDelivery {
++		hash.Write([]byte("_durable-delivery"))
++	}
+ 	return hex.EncodeToString(hash.Sum(nil))
+ }
+ 
+diff --git a/storage/store/sql/alert_delivery.go b/storage/store/sql/alert_delivery.go
+new file mode 100644
+index 0000000..5a4a68d
+--- /dev/null
++++ b/storage/store/sql/alert_delivery.go
+@@ -0,0 +1,40 @@
++package sql
++
++import (
++	"database/sql"
++	"errors"
++)
++
++// LoadAlertDeliveryState keeps producer outboxes separate from upstream's
++// triggered-alert cleanup: a pending recovery must survive endpoint recovery.
++func (s *Store) LoadAlertDeliveryState(endpointKey, checksum string) ([]byte, error) {
++	if s.driver != "sqlite" {
++		return nil, errors.New("durable-delivery requires SQLite storage")
++	}
++	// NORMAL can lose the most recent committed cursor on power loss. Only
++	// opt-in users pay for FULL synchronization; ordinary Gatus is unchanged.
++	if _, err := s.db.Exec("PRAGMA synchronous=FULL"); err != nil {
++		return nil, err
++	}
++	if _, err := s.db.Exec(`CREATE TABLE IF NOT EXISTS alert_delivery_state (
++		endpoint_key TEXT NOT NULL,
++		alert_checksum TEXT NOT NULL,
++		state TEXT NOT NULL,
++		PRIMARY KEY (endpoint_key, alert_checksum)
++	)`); err != nil {
++		return nil, err
++	}
++	var state string
++	err := s.db.QueryRow(`SELECT state FROM alert_delivery_state WHERE endpoint_key = ? AND alert_checksum = ?`, endpointKey, checksum).Scan(&state)
++	if errors.Is(err, sql.ErrNoRows) {
++		return nil, nil
++	}
++	return []byte(state), err
++}
++
++// SaveAlertDeliveryState atomically commits detector state and the FIFO cursor.
++func (s *Store) SaveAlertDeliveryState(endpointKey, checksum string, state []byte) error {
++	_, err := s.db.Exec(`INSERT INTO alert_delivery_state (endpoint_key, alert_checksum, state) VALUES (?, ?, ?)
++		ON CONFLICT(endpoint_key, alert_checksum) DO UPDATE SET state = excluded.state`, endpointKey, checksum, string(state))
++	return err
++}
+diff --git a/watchdog/alerting.go b/watchdog/alerting.go
+index c71ac33..10c40e5 100644
+--- a/watchdog/alerting.go
++++ b/watchdog/alerting.go
+@@ -17,6 +17,14 @@ func HandleAlerting(ep *endpoint.Endpoint, result *endpoint.Result, alertingConf
+ 	if alertingConfig == nil {
+ 		return
+ 	}
++	for _, endpointAlert := range ep.Alerts {
++		if endpointAlert.DurableDelivery && endpointAlert.IsEnabled() {
++			if err := handleDurableAlert(ep, endpointAlert, result, alertingConfig); err != nil {
++				// A broken/full outbox must fail the daemon, not silently discard transitions.
++				panic(err)
++			}
++		}
++	}
+ 	if result.Success {
+ 		handleAlertsToResolve(ep, result, alertingConfig)
+ 	} else {
+@@ -33,6 +41,9 @@ func handleAlertsToTrigger(ep *endpoint.Endpoint, result *endpoint.Result, alert
+ 	// By storing the value in a local variable, we ensure all alerts use the same reference
+ 	lastReminderSent := ep.LastReminderSent
+ 	for _, endpointAlert := range ep.Alerts {
++		if endpointAlert.DurableDelivery {
++			continue
++		}
+ 		// If the alert hasn't been triggered, move to the next one
+ 		if !endpointAlert.IsEnabled() || endpointAlert.FailureThreshold > ep.NumberOfFailuresInARow {
+ 			continue
+@@ -83,6 +94,9 @@ func handleAlertsToTrigger(ep *endpoint.Endpoint, result *endpoint.Result, alert
+ func handleAlertsToResolve(ep *endpoint.Endpoint, result *endpoint.Result, alertingConfig *alerting.Config) {
+ 	ep.NumberOfSuccessesInARow++
+ 	for _, endpointAlert := range ep.Alerts {
++		if endpointAlert.DurableDelivery {
++			continue
++		}
+ 		isStillBelowSuccessThreshold := endpointAlert.SuccessThreshold > ep.NumberOfSuccessesInARow
+ 		if isStillBelowSuccessThreshold && endpointAlert.IsEnabled() && endpointAlert.Triggered {
+ 			// Persist NumberOfSuccessesInARow
+diff --git a/watchdog/durable_alerting.go b/watchdog/durable_alerting.go
+new file mode 100644
+index 0000000..626ec7e
+--- /dev/null
++++ b/watchdog/durable_alerting.go
+@@ -0,0 +1,111 @@
++package watchdog
++
++import (
++	"encoding/json"
++	"errors"
++	"fmt"
++
++	"github.com/TwiN/gatus/v5/alerting"
++	"github.com/TwiN/gatus/v5/alerting/alert"
++	"github.com/TwiN/gatus/v5/config/endpoint"
++	"github.com/TwiN/gatus/v5/storage/store"
++	"github.com/TwiN/logr"
++)
++
++// This opt-in path is for state-only custom payloads and idempotent receivers.
++// It deliberately does not replay result details, reminders or other providers.
++const durableQueueLimit = 1000
++
++type durableAlertStore interface {
++	LoadAlertDeliveryState(endpointKey, checksum string) ([]byte, error)
++	SaveAlertDeliveryState(endpointKey, checksum string, state []byte) error
++}
++
++type durableAlertState struct {
++	Failures  int
++	Successes int
++	Triggered bool
++	Pending   []bool // false = trigger, true = recovery, in observed order
++}
++
++func handleDurableAlert(ep *endpoint.Endpoint, a *alert.Alert, result *endpoint.Result, cfg *alerting.Config) error {
++	db, ok := store.Get().(durableAlertStore)
++	if !ok {
++		return errors.New("durable-delivery requires SQLite storage")
++	}
++	data, err := db.LoadAlertDeliveryState(ep.Key(), a.Checksum())
++	if err != nil {
++		return fmt.Errorf("load durable alert outbox: %w", err)
++	}
++	state := durableAlertState{}
++	if len(data) > 0 {
++		if err := json.Unmarshal(data, &state); err != nil {
++			return fmt.Errorf("decode durable alert outbox: %w", err)
++		}
++	}
++	save := func() error {
++		data, err := json.Marshal(state)
++		if err != nil {
++			return err
++		}
++		return db.SaveAlertDeliveryState(ep.Key(), a.Checksum(), data)
++	}
++	sendHead := func() error {
++		if len(state.Pending) == 0 {
++			return nil
++		}
++		provider := cfg.GetAlertingProviderByAlertType(a.Type)
++		if provider == nil {
++			return errors.New("durable alert provider is not configured")
++		}
++		if err := provider.Send(ep, a, result, state.Pending[0]); err != nil {
++			// Keep the head, including rejected recoveries, regardless of the next probe.
++			logr.Errorf("[watchdog.durableAlert] Receiver rejected pending transition for endpoint=%s route=%s", ep.Key(), a.GetDescription())
++			return nil
++		}
++		state.Pending = state.Pending[1:]
++		return save() // Never deliver a later transition before this cursor is durable.
++	}
++	// At most one delivery attempt per route per probe. Try old work first so a
++	// previously full queue can drain when the receiver becomes available again.
++	hadPending := len(state.Pending) > 0
++	if hadPending {
++		if err := sendHead(); err != nil {
++			return err
++		}
++	}
++	transition := false
++	resolved := false
++	if result.Success {
++		state.Failures = 0
++		if state.Successes < a.SuccessThreshold {
++			state.Successes++
++		}
++		if state.Triggered && state.Successes >= a.SuccessThreshold {
++			transition, resolved = true, true
++			state.Triggered = false
++		}
++	} else {
++		state.Successes = 0
++		if state.Failures < a.FailureThreshold {
++			state.Failures++
++		}
++		if !state.Triggered && state.Failures >= a.FailureThreshold {
++			transition = true
++			state.Triggered = true
++		}
++	}
++	if transition {
++		if len(state.Pending) >= durableQueueLimit {
++			return errors.New("durable alert outbox full; preserve database and reconcile receiver before restarting")
++		}
++		state.Pending = append(state.Pending, resolved)
++	}
++	if err := save(); err != nil { // Commit detected transitions before any attempt to send them.
++		return fmt.Errorf("persist durable alert outbox: %w", err)
++	}
++	if !hadPending {
++		return sendHead()
++	}
++	return nil
++}

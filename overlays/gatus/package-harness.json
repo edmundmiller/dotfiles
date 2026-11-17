@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/TwiN/gatus.git",
+  "ref": "v5.36.0",
+  "patches": ["patches/0001-durable-custom-transitions.patch"],
+  "checks": [["go", "test", "-mod=mod", "./alerting/alert", "./storage/store/sql", "./watchdog"]]
+}

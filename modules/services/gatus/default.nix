@@ -25,6 +25,13 @@ let
     else
       "";
 
+  defaultAlert = {
+    enabled = true;
+    failure-threshold = 3;
+    success-threshold = 2;
+    send-on-resolved = true;
+  };
+
   # Alerting config — only include enabled providers
   alertingConfig =
     { }
@@ -32,26 +39,59 @@ let
       telegram = {
         token = "__TELEGRAM_TOKEN__";
         id = cfg.alerting.telegram.chatId;
-        default-alert = {
-          enabled = true;
-          failure-threshold = 3;
-          success-threshold = 2;
-          send-on-resolved = true;
+        default-alert = defaultAlert;
+      };
+    }
+    // optionalAttrs (cfg.alerting.notion.enable || cfg.alerting.email.enable) {
+      custom = {
+        url = "http://127.0.0.1:${
+          toString (if cfg.alerting.notion.enable then cfg.alerting.notion.port else cfg.alerting.email.port)
+        }/events";
+        method = "POST";
+        headers = {
+          Content-Type = "application/json";
         };
+        default-alert = defaultAlert;
       };
     };
 
-  # Default alert list per endpoint — one entry per enabled provider
-  endpointAlerts = optionals cfg.alerting.telegram.enable [
-    { type = "telegram"; }
-  ];
+  incidentAlert = route: ep: {
+    type = "custom";
+    # Gatus checksums omit provider overrides. Keep stable, distinct route IDs.
+    description = "gatus-${route}";
+    durable-delivery = true;
+    provider-override = {
+      url = "http://127.0.0.1:${toString cfg.alerting.${route}.port}/events";
+      headers = {
+        Content-Type = "application/json";
+        Authorization = "Bearer __${route}_INGEST_TOKEN__";
+      };
+      # Encode names at build time; Gatus does not JSON-escape placeholders.
+      body = builtins.toJSON {
+        endpoint = "${ep.group}: ${ep.name}";
+        state = "[ALERT_TRIGGERED_OR_RESOLVED]";
+      };
+    };
+  };
+
+  # Preserve Telegram's existing opt-in scope. The new routes default to HA only.
+  alertsFor =
+    ep:
+    optionals cfg.alerting.telegram.enable [ { type = "telegram"; } ]
+    ++ optionals (elem ep.name cfg.alerting.endpoints) (
+      optional cfg.alerting.email.enable (incidentAlert "email" ep)
+      ++ optional cfg.alerting.notion.enable (incidentAlert "notion" ep)
+    );
 
   # Helper to add alerts to an endpoint
   withAlerts =
     ep:
+    let
+      alerts = alertsFor ep;
+    in
     ep
-    // optionalAttrs (endpointAlerts != [ ]) {
-      alerts = endpointAlerts;
+    // optionalAttrs (alerts != [ ]) {
+      inherit alerts;
     };
 
   # Endpoints contributed by the services themselves via
@@ -80,113 +120,125 @@ let
     svc:
     let
       entry = svc.registry.gatus;
+      endpoint =
+        (removeAttrs entry [
+          "alerts"
+          "headers"
+        ])
+        // optionalAttrs (entry.headers != { }) { inherit (entry) headers; };
     in
-    optional (svc.enable && entry != null) (
-      (removeAttrs entry [
-        "alerts"
-        "headers"
-      ])
-      // optionalAttrs (entry.headers != { }) { inherit (entry) headers; }
-      // optionalAttrs (entry.alerts && endpointAlerts != [ ]) { alerts = endpointAlerts; }
-    )
+    optional (svc.enable && entry != null) (if entry.alerts then withAlerts endpoint else endpoint)
   ) registryContributors;
+
+  endpoints = sortEndpoints (
+    (map withAlerts [
+      {
+        name = "Matter Server";
+        order = 30;
+        group = "Smart Home";
+        url = "tcp://localhost:5580";
+        interval = "120s";
+        conditions = [ "[CONNECTED] == true" ];
+      }
+      {
+        name = "PostgreSQL";
+        order = 80;
+        group = "Infrastructure";
+        url = "tcp://localhost:5432";
+        interval = "60s";
+        conditions = [ "[CONNECTED] == true" ];
+      }
+      {
+        name = "Mill Docs Agents";
+        order = 90;
+        group = "Infrastructure";
+        url = "https://mill-docs-agents.cinnamon-rooster.ts.net/";
+        interval = "60s";
+        conditions = [ "[STATUS] == 200" ];
+      }
+      {
+        name = "Grafana Cloud";
+        order = 100;
+        group = "Monitoring";
+        url = "https://fearlesslorry169.grafana.net/api/health";
+        interval = "60s";
+        conditions = [ "[STATUS] == 200" ];
+      }
+      # TODO: Tailscale local API doesn't expose healthz on 41112
+      # {
+      #   name = "Tailscale";
+      #   group = "Infrastructure";
+      #   url = "http://localhost:41112/healthz";
+      #   interval = "60s";
+      #   conditions = [ "[STATUS] == 200" ];
+      # }
+    ])
+    ++ optionals config.modules.services.homepage.enable [
+      {
+        name = "Homepage";
+        order = 130;
+        group = "Monitoring";
+        url = "http://localhost:8082";
+        interval = "60s";
+        conditions = [ "[STATUS] == 200" ];
+      }
+    ]
+    ++
+      optionals
+        (
+          config.modules.services.obsidian-sync.enable
+          && config.modules.services.obsidian-sync.healthcheck.enable
+          && cfg.healthchecks.readonlyApiKeyFile != ""
+          && obsidianSyncHealthcheckId != ""
+        )
+        [
+          {
+            name = "Obsidian Sync";
+            order = 140;
+            group = "Sync";
+            url = "https://healthchecks.io/api/v2/checks/${obsidianSyncHealthcheckId}";
+            headers = {
+              X-Api-Key = "__HEALTHCHECKS_API_KEY__";
+            };
+            interval = "60s";
+            conditions = [
+              "[STATUS] == 200"
+              "[BODY].status == up"
+            ];
+          }
+        ]
+    ++ registryEndpoints
+    ++ optional cfg.alerting.notion.enable {
+      name = "Notion Incident Delivery";
+      group = "Monitoring";
+      order = 110;
+      url = "http://127.0.0.1:${toString cfg.alerting.notion.port}/health";
+      interval = "60s";
+      conditions = [ "[STATUS] == 200" ];
+      # Delivery health is dashboard-only; the mail receiver permits HA only.
+    }
+    ++ optional cfg.alerting.email.enable {
+      name = "Email Incident Delivery";
+      group = "Monitoring";
+      order = 111;
+      url = "http://127.0.0.1:${toString cfg.alerting.email.port}/health";
+      interval = "60s";
+      conditions = [ "[STATUS] == 200" ];
+    }
+  );
 
   configTemplate = pkgs.writeText "gatus-config-template.yaml" (
     builtins.toJSON (
       {
         web.port = gatusPort;
-
+        inherit endpoints;
         storage = {
           type = "sqlite";
           path = "/var/lib/gatus/data.db";
-          # Keep at least 24 hours of the one-minute HA runtime probes/events
-          # for agent assessment instead of only the default 100 results.
+          # Keep at least 24 hours of one-minute HA runtime probes/events.
           maximum-number-of-results = 1500;
           maximum-number-of-events = 1500;
         };
-
-        # Every endpoint carries an `order`; the combined list is sorted once and
-        # `order` stripped, so registry-contributed entries land in the same
-        # positions they occupied when they were hard-coded here.
-        endpoints = sortEndpoints (
-          (map withAlerts [
-            {
-              name = "Matter Server";
-              order = 30;
-              group = "Smart Home";
-              url = "tcp://localhost:5580";
-              interval = "120s";
-              conditions = [ "[CONNECTED] == true" ];
-            }
-            {
-              name = "PostgreSQL";
-              order = 80;
-              group = "Infrastructure";
-              url = "tcp://localhost:5432";
-              interval = "60s";
-              conditions = [ "[CONNECTED] == true" ];
-            }
-            {
-              name = "Mill Docs Agents";
-              order = 90;
-              group = "Infrastructure";
-              url = "https://mill-docs-agents.cinnamon-rooster.ts.net/";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-            {
-              name = "Grafana Cloud";
-              order = 100;
-              group = "Monitoring";
-              url = "https://fearlesslorry169.grafana.net/api/health";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-            # TODO: Tailscale local API doesn't expose healthz on 41112
-            # {
-            #   name = "Tailscale";
-            #   group = "Infrastructure";
-            #   url = "http://localhost:41112/healthz";
-            #   interval = "60s";
-            #   conditions = [ "[STATUS] == 200" ];
-            # }
-          ])
-          ++ optionals config.modules.services.homepage.enable [
-            {
-              name = "Homepage";
-              order = 130;
-              group = "Monitoring";
-              url = "http://localhost:8082";
-              interval = "60s";
-              conditions = [ "[STATUS] == 200" ];
-            }
-          ]
-          ++
-            optionals
-              (
-                config.modules.services.obsidian-sync.enable
-                && config.modules.services.obsidian-sync.healthcheck.enable
-                && cfg.healthchecks.readonlyApiKeyFile != ""
-                && obsidianSyncHealthcheckId != ""
-              )
-              [
-                {
-                  name = "Obsidian Sync";
-                  order = 140;
-                  group = "Sync";
-                  url = "https://healthchecks.io/api/v2/checks/${obsidianSyncHealthcheckId}";
-                  headers = {
-                    X-Api-Key = "__HEALTHCHECKS_API_KEY__";
-                  };
-                  interval = "60s";
-                  conditions = [
-                    "[STATUS] == 200"
-                    "[BODY].status == up"
-                  ];
-                }
-              ]
-          ++ registryEndpoints
-        );
       }
       // optionalAttrs (alertingConfig != { }) {
         alerting = alertingConfig;
@@ -210,6 +262,25 @@ in
       chatId = mkOpt types.str "";
     };
 
+    alerting.endpoints = mkOpt (types.listOf types.str) [ "Home Assistant Runtime" ];
+
+    alerting.email = {
+      enable = mkBoolOpt false;
+      port = mkOpt types.port 8126;
+      url = mkOpt types.str "";
+      tokenFile = mkOpt types.str "";
+      ingestTokenFile = mkOpt types.str "";
+    };
+
+    alerting.notion = {
+      enable = mkBoolOpt false;
+      port = mkOpt types.port 8125;
+      tokenFile = mkOpt types.str "";
+      ingestTokenFile = mkOpt types.str "";
+      dataSourceId = mkOpt types.str "";
+      evidenceUrl = mkOpt types.str "";
+    };
+
     healthcheck = {
       enable = mkBoolOpt false;
       pingUrl = mkOpt types.str "";
@@ -222,13 +293,48 @@ in
   # NixOS-only service
   config = mkIf cfg.enable (
     optionalAttrs (!isDarwin) {
+      assertions = [
+        {
+          assertion =
+            !cfg.alerting.email.enable
+            || (
+              cfg.alerting.email.tokenFile != ""
+              && cfg.alerting.email.ingestTokenFile != ""
+              && hasPrefix "https://" cfg.alerting.email.url
+              && cfg.alerting.email.port != cfg.port
+              && cfg.alerting.email.port != cfg.alerting.notion.port
+              && cfg.alerting.endpoints == [ "Home Assistant Runtime" ]
+            );
+          message = "Gatus Cloudflare email requires scoped runtime API/ingest tokens, HTTPS URL, a distinct local port and HA Runtime-only scope.";
+        }
+        {
+          assertion =
+            !cfg.alerting.notion.enable
+            || (
+              all (value: value != "") [
+                cfg.alerting.notion.tokenFile
+                cfg.alerting.notion.ingestTokenFile
+                cfg.alerting.notion.dataSourceId
+              ]
+              && hasPrefix "https://" cfg.alerting.notion.evidenceUrl
+              && cfg.alerting.notion.port != cfg.port
+            );
+          message = "Gatus Notion requires runtime API/ingest token files, a data source, HTTPS evidence URL and a distinct local port.";
+        }
+      ];
+
       systemd.services.gatus = {
         description = "Gatus uptime monitor";
         wantedBy = [ "multi-user.target" ];
         after = [
           "network.target"
           "tailscaled.service"
-        ];
+        ]
+        ++ optional cfg.alerting.notion.enable "gatus-notion.service"
+        ++ optional cfg.alerting.email.enable "gatus-email.service";
+        wants =
+          optional cfg.alerting.notion.enable "gatus-notion.service"
+          ++ optional cfg.alerting.email.enable "gatus-email.service";
 
         serviceConfig = {
           Type = "simple";
@@ -240,7 +346,8 @@ in
             "+"
             + pkgs.writeShellScript "gatus-prepare-config" (
               ''
-                cp ${configTemplate} /run/gatus/config.yaml
+                set -eu
+                install -m 600 ${configTemplate} /run/gatus/config.yaml
               ''
               + optionalString cfg.alerting.telegram.enable ''
                 TELEGRAM_TOKEN=$(cat ${cfg.alerting.telegram.botTokenFile})
@@ -249,6 +356,38 @@ in
               + optionalString (cfg.healthchecks.readonlyApiKeyFile != "") ''
                 HEALTHCHECKS_API_KEY=$(cat ${cfg.healthchecks.readonlyApiKeyFile})
                 ${pkgs.gnused}/bin/sed -i "s|__HEALTHCHECKS_API_KEY__|$HEALTHCHECKS_API_KEY|g" /run/gatus/config.yaml
+              ''
+              + optionalString (cfg.alerting.email.enable || cfg.alerting.notion.enable) ''
+                ${pkgs.python3}/bin/python3 - <<'PY'
+                import json
+                from pathlib import Path
+                path = Path("/run/gatus/config.yaml")
+                config = json.loads(path.read_text())
+                tokens = {}
+                ${concatMapStrings
+                  (
+                    route:
+                    optionalString cfg.alerting.${route}.enable ''
+                      tokens["__${route}_INGEST_TOKEN__"] = Path(${
+                        builtins.toJSON cfg.alerting.${route}.ingestTokenFile
+                      }).read_text().strip()
+                    ''
+                  )
+                  [
+                    "email"
+                    "notion"
+                  ]
+                }
+                if not all(tokens.values()):
+                    raise SystemExit("Gatus incident ingest token is empty")
+                for endpoint in config["endpoints"]:
+                    for alert in endpoint.get("alerts", []):
+                        headers = alert.get("provider-override", {}).get("headers", {})
+                        for placeholder, token in tokens.items():
+                            if placeholder in headers.get("Authorization", ""):
+                                headers["Authorization"] = "Bearer " + token
+                path.write_text(json.dumps(config))
+                PY
               ''
               + ''
                 # RuntimeDirectory is owned by DynamicUser; match ownership
@@ -260,6 +399,84 @@ in
           Environment = [ "GATUS_CONFIG_PATH=/run/gatus/config.yaml" ];
           Restart = "on-failure";
           RestartSec = 5;
+        };
+      };
+
+      systemd.services.gatus-notion = mkIf cfg.alerting.notion.enable {
+        description = "Deliver Gatus incidents to Notion";
+        wantedBy = [ "multi-user.target" ];
+        # Start the local queue even when the upstream network is unavailable.
+        after = [ "network.target" ];
+        serviceConfig = {
+          DynamicUser = true;
+          StateDirectory = "gatus-notion";
+          StateDirectoryMode = "0700";
+          UMask = "0077";
+          LoadCredential = [
+            "notion-token:${cfg.alerting.notion.tokenFile}"
+            "ingest-token:${cfg.alerting.notion.ingestTokenFile}"
+          ];
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          Restart = "on-failure";
+          RestartSec = "5s";
+          ExecStart = concatStringsSep " " [
+            "${pkgs.python3}/bin/python3"
+            "${./incident-delivery.py}"
+            "--state-file /var/lib/gatus-notion/incidents.sqlite"
+            "--token-file %d/notion-token"
+            "--ingest-token-file %d/ingest-token"
+            "--port ${toString cfg.alerting.notion.port}"
+            "--data-source ${escapeShellArg cfg.alerting.notion.dataSourceId}"
+            "--evidence-url ${escapeShellArg cfg.alerting.notion.evidenceUrl}"
+            "--endpoints-file ${
+              pkgs.writeText "gatus-notion-endpoints.json" (
+                builtins.toJSON (
+                  map (ep: "${ep.group}: ${ep.name}") (
+                    filter (ep: elem ep.name cfg.alerting.endpoints && (ep.alerts or [ ]) != [ ]) endpoints
+                  )
+                )
+              )
+            }"
+          ];
+        };
+      };
+
+      systemd.services.gatus-email = mkIf cfg.alerting.email.enable {
+        description = "Deliver ordered Gatus email transitions through Family Ops";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        serviceConfig = {
+          DynamicUser = true;
+          StateDirectory = "gatus-email";
+          StateDirectoryMode = "0700";
+          UMask = "0077";
+          LoadCredential = [
+            "email-token:${cfg.alerting.email.tokenFile}"
+            "ingest-token:${cfg.alerting.email.ingestTokenFile}"
+          ];
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          Restart = "on-failure";
+          RestartSec = "5s";
+          ExecStart = concatStringsSep " " [
+            "${pkgs.python3}/bin/python3"
+            "${./incident-delivery.py}"
+            "--state-file /var/lib/gatus-email/events.sqlite"
+            "--token-file %d/email-token"
+            "--ingest-token-file %d/ingest-token"
+            "--port ${toString cfg.alerting.email.port}"
+            "--email-url ${escapeShellArg cfg.alerting.email.url}"
+            "--endpoints-file ${
+              pkgs.writeText "gatus-email-endpoints.json" (
+                builtins.toJSON [ "Smart Home: Home Assistant Runtime" ]
+              )
+            }"
+          ];
         };
       };
 

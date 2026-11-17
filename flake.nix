@@ -1735,6 +1735,11 @@
                 configFile = ./config/herdr/config.toml;
               };
 
+              gatus-alerting-tests = import ./modules/services/gatus/_tests/check.nix {
+                inherit inputs;
+                pkgs = pkgs.extend self.overlays.gatus;
+              };
+
               hass-health-tests =
                 pkgs.runCommand "hass-health-tests"
                   {
