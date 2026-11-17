@@ -50,8 +50,8 @@ needed; this helper does not delete remote branches.
 
 Candidates use the same changed-path portable/Linux selection as main, with
 affected formatting/lint, repository tests and package checks. A small planner
-validates the candidate ref and passes its explicit BASE to both Linux and the
-affected Herdr VM. A new candidate branch's zero `before` SHA must not turn a
+validates the candidate ref and passes its explicit BASE to Linux.
+A new candidate branch's zero `before` SHA must not turn a
 docs change into a full repository run. Shared Nix inputs still select broad
 checks deliberately; "small" is not a fixed list that omits affected consumers.
 
@@ -105,7 +105,7 @@ hit, not a separate check-skipping rule. Different outputs build normally.
 Missing, expired, malformed or unavailable artifacts fall back to ordinary
 validation. No cache result can make a failed validation pass. A Nix export
 format change also causes a cache miss rather than publishing unknown bytes.
-Herdr VM, Darwin and service VM jobs retain their existing behavior.
+Darwin and service VM jobs retain their existing behavior.
 
 For hosted evidence, retain the candidate's `Check cache: exported` count,
 main's `Check cache: imported` count and source run URL, and both jobs' timed

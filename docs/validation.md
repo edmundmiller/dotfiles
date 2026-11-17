@@ -20,7 +20,6 @@ Run them inside the checkout, or use `mise --cd <checkout> run check`.
 | `hey check --full`                 | All portable checks, formatting/lint, all workspace packages and integration tests |
 | `hey check --platform darwin`      | Both host derivations and native checks, aarch64 Darwin only                       |
 | `hey check --platform nixos`       | Full Linux flake check, including host, deployment and VM checks                   |
-| `hey check --platform herdr-vm`    | Herdr integration VM only, x86_64 Linux                                            |
 | `hey check --platform services-vm` | Service VM suite only, x86_64 Linux                                                |
 
 Use the repository dev shell (`nix develop`) or installed dotfiles tools. The
@@ -74,10 +73,9 @@ explicit base encoded in `candidate/BASE/SHA`, not the all-zero before-SHA
 of a new branch. The planner rejects mismatched candidate refs, non-ancestor
 bases, or main that has moved beyond that base. `--ci` consumes `VALIDATION_BASE`;
 manual events with no usable base run the full portable suite. The
-lightweight platform planner runs the same selector without Nix before allocating
-the Herdr VM runner and passes the same base to Linux and Herdr. Unaffected
-Herdr work is explicitly skipped. Planning can run on either platform without
-a native builder. See [candidate admission](runbooks/candidate-ci.md) for the
+lightweight planning job validates the candidate base before passing it to Linux.
+Legacy Herdr TOML and VM checks have been removed; native Herdr tests remain.
+See [candidate admission](runbooks/candidate-ci.md) for the
 pre-main publication route and the separately approved live settings.
 
 Ordinary PR, candidate and main-push CI allocates no Mac runner. Linux waits only

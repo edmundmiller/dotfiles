@@ -230,17 +230,27 @@ class ValidationTests(unittest.TestCase):
                 self.selection("--ci", "--platform", "darwin")["platform"]
             )
             self.assertIsNone(
-                self.selection("--ci", "--platform", "herdr-vm")["platform"]
+                self.selection("--ci", "--platform", "services-vm")["platform"]
             )
-            self.write("modules/shell/herdr/default.nix", "affected")
+            self.write("modules/services/gatus/default.nix", "affected")
             self.assertEqual(
-                self.selection("--ci", "--platform", "herdr-vm")["platform"], "herdr-vm"
+                self.selection("--ci", "--platform", "services-vm")["platform"], "services-vm"
             )
+
+    def test_herdr_selection_keeps_native_checks_without_legacy_binary_checks(self):
+        for path in ("modules/shell/herdr/default.nix", "flake.nix"):
+            with self.subTest(path=path):
+                self.write(path, "changed")
+                checks = self.selection(path)["checks"]
+                self.assertIn("herdr-native-tests", checks)
+                self.assertIn("pi-herdr-settings-tests", checks)
+                self.assertNotIn("herdr-config-check", checks)
+        self.assertNotIn("herdr-config-check", self.selection("--full")["checks"])
 
     def test_platform_plan_does_not_require_a_native_builder(self):
         self.write("flake.lock", "shared change")
         with patch.dict(os.environ, {"VALIDATION_BASE": "origin/main"}):
-            for host, target in (("Darwin", "herdr-vm"), ("Linux", "darwin")):
+            for host, target in (("Darwin", "services-vm"), ("Linux", "darwin")):
                 with patch.object(v.platform, "system", return_value=host):
                     self.assertEqual(
                         self.selection("--ci", "--platform", target)["platform"], target
@@ -343,7 +353,7 @@ class ValidationTests(unittest.TestCase):
             v.package_plan(self.root, [], packages=["pi-typo"])
 
     def test_platform_rejection_happens_before_checks(self):
-        for host, target in (("Darwin", "herdr-vm"), ("Linux", "darwin")):
+        for host, target in (("Darwin", "services-vm"), ("Linux", "darwin")):
             with (
                 patch.object(v.platform, "system", return_value=host),
                 patch.object(
@@ -664,14 +674,13 @@ class ValidationTests(unittest.TestCase):
         self.assertIn("python3 scripts/validation.py", workflow)
         self.assertNotIn(".#checks.", workflow)
         self.assertNotIn("qa-changed", workflow)
-        self.assertNotIn("--platform darwin", workflow.split("  herdr-vm-test:")[0])
-        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
+        self.assertNotIn("--platform darwin", workflow.split("\n  darwin:\n")[0])
+        linux = workflow.split("  checks:")[1].split("  required-checks:")[0]
         self.assertIn(
             "NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}", linux
         )
         self.assertNotIn("secrets.RENOVATE_TOKEN", linux)
         self.assertNotIn("needs: darwin", linux)
-        linux = workflow.split("  checks:")[1].split("  herdr-vm-test:")[0]
         darwin = workflow.split("\n  darwin:\n")[1].split("  vm-services:")[0]
         self.assertIn("runs-on: xcode-27", darwin)
         self.assertIn("if: github.event_name == 'workflow_dispatch' && inputs.darwin", darwin)
@@ -780,15 +789,14 @@ class ValidationTests(unittest.TestCase):
     def test_required_ci_contexts_fail_closed(self):
         workflow = (v.ROOT / ".github/workflows/ci.yml").read_text()
         self.assertIn("  required-checks:", workflow)
-        required = workflow.split("  required-checks:")[1].split("  herdr-vm-test:")[0]
+        required = workflow.split("  required-checks:")[1].split("\n  darwin:\n")[0]
         self.assertIn("name: ${{ matrix.context }}", required)
         self.assertIn("context: [Flake Check (Linux), Check Formatting]", required)
-        self.assertIn("needs: [plan, checks, herdr-vm-test, darwin, vm-services]", required)
+        self.assertIn("needs: [plan, checks, darwin, vm-services]", required)
         self.assertIn("if: always()", required)
         command = textwrap.dedent(required.split("run: |\n", 1)[1])
         baseline = {
             "PLAN_RESULT": "success", "LINUX_RESULT": "success",
-            "HERDR_REQUIRED": "false", "HERDR_RESULT": "skipped",
             "DARWIN_REQUIRED": "false", "DARWIN_RESULT": "skipped",
             "SERVICES_REQUIRED": "false", "SERVICES_RESULT": "skipped",
         }
@@ -796,7 +804,7 @@ class ValidationTests(unittest.TestCase):
         for job in ("PLAN", "LINUX"):
             for result in ("failure", "cancelled", "skipped", ""):
                 cases.append((baseline | {job + "_RESULT": result}, False))
-        for job in ("HERDR", "DARWIN", "SERVICES"):
+        for job in ("DARWIN", "SERVICES"):
             for requested in ("true", "false", ""):
                 for result in ("success", "failure", "cancelled", "skipped", ""):
                     expected = (requested, result) in (("true", "success"), ("false", "skipped"))

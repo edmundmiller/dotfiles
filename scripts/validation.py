@@ -197,11 +197,6 @@ CHECKS = {
         "tests/test_herdr_native*.py",
         "tests/test_herdr_studios_native.py",
     ],
-    "herdr-config-check": [
-        "modules/shell/herdr/*",
-        "config/herdr/*",
-        "packages/herdr/*",
-    ],
     "screentime-backup-cli-tests": ["packages/screentime-backup/*"],
     "discrawl-backup-cli-tests": ["packages/discrawl-backup/*"],
     "nuc-deployment-provenance": [
@@ -254,14 +249,6 @@ PLATFORM_PATHS = {
         "modules/*",
         "packages/*",
         "config/*",
-    ],
-    "herdr-vm": [
-        "modules/shell/herdr/*",
-        "modules/desktop/term/tmux/*",
-        "config/tmux/*",
-        "config/herdr/*",
-        "packages/herdr/*",
-        "modules/options.nix",
     ],
     "services-vm": ["modules/services/*"],
     "nixos": ["hosts/nuc/*", "modules/*", "packages/*", "config/*"],
@@ -632,7 +619,6 @@ def execute(root, selection, github_token=""):
         )
     elif target and system:
         name = {
-            "herdr-vm": "vm-shell-herdr-vm-test",
             "services-vm": "vm-services-gatus-vm-test",
         }[target]
         run(target, build + [f".#checks.{system}.{name}"], env=env)
@@ -760,7 +746,7 @@ def main(argv=None):
     )
     parser.add_argument(
         "--platform",
-        choices=["darwin", "nixos", "herdr-vm", "services-vm"],
+        choices=["darwin", "nixos", "services-vm"],
         help="Explicit host evaluation or VM suite, separate from portable checks",
     )
     parser.add_argument(
@@ -796,7 +782,7 @@ def main(argv=None):
         parser.error(
             "--platform darwin requires an aarch64 Darwin builder; nothing ran"
         )
-    if args.platform in ("nixos", "herdr-vm", "services-vm") and not args.plan and (
+    if args.platform in ("nixos", "services-vm") and not args.plan and (
         platform.system() != "Linux" or platform.machine() != "x86_64"
     ):
         parser.error(

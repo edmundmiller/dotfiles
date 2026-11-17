@@ -1719,21 +1719,12 @@
                     touch "$out"
                   '';
 
-              # Validate the tracked Herdr config template with Herdr's own
-              # `config check`, which rejects unknown keys. Cheap and runs
-              # everywhere; the VM test below covers the activated config.
               pi-herdr-settings-tests = import ./modules/agents/pi/_tests/herdr-settings.nix {
                 inherit lib pkgs;
               };
 
               herdr-native-tests = import ./modules/shell/herdr/_tests/native-check.nix {
                 inherit lib pkgs inputs;
-              };
-
-              herdr-config-check = import ./modules/shell/herdr/_tests/config-check.nix {
-                inherit pkgs;
-                herdrPackage = self.packages.${system}.herdr;
-                configFile = ./config/herdr/config.toml;
               };
 
               gatus-alerting-tests = import ./modules/services/gatus/_tests/check.nix {

@@ -27,24 +27,19 @@ env:
 
 jobs:
   plan:
-    name: Plan platform checks
+    name: Resolve validation base
     runs-on: ubuntu-latest
     outputs:
       base: ${{ steps.plan.outputs.base }}
-      herdr_vm: ${{ steps.plan.outputs.herdr_vm }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - id: plan
-        name: Select affected Herdr VM before provisioning
+        name: Validate candidate base before checks
         run: |
           VALIDATION_BASE=$(python3 scripts/candidate_ci.py base)
-          export VALIDATION_BASE
           printf 'base=%s\n' "$VALIDATION_BASE" >> "$GITHUB_OUTPUT"
-          plan=$(python3 scripts/validation.py --ci --platform herdr-vm --plan)
-          required=$(jq -er 'if .platform == "herdr-vm" then "true" elif has("platform") and .platform == null then "false" else error("Invalid Herdr plan") end' <<< "$plan")
-          printf 'herdr_vm=%s\n' "$required" >> "$GITHUB_OUTPUT"
 
   checks:
     name: Checks (Linux)
@@ -107,7 +102,7 @@ jobs:
   # Preserve the contexts required by main without weakening branch protection.
   required-checks:
     name: ${{ matrix.context }}
-    needs: [plan, checks, herdr-vm-test, darwin, vm-services]
+    needs: [plan, checks, darwin, vm-services]
     if: always()
     runs-on: ubuntu-latest
     strategy:
@@ -118,8 +113,6 @@ jobs:
         env:
           PLAN_RESULT: ${{ needs.plan.result }}
           LINUX_RESULT: ${{ needs.checks.result }}
-          HERDR_REQUIRED: ${{ needs.plan.outputs.herdr_vm }}
-          HERDR_RESULT: ${{ needs.herdr-vm-test.result }}
           DARWIN_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.darwin }}
           DARWIN_RESULT: ${{ needs.darwin.result }}
           SERVICES_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.services_vm }}
@@ -127,29 +120,12 @@ jobs:
         run: |
           test "$PLAN_RESULT" = success
           test "$LINUX_RESULT" = success
-          for result in "$HERDR_REQUIRED:$HERDR_RESULT" "$DARWIN_REQUIRED:$DARWIN_RESULT" "$SERVICES_REQUIRED:$SERVICES_RESULT"; do
+          for result in "$DARWIN_REQUIRED:$DARWIN_RESULT" "$SERVICES_REQUIRED:$SERVICES_RESULT"; do
             case "$result" in
               true:success|false:skipped) ;;
               *) echo "Required check did not succeed: $result"; exit 1 ;;
             esac
           done
-
-  herdr-vm-test:
-    name: Herdr VM Test (Linux)
-    needs: plan
-    if: needs.plan.outputs.herdr_vm == 'true'
-    runs-on: ubuntu-latest
-    env:
-      VALIDATION_BASE: ${{ needs.plan.outputs.base }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          extra-conf: accept-flake-config = true
-      - name: Validate affected Herdr VM
-        run: python3 scripts/validation.py --ci --platform herdr-vm
 
   darwin:
     name: Darwin-only checks
