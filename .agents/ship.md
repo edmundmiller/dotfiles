@@ -32,9 +32,11 @@ continue despite a reporting failure.
 Return "Ship request submitted; publication and deployment pending" with the
 run URL and observed state. No Orb watcher, polling, wait loop or new Orb is
 needed. CI events report progress; they do not supply authority or require the
-agent to land or dispatch. Keep the owner thread unarchived until result
-inspection is complete. End the turn so the Orb can pause normally; do not
-equate an idle thread with measured billable savings.
+agent to land or dispatch. Never keep an Orb active just to wait for CI.
+After confirmed registration, source-thread archival must not stop authorized
+shipping. Archival disables that thread's notifications, not GitHub's request.
+Preserve run links and the receipt for later inspection by an authorized owner.
+End the turn while GitHub works; claim pause or billing savings only with evidence.
 
 On completion, inspect the saved runs and latest attempts. Verify the active
 dotfiles and agents-workspace revisions and basic host services from Deploy NUC

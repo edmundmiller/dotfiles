@@ -314,11 +314,13 @@ lands after candidate CI, and dispatches Deploy NUC after exact-main CI.
 Neither transition depends on an Amp completion subscription or a running Orb.
 The existing Deploy NUC guards and runtime verification remain unchanged.
 
-Keep the owner thread unarchived for result reporting, while allowing its Orb
-to pause normally. Archival disables Amp subscriptions. Missing registration
-or reporting is a named blocker, not a completed handoff. Failed Ship runs,
-deployment claims and original approval references must survive recovery.
-No hosted cost reduction is proved until the new route is published and measured.
+Never keep an Orb active just to wait for CI. Confirmed GitHub registration
+must survive source-thread archival. Archival disables that thread's Amp
+notifications, not authorized shipping. Preserve run links and the receipt
+for later inspection by an authorized owner. Missing registration or reporting
+is a named blocker, not a completed handoff. Failed Ship runs, deployment claims
+and original approval references must survive recovery. Claim pause or billing
+savings only with measured evidence.
 
 #### Manual exact-main requests and special deployment options
 

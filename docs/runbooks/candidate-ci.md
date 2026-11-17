@@ -82,11 +82,14 @@ The owner subscribes to `ship.yml`, `ci.yml`, and `deploy-nuc.yml` for reporting
 not orchestration, and records their IDs and run URLs. The initial Ship
 dispatch captures BASE, not SHA. Its reporting subscription must match that
 captured head; later continuations and Deploy NUC capture the published SHA.
-Keep that thread unarchived until result inspection. An idle Orb can pause normally without
-archiving its thread. A failed/missing subscription is a reporting blocker,
-not a reason to redispatch accepted work. Check a completed run immediately;
-never rely solely on a future event. Do not claim registered handoff until
-the dispatch's authorization artifact is present.
+Never keep an Orb active just to wait for CI. After confirmed registration,
+archiving the source thread must not stop authorized publication or deployment.
+Archival disables that thread's notifications, not GitHub's saved authority.
+Preserve run links and the receipt for later inspection by an authorized owner.
+A failed/missing subscription is a reporting blocker, not a reason to redispatch
+accepted work. Check a completed run immediately; never rely solely on a future
+event. Do not claim registered handoff until the dispatch's authorization
+artifact is present. Measure pause and billing effects before claiming savings.
 
 ### One-time rollout approval
 

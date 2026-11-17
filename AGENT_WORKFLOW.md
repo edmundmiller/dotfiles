@@ -50,10 +50,12 @@ For authorized NUC shipping, follow the request handoff in
 [NUC shipping](docs/runbooks/deploy-nuc.md#ship-from-an-amp-orb). The registered
 Ship request owns deployment after exact-main CI. Persist the authority,
 request/run identities and reporting subscriptions in the existing receipt.
-End the turn while GitHub works so the Orb can pause; keep the owner thread
-unarchived and retain the receipt and checkout through result inspection.
-Archival disables its event subscriptions. Completion events resume inspection,
-not publication or another deployment, and grant no new authority.
+Never keep an Orb active just to wait for CI. After confirmed registration,
+GitHub continues authorized shipping even if the source thread is archived.
+Archival disables that thread's notifications, not the registered request.
+Retain run links and the receipt for later inspection by an authorized owner.
+Completion events resume inspection, not publication or another deployment,
+and grant no new authority. Do not infer pause or billing savings from idleness.
 
 Cross-model review is optional and runs only on explicit request. It is not a
 quality gate. `hey check` never applies repairs to source; use `nix fmt` for
