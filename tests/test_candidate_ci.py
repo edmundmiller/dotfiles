@@ -208,7 +208,7 @@ class CandidateCiTests(unittest.TestCase):
             text=True, capture_output=True, timeout=10,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(output.read_text().splitlines(), [f"base={self.base}", "herdr_vm=false"])
+        self.assertEqual(output.read_text().splitlines(), [f"base={self.base}"])
         for change in (
             {"GITHUB_SHA": self.base},
             {"GITHUB_REF_NAME": f"candidate/{self.sha}/{self.sha}"},

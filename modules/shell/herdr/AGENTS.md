@@ -25,6 +25,4 @@ The Ghostty module owns the renamed `packages/herdr-ghostty` legacy frontend;
 it never launches native Herdr inside a terminal.
 
 Run `hey check modules/shell/herdr config/herdr` and the native CLI/config
-behavior tests. Legacy `_tests/` still checks TOML against the old binary;
-it does not validate native JSON or mods. Add Darwin evaluation for backend
-or cross-module wiring changes. Keep private tnote disabled in VM tests.
+behavior tests. Add Darwin evaluation for backend or cross-module wiring changes.

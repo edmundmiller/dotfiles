@@ -404,16 +404,14 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertNotIn("done_path", template)
         self.assertIn("[ui.sound]", template)
 
-    def test_herdr_vm_test_does_not_evaluate_private_tnote(self):
+    def test_herdr_tnote_is_optional(self):
         herdr_module = (ROOT / "modules/shell/herdr/default.nix").read_text()
-        vm_test = (ROOT / "modules/shell/herdr/_tests/vm-test.nix").read_text()
         self.assertIn("tnote.enable = mkBoolOpt true;", herdr_module)
         self.assertIn('optional cfg.tnote.enable "${pkgs.my.tnote}/bin"', herdr_module)
         self.assertIn(
             "herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote",
             herdr_module,
         )
-        self.assertIn("modules.shell.herdr.tnote.enable = false;", vm_test)
 
     def test_renovate_config_keeps_hash_refresh_and_reduces_noise(self):
         config = json.loads((ROOT / "renovate.json").read_text())
