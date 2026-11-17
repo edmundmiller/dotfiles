@@ -63,6 +63,8 @@
     "~/.config/dotfiles/packages/pi-packages/pi-xurl",
     // Direct Pi-to-Pi messages and blocking questions; /intercom opens the peer picker.
     { "source": "npm:pi-intercom@0.18.1", "skills": [] },
+    // Colored reply emphasis and upstream's TUI-only writing guidance.
+    "git:github.com/johnlindquist/pi-emphasis@f884b736c489944ee778ab951c7f78580f137b02",
     // Pin the permission API validated with Pi 1.5.0; the bridge enforces asks even in yolo mode.
     "npm:@gotgenes/pi-permission-system@42.0.0",
     // JJ baseline guardrail: stop editing described dirty changes without explicit intent.
