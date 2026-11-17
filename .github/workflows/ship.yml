@@ -1,0 +1,90 @@
+name: Ship
+run-name: Ship ${{ inputs.sha || github.event.workflow_run.head_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Exact main base authorized for publication
+        required: true
+        type: string
+      sha:
+        description: Exact submitted candidate SHA
+        required: true
+        type: string
+      deploy:
+        description: Explicit authority to deploy this revision to NUC
+        type: boolean
+        default: false
+      authority:
+        description: Reference to the human publication and optional deployment approval
+        required: true
+        type: string
+      owner:
+        description: Owning Amp thread URL
+        required: true
+        type: string
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ship-${{ inputs.sha || github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  advance:
+    if: >-
+      github.repository == 'edmundmiller/dotfiles' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.path == '.github/workflows/ci.yml' &&
+      github.event.workflow_run.event == 'push' &&
+      (github.event.workflow_run.head_branch == 'main' ||
+      startsWith(github.event.workflow_run.head_branch, 'candidate/'))))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.DOTFILES_SHIP_TOKEN }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      # workflow_run uses default-branch code, never code/artifacts from the candidate.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require a dedicated shipping credential
+        run: |
+          test -n "$GH_TOKEN" || { echo '::error::DOTFILES_SHIP_TOKEN is required; shipping was not handed off.'; exit 1; }
+          gh auth setup-git --hostname github.com
+      - name: Register explicit dispatch authority
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          mkdir "$RUNNER_TEMP/ship-request"
+          python3 scripts/ship.py register --event "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/ship-request/request.json"
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: ship-request-v1-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ship-request/request.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Advance authorized shipping without waiting
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            args=(--record "$RUNNER_TEMP/ship-request/request.json")
+          fi
+          python3 scripts/ship.py advance --event "$GITHUB_EVENT_PATH" "${args[@]}" | tee "$RUNNER_TEMP/ship-result.json"
+          cat "$RUNNER_TEMP/ship-result.json" >> "$GITHUB_STEP_SUMMARY"
+      - name: Explain a blocked handoff
+        if: failure()
+        run: |
+          echo '::error::Ship stopped. Inspect this run before retrying; a push or deployment dispatch may already have succeeded.'
+          echo 'Ship stopped. Inspect this run and any Deploy NUC run before retrying. Do not redispatch an uncertain deployment.' >> "$GITHUB_STEP_SUMMARY"

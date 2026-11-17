@@ -23,13 +23,17 @@ Deployment and live settings changes need their own explicit approval.
    both values with exact 40-character commit IDs. This pushes only
    `candidate/BASE/SHA`; it does not update main. The helper requires HEAD to
    equal SHA, BASE to be its ancestor, and remote main to equal BASE.
-3. Record BASE, SHA, branch, original authority and the CI run in the existing
-   receipt. Subscribe to push CI for that SHA and candidate branch. End the
-   submission stage with "Candidate submitted; main unchanged". A subscription
-   or lookup failure does not undo a branch push; inspect it before retrying.
-   Do not poll CI or keep an Orb watcher running.
-4. On completion, recheck authority and run
-   `python3 scripts/candidate_ci.py land --base BASE --sha SHA`. This checks the
+3. Before ending the turn, register the authorized continuation with
+   `python3 scripts/ship.py request --receipt RECEIPT --base BASE --sha SHA --thread THREAD_URL --authority APPROVAL_REFERENCE`.
+   Add `--deploy` only with explicit NUC activation authority. The request
+   defaults to publication only. Record the request state/run, original
+   authority and reporting subscriptions in the existing receipt. Candidate
+   submission alone is not a completed handoff. Missing Ship workflow or
+   credential access is a blocker; no watcher or agent-only fallback is used.
+4. GitHub's `ship.yml` registers the authority in an attempt-bound artifact and
+   reacts to `ci.yml` completion events. It checks already-completed CI during
+   registration too, so a fast CI completion cannot be lost. It uses the existing
+   `python3 scripts/candidate_ci.py land --base BASE --sha SHA` guard. This checks the
    latest candidate push run of `ci.yml`, its exact SHA/branch and latest attempt,
    and both required contexts in that attempt. Missing, failed, cancelled,
    skipped or pending results block main. The helper pins GitHub API reads to
@@ -45,6 +49,62 @@ An interrupted push can have succeeded. Inspect the exact remote refs before
 retrying. If main already equals SHA, verify the saved candidate run and record
 publication rather than pushing again. Retain candidate refs while evidence is
 needed; this helper does not delete remote branches.
+
+## Durable Ship handoff
+
+The authorization artifact contains the exact base, candidate, publication and
+deployment choice, human approval reference, owner thread, and dispatch run and
+attempt. Only a dispatch on the captured main base can register it. A candidate
+push or CI event without this record never authorizes landing or activation.
+The trusted default-branch continuation reads no candidate code or CI artifact
+for authorization. It imports its helpers before checking out the candidate.
+
+Candidate and main CI remain independent gates. A main CI completion event
+dispatches Deploy NUC only for the saved exact revision after checking live
+main and latest main-push CI. A `refs/tags/ship-landed/SHA` marker is written
+only after compliant landing and remote readback. An uncertain or bypassed
+push cannot resume into deployment merely because main now equals SHA.
+The continuation creates `refs/tags/ship-deploy/SHA` before dispatch to prevent
+duplicate deliveries or reruns from deploying twice.
+Ambiguous dispatches and existing claims stop with a failed Ship run and an
+operator recovery instruction. Never delete a claim or retry deployment
+without inspecting the original runs and renewed retry authority.
+
+Requests and artifacts expire after seven days. To revoke future continuation,
+run `python3 scripts/ship.py revoke --sha SHA`. This creates the durable
+`refs/tags/ship-revoked/SHA` marker even when registration already completed.
+Cancel any in-flight Ship and accepted Deploy NUC runs separately, then inspect
+actual activation. Cancellation alone cannot revoke a completed registration.
+A rerun of registration creates a new attempt and can repeat writes, so it
+needs explicit retry approval. A revocation marker continues to block reruns.
+
+The owner subscribes to `ship.yml`, `ci.yml`, and `deploy-nuc.yml` for reporting,
+not orchestration, and records their IDs and run URLs. The initial Ship
+dispatch captures BASE, not SHA. Its reporting subscription must match that
+captured head; later continuations and Deploy NUC capture the published SHA.
+Keep that thread unarchived until result inspection. An idle Orb can pause normally without
+archiving its thread. A failed/missing subscription is a reporting blocker,
+not a reason to redispatch accepted work. Check a completed run immediately;
+never rely solely on a future event. Do not claim registered handoff until
+the dispatch's authorization artifact is present.
+
+### One-time rollout approval
+
+Publish this implementation through the existing manual candidate/land route
+only with explicit publication approval. The new workflow must be on main
+before it can accept dispatches or `workflow_run` events. Provision a dedicated
+repository-scoped `DOTFILES_SHIP_TOKEN` with Contents and Actions read/write
+and no branch-protection bypass. Workflow-file changes may additionally need
+Workflows write. Do not repurpose the Renovate or private-input credentials.
+The built-in `GITHUB_TOKEN` suppresses downstream push CI, so it cannot land
+for this route. A missing credential fails before registration.
+
+After rollout, test publication-only shipping first, then an explicitly
+authorized NUC deployment, including a deliberately archived disposable owner
+thread if approved. The GitHub control path should complete without that
+thread; reporting still requires an unarchived listener. Updating the saved Amp
+Ship prompt is a separate approved project-setting action. The exact proposed
+text is `.agents/ship.md`; no prompt setting changes when the file is edited.
 
 ## Small admission suite
 
@@ -71,8 +131,10 @@ for the latest successful exact-main push run and retains the SHA, stale-main,
 provenance and deployment-lock guards. Candidate success cannot substitute for
 that main-push run. This conservatively retains post-main validation work; it
 does not claim to eliminate all duplicate builds or prove lower hosted cost.
-Use the existing [NUC handoff](deploy-nuc.md#ship-from-an-amp-orb) only when
-deployment is authorized. Hosted skill publication still needs served-artifact
+The event-driven Ship route dispatches only after main CI, avoiding an occupied
+Deploy NUC wait runner during that CI. The existing candidate output reuse below
+still saves rebuilds without skipping main validation. Use the [NUC handoff](deploy-nuc.md#ship-from-an-amp-orb)
+only when deployment is authorized. Hosted skill publication still needs served-artifact
 parity; host activation is not hosted-skill delivery evidence.
 
 ## Candidate output reuse
