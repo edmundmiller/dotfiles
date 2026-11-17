@@ -40,20 +40,20 @@ boundaries. Commit, publish, deploy, or clean up only within the user's request;
 publication and host activation are not implied by completing local edits.
 
 For authorized publication to main, follow
-[candidate CI](docs/runbooks/candidate-ci.md). Submit a candidate, resume on
-hosted CI completion, then fast-forward main to the exact passing SHA. No PR
-is required. Do not push unchecked task commits directly to main or bypass
-required statuses. Legacy commands that combine a direct push and activation
-must not be used as an alternative publication route.
+[candidate CI](docs/runbooks/candidate-ci.md). Submit the candidate and its
+explicit Ship authorization in the same submission turn. GitHub owns the
+event-driven landing after candidate CI; an Amp subscription only reports it.
+Candidate submission alone is not a completed handoff. No PR is required.
+Do not push unchecked task commits directly to main or bypass required statuses.
 
 For authorized NUC shipping, follow the request handoff in
-[NUC shipping](docs/runbooks/deploy-nuc.md#ship-from-an-amp-orb). GitHub owns CI
-waiting and deployment after the agent submits the authorized exact revision.
-Persist the request, authority, run URL, and reporting subscriptions in the
-existing receipt. Submission ends after handoff; deployment remains pending.
-Keep that receipt and checkout until deployment evidence and cleanup are
-complete. A completion event resumes result inspection by the same owner;
-it does not authorize new changes or another deployment.
+[NUC shipping](docs/runbooks/deploy-nuc.md#ship-from-an-amp-orb). The registered
+Ship request owns deployment after exact-main CI. Persist the authority,
+request/run identities and reporting subscriptions in the existing receipt.
+End the turn while GitHub works so the Orb can pause; keep the owner thread
+unarchived and retain the receipt and checkout through result inspection.
+Archival disables its event subscriptions. Completion events resume inspection,
+not publication or another deployment, and grant no new authority.
 
 Cross-model review is optional and runs only on explicit request. It is not a
 quality gate. `hey check` never applies repairs to source; use `nix fmt` for
