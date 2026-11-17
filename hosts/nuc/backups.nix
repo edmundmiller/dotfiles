@@ -120,6 +120,8 @@ in
     # so it goes to a dedicated Cloudflare R2 restic repository via restic's S3
     # backend. Do not point audiobook media at BorgBase.
     audiobooks = commonBackupOptions // {
+      # Root is squashed on the NAS; emiller retains access to private books.
+      user = "emiller";
       environmentFile = config.age.secrets."restic/audiobooks-r2-env".path;
       paths = [ "/audiobooks" ];
       timerConfig = {

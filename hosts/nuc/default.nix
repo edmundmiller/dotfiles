@@ -1570,6 +1570,7 @@ in
     ./hardware-configuration.nix
     ./disko.nix
     ./backups.nix
+    ./audiobookshelf.nix
     ./ups.nix
     ./hermes-cadu.nix
     ./amp-orbs.nix
