@@ -6,6 +6,9 @@
 -- leaves this marker inert, so validation never starts an unmanaged watcher.
 -- @rexUndo@
 
+-- Leaf is opt-in; Nix loads the pinned native palette without its installer.
+-- @rexLeaf@
+
 -- Keep the NUC host's existing app identity across config reloads.
 rex.host({
   id = "host:fa2e06a4-e832-41db-a474-a56f5f04ee0b",

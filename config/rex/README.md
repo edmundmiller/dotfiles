@@ -9,6 +9,67 @@ On macOS, this module installs `neorex`. Inside a Rex pane, `neorex file.txt`
 runs Neovim headless and opens `:split` and `:vsplit` as Rex panes. Floats render
 inside their parent pane.
 
+## Leaf document and diff reader
+
+Leaf is disabled by default. To install the reader and its native Rex palette,
+set both options in the host configuration:
+
+```nix
+modules.shell.rex = {
+  enable = true;
+  leaf.enable = true;
+};
+```
+
+The package is `pkgs.my.leaf-reader`, pinned to upstream revision
+`1fd9573697c2e2507cff5ef07a4b6f93a06e5729`, version 0.11.1. It installs the
+`leaf` executable. `pkgs.my.leaf` is an unrelated Markdown previewer; do not
+install both into the same profile. For the reader alone, add
+`pkgs.my.leaf-reader` to `user.packages` without enabling the Rex integration.
+
+After an authorized rebuild and `rex config reload`, open `Cmd+Shift+P` and
+type `Leaf`. The native palette opens documents, working-tree/staged/branch
+diffs and GitHub pull requests. It also offers agent selection, questions about
+selected text and read-aloud controls. GitHub browsing needs authenticated `gh`;
+inline video needs `ffmpeg`. Read aloud uses an online service.
+
+Nix calls the packaged Lua `setup` directly with the absolute executable path.
+Do not run `leaf rex install`, its alias `leaf plugin install`, or their
+uninstall commands against the Nix-managed Rex config. A carried patch keeps
+all palette actions registered, rather than rewriting `init.lua` as readers
+open and close. Reader actions report an error when no reader is open. Config
+loading does not start Leaf or an agent. Remote actions require `leaf` already
+on that host's PATH; the patch removes upstream's automatic Cargo installation.
+No remote host is enabled or changed by this option.
+
+### Pin the receiving agent
+
+Without a pin, Leaf sends selected context to the focused matching agent, then
+a matching agent in the document's window, then another matching pane. A Rex
+Spaces worker may receive it instead of the head. Choosing an agent CLI does
+not distinguish a head from workers. With a selected CLI but no matching pane,
+upstream can launch a new agent. This module sets no agent choice or routing
+defaults and does not change an existing saved Leaf choice.
+
+For deliberate head delivery, obtain the head's actual Rex block ID and launch
+the reader with it, for example `LEAF_AGENT_PANE=block:actual-head-id leaf open README.md`.
+The ID is runtime state, not a dotfiles constant. For palette-launched readers,
+the Rex server process must inherit `LEAF_AGENT_PANE`; an export in an unrelated
+shell does not configure the server. Verify the destination before sending
+sensitive text. An invalid pin fails with clipboard fallback rather than
+automatically choosing another pane. Delivery pastes text and presses Enter;
+it is not a correlated Intercom request or an acceptance signal.
+
+Disable `modules.shell.rex.leaf.enable` and rebuild/reload when authorized to
+remove the package and actions. No installer, host activation or config reload
+runs during a package build. Leaf's reading state remains under
+`${XDG_DATA_HOME:-~/.local/share}/leaf`, including `leaf.db`; disabling does not
+delete it. The package build runs upstream Rust tests and the carried Lua
+palette contract. `pkg-check leaf-reader` checks the Lua contract against a
+fresh pinned checkout. These mocks do not prove routing or rendering in Rex;
+native smoke checks still need an opened document/diff, palette controls and
+delivery to a disposable pinned pane with a worker present.
+
 ## Reopen closed panes
 
 On macOS, the Rex module loads [rex-undo](https://github.com/lakshaybhushan/rex-undo-extension)

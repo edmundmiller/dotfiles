@@ -1,0 +1,119 @@
+diff --git a/lua/leaf/init.lua b/lua/leaf/init.lua
+index 33fd6ed..a5eec74 100644
+--- a/lua/leaf/init.lua
++++ b/lua/leaf/init.lua
+@@ -30,22 +30,12 @@ local DEFAULT_PATH = table.concat({
+   "/bin",
+ }, ":")
+
+--- Runs leaf on the host, installing it with cargo when it isn't there.
++-- Remote hosts must install their own pinned Leaf package.
+ local BOOTSTRAP = [[
+ leaf=$(command -v leaf 2>/dev/null || true)
+-[ -n "$leaf" ] || leaf="$HOME/.cargo/bin/leaf"
+-if [ ! -x "$leaf" ]; then
+-  cargo=$(command -v cargo 2>/dev/null || echo "$HOME/.cargo/bin/cargo")
+-  if [ ! -x "$cargo" ]; then
+-    printf 'leaf isn'"'"'t on %s, and cargo isn'"'"'t either.\n' "$(uname -n)"
+-    printf 'Install Rust from https://rustup.rs, then: cargo install leaf-reader\n'
+-    printf 'Press enter to close.'; read -r _; exit 1
+-  fi
+-  printf 'leaf isn'"'"'t on %s yet. Installing it with cargo install leaf-reader…\n' "$(uname -n)"
+-  if ! "$cargo" install leaf-reader; then
+-    printf '\nleaf couldn'"'"'t be built here. The output above says why.\n'
+-    printf 'Press enter to close.'; read -r _; exit 1
+-  fi
++if [ -z "$leaf" ] || [ ! -x "$leaf" ]; then
++  printf 'Install the pinned leaf-reader package on %s first.\n' "$(uname -n)" >&2
++  exit 127
+ fi
+ exec "$leaf" "$@"
+ ]]
+@@ -293,20 +283,10 @@ function M.setup(opts)
+
+   -- While a document or a diff is open --------------------------------------------
+   --
+-  -- Rex can't hide an action per pane, so these are only defined while leaf
+-  -- shows something on this machine: leaf reloads Rex's config when what's
+-  -- open changes, and this asks it what that is ("document diff", or "idle").
+-
+-  local function open_kinds()
+-    local result = rex.exec(argv("rex", "state"), { env = env, timeout = 5 })
+-    local kinds = {}
+-    if result ~= nil and result.ok then
+-      for word in (result.stdout or ""):gmatch("%a+") do kinds[word] = true end
+-    end
+-    return kinds
+-  end
+-
+-  local open = open_kinds()
++  -- Nix owns the read-only config. Keep actions registered without a managed
++  -- installer block, config rewrites, or a Leaf subprocess during config load.
++  -- Reader actions already check for a live reader when invoked.
++  local open = { document = true, diff = true }
+
+   if open.document or open.diff then
+     rex.action{
+diff --git a/tests/rex.lua b/tests/rex.lua
+new file mode 100644
+index 0000000..ca0862c
+--- /dev/null
++++ b/tests/rex.lua
+@@ -0,0 +1,57 @@
++-- Exercise the public palette callbacks without a running Rex or agent.
++local actions, bindings, calls = {}, {}, {}
++local reader = false
++rex = {
++  action = function(spec) actions[spec.name] = spec end,
++  bind = function(key, action) bindings[key] = action end,
++  exec = setmetatable({}, { __call = function() error("config load must not spawn Leaf") end }),
++  block = {
++    call = function(_, method, args)
++      if method == "program_status" then
++        return { records = reader and { { id = "leaf/reader", owner = { pid = 42 } } } or {} }
++      elseif method == "process" then
++        return { foreground = { name = reader and "leaf" or "zsh", pid = 42, cwd = "/repo" } }
++      elseif method == "write" then
++        calls[#calls + 1] = args
++      end
++    end,
++  },
++  session = {
++    list_blocks = function() return { blocks = {} } end,
++    new_split = function(args) calls[#calls + 1] = args end,
++    new_layer = function(args) calls[#calls + 1] = args end,
++  },
++}
++rex.exec.start = function(argv, opts) calls[#calls + 1] = { argv = argv, opts = opts } end
++dofile("lua/leaf/init.lua").setup { bin = { "/pinned/bin/leaf" } }
++local count = 0
++for _ in pairs(actions) do count = count + 1 end
++assert(count == 14, "all actions must be available without a config rewrite")
++assert(bindings["shift+cmd+a"] == "leaf_ask")
++assert(#calls == 0, "setup must not launch programs")
++
++local ctx = { block_id = "reader", session_id = "session" }
++actions.leaf_review_staged.run(ctx)
++assert(calls[1].argv[1] == "/pinned/bin/leaf")
++assert(table.concat(calls[1].argv, " ") == "/pinned/bin/leaf rex place reader staged -- diff --staged")
++local ok, err = pcall(actions.leaf_ask.run, ctx, { question = "why?" })
++assert(not ok and err:find("no document or diff"))
++assert(#calls == 1, "a missing reader must not receive input")
++reader = true
++actions.leaf_ask.run(ctx, { question = "why?\nsecond line" })
++assert(calls[2].block_id == "reader")
++assert(calls[2].data == "\27[24~ask why? second line\r")
++assert(#calls == 2, "asking must only send the reader its command")
++
++actions.leaf_open.run({ server = "remote", block_id = "remote-pane" }, { target = "book.md" })
++local command = calls[3].layout.block.options.command
++assert(command[1] == "sh" and command[2] == "-c")
++assert(command[5] == "open" and command[6] == "book.md")
++-- Run the actual remote command with no available leaf. It must fail without
++-- trying Cargo, changing the machine, or opening an agent.
++local pipe = assert(io.popen("env -i PATH=/nonexistent /bin/sh -c "
++  .. "'" .. command[3]:gsub("'", "'\\''") .. "' leaf open book.md 2>&1; printf '\\nexit=%s' \"$?\""))
++local output = pipe:read("*a")
++pipe:close()
++assert(output:find("exit=127") and output:find("Install the pinned leaf%-reader package"))
++print("Leaf Rex palette contract passed")

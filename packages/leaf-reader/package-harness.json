@@ -1,0 +1,6 @@
+{
+  "source": "https://github.com/DeepanshuMishraa/leaf.git",
+  "ref": "1fd9573697c2e2507cff5ef07a4b6f93a06e5729",
+  "patches": ["patches/0001-declarative-rex-plugin.patch"],
+  "checks": [["luajit", "tests/rex.lua"]]
+}

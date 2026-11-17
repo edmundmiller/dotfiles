@@ -36,6 +36,11 @@ let
   undoHook = pkgs.writeShellScript "rex-undo-claude-session-start" ''
     exec /bin/sh ${undoRoot}/hooks/claude-session-start.sh
   '';
+  leafSetup = optionalString cfg.leaf.enable ''
+    dofile("${pkgs.my.leaf-reader}/share/leaf-reader/leaf/init.lua").setup{
+      bin = { "${pkgs.my.leaf-reader}/bin/leaf" },
+    }
+  '';
   themeFile =
     {
       catppuccin = ../../config/rex/themes-catppuccin.json;
@@ -113,7 +118,10 @@ let
   );
 in
 {
-  options.modules.shell.rex.enable = mkBoolOpt false;
+  options.modules.shell.rex = {
+    enable = mkBoolOpt false;
+    leaf.enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable (
     {
@@ -121,9 +129,15 @@ in
       # and installs neorex on Darwin.
       # The Linux Rex server is configured separately through services.rex.
       home.configFile."rex/init.lua".text =
-        builtins.replaceStrings [ "@rexJj@" "-- @rexUndo@" ] [ "${rexJj}/bin/rex-jj" undoSetup ]
+        builtins.replaceStrings
+          [ "@rexJj@" "-- @rexUndo@" "-- @rexLeaf@" ]
+          [ "${rexJj}/bin/rex-jj" undoSetup leafSetup ]
           (builtins.readFile "${config.dotfiles.configDir}/rex/init.lua");
-      "user.packages" = [ rexJj ] ++ optionals isDarwin [ pkgs.my.neorex ];
+      "user.packages" = [
+        rexJj
+      ]
+      ++ optionals isDarwin [ pkgs.my.neorex ]
+      ++ optionals cfg.leaf.enable [ pkgs.my.leaf-reader ];
       modules.agents.mcp.servers.superlogical.enable = mkDefault true;
     }
     // optionalAttrs isDarwin {
