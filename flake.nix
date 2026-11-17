@@ -54,10 +54,14 @@
       url = "github:dmmulroy/anti-slop";
       flake = false;
     };
-    # Keep the linter and plugin API on the same release until the main
-    # nixpkgs input catches up. oxlint-plugin-jev needs Oxlint >= 1.83.0 and
-    # lives in a separate npm-locked package. Do not point this hook at 1.83
-    # unless anti-slop is verified on that plugin API.
+    # Approved zero-conflict additions run alongside the original gate.
+    # The full incoming rule set remains an explicit proposal.
+    anti-slop-incoming = {
+      url = "github:K-Mistele/anti-slop/b7c1619b4d51b4815e89ba3700a975a6ec54b8c3";
+      flake = false;
+    };
+    # Retain the existing ordinary gate while the 1.86.0 proposal awaits
+    # acceptance. The proposal and opt-in Jev each lock their compatible pair.
     nixpkgs-anti-slop.url = "github:NixOS/nixpkgs/2a747aca22036dce3677fd41877427e3cd33e87a";
 
     # Extras
@@ -587,8 +591,8 @@
               ''
             else
               pkgs.firefox;
-          # Repository hook: Oxlint 1.78.0 + anti-slop. Jev is
-          # packages.oxlint-plugin-jev (Oxlint 1.83.0) and is opt-in.
+          # Preserve the original gate; the additive hook enables only approved
+          # zero-conflict rules and Fowler advisories. Semantic review is opt-in.
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
           antiSlopConfig = pkgs.writeText "oxlint-anti-slop.json" (
             builtins.toJSON {
@@ -605,23 +609,7 @@
                   specifier = "${self.packages.${system}.anti-slop}/lib/anti-slop/index.ts";
                 }
               ];
-              rules = {
-                "anti-slop/no-chained-type-assertions" = "error";
-                "anti-slop/no-conditional-empty-object-spread" = "error";
-                "anti-slop/no-known-value-widening" = "error";
-                "anti-slop/no-module-mocking" = "error";
-                "anti-slop/no-object-parameters" = "error";
-                "anti-slop/no-reflect-apply" = "error";
-                "anti-slop/no-reflect-get" = "error";
-                "anti-slop/no-runtime-typeof" = "error";
-                "anti-slop/no-shape-in-symbol-names" = "error";
-                "anti-slop/no-unknown-parameters" = "error";
-                "anti-slop/no-unknown-returns" = "error";
-                "anti-slop/no-unknown-type-aliases" = "error";
-                "anti-slop/no-unsafe-dictionary-type" = "error";
-                "anti-slop/no-widen-then-assert" = "error";
-                "anti-slop/require-safety-comment-for-type-assertion" = "error";
-              };
+              rules = builtins.fromJSON (builtins.readFile ./packages/anti-slop/rules.json);
             }
           );
           preCommitShellHook = ''
@@ -747,6 +735,8 @@
               "skills/conditional/rex/rex/SKILL.md"
               # Preserve the pinned upstream body checked by agent-instruction-tests.
               "skills/catalog/unslop/SKILL.md"
+              # Preserve the fork's built bytes and source provenance.
+              "packages/oxlint-plugin-jev/vendor/**"
             ];
           };
 
@@ -827,6 +817,17 @@
                 package = antiSlopOxlint;
                 language = "system";
                 files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
+                excludes = [ "^packages/oxlint-plugin-jev/vendor/" ];
+                stages = [ "pre-commit" ];
+              };
+              oxlint-additions = {
+                enable = true;
+                name = "oxlint approved additions";
+                entry = "${self.packages.${system}.anti-slop-proposal}/bin/anti-slop-additions";
+                package = self.packages.${system}.anti-slop-proposal;
+                language = "system";
+                files = "\\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$";
+                excludes = [ "^packages/oxlint-plugin-jev/vendor/" ];
                 stages = [ "pre-commit" ];
               };
               br-sync = {

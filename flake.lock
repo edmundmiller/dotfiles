@@ -119,6 +119,23 @@
         "type": "github"
       }
     },
+    "anti-slop-incoming": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794798081,
+        "narHash": "sha256-gEnY+IJZjHub/O8fDhghV4vZnLwydCIHEnSaK7lCzlw=",
+        "owner": "K-Mistele",
+        "repo": "anti-slop",
+        "rev": "b7c1619b4d51b4815e89ba3700a975a6ec54b8c3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "K-Mistele",
+        "repo": "anti-slop",
+        "rev": "b7c1619b4d51b4815e89ba3700a975a6ec54b8c3",
+        "type": "github"
+      }
+    },
     "anti-slop-repo": {
       "flake": false,
       "locked": {
@@ -2105,6 +2122,7 @@
         "agenix": "agenix",
         "agents-workspace": "agents-workspace",
         "anti-slop": "anti-slop",
+        "anti-slop-incoming": "anti-slop-incoming",
         "brew-src": "brew-src",
         "bun2nix": "bun2nix",
         "clin": "clin",

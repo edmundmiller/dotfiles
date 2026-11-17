@@ -5,9 +5,14 @@ if [ -z "${TYPESAFE_API_KEY:-}" ] && [ -n "${TYPESAFE_API_KEY_FILE:-}" ]; then
   TYPESAFE_API_KEY="$(tr -d '\n' < "$TYPESAFE_API_KEY_FILE")"
   export TYPESAFE_API_KEY
 fi
-exec "@oxlintBin@" \
+config="@jevConfig@"
+if [ "${1:-}" = --presets ]; then
+  config="@presetsConfig@"
+  shift
+fi
+exec node "@lintChanged@" --oxlint="@oxlintBin@" \
   --threads=1 \
   --disable-nested-config \
-  --config "@jevConfig@" \
+  --config "$config" \
   @ignoreArgs@ \
   "$@"

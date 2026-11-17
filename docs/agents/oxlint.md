@@ -1,86 +1,145 @@
 ---
-purpose: Record repository Oxlint paths for anti-slop and opt-in Jev rules.
-applies_to: JavaScript and TypeScript lint, English Jev rules, TypeSafe keys.
-entrypoint: Default hook is anti-slop. Jev is nix run .#oxlint-plugin-jev.
+purpose: Record deterministic Oxlint policy and explicitly opted-in semantic review.
+applies_to: JavaScript and TypeScript lint, Jev questions and diff review.
+entrypoint: Ordinary hooks and hey check use AST rules only. Jev is opt-in.
 verification: python3 -m unittest tests.test_oxlint_jev tests.test_package_policy
-update_when: Oxlint pins, plugin packaging, or Jev secret wiring change.
+update_when: Source pins, rules, disclosure scope or packaging change.
 ---
 
 # Oxlint
 
-This checkout has two Oxlint paths. They do not share a binary or plugin API.
+Ordinary lint, editor checks, pre-commit and `hey check` do not send code to a
+model, require model credentials or run paid checks. The default config registers
+only AST plugins. Jev and diff review are separate, explicitly invoked commands.
+Supplying credentials does not enable them in ordinary checks.
 
-## Anti-slop (default)
+## Deterministic lint
 
-Pre-commit and `hey check` run Oxlint **1.78.0** from `nixpkgs-anti-slop` with
-`packages/anti-slop` (`@oxlint/plugins` 1.78.0). That hook stays the repository
-TypeScript-shape lint. Do not load Jev into it.
+The ordinary hook retains its original Oxlint 1.78.0, source pin, 15 error-level
+rules and suppression file. Edmund approved staged activation. A second ordinary
+AST hook enables the two zero-conflict core additions, their native accumulating-spread
+companion, 12 compatible Effect rules and seven Fowler advisories.
+Only the newly vendored build is excluded from source lint and formatting.
 
-## Jev (opt-in)
+`packages/anti-slop/rules.json` preserves the original policy for both scans.
+The additive scan also loads the original rule source with its matching 1.86.0
+CLI/API pair, so the existing suppression counts remain valid. It does not bypass
+suppression validation. The original 1.78.0 gate still runs independently.
 
-[oxlint-plugin-jev](https://github.com/wobsoriano/oxlint-plugin-jev) 0.1.1
-needs Oxlint **>= 1.83.0**. It is packaged under `packages/oxlint-plugin-jev`
-with a matching `oxlint` 1.83.0 CLI in the same npm lock. A coordinated bump
-of anti-slop plus Oxlint is a separate change and needs its own proof.
+Conflicting core rules and the two Effect rules `no-manual-tag-comparison` and
+`prefer-effect-match` remain in the explicit full proposal. This is approved
+staging, not a permanent exemption or full acceptance.
 
 ```sh
-nix run .#oxlint-plugin-jev -- path/to/file.ts
-nix shell .#oxlint-plugin-jev --command oxlint-jev path/to/dir
+nix run .#anti-slop-proposal -- path/to/file.ts
 ```
 
-The wrapper uses `--disable-nested-config` and the store config at
-`$out/share/oxlint-jev.json`. Built-in Oxlint categories are off, so this
-path only asks Jev. It is not a pre-commit hook. CLI ignore patterns exclude
-`.agents`, `.claude`, `.codex`, `.opencode`, and `.pi` under the
-invocation directory. Run from the checkout root to apply these exclusions.
+`packages/anti-slop-proposal/oxlint.json` owns this explicit proposal. It enables core rules at
+error, Fowler AST recommendations at warn and keeps `message-chains` off. Effect
+AST rules apply only to `packages/callstack-diff/**`, which uses Effect
+4.0.0-beta.105. The package's existing Effect tsgo lint remains separate and
+unchanged. All former core error severities remain errors in the proposal, including the renamed,
+broader `no-conditional-spread` rule.
 
-### English rules
+The source is [K-Mistele/anti-slop](https://github.com/K-Mistele/anti-slop) at
+`b7c1619b4d51b4815e89ba3700a975a6ec54b8c3`, supplied by the immutable flake
+`anti-slop-incoming` input. Both proposal Oxlint and `@oxlint/plugins` are pinned to **1.86.0**, the pair tested
+upstream. Nix packages use Node 22 with TypeScript stripping. Source and license
+lineage is recorded in `packages/anti-slop-proposal/UPSTREAM.md`. The proposal
+currently fails on incoming findings and suppression compatibility checks. It is
+not wired into ordinary hooks or `hey check`; only `anti-slop-additions` is.
+No suppressions were regenerated.
 
-Edit `packages/oxlint-plugin-jev/rules.json`. Each item is one `jev/ask` rule:
+## Optional local questions
 
-| Field      | Meaning                                           |
-| ---------- | ------------------------------------------------- |
-| `id`       | Shown in the diagnostic. Unique in the list.      |
-| `target`   | `function`, `call`, `jsx`, or `file`.             |
-| `question` | Yes/no. Yes means report.                         |
-| `cutoff`   | 0 to 1. Report at or above Jev's yes-probability. |
+```sh
+nix run .#oxlint-jev
+nix run .#oxlint-jev -- --all path/to/file.ts
+```
 
-Starter rules: no PII in logs, no secrets in logs, and names that match
-behavior. After you edit the list, rebuild the package. The plugin schema
-rejects unknown fields at startup.
+The default command reviews staged, unstaged and non-ignored untracked JS/TS
+files relative to the current directory. Deleted files and unchanged files are
+omitted. Within those files the three local call/function questions only select
+nodes overlapping changed lines. Selected nodes are sent as snippets, including
+unchanged lines within that function or call. This is not changed-lines-only
+disclosure. Run from the repository root for the configured agent-directory
+ignores and package-scoped overrides to apply.
 
-Keep `jev/ask` out of any config the editor loads. Each keystroke inside a
-match is a paid TypeSafe request.
+The pinned fork has a known changed-line parser limitation for tracked paths
+containing spaces. Git's `+++` header can leave a trailing tab in its map key,
+so the lookup can silently skip semantic questions for that file. A successful
+exit does not prove complete review of space-containing paths. The fork and
+questions remain pinned; this integration does not broaden scope to work around it.
 
-### Secret
+`--all` reviews all selected files and nodes. Arguments after `--` are passed to
+Oxlint, except the runner's `--all`, `--ext` and `--oxlint` options. Explicit file
+arguments do not override the changed-file filter without `--all`.
 
-Jev reads `TYPESAFE_API_KEY` from the process environment. Get a key at
-https://console.typesafe.ai. Do not put the value in `flake.nix`, Git, or
-Nix output.
+The three local `rules.json` questions retain their targets, thresholds and error
+severities. They migrate from `jev/ask` to `jev/<id>` through `createJevPlugin`:
 
-Local options, in the usual secret order for this repo:
+| Question              | Target   | Cutoff |
+| --------------------- | -------- | ------ |
+| no-pii-in-logs        | call     | 0.8    |
+| no-secrets-in-logs    | call     | 0.8    |
+| name-matches-behavior | function | 0.6    |
 
-1. **direnv.** Add `export TYPESAFE_API_KEY=...` to gitignored `.envrc.local`.
-   Root `.envrc` already sources that file.
-2. **1Password.** `op run -- oxlint-jev ...` or
-   `export TYPESAFE_API_KEY="$(op read 'op://Vault/TypeSafe/credential')"`.
-3. **agenix / opnix file.** Export `TYPESAFE_API_KEY_FILE` to the decrypted
-   path. The wrapper copies that file into `TYPESAFE_API_KEY` for the child
-   Oxlint process. Do not pass the value on the command line.
+Each yes answer at or above the cutoff reports. The local plugin retains
+`ci: "skip"`, which controls errors, not whether requests happen. A key permits
+requests even with `CI=1`. Missing credentials or API failures warn and skip the
+local questions. No CI workflow invokes this command.
 
-The plugin default `ci: "skip"` controls error handling, not network access.
-A missing key warns once and reports nothing. With a key, Jev sends matched
-code snippets to TypeSafe even under `CI=1`, and a yes verdict can fail lint.
-Authentication and network failures warn and skip those checks. Set `ci` to
-`"fail"` in the package config template to fail on missing keys or API errors
-when `CI` is set, then rebuild. To avoid requests, do not supply a key.
+## Optional whole-file semantic presets
 
-### Version pins
+```sh
+nix run .#oxlint-jev -- --presets
+```
 
-| Path         | Oxlint                       | Plugin                               |
-| ------------ | ---------------------------- | ------------------------------------ |
-| Default hook | 1.78.0 (`nixpkgs-anti-slop`) | anti-slop / `@oxlint/plugins` 1.78.0 |
-| `oxlint-jev` | 1.83.0 (npm lock)            | `oxlint-plugin-jev` 0.1.1            |
+This second opt-in adds the 12 upstream Fowler questions at warn, the 10 Effect
+source questions at error only in `packages/callstack-diff/**`, and
+`test-cannot-fail` at error for test files. Source questions are off for tests.
+It retains the local questions too. Upstream preset `ci: "fail"` remains intact,
+but there is no paid CI gate or workflow wiring.
 
-Refresh Jev by editing `packages/oxlint-plugin-jev/package.json`, running
-`npm install` there, and keeping the two asserts in `default.nix` in sync.
+All Effect questions and eight Fowler questions target **whole files**. The four
+other Fowler questions target functions and filter changed overlaps. Unchanged
+files are excluded, but file-targeted questions can transmit unchanged functions
+in a changed file. `JEV_CHANGED_ONLY=1` does not redact file-targeted questions.
+Snippet limits can truncate long files. Review this boundary before using the
+command. Neither the fork nor preset questions are modified to imply a narrower
+boundary.
+
+`JEV_CHANGED_BASE` changes the node filter's base, not the runner's HEAD-based
+changed-file selection. It is not a branch-wide selection flag. The fork can
+fall back to checking every line if it cannot resolve a diff base; heed its
+warning rather than relying on a failed base for disclosure control.
+
+## Optional change-set review
+
+```sh
+nix shell .#oxlint-plugin-jev --command anti-slop-diff --base origin/main --working --json
+```
+
+Diff review judges shotgun surgery, divergent change, duplicated code and scope
+creep. It sends diff hunks including context, changed-file summaries and commit
+history, not just added lines or edited functions. With no backend configured it
+warns and exits successfully. Credentials can select a backend automatically, so
+invoking this command is an explicit request to use that configured backend.
+`--backend command --command '<local program>'` supports offline testing. Never
+wire it into an ordinary hook, editor command or CI gate.
+
+## Credentials and provenance
+
+No new credential is needed for installation or deterministic validation. For
+explicit semantic use, the fork accepts `TYPESAFE_API_KEY` or
+`TYPESAFE_AI_API_KEY`, Factory credentials, or AI Gateway credentials. Never put
+their values in Nix, Git or command arguments. `.envrc.local` is gitignored;
+`op run -- oxlint-jev` and `op://Vault/TypeSafe/credential` are existing local
+secret routes. `TYPESAFE_API_KEY_FILE` remains supported by the Jev wrapper.
+
+`packages/oxlint-plugin-jev/vendor/oxlint-plugin-jev` is the unmodified MIT build
+bundled by the pinned anti-slop source, from K-Mistele/oxlint-plugin-jev at
+`fd3e4b1ad3b8fa7c0d08cdc92633e33c7e662f9e`. Its README, license and `UPSTREAM.md`
+travel with it. Both semantic CLI/API pins also equal 1.86.0. Refresh the fork
+from its source build, not by editing `dist`; use `npm install --install-links
+--ignore-scripts` to refresh its lock. Preserve local questions during updates.

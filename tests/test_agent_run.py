@@ -96,13 +96,12 @@ class AgentRunTests(unittest.TestCase):
         )
         self.assertIn("sudo sysctl -w vm.overcommit_memory=1", setup)
         self.assertIn('url = "github:dmmulroy/anti-slop";', flake)
-        self.assertIn('"anti-slop/no-chained-type-assertions" = "error";', flake)
-        self.assertIn(
-            '"anti-slop/require-safety-comment-for-type-assertion" = "error";',
-            flake,
-        )
+        self.assertIn('builtins.readFile ./packages/anti-slop/rules.json', flake)
+        rules = json.loads((ROOT / "packages/anti-slop/rules.json").read_text())
+        self.assertEqual(rules["anti-slop/no-chained-type-assertions"], "error")
+        self.assertEqual(rules["anti-slop/require-safety-comment-for-type-assertion"], "error")
         self.assertNotIn("jev/ask", flake)
-        self.assertIn("packages.oxlint-plugin-jev", flake)
+        self.assertIn('oxlint-jev = self.packages.${system}.oxlint-plugin-jev;', flake)
 
     def test_orb_setup_limits_nix_parallelism(self) -> None:
         setup = ORB_SETUP.read_text()

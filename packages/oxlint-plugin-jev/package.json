@@ -1,11 +1,12 @@
 {
   "name": "oxlint-jev-tooling",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "private": true,
   "type": "module",
-  "description": "Pinned oxlint-plugin-jev and a matching oxlint CLI for this flake.",
+  "description": "Opt-in vendored Jev fork and matching Oxlint tooling.",
   "dependencies": {
-    "oxlint": "1.83.0",
-    "oxlint-plugin-jev": "0.1.1"
+    "@oxlint/plugins": "1.86.0",
+    "oxlint": "1.86.0",
+    "oxlint-plugin-jev": "file:vendor/oxlint-plugin-jev"
   }
 }
