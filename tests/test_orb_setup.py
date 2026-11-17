@@ -82,6 +82,13 @@ class OrbSetupTests(unittest.TestCase):
             script(
                 tools / "sudo",
                 """case "$*" in
+  *'/swapfile'*)
+    if [[ "${ORB_TEST_CONTAINER:-0}" == 1 ]]; then
+      echo 'Container cannot provision host swap' >&2
+      exit 255
+    fi ;;
+esac
+case "$*" in
   'sysctl -w vm.overcommit_memory=1')
     echo 'sysctl: permission denied on key "vm.overcommit_memory"' >&2
     exit 1 ;;
@@ -97,6 +104,10 @@ esac""",
 function /usr/sbin/swapon { :; }""",
             )
             script(tools / "systemctl", "exit 1")
+            script(
+                tools / "systemd-detect-virt",
+                'test "${ORB_TEST_CONTAINER:-0}" = 1',
+            )
             script(tools / "curl", "echo 'Unexpected Nix install' >&2; exit 99")
             script(tools / "gh", "exit 1")
             profile = home / ".nix-profile"
@@ -157,12 +168,18 @@ esac""",
                 if args == (bash, ".agents/setup"):
                     self.assertIn("permission denied", result.stderr)
                     self.assertIn("Warning: cannot set vm.overcommit_memory=1", result.stderr)
+                    if env["ORB_TEST_CONTAINER"] == "1":
+                        self.assertIn("swap is host-managed", result.stderr)
+                    else:
+                        self.assertNotIn("skipping swap provisioning", result.stderr)
                 return result.stdout
 
             run("git", "init", "--quiet")
             assert_untrusted(repo)
             assert_untrusted(unrelated)
-            for _ in range(2):
+            # Both rootless containers and VM orbs must reach shell setup.
+            for container in ("1", "1", "0", "0"):
+                env["ORB_TEST_CONTAINER"] = container
                 self.assertIn("Orb setup complete.", run(bash, ".agents/setup"))
                 self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
                 self.assertEqual(

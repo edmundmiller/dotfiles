@@ -63,7 +63,10 @@ fi
 step "Provide swap for full Nix evaluation"
 # The evaluator retains the full flake graph, even with one evaluation thread.
 swapfile="/swapfile"
-if ! /usr/sbin/swapon --show=NAME --noheadings | grep -Fxq "$swapfile"; then
+# Swap is host-wide; rootless containers cannot activate it, even with sudo.
+if systemd-detect-virt --container --quiet; then
+  echo "Warning: skipping swap provisioning in a container; swap is host-managed. Full Nix evaluation may exceed available memory." >&2
+elif ! /usr/sbin/swapon --show=NAME --noheadings | grep -Fxq "$swapfile"; then
   if [[ ! -f "$swapfile" ]]; then
     sudo fallocate -l 4G "$swapfile"
     sudo chmod 600 "$swapfile"
