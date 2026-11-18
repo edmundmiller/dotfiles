@@ -13,10 +13,10 @@ in
 {
   imports = [ ../_amp-orbs.nix ];
 
-  # One physical Note 4C, one firmware thread. Do not grant dialout membership
+  # One physical Note 4C, one household agent thread. Do not grant dialout membership
   # or expose the Nabu Casa ZBT-2 (303a:831a) used by Home Assistant.
   environment.etc."amp-orbs/note4c-orb".text = ''
-    amp-01a1e7c4-98e1-76f3-a326-18609825b5a3
+    amp-01a1f05a-2cb2-73dc-ab1d-7f51b1b4f508
   '';
   # A stable, root-owned devtmpfs directory allows hotplug without binding /dev.
   systemd.tmpfiles.rules = [ "d /dev/amp-note4c-port 0750 root amp-orbs -" ];

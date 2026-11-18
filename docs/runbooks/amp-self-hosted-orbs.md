@@ -179,8 +179,8 @@ management; never run a blanket container/image prune to recover space.
 
 ## Note 4C serial access
 
-NUC alone grants the firmware thread
-`T-01a1e7c4-98e1-76f3-a326-18609825b5a3` one serial device. Its udev rule matches
+NUC alone grants the household agent thread
+`T-01a1f05a-2cb2-73dc-ab1d-7f51b1b4f508` one serial device. Its udev rule matches
 Espressif `303a:1001` and individual USB serial `80:45:6B:37:55:E8`, then creates
 `/dev/amp-note4c` owned by `amp-orbs:amp-orbs` with mode `0660`. A root-only udev
 helper checks that same identity against live sysfs before exporting a second
@@ -202,13 +202,27 @@ The orb starts with an empty directory while the device sleeps. Plug/unplug and
 changed tty numbers appear in the running orb without recreating its disk.
 Do not replace the host directory itself; that would leave a stale bind mount.
 
+Changing the pin does not revoke an existing container's bind. During the
+handoff from firmware thread `T-01a1e7c4-98e1-76f3-a326-18609825b5a3`, confirm
+that its container is stopped and keep it paused. Preserve its current disk,
+both rollback containers and every image/snapshot. Its current disk holds the
+newest flash backup, which postdates the rollback snapshots. Do not run
+`serial-enable` against that mounted container or delete/recreate it from a
+project snapshot. Waking it would restore its existing USB access despite the
+new pin. Removing that retained bind requires a separately approved,
+disk-preserving recreation before it can run again without USB access.
+
+Publication, NUC deployment and stopping/recreating the new orb each need
+specific approval. Coordinate the pause with the household agent thread and
+record its checkout and ignored-file baselines before migration.
+
 Changing create flags does not update an existing container. After explicit
 approval to publish, deploy and migrate this orb:
 
 1. Publish through candidate CI and deploy the exact passing main revision with
    the guarded `hey nuc` route. Do not request the pilot recovery or smoke-test
    options, which require stopping unrelated pilot containers.
-2. Pause the firmware thread in Amp. Confirm the provider has stopped its
+2. Pause the household agent thread in Amp. Confirm the provider has stopped its
    container, rather than stopping it behind Amp's back. Do not wake it during
    migration. Processes stop, but all disk state must remain.
 3. Dispatch `Deploy NUC` at that same exact main SHA with
@@ -228,9 +242,9 @@ approval to publish, deploy and migrate this orb:
    Tracked, untracked and ignored files all
    survive. It never removes the original container or snapshot, and does not
    stop any other orb, the provider controller or Home Assistant container.
-5. On success wake the firmware thread with a message so Amp supplies a fresh
+5. On success wake the household agent thread with a message so Amp supplies a fresh
    bootstrap token. Confirm its checkout status and
-   ignored evidence remain before continuing firmware work. In that orb, run:
+   ignored evidence remain before continuing device work. In that orb, run:
 
    ```bash copy Copy Serial Check
    python3 - <<'PY'
@@ -246,7 +260,7 @@ approval to publish, deploy and migrate this orb:
    ```
 
 This check opens the serial port but sends no bytes. Only a successful check in
-the firmware orb proves live access; local dispatcher fixtures do not. Run it
+the household agent orb proves live access; local dispatcher fixtures do not. Run it
 only when the exact USB identity and the node's major/minor match live sysfs.
 After removal the path disappears; close old descriptors and reopen the new
 node after reconnect. Do not migrate again for ordinary reconnects or broaden
