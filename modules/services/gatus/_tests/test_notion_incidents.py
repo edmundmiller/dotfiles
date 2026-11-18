@@ -91,9 +91,12 @@ class IncidentTests(unittest.TestCase):
                     fixture.ingress_events.append((route, body["state"], code))
                     return self.reply(code, {})
                 if self.path == "/email":
-                    fixture.assertEqual(self.headers.get("Authorization"), "Bearer email-api-fixture-secret")
                     body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                    if self.headers.get("Authorization") != "Bearer email-api-fixture-secret":
+                        return self.reply(401, {})
                     fixture.assertEqual(set(body), {"endpoint", "state"})
+                    if body["state"] not in ("TRIGGERED", "RESOLVED"):
+                        return self.reply(400, {})
                     fixture.email_requests.append(body)
                     if fixture.email_code != 200:
                         return self.reply(fixture.email_code, {"status": "private-response-must-not-be-logged"}, fixture.email_retry_after)
@@ -514,6 +517,91 @@ class IncidentTests(unittest.TestCase):
         self.deliver()
         self.send("RESOLVED")
         self.assertEqual(self.health()[0], 200)
+
+    def acceptance(self, token="email-api-fixture-secret", *, producer=None):
+        token_file = Path(self.tmp.name) / "acceptance-token"
+        ingest_file = Path(self.tmp.name) / "acceptance-ingest"
+        token_file.write_text(token)
+        ingest_file.write_text(EMAIL_INGEST)
+        token_file.chmod(0o600)
+        ingest_file.chmod(0o600)
+        with (patch.object(incidents, "require_email_test_preconditions",
+                           side_effect=(lambda: incidents.require_fresh_producer(producer)) if producer else None),
+              patch.dict(os.environ, {"GATUS_EMAIL_TEST_FAMILY_REVISION": "a" * 40}),
+              redirect_stdout(self.logs)):
+            incidents.email_acceptance_test(
+                Path(self.tmp.name) / "acceptance", f"http://127.0.0.1:{self.api.server_port}/email",
+                token_file, ingest_file,
+            )
+
+    def test_acceptance_pair_is_synthetic_isolated_and_never_replayed(self):
+        producer = Path(self.tmp.name) / "producer.sqlite"
+        with closing(sqlite3.connect(producer)) as db:
+            db.execute("CREATE TABLE history (value TEXT)")
+            db.commit()
+        self.acceptance(producer=producer)
+        self.assertEqual([body["state"] for body in self.sent_mail], ["TRIGGERED", "RESOLVED"])
+        self.assertEqual(self.email_queue.health()["pending"], 0)
+        with self.email_queue.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM events").fetchone()[0], 0)
+        journal = Path(self.tmp.name) / "acceptance/claim.jsonl"
+        records = [json.loads(line) for line in journal.read_text().splitlines()]
+        self.assertTrue(all(record["synthetic"] for record in records))
+        self.assertEqual([record["state"] for record in records[1:]], ["TRIGGERED", "RESOLVED"])
+        self.assertIn('"inbox_delivery": "unverified"', self.logs.getvalue())
+        with self.assertRaises(incidents.DeliveryError):
+            self.acceptance()
+        self.assertEqual(len(self.email_requests), 2)
+        self.assertNotIn("email-api-fixture-secret", journal.read_text() + self.logs.getvalue())
+
+    def test_acceptance_retained_producer_wal_blocks_without_touching_source(self):
+        producer = Path(self.tmp.name) / "producer.sqlite"
+        with closing(sqlite3.connect(producer)) as db:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("CREATE TABLE alert_delivery_state (state TEXT)")
+            db.execute("INSERT INTO alert_delivery_state VALUES (?)", ('{"Triggered":true,"Pending":[false]}',))
+            db.commit()
+            before = {path.name: path.read_bytes() for path in producer.parent.glob("producer.sqlite*")}
+            with self.assertRaisesRegex(incidents.DeliveryError, "retained-producer-state"):
+                self.acceptance(producer=producer)
+            self.assertEqual(before, {path.name: path.read_bytes() for path in producer.parent.glob("producer.sqlite*")})
+        self.assertEqual(self.email_requests, [])
+        self.assertFalse((Path(self.tmp.name) / "acceptance/claim.jsonl").exists())
+
+    def test_acceptance_duplicate_trigger_never_resolves_existing_incident(self):
+        self.email_state = "TRIGGERED"
+        with self.assertRaises(incidents.DeliveryError):
+            self.acceptance()
+        self.assertEqual([body["state"] for body in self.email_requests], ["TRIGGERED"])
+        self.assertEqual(self.sent_mail, [])
+        self.assertEqual(self.email_state, "TRIGGERED")
+
+    def test_acceptance_unknown_delivery_preserves_head_without_recovery_or_replay(self):
+        self.email_code = 409
+        with self.assertRaises(incidents.DeliveryError):
+            self.acceptance()
+        self.assertEqual([body["state"] for body in self.email_requests], ["TRIGGERED"])
+        queue = incidents.EmailQueue(Path(self.tmp.name) / "acceptance/events.sqlite")
+        self.assertEqual(queue.health()["pending"], 1)
+        with self.assertRaises(incidents.DeliveryError):
+            self.acceptance()
+        self.assertEqual(len(self.email_requests), 1)
+
+    def test_acceptance_refuses_even_a_stopped_configured_production_receiver(self):
+        with (patch.object(incidents.socket, "gethostname", return_value="nuc"),
+              patch.object(incidents.os, "geteuid", return_value=0),
+              patch.object(incidents.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "loaded\n"))):
+            with self.assertRaisesRegex(incidents.DeliveryError, "production-email-absent"):
+                incidents.email_acceptance_test()
+        self.assertEqual(self.email_requests, [])
+
+    def test_acceptance_auth_mismatch_claim_cannot_be_retried(self):
+        with self.assertRaises(incidents.DeliveryError):
+            self.acceptance("wrong-token")
+        with self.assertRaises(FileExistsError):
+            self.acceptance()
+        self.assertEqual(self.email_requests, [])
+        self.assertEqual(self.sent_mail, [])
 
     def test_email_retry_keeps_recovery_and_later_incidents_ordered_across_restart(self):
         self.query_mode = "rate-limit"

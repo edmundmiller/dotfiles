@@ -7,8 +7,15 @@ from datetime import UTC, datetime
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
+import re
+import shutil
+import socket
 import sqlite3
+import subprocess
+import sys
+import tempfile
 import threading
 import time
 from urllib.error import HTTPError, URLError
@@ -239,9 +246,10 @@ class Incidents(SQLiteStore):
 
 
 class CloudflareEmail:
-    def __init__(self, token, url):
+    def __init__(self, token, url, *, require_new_acceptance=False):
         self.token = token
         self.url = url
+        self.require_new_acceptance = require_new_acceptance
 
     def send(self, endpoint, state):
         request = Request(self.url, data=json.dumps({"endpoint": endpoint, "state": state}).encode(), headers={
@@ -254,6 +262,8 @@ class CloudflareEmail:
                 status = result.get("status") if isinstance(result, dict) else None
                 if response.status != 200 or status not in ("accepted_by_provider", "duplicate", "orphan_recovery"):
                     raise DeliveryError("email-invalid-receipt")
+                if self.require_new_acceptance and status != "accepted_by_provider":
+                    raise DeliveryError("email-acceptance-needs-reconciliation")
                 if status == "orphan_recovery" and state != "RESOLVED":
                     raise DeliveryError("email-invalid-receipt")
                 if status == "accepted_by_provider" and not all(
@@ -392,6 +402,145 @@ def make_server(store, token, endpoints, port):
     return server, wake
 
 
+def require_fresh_producer(database=Path("/var/lib/gatus/data.db")):
+    # Inspect only a private physical snapshot. Opening the live SQLite file
+    # can modify its shared-memory sidecar even through a read-only connection.
+    files = [Path(str(database) + suffix) for suffix in ("", "-wal", "-journal")]
+
+    def versions():
+        result = []
+        for path in files:
+            if path.exists():
+                info = path.stat()
+                result.append((info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns))
+            else:
+                result.append(None)
+        return result
+
+    before = versions()
+    if before[0] is None:
+        raise DeliveryError("acceptance-producer-database-unavailable")
+    with tempfile.TemporaryDirectory(prefix="gatus-email-preflight-") as temporary:
+        snapshot = Path(temporary) / "data.db"
+        for path, version, suffix in zip(files, before, ("", "-wal", "-journal")):
+            if version is not None:
+                shutil.copyfile(path, Path(str(snapshot) + suffix))
+        if versions() != before:
+            raise DeliveryError("acceptance-producer-snapshot-changed")
+        with closing(sqlite3.connect(snapshot)) as db:
+            if db.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+                raise DeliveryError("acceptance-producer-snapshot-invalid")
+            # First-enable test only. Even a removed/resolved durable route
+            # requires separate reconciliation; never discard retained state.
+            if db.execute("SELECT count(*) FROM sqlite_master WHERE name = 'alert_delivery_state'").fetchone()[0]:
+                raise DeliveryError("acceptance-retained-producer-state-needs-reconciliation")
+
+
+def require_email_test_preconditions():
+    if socket.gethostname() != "nuc" or os.geteuid() != 0:
+        raise DeliveryError("acceptance-requires-root-on-nuc")
+    unit = subprocess.run(
+        ["systemctl", "show", "gatus-email.service", "-p", "LoadState", "--value"],
+        capture_output=True, text=True, timeout=5,
+    )
+    if unit.returncode not in (0, 4) or unit.stdout.strip() != "not-found":
+        raise DeliveryError("acceptance-requires-production-email-absent")
+    # The workflow serializes this operation against deployments. Do not change
+    # the production producer or its journal to manufacture a test transition.
+    if "gatus-email" in Path("/run/gatus/config.yaml").read_text():
+        raise DeliveryError("acceptance-requires-production-route-absent")
+    production = Path("/var/lib/gatus-email/events.sqlite")
+    if production.exists() or Path(str(production) + "-wal").exists():
+        # Do not open a production SQLite journal, even read-only: WAL readers
+        # can create or update shared-memory sidecars. Reconcile it separately.
+        raise DeliveryError("acceptance-existing-production-journal-needs-reconciliation")
+    require_fresh_producer()
+    for url in ("http://127.0.0.1:8084/health", "http://127.0.0.1:8124/health"):
+        with urlopen(url, timeout=5) as response:
+            if response.status != 200:
+                raise DeliveryError("acceptance-requires-healthy-monitoring")
+
+
+def email_acceptance_test(
+    directory=Path("/var/lib/gatus-email-acceptance"),
+    worker_url="https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email",
+    token_file=Path("/run/agenix/gatus-email-worker"),
+    ingest_file=Path("/run/agenix/gatus-email-ingest"),
+):
+    """One synthetic pair before activation; retain intent and FIFO on any failure."""
+    require_email_test_preconditions()
+    family_revision = os.environ.get("GATUS_EMAIL_TEST_FAMILY_REVISION", "")
+    if not re.fullmatch(r"[0-9a-f]{40}", family_revision):
+        raise DeliveryError("acceptance-requires-verified-family-revision")
+    for path in (token_file, ingest_file):
+        info = path.stat()
+        if info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            raise DeliveryError("acceptance-requires-private-credentials")
+    token, ingest = token_file.read_text().strip(), ingest_file.read_text().strip()
+    if not token or not ingest:
+        raise DeliveryError("acceptance-requires-existing-credentials")
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if directory.stat().st_uid != os.geteuid() or directory.stat().st_mode & 0o077:
+        raise DeliveryError("acceptance-requires-private-journal")
+    if (directory / "events.sqlite").exists():
+        raise DeliveryError("acceptance-existing-test-journal-needs-reconciliation")
+    # Exclusive creation is durable before any external request. Never erase or
+    # replay a previous claim, including a process crash before a response.
+    with (directory / "claim.jsonl").open("x") as claim:
+        claim.write(json.dumps({"synthetic": True, "family_revision": family_revision,
+                                "started": datetime.now(UTC).isoformat()}) + "\n")
+        claim.flush()
+        os.fsync(claim.fileno())
+    for path in (directory.parent, directory):
+        directory_fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    endpoint = "Smart Home: Home Assistant Runtime"
+    for authenticated, expected in ((False, 401), (True, 400)):
+        headers = {"Content-Type": "application/json"}
+        if authenticated:
+            headers["Authorization"] = "Bearer " + token
+        request = Request(worker_url, data=json.dumps({"endpoint": endpoint, "state": "INVALID"}).encode(), headers=headers)
+        try:
+            with urlopen(request, timeout=15):
+                raise DeliveryError("acceptance-invalid-state-unexpectedly-accepted")
+        except HTTPError as error:
+            with error:
+                if error.code != expected:
+                    raise DeliveryError("acceptance-authentication-probe-failed") from None
+    queue = EmailQueue(directory / "events.sqlite")
+    sender = CloudflareEmail(token, worker_url, require_new_acceptance=True)
+    server, _wake = make_server(queue, ingest, [endpoint], 0)
+    serving = threading.Thread(target=server.serve_forever, daemon=True)
+    serving.start()
+    try:
+        for state in ("TRIGGERED", "RESOLVED"):
+            require_email_test_preconditions()
+            request = Request(f"http://127.0.0.1:{server.server_port}/events",
+                              data=json.dumps({"endpoint": endpoint, "state": state}).encode(), headers={
+                                  "Content-Type": "application/json", "Authorization": "Bearer " + ingest,
+                              })
+            with urlopen(request, timeout=5) as response:
+                if response.status != 202:
+                    raise DeliveryError("acceptance-local-ingest-failed")
+            queue.deliver_one(sender)
+            if queue.health()["pending"] or queue.health()["delivery_errors"]:
+                raise DeliveryError("acceptance-delivery-unconfirmed-no-replay")
+            with (directory / "claim.jsonl").open("a") as claim:
+                claim.write(json.dumps({"synthetic": True, "state": state,
+                                        "receiver_acknowledged": datetime.now(UTC).isoformat()}) + "\n")
+                claim.flush()
+                os.fsync(claim.fileno())
+        print(json.dumps({"synthetic": True, "receiver_acknowledged_pair": True,
+                          "provider_receipt_correlation": "requires-family-evidence", "inbox_delivery": "unverified"}))
+    finally:
+        server.shutdown()
+        server.server_close()
+        serving.join(timeout=5)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state-file", required=True)
@@ -431,4 +580,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["acceptance-test"]:
+        try:
+            email_acceptance_test()
+        except Exception as error:
+            # Never include HTTP bodies, runtime config or credentials in logs.
+            reason = str(error) if isinstance(error, DeliveryError) else type(error).__name__
+            print(json.dumps({"synthetic": True, "result": "blocked-no-replay", "reason": reason}))
+            sys.exit(1)
+    else:
+        main()

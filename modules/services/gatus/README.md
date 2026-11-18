@@ -225,6 +225,41 @@ separate runtime secrets, ordered retries, rate limits, unknown delivery, privac
 and bounds. It contacts no live account. `pkg-check gatus` separately applies
 the patch to fresh pinned upstream source and runs its focused Go tests.
 
+#### One-shot synthetic acceptance before activation
+
+After Family Ops provides its exact deployed revision, enabled binding/secret
+readback, fresh idle-journal proof and an exclusive test window, the existing
+Deploy NUC workflow can run `operation=gatus-email-acceptance` with the exact
+published `expected_sha` and `email_test_family_revision`. This is a separately
+approved live email test, not part of an ordinary deployment. Publish the test
+operation while production email is still disabled; enable production email
+only after controlled acceptance. The workflow keeps the exact-main CI guards
+and deployment concurrency lock but does not activate NixOS for this operation.
+
+The helper requires root on NUC, no installed production email receiver or
+configured email route, no existing production email journal, healthy Gatus and HA
+health endpoints, and the existing private credentials. A stable private snapshot
+of Gatus's database must show no durable producer table, including retained routes
+removed from current configuration. Existing state requires separate reconciliation;
+the helper never resets or opens a live producer journal through SQLite.
+It commits an exclusive intent under `/var/lib/gatus-email-acceptance/` before
+the first external request.
+It verifies unauthenticated 401 and authenticated invalid-state 400, then sends
+one failure/recovery pair through an isolated loopback receiver and durable
+FIFO. Each test transition requires a new `accepted_by_provider` receipt;
+`duplicate` or `orphan_recovery` stops for reconciliation instead of advancing.
+Ordinary production retry semantics remain unchanged. Production alert journals
+and HA health are not modified. Any failed, ambiguous or 409 result stops the test.
+A previous claim or journal always blocks rerunning, even after a crash; preserve it for operator reconciliation.
+Do not delete it or invoke the helper again to bypass uncertainty.
+
+The payload remains exactly endpoint/state. The fixed emails have no synthetic
+flag or custom subject, so announce the test window and retain synthetic
+provenance in its journal and evidence. Receiver acknowledgment alone does not
+prove two provider acceptances or inbox receipt. Correlate both provider receipts
+with Family Ops and verify the inbox separately before claiming acceptance.
+This is synthetic delivery proof, not a genuine HA outage or seven-day stability.
+
 ### Telegram
 
 Alerts on endpoint failure (3 consecutive failures) and recovery (2 consecutive successes). The bot token is managed via agenix and injected at runtime — never in the nix store.

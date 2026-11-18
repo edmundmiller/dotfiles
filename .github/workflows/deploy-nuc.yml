@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'gatus-email-acceptance' && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -19,8 +19,12 @@ on:
           - ha-climate-recurrence
           - ha-plant-diagnostics
           - ha-monitor-diagnostics
+          - gatus-email-acceptance
           - orb-diagnostics
           - orb-note4c-serial
+      email_test_family_revision:
+        description: Acceptance only; verified deployed Family SHA and exclusive synthetic window require separate readiness
+        type: string
       incident_start:
         description: Recurrence only; UTC time of human/checker-confirmed climate.master_suite incident
         type: string
@@ -161,6 +165,24 @@ jobs:
           audience: ${{ vars.TS_AUDIENCE }}
           tags: tag:github-nuc-deploy
           ping: ${{ inputs.operation != 'ha-climate-recurrence' && 'nuc.cinnamon-rooster.ts.net' || '' }}
+      - name: Run one approved synthetic email pair before production activation
+        if: inputs.operation == 'gatus-email-acceptance'
+        env:
+          FAMILY_REVISION: ${{ inputs.email_test_family_revision }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$FAMILY_REVISION" =~ ^[0-9a-f]{40}$ ]]
+          # Family readiness and an exclusive synthetic window must be confirmed
+          # by its owner before dispatch. This operation never activates NixOS.
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "
+            set -eu
+            test \"\$(hostname)\" = nuc
+            uname -a
+            printf 'configurationRevision=%s\\n' \"\$(nixos-version --configuration-revision)\"
+            exec sudo -n env GATUS_EMAIL_TEST_FAMILY_REVISION='$FAMILY_REVISION' uv run --no-project python - acceptance-test
+          " < modules/services/gatus/incident-delivery.py
+          echo 'Synthetic receiver/FIFO pair acknowledged. Family provider receipts and independent inbox proof still required.' >> "$GITHUB_STEP_SUMMARY"
       - name: Check live orb pilot capacity before activation
         if: inputs.operation == 'deploy' && inputs.orb_pilot
         shell: bash
