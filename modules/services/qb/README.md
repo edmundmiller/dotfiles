@@ -4,8 +4,9 @@
 inside the `qb` NixOS container. It replaces the old Gluetun configuration.
 The NUC keeps its current Tailscale identity and Internet routes.
 
-The NUC still declares `qb.enable = false`. Preparing this module does not
-register a device, change a tailnet policy, mount storage, or start a downloader.
+The NUC configuration enables the container with dedicated encrypted credentials
+and the `us-dal-wg-601.mullvad.ts.net` exit. Activation requires the guarded NUC
+deployment workflow. A local configuration edit does not start the downloader.
 
 ## Network and storage boundaries
 
@@ -23,7 +24,7 @@ register a device, change a tailnet policy, mount storage, or start a downloader
   Tailscale Serve forwards TCP port 8090 to it through the encrypted tailnet.
   There is no host port publication or public torrent-port forwarding.
 - The separate identity advertises only `tag:qb-downloads`. The tailnet policy
-  draft grants it Mullvad eligibility and Internet egress, not permission to
+  grants it Mullvad eligibility and Internet egress, not permission to
   initiate connections to private tailnet services. Existing trusted members,
   servers, and Amp agents retain their broad inbound access. Grok Bot and the
   GitHub deployment identity do not gain downloader access. No Funnel is granted.
@@ -76,10 +77,12 @@ register a device, change a tailnet policy, mount storage, or start a downloader
 The dedicated recipient file is `hosts/nuc/secrets/qb/secrets.nix`. It uses the
 same Edmund and NUC public keys as the host's existing secrets. This separate
 directory avoids the host's automatic secret discovery until the module is enabled.
-No encrypted files or real credentials accompany this preparation.
+The encrypted enrollment key and persistent WebUI credential live in this directory.
 
-Create a short-lived, single-use, non-ephemeral Tailscale auth key restricted to
-`tag:qb-downloads`. Never add `tag:server`, `tag:nuc`, or an agent tag. Encrypt
+Use the existing short-lived, single-use, non-ephemeral Tailscale auth key from
+the `TailnetQbEnrollment/prod` owner. Do not mint a replacement automatically.
+The key must be restricted to `tag:qb-downloads`.
+Never add `tag:server`, `tag:nuc`, or an agent tag. Encrypt
 only its raw value as `tailscale-auth.age` using agenix in that directory.
 The NUC decrypts it to `/run/agenix/qb-tailscale-auth`, mode `0400`, owner root.
 The container binds it read-only at `/run/qb-tailscale-auth`, outside NixOS's

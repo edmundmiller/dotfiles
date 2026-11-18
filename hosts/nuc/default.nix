@@ -2649,9 +2649,10 @@ in
       };
       prowlarr.enable = true;
       qb = {
-        enable = false;
+        enable = true;
         authKeyFile = "/run/agenix/qb-tailscale-auth";
         webuiCredentialsFile = "/run/agenix/qb-webui";
+        mullvadExitNode = "us-dal-wg-601.mullvad.ts.net";
       };
       radarr.enable = true;
       sonarr.enable = true;
