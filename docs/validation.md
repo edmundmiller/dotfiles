@@ -80,6 +80,13 @@ then rerun `hey check`. Missing tools or private inputs are failures with concre
 diagnostics, never silent passes. Snapshot commits explicitly disable signing;
 real commits retain the user's signing policy.
 
+The `validation-tests` derivation runs its existing unittest modules in separate
+processes, starting the longest modules first. Concurrency respects
+`NIX_BUILD_CORES`, with a maximum of four workers; zero means automatic CPU
+selection. Each module gets a separate `HOME` and `TMPDIR`. Logs include every
+test name and each module's duration. A failed module fails the check, but other
+modules still finish and report their results. No tests or assertions are skipped.
+
 Read-only tasks have no automatic stop hook. Agents select owned paths, fix
 task-caused failures, and report baseline or unavailable checks without being
 forced into unrelated repairs. Evidence remains useful until its inputs change;

@@ -1339,15 +1339,16 @@
                     cd "$TMPDIR/source"
                     patchShebangs bin/hey bin/hey.d
                     git init --quiet
-                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
-                      tests/test_validation.py \
+                    # Start the longest modules first; each keeps its own process and HOME/TMPDIR.
+                    PYTHONDONTWRITEBYTECODE=1 python3 scripts/run_validation_tests.py \
+                      tests/test_ship.py \
+                      tests/test_renovate_admission.py \
+                      tests/test_mise_tasks.py \
                       tests/test_nuc_shipping.py \
                       tests/test_amp_orb_dispatch.py \
                       tests/test_candidate_ci.py \
-                      tests/test_ship.py \
+                      tests/test_validation.py \
                       tests/test_ci_check_cache.py \
-                      tests/test_renovate_admission.py \
-                      tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py
                     touch $out

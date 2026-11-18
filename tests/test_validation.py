@@ -905,6 +905,52 @@ class TypeScriptArchitectureTests(unittest.TestCase):
         self.assertNotIn("lint passed", result.stdout)
 
 
+class ParallelValidationTests(unittest.TestCase):
+    def test_modules_overlap_isolate_state_and_finish_after_a_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ("first", "second", "last"):
+                (root / f"{name}.py").write_text(textwrap.dedent(f"""
+                    import json, os, time, unittest
+                    from pathlib import Path
+
+                    class Example(unittest.TestCase):
+                        def test_case(self):
+                            root = Path({str(root)!r})
+                            (root / '{name}.json').write_text(json.dumps(dict(
+                                home=os.environ['HOME'], tmp=os.environ['TMPDIR'])))
+                            if '{name}' == 'first':
+                                deadline = time.monotonic() + 5
+                                while not (root / 'second.json').exists():
+                                    self.assertLess(time.monotonic(), deadline,
+                                                    'modules did not overlap')
+                                    time.sleep(0.01)
+                            self.assertNotEqual('{name}', 'second', 'fixture failure')
+                    """))
+            result = subprocess.run(
+                [shutil.which("python3"), str(v.ROOT / "scripts/run_validation_tests.py"),
+                 "--jobs", "2", "first", "second", "last"],
+                cwd=root, capture_output=True, text=True, timeout=15,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            for name, status in (("first", "PASS"), ("second", "FAIL"), ("last", "PASS")):
+                self.assertIn(f"=== {name}: {status}", result.stdout)
+            self.assertIn("fixture failure", result.stdout)
+            self.assertEqual(result.stdout.count("Ran 1 test"), 3)
+            self.assertIn("3 modules, 1 failed, 2 workers", result.stdout)
+            states = [json.loads((root / f"{name}.json").read_text())
+                      for name in ("first", "second", "last")]
+            self.assertEqual(len({state['home'] for state in states}), 3)
+            self.assertEqual(len({state['tmp'] for state in states}), 3)
+            result = subprocess.run(
+                [shutil.which("python3"), str(v.ROOT / "scripts/run_validation_tests.py"),
+                 "--jobs", "1", "last"],
+                cwd=root, capture_output=True, text=True, timeout=15,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("1 modules, 0 failed, 1 workers", result.stdout)
+
+
 class NucDeploymentWorkflowTests(unittest.TestCase):
     def test_dispatch_rejects_a_different_revision_before_deployment(self):
         workflow = (v.ROOT / ".github/workflows/deploy-nuc.yml").read_text()

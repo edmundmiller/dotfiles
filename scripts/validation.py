@@ -35,6 +35,7 @@ CHECKS = {
     ],
     "validation-tests": [
         "scripts/validation.py",
+        "scripts/run_validation_tests.py",
         "scripts/nuc_shipping.py",
         "tests/test_nuc_shipping.py",
         "config/amp-orbs/*",
