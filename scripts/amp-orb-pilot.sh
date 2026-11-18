@@ -106,8 +106,20 @@ SMOKE
       echo 'Deploy the exact approved revision before serial migration' >&2
       exit 1
     }
-    test -r /etc/amp-orbs/note4c-orb
-    test -d /dev/amp-note4c-port
+    test -r /etc/amp-orbs/note4c-orb || {
+      echo 'Missing readable Note 4C orb pin' >&2
+      exit 1
+    }
+    # Live NixOS switches exclude /dev from tmpfiles setup. Create only this
+    # export directory without requiring a reboot or the physical USB device.
+    if ! test -d /dev/amp-note4c-port; then
+      echo 'Initializing absent Note 4C export directory from deployed tmpfiles rule'
+    fi
+    sudo -n systemd-tmpfiles --create --prefix=/dev/amp-note4c-port
+    test -d /dev/amp-note4c-port || {
+      echo 'Note 4C export directory was not created' >&2
+      exit 1
+    }
     # Apply only the Note 4C's new rule, never retrigger the Home Assistant radio.
     for tty in /sys/class/tty/ttyACM*; do
       [[ -e $tty/device ]] || continue

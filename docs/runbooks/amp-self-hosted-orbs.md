@@ -216,7 +216,10 @@ approval to publish, deploy and migrate this orb:
    part of diagnostic-only requests or ordinary deployments. The workflow checks
    exact-main CI and the deployed revision, then streams
    `scripts/amp-orb-pilot.sh serial-enable SHA` over the existing OIDC route.
-4. The helper retriggers udev only for the pinned Note 4C, if present, and invokes the
+4. The helper creates the export directory from the deployed tmpfiles rule with
+   `systemd-tmpfiles --create --prefix=/dev/amp-note4c-port`. Live NixOS switches
+   skip `/dev` during tmpfiles setup, so this also works before a reboot while
+   USB is absent. It retriggers udev only for the pinned Note 4C, if present, and invokes the
    dispatcher's locked `serial-enable` maintenance operation.
    It refuses a running target or any mounts that a commit would omit. It saves
    the complete stopped writable filesystem to a local image, renames the
