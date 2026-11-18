@@ -1,3 +1,4 @@
+# Candidate-only cache experiment: select the unchanged HA checks in both arms.
 { nixosConfig, pkgs }:
 let
   hass = nixosConfig.config.services.home-assistant.package;
