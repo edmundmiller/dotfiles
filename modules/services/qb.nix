@@ -125,7 +125,6 @@ in
               "--advertise-tags=tag:qb-downloads"
             ];
             extraSetFlags = [
-              "--advertise-tags=tag:qb-downloads"
               "--exit-node=${cfg.mullvadExitNode}"
               "--exit-node-allow-lan-access=false"
               "--accept-dns=false"
@@ -141,7 +140,6 @@ in
               if ! tailscale status --json | jq --exit-status '.BackendState == "Running"' >/dev/null; then
                 tailscale up --auth-key=file:/run/qb-tailscale-auth --hostname=qb-downloads \
                   --advertise-tags=tag:qb-downloads \
-                  ${escapeShellArg "--exit-node=${cfg.mullvadExitNode}"} \
                   --exit-node-allow-lan-access=false --accept-dns=false --timeout=60s
               fi
             '';

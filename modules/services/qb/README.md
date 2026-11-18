@@ -12,6 +12,9 @@ deployment workflow. A local configuration edit does not start the downloader.
 
 - The container has its own network namespace and TUN device. Its root-owned
   Tailscale daemon retains the ordinary connection for VPN bootstrap.
+- Initial enrollment advertises the downloader tag without selecting an exit.
+  Once the peer map is available, `tailscaled-set` selects the configured exit.
+  qBittorrent cannot start before that configuration and its Mullvad check pass.
 - qBittorrent binds to `tailscale0`. An independent nftables output rule rejects
   its IPv4 and IPv6 traffic on every interface except loopback and `tailscale0`.
   The firewall does not exempt established connections from this rule.
@@ -114,7 +117,10 @@ the NAS, without registering a device or contacting an indexer. It checks direct
 egress rejection, IPv4 and IPv6 traffic over the simulated VPN, rejection after
 VPN loss despite a working fallback route, persistent WebUI authentication,
 rejection of malformed credentials, and shutdown when the firewall or storage
-mount stops. It does not prove a real Mullvad session or NAS access.
+mount stops. A separate local daemon-API fixture runs the real Tailscale CLI
+against the generated enrollment script and settings. It verifies enrollment
+before named-exit selection and identity reuse after the enrollment file is gone.
+Neither fixture proves a real Mullvad session or NAS access.
 
 After an authorized deployment, validate the new device's selected Mullvad exit,
 DNS, and connection-check response under qBittorrent's UID. Then test VPN loss

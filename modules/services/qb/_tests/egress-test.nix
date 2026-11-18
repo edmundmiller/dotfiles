@@ -15,7 +15,7 @@ in
 dotfilesLib.mkServiceVmTest {
   name = "qb-vpn-egress";
   modules = [ ../../qb.nix ];
-  extraConfig = { lib, ... }: {
+  extraConfig = { config, lib, ... }: {
     options.user.name = lib.mkOption {
       type = lib.types.str;
       default = "emiller";
@@ -33,6 +33,12 @@ dotfilesLib.mkServiceVmTest {
         mullvadExitNode = "test.mullvad.ts.net";
       };
       environment.etc."qb-webui-test.json".source = webuiFixture;
+      environment.etc."qb-startup-test.json".text = builtins.toJSON {
+        script = config.containers.qb.config.systemd.services.tailscaled-autoconnect.script;
+        setFlags = config.containers.qb.config.services.tailscale.extraSetFlags;
+        exitNode = config.modules.services.qb.mullvadExitNode;
+      };
+      environment.etc."qb-startup-test.py".source = ./tailscale-startup.py;
       systemd.tmpfiles.rules = [
         "f /run/qb-test-auth 0600 root root - unused-test-key"
         "C /run/qb-test-secrets/webui 0400 root root - ${webuiFixture}"
@@ -52,7 +58,11 @@ dotfilesLib.mkServiceVmTest {
         ];
         vpnpeer.allowedTCPPorts = [ 18082 ];
       };
-      environment.systemPackages = [ pkgs.python3 ];
+      environment.systemPackages = [
+        pkgs.python3
+        pkgs.tailscale
+        pkgs.jq
+      ];
       containers.qb.config = {
         environment.systemPackages = [
           pkgs.curl
@@ -77,6 +87,9 @@ dotfilesLib.mkServiceVmTest {
 
     start_all()
     machine.wait_for_unit("container@qb.service")
+
+    with subtest("Real Tailscale CLI enrolls before selecting the exit and reuses identity"):
+        machine.succeed("python3 /etc/qb-startup-test.py /etc/qb-startup-test.json")
 
     def inside(command):
         return "nixos-container run qb -- sh -c " + shlex.quote(command)
