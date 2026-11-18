@@ -4,6 +4,7 @@ from contextlib import closing, redirect_stdout
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -50,6 +51,7 @@ class IncidentTests(unittest.TestCase):
         self.email_lost_response = False
         self.email_state = "RESOLVED"
         self.email_requests = []
+        self.email_user_agents = []
         self.sent_mail = []
         self.diagnostic_requests = []
         self.diagnostic_responses = {}
@@ -96,11 +98,13 @@ class IncidentTests(unittest.TestCase):
                     fixture.ingress_events.append((route, body["state"], code))
                     return self.reply(code, {})
                 if self.path == "/email":
+                    fixture.email_user_agents.append(self.headers.get("User-Agent"))
                     body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                     if body.get("state") == "INVALID":
                         phase = "authenticated" if self.headers.get("Authorization") else "unauthenticated"
                         fixture.diagnostic_requests.append({"phase": phase, "method": self.command,
-                                                            "content_type": self.headers.get("Content-Type"), "body": body})
+                                                            "content_type": self.headers.get("Content-Type"),
+                                                            "user_agent": self.headers.get("User-Agent"), "body": body})
                         if fixture.diagnostic_pause and phase == "unauthenticated":
                             started, release = fixture.diagnostic_pause
                             started.set()
@@ -567,6 +571,8 @@ class IncidentTests(unittest.TestCase):
         self.assertTrue(all(record["synthetic"] for record in records))
         self.assertEqual([record["state"] for record in records[1:]], ["TRIGGERED", "RESOLVED"])
         self.assertIn('"inbox_delivery": "unverified"', self.logs.getvalue())
+        self.assertEqual(self.email_user_agents,
+                         ["dotfiles-gatus-email/1.0 (+https://github.com/edmundmiller/dotfiles)"] * 4)
         with self.assertRaises(incidents.DeliveryError):
             self.acceptance()
         self.assertEqual(len(self.email_requests), 2)
@@ -621,7 +627,7 @@ class IncidentTests(unittest.TestCase):
         self.assertEqual(self.email_requests, [])
         self.assertEqual(self.sent_mail, [])
 
-    def diagnostic(self, name="diagnostic"):
+    def diagnostic(self, name="diagnostic", *, prior_diagnostic=None):
         prior = Path(self.tmp.name) / "acceptance"
         prior.mkdir(exist_ok=True)
         if not (prior / "claim.jsonl").exists():
@@ -638,6 +644,7 @@ class IncidentTests(unittest.TestCase):
               redirect_stdout(self.logs)):
             incidents.email_preflight_diagnostic(
                 Path(self.tmp.name) / name, prior, f"http://127.0.0.1:{self.api.server_port}/email", token,
+                prior_diagnostic_directory=prior_diagnostic,
             )
 
     def test_diagnostic_only_probes_preserve_failed_intent_and_refuse_replay(self):
@@ -658,6 +665,8 @@ class IncidentTests(unittest.TestCase):
                          [{"endpoint": ENDPOINT, "state": "INVALID"}] * 2)
         self.assertTrue(all(request["method"] == "POST" and request["content_type"] == "application/json"
                             for request in self.diagnostic_requests))
+        self.assertEqual([request["user_agent"] for request in self.diagnostic_requests],
+                         ["dotfiles-gatus-email/1.0 (+https://github.com/edmundmiller/dotfiles)"] * 2)
         self.assertTrue(events[-1]["expected_rejections_confirmed"])
         self.assertEqual(events[-1]["valid_transitions_sent"], 0)
         with self.assertRaises(FileExistsError):
@@ -725,6 +734,52 @@ class IncidentTests(unittest.TestCase):
             self.diagnostic()
         self.assertEqual(self.diagnostic_requests, [])
         self.assertFalse((Path(self.tmp.name) / "diagnostic/claim.jsonl").exists())
+
+    def test_client_diagnostic_preserves_both_claims_and_refuses_unreconciled_state(self):
+        self.diagnostic_responses = {"unauthenticated": (
+            403, {}, {"Content-Type": "text/plain", "CF-Ray": "0123456789abcdef-DFW"},
+        )}
+        with self.assertRaises(incidents.DeliveryError):
+            self.diagnostic()
+        prior = Path(self.tmp.name) / "diagnostic"
+        acceptance = Path(self.tmp.name) / "acceptance/claim.jsonl"
+        before = (prior / "claim.jsonl").read_bytes()
+        acceptance_before = acceptance.read_bytes()
+        self.diagnostic_responses = {}
+        self.diagnostic("client-diagnostic", prior_diagnostic=prior)
+        self.assertEqual((prior / "claim.jsonl").read_bytes(), before)
+        self.assertEqual(acceptance.read_bytes(), acceptance_before)
+        claim = Path(self.tmp.name) / "client-diagnostic/claim.jsonl"
+        records = [json.loads(line) for line in claim.read_text().splitlines()]
+        self.assertEqual(records[0]["prior_diagnostic_sha256"], hashlib.sha256(before).hexdigest())
+        self.assertTrue(records[-1]["expected_rejections_confirmed"])
+        with self.assertRaises(FileExistsError):
+            self.diagnostic("client-diagnostic", prior_diagnostic=prior)
+        self.assertEqual(len(self.diagnostic_requests), 3)
+
+        original = [json.loads(line) for line in before.splitlines()]
+        mutations = [original + [{"phase": "authenticated"}],
+                     [original[0], {**original[1], "phase": "authenticated"}, *original[2:]],
+                     [original[0], original[1], original[2], {**original[3], "status": 401}],
+                     [{**original[0], "prior_intent_sha256": "0" * 64}, *original[1:]]]
+        for index, events in enumerate(mutations):
+            with self.subTest(index=index):
+                (prior / "claim.jsonl").write_text("".join(json.dumps(event) + "\n" for event in events))
+                with self.assertRaisesRegex(incidents.DeliveryError, "prior-probe-needs-reconciliation"):
+                    self.diagnostic(f"blocked-{index}", prior_diagnostic=prior)
+                self.assertFalse((Path(self.tmp.name) / f"blocked-{index}/claim.jsonl").exists())
+        (prior / "claim.jsonl").write_bytes(before)
+        for suffix in ("", "-wal", "-shm", "-journal"):
+            with self.subTest(suffix=suffix):
+                sidecar = prior / ("events.sqlite" + suffix)
+                sidecar.write_bytes(b"retained queue")
+                with self.assertRaisesRegex(incidents.DeliveryError, "prior-probe-needs-reconciliation"):
+                    self.diagnostic("blocked-queue", prior_diagnostic=prior)
+                self.assertEqual(sidecar.read_bytes(), b"retained queue")
+                sidecar.unlink()
+        self.assertEqual(len(self.diagnostic_requests), 3)
+        self.assertEqual(self.email_requests, [])
+        self.assertEqual(self.sent_mail, [])
 
     def test_diagnostic_network_error_is_classified_without_private_exception_text(self):
         with patch("urllib.request.OpenerDirector.open", side_effect=URLError(socket.gaierror("private-network-detail"))):

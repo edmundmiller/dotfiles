@@ -26,6 +26,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 import uuid
 
 NOTION_API = "https://api.notion.com/v1"
+EMAIL_USER_AGENT = "dotfiles-gatus-email/1.0 (+https://github.com/edmundmiller/dotfiles)"
 QUEUE_LIMIT = 1000
 HISTORY_LIMIT = 100
 
@@ -257,6 +258,7 @@ class CloudflareEmail:
         request = Request(self.url, data=json.dumps({"endpoint": endpoint, "state": state}).encode(), headers={
             "Authorization": "Bearer " + self.token,
             "Content-Type": "application/json",
+            "User-Agent": EMAIL_USER_AGENT,
         })
         try:
             with urlopen(request, timeout=15) as response:
@@ -501,7 +503,7 @@ def email_acceptance_test(
             os.close(directory_fd)
     endpoint = "Smart Home: Home Assistant Runtime"
     for authenticated, expected in ((False, 401), (True, 400)):
-        headers = {"Content-Type": "application/json"}
+        headers = {"Content-Type": "application/json", "User-Agent": EMAIL_USER_AGENT}
         if authenticated:
             headers["Authorization"] = "Bearer " + token
         request = Request(worker_url, data=json.dumps({"endpoint": endpoint, "state": "INVALID"}).encode(), headers=headers)
@@ -548,6 +550,7 @@ def email_preflight_diagnostic(
     prior_directory=Path("/var/lib/gatus-email-acceptance"),
     worker_url="https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email",
     token_file=Path("/run/agenix/gatus-email-worker"),
+    prior_diagnostic_directory=None,
 ):
     """One separately approved diagnostic; never resume the failed acceptance."""
     require_email_test_preconditions()
@@ -562,6 +565,40 @@ def email_preflight_diagnostic(
             or set(prior[0]) != {"synthetic", "family_revision", "started"}
             or prior[0]["synthetic"] is not True):
         raise DeliveryError("diagnostic-prior-intent-needs-reconciliation")
+    reconciled_diagnostic = {}
+    if prior_diagnostic_directory is not None:
+        previous_file = prior_diagnostic_directory / "claim.jsonl"
+        info = prior_diagnostic_directory.stat()
+        if (info.st_uid != os.geteuid() or info.st_mode & 0o077
+                or previous_file.stat().st_size > 8192
+                or any((prior_diagnostic_directory / ("events.sqlite" + suffix)).exists()
+                       for suffix in ("", "-wal", "-shm", "-journal"))):
+            raise DeliveryError("diagnostic-prior-probe-needs-reconciliation")
+        previous_bytes = previous_file.read_bytes()
+        previous = [json.loads(line) for line in previous_bytes.splitlines()]
+        if (len(previous) != 4 or not all(isinstance(event, dict) for event in previous)
+                or previous[0].get("diagnostic_only") is not True
+                or previous[0].get("prior_intent_sha256") != hashlib.sha256(prior_bytes).hexdigest()):
+            raise DeliveryError("diagnostic-prior-probe-needs-reconciliation")
+        intent, response_headers, response = previous[1:]
+        expected_url = urlsplit(worker_url)
+        if (intent.get("event") != "request_intent" or intent.get("method") != "POST"
+                or intent.get("url") != worker_url or intent.get("content_type") != "application/json"
+                or response_headers.get("event") != "response_headers" or "event" in response
+                or not isinstance(intent.get("correlation_id"), str)
+                or not re.fullmatch(r"[0-9a-f-]{36}", intent["correlation_id"])
+                or any(event.get("phase") != "unauthenticated"
+                       or event.get("correlation_id") != intent["correlation_id"] for event in previous[1:])
+                or any(event.get("status") != 403 or event.get("content_type") != "text/plain"
+                       or event.get("error") != "unclassified"
+                       or event.get("final_url") != {"scheme": expected_url.scheme, "host": expected_url.hostname,
+                                                     "path": expected_url.path, "port": expected_url.port}
+                       for event in previous[2:])
+                or not isinstance(response.get("cf_ray"), str)
+                or not re.fullmatch(r"[0-9a-fA-F]{16,32}(?:-[A-Z0-9]{2,8})?", response["cf_ray"])
+                or response_headers.get("cf_ray") != response["cf_ray"]):
+            raise DeliveryError("diagnostic-prior-probe-needs-reconciliation")
+        reconciled_diagnostic["prior_diagnostic_sha256"] = hashlib.sha256(previous_bytes).hexdigest()
     family_revision = os.environ.get("GATUS_EMAIL_TEST_FAMILY_REVISION", "")
     family_version = os.environ.get("GATUS_EMAIL_DIAGNOSTIC_FAMILY_VERSION", "")
     run_id = os.environ.get("GATUS_EMAIL_DIAGNOSTIC_RUN_ID", "")
@@ -610,7 +647,8 @@ def email_preflight_diagnostic(
 
         record({"diagnostic_only": True, "family_revision": family_revision,
                 "family_version": family_version, "run_id": run_id,
-                "prior_intent_sha256": hashlib.sha256(prior_bytes).hexdigest()})
+                "prior_intent_sha256": hashlib.sha256(prior_bytes).hexdigest(),
+                "user_agent": EMAIL_USER_AGENT, **reconciled_diagnostic})
         for path in (directory.parent, directory):
             descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
             try:
@@ -623,7 +661,7 @@ def email_preflight_diagnostic(
             correlation = str(uuid.uuid4())
             record({"phase": phase, "correlation_id": correlation, "event": "request_intent",
                     "method": "POST", "url": worker_url, "content_type": "application/json"})
-            headers = {"Content-Type": "application/json"}
+            headers = {"Content-Type": "application/json", "User-Agent": EMAIL_USER_AGENT}
             if phase == "authenticated":
                 headers["Authorization"] = "Bearer " + token
             request = Request(worker_url, method="POST", headers=headers, data=json.dumps({
@@ -714,9 +752,14 @@ def main():
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] in (["acceptance-test"], ["email-diagnostic"]):
+    if sys.argv[1:] in (["acceptance-test"], ["email-diagnostic"], ["email-client-diagnostic"]):
         try:
-            if sys.argv[1:] == ["email-diagnostic"]:
+            if sys.argv[1:] == ["email-client-diagnostic"]:
+                email_preflight_diagnostic(
+                    directory=Path("/var/lib/gatus-email-client-diagnostic"),
+                    prior_diagnostic_directory=Path("/var/lib/gatus-email-diagnostic"),
+                )
+            elif sys.argv[1:] == ["email-diagnostic"]:
                 email_preflight_diagnostic()
             else:
                 email_acceptance_test()

@@ -285,6 +285,32 @@ Diagnostic success proves rejection paths only. It authorizes neither retrying
 the preserved pair nor enabling production email. Retain its claim and evidence
 for operator reconciliation; do not reset either claim to obtain another run.
 
+#### Client identification after a BIC block
+
+Email delivery and both preflight paths identify themselves as
+`dotfiles-gatus-email/1.0 (+https://github.com/edmundmiller/dotfiles)`.
+[Cloudflare documents](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/#browser-integrity-check-on-workersdev)
+that its managed `workers.dev` Browser Integrity Check can reject Python urllib's
+default User-Agent before Worker execution. Its recommended remedy is a descriptive
+application identity, not a browser User-Agent. A zone-owned BIC skip cannot change
+this check. No security setting or credential changes are required by this repair.
+
+After an independently correlated unauthenticated BIC block, separate approval
+and fresh Family readiness permit `operation=gatus-email-client-diagnostic`,
+using the same exact revision/version inputs as the original diagnostic. It
+retains `/var/lib/gatus-email-diagnostic/` and the original acceptance intent.
+Before requests, it requires the old diagnostic to contain only its initial
+claim, unauthenticated POST intent, response headers and matching terminal403
+text/plain evidence, with a validated Ray and no FIFO or sidecars. Its original
+acceptance-intent hash must still match. Unexpected state blocks the operation.
+
+The new operation exclusively claims
+`/var/lib/gatus-email-client-diagnostic/claim.jsonl`, records the hashes of both
+preserved claims and the application identity, and uses the same INVALID-only
+401/400 contract and redirect refusal. Its own claim blocks reruns. It never
+calls the acceptance helper, resets either old claim, activates NixOS or enables
+production delivery. A successful diagnostic still proves no email delivery.
+
 ### Telegram
 
 Alerts on endpoint failure (3 consecutive failures) and recovery (2 consecutive successes). The bot token is managed via agenix and injected at runtime — never in the nix store.
