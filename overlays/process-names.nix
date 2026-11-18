@@ -27,4 +27,5 @@ in
 {
   bat = showRealName prev.bat;
   gh = showRealName prev.gh;
+  man-db = showRealName prev.man-db;
 }
