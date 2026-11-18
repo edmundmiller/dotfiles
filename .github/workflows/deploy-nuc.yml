@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         required: true
         type: string
       operation:
-        description: Deploy this revision or inspect HA or the orb provider without activation
+        description: Deploy, inspect HA/orbs, or enable approved Note 4C serial access
         type: choice
         default: deploy
         options:
@@ -20,6 +20,7 @@ on:
           - ha-plant-diagnostics
           - ha-monitor-diagnostics
           - orb-diagnostics
+          - orb-note4c-serial
       incident_start:
         description: Recurrence only; UTC time of human/checker-confirmed climate.master_suite incident
         type: string
@@ -266,6 +267,12 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- diagnostics' < scripts/amp-orb-pilot.sh
+      - name: Enable approved Note 4C serial access preserving its paused orb disk
+        if: inputs.operation == 'orb-note4c-serial'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- serial-enable '$DEPLOY_SHA'" < scripts/amp-orb-pilot.sh
       - name: Inspect plant power controls without activation
         if: inputs.operation == 'ha-plant-diagnostics'
         shell: bash

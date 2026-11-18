@@ -5,6 +5,15 @@ in
 {
   imports = [ ../_amp-orbs.nix ];
 
+  # One physical Note 4C, one firmware thread. Do not grant dialout membership
+  # or expose the Nabu Casa ZBT-2 (303a:831a) used by Home Assistant.
+  environment.etc."amp-orbs/note4c-orb".text = ''
+    amp-01a1e7c4-98e1-76f3-a326-18609825b5a3
+  '';
+  services.udev.extraRules = ''
+    SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", ATTRS{serial}=="80:45:6B:37:55:E8", OWNER:="amp-orbs", GROUP:="amp-orbs", MODE:="0660", SYMLINK+="amp-note4c", ENV{ID_MM_DEVICE_IGNORE}="1"
+  '';
+
   # Bound images, snapshots, checkouts, and CLI state together, off the NAS.
   # Never mount over an existing non-empty home or change an unrelated dataset.
   systemd.services.amp-orb-storage = {

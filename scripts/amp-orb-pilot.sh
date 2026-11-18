@@ -99,6 +99,39 @@ RECOVER
     fi
 SMOKE
     ;;
+  serial-enable)
+    # This operation is separate from deployment and needs explicit approval.
+    [[ ${2:-} =~ ^[0-9a-f]{40}$ ]]
+    [[ $(nixos-version --configuration-revision) == "dotfiles=$2;"* ]] || {
+      echo 'Deploy the exact approved revision before serial migration' >&2
+      exit 1
+    }
+    test -r /etc/amp-orbs/note4c-orb
+    # Apply only the Note 4C's new rule, never retrigger the Home Assistant radio.
+    found=false
+    for tty in /sys/class/tty/ttyACM*; do
+      [[ -e $tty/device ]] || continue
+      usb=$(readlink -f "$tty/device/..")
+      [[ $(cat "$usb/idVendor" 2>/dev/null) == 303a &&
+        $(cat "$usb/idProduct" 2>/dev/null) == 1001 &&
+        $(cat "$usb/serial" 2>/dev/null) == 80:45:6B:37:55:E8 ]] || continue
+      sudo -n udevadm trigger --action=add "$tty"
+      found=true
+    done
+    [[ $found == true ]] || { echo 'The pinned Note 4C is not connected' >&2; exit 1; }
+    sudo -n udevadm settle
+    home=/var/lib/amp-orbs
+    uid=$(id -u amp-orbs)
+    sudo -n -u amp-orbs env HOME="$home" XDG_RUNTIME_DIR="/run/user/$uid" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+      CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf bash -s <<'SERIAL'
+    set -euo pipefail
+    cd "$HOME"
+    ORB_ID=$(cat /etc/amp-orbs/note4c-orb)
+    export ORB_ID ORB_OPERATION=serial-enable
+    exec /etc/amp-orbs/dispatch
+SERIAL
+    ;;
   diagnostics)
     home=/var/lib/amp-orbs
     uid=$(id -u amp-orbs)
@@ -151,5 +184,5 @@ DIAGNOSTICS
       _UID="$uid" _SYSTEMD_USER_UNIT=amp-orb-provider.service |
       sudo -n -u amp-orbs env HOME="$home" bash -c 'cd "$HOME"; exec .amp/bin/amp orb redact-output'
     ;;
-  *) echo 'Usage: amp-orb-pilot.sh preflight|recover|verify|diagnostics' >&2; exit 2 ;;
+  *) echo 'Usage: amp-orb-pilot.sh preflight|recover|verify|diagnostics|serial-enable SHA' >&2; exit 2 ;;
 esac

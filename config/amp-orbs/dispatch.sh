@@ -19,7 +19,7 @@ max_active=${AMP_ORB_MAX_ACTIVE:-2}
 [[ $max_active == 1 || $max_active == 2 ]] || fail "invalid active orb limit"
 
 [[ ${ORB_ID:-} =~ ^amp-[a-zA-Z0-9_.-]+$ ]] || fail "invalid ORB_ID"
-case "${ORB_OPERATION:-}" in spawn | pause | delete) ;; *) fail "invalid operation" ;; esac
+case "${ORB_OPERATION:-}" in spawn | pause | delete | serial-enable) ;; *) fail "invalid operation" ;; esac
 [[ $(id -u) != 0 ]] || fail "run as a dedicated non-root account"
 [[ $(podman info --format '{{.Host.Security.Rootless}}') == true ]] || fail "rootless Podman required"
 
@@ -27,6 +27,9 @@ state="${XDG_STATE_HOME:-$HOME/.local/state}/amp-orbs"
 mkdir -p "$state"
 exec 9>"$state/dispatch.lock"
 flock -x -w 240 9
+
+maintenance="$state/$ORB_ID-serial-migration"
+[[ ! -e $maintenance ]] || fail "inspect incomplete serial migration recorded in $maintenance before continuing"
 
 label=io.dotfiles.amp-orb
 exists=false
@@ -44,6 +47,34 @@ check_space() {
   available=$(df -Pk "$root" | awk 'END {print $4}')
   [[ $available =~ ^[0-9]+$ ]] || fail "cannot determine free space"
   ((available >= 20 * 1024 * 1024)) || fail "less than 20 GiB free in container storage"
+}
+
+note4c_orb() {
+  local authorized
+  authorized=$(cat /etc/amp-orbs/note4c-orb 2>/dev/null) || return 1
+  [[ $ORB_ID == "$authorized" ]]
+}
+
+note4c_device() {
+  serial_device=$(readlink -e /dev/amp-note4c) &&
+    [[ -c $serial_device && -r $serial_device && -w $serial_device ]] && return 0
+  echo 'amp-orbs: Note 4C is absent or inaccessible' >&2
+  return 1
+}
+
+create_orb() {
+  local devices=() serial_device
+  if note4c_orb; then
+    # Only NUC's root-owned udev rule creates this alias. Never pass a tty index,
+    # a USB bus, or a caller-supplied device path through to Podman.
+    note4c_device || return 1
+    # Amp runs as the image's non-root user. crun keeps the host account's
+    # amp-orbs group so the device's 0660 mode works through the user namespace.
+    devices=(--runtime crun --group-add keep-groups --device "$serial_device:/dev/note4c:rw")
+  fi
+  podman create --name "$ORB_ID" --label "$label=true" \
+    --platform linux/amd64 --init --cpus 2 --memory 2g --memory-swap 2g \
+    --pids-limit 512 --shm-size 1g "${devices[@]}" --entrypoint sleep "$1" infinity
 }
 
 check_capacity() {
@@ -103,9 +134,7 @@ case "$ORB_OPERATION" in
         fi
       fi
       [[ $image != -* ]] || fail "invalid image"
-      podman create --name "$ORB_ID" --label "$label=true" \
-        --platform linux/amd64 --init --cpus 2 --memory 2g --memory-swap 2g \
-        --pids-limit 512 --shm-size 1g --entrypoint sleep "$image" infinity
+      create_orb "$image"
     elif [[ $target_running == false ]]; then
       # Apply the small type's current limits before restart, never during work.
       # Podman update changes resource configuration without replacing the disk.
@@ -116,6 +145,37 @@ case "$ORB_OPERATION" in
     # An unset AMP_URL must not inherit a value saved in a snapshot.
     export AMP_URL="${AMP_URL:-https://ampcode.com}"
     podman exec --detach --env ORB_TOKEN --env AMP_URL "$ORB_ID" amp orb bootstrap
+    ;;
+  serial-enable)
+    # Explicit maintenance only, after Amp has paused the thread. Keep its full
+    # writable filesystem, including ignored/untracked work, and the original
+    # stopped container. Never substitute the project's clean base image.
+    note4c_orb || fail "serial access is not authorized for this orb"
+    [[ $exists == true ]] || fail "Note 4C orb does not exist"
+    [[ $(podman inspect --format '{{.State.Running}}' "$ORB_ID") == false ]] || fail "pause the Note 4C thread first"
+    [[ $(podman inspect --format '{{len .Mounts}}' "$ORB_ID") == 0 ]] || fail "orb has mounts that a commit would not preserve"
+    note4c_device || exit 1
+    check_space
+    backup="$ORB_ID-pre-note4c-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+    snapshot="localhost/$backup:disk"
+    podman commit "$ORB_ID" "$snapshot"
+    # If interrupted after rename, a later spawn must not create a clean orb
+    # under the old name. Block this orb only until its retained disk is restored.
+    printf '%s\n' "$backup" > "$maintenance"
+    podman rename "$ORB_ID" "$backup"
+    if ! create_orb "$snapshot"; then
+      # Retain even a partially created replacement for investigation.
+      # The lifecycle lock prevents concurrent spawn throughout the replacement.
+      if podman container exists "$ORB_ID"; then
+        podman rename "$ORB_ID" "$backup-failed"
+      fi
+      podman rename "$backup" "$ORB_ID"
+      rm -- "$maintenance"
+      fail "replacement failed; original stopped orb restored"
+    fi
+    rm -- "$maintenance"
+    printf 'PASS: stopped orb replaced from its complete disk snapshot\nrollbackContainer=%s\nsnapshot=%s\n' "$backup" "$snapshot"
+    echo 'Wake the Note 4C thread to bootstrap it; serial path is /dev/note4c.'
     ;;
   pause)
     if [[ $exists == true ]]; then

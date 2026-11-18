@@ -132,6 +132,139 @@ elif args[0] != 'exec':
                     self.assertEqual(after, containers)
 
     @unittest.skipUnless(sys.platform == 'linux', 'Rootless Podman dispatcher uses Linux flock')
+    def test_serial_disk_preservation_and_isolation(self):
+        # The fake backend models stopped container disks, including ignored
+        # content, independently of the dispatcher's snapshot/name choices.
+        disk = {'tracked': 'dirty', 'untracked/firmware': 'new', '.amp/ignored': 'evidence'}
+        for scenario in ('migrate', 'other orb', 'running', 'mounted', 'absent',
+                         'commit failure', 'create failure', 'unplug during create',
+                         'interrupted rename', 'fresh target', 'fresh unrelated', 'fresh absent'):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                tools = root / 'bin'
+                tools.mkdir()
+                containers = {
+                    'amp-note4c': dict(running=scenario == 'running',
+                        mounts=int(scenario == 'mounted'), disk=disk),
+                    'amp-other': dict(running=True, mounts=0, disk={'other': 'untouched'}),
+                }
+                fresh = scenario.startswith('fresh')
+                target = 'amp-other' if scenario in ('other orb', 'fresh unrelated') else 'amp-note4c'
+                if fresh:
+                    containers = {}
+                state = root / 'containers.json'
+                state.write_text(json.dumps(containers))
+                scripts = {
+                    'id': f'#!{sys.executable}\nprint(1000)\n',
+                    'getconf': f'#!{sys.executable}\nprint(8)\n',
+                    'df': f"#!{sys.executable}\nprint('fixture 99999999 0 99999999 0% /')\n",
+                    'awk': f"#!{sys.executable}\nimport sys\nprint(99999999 if sys.argv[-1] == '/proc/meminfo' else sys.stdin.read().split()[3])\n",
+                    'cat': f"#!{sys.executable}\nimport sys\nassert sys.argv[1:] == ['/etc/amp-orbs/note4c-orb']\nprint('amp-note4c')\n",
+                    'readlink': f'#!{sys.executable}\n' + """
+import os, sys
+from pathlib import Path
+assert sys.argv[1:] == ['-e', '/dev/amp-note4c']
+scenario = os.environ['SCENARIO']
+if scenario in ('absent', 'fresh absent') or (scenario == 'unplug during create' and
+        (Path(os.environ['FIXTURE_ROOT']) / 'committed').exists()):
+    sys.exit(1)
+print('/dev/null')
+""",
+                    'podman': f'#!{sys.executable}\n' + """
+import copy, json, os, sys
+from pathlib import Path
+root = Path(os.environ['FIXTURE_ROOT'])
+path = root / 'containers.json'
+containers = json.loads(path.read_text())
+args = sys.argv[1:]
+scenario = os.environ['SCENARIO']
+if args[0] == 'info':
+    print('true' if 'Rootless' in args[-1] else root)
+elif args[:2] == ['container', 'exists']:
+    sys.exit(0 if args[-1] in containers else 1)
+elif args[0] == 'inspect':
+    c = containers[args[-1]]
+    template = args[args.index('--format') + 1]
+    print('true' if 'Labels' in template else
+        str(c['running']).lower() if 'Running' in template else c['mounts'])
+elif args[0] == 'commit':
+    if scenario == 'commit failure':
+        sys.exit(42)
+    assert not containers[args[-2]]['running']
+    (root / 'snapshot.json').write_text(json.dumps({
+        'image': args[-1], 'disk': containers[args[-2]]['disk']}))
+    (root / 'committed').touch()
+elif args[0] == 'rename':
+    assert args[-1] not in containers
+    containers[args[-1]] = containers.pop(args[-2])
+    if scenario == 'interrupted rename':
+        path.write_text(json.dumps(containers))
+        sys.exit(42)
+elif args[0] == 'create':
+    name = args[args.index('--name') + 1]
+    snapshot = json.loads((root / 'snapshot.json').read_text()) if not scenario.startswith('fresh') else None
+    assert snapshot is None or args[-2] == snapshot['image']
+    devices = [args[i+1] for i, arg in enumerate(args) if arg == '--device']
+    containers[name] = dict(running=False, mounts=0,
+        disk=copy.deepcopy(snapshot['disk']) if snapshot else {'clean': 'base'}, devices=devices,
+        groups=args[args.index('--group-add')+1] if '--group-add' in args else None,
+        runtime=args[args.index('--runtime')+1] if '--runtime' in args else None)
+    if scenario == 'create failure':
+        path.write_text(json.dumps(containers))
+        sys.exit(42)
+elif args[0] == 'start':
+    containers[args[-1]]['running'] = True
+elif args[0] not in ('ps', 'exec'):
+    sys.exit('Unexpected fixture command: ' + repr(args))
+path.write_text(json.dumps(containers))
+""",
+                }
+                for name, source in scripts.items():
+                    tool = tools / name
+                    tool.write_text(source)
+                    tool.chmod(0o755)
+                environment = dict(os.environ, PATH=f"{tools}:{os.environ['PATH']}",
+                    HOME=str(root), XDG_STATE_HOME=str(root / 'state'),
+                    FIXTURE_ROOT=str(root), SCENARIO=scenario, ORB_ID=target,
+                    ORB_OPERATION='spawn' if fresh else 'serial-enable',
+                    ORB_IMAGE='clean-base', ORB_TOKEN='non-secret-fixture')
+                result = subprocess.run(['bash', str(DISPATCH)], env=environment,
+                    capture_output=True, text=True, timeout=5)
+                after = json.loads(state.read_text())
+                accepted = scenario in ('migrate', 'fresh target', 'fresh unrelated')
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                if accepted:
+                    self.assertEqual(after[target]['devices'],
+                        [] if scenario == 'fresh unrelated' else ['/dev/null:/dev/note4c:rw'])
+                    self.assertEqual(after[target]['groups'],
+                        None if scenario == 'fresh unrelated' else 'keep-groups')
+                    self.assertEqual(after[target]['runtime'],
+                        None if scenario == 'fresh unrelated' else 'crun')
+                    self.assertEqual(after[target]['running'], fresh)
+                    if not fresh:
+                        self.assertEqual(after[target]['disk'], disk)
+                        backups = [c for name, c in after.items() if name.startswith('amp-note4c-pre-note4c-')]
+                        self.assertEqual(backups, [containers[target]])
+                        self.assertEqual(after['amp-other'], containers['amp-other'])
+                elif scenario == 'interrupted rename':
+                    self.assertEqual(after['amp-other'], containers['amp-other'])
+                    self.assertEqual([c['disk'] for name, c in after.items()
+                        if name != 'amp-other'], [disk])
+                    wake = subprocess.run(['bash', str(DISPATCH)],
+                        env=dict(environment, ORB_OPERATION='spawn'),
+                        capture_output=True, text=True, timeout=5)
+                    self.assertNotEqual(wake.returncode, 0)
+                    self.assertIn('incomplete serial migration', wake.stderr)
+                    self.assertEqual(json.loads(state.read_text()), after)
+                else:
+                    # A failed replacement may be retained, but the original
+                    # stopped disk must be restored under the provider's name.
+                    for name, original in containers.items():
+                        self.assertEqual(after[name], original)
+                    if scenario == 'fresh absent':
+                        self.assertEqual(after, {})
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Rootless Podman dispatcher uses Linux flock')
     def test_pause_after_spawn_with_detached_helper(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

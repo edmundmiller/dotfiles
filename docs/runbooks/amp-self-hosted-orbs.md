@@ -148,8 +148,9 @@ headroom at their full limits. Each spawn rechecks current capacity. Large build
 should continue using hosted orbs. Do not archive unfinished review work merely
 to free a slot or automatically prune retained disks.
 
-The dispatcher grants no host mounts, container socket, host networking, devices,
-or privileged mode. These limits do not isolate the LAN or prevent kernel
+The dispatcher grants no host mounts, container socket, host networking,
+or privileged mode. Devices are absent except for the single Note 4C grant below.
+These limits do not isolate the LAN or prevent kernel
 exploits. Rootless Podman resource enforcement requires working cgroup v2
 delegation. Validate actual limits before trusting them. Use a dedicated VM if
 untrusted repositories or stronger protection of home services are required.
@@ -159,7 +160,7 @@ with a 175-GiB quota. CLI state, images, snapshots, and checkouts share this lim
 It refuses to mount over a non-empty existing home or adopt a dataset with a
 different mountpoint or quota. The dispatcher's free-space check is an additional
 admission guard. UNAS uses its separate bounded local image described above;
-do not use bulk/preservation storage or add GPU/USB passthrough.
+do not use bulk/preservation storage or add GPU or USB-bus passthrough.
 
 For an existing NUC dataset at a former 64-GiB or 96-GiB quota, run `hey nuc:orb-quota`
 with approval before deploying the 175-GiB configuration. This changes the persistent
@@ -174,6 +175,83 @@ account's Podman storage, separate from existing rootful home-service containers
 Do not enable prune jobs in that account. Archive pauses a thread but does not
 delete its container. Project snapshot images also require deliberate retention
 management; never run a blanket container/image prune to recover space.
+
+## Note 4C serial access
+
+NUC alone grants the firmware thread
+`T-01a1e7c4-98e1-76f3-a326-18609825b5a3` one serial device. Its udev rule matches
+Espressif `303a:1001` and individual USB serial `80:45:6B:37:55:E8`, then creates
+`/dev/amp-note4c` owned by `amp-orbs:amp-orbs` with mode `0660`. It does not depend
+on a tty number or USB port. The Nabu Casa ZBT-2 is `303a:831a` and cannot match.
+There is no `dialout` grant, world-writable node, USB bus mount or privileged
+container. `/etc/amp-orbs/note4c-orb` pins the permitted container name. Other
+threads, including clones of project snapshots, receive no device mapping.
+
+The permitted container maps only this device to `/dev/note4c` with read/write
+permission and no mknod grant. It uses crun and `--group-add keep-groups` because
+Amp's image user is non-root and needs the host account's existing `amp-orbs`
+group through the rootless user namespace. No new account groups are required.
+An absent or inaccessible device fails creation closed for this thread only.
+
+Changing create flags does not update an existing container. After explicit
+approval to publish, deploy and migrate this orb:
+
+1. Publish through candidate CI and deploy the exact passing main revision with
+   the guarded `hey nuc` route. Do not request the pilot recovery or smoke-test
+   options, which require stopping unrelated pilot containers.
+2. Pause the firmware thread in Amp. Confirm the provider has stopped its
+   container, rather than stopping it behind Amp's back. Do not wake it during
+   migration. Processes stop, but all disk state must remain.
+3. Dispatch `Deploy NUC` at that same exact main SHA with
+   `operation=orb-note4c-serial`. This is a separate approved host write, never
+   part of diagnostic-only requests or ordinary deployments. The workflow checks
+   exact-main CI and the deployed revision, then streams
+   `scripts/amp-orb-pilot.sh serial-enable SHA` over the existing OIDC route.
+4. The helper retriggers udev only for the pinned Note 4C and invokes the
+   dispatcher's locked `serial-enable` maintenance operation.
+   It refuses a running target or any mounts that a commit would omit. It saves
+   the complete stopped writable filesystem to a local image, renames the
+   original as a rollback container, and creates a stopped replacement from
+   that image with the device grant. Tracked, untracked and ignored files all
+   survive. It never removes the original container or snapshot, and does not
+   stop any other orb, the provider controller or Home Assistant container.
+5. On success wake the firmware thread with a message so Amp supplies a fresh
+   bootstrap token. Confirm its checkout status and
+   ignored evidence remain before continuing firmware work. In that orb, run:
+
+   ```bash copy Copy Serial Check
+   python3 - <<'PY'
+   import os, stat
+   path = "/dev/note4c"
+   assert stat.S_ISCHR(os.stat(path).st_mode)
+   fd = os.open(path, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+   os.close(fd)
+   assert not os.path.exists("/dev/ttyACM0")
+   assert not os.path.exists("/dev/bus/usb")
+   print("PASS: Note 4C serial opens read/write; radio and USB bus are absent")
+   PY
+   ```
+
+This check opens the serial port but sends no bytes. Only a successful check in
+the firmware orb proves live access; local dispatcher fixtures do not. Device
+removal or re-enumeration can leave a stale bind mount. After a disconnect, pause
+the thread and repeat the approved migration before opening the port again.
+Do not broaden access to every ACM device to work around reconnects.
+
+The workflow prints `rollbackContainer` and `snapshot`. A failed create restores
+the original name when possible and retains any partial replacement. An interrupted
+migration leaves a per-orb marker under `~/.local/state/amp-orbs` containing the
+original's backup name. That marker blocks all lifecycle operations for this orb,
+so a later wake cannot create a clean disk over an unfinished migration. Inspect
+and restore the retained disk under the dispatch lock before removing the marker.
+Other orbs remain usable. For rollback,
+keep the firmware thread paused, stop the dedicated controller, acquire the same
+dispatch lock as `amp-orbs`, and rename the replacement aside without deleting it.
+Rename the printed original back to the exact permitted container name, then
+restart the controller and wake the thread. This restores the pre-migration
+disk, which has no device mapping. Preserve any work made after migration in the
+retained replacement. Remove the NUC grant through the same approved publication
+and deployment route to revoke future device mappings too.
 
 ## Approval and installation boundary
 
