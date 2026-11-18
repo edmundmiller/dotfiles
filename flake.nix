@@ -1275,6 +1275,36 @@
                     touch $out
                   '';
 
+              orb-setup-tests =
+                pkgs.runCommand "orb-setup-tests"
+                  {
+                    src = lib.fileset.toSource {
+                      root = ./.;
+                      fileset = lib.fileset.unions [
+                        ./.agents/setup
+                        ./.agents/resume
+                        ./.agents/nix-env.sh
+                        ./.agents/orb-tools.nix
+                        ./tests/test_orb_setup.py
+                      ];
+                    };
+                    nativeBuildInputs = [
+                      pkgs.bash
+                      pkgs.git
+                      pkgs.mise
+                      pkgs.python3
+                    ]
+                    ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.util-linux ];
+                  }
+                  ''
+                    export HOME=$TMPDIR
+                    cp -R "$src" "$TMPDIR/source"
+                    chmod -R u+w "$TMPDIR/source"
+                    cd "$TMPDIR/source"
+                    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests/test_orb_setup.py
+                    touch $out
+                  '';
+
               validation-tests =
                 pkgs.runCommand "validation-tests"
                   {
@@ -1317,7 +1347,6 @@
                       tests/test_ship.py \
                       tests/test_ci_check_cache.py \
                       tests/test_renovate_admission.py \
-                      tests/test_orb_setup.py \
                       tests/test_mise_tasks.py \
                       tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py

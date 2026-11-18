@@ -293,12 +293,28 @@ class ValidationTests(unittest.TestCase):
         selected = self.selection("--full")
         self.assertIn("tracked.md", selected["files"])
         self.assertIn("validation-tests", selected["checks"])
+        self.assertIn("orb-setup-tests", selected["checks"])
         self.assertIn("agent-instruction-tests", selected["checks"])
         self.assertIn("pi-example", selected["packages"])
         self.assertIsNone(selected["platform"])
         self.assertNotIn("trmnl-agent-message-render", selected["checks"])
         self.assertFalse(
             any("dji" in name or "vm-test" in name for name in selected["checks"])
+        )
+
+    def test_orb_lifecycle_changes_select_the_lifecycle_suite(self):
+        for name in (
+            ".agents/setup", ".agents/resume", ".agents/nix-env.sh",
+            ".agents/orb-tools.nix", "tests/test_orb_setup.py",
+        ):
+            with self.subTest(path=name):
+                self.write(name, "probe\n")
+                self.assertEqual(self.selection(name)["checks"], ["orb-setup-tests"])
+        self.write("scripts/validation.py", "probe\n")
+        self.assertTrue(
+            {"validation-tests", "orb-setup-tests"}.issubset(
+                self.selection("scripts/validation.py")["checks"]
+            )
         )
 
     def test_unas_vm_checks_are_excluded_from_portable_plans(self):

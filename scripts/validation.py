@@ -21,11 +21,19 @@ ROOT = Path(__file__).resolve().parents[1]
 # These are portable check derivations, not host evaluations or VM builds.
 # Hook-owned tests are deliberately not repeated here.
 CHECKS = {
-    "validation-tests": [
+    "orb-setup-tests": [
         ".agents/setup",
         ".agents/resume",
         ".agents/nix-env.sh",
+        ".agents/orb-tools.nix",
         "tests/test_orb_setup.py",
+        "packages/hey/*",
+        "packages/bend/*",
+        "bin/hey",
+        "bin/agent-run",
+        "scripts/validation.py",
+    ],
+    "validation-tests": [
         "scripts/validation.py",
         "scripts/nuc_shipping.py",
         "tests/test_nuc_shipping.py",

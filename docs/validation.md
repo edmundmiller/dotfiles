@@ -27,6 +27,26 @@ runner needs Python 3.11+, Git, Nix and Prek; package QA needs Bun/Node.
 CI invokes `python3 scripts/validation.py`, the exact implementation
 behind `hey check`, without starting the host-oriented `hey` environment.
 
+### Orb lifecycle checks
+
+`hey check .agents tests/test_orb_setup.py` selects `orb-setup-tests`, which runs
+the lifecycle fixtures without the unrelated shipping and validation regression
+tests. Changes to the validation runner select both suites; `--full` retains both.
+These fixtures exercise setup, repeated resume, restored profiles, command links,
+checkout-scoped Mise trust, broken Nix profiles, containers and swap failures.
+They stub Nix builds and privileged operations, so they do not prove package builds
+or real host kernel changes. Run `.agents/setup` twice and `.agents/resume` directly
+when changing the lifecycle or its public package recipe.
+
+Setup builds `.agents/orb-tools.nix` from only the public locked Nixpkgs source
+and existing Hey/Bend recipes. Its GC-rooted tool environment survives snapshots;
+Nix rechecks the recipes on repeated setup. Resume only repairs command links,
+trusts this checkout and restores the login hook. Missing tools fail with a request
+to rerun setup, not a background install. Rerun setup after changing those recipes
+in an existing Orb. The full `#agent` login environment still resolves the root
+flake with the current user's credentials after activation, never in shared setup.
+No credential or private flake input is added to the prepared public tool closure.
+
 Selection includes committed branch changes relative to the merge-base with
 `origin/main`, plus staged, unstaged and untracked files. Without `origin/main`,
 it uses `HEAD` and checks working changes. `--base-ref REF` makes the baseline

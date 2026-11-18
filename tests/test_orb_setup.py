@@ -67,7 +67,7 @@ class OrbSetupTests(unittest.TestCase):
             home.mkdir()
             repo = root / "repo"
             (repo / ".agents").mkdir(parents=True)
-            for name in ("setup", "resume", "nix-env.sh"):
+            for name in ("setup", "resume", "nix-env.sh", "orb-tools.nix"):
                 shutil.copy2(ROOT / ".agents" / name, repo / ".agents" / name)
             tools = root / "tools"
             tools.mkdir()
@@ -132,7 +132,9 @@ test -z "${ORB_TEST_HOST_PROFILE:-}"
 case "$*" in
   'config show eval-cores') exit 1 ;;
   *print-dev-env*) printf 'export ORB_TEST_SHELL=loaded\\n' ;;
-  *build*) printf '%s\\n' "$HOME/agent-env" ;;
+  'build --impure --file '*'/orb-tools.nix --out-link '*)
+    test "${ORB_TEST_BUILD_STATUS:-0}" = 0
+    ln -sfn "$HOME/agent-env" "${@: -1}" ;;
   --version) echo 'fixture Nix' ;;
   *) exit 98 ;;
 esac""",
@@ -195,7 +197,13 @@ esac""",
             # Both rootless containers and VM orbs must reach shell setup.
             for container in ("1", "1", "0", "0"):
                 env["ORB_TEST_CONTAINER"] = container
+                env["ORB_TEST_BUILD_STATUS"] = "0"
                 self.assertIn("Orb setup complete.", run(bash, ".agents/setup"))
+                # Model a shared snapshot dropping shell profiles, then prove
+                # resume restores them without building or fetching anything.
+                (home / ".bash_profile").unlink(missing_ok=True)
+                env["ORB_TEST_BUILD_STATUS"] = "99"
+                self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
                 self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
                 self.assertEqual(
                     json.loads(run(str(home / ".local/bin/mise"), "env", "--json"))[
@@ -235,8 +243,22 @@ esac""",
                 text=True,
             )
             self.assertEqual(failed_swap.returncode, 42, failed_swap.stderr)
-            self.assertNotIn("Make the agent shell available", failed_swap.stdout)
+            self.assertNotIn("Prepare public Orb commands", failed_swap.stdout)
             self.assertNotIn("Orb setup complete.", failed_swap.stdout)
+
+            missing_tools = home / ".local/state/dotfiles-orb-tools"
+            missing_tools.unlink()
+            failed_resume = subprocess.run(
+                [bash, ".agents/resume"],
+                cwd=repo,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(failed_resume.returncode, 0)
+            self.assertIn("rerun .agents/setup", failed_resume.stderr)
+            self.assertNotIn("commands are ready", failed_resume.stdout)
+            missing_tools.symlink_to(home / "agent-env")
 
             host_profile.unlink()
             store_nix = root / "store/example-nix-2.35.3/bin/nix"
@@ -245,7 +267,10 @@ esac""",
             shutil.rmtree(profile)
             profile.symlink_to(root / "missing-profile")
             (home / ".local/bin/nix").unlink()
-            for tool in ("git", "readlink", "sort", "tail", "cut", "mkdir", "ln"):
+            for tool in (
+                "git", "readlink", "sort", "tail", "cut", "mkdir", "ln",
+                "dirname", "cat", "grep",
+            ):
                 (tools / tool).symlink_to(shutil.which(tool))
             env.update(
                 PATH=str(tools),

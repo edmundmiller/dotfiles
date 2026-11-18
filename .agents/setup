@@ -2,7 +2,11 @@
 set -euo pipefail
 
 step() {
+  if [[ -n "${step_started:-}" ]]; then
+    printf '    Completed in %ss\n' "$((SECONDS - step_started))"
+  fi
   printf '\n==> %s\n' "$1"
+  step_started=$SECONDS
 }
 
 repo_root="$(git rev-parse --show-toplevel)"
@@ -75,33 +79,11 @@ elif ! /usr/sbin/swapon --show=NAME --noheadings | grep -Fxq "$swapfile"; then
   sudo /usr/sbin/swapon "$swapfile"
 fi
 
-# The root flake includes private inputs. Resolve them after snapshot activation
-# with the current user's GitHub credential, never while building shared setup.
-step "Make the agent shell available to orb login shells"
-orb_env="$HOME/.config/amp/dotfiles-orb-env.sh"
-mkdir -p "$(dirname "$orb_env")"
-cat > "$orb_env" <<EOF
-if [[ "\${AMP_ORB:-}" == "1" && "\${PWD:-}" == "$repo_root" && -z "\${DOTFILES_AGENT_ENV_ACTIVE:-}" ]]; then
-  source "$repo_root/.agents/nix-env.sh" || return
-  export DOTFILES_AGENT_ENV_ACTIVE=1
-  nix_config="\${NIX_CONFIG:-}"
-  if command -v gh >/dev/null 2>&1 && github_token="\$(gh auth token 2>/dev/null)" && [[ -n "\$github_token" ]]; then
-    nix_config="\${nix_config:+\$nix_config
-}access-tokens = github.com=\$github_token"
-  fi
-  eval "\$(NIX_CONFIG=\$nix_config "\$nix_bin" --accept-flake-config print-dev-env --no-write-lock-file '$repo_root#agent')"
-  unset github_token nix_config
-  export PATH="\$(dirname "\$nix_bin"):\$PATH"
-fi
-EOF
+step "Prepare public Orb commands for the snapshot"
+# Keep a GC root across snapshot reuse. Nix checks the pinned recipes on every
+# setup, reusing realized outputs rather than a custom success/fingerprint cache.
+mkdir -p "$HOME/.local/state"
+"$nix_bin" build --impure --file "$repo_root/.agents/orb-tools.nix" \
+  --out-link "$HOME/.local/state/dotfiles-orb-tools"
 
-profile_marker="# dotfiles orb agent shell"
-if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
-  cat >> "$HOME/.bash_profile" <<'EOF'
-
-# dotfiles orb agent shell
-source "$HOME/.config/amp/dotfiles-orb-env.sh"
-EOF
-fi
-
-printf '\nOrb setup complete.\n'
+printf '    Completed in %ss\n\nOrb setup complete.\n' "$((SECONDS - step_started))"
