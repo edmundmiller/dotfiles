@@ -26,4 +26,5 @@ let
 in
 {
   bat = showRealName prev.bat;
+  gh = showRealName prev.gh;
 }
