@@ -22,7 +22,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'flue-review') &&
       (github.event.pull_request.head.ref == 'renovate/herdr' ||
        github.event.pull_request.head.ref == 'renovate/hunk')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
     steps:
       - name: Select patch stack

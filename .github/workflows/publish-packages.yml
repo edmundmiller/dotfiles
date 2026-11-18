@@ -28,7 +28,7 @@ permissions:
 jobs:
   detect:
     name: Detect changed packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       packages: ${{ steps.detect.outputs.packages }}
     steps:
@@ -73,7 +73,7 @@ jobs:
     name: QA ${{ matrix.package }}
     needs: detect
     if: needs.detect.outputs.packages != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -96,7 +96,7 @@ jobs:
     name: Publish ${{ matrix.package }}
     needs: [detect, quality-gate]
     if: needs.detect.outputs.packages != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:

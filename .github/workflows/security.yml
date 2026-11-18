@@ -8,7 +8,7 @@ on:
 jobs:
   trufflehog:
     name: Secret Scanning
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,7 +19,7 @@ jobs:
 
   statix:
     name: Nix Static Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
         with:

@@ -28,7 +28,7 @@ env:
 jobs:
   plan:
     name: Resolve validation base
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       base: ${{ steps.plan.outputs.base }}
     steps:
@@ -44,7 +44,7 @@ jobs:
   checks:
     name: Checks (Linux)
     needs: plan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       actions: read
@@ -160,7 +160,7 @@ jobs:
     name: ${{ matrix.context }}
     needs: [plan, checks, darwin, vm-services]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         context: [Flake Check (Linux), Check Formatting]
@@ -273,7 +273,7 @@ jobs:
   vm-services:
     name: Service VM Tests (Linux)
     if: github.event_name == 'workflow_dispatch' && inputs.services_vm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4

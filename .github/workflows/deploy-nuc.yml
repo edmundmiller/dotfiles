@@ -67,7 +67,7 @@ concurrency:
 jobs:
   wait-for-ci:
     if: github.repository == 'edmundmiller/dotfiles' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 95
     permissions:
       contents: read
@@ -124,7 +124,7 @@ jobs:
   deploy:
     needs: wait-for-ci
     if: github.repository == 'edmundmiller/dotfiles' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 120
     environment: nuc
     permissions:
