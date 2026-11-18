@@ -64,12 +64,23 @@ with lib;
       determinateNixd.garbageCollector.strategy = "disabled";
     };
 
+    # Adopt only the exact generated policy staged before the installer starts.
+    environment.etc."determinate/config.json".knownSha256Hashes = [
+      (builtins.hashString "sha256" config.environment.etc."determinate/config.json".text)
+    ];
+
     # Refuse to relinquish the old daemon before the independent runtime exists.
     system.activationScripts.preActivation.text = mkBefore ''
       if [[ ! -x /nix/var/nix/profiles/default/bin/nix ]] ||
          [[ "$(/nix/var/nix/profiles/default/bin/nix --version)" != *"Determinate Nix"* ]]; then
         echo "Determinate runtime missing; install the signed macOS package before activating. See docs/runbooks/determinate-darwin.md." >&2
         exit 1
+      fi
+
+      # Legacy launchctl unload can fail while nix-darwin removes its plist.
+      # Boot out the loaded service by label before it can compete with Nixd.
+      if launchctl print system/org.nixos.nix-daemon >/dev/null 2>&1; then
+        launchctl bootout system/org.nixos.nix-daemon
       fi
     '';
 
