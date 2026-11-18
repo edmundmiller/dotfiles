@@ -1,6 +1,14 @@
 { pkgs, ... }:
 let
   home = "/var/lib/amp-orbs";
+  note4cNode = pkgs.writeShellApplication {
+    name = "amp-note4c-node";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.util-linux
+    ];
+    text = builtins.readFile ../../config/amp-orbs/note4c-node.sh;
+  };
 in
 {
   imports = [ ../_amp-orbs.nix ];
@@ -10,8 +18,11 @@ in
   environment.etc."amp-orbs/note4c-orb".text = ''
     amp-01a1e7c4-98e1-76f3-a326-18609825b5a3
   '';
+  # A stable, root-owned devtmpfs directory allows hotplug without binding /dev.
+  systemd.tmpfiles.rules = [ "d /dev/amp-note4c-port 0750 root amp-orbs -" ];
   services.udev.extraRules = ''
-    SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", ATTRS{serial}=="80:45:6B:37:55:E8", OWNER:="amp-orbs", GROUP:="amp-orbs", MODE:="0660", SYMLINK+="amp-note4c", ENV{ID_MM_DEVICE_IGNORE}="1"
+    ACTION=="add", SUBSYSTEM=="tty", KERNEL=="ttyACM*", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", ATTRS{serial}=="80:45:6B:37:55:E8", OWNER:="amp-orbs", GROUP:="amp-orbs", MODE:="0660", SYMLINK+="amp-note4c", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{AMP_NOTE4C}="1", RUN+="${note4cNode}/bin/amp-note4c-node add %M %m"
+    ACTION=="remove", SUBSYSTEM=="tty", ENV{AMP_NOTE4C}=="1", RUN+="${note4cNode}/bin/amp-note4c-node remove %M %m"
   '';
 
   # Bound images, snapshots, checkouts, and CLI state together, off the NAS.

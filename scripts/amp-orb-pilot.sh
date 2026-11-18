@@ -107,8 +107,8 @@ SMOKE
       exit 1
     }
     test -r /etc/amp-orbs/note4c-orb
+    test -d /dev/amp-note4c-port
     # Apply only the Note 4C's new rule, never retrigger the Home Assistant radio.
-    found=false
     for tty in /sys/class/tty/ttyACM*; do
       [[ -e $tty/device ]] || continue
       usb=$(readlink -f "$tty/device/..")
@@ -116,9 +116,8 @@ SMOKE
         $(cat "$usb/idProduct" 2>/dev/null) == 1001 &&
         $(cat "$usb/serial" 2>/dev/null) == 80:45:6B:37:55:E8 ]] || continue
       sudo -n udevadm trigger --action=add "$tty"
-      found=true
     done
-    [[ $found == true ]] || { echo 'The pinned Note 4C is not connected' >&2; exit 1; }
+    # The empty export directory is intentional while the device sleeps.
     sudo -n udevadm settle
     home=/var/lib/amp-orbs
     uid=$(id -u amp-orbs)

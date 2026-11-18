@@ -55,22 +55,14 @@ note4c_orb() {
   [[ $ORB_ID == "$authorized" ]]
 }
 
-note4c_device() {
-  serial_device=$(readlink -e /dev/amp-note4c) &&
-    [[ -c $serial_device && -r $serial_device && -w $serial_device ]] && return 0
-  echo 'amp-orbs: Note 4C is absent or inaccessible' >&2
-  return 1
-}
-
 create_orb() {
-  local devices=() serial_device
+  local devices=()
   if note4c_orb; then
-    # Only NUC's root-owned udev rule creates this alias. Never pass a tty index,
-    # a USB bus, or a caller-supplied device path through to Podman.
-    note4c_device || return 1
-    # Amp runs as the image's non-root user. crun keeps the host account's
-    # amp-orbs group so the device's 0660 mode works through the user namespace.
-    devices=(--runtime crun --group-add keep-groups --device "$serial_device:/dev/note4c:rw")
+    # This root-owned directory exists even while USB is absent. udev adds and
+    # removes only the individually pinned device node inside it. A read-only
+    # directory bind follows hotplug without exposing /dev or a stale tty inode.
+    devices=(--runtime crun --group-add keep-groups
+      --mount type=bind,src=/dev/amp-note4c-port,dst=/dev/note4c,ro=true)
   fi
   podman create --name "$ORB_ID" --label "$label=true" \
     --platform linux/amd64 --init --cpus 2 --memory 2g --memory-swap 2g \
@@ -154,7 +146,6 @@ case "$ORB_OPERATION" in
     [[ $exists == true ]] || fail "Note 4C orb does not exist"
     [[ $(podman inspect --format '{{.State.Running}}' "$ORB_ID") == false ]] || fail "pause the Note 4C thread first"
     [[ $(podman inspect --format '{{len .Mounts}}' "$ORB_ID") == 0 ]] || fail "orb has mounts that a commit would not preserve"
-    note4c_device || exit 1
     check_space
     backup="$ORB_ID-pre-note4c-$(date -u +%Y%m%d-%H%M%S)-$$"
     snapshot="localhost/$backup:disk"
@@ -175,7 +166,7 @@ case "$ORB_OPERATION" in
     fi
     rm -- "$maintenance"
     printf 'PASS: stopped orb replaced from its complete disk snapshot\nrollbackContainer=%s\nsnapshot=%s\n' "$backup" "$snapshot"
-    echo 'Wake the Note 4C thread to bootstrap it; serial path is /dev/note4c.'
+    echo 'Wake the Note 4C thread to bootstrap it; hotplug serial path is /dev/note4c/serial.'
     ;;
   pause)
     if [[ $exists == true ]]; then

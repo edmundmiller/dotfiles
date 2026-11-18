@@ -138,7 +138,8 @@ elif args[0] != 'exec':
         disk = {'tracked': 'dirty', 'untracked/firmware': 'new', '.amp/ignored': 'evidence'}
         for scenario in ('migrate', 'other orb', 'running', 'mounted', 'absent',
                          'commit failure', 'create failure', 'unplug during create',
-                         'interrupted rename', 'fresh target', 'fresh unrelated', 'fresh absent'):
+                         'interrupted rename', 'fresh target', 'fresh unrelated', 'fresh absent',
+                         'missing export'):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 tools = root / 'bin'
@@ -160,16 +161,6 @@ elif args[0] != 'exec':
                     'df': f"#!{sys.executable}\nprint('fixture 99999999 0 99999999 0% /')\n",
                     'awk': f"#!{sys.executable}\nimport sys\nprint(99999999 if sys.argv[-1] == '/proc/meminfo' else sys.stdin.read().split()[3])\n",
                     'cat': f"#!{sys.executable}\nimport sys\nassert sys.argv[1:] == ['/etc/amp-orbs/note4c-orb']\nprint('amp-note4c')\n",
-                    'readlink': f'#!{sys.executable}\n' + """
-import os, sys
-from pathlib import Path
-assert sys.argv[1:] == ['-e', '/dev/amp-note4c']
-scenario = os.environ['SCENARIO']
-if scenario in ('absent', 'fresh absent') or (scenario == 'unplug during create' and
-        (Path(os.environ['FIXTURE_ROOT']) / 'committed').exists()):
-    sys.exit(1)
-print('/dev/null')
-""",
                     'podman': f'#!{sys.executable}\n' + """
 import copy, json, os, sys
 from pathlib import Path
@@ -209,8 +200,13 @@ elif args[0] == 'create':
     snapshot = json.loads((root / 'snapshot.json').read_text()) if not scenario.startswith('fresh') else None
     assert snapshot is None or args[-2] == snapshot['image']
     devices = [args[i+1] for i, arg in enumerate(args) if arg == '--device']
+    mounts = [args[i+1] for i, arg in enumerate(args) if arg == '--mount']
+    # A bind of the stable directory works without a USB node, but not without
+    # the host export itself. --mount must not auto-create a missing host path.
+    if mounts and scenario == 'missing export':
+        sys.exit(42)
     containers[name] = dict(running=False, mounts=0,
-        disk=copy.deepcopy(snapshot['disk']) if snapshot else {'clean': 'base'}, devices=devices,
+        disk=copy.deepcopy(snapshot['disk']) if snapshot else {'clean': 'base'}, devices=devices, binds=mounts,
         groups=args[args.index('--group-add')+1] if '--group-add' in args else None,
         runtime=args[args.index('--runtime')+1] if '--runtime' in args else None)
     if scenario == 'create failure':
@@ -235,11 +231,14 @@ path.write_text(json.dumps(containers))
                 result = subprocess.run(['bash', str(DISPATCH)], env=environment,
                     capture_output=True, text=True, timeout=5)
                 after = json.loads(state.read_text())
-                accepted = scenario in ('migrate', 'fresh target', 'fresh unrelated')
+                accepted = scenario in ('migrate', 'fresh target', 'fresh unrelated',
+                    'absent', 'fresh absent', 'unplug during create')
                 self.assertEqual(result.returncode == 0, accepted, result.stderr)
                 if accepted:
-                    self.assertEqual(after[target]['devices'],
-                        [] if scenario == 'fresh unrelated' else ['/dev/null:/dev/note4c:rw'])
+                    self.assertEqual(after[target]['devices'], [])
+                    self.assertEqual(after[target]['binds'],
+                        [] if scenario == 'fresh unrelated' else
+                        ['type=bind,src=/dev/amp-note4c-port,dst=/dev/note4c,ro=true'])
                     self.assertEqual(after[target]['groups'],
                         None if scenario == 'fresh unrelated' else 'keep-groups')
                     self.assertEqual(after[target]['runtime'],

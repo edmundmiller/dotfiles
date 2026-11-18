@@ -148,8 +148,9 @@ headroom at their full limits. Each spawn rechecks current capacity. Large build
 should continue using hosted orbs. Do not archive unfinished review work merely
 to free a slot or automatically prune retained disks.
 
-The dispatcher grants no host mounts, container socket, host networking,
-or privileged mode. Devices are absent except for the single Note 4C grant below.
+The dispatcher grants no container socket, host networking or privileged mode.
+Host paths and devices are absent except for the single read-only Note 4C
+export-directory bind below. It contains no host files or other devices.
 These limits do not isolate the LAN or prevent kernel
 exploits. Rootless Podman resource enforcement requires working cgroup v2
 delegation. Validate actual limits before trusting them. Use a dedicated VM if
@@ -181,17 +182,25 @@ management; never run a blanket container/image prune to recover space.
 NUC alone grants the firmware thread
 `T-01a1e7c4-98e1-76f3-a326-18609825b5a3` one serial device. Its udev rule matches
 Espressif `303a:1001` and individual USB serial `80:45:6B:37:55:E8`, then creates
-`/dev/amp-note4c` owned by `amp-orbs:amp-orbs` with mode `0660`. It does not depend
-on a tty number or USB port. The Nabu Casa ZBT-2 is `303a:831a` and cannot match.
+`/dev/amp-note4c` owned by `amp-orbs:amp-orbs` with mode `0660`. A root-only udev
+helper checks that same identity against live sysfs before exporting a second
+node at `/dev/amp-note4c-port/serial`, owned by `root:amp-orbs`, mode `0660`.
+It does not depend on a tty number or USB port. The Nabu Casa ZBT-2 is
+`303a:831a` and cannot match.
 There is no `dialout` grant, world-writable node, USB bus mount or privileged
 container. `/etc/amp-orbs/note4c-orb` pins the permitted container name. Other
 threads, including clones of project snapshots, receive no device mapping.
 
-The permitted container maps only this device to `/dev/note4c` with read/write
-permission and no mknod grant. It uses crun and `--group-add keep-groups` because
+The permitted container binds only `/dev/amp-note4c-port` read-only at
+`/dev/note4c`. This root-owned directory exists even while USB is absent; only
+udev can add or remove its `serial` character node. Read-only here protects the
+directory, not serial I/O. There is no container mknod grant. It uses crun and
+`--group-add keep-groups` because
 Amp's image user is non-root and needs the host account's existing `amp-orbs`
 group through the rootless user namespace. No new account groups are required.
-An absent or inaccessible device fails creation closed for this thread only.
+The orb starts with an empty directory while the device sleeps. Plug/unplug and
+changed tty numbers appear in the running orb without recreating its disk.
+Do not replace the host directory itself; that would leave a stale bind mount.
 
 Changing create flags does not update an existing container. After explicit
 approval to publish, deploy and migrate this orb:
@@ -207,12 +216,13 @@ approval to publish, deploy and migrate this orb:
    part of diagnostic-only requests or ordinary deployments. The workflow checks
    exact-main CI and the deployed revision, then streams
    `scripts/amp-orb-pilot.sh serial-enable SHA` over the existing OIDC route.
-4. The helper retriggers udev only for the pinned Note 4C and invokes the
+4. The helper retriggers udev only for the pinned Note 4C, if present, and invokes the
    dispatcher's locked `serial-enable` maintenance operation.
    It refuses a running target or any mounts that a commit would omit. It saves
    the complete stopped writable filesystem to a local image, renames the
    original as a rollback container, and creates a stopped replacement from
-   that image with the device grant. Tracked, untracked and ignored files all
+   that image with the dedicated directory bind. USB need not be present.
+   Tracked, untracked and ignored files all
    survive. It never removes the original container or snapshot, and does not
    stop any other orb, the provider controller or Home Assistant container.
 5. On success wake the firmware thread with a message so Amp supplies a fresh
@@ -222,7 +232,7 @@ approval to publish, deploy and migrate this orb:
    ```bash copy Copy Serial Check
    python3 - <<'PY'
    import os, stat
-   path = "/dev/note4c"
+   path = "/dev/note4c/serial"
    assert stat.S_ISCHR(os.stat(path).st_mode)
    fd = os.open(path, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
    os.close(fd)
@@ -233,10 +243,13 @@ approval to publish, deploy and migrate this orb:
    ```
 
 This check opens the serial port but sends no bytes. Only a successful check in
-the firmware orb proves live access; local dispatcher fixtures do not. Device
-removal or re-enumeration can leave a stale bind mount. After a disconnect, pause
-the thread and repeat the approved migration before opening the port again.
-Do not broaden access to every ACM device to work around reconnects.
+the firmware orb proves live access; local dispatcher fixtures do not. Run it
+only when the exact USB identity and the node's major/minor match live sysfs.
+After removal the path disappears; close old descriptors and reopen the new
+node after reconnect. Do not migrate again for ordinary reconnects or broaden
+access to every ACM device. The maintenance migration refuses any mounted
+container, including an already migrated hotplug orb, so it cannot silently
+omit externally mounted state from its snapshot.
 
 The workflow prints `rollbackContainer` and `snapshot`. A failed create restores
 the original name when possible and retains any partial replacement. An interrupted
@@ -315,7 +328,8 @@ dispatch lifecycle behavior. Those checks do not prove Podman compatibility or
 live host safety. A pilot is not ready until the approved host passes all of:
 
 1. A test thread starts on the provider and reports Linux, a separate repository
-   checkout, the expected CPU/memory limits, and no host filesystem mounts.
+   checkout, the expected CPU/memory limits, and no host filesystem mounts except
+   the pinned firmware thread's Note 4C export directory.
 2. A second simultaneous thread fails admission without affecting the first.
 3. Pause and resume preserve an uncommitted sentinel file. A repeated pause and
    resume work. A snapshot produces a new thread without rerunning project setup.
