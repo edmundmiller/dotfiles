@@ -71,10 +71,30 @@ dotfilesLib.mkServiceVmTest {
         ];
         services.tailscale.enable = lib.mkForce false;
         systemd.services.qb-tailscale-serve.enable = false;
+        systemd.services.tailscaled-autoconnect = {
+          wantedBy = [ "multi-user.target" ];
+          # Enrollment must reach the host before it can finish. Keep the real
+          # container readiness and veth setup instead of mocking their order.
+          serviceConfig.ExecStart = lib.mkForce (
+            pkgs.writeShellScript "qb-network-enrollment" ''
+              for attempt in $(${pkgs.coreutils}/bin/seq 1 30); do
+                if ${pkgs.iputils}/bin/ping -n -c 1 -W 1 192.168.150.1; then
+                  touch /run/qb-network-ready
+                  exit 0
+                fi
+                sleep 1
+              done
+              exit 1
+            ''
+          );
+        };
+        systemd.services.tailscaled-set = {
+          wantedBy = [ "multi-user.target" ];
+          after = [ "tailscaled-autoconnect.service" ];
+          serviceConfig.Type = "oneshot";
+          script = "test -e /run/qb-network-ready";
+        };
         systemd.services.qbittorrent = {
-          wantedBy = lib.mkForce [ ];
-          requires = lib.mkForce [ "nftables.service" ];
-          after = lib.mkForce [ "nftables.service" ];
           bindsTo = lib.mkForce [ "nftables.service" ];
           # Only the live Mullvad check is replaced; confinement is unchanged.
           preStart = lib.mkForce "";
@@ -86,7 +106,7 @@ dotfilesLib.mkServiceVmTest {
     import shlex
 
     start_all()
-    machine.wait_for_unit("container@qb.service")
+    machine.wait_for_unit("container@qb.service", timeout=90)
 
     with subtest("Real Tailscale CLI enrolls before selecting the exit and reuses identity"):
         machine.succeed("python3 /etc/qb-startup-test.py /etc/qb-startup-test.json")
@@ -96,6 +116,10 @@ dotfilesLib.mkServiceVmTest {
 
     def as_downloader(command):
         return inside("runuser -u qbittorrent -- " + command)
+
+    with subtest("Container networking is ready before network-dependent enrollment"):
+        machine.wait_until_succeeds(inside("test -e /run/qb-network-ready"), timeout=30)
+        machine.wait_until_succeeds(inside("systemctl is-active qbittorrent"), timeout=30)
 
     machine.wait_until_succeeds(inside("systemctl is-active nftables"))
     machine.succeed("mkdir -p /tmp/egress; echo physical > /tmp/egress/marker")

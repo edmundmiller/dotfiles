@@ -69,6 +69,11 @@ in
         unitConfig.RequiresMountsFor = [ "/data/media/downloads" ];
         bindsTo = [ "data-media-downloads.mount" ];
         after = [ "data-media-downloads.mount" ];
+        # The native container post-start raises ve-qb only after guest boot.
+        postStart = mkAfter ''
+          ${pkgs.nixos-container}/bin/nixos-container run qb -- \
+            ${pkgs.systemd}/bin/systemctl start --no-block qb-workload.target
+        '';
       };
 
       containers.qb = {
@@ -130,7 +135,9 @@ in
               "--accept-dns=false"
             ];
           };
+          systemd.targets.qb-workload.description = "Downloader services after host veth setup";
           systemd.services.tailscaled-autoconnect = {
+            wantedBy = mkForce [ "qb-workload.target" ];
             serviceConfig = {
               Type = mkForce "oneshot";
               RemainAfterExit = true;
@@ -144,6 +151,7 @@ in
               fi
             '';
           };
+          systemd.services.tailscaled-set.wantedBy = mkForce [ "qb-workload.target" ];
           users.users.qbittorrent.uid = mediaUid;
           users.groups.${mediaGroup}.gid = mediaGid;
           services.qbittorrent = {
@@ -168,6 +176,7 @@ in
             };
           };
           systemd.services.qbittorrent = {
+            wantedBy = mkForce [ "qb-workload.target" ];
             requires = [
               "nftables.service"
               "tailscaled-set.service"
@@ -208,7 +217,7 @@ in
             '';
           };
           systemd.services.qb-tailscale-serve = {
-            wantedBy = [ "multi-user.target" ];
+            wantedBy = [ "qb-workload.target" ];
             requires = [ "tailscaled-set.service" ];
             after = [ "tailscaled-set.service" ];
             serviceConfig = {

@@ -12,6 +12,9 @@ deployment workflow. A local configuration edit does not start the downloader.
 
 - The container has its own network namespace and TUN device. Its root-owned
   Tailscale daemon retains the ordinary connection for VPN bootstrap.
+- Guest boot finishes before NixOS raises the host-side container link. The
+  host then queues `qb-workload.target` for enrollment, exit configuration,
+  qBittorrent and Serve, so enrollment cannot deadlock guest readiness.
 - Initial enrollment advertises the downloader tag without selecting an exit.
   Once the peer map is available, `tailscaled-set` selects the configured exit.
   qBittorrent cannot start before that configuration and its Mullvad check pass.
@@ -117,7 +120,9 @@ the NAS, without registering a device or contacting an indexer. It checks direct
 egress rejection, IPv4 and IPv6 traffic over the simulated VPN, rejection after
 VPN loss despite a working fallback route, persistent WebUI authentication,
 rejection of malformed credentials, and shutdown when the firewall or storage
-mount stops. A separate local daemon-API fixture runs the real Tailscale CLI
+mount stops. A network-dependent enrollment fixture must reach the real host
+veth before the downloader starts, catching container boot deadlocks. A separate
+local daemon-API fixture runs the real Tailscale CLI
 against the generated enrollment script and settings. It verifies enrollment
 before named-exit selection and identity reuse after the enrollment file is gone.
 Neither fixture proves a real Mullvad session or NAS access.
