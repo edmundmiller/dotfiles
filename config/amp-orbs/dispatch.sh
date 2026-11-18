@@ -156,7 +156,7 @@ case "$ORB_OPERATION" in
     [[ $(podman inspect --format '{{len .Mounts}}' "$ORB_ID") == 0 ]] || fail "orb has mounts that a commit would not preserve"
     note4c_device || exit 1
     check_space
-    backup="$ORB_ID-pre-note4c-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+    backup="$ORB_ID-pre-note4c-$(date -u +%Y%m%d-%H%M%S)-$$"
     snapshot="localhost/$backup:disk"
     podman commit "$ORB_ID" "$snapshot"
     # If interrupted after rename, a later spawn must not create a clean orb

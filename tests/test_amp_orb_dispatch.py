@@ -190,6 +190,10 @@ elif args[0] == 'inspect':
 elif args[0] == 'commit':
     if scenario == 'commit failure':
         sys.exit(42)
+    # Podman rejects uppercase repository names before writing a snapshot.
+    repository = args[-1].rsplit(':', 1)[0]
+    if repository != repository.lower():
+        sys.exit('repository name must be lowercase')
     assert not containers[args[-2]]['running']
     (root / 'snapshot.json').write_text(json.dumps({
         'image': args[-1], 'disk': containers[args[-2]]['disk']}))
