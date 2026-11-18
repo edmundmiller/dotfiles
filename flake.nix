@@ -31,6 +31,8 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+    determinate.inputs.nixpkgs.follows = "nixpkgs";
     nix-apple-container.url = "github:halfwhey/nix-apple-container";
     nix-apple-container.inputs.nixpkgs.follows = "nixpkgs";
     darwin-login-items.url = "github:uncenter/nix-darwin-login-items";
@@ -223,6 +225,9 @@
 
             # Add home-manager module
             inputs.home-manager.darwinModules.home-manager
+
+            # The installer owns the Darwin Nix runtime; this module owns its overrides.
+            inputs.determinate.darwinModules.default
 
             # Manage native macOS Login Items declaratively.
             inputs.darwin-login-items.darwinModules.default

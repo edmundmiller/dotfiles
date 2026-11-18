@@ -58,6 +58,10 @@ The installer does not decide which Nix interpreter the system uses later:
 nix-darwin manages the Nix installation by default and defaults to upstream
 Nix. To keep Lix, set `nix.package = pkgs.lix` in configuration.
 
+These Macs instead use the Darwin-only `determinateNix` module. Follow the
+[Determinate migration and recovery runbook](runbooks/determinate-darwin.md)
+to install the runtime separately and verify daemon/configuration ownership.
+
 ## Nix command references
 
 - Legacy `nix-build` reference:

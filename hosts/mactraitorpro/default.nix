@@ -265,10 +265,10 @@ in
     };
 
     ## CPU
-    # 12 cores; pairs with nix.settings.cores = 2
+    # 12 cores; pairs with determinateNix.customSettings.cores = 2
     # (modules/darwin-base.nix). nix-darwin's max-jobs = auto would
     # resolve to 12 here, and auto x all-cores lets 144 threads run.
-    nix.settings.max-jobs = lib.mkDefault 6;
+    determinateNix.customSettings.max-jobs = lib.mkDefault 6;
 
     # Configure nix-homebrew for proper privilege management
     nix-homebrew = {

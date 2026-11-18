@@ -129,17 +129,17 @@ with lib.my;
 
     users.users.${config.user.name} = mkAliasDefinitions options.user;
 
-    nix =
-      let
-        users = [
-          "root"
-          config.user.name
-        ];
-      in
-      {
-        settings.trusted-users = users;
-        settings.allowed-users = users;
-      };
+    # Darwin access policy belongs to the Determinate daemon, not nix-darwin.
+    nix = optionalAttrs (!isDarwin) {
+      settings.trusted-users = [
+        "root"
+        config.user.name
+      ];
+      settings.allowed-users = [
+        "root"
+        config.user.name
+      ];
+    };
 
     # must already begin with pre-existing PATH. Also, can't use binDir here,
     # because it contains a nix store path.
