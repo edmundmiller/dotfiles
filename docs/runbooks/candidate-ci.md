@@ -180,6 +180,60 @@ timings are not a hosted speedup claim. Publishing the candidate and landing
 its exact green SHA require explicit publication approval; no deployment or
 settings changes are needed. Roll back through a normal candidate revert.
 
+## Public HA dependencies in GitHub cache
+
+Linux CI uses GitHub's existing cache service for public Home Assistant package
+outputs. No Cachix or FlakeHub account, cache secret, OIDC grant, protected
+environment or paid plan is required. The validation step and its credentials
+are unchanged. Every cache step is optional; a miss, corrupt archive, import
+error or save failure leaves the ordinary checks authoritative.
+
+GitHub caches from `main` are readable by fork PRs. This is deliberately a
+**public-dependencies-only cache**, not a private cache with a workflow `if`
+pretending to enforce confidentiality. Our PR jobs do not restore or save it,
+and PR merge-ref caches cannot seed trusted main/candidate pushes. Forks can
+still read the public archive through their own workflows. Never put private
+inputs, a whole store, a before/after store diff or host configuration in it.
+
+`scripts/ci_dependency_cache.py` enables caching only for trusted main or exact
+candidate pushes selecting the existing HA behavior or robot tests. To select
+export roots, it evaluates the public `nixpkgs-hass` pin and the existing public
+HA overlay in isolation, using the upstream NixOS package default. It does not
+evaluate this repository's flake or import NUC configuration. Only already-built
+public HA package outputs and their runtime dependencies are exported. There
+is no cache-only dependency build, private source fetch or final check output.
+Other heavy packages can be added only with an equally public provenance path.
+
+The cache key includes the OS, lock file and public HA overlay contents. There
+are no broad restore prefixes. After successful validation on a miss, an atomic
+Nix export is saved by pinned `actions/cache/save`; later runs restore and
+import it before executing the unchanged validation. Only that export directory
+is cached, never Nix's database, source trees, netrc files or token directories.
+Changes to the allowlist or export format must bump the key's `public-ha-v1`
+version. Leave GitHub's existing storage limit and eviction policy unchanged.
+
+A main-produced cache can warm later candidates. A candidate-produced cache
+can warm reruns of that same candidate, but GitHub does not let it flow upward
+to main or sideways to sibling candidates. To seed main without rebuilding,
+the candidate retains a separate public-only dependency artifact for three days.
+On a main cache miss, the helper downloads it only from the exact successful
+candidate's current attempt, using the existing admission verifier and checking
+the source repository again. Main imports those packages and saves its own
+branch cache after validation. The empty-output artifact and handoff remain
+unchanged. Never include private dependencies in either public transport.
+
+The bootstrap artifact adds upload/download time on cold keys. It avoids an
+extra dependency build when main reuses empty final check outputs, but its
+hosted transfer cost still needs measurement. Do not promise cross-branch private
+dependency reuse or claim a local import measures hosted cache transfer speed.
+
+For hosted measurements, compare cold and warm attempts at the same SHA and
+selected derivations on fresh runners. Record archive bytes, cache hit/miss,
+restore/import/export/save time and validation/job walls. Measure the default-
+branch sharing direction only after separately authorized landing. Cache
+publication and workflow runs still need their own authorization; this section
+does not authorize main landing or deployment.
+
 ## Live changes requiring separate approval
 
 The helper is not a security boundary. GitHub must reject unchecked main writes
