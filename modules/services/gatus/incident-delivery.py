@@ -4,6 +4,7 @@
 import argparse
 from contextlib import closing, contextmanager
 from datetime import UTC, datetime
+import hashlib
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -12,6 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import socket
+import ssl
 import sqlite3
 import subprocess
 import sys
@@ -19,8 +21,8 @@ import tempfile
 import threading
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
-from urllib.request import Request, urlopen
+from urllib.parse import quote, urljoin, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 import uuid
 
 NOTION_API = "https://api.notion.com/v1"
@@ -541,6 +543,138 @@ def email_acceptance_test(
         serving.join(timeout=5)
 
 
+def email_preflight_diagnostic(
+    directory=Path("/var/lib/gatus-email-diagnostic"),
+    prior_directory=Path("/var/lib/gatus-email-acceptance"),
+    worker_url="https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email",
+    token_file=Path("/run/agenix/gatus-email-worker"),
+):
+    """One separately approved diagnostic; never resume the failed acceptance."""
+    require_email_test_preconditions()
+    prior_file = prior_directory / "claim.jsonl"
+    if prior_file.stat().st_size > 4096 or any(
+        (prior_directory / ("events.sqlite" + suffix)).exists() for suffix in ("", "-wal", "-shm", "-journal")
+    ):
+        raise DeliveryError("diagnostic-prior-intent-needs-reconciliation")
+    prior_bytes = prior_file.read_bytes()
+    prior = [json.loads(line) for line in prior_bytes.splitlines()]
+    if (len(prior) != 1 or not isinstance(prior[0], dict)
+            or set(prior[0]) != {"synthetic", "family_revision", "started"}
+            or prior[0]["synthetic"] is not True):
+        raise DeliveryError("diagnostic-prior-intent-needs-reconciliation")
+    family_revision = os.environ.get("GATUS_EMAIL_TEST_FAMILY_REVISION", "")
+    family_version = os.environ.get("GATUS_EMAIL_DIAGNOSTIC_FAMILY_VERSION", "")
+    run_id = os.environ.get("GATUS_EMAIL_DIAGNOSTIC_RUN_ID", "")
+    if (not re.fullmatch(r"[0-9a-f]{40}", family_revision)
+            or not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", family_version)
+            or not re.fullmatch(r"[0-9]{1,20}", run_id)):
+        raise DeliveryError("diagnostic-requires-exact-readiness-and-run")
+    info = token_file.stat()
+    if info.st_uid != os.geteuid() or info.st_mode & 0o077:
+        raise DeliveryError("diagnostic-requires-private-credential")
+    token = token_file.read_text().strip()
+    if not token:
+        raise DeliveryError("diagnostic-requires-existing-credential")
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    info = directory.stat()
+    if info.st_uid != os.geteuid() or info.st_mode & 0o077:
+        raise DeliveryError("diagnostic-requires-private-journal")
+
+    class NoRedirect(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            return None
+
+    opener = build_opener(NoRedirect())
+    expected_url = urlsplit(worker_url)
+
+    def describe_url(value):
+        try:
+            parsed = urlsplit(urljoin(worker_url, value))
+            return {key: actual if actual == expected else "other" for key, actual, expected in (
+                ("scheme", parsed.scheme, expected_url.scheme),
+                ("host", parsed.hostname, expected_url.hostname),
+                ("path", parsed.path, expected_url.path),
+                ("port", parsed.port, expected_url.port),
+            )}
+        except ValueError:
+            return {"scheme": "invalid", "host": "invalid", "path": "invalid"}
+
+    with (directory / "claim.jsonl").open("x") as claim:
+        def record(event):
+            event["at"] = datetime.now(UTC).isoformat()
+            line = json.dumps(event)
+            claim.write(line + "\n")
+            claim.flush()
+            os.fsync(claim.fileno())
+            print(line, flush=True)
+
+        record({"diagnostic_only": True, "family_revision": family_revision,
+                "family_version": family_version, "run_id": run_id,
+                "prior_intent_sha256": hashlib.sha256(prior_bytes).hexdigest()})
+        for path in (directory.parent, directory):
+            descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        for phase, expected, classification in (("unauthenticated", 401, "unauthorized"),
+                                                 ("authenticated", 400, "invalid_transition")):
+            require_email_test_preconditions()
+            correlation = str(uuid.uuid4())
+            record({"phase": phase, "correlation_id": correlation, "event": "request_intent",
+                    "method": "POST", "url": worker_url, "content_type": "application/json"})
+            headers = {"Content-Type": "application/json"}
+            if phase == "authenticated":
+                headers["Authorization"] = "Bearer " + token
+            request = Request(worker_url, method="POST", headers=headers, data=json.dumps({
+                "endpoint": "Smart Home: Home Assistant Runtime", "state": "INVALID",
+            }).encode())
+            try:
+                try:
+                    response = opener.open(request, timeout=15)
+                except HTTPError as error:
+                    response = error
+            except (URLError, OSError) as error:
+                reason = error.reason if isinstance(error, URLError) else error
+                category = ("tls" if isinstance(reason, ssl.SSLError) else
+                            "timeout" if isinstance(reason, TimeoutError) else
+                            "dns" if isinstance(reason, socket.gaierror) else "network")
+                record({"phase": phase, "correlation_id": correlation, "network_error": category})
+                raise DeliveryError("diagnostic-network-failure-no-replay") from None
+            with response:
+                media = response.headers.get_content_type()
+                event = {"phase": phase, "correlation_id": correlation, "status": response.status,
+                         "final_url": describe_url(response.geturl()),
+                         "content_type": media if media in ("application/json", "text/html", "text/plain") else "other",
+                         "error": "unclassified"}
+                ray = response.headers.get("CF-Ray", "")
+                if re.fullmatch(r"[0-9a-fA-F]{16,32}(?:-[A-Z0-9]{2,8})?", ray):
+                    event["cf_ray"] = ray
+                record({**event, "event": "response_headers"})
+                if 300 <= response.status < 400:
+                    event["redirect"] = describe_url(response.headers.get("Location", ""))
+                elif media == "application/json":
+                    try:
+                        body = response.read(4097)
+                    except (OSError, URLError):
+                        record({"phase": phase, "correlation_id": correlation, "network_error": "response_read"})
+                        raise DeliveryError("diagnostic-response-read-failed-no-replay") from None
+                    try:
+                        result = json.loads(body) if len(body) <= 4096 else None
+                        detail = result.get("error") if isinstance(result, dict) and set(result) == {"error"} else None
+                        if isinstance(detail, str) and detail in (
+                            "unauthorized", "invalid_transition", "unsupported_media_type", "disabled", "method_not_allowed",
+                        ):
+                            event["error"] = detail
+                    except (ValueError, UnicodeError):
+                        pass
+                record(event)
+                if response.status != expected or event["error"] != classification:
+                    raise DeliveryError("diagnostic-unexpected-response-no-replay")
+        record({"diagnostic_only": True, "expected_rejections_confirmed": True,
+                "valid_transitions_sent": 0, "pair_retry_authorized": False})
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state-file", required=True)
@@ -580,9 +714,12 @@ def main():
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] == ["acceptance-test"]:
+    if sys.argv[1:] in (["acceptance-test"], ["email-diagnostic"]):
         try:
-            email_acceptance_test()
+            if sys.argv[1:] == ["email-diagnostic"]:
+                email_preflight_diagnostic()
+            else:
+                email_acceptance_test()
         except Exception as error:
             # Never include HTTP bodies, runtime config or credentials in logs.
             reason = str(error) if isinstance(error, DeliveryError) else type(error).__name__

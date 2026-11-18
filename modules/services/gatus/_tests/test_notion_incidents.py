@@ -18,7 +18,7 @@ import threading
 import time
 import unittest
 from unittest.mock import patch
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 source = Path(sys.argv.pop(1)) if len(sys.argv) > 1 else Path(__file__).parents[1] / "incident-delivery.py"
@@ -51,6 +51,9 @@ class IncidentTests(unittest.TestCase):
         self.email_state = "RESOLVED"
         self.email_requests = []
         self.sent_mail = []
+        self.diagnostic_requests = []
+        self.diagnostic_responses = {}
+        self.diagnostic_pause = None
         self.clock = time.time()
         self.logs = io.StringIO()
         fixture = self
@@ -59,10 +62,12 @@ class IncidentTests(unittest.TestCase):
             def log_message(self, *_args):
                 pass
 
-            def reply(self, code, body, retry=0):
+            def reply(self, code, body, retry=0, headers=None):
                 data = json.dumps(body).encode()
                 self.send_response(code)
                 self.send_header("Content-Length", str(len(data)))
+                for key, value in {"Content-Type": "application/json; charset=utf-8", **(headers or {})}.items():
+                    self.send_header(key, value)
                 if retry:
                     self.send_header("Retry-After", str(retry))
                 self.end_headers()
@@ -92,6 +97,19 @@ class IncidentTests(unittest.TestCase):
                     return self.reply(code, {})
                 if self.path == "/email":
                     body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                    if body.get("state") == "INVALID":
+                        phase = "authenticated" if self.headers.get("Authorization") else "unauthenticated"
+                        fixture.diagnostic_requests.append({"phase": phase, "method": self.command,
+                                                            "content_type": self.headers.get("Content-Type"), "body": body})
+                        if fixture.diagnostic_pause and phase == "unauthenticated":
+                            started, release = fixture.diagnostic_pause
+                            started.set()
+                            release.wait(5)
+                        default = ((400, {"error": "invalid_transition"}, {})
+                                   if self.headers.get("Authorization") == "Bearer email-api-fixture-secret"
+                                   else (401, {"error": "unauthorized"}, {}))
+                        code, payload, headers = fixture.diagnostic_responses.get(phase, default)
+                        return self.reply(code, payload, headers=headers)
                     if self.headers.get("Authorization") != "Bearer email-api-fixture-secret":
                         return self.reply(401, {})
                     fixture.assertEqual(set(body), {"endpoint", "state"})
@@ -601,6 +619,146 @@ class IncidentTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.acceptance()
         self.assertEqual(self.email_requests, [])
+        self.assertEqual(self.sent_mail, [])
+
+    def diagnostic(self, name="diagnostic"):
+        prior = Path(self.tmp.name) / "acceptance"
+        prior.mkdir(exist_ok=True)
+        if not (prior / "claim.jsonl").exists():
+            (prior / "claim.jsonl").write_text(json.dumps({
+                "synthetic": True, "family_revision": "b" * 40, "started": "2026-11-18T09:38:51Z",
+            }) + "\n")
+        token = Path(self.tmp.name) / "diagnostic-token"
+        token.write_text("email-api-fixture-secret")
+        token.chmod(0o600)
+        with (patch.object(incidents, "require_email_test_preconditions"),
+              patch.dict(os.environ, {"GATUS_EMAIL_TEST_FAMILY_REVISION": "a" * 40,
+                                     "GATUS_EMAIL_DIAGNOSTIC_FAMILY_VERSION": "12345678-abcd-1234-abcd-123456789abc",
+                                     "GATUS_EMAIL_DIAGNOSTIC_RUN_ID": "44277758687"}),
+              redirect_stdout(self.logs)):
+            incidents.email_preflight_diagnostic(
+                Path(self.tmp.name) / name, prior, f"http://127.0.0.1:{self.api.server_port}/email", token,
+            )
+
+    def test_diagnostic_only_probes_preserve_failed_intent_and_refuse_replay(self):
+        prior = Path(self.tmp.name) / "acceptance/claim.jsonl"
+        prior.parent.mkdir()
+        before = (json.dumps({"synthetic": True, "family_revision": "b" * 40,
+                              "started": "2026-11-18T09:38:51Z"}) + "\n").encode()
+        prior.write_bytes(before)
+        self.diagnostic_responses["authenticated"] = (400, {"error": "invalid_transition"}, {"CF-Ray": "0123456789abcdef-DFW"})
+        self.diagnostic()
+        events = [json.loads(line) for line in (Path(self.tmp.name) / "diagnostic/claim.jsonl").read_text().splitlines()]
+        results = [event for event in events if "status" in event and "event" not in event]
+        self.assertEqual([(event["phase"], event["status"], event["error"]) for event in results],
+                         [("unauthenticated", 401, "unauthorized"), ("authenticated", 400, "invalid_transition")])
+        self.assertEqual(results[-1]["cf_ray"], "0123456789abcdef-DFW")
+        self.assertEqual(len({event["correlation_id"] for event in results}), 2)
+        self.assertEqual([request["body"] for request in self.diagnostic_requests],
+                         [{"endpoint": ENDPOINT, "state": "INVALID"}] * 2)
+        self.assertTrue(all(request["method"] == "POST" and request["content_type"] == "application/json"
+                            for request in self.diagnostic_requests))
+        self.assertTrue(events[-1]["expected_rejections_confirmed"])
+        self.assertEqual(events[-1]["valid_transitions_sent"], 0)
+        with self.assertRaises(FileExistsError):
+            self.diagnostic()
+        self.assertEqual(len(self.diagnostic_requests), 2)
+        self.assertEqual(prior.read_bytes(), before)
+        self.assertEqual(len(before.splitlines()), 1)
+        self.assertFalse((prior.parent / "events.sqlite").exists())
+        self.assertEqual(self.email_requests, [])
+        self.assertEqual(self.sent_mail, [])
+        self.assertNotIn("email-api-fixture-secret", self.logs.getvalue())
+
+    def test_diagnostic_retains_status_phase_and_hides_unknown_response_details(self):
+        cases = (("unauthenticated", 403, {"error": "private-response"}, {"Content-Type": "text/html"}),
+                 ("authenticated", 401, {"error": "unauthorized"}, {}),
+                 ("authenticated", 415, {"error": "unsupported_media_type"}, {}),
+                 ("authenticated", 400, {"error": "invalid_transition", "private": "private-response"}, {}),
+                 ("authenticated", 200, {"status": "accepted_by_provider", "private": "private-response"}, {}))
+        for index, (phase, status, body, headers) in enumerate(cases):
+            with self.subTest(phase=phase, status=status):
+                self.diagnostic_responses = {phase: (status, body, {"CF-Ray": "private-ray", **headers})}
+                before = len(self.diagnostic_requests)
+                with self.assertRaises(incidents.DeliveryError):
+                    self.diagnostic(f"diagnostic-{index}")
+                records = [json.loads(line) for line in (Path(self.tmp.name) / f"diagnostic-{index}/claim.jsonl").read_text().splitlines()]
+                self.assertEqual(records[-1]["phase"], phase)
+                self.assertEqual(records[-1]["status"], status)
+                self.assertEqual(len(self.diagnostic_requests) - before, 1 if phase == "unauthenticated" else 2)
+                self.assertNotIn("private-response", json.dumps(records))
+                self.assertNotIn("private-ray", json.dumps(records))
+        self.assertEqual(self.email_requests, [])
+        self.assertEqual(self.sent_mail, [])
+        self.assertNotIn("email-api-fixture-secret", self.logs.getvalue())
+
+    def test_diagnostic_does_not_follow_authenticated_redirects(self):
+        for code, location in ((302, "/private-location?token=private-query"),
+                               (307, self.email_url + "/events?token=private-query")):
+            with self.subTest(code=code):
+                self.diagnostic_responses = {"authenticated": (code, {}, {"Location": location})}
+                with self.assertRaises(incidents.DeliveryError):
+                    self.diagnostic(f"diagnostic-{code}")
+                records = [json.loads(line) for line in (Path(self.tmp.name) / f"diagnostic-{code}/claim.jsonl").read_text().splitlines()]
+                self.assertEqual(records[-1]["status"], code)
+                self.assertEqual(records[-1]["redirect"]["path"], "other")
+                if code == 307:
+                    self.assertEqual(records[-1]["redirect"]["port"], "other")
+                self.assertNotIn("private-location", json.dumps(records))
+                self.assertNotIn("private-query", json.dumps(records))
+        self.assertEqual(self.probe_reads, 0)
+        self.assertEqual(self.email_queue.health()["pending"], 0)
+        self.assertEqual(self.email_requests, [])
+        self.assertEqual(self.sent_mail, [])
+
+    def test_diagnostic_refuses_prior_acknowledgement_or_fifo_sidecar(self):
+        prior = Path(self.tmp.name) / "acceptance"
+        prior.mkdir()
+        original = json.dumps({"synthetic": True, "family_revision": "b" * 40, "started": "earlier"}) + "\n"
+        journal = prior / "claim.jsonl"
+        journal.write_text(original + json.dumps({"state": "TRIGGERED"}) + "\n")
+        with self.assertRaisesRegex(incidents.DeliveryError, "prior-intent-needs-reconciliation"):
+            self.diagnostic()
+        journal.write_text(original)
+        (prior / "events.sqlite-wal").write_bytes(b"retained producer work")
+        with self.assertRaisesRegex(incidents.DeliveryError, "prior-intent-needs-reconciliation"):
+            self.diagnostic()
+        self.assertEqual(self.diagnostic_requests, [])
+        self.assertFalse((Path(self.tmp.name) / "diagnostic/claim.jsonl").exists())
+
+    def test_diagnostic_network_error_is_classified_without_private_exception_text(self):
+        with patch("urllib.request.OpenerDirector.open", side_effect=URLError(socket.gaierror("private-network-detail"))):
+            with self.assertRaisesRegex(incidents.DeliveryError, "network-failure-no-replay"):
+                self.diagnostic()
+        records = [json.loads(line) for line in (Path(self.tmp.name) / "diagnostic/claim.jsonl").read_text().splitlines()]
+        self.assertEqual(records[-1]["network_error"], "dns")
+        self.assertEqual(records[-1]["phase"], "unauthenticated")
+        self.assertNotIn("private-network-detail", self.logs.getvalue())
+        self.assertEqual(self.diagnostic_requests, [])
+
+    def test_concurrent_diagnostic_cannot_acquire_existing_live_claim(self):
+        started, release = threading.Event(), threading.Event()
+        self.diagnostic_pause = (started, release)
+        errors = []
+
+        def run():
+            try:
+                self.diagnostic()
+            except Exception as error:
+                errors.append(type(error).__name__)
+
+        worker = threading.Thread(target=run)
+        worker.start()
+        try:
+            self.assertTrue(started.wait(5))
+            with self.assertRaises(FileExistsError):
+                self.diagnostic()
+        finally:
+            release.set()
+            worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(self.diagnostic_requests), 2)
         self.assertEqual(self.sent_mail, [])
 
     def test_email_retry_keeps_recovery_and_later_incidents_ordered_across_restart(self):

@@ -260,6 +260,31 @@ prove two provider acceptances or inbox receipt. Correlate both provider receipt
 with Family Ops and verify the inbox separately before claiming acceptance.
 This is synthetic delivery proof, not a genuine HA outage or seven-day stability.
 
+#### Diagnostic after a blocked preflight
+
+A failed acceptance intent remains a replay block. With separate approval and
+fresh Family deployed SHA/version/settings/idle evidence, dispatch
+`operation=gatus-email-diagnostic` with exact published `expected_sha`,
+`email_test_family_revision` and `email_diagnostic_family_version`. This operation
+never activates NixOS or resumes the acceptance pair. It requires the old intent
+to contain only its initial record and refuses any retained acceptance FIFO,
+including sidecars. It preserves that directory and all production journals.
+
+The helper claims `/var/lib/gatus-email-diagnostic/claim.jsonl` exclusively before
+requests. A prior diagnostic claim blocks reruns, including crashes. It sends
+only unauthenticated and authenticated INVALID-state probes, stopping unless
+401 unauthorized then400 invalid_transition are confirmed as exact error JSON.
+It records phase, UTC timing, actual status, safe media type/error classification,
+validated CF-Ray and local correlation IDs. It retains response metadata before
+reading a body. Redirects are recorded with sanitized destinations and never
+followed. Credentials, arbitrary bodies/headers, unknown host/path values,
+queries and fragments are not logged. A network failure records only its fixed
+category. No request body contains a test flag or valid transition.
+
+Diagnostic success proves rejection paths only. It authorizes neither retrying
+the preserved pair nor enabling production email. Retain its claim and evidence
+for operator reconciliation; do not reset either claim to obtain another run.
+
 ### Telegram
 
 Alerts on endpoint failure (3 consecutive failures) and recovery (2 consecutive successes). The bot token is managed via agenix and injected at runtime — never in the nix store.
