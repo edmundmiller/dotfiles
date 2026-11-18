@@ -37,7 +37,11 @@ stdenvNoCC.mkDerivation {
     runHook preInstall
     mkdir -p "$out"
     cp -R bin bend2 guide "$out/"
-    wrapProgram "$out/bin/bend" \
+    # Real binary keeps its name so terminals (Rex) show "bend", not ".bend-wrapped".
+    # It finds bend2 at dirname(execPath)/../bend2, so it must stay one level below $out.
+    mkdir -p "$out/libexec"
+    mv "$out/bin/bend" "$out/libexec/bend"
+    makeWrapper "$out/libexec/bend" "$out/bin/bend" \
       --set BEND_NO_TELEMETRY 1 \
       --prefix PATH : ${lib.makeBinPath [ clang ]}
     runHook postInstall
