@@ -72,6 +72,10 @@ in
     edmundmiller
     nuc
   ];
+  "gatus-notion-api.age".publicKeys = [
+    edmundmiller
+    nuc
+  ];
   "gatus-notion-ingest.age".publicKeys = [
     edmundmiller
     nuc

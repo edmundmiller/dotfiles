@@ -2598,7 +2598,8 @@ in
           ingestTokenFile = config.age.secrets.gatus-email-ingest.path;
         };
         alerting.notion = {
-          enable = false;
+          enable = true;
+          tokenFile = config.age.secrets.gatus-notion-api.path;
           ingestTokenFile = config.age.secrets.gatus-notion-ingest.path;
           dataSourceId = "e5899731-9190-4f81-b5e0-36ccbc5a5f00";
           evidenceUrl = "https://gatus.cinnamon-rooster.ts.net/";
@@ -2726,6 +2727,11 @@ in
     mode = "0400";
   };
   age.secrets.gatus-email-worker = {
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
+  age.secrets.gatus-notion-api = {
     owner = "root";
     group = "root";
     mode = "0400";

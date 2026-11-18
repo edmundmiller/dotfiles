@@ -286,6 +286,45 @@ jobs:
             curl -fsS --max-time 5 http://127.0.0.1:8124/health > /dev/null
             printf "HA-runtime-only email receiver is active, loopback-only and healthy; no production events injected.\n"
           '
+      - name: Verify HA-runtime Notion receiver after activation
+        if: inputs.operation == 'deploy'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Check the local receiver without injecting a production incident.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            systemctl is-active --quiet gatus-notion.service
+            endpoints=$(systemctl show gatus-notion.service -p ExecStart --value | grep -oE "/nix/store/[a-z0-9]+-gatus-notion-endpoints.json")
+            jq -e '\''. == ["Smart Home: Home Assistant Runtime"]'\'' "$endpoints"
+            test "$(ss -H -ltn "sport = :8125" | awk "{print \$4}")" = 127.0.0.1:8125
+            test "$(sudo -n stat -Lc "%U:%G:%a" /run/agenix/gatus-notion-api)" = root:root:400
+            curl -fsS --max-time 5 --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8125/health |
+              jq -e '\''{pending, delivery_errors, oldest_pending_seconds, queue_used} |
+                if .pending == 0 and .delivery_errors == 0 and .oldest_pending_seconds == 0 and .queue_used == 0
+                then . else error("Notion queue not empty and healthy after activation") end'\''
+            printf "HA-runtime-only Notion receiver is active, loopback-only and healthy.\n"
+          '
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'sudo -n uv run --no-project python -' <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+          try:
+              token = Path('/run/agenix/gatus-notion-api').read_text().strip()
+              request = Request('https://api.notion.com/v1/data_sources/e5899731-9190-4f81-b5e0-36ccbc5a5f00', headers={
+                  'Authorization': 'Bearer ' + token, 'Notion-Version': '2026-03-11'})
+              with urlopen(request, timeout=20) as response:
+                  source = json.load(response)
+              expected = {'Name': 'title', 'Incident ID': 'rich_text', 'Status': 'select',
+                          'Detected': 'date', 'Recovered': 'date', 'Evidence': 'url'}
+              assert all(source['properties'][name]['type'] == kind for name, kind in expected.items())
+              assert {'Open', 'Resolved'} <= {item['name'] for item in source['properties']['Status']['select']['options']}
+          except Exception:
+              raise SystemExit('Notion runtime read-only authentication/schema check failed; details suppressed') from None
+          print('Notion runtime credential authenticated and incident schema matched; no data written.')
+          PY
       - name: Record deployed revision
         if: inputs.operation == 'deploy'
         run: |
