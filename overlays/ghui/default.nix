@@ -52,12 +52,13 @@ let
     installPhase = ''
       runHook preInstall
 
-      install -Dm755 ghui $out/bin/ghui
+      # Keep the real binary named `ghui` so terminals (Rex) show "ghui", not ".ghui-wrapped".
+      install -Dm755 ghui $out/libexec/ghui/ghui
       ${lib.optionalString final.stdenv.hostPlatform.isDarwin ''
-        chmod u+w $out/bin/ghui
-        /usr/bin/codesign -f -s - $out/bin/ghui
+        chmod u+w $out/libexec/ghui/ghui
+        /usr/bin/codesign -f -s - $out/libexec/ghui/ghui
       ''}
-      wrapProgram $out/bin/ghui --prefix PATH : ${lib.makeBinPath [ final.gh ]}
+      makeWrapper $out/libexec/ghui/ghui $out/bin/ghui --prefix PATH : ${lib.makeBinPath [ final.gh ]}
 
       runHook postInstall
     '';
