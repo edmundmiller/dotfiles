@@ -2590,9 +2590,9 @@ in
         tailscaleService.enable = true;
         alerting.telegram.enable = false;
         alerting.endpoints = [ "Home Assistant Runtime" ];
-        # Family Ops owns this route; it is not deployed or enabled yet.
+        # Family Ops owns this route; the isolated failure/recovery pair passed.
         alerting.email = {
-          enable = false;
+          enable = true;
           url = "https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email";
           tokenFile = config.age.secrets.gatus-email-worker.path;
           ingestTokenFile = config.age.secrets.gatus-email-ingest.path;

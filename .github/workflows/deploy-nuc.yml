@@ -263,6 +263,29 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- verify' < scripts/amp-orb-pilot.sh
+      - name: Verify HA-runtime email receiver after activation
+        if: inputs.operation == 'deploy'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Read only service metadata, a credential-free allowlist and queue health.
+          # Do not send synthetic production events or inspect live SQLite files.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            systemctl is-active --quiet gatus.service gatus-email.service home-assistant.service hass-health.timer
+            endpoints=$(systemctl show gatus-email.service -p ExecStart --value | grep -oE "/nix/store/[a-z0-9]+-gatus-email-endpoints.json")
+            jq -e '\''. == ["Smart Home: Home Assistant Runtime"]'\'' "$endpoints"
+            test "$(ss -H -ltn "sport = :8126" | awk "{print \$4}")" = 127.0.0.1:8126
+            curl -fsS --max-time 5 --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8126/health |
+              jq -e '\''{pending, delivery_errors, oldest_pending_seconds, queue_used} |
+                if .pending == 0 and .delivery_errors == 0 and .oldest_pending_seconds == 0 and .queue_used == 0
+                then . else error("Email queue not empty and healthy after activation") end'\''
+            curl -fsS --max-time 5 http://127.0.0.1:8084/health > /dev/null
+            curl -fsS --max-time 5 http://127.0.0.1:8124/health > /dev/null
+            printf "HA-runtime-only email receiver is active, loopback-only and healthy; no production events injected.\n"
+          '
       - name: Record deployed revision
         if: inputs.operation == 'deploy'
         run: |
