@@ -61,6 +61,38 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
         with:
           extra-conf: accept-flake-config = true
+      - name: Select public HA dependency cache
+        id: public-ha-plan
+        if: github.event_name == 'push' && github.repository == 'edmundmiller/dotfiles'
+        continue-on-error: true
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m scripts.ci_dependency_cache plan >> "$GITHUB_OUTPUT"
+      # GitHub base-branch caches are readable by fork PRs. Never save /nix,
+      # a store diff, private inputs, host configuration or check outputs here.
+      - name: Restore public HA dependency archive
+        id: public-ha-restore
+        if: steps.public-ha-plan.outputs.enabled == 'true'
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+        with:
+          path: ${{ runner.temp }}/public-ha-cache
+          key: public-ha-v1-${{ runner.os }}-${{ hashFiles('flake.lock', 'overlays/home-assistant-mcp-schema-compat/**') }}
+      - name: Import public HA dependencies
+        if: steps.public-ha-restore.outputs.cache-hit == 'true'
+        continue-on-error: true
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m scripts.ci_dependency_cache restore "$RUNNER_TEMP/public-ha-cache"
+      - name: Bootstrap main cache from exact successful candidate
+        if: steps.public-ha-plan.outputs.enabled == 'true' && steps.public-ha-restore.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m scripts.ci_dependency_cache restore-candidate "$RUNNER_TEMP/public-ha-cache"
       - name: Restore exact successful candidate check outputs
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
@@ -89,6 +121,30 @@ jobs:
           unset REX_TOKEN
           export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
           nix shell .#validation-tools --command python3 scripts/validation.py --ci
+      - name: Export only realized public HA dependencies
+        id: public-ha-export
+        if: steps.public-ha-plan.outputs.enabled == 'true' && steps.public-ha-restore.outputs.cache-hit != 'true'
+        continue-on-error: true
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m scripts.ci_dependency_cache export "$RUNNER_TEMP/public-ha-cache" >> "$GITHUB_OUTPUT"
+      - name: Save public HA dependency archive
+        if: steps.public-ha-export.outputs.ready == 'true'
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ runner.temp }}/public-ha-cache
+          key: public-ha-v1-${{ runner.os }}-${{ hashFiles('flake.lock', 'overlays/home-assistant-mcp-schema-compat/**') }}
+      - name: Retain public dependencies for main cache bootstrap
+        if: steps.public-ha-plan.outputs.enabled == 'true' && startsWith(github.ref, 'refs/heads/candidate/') && (steps.public-ha-restore.outputs.cache-hit == 'true' || steps.public-ha-export.outputs.ready == 'true')
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: public-ha-v1-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/public-ha-cache/dependencies.export
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: warn
       - name: Retain only empty candidate check outputs
         if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/candidate/')
         continue-on-error: true

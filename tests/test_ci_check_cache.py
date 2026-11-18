@@ -12,11 +12,13 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 import zipfile
 
 from scripts import ci_check_cache as cache
+from scripts import ci_dependency_cache as dependencies
 
 
 class CheckCacheTests(unittest.TestCase):
@@ -209,6 +211,249 @@ class CheckCacheTests(unittest.TestCase):
             payload = (root / "cache/checks.json").read_text()
             self.assertEqual(json.loads(payload)["entries"], [])
             self.assertNotIn("PRIVATE-SENTINEL", payload)
+
+
+class PublicDependencyCacheTests(unittest.TestCase):
+    def setUp(self):
+        self.sha = "a" * 40
+        self.env = {
+            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_REPOSITORY": "edmundmiller/dotfiles",
+            "GITHUB_SHA": self.sha,
+            "GITHUB_REF": "refs/heads/main",
+        }
+
+    def invoke(self, *command, env=None):
+        with (
+            patch.dict(os.environ, self.env | (env or {})),
+            patch.object(dependencies.candidate_ci, "git", return_value=self.sha),
+            patch.object(dependencies.sys, "argv", ["ci_dependency_cache", *command]),
+            contextlib.redirect_stdout(io.StringIO()) as output,
+            contextlib.redirect_stderr(io.StringIO()) as errors,
+        ):
+            self.assertEqual(dependencies.main(), 0)
+        return output.getvalue(), errors.getvalue()
+
+    def test_only_affected_trusted_pushes_enable_cache(self):
+        with patch.object(
+            dependencies.subprocess,
+            "check_output",
+            return_value=json.dumps({"checks": ["ha-behavior-tests"]}),
+        ):
+            self.assertEqual(self.invoke("plan")[0], "enabled=true\n")
+            self.assertEqual(
+                self.invoke(
+                    "plan",
+                    env={"GITHUB_REF": f"refs/heads/candidate/{'b' * 40}/{self.sha}"},
+                )[0],
+                "enabled=true\n",
+            )
+        with patch.object(
+            dependencies.subprocess,
+            "check_output",
+            return_value=json.dumps({"checks": ["validation-tests"]}),
+        ):
+            self.assertEqual(self.invoke("plan")[0], "")
+        with patch.object(
+            dependencies.subprocess,
+            "check_output",
+            side_effect=AssertionError("Untrusted run accessed cache machinery"),
+        ):
+            for env in (
+                {"GITHUB_EVENT_NAME": "pull_request"},
+                {"GITHUB_EVENT_NAME": "pull_request_target"},
+                {"GITHUB_EVENT_NAME": "workflow_dispatch"},
+                {"GITHUB_REPOSITORY": "fork/dotfiles"},
+                {"GITHUB_REF": "refs/heads/candidate/x/y"},
+                {"GITHUB_REF": f"refs/heads/candidate/{self.sha}/{'b' * 40}"},
+                {"GITHUB_SHA": "b" * 40},
+            ):
+                with self.subTest(env=env):
+                    self.assertEqual(self.invoke("plan", env=env)[0], "")
+
+    def test_export_contains_only_the_realized_public_closure(self):
+        public = "/nix/store/" + "1" * 32 + "-homeassistant"
+        unrealized = "/nix/store/" + "2" * 32 + "-unrealized"
+        private = "/nix/store/" + "3" * 32 + "-private-host-config"
+
+        def query(command, **kwargs):
+            if command[0] == "nix":
+                return json.dumps([public, unrealized])
+            self.assertEqual(command[3:], [public])
+            return public + "\n"
+
+        def write_export(command, **kwargs):
+            self.assertEqual(command, ["nix-store", "--export", public])
+            kwargs["stdout"].write(b"PUBLIC-PACKAGE")
+
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(dependencies.subprocess, "check_output", side_effect=query),
+            patch.object(dependencies.subprocess, "run", side_effect=write_export),
+            patch.object(Path, "exists", lambda path: str(path) in (public, private)),
+        ):
+            output, errors = self.invoke("export", directory)
+            self.assertEqual(output, "ready=true\n")
+            self.assertIn("exported 1 public store paths", errors)
+            self.assertEqual(
+                (Path(directory) / dependencies.ARCHIVE).read_bytes(), b"PUBLIC-PACKAGE"
+            )
+
+    def test_unsafe_closures_and_partial_exports_are_not_saved(self):
+        public = "/nix/store/" + "1" * 32 + "-homeassistant"
+        for unsafe in (
+            public + ".drv",
+            "/etc/private",
+            public.replace("homeassistant", "ha-behavior-tests"),
+        ):
+            with (
+                self.subTest(unsafe=unsafe),
+                tempfile.TemporaryDirectory() as directory,
+                patch.object(Path, "exists", return_value=True),
+                patch.object(
+                    dependencies.subprocess,
+                    "check_output",
+                    side_effect=[json.dumps([public]), public + "\n" + unsafe + "\n"],
+                ),
+            ):
+                output, errors = self.invoke("export", directory)
+                self.assertEqual(output, "")
+                self.assertIn("normal validation required", errors)
+                self.assertEqual(list(Path(directory).iterdir()), [])
+
+        def fail_export(command, **kwargs):
+            kwargs["stdout"].write(b"PARTIAL")
+            raise subprocess.CalledProcessError(1, command, stderr="PRIVATE-SENTINEL")
+
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(dependencies, "public_paths", return_value=[public]),
+            patch.object(dependencies.subprocess, "run", side_effect=fail_export),
+        ):
+            output, errors = self.invoke("export", directory)
+            self.assertEqual(output, "")
+            self.assertNotIn("PRIVATE-SENTINEL", errors)
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_main_bootstrap_requires_the_exact_current_passing_candidate(self):
+        url = "https://github.com/edmundmiller/dotfiles/actions/runs/123"
+        run = {
+            "run_attempt": 2,
+            "repository": {"full_name": "edmundmiller/dotfiles"},
+            "head_repository": {"full_name": "edmundmiller/dotfiles"},
+        }
+        artifact = {
+            "id": 456,
+            "name": f"public-ha-v1-{self.sha}-2",
+            "expired": False,
+        }
+        for case in (
+            "valid",
+            "old-attempt",
+            "fork",
+            "changed-run",
+            "failed",
+            "extra-file",
+        ):
+            imported = []
+            reads = []
+
+            def api(endpoint):
+                if "/artifacts?" in endpoint:
+                    item = artifact.copy()
+                    if case == "old-attempt":
+                        item["name"] = f"public-ha-v1-{self.sha}-1"
+                    return {"artifacts": [item]}
+                current = copy.deepcopy(run)
+                if case == "fork":
+                    current["head_repository"]["full_name"] = "fork/dotfiles"
+                if case == "changed-run" and reads:
+                    current["run_attempt"] = 3
+                reads.append(endpoint)
+                return current
+
+            def execute(command, **kwargs):
+                if command[0] == "gh":
+                    with zipfile.ZipFile(kwargs["stdout"], "w") as zipped:
+                        zipped.writestr(dependencies.ARCHIVE, b"PUBLIC-PACKAGES")
+                        if case == "extra-file":
+                            zipped.writestr("private-source", b"REJECT")
+                else:
+                    imported.append(kwargs["stdin"].read())
+
+            with (
+                self.subTest(case=case),
+                tempfile.TemporaryDirectory() as directory,
+                patch.object(dependencies.candidate_ci, "github", side_effect=api),
+                patch.object(
+                    dependencies.candidate_ci,
+                    "passing_candidate",
+                    side_effect=ValueError("Candidate is not passing")
+                    if case == "failed"
+                    else None,
+                    return_value=url,
+                ),
+                patch.object(dependencies.subprocess, "run", side_effect=execute),
+            ):
+                self.invoke(
+                    "restore-candidate",
+                    directory,
+                    env={"VALIDATION_BASE": "b" * 40},
+                )
+                self.assertEqual(
+                    imported, [b"PUBLIC-PACKAGES"] if case == "valid" else []
+                )
+                if case != "valid":
+                    self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_misses_and_import_errors_leave_validation_authoritative(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(self.invoke("restore", directory)[0], "")
+            (Path(directory) / dependencies.ARCHIVE).write_bytes(b"CORRUPT")
+            with patch.object(
+                dependencies.subprocess,
+                "run",
+                side_effect=subprocess.CalledProcessError(1, ["nix-store", "--import"]),
+            ):
+                output, errors = self.invoke("restore", directory)
+                self.assertEqual(output, "")
+                self.assertIn("normal validation required", errors)
+
+        workflow = (
+            Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml"
+        ).read_text()
+        script = textwrap.dedent(
+            workflow.split("      - name: Validate (same runner as hey check)\n", 1)[1]
+            .split("        run: |\n", 1)[1]
+            .split("      - name:", 1)[0]
+        )
+        for status in (0, 17):
+            with (
+                self.subTest(status=status),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                trace = Path(directory) / "trace"
+                fixture = (
+                    'nix() { printf "%s\\n" "$*" > "$TRACE"; return "$STATUS"; }\n'
+                )
+                result = subprocess.run(
+                    ["bash", "-e", "-c", fixture + script],
+                    env=os.environ
+                    | {
+                        "NIX_GITHUB_TOKEN": "fixture-github",
+                        "REX_TOKEN": "fixture-rex",
+                        "RUNNER_TEMP": directory,
+                        "TRACE": str(trace),
+                        "STATUS": str(status),
+                    },
+                    capture_output=True,
+                )
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertEqual(
+                    trace.read_text().strip(),
+                    "shell .#validation-tools --command python3 scripts/validation.py --ci",
+                )
+                self.assertEqual(list(Path(directory).glob("rex-netrc.*")), [])
 
 
 if __name__ == "__main__":

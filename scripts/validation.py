@@ -37,6 +37,7 @@ CHECKS = {
         "scripts/ship.py",
         "tests/test_ship.py",
         "scripts/ci_check_cache.py",
+        "scripts/ci_dependency_cache.py",
         "tests/test_ci_check_cache.py",
         "scripts/renovate_admission.py",
         "tests/test_renovate_admission.py",
