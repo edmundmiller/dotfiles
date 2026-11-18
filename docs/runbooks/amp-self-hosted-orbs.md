@@ -260,14 +260,164 @@ migration leaves a per-orb marker under `~/.local/state/amp-orbs` containing the
 original's backup name. That marker blocks all lifecycle operations for this orb,
 so a later wake cannot create a clean disk over an unfinished migration. Inspect
 and restore the retained disk under the dispatch lock before removing the marker.
-Other orbs remain usable. For rollback,
-keep the firmware thread paused, stop the dedicated controller, acquire the same
-dispatch lock as `amp-orbs`, and rename the replacement aside without deleting it.
-Rename the printed original back to the exact permitted container name, then
-restart the controller and wake the thread. This restores the pre-migration
-disk, which has no device mapping. Preserve any work made after migration in the
-retained replacement. Remove the NUC grant through the same approved publication
-and deployment route to revoke future device mappings too.
+Other orbs remain usable.
+
+### Note 4C rollback
+
+Restore firmware without rolling back the orb when only the device firmware is
+wrong. An orb rollback changes the development filesystem and its device mapping;
+it does not restore the device's flash. Neither procedure below is authorization
+to execute a rollback. Obtain approval for the specific device or host write.
+
+The hardware procedure was exercised on 2026-11-18 in the
+[original firmware thread](https://ampcode.com/threads/T-01a1e7c4-98e1-76f3-a326-18609825b5a3).
+The paths below belong to that thread's **Family Ops checkout on `nuc-orbs`**,
+not this dotfiles checkout, even though both use `/home/user/workspace/repo`.
+
+#### Preserve the current disk and original flash backup
+
+The original-flash backup is
+`.amp/in/orb-backup/note4c-current/full-flash.bin` in the firmware orb:
+
+- Size: `16777216` bytes, exactly 16 MiB.
+- SHA256: `e067114718b0662a9a7262f85a9c264f38088d3c7b79b7fd291c2b3d142c6661`.
+- Original firmware: Gallery v6.5.9, project `xiaozhi`, with CRC-valid active `ota_0`.
+- The same private directory holds `rollback.py`, `maintenance-run.json` and logs.
+  Keep the directory mode `0700` and files mode `0600`.
+
+This backup was created **after both retained migration snapshots**. Keep the
+current orb disk as well as both old containers and every snapshot. Before an orb
+rollback, preserve a separate verified copy of this directory and any later work
+in approved private storage. Do not commit, publish or attach the raw flash or
+logs; they contain device configuration. Never overwrite `full-flash.bin` with a
+new read of the currently installed firmware.
+
+#### Restore the original device flash
+
+1. In the original firmware orb, stop serial monitors and other processes using
+   the Note 4C. Keep the device powered and connected throughout the operation.
+   Do not assume `/dev/ttyACM1` is permanent.
+2. Confirm exactly one live USB device with VID/PID `303a:1001` and serial
+   `80:45:6B:37:55:E8`. Its associated sysfs tty major/minor must match the
+   character node `/dev/note4c/serial`. The tested value was `166:1`, not a value
+   to hard-code. `/dev/ttyACM0` and `/dev/bus/usb` must remain absent. The retained
+   `rollback.py` checks the exact identity/node and backup length/hash before
+   writing; inspect that helper before use and stop if it or the backup is missing.
+3. From `/home/user/workspace/repo` in that firmware orb, check flash identity and
+   security with the pinned device tool. These commands reset the device into
+   flashing mode, so run them only inside the approved rollback window:
+
+   ```bash copy Copy Flash Preflight
+   mise run //:tailnet -- exec -- uv tool run --from esptool==5.1.0 esptool \
+     --chip esp32s3 --port /dev/note4c/serial --baud 115200 \
+     --before usb-reset --after no-reset --connect-attempts 1 flash-id
+
+   mise run //:tailnet -- exec -- uv tool run --from esptool==5.1.0 esptool \
+     --chip esp32s3 --port /dev/note4c/serial --baud 460800 \
+     --before no-reset --after no-reset get-security-info
+   ```
+
+   The verified device had 16 MB flash, MAC `80:45:6b:37:55:e8`, Secure Boot
+   disabled and Flash Encryption disabled. Stop on an identity, capacity or
+   security mismatch. This procedure does not cover a differently secured device.
+
+4. Run the tested identity/hash-pinned restore helper:
+
+   ```bash copy Copy Firmware Restore
+   mise run //:tailnet -- exec -- uv run --with esptool==5.1.0 python \
+     /home/user/workspace/repo/.amp/in/orb-backup/note4c-current/rollback.py --restore
+   ```
+
+   It writes the full backup at offset `0x0` with `--before usb-reset` and
+   `--after no-reset`. It then independently runs `verify-flash 0x0` on that
+   same backup with `--before no-reset --after no-reset`. Require successful command
+   exits and `Verification successful (digest matched).` A partition-only or
+   app-only restore is insufficient because Gallery and TRMNL use different
+   partition, NVS and filesystem layouts.
+
+5. The helper leaves the device in the ROM bootloader. If the approved outcome
+   includes booting Gallery, the following re-verifies all original bytes and
+   requests a reset after verification:
+
+   ```bash copy Copy Verify And Request Boot
+   mise run //:tailnet -- exec -- uv tool run --from esptool==5.1.0 esptool \
+     --chip esp32s3 --port /dev/note4c/serial --baud 460800 \
+     --before no-reset --after hard-reset verify-flash 0x0 \
+     /home/user/workspace/repo/.amp/in/orb-backup/note4c-current/full-flash.bin
+   ```
+
+   The reset mechanism was exercised with the TRMNL image. **Booting restored
+   Gallery was not verified in the November round trip.** Check actual application
+   identity and the physical panel afterward; a reset message alone is not proof
+   of boot. Original Gallery may sleep and remove USB again.
+
+The tested sequence restored and verified all original bytes from a running
+maintenance application, then reflashed the same TRMNL candidate and verified its
+boot, without another physical button press. The `/dev/note4c/serial` alias hides
+PID discovery from esptool, so automatic reset selection failed. Explicit
+`--before usb-reset` worked from the running app; use `--before no-reset` only
+when already in the bootloader/stub. Do not substitute the build-time merger's
+esptool version for device-tool version `5.1.0`.
+
+For serial application monitoring, set both DTR and RTS false **before opening**
+the port. DTR true yielded no application output in the test. Even a monitor open
+can reset this device, so measure uptime from the observed boot/reset rather than
+from monitor startup. The maintenance image leaves normal TRMNL OTA enabled;
+later provisioning or updates can replace the tested image.
+
+#### Roll back the orb filesystem only if necessary
+
+This is a manual NUC host recovery, not an operation available inside the orb.
+The existing `Deploy NUC` workflow has no container-rollback operation. An
+authorized host operator must use the dedicated rootless account and its
+`/etc/amp-orbs/storage.conf`, never the rootful Podman store.
+
+The migration receipts name two different retained states:
+
+- Original pre-serial container:
+  `amp-01a1e7c4-98e1-76f3-a326-18609825b5a3-pre-note4c-20261118-025104-421912`.
+  It has **no device mapping**. Its image is `localhost/` followed by that name
+  and `:disk`.
+- Pre-hotplug replacement:
+  `amp-01a1e7c4-98e1-76f3-a326-18609825b5a3-pre-note4c-20261118-051554-846501`.
+  It has the **obsolete fixed-tty mapping**, which can prevent startup when the
+  Note 4C is absent. Its image follows the same `localhost/NAME:disk` pattern.
+
+Choose deliberately; do not treat the newer container as equivalent to the
+unmapped original. The current hotplug orb is
+`amp-01a1e7c4-98e1-76f3-a326-18609825b5a3`.
+
+1. Preserve the current disk and separately verified private flash-backup copy
+   described above. Record current checkout/evidence baselines and the selected
+   retained container/image. Confirm `hostname` is `nuc` and inspect the exact
+   containers before changing names.
+2. Pause the firmware thread in Amp and confirm its container is stopped. Do not
+   wake it during recovery. As `amp-orbs`, stop
+   `amp-orb-provider.service` through its user manager. This temporarily suspends
+   provider lifecycle requests for other orbs; do not stop their containers.
+3. With `HOME=/var/lib/amp-orbs`, `XDG_RUNTIME_DIR=/run/user/$(id -u amp-orbs)`
+   and `CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf`, acquire
+   `/var/lib/amp-orbs/.local/state/amp-orbs/dispatch.lock` as `amp-orbs` using
+   `flock`. Keep it held through both renames. Close the lock descriptor in
+   Podman child processes, as the dispatcher's `podman` wrapper does.
+4. Confirm the current and selected retained containers are stopped and carry
+   `io.dotfiles.amp-orb=true`. Rename the current container to a new unused
+   recovery name. Do not remove it. Rename the selected retained container to
+   `amp-01a1e7c4-98e1-76f3-a326-18609825b5a3`. If the second rename fails, restore
+   the first name before releasing the lock; do not wake a missing canonical orb.
+5. For an interrupted migration, inspect the per-orb `-serial-migration` marker.
+   Remove only that marker, only after the intended disk is restored under the
+   canonical name. Never unlink or replace `dispatch.lock`.
+6. Release the lock, restart the provider controller and wake the same firmware
+   thread so Amp supplies a fresh bootstrap token. Compare the restored checkout
+   and evidence against the selected snapshot's baseline, not the newer disk's.
+   Keep the newer disk and all snapshots for recovery of later work and backup.
+
+Container renames do not revoke the deployed grant for future containers. To
+remove future Note 4C access, separately authorize a source change removing the
+NUC pin/udev/export wiring and publish/deploy it through candidate CI and exact-main
+deployment. Review running containers too; removing a create flag does not change
+an existing mapping. Do not revoke access merely to restore device firmware.
 
 ## Approval and installation boundary
 
