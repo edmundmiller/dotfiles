@@ -12,6 +12,12 @@ Publication authority is required before submitting a candidate branch or
 advancing main. Implementation and local testing authorize neither operation.
 Deployment and live settings changes need their own explicit approval.
 
+## Publication and activation scope
+
+Publication and NUC activation are separate outcomes. A publication-only request finishes when the exact passing candidate has landed and remote readback confirms publication; it needs no host access or runtime readback. Report activation as not requested rather than pending. Subscribe to Ship and CI for publication reporting, and to Deploy NUC only when activation is authorized.
+
+An explicit deployment request still requires its exact revision, successful main CI and host verification. Publication-only completion changes neither required checks nor accepted requests' authority. A local no-deploy instruction cannot revoke an already registered deployment; use the revocation and recovery procedure below.
+
 ## Publication contract
 
 1. Commit task-owned work, fetch `origin/main`, reconcile onto its exact base,

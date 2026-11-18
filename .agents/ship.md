@@ -28,7 +28,7 @@ Only an authorized, freshly checked successor may replace the original SHA.
 Never bypass a gate or fall back to direct main push.
 
 Confirm the identified Ship dispatch registered its authorization artifact.
-Subscribe to Ship, CI and Deploy NUC completion for reporting. The initial
+Subscribe to Ship and CI completion for reporting, plus Deploy NUC when activation is authorized. The initial
 Ship run captures main at dispatch, which can differ from BASE; subscribe to that
 captured head and retain successor SHA/run links for later continuations.
 Preserve the receipt/checkout for verification.
@@ -36,8 +36,7 @@ If registration, credentials, run identity, or reporting fails, report that
 specific blocker; do not claim a completed handoff. Accepted GitHub work may
 continue despite a reporting failure.
 
-Return "Ship request submitted; publication and deployment pending" with the
-run URL and observed state. No Orb watcher, polling, wait loop or new Orb is
+Report the run URL, observed state and whether the request is publication-only or includes activation. No Orb watcher, polling, wait loop or new Orb is
 needed. CI events report progress; they do not supply authority or require the
 agent to land or dispatch. Never keep an Orb active just to wait for CI.
 After confirmed registration, source-thread archival must not stop authorized
@@ -45,7 +44,7 @@ shipping. Archival disables that thread's notifications, not GitHub's request.
 Preserve run links and the receipt for later inspection by an authorized owner.
 End the turn while GitHub works; claim pause or billing savings only with evidence.
 
-On completion, inspect the saved runs and latest attempts. Verify the active
+On completion, inspect the saved runs and latest attempts and verify exact publication. Publication-only requests finish at verified landing without host access or runtime readback. For authorized activation, verify the active
 dotfiles and agents-workspace revisions and basic host services from Deploy NUC
 logs, then check affected runtime behavior through authorized access. Report
 publication, activation and verification separately. A dispatch or green CI is
