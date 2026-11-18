@@ -19,7 +19,7 @@ class OrbSetupTests(unittest.TestCase):
     )
     def test_recovers_nix_from_store_when_profile_is_broken(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             home = root / "home"
             home.mkdir()
             (home / ".nix-profile").symlink_to(root / "missing-profile")
@@ -62,7 +62,7 @@ class OrbSetupTests(unittest.TestCase):
 
     def test_single_user_setup_resume_and_login_are_repeatable(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             home = root / "home"
             home.mkdir()
             repo = root / "repo"
@@ -103,6 +103,16 @@ esac""",
                 """function /usr/sbin/sysctl { echo 0; }
 function /usr/sbin/swapon { :; }""",
             )
+            # Model a multi-user host without reading its real Nix profile.
+            host_profile = root / "host-profile/nix-daemon.sh"
+            script(host_profile, "export ORB_TEST_HOST_PROFILE=loaded")
+            nix_env = repo / ".agents/nix-env.sh"
+            nix_env.write_text(
+                nix_env.read_text().replace(
+                    "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh",
+                    str(host_profile),
+                )
+            )
             script(tools / "systemctl", "exit 1")
             script(
                 tools / "systemd-detect-virt",
@@ -118,6 +128,7 @@ function /usr/sbin/swapon { :; }""",
             script(
                 profile / "bin/nix",
                 """test "${ORB_TEST_PROFILE:-}" = loaded
+test -z "${ORB_TEST_HOST_PROFILE:-}"
 case "$*" in
   'config show eval-cores') exit 1 ;;
   *print-dev-env*) printf 'export ORB_TEST_SHELL=loaded\\n' ;;
@@ -137,8 +148,10 @@ esac""",
             env = {
                 **os.environ,
                 "HOME": str(home),
-                "PATH": f"{home / '.local/bin'}:{profile / 'bin'}:{tools}:{os.environ['PATH']}",
+                # Select the fixture profile even after setup links ~/.local/bin/nix.
+                "PATH": f"{profile / 'bin'}:{home / '.local/bin'}:{tools}:{os.environ['PATH']}",
                 "AMP_ORB": "1",
+                "XDG_STATE_HOME": str(home / ".local/state"),
                 "MISE_DATA_DIR": str(root / "mise-data"),
                 "MISE_STATE_DIR": str(root / "mise-state"),
                 "MISE_CONFIG_DIR": str(root / "mise-config"),
@@ -148,6 +161,8 @@ esac""",
             }
             env.pop("DOTFILES_AGENT_ENV_ACTIVE", None)
             env.pop("MISE_TRUSTED_CONFIG_PATHS", None)
+            for name in ("ORB_TEST_PROFILE", "ORB_TEST_HOST_PROFILE", "ORB_TEST_SHELL"):
+                env.pop(name, None)
 
             def assert_untrusted(cwd):
                 result = subprocess.run(
@@ -223,23 +238,23 @@ esac""",
             self.assertNotIn("Make the agent shell available", failed_swap.stdout)
             self.assertNotIn("Orb setup complete.", failed_swap.stdout)
 
-            if not Path("/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh").exists():
-                store_nix = root / "store/example-nix-2.35.3/bin/nix"
-                store_nix.parent.mkdir(parents=True)
-                shutil.copy2(profile / "bin/nix", store_nix)
-                shutil.rmtree(profile)
-                profile.symlink_to(root / "missing-profile")
-                (home / ".local/bin/nix").unlink()
-                for tool in ("git", "readlink", "sort", "tail", "cut", "mkdir", "ln"):
-                    (tools / tool).symlink_to(shutil.which(tool))
-                env.update(
-                    PATH=str(tools),
-                    NIX_STORE_DIR=str(root / "store"),
-                    ORB_TEST_PROFILE="loaded",
-                )
-                for _ in range(2):
-                    self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
-                    self.assertEqual((home / ".local/bin/nix").resolve(), store_nix)
+            host_profile.unlink()
+            store_nix = root / "store/example-nix-2.35.3/bin/nix"
+            store_nix.parent.mkdir(parents=True)
+            shutil.copy2(profile / "bin/nix", store_nix)
+            shutil.rmtree(profile)
+            profile.symlink_to(root / "missing-profile")
+            (home / ".local/bin/nix").unlink()
+            for tool in ("git", "readlink", "sort", "tail", "cut", "mkdir", "ln"):
+                (tools / tool).symlink_to(shutil.which(tool))
+            env.update(
+                PATH=str(tools),
+                NIX_STORE_DIR=str(root / "store"),
+                ORB_TEST_PROFILE="loaded",
+            )
+            for _ in range(2):
+                self.assertIn("agent commands are ready.", run(bash, ".agents/resume"))
+                self.assertEqual((home / ".local/bin/nix").resolve(), store_nix)
 
 
 if __name__ == "__main__":
