@@ -71,8 +71,10 @@ there is no one-shot completion token or persistent success cache.
 the PR base SHA; main pushes use the previous SHA. Candidate pushes use the
 explicit base encoded in `candidate/BASE/SHA`, not the all-zero before-SHA
 of a new branch. The planner rejects mismatched candidate refs, non-ancestor
-bases, or main that has moved beyond that base. `--ci` consumes `VALIDATION_BASE`;
-manual events with no usable base run the full portable suite. The
+bases, or a checked-out SHA that differs from the encoded candidate. A newer
+descendant main does not invalidate testing; exact-base admission still guards
+landing. Candidate manual dispatches use the same encoded base. `--ci` consumes
+`VALIDATION_BASE`; other manual events with no usable base run the full portable suite. The
 lightweight planning job validates the candidate base before passing it to Linux.
 Legacy Herdr TOML and VM checks have been removed; native Herdr tests remain.
 See [candidate admission](runbooks/candidate-ci.md) for the
@@ -85,6 +87,11 @@ run `hey check --platform darwin` on the exact candidate, or explicitly dispatch
 CI on that candidate with `darwin=true`. The optional job always runs native
 validation, even when the candidate has no changed files. Service VMs are separately
 opt-in with `services_vm=true`. Neither platform command activates or deploys a host.
+
+New clean-rebase Ship requests can select `--darwin` and `--services-vm` to carry
+these requirements through every successor. Ship correlates each hosted dispatch
+with its root request and exact candidate SHA. Earlier native results never
+certify a rebased SHA. See the [replay contract](runbooks/candidate-ci.md#automatic-clean-rebase-for-new-requests).
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during

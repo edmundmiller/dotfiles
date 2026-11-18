@@ -16,6 +16,22 @@ on:
         description: Explicit authority to deploy this revision to NUC
         type: boolean
         default: false
+      allow_clean_rebase:
+        description: Authorize up to three conflict-free replays onto descendant main with fresh CI
+        type: boolean
+        default: false
+      deploy_rebased:
+        description: Explicitly authorize deploying newer main plus the replayed task
+        type: boolean
+        default: false
+      darwin:
+        description: Require fresh hosted Darwin checks for every candidate generation
+        type: boolean
+        default: false
+      services_vm:
+        description: Require fresh hosted service VM checks for every candidate generation
+        type: boolean
+        default: false
       authority:
         description: Reference to the human publication and optional deployment approval
         required: true
@@ -43,7 +59,8 @@ jobs:
       ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_run' &&
       github.event.workflow_run.path == '.github/workflows/ci.yml' &&
-      github.event.workflow_run.event == 'push' &&
+      (github.event.workflow_run.event == 'push' ||
+      github.event.workflow_run.event == 'workflow_dispatch') &&
       (github.event.workflow_run.head_branch == 'main' ||
       startsWith(github.event.workflow_run.head_branch, 'candidate/'))))
     runs-on: ubuntu-26.04
@@ -52,7 +69,7 @@ jobs:
       GH_TOKEN: ${{ secrets.DOTFILES_SHIP_TOKEN }}
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
-      # workflow_run uses default-branch code, never code/artifacts from the candidate.
+      # Always keep trusted main checked out, including between successor steps.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -74,6 +91,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Advance authorized shipping without waiting
+        id: advance
         shell: bash
         run: |
           set -euo pipefail
@@ -81,8 +99,24 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             args=(--record "$RUNNER_TEMP/ship-request/request.json")
           fi
-          python3 scripts/ship.py advance --event "$GITHUB_EVENT_PATH" "${args[@]}" | tee "$RUNNER_TEMP/ship-result.json"
+          python3 scripts/ship.py advance --event "$GITHUB_EVENT_PATH" "${args[@]}" \
+            --successor "$RUNNER_TEMP/ship-successor/request.json" | tee "$RUNNER_TEMP/ship-result.json"
+          printf 'state=%s\n' "$(jq -er .state "$RUNNER_TEMP/ship-result.json")" >> "$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/ship-result.json" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: steps.advance.outputs.state == 'rebase_prepared'
+        with:
+          name: ship-successor-v2-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ship-successor/request.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Publish the authorized successor and reconcile fast CI
+        if: steps.advance.outputs.state == 'rebase_prepared'
+        run: |
+          set -euo pipefail
+          python3 scripts/ship.py publish-successor --record "$RUNNER_TEMP/ship-successor/request.json" \
+            | tee "$RUNNER_TEMP/ship-successor-result.json"
+          cat "$RUNNER_TEMP/ship-successor-result.json" >> "$GITHUB_STEP_SUMMARY"
       - name: Explain a blocked handoff
         if: failure()
         run: |

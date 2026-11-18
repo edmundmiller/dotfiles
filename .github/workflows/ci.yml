@@ -1,4 +1,5 @@
 name: CI
+run-name: ${{ inputs.ship_request && format('Ship validation {0}', inputs.ship_request) || '' }}
 
 on:
   push:
@@ -14,6 +15,9 @@ on:
         description: Run the service VM suite
         type: boolean
         default: false
+      ship_request:
+        description: Ship validation correlation only; never grants publication or deployment authority
+        type: string
 
 permissions:
   contents: read

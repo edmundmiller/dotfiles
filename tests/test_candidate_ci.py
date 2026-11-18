@@ -189,7 +189,7 @@ class CandidateCiTests(unittest.TestCase):
         self.assertNotEqual(self.cli("submit").returncode, 0)
         self.assertEqual(self.remote_main(), other)
 
-    def test_candidate_base_is_explicit_and_rejects_stale_or_mismatched_refs(self):
+    def test_candidate_base_is_explicit_and_rejects_mismatched_refs(self):
         self.git("fetch", "origin", "main:refs/remotes/origin/main")
         environment = {
             "GITHUB_EVENT_NAME": "push", "GITHUB_REF_NAME": self.branch,
@@ -219,6 +219,20 @@ class CandidateCiTests(unittest.TestCase):
         result = self.cli("base", GITHUB_EVENT_NAME="push", GITHUB_REF_NAME="main",
                           VALIDATION_BASE=self.base)
         self.assertEqual(result.stdout.strip(), self.base)
+
+    def test_planning_old_base_is_valid_but_does_not_authorize_landing(self):
+        self.assertEqual(self.cli("submit").returncode, 0)
+        tree = self.git("rev-parse", f"{self.base}^{{tree}}")
+        other = self.git("commit-tree", tree, "-p", self.base, "-m", "main advanced")
+        self.git("push", "origin", f"{other}:refs/heads/main")
+        self.git("fetch", "origin", "main:refs/remotes/origin/main")
+        for event in ("push", "workflow_dispatch"):
+            result = self.cli("base", GITHUB_EVENT_NAME=event, GITHUB_REF_NAME=self.branch,
+                              GITHUB_SHA=self.sha, VALIDATION_BASE="0" * 40)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), self.base)
+        self.assertNotEqual(self.cli("land").returncode, 0)
+        self.assertEqual(self.remote_main(), other)
 
     def test_dirty_worktree_or_wrong_candidate_cannot_be_submitted(self):
         (self.repo / "untracked").write_text("uncommitted\n")

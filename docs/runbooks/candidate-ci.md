@@ -26,7 +26,9 @@ Deployment and live settings changes need their own explicit approval.
 3. Before ending the turn, register the authorized continuation with
    `python3 scripts/ship.py request --receipt RECEIPT --base BASE --sha SHA --thread THREAD_URL --authority APPROVAL_REFERENCE`.
    Add `--deploy` only with explicit NUC activation authority. The request
-   defaults to publication only. Record the request state/run, original
+   defaults to publication only. Add `--allow-clean-rebase` only with the
+   [bounded replay authority](#automatic-clean-rebase-for-new-requests) below;
+   deploying its result also requires `--deploy-rebased`. Record the request state/run, original
    authority and reporting subscriptions in the existing receipt. Candidate
    submission alone is not a completed handoff. Missing Ship workflow or
    credential access is a blocker; no watcher or agent-only fallback is used.
@@ -39,9 +41,10 @@ Deployment and live settings changes need their own explicit approval.
    skipped or pending results block main. The helper pins GitHub API reads to
    `github.com` instead of inheriting an unrelated `GH_HOST`.
 5. Landing is a normal, non-forced Git push of SHA to main, followed by remote
-   readback. There is no PR, squash, merge commit, or rewritten candidate. If
-   another unrelated commit wins the race, Git rejects the push. Reconcile onto
-   new main, run affected checks, and submit a new candidate. Old CI does not
+   readback. There is no PR, squash, merge commit, or force-updated candidate. If
+   another unrelated commit wins the race, Git rejects the push. Exact-only
+   requests stop for manual reconciliation. Opt-in requests may prepare a new
+   candidate and rerun hosted checks. Old CI does not
    certify a new SHA. A successful push with a bypass warning is reported as
    noncompliant publication, never as a clean landing.
 
@@ -54,10 +57,10 @@ needed; this helper does not delete remote branches.
 
 The authorization artifact contains the exact base, candidate, publication and
 deployment choice, human approval reference, owner thread, and dispatch run and
-attempt. Only a dispatch on the captured main base can register it. A candidate
+attempt. Exact-only requests must dispatch on the captured main base. A candidate
 push or CI event without this record never authorizes landing or activation.
 The trusted default-branch continuation reads no candidate code or CI artifact
-for authorization. It imports its helpers before checking out the candidate.
+for authorization. It keeps trusted main checked out for every workflow step.
 
 Candidate and main CI remain independent gates. A main CI completion event
 dispatches Deploy NUC only for the saved exact revision after checking live
@@ -80,7 +83,8 @@ needs explicit retry approval. A revocation marker continues to block reruns.
 
 The owner subscribes to `ship.yml`, `ci.yml`, and `deploy-nuc.yml` for reporting,
 not orchestration, and records their IDs and run URLs. The initial Ship
-dispatch captures BASE, not SHA. Its reporting subscription must match that
+dispatch captures main at dispatch, not SHA. For exact-only requests this is
+BASE; an opt-in request can capture a newer descendant. Its reporting subscription must match that
 captured head; later continuations and Deploy NUC capture the published SHA.
 Never keep an Orb active just to wait for CI. After confirmed registration,
 archiving the source thread must not stop authorized publication or deployment.
@@ -90,6 +94,65 @@ A failed/missing subscription is a reporting blocker, not a reason to redispatch
 accepted work. Check a completed run immediately; never rely solely on a future
 event. Do not claim registered handoff until the dispatch's authorization
 artifact is present. Measure pause and billing effects before claiming savings.
+
+### Automatic clean rebase for new requests
+
+`request --allow-clean-rebase` registers v2 authority to replay the original
+task onto descendant main up to three times within the original seven-day
+expiry. All raw workflow options default off. Existing v1 artifacts and receipts
+remain exact-only; never retrofit an accepted request or replace its receipt.
+When deploying, `--deploy --deploy-rebased` explicitly authorizes activation of
+newer main plus the replayed task after fresh candidate and exact-main CI.
+Omitting either rebase or deployment authority cannot silently widen permission.
+
+Ship requires successful latest candidate checks before replay. It replays the
+complete original `BASE..SHA` series in an isolated local clone, with no shipping
+credential environment, repository Git config, hooks, custom filters or rerere
+resolutions. Conflicts, merge commits, newly empty commits, changed commit counts
+and failed checks stop the request. Main must descend from the original base.
+No agent resolves conflicts or changes source in this continuation.
+
+Each successor records its root run/attempt, original SHA, predecessor,
+generation, new base/SHA and producing run/attempt. The immutable
+`ship-successor-v2-ATTEMPT` artifact is uploaded before an atomic push creates
+`ship-next/ROOT_RUN-ROOT_ATTEMPT/PREVIOUS_SHA`, `ship-source/NEW_SHA`, and
+`candidate/NEW_BASE/NEW_SHA`. The annotated tags locate the trusted record;
+they do not grant authority. Ship verifies the producing main workflow and
+artifact, root identity, both indexes and generation chain on continuation.
+Create-only tags arbitrate competing events without holding a runner through CI.
+Missing or mismatched records stop; retain the refs and run URLs for recovery.
+Successor verification reads the exact producing attempt and its immutable
+artifact, so an approved producer retry does not invalidate an existing successor.
+Root authorization still follows its latest dispatch attempt, expiry and revocation.
+
+Every generation gets fresh ordinary push CI. `--darwin` and `--services-vm`
+also require fresh hosted platform validation of the original and every successor.
+Ship creates a `ship-validation/ROOT_RUN-ROOT_ATTEMPT-SHA` claim before dispatch,
+correlates its CI run title, and requires all selected jobs to succeed in the
+latest attempt. An unrelated manual run title cannot complete that handoff.
+Lost dispatch replies remain claimed and fail visibly, never automatically redispatch.
+An existing claim with no visible correlated run fails with a recovery instruction,
+not ordinary pending status. Inspect the original Ship and Actions runs before
+retrying anything. If the accepted CI run becomes visible later, its completion
+event can resume the request without another dispatch.
+
+Late events for old generations reconcile the saved current generation.
+Successor publication immediately checks CI again to close fast-completion races.
+A second main race during admission can replay only after a proved pre-write
+base mismatch or non-fast-forward rejection. Unknown push outcomes still stop.
+If CI completes and main moves again during successor publication itself, Ship
+stops visibly rather than creating a second, unuploaded artifact in one attempt.
+
+After any generation lands, rebasing is closed. Main moving afterward still
+blocks deployment; Ship cannot deploy newer main or republish the task to regain
+freshness. Root revocation blocks every successor; revoking a generation also
+blocks its descendants. Revoke the original SHA when stopping the whole request,
+cancel accepted runs separately and inspect host state.
+
+Roll out through the existing exact-only candidate path. With separate approval,
+exercise publication-only rebasing first, then a rebased deployment canary.
+Publishing this code does not authorize either canary or change Amp settings.
+Activating the reviewed `.agents/ship.md` copy is a separate settings operation.
 
 ### One-time rollout approval
 

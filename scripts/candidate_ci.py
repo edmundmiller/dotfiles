@@ -18,6 +18,10 @@ REQUIRED = {"Flake Check (Linux)", "Check Formatting"}
 SHA = r"[0-9a-f]{40}"
 
 
+class MainMoved(ValueError):
+    """No main write occurred; a fresh candidate may be prepared safely."""
+
+
 def git(*args):
     return subprocess.check_output(["git", *args], text=True).strip()
 
@@ -31,7 +35,7 @@ def candidate_branch(base, sha):
 def validation_base():
     """A new branch's zero before-SHA must not select an accidental full run."""
     ref = os.environ.get("GITHUB_REF_NAME", "")
-    if os.environ.get("GITHUB_EVENT_NAME") != "push" or not ref.startswith("candidate/"):
+    if os.environ.get("GITHUB_EVENT_NAME") not in {"push", "workflow_dispatch"} or not ref.startswith("candidate/"):
         return os.environ.get("VALIDATION_BASE", "")
     match = re.fullmatch(f"candidate/({SHA})/({SHA})", ref)
     if not match:
@@ -40,8 +44,8 @@ def validation_base():
     candidate_branch(base, sha)
     if os.environ.get("GITHUB_SHA") != sha or git("rev-parse", "HEAD") != sha:
         raise ValueError("Candidate ref does not identify the checked out commit")
-    if git("rev-parse", "origin/main") != base:
-        raise ValueError("Main moved; reconcile and submit a new candidate")
+    # Testing an old base is valid; only admission requires it to remain current.
+    git("merge-base", "--is-ancestor", base, "origin/main")
     git("merge-base", "--is-ancestor", base, sha)
     return base
 
@@ -53,16 +57,26 @@ def github(endpoint, paginate=False):
     return json.loads(subprocess.check_output(command, text=True, timeout=30))
 
 
-def passing_candidate(base, sha):
+def candidate_runs(base, sha, event="push", title=None):
     branch = candidate_branch(base, sha)
-    query = urlencode({"branch": branch, "event": "push", "head_sha": sha, "per_page": 1})
+    query = urlencode({"branch": branch, "event": event, "head_sha": sha,
+                       "per_page": 100 if title else 1})
     endpoint = f"actions/workflows/ci.yml/runs?{query}"
-    runs = github(endpoint)["workflow_runs"]
+    if title:
+        pages = github(endpoint, paginate=True)
+        return [run for page in pages for run in page["workflow_runs"]
+                if run["display_title"] == title]
+    return github(endpoint)["workflow_runs"]
+
+
+def passing_candidate(base, sha, event="push", title=None, required=REQUIRED):
+    branch = candidate_branch(base, sha)
+    runs = candidate_runs(base, sha, event, title)
     if not runs:
         raise ValueError("Candidate CI has not started; resume on its completion event")
     run = runs[0]
     expected = {
-        "head_sha": sha, "head_branch": branch, "event": "push",
+        "head_sha": sha, "head_branch": branch, "event": event,
         "path": ".github/workflows/ci.yml", "status": "completed", "conclusion": "success",
     }
     if any(run.get(key) != value for key, value in expected.items()):
@@ -73,13 +87,13 @@ def passing_candidate(base, sha):
         f"actions/runs/{run['id']}/attempts/{run['run_attempt']}/jobs?per_page=100",
         paginate=True,
     )
-    jobs = [job for page in pages for job in page["jobs"] if job["name"] in REQUIRED]
-    if len(jobs) != len(REQUIRED) or {job["name"] for job in jobs} != REQUIRED or any(
+    jobs = [job for page in pages for job in page["jobs"] if job["name"] in required]
+    if len(jobs) != len(required) or {job["name"] for job in jobs} != required or any(
         job["conclusion"] != "success" for job in jobs
     ):
         raise ValueError("Required candidate checks are missing or unsuccessful")
     # A failed/running rerun must not be hidden behind an earlier successful attempt.
-    if github(endpoint)["workflow_runs"] != runs:
+    if candidate_runs(base, sha, event, title) != runs:
         raise ValueError("CI changed during inspection; inspect the latest attempt again")
     return run["html_url"]
 
@@ -91,8 +105,7 @@ def remote_sha(ref):
     return result[0]
 
 
-def publish(command, base, sha):
-    branch = candidate_branch(base, sha)
+def require_origin():
     urls = git("config", "--get-all", "remote.origin.url").splitlines()
     allowed = {
         f"https://github.com/{REPOSITORY}", f"https://github.com/{REPOSITORY}.git",
@@ -103,19 +116,24 @@ def publish(command, base, sha):
     )
     if len(urls) != 1 or urls[0] not in allowed or push_urls.returncode != 1:
         raise ValueError("origin must name this GitHub repository without a separate push URL")
-    if git("status", "--porcelain") or git("rev-parse", "HEAD") != sha:
+
+
+def publish(command, base, sha, require_head=True):
+    branch = candidate_branch(base, sha)
+    require_origin()
+    if git("status", "--porcelain") or (require_head and git("rev-parse", "HEAD") != sha):
         raise ValueError("Commit task changes first; HEAD must be the exact clean candidate")
     git("fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main")
     git("merge-base", "--is-ancestor", base, sha)
     if remote_sha("refs/heads/main") != base:
-        raise ValueError("Main moved; reconcile, validate, and submit a new candidate")
+        raise MainMoved("Main moved; reconcile, validate, and submit a new candidate")
     ci_url = None
     if command == "land":
         if remote_sha(f"refs/heads/{branch}") != sha:
             raise ValueError("Candidate ref no longer identifies the requested SHA")
         ci_url = passing_candidate(base, sha)
         if remote_sha("refs/heads/main") != base:
-            raise ValueError("Main moved during CI inspection; submit a new candidate")
+            raise MainMoved("Main moved during CI inspection; submit a new candidate")
     target = "refs/heads/main" if command == "land" else f"refs/heads/{branch}"
     # No force option. An unrelated main update racing this push is rejected by Git.
     result = subprocess.run(
@@ -123,6 +141,10 @@ def publish(command, base, sha):
     )
     sys.stderr.write(result.stdout + result.stderr)
     if result.returncode:
+        if command == "land" and re.search(
+            r"\[rejected\].* -> main \((fetch first|non-fast-forward)\)", result.stderr
+        ):
+            raise MainMoved("Main rejected this fast-forward; prepare a fresh candidate")
         raise ValueError("Push did not confirm success; inspect remote refs before retrying")
     if "bypass" in (result.stdout + result.stderr).lower():
         raise ValueError("Ref was published with a policy bypass; do not report compliant landing")

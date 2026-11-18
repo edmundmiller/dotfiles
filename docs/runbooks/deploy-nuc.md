@@ -314,6 +314,15 @@ lands after candidate CI, and dispatches Deploy NUC after exact-main CI.
 Neither transition depends on an Amp completion subscription or a running Orb.
 The existing Deploy NUC guards and runtime verification remain unchanged.
 
+New requests may opt into [bounded clean rebasing](candidate-ci.md#automatic-clean-rebase-for-new-requests)
+with `--allow-clean-rebase`. Deployment then requires separate approval for
+newer main plus the replayed task, expressed as both `--deploy` and
+`--deploy-rebased`. Existing accepted requests remain exact-only. Each successor
+must pass fresh candidate checks and successful exact-main push CI before its
+own SHA can be deployed. Main movement after landing still stops deployment;
+it never authorizes deploying a different head. Publishing the implementation
+does not update the saved Amp Ship prompt or authorize a deployment canary.
+
 Never keep an Orb active just to wait for CI. Confirmed GitHub registration
 must survive source-thread archival. Archival disables that thread's Amp
 notifications, not authorized shipping. Preserve run links and the receipt
