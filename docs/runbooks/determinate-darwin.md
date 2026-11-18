@@ -110,10 +110,35 @@ may require an unlocked 1Password session for its existing activation hooks.
 Do not claim success from the installer alone. Preserve the unpiped exit status
 of the rebuild.
 
+The installer writes a placeholder `/etc/nix/nix.custom.conf` containing only
+its header comments. The first activation then aborts with "Unexpected files
+in /etc" (Seqeratop, 2026-11-18). Confirm the file holds no settings, then
+`sudo mv /etc/nix/nix.custom.conf /etc/nix/nix.custom.conf.before-nix-darwin`
+and rerun the rebuild. The system profile already points at the new generation
+after the aborted run, but `/run/current-system` does not; check both.
+
 The activation guard uses `launchctl bootout system/org.nixos.nix-daemon`
 when the old service remains loaded. On MacTraitor-Pro, nix-darwin's legacy
 `launchctl unload` failed while removing the old plist, despite a zero rebuild
 exit status. Check loaded services and processes, not just files or exit status.
+
+Later in the same activation, nix-darwin's "restore unmanaged Nix daemon" step
+runs while `/run/current-system` is still the old system. It copies
+`org.nixos.nix-daemon.plist` from the Determinate default profile back into
+`/Library/LaunchDaemons` and loads it, so a second, standalone `nix-daemon`
+runs beside Nixd. That daemon also replaces Nixd's client socket link. On
+Seqeratop it recurred after a zero-exit rebuild. Remove it, then restore the
+socket link:
+
+```sh
+sudo launchctl bootout system/org.nixos.nix-daemon
+sudo rm /Library/LaunchDaemons/org.nixos.nix-daemon.plist
+sudo rm /nix/var/nix/daemon-socket/socket
+sudo ln -s /var/run/nix-daemon.socket /nix/var/nix/daemon-socket/socket
+```
+
+Restarting Nixd with `launchctl kickstart -k` did not recreate the link. Later
+rebuilds do not repeat this, because the activated system has no such plist.
 
 The package can leave the old nix-darwin `nix.conf` symlink until activation.
 After activation, require a real installer/Nixd-owned `nix.conf` that includes
@@ -151,7 +176,8 @@ Record the exact source SHA and `/run/current-system` target. Check all of:
    Verify `gh`, Python, Git, SSH, and the preserved fallback profile still run.
 
 Only after MacTraitor-Pro passes may the coordinator assign Seqeratop the same
-exact revision and these steps. Neither a portable CI success nor local Darwin
+exact revision and these steps. (Seqeratop was migrated first, at `90d503d61`
+on 2026-11-18, by owner decision; it passed these checks.) Neither a portable CI success nor local Darwin
 evaluation proves runtime acceptance on the second Mac.
 
 ## Emergency recovery without deleting the store
