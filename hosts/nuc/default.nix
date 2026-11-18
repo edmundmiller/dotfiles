@@ -2648,7 +2648,11 @@ in
         tailscaleService.enable = true;
       };
       prowlarr.enable = true;
-      qb.enable = false;
+      qb = {
+        enable = false;
+        authKeyFile = "/run/agenix/qb-tailscale-auth";
+        webuiCredentialsFile = "/run/agenix/qb-webui";
+      };
       radarr.enable = true;
       sonarr.enable = true;
       deploy-rs.enable = true;
@@ -2698,6 +2702,20 @@ in
     "d ${factoryProductPassStateDir} 0700 emiller users -"
 
   ];
+
+  # Provision these encrypted files before enabling the downloader.
+  age.secrets.qb-tailscale-auth = lib.mkIf config.modules.services.qb.enable {
+    file = ./secrets/qb/tailscale-auth.age;
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
+  age.secrets.qb-webui = lib.mkIf config.modules.services.qb.enable {
+    file = ./secrets/qb/webui.age;
+    owner = "root";
+    group = "root";
+    mode = "0400";
+  };
 
   # Gatus reads local ingest credentials in root ExecStartPre; receivers use
   # systemd LoadCredential. No login user needs decrypted token access.
