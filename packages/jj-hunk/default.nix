@@ -23,7 +23,9 @@ rustPlatform.buildRustPackage {
   nativeBuildInputs = [ makeWrapper ];
 
   postInstall = ''
-    wrapProgram $out/bin/jj-hunk --prefix PATH : ${lib.makeBinPath [ jujutsu ]}
+    # Real binary keeps its name so terminals (Rex) show "jj-hunk", not ".jj-hunk-wrapped".
+    install -Dm755 $out/bin/jj-hunk $out/libexec/jj-hunk/jj-hunk && rm $out/bin/jj-hunk
+    makeWrapper $out/libexec/jj-hunk/jj-hunk $out/bin/jj-hunk --prefix PATH : ${lib.makeBinPath [ jujutsu ]}
   '';
 
   meta = with lib; {

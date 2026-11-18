@@ -21,7 +21,11 @@ unstable.rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [ unstable.makeWrapper ];
   postInstall = ''
-    wrapProgram $out/bin/sgrep --prefix PATH : ${lib.makeBinPath [ unstable.ripgrep ]}
+    # Real binary keeps its name so terminals (Rex) show "sgrep", not ".sgrep-wrapped".
+    install -Dm755 $out/bin/sgrep $out/libexec/sgrep/sgrep && rm $out/bin/sgrep
+    makeWrapper $out/libexec/sgrep/sgrep $out/bin/sgrep --prefix PATH : ${
+      lib.makeBinPath [ unstable.ripgrep ]
+    }
   '';
 
   doInstallCheck = true;

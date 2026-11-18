@@ -29,9 +29,10 @@ stdenvNoCC.mkDerivation {
   installPhase = ''
     runHook preInstall
     tar -xzf "$src"
-    install -Dm755 fx "$out/bin/fx"
+    # Real binary keeps its name so terminals (Rex) show "fx", not ".fx-wrapped".
+    install -Dm755 fx "$out/libexec/fx/fx"
     # Nix store binaries cannot be replaced in place.
-    wrapProgram "$out/bin/fx" --set FX_AUTO_UPGRADE 0
+    makeWrapper "$out/libexec/fx/fx" "$out/bin/fx" --set FX_AUTO_UPGRADE 0
     runHook postInstall
   '';
 

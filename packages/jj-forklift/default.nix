@@ -28,7 +28,9 @@ rustPlatform.buildRustPackage {
   VERGEN_IDEMPOTENT = "1";
 
   postInstall = ''
-    wrapProgram $out/bin/forklift \
+    # Real binary keeps its name so terminals (Rex) show "forklift", not ".forklift-wrapped".
+    install -Dm755 $out/bin/forklift $out/libexec/forklift/forklift && rm $out/bin/forklift
+    makeWrapper $out/libexec/forklift/forklift $out/bin/forklift \
       --prefix PATH : ${lib.makeBinPath [ gh ]}
   '';
 
