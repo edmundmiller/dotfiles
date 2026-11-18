@@ -36,6 +36,14 @@ move_literal=$(
   done
 )
 
+# Bend runs on Bun and recurses deeply: snapshot-main.bend needs ~4.4 MiB of the
+# default 8 MiB stack, and a busy CI runner overflowed it. Raise the soft limit.
+stack_kib=$(ulimit -Hs)
+if [[ $stack_kib == unlimited ]] || ((stack_kib > 65536)); then
+  stack_kib=65536
+fi
+ulimit -s "$stack_kib"
+
 bend "$source_dir/PROOF.bend"
 bend "$source_dir/$entrypoint" -o "$build_dir/generated.c"
 stack_words=4096
