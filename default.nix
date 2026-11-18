@@ -110,9 +110,13 @@ in
 
   # Configure nix and nixpkgs
   environment.variables.NIXPKGS_ALLOW_UNFREE = "1";
-  nix =
+  nix = optionalAttrs (!isDarwin) (
     let
-      filteredInputs = filterAttrs (n: _: n != "self") inputs;
+      # The Darwin-only runtime module is not a NixOS registry/search-path input.
+      filteredInputs = removeAttrs inputs [
+        "self"
+        "determinate"
+      ];
       nixPathInputs = mapAttrsToList (n: v: "${n}=${v}") filteredInputs;
       registryInputs = mapAttrs (_: v: { flake = v; }) filteredInputs;
     in
@@ -138,7 +142,8 @@ in
       registry = registryInputs // {
         dotfiles.flake = inputs.self;
       };
-    };
+    }
+  );
   system.configurationRevision =
     if isDarwin then
       with inputs; mkIf (self ? rev) self.rev
