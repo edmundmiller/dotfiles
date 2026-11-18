@@ -53,6 +53,15 @@ This tests the fallback CLI and saves the known-running daemon definition. It
 does not prove a post-migration daemon rollback. macOS cannot build through a
 diverted user-owned store, so an isolated-store build is not a substitute.
 
+After other local Nix work stops, rehearse restoring the saved plist with
+administrator authentication. Install it as root:wheel, mode 0644, boot out
+`system/org.nixos.nix-daemon`, and bootstrap the saved definition. Require the
+rooted upstream executable in `ps` and a fresh build/read through the independent
+profile. Save the evidence separately from any post-migration rollback claim.
+Before installation, take a consistent SQLite `.backup` of
+`/nix/var/nix/db/db.sqlite` and save its adjacent `schema` file in the private
+recovery directory. Never publish that database.
+
 Run `hey check` and `hey check --platform darwin` for the exact candidate.
 Use a supervised PTY for `hey re build`. Inspect the resulting activation and
 service changes before switching. These checks do not activate either host.
@@ -68,6 +77,26 @@ Download and retain the package, record its SHA-256, and verify it with
 `pkgutil --check-signature`. Require the notarized Determinate Systems installer
 certificate, team `X3JQ4VPJZ6`. Record its version separately from the module lock.
 
+Stage the validated system's disabled-GC configuration **before** starting the
+installer. Nixd otherwise starts its default automatic GC immediately, before
+the first Darwin activation can disable it. MacTraitor-Pro exposed this ordering
+hazard during migration. Do not rely on activating quickly enough afterward.
+
+For an upstream-only host with no existing Determinate configuration:
+
+```sh
+built_system=$(realpath result)
+jq -e '.garbageCollector.strategy == "disabled"' "$built_system/etc/determinate/config.json"
+test ! -e /etc/determinate/config.json && test ! -L /etc/determinate/config.json &&
+  sudo install -d -m 0755 /etc/determinate &&
+  sudo ln -s "$built_system/etc/determinate/config.json" /etc/determinate/config.json
+```
+
+Keep `result` rooted. The staged symlink uses the generated file from the exact
+built candidate; do not hand-edit its contents. Activation replaces it with the
+normal `/etc/static` link. If configuration already exists, inspect its ownership
+and reconcile it before installation rather than overwriting it blindly.
+
 The package needs administrator authentication. Use a supervised terminal for
 `sudo /usr/sbin/installer -pkg PACKAGE -target /` or the native Installer app.
 The user enters the password locally, never in chat or an agent tool argument.
@@ -80,6 +109,11 @@ runs that checkout's supported task. Seqeratop also needs interactive sudo and
 may require an unlocked 1Password session for its existing activation hooks.
 Do not claim success from the installer alone. Preserve the unpiped exit status
 of the rebuild.
+
+The activation guard uses `launchctl bootout system/org.nixos.nix-daemon`
+when the old service remains loaded. On MacTraitor-Pro, nix-darwin's legacy
+`launchctl unload` failed while removing the old plist, despite a zero rebuild
+exit status. Check loaded services and processes, not just files or exit status.
 
 The package can leave the old nix-darwin `nix.conf` symlink until activation.
 After activation, require a real installer/Nixd-owned `nix.conf` that includes
