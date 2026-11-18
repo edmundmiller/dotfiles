@@ -248,11 +248,17 @@ class Incidents(SQLiteStore):
         return True
 
 
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 class CloudflareEmail:
     def __init__(self, token, url, *, require_new_acceptance=False):
         self.token = token
         self.url = url
         self.require_new_acceptance = require_new_acceptance
+        self.last_receipt = None
 
     def send(self, endpoint, state):
         request = Request(self.url, data=json.dumps({"endpoint": endpoint, "state": state}).encode(), headers={
@@ -261,7 +267,7 @@ class CloudflareEmail:
             "User-Agent": EMAIL_USER_AGENT,
         })
         try:
-            with urlopen(request, timeout=15) as response:
+            with build_opener(NoRedirect()).open(request, timeout=15) as response:
                 result = json.load(response)
                 status = result.get("status") if isinstance(result, dict) else None
                 if response.status != 200 or status not in ("accepted_by_provider", "duplicate", "orphan_recovery"):
@@ -274,6 +280,7 @@ class CloudflareEmail:
                     isinstance(result.get(key), str) and result[key] for key in ("incidentId", "messageId")
                 ):
                     raise DeliveryError("email-invalid-receipt")
+                self.last_receipt = {key: result[key] for key in ("status", "incidentId", "messageId") if key in result}
         except HTTPError as error:
             with error:
                 try:
@@ -470,9 +477,28 @@ def email_acceptance_test(
     worker_url="https://mill-docs-agents.edmund-a-miller.workers.dev/api/monitoring/gatus-email",
     token_file=Path("/run/agenix/gatus-email-worker"),
     ingest_file=Path("/run/agenix/gatus-email-ingest"),
+    reconciled_claims=None,
 ):
     """One synthetic pair before activation; retain intent and FIFO on any failure."""
     require_email_test_preconditions()
+    retained = {}
+    for prior_directory, expected_hash in (reconciled_claims or {}).items():
+        info = prior_directory.stat()
+        prior_file = prior_directory / "claim.jsonl"
+        if (info.st_uid != os.geteuid() or info.st_mode & 0o077
+                or prior_file.stat().st_size > 16384
+                or any((prior_directory / ("events.sqlite" + suffix)).exists()
+                       for suffix in ("", "-wal", "-shm", "-journal"))):
+            raise DeliveryError("acceptance-prior-claims-need-reconciliation")
+        actual_hash = hashlib.sha256(prior_file.read_bytes()).hexdigest()
+        if actual_hash != expected_hash:
+            raise DeliveryError("acceptance-prior-claims-need-reconciliation")
+        retained[prior_directory.name] = actual_hash
+    family_version = os.environ.get("GATUS_EMAIL_DIAGNOSTIC_FAMILY_VERSION", "")
+    run_id = os.environ.get("GATUS_EMAIL_DIAGNOSTIC_RUN_ID", "")
+    if reconciled_claims and (not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", family_version)
+                              or not re.fullmatch(r"[0-9]{1,20}", run_id)):
+        raise DeliveryError("acceptance-requires-exact-readiness-and-run")
     family_revision = os.environ.get("GATUS_EMAIL_TEST_FAMILY_REVISION", "")
     if not re.fullmatch(r"[0-9a-f]{40}", family_revision):
         raise DeliveryError("acceptance-requires-verified-family-revision")
@@ -492,7 +518,9 @@ def email_acceptance_test(
     # replay a previous claim, including a process crash before a response.
     with (directory / "claim.jsonl").open("x") as claim:
         claim.write(json.dumps({"synthetic": True, "family_revision": family_revision,
-                                "started": datetime.now(UTC).isoformat()}) + "\n")
+                                "started": datetime.now(UTC).isoformat(),
+                                "retained_claims": retained, "family_version": family_version,
+                                "run_id": run_id}) + "\n")
         claim.flush()
         os.fsync(claim.fileno())
     for path in (directory.parent, directory):
@@ -508,11 +536,13 @@ def email_acceptance_test(
             headers["Authorization"] = "Bearer " + token
         request = Request(worker_url, data=json.dumps({"endpoint": endpoint, "state": "INVALID"}).encode(), headers=headers)
         try:
-            with urlopen(request, timeout=15):
+            with build_opener(NoRedirect()).open(request, timeout=15):
                 raise DeliveryError("acceptance-invalid-state-unexpectedly-accepted")
         except HTTPError as error:
             with error:
-                if error.code != expected:
+                classification = "unauthorized" if not authenticated else "invalid_transition"
+                if (error.code != expected or error.headers.get_content_type() != "application/json"
+                        or json.loads(error.read(4097)) != {"error": classification}):
                     raise DeliveryError("acceptance-authentication-probe-failed") from None
     queue = EmailQueue(directory / "events.sqlite")
     sender = CloudflareEmail(token, worker_url, require_new_acceptance=True)
@@ -533,10 +563,12 @@ def email_acceptance_test(
             if queue.health()["pending"] or queue.health()["delivery_errors"]:
                 raise DeliveryError("acceptance-delivery-unconfirmed-no-replay")
             with (directory / "claim.jsonl").open("a") as claim:
-                claim.write(json.dumps({"synthetic": True, "state": state,
-                                        "receiver_acknowledged": datetime.now(UTC).isoformat()}) + "\n")
+                event = {"synthetic": True, "state": state, "provider_receipt": sender.last_receipt,
+                         "receiver_acknowledged": datetime.now(UTC).isoformat()}
+                claim.write(json.dumps(event) + "\n")
                 claim.flush()
                 os.fsync(claim.fileno())
+                print(json.dumps(event), flush=True)
         print(json.dumps({"synthetic": True, "receiver_acknowledged_pair": True,
                           "provider_receipt_correlation": "requires-family-evidence", "inbox_delivery": "unverified"}))
     finally:
@@ -616,10 +648,6 @@ def email_preflight_diagnostic(
     info = directory.stat()
     if info.st_uid != os.geteuid() or info.st_mode & 0o077:
         raise DeliveryError("diagnostic-requires-private-journal")
-
-    class NoRedirect(HTTPRedirectHandler):
-        def redirect_request(self, req, fp, code, msg, headers, newurl):
-            return None
 
     opener = build_opener(NoRedirect())
     expected_url = urlsplit(worker_url)
@@ -752,9 +780,20 @@ def main():
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] in (["acceptance-test"], ["email-diagnostic"], ["email-client-diagnostic"]):
+    if sys.argv[1:] in (["acceptance-test"], ["acceptance-client-test"], ["email-diagnostic"], ["email-client-diagnostic"]):
         try:
-            if sys.argv[1:] == ["email-client-diagnostic"]:
+            if sys.argv[1:] == ["acceptance-client-test"]:
+                # Reconciled no-mail transcripts from runs 44277758687,
+                # 44346957702 and 44365259269. Any changed byte stops this test.
+                email_acceptance_test(
+                    directory=Path("/var/lib/gatus-email-client-acceptance"),
+                    reconciled_claims={
+                        Path("/var/lib/gatus-email-acceptance"): "cce3c395f0e74c86a372810f746e6de27ac93a435c08a13c29280e01dae9c3d2",
+                        Path("/var/lib/gatus-email-diagnostic"): "51de516febc115c4baeb00b3e12faad73ac274fabbfd3ca0331d290c4bf6c8f0",
+                        Path("/var/lib/gatus-email-client-diagnostic"): "e7db104a01371bae11be32d624777943c2679ccb7aaf83ea3ab671eedb990af8",
+                    },
+                )
+            elif sys.argv[1:] == ["email-client-diagnostic"]:
                 email_preflight_diagnostic(
                     directory=Path("/var/lib/gatus-email-client-diagnostic"),
                     prior_diagnostic_directory=Path("/var/lib/gatus-email-diagnostic"),

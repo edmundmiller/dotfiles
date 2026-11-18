@@ -540,7 +540,7 @@ class IncidentTests(unittest.TestCase):
         self.send("RESOLVED")
         self.assertEqual(self.health()[0], 200)
 
-    def acceptance(self, token="email-api-fixture-secret", *, producer=None):
+    def acceptance(self, token="email-api-fixture-secret", *, producer=None, reconciled_claims=None):
         token_file = Path(self.tmp.name) / "acceptance-token"
         ingest_file = Path(self.tmp.name) / "acceptance-ingest"
         token_file.write_text(token)
@@ -549,11 +549,13 @@ class IncidentTests(unittest.TestCase):
         ingest_file.chmod(0o600)
         with (patch.object(incidents, "require_email_test_preconditions",
                            side_effect=(lambda: incidents.require_fresh_producer(producer)) if producer else None),
-              patch.dict(os.environ, {"GATUS_EMAIL_TEST_FAMILY_REVISION": "a" * 40}),
+              patch.dict(os.environ, {"GATUS_EMAIL_TEST_FAMILY_REVISION": "a" * 40,
+                                     "GATUS_EMAIL_DIAGNOSTIC_FAMILY_VERSION": "12345678-abcd-1234-abcd-123456789abc",
+                                     "GATUS_EMAIL_DIAGNOSTIC_RUN_ID": "123456789"}),
               redirect_stdout(self.logs)):
             incidents.email_acceptance_test(
                 Path(self.tmp.name) / "acceptance", f"http://127.0.0.1:{self.api.server_port}/email",
-                token_file, ingest_file,
+                token_file, ingest_file, reconciled_claims=reconciled_claims,
             )
 
     def test_acceptance_pair_is_synthetic_isolated_and_never_replayed(self):
@@ -570,6 +572,10 @@ class IncidentTests(unittest.TestCase):
         records = [json.loads(line) for line in journal.read_text().splitlines()]
         self.assertTrue(all(record["synthetic"] for record in records))
         self.assertEqual([record["state"] for record in records[1:]], ["TRIGGERED", "RESOLVED"])
+        self.assertEqual([record["provider_receipt"]["status"] for record in records[1:]],
+                         ["accepted_by_provider"] * 2)
+        self.assertTrue(all(record["provider_receipt"][key] for record in records[1:]
+                            for key in ("incidentId", "messageId")))
         self.assertIn('"inbox_delivery": "unverified"', self.logs.getvalue())
         self.assertEqual(self.email_user_agents,
                          ["dotfiles-gatus-email/1.0 (+https://github.com/edmundmiller/dotfiles)"] * 4)
@@ -577,6 +583,35 @@ class IncidentTests(unittest.TestCase):
             self.acceptance()
         self.assertEqual(len(self.email_requests), 2)
         self.assertNotIn("email-api-fixture-secret", journal.read_text() + self.logs.getvalue())
+
+    def test_fresh_acceptance_requires_unchanged_reconciled_claims_without_fifo(self):
+        retained = {}
+        for index in range(3):
+            directory = Path(self.tmp.name) / f"retained-{index}"
+            directory.mkdir(mode=0o700)
+            (directory / "claim.jsonl").write_text(f'{{"fixture": {index}}}\n')
+            retained[directory] = hashlib.sha256((directory / "claim.jsonl").read_bytes()).hexdigest()
+        last = directory / "claim.jsonl"
+        before = last.read_bytes()
+        last.write_bytes(before + b'{}\n')
+        with self.assertRaisesRegex(incidents.DeliveryError, "prior-claims"):
+            self.acceptance(reconciled_claims=retained)
+        last.write_bytes(before)
+        sidecar = directory / "events.sqlite-wal"
+        sidecar.touch()
+        with self.assertRaisesRegex(incidents.DeliveryError, "prior-claims"):
+            self.acceptance(reconciled_claims=retained)
+        self.assertEqual(self.sent_mail, [])
+        self.assertEqual(self.email_user_agents, [])
+        self.assertFalse((Path(self.tmp.name) / "acceptance/claim.jsonl").exists())
+        sidecar.unlink()
+        self.acceptance(reconciled_claims=retained)
+        self.assertEqual([body["state"] for body in self.sent_mail], ["TRIGGERED", "RESOLVED"])
+        self.assertEqual({directory: hashlib.sha256((directory / "claim.jsonl").read_bytes()).hexdigest()
+                          for directory in retained}, retained)
+        with self.assertRaises(incidents.DeliveryError):
+            self.acceptance(reconciled_claims=retained)
+        self.assertEqual(len(self.sent_mail), 2)
 
     def test_acceptance_retained_producer_wal_blocks_without_touching_source(self):
         producer = Path(self.tmp.name) / "producer.sqlite"

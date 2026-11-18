@@ -260,6 +260,28 @@ prove two provider acceptances or inbox receipt. Correlate both provider receipt
 with Family Ops and verify the inbox separately before claiming acceptance.
 This is synthetic delivery proof, not a genuine HA outage or seven-day stability.
 
+#### Fresh acceptance after the client repair
+
+`operation=gatus-email-client-acceptance` runs a new synthetic pair after the
+no-mail runs 44277758687, 44346957702 and 44365259269 have been reconciled.
+It requires exact hashes of all three retained transcripts and refuses any old
+FIFO or sidecar. It preserves those directories and exclusively claims
+`/var/lib/gatus-email-client-acceptance/` before requests. An existing new claim
+or FIFO blocks replay, including after a crash. Unexpected retained bytes stop
+the operation rather than authorizing another attempt.
+
+Supply the exact published `expected_sha`, freshly verified deployed
+`email_test_family_revision` and `email_diagnostic_family_version`. Coordinate
+fresh settings, idle journal and an exclusive send window with Family Ops.
+The original health, private credential and clean producer guards still apply.
+The test never activates NixOS or enables production routes. Email requests do
+not follow redirects. Each successful transition records only its allowlisted
+provider status, incident ID, message ID and acknowledgment time in the new
+claim and workflow output. Require two fresh provider acceptances and ask the
+recipient whether both emails arrived. Provider acceptance is not inbox proof.
+Only then enable production email for the HA Runtime endpoint. Preserve all
+claims, production journals and Backup Repair throughout.
+
 #### Diagnostic after a blocked preflight
 
 A failed acceptance intent remains a replay block. With separate approval and
