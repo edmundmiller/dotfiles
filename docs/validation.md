@@ -34,6 +34,8 @@ the lifecycle fixtures without the unrelated shipping and validation regression
 tests. Changes to the validation runner select both suites; `--full` retains both.
 These fixtures exercise setup, repeated resume, restored profiles, command links,
 checkout-scoped Mise trust, broken Nix profiles, containers and swap failures.
+Native Darwin validation also runs this check because installed host Nix profiles
+can affect discovery differently from Linux's sandbox.
 They stub Nix builds and privileged operations, so they do not prove package builds
 or real host kernel changes. Run `.agents/setup` twice and `.agents/resume` directly
 when changing the lifecycle or its public package recipe.

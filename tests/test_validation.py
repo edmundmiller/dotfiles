@@ -441,6 +441,10 @@ class ValidationTests(unittest.TestCase):
             [command[-1] for command in commands if "build" in command],
         )
         self.assertIn(
+            ".#checks.aarch64-darwin.orb-setup-tests",
+            [command[-1] for command in commands if "build" in command],
+        )
+        self.assertIn(
             ".#checks.aarch64-darwin.dji-mic-mini-receiver-mute-regressions",
             [command[-1] for command in commands if "build" in command],
         )

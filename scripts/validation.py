@@ -241,6 +241,7 @@ LINUX_CHECKS = {
 }
 
 DARWIN_CHECKS = [
+    "orb-setup-tests",
     "rex-package-wiring",
     "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
