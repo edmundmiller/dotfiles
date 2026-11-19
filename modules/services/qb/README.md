@@ -29,6 +29,8 @@ deployment workflow. A local configuration edit does not start the downloader.
   under qBittorrent's UID must pass Mullvad's connection check.
 - qBittorrent gets a private resolver file with only Tailscale's
   `100.100.100.100`. Its process cannot use the container's public bootstrap DNS.
+  Exit selection enables Tailscale DNS so that resolver uses the selected
+  Mullvad exit's advertised DNS servers. Enrollment keeps bootstrap DNS until then.
 - The authenticated WebUI listens on container loopback at port 8090.
   Tailscale Serve forwards TCP port 8090 to it through the encrypted tailnet.
   There is no host port publication or public torrent-port forwarding.

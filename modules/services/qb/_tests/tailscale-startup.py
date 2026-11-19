@@ -138,6 +138,7 @@ assert starts[0]["AuthKey"] == "test-auth-key", "Enrollment must read the runtim
 assert starts[0]["UpdatePrefs"]["AdvertiseTags"] == ["tag:qb-downloads"]
 assert starts[0]["UpdatePrefs"]["Hostname"] == "qb-downloads"
 assert starts[0]["UpdatePrefs"]["ExitNodeIP"] in ("", None), "Enroll before resolving an exit"
+assert starts[0]["UpdatePrefs"]["CorpDNS"] is False, "Keep bootstrap DNS until exit selection"
 assert len(edits) == 2
 assert all(edit_readiness), "Never select an exit before the configured peer is online"
 for edit in edits:
@@ -145,6 +146,6 @@ for edit in edits:
     assert edit["ExitNodeIPSet"] is True
     assert edit["ExitNodeAllowLANAccess"] is False
     assert edit["ExitNodeAllowLANAccessSet"] is True
-    assert edit["CorpDNS"] is False
+    assert edit["CorpDNS"] is True, "Enable the exit's DNS resolver before downloader startup"
     assert edit["CorpDNSSet"] is True
 print("PASS: real Tailscale CLI enrolls once, selects the exit and reuses identity")

@@ -132,7 +132,7 @@ in
             extraSetFlags = [
               "--exit-node=${cfg.mullvadExitNode}"
               "--exit-node-allow-lan-access=false"
-              "--accept-dns=false"
+              "--accept-dns=true"
             ];
           };
           systemd.targets.qb-workload.description = "Downloader services after host veth setup";
