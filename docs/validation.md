@@ -38,14 +38,24 @@ They stub Nix builds and privileged operations, so they do not prove package bui
 or real host kernel changes. Run `.agents/setup` twice and `.agents/resume` directly
 when changing the lifecycle or its public package recipe.
 
-Setup builds `.agents/orb-tools.nix` from only the public locked Nixpkgs source
-and existing Hey/Bend recipes. Its GC-rooted tool environment survives snapshots;
+Setup builds `.agents/orb-tools.nix` from only the public locked Nixpkgs source,
+existing Hey/Bend recipes, and the hash-pinned upstream Mise release in
+`.agents/mise-binary.nix`. Its GC-rooted tool environment survives snapshots;
 Nix rechecks the recipes on repeated setup. Resume only repairs command links,
 trusts this checkout and restores the login hook. Missing tools fail with a request
 to rerun setup, not a background install. Rerun setup after changing those recipes
 in an existing Orb. The full `#agent` login environment still resolves the root
 flake with the current user's credentials after activation, never in shared setup.
 No credential or private flake input is added to the prepared public tool closure.
+
+The headless agent environment, `hey-native`, `validation-tests` and
+`orb-setup-tests` use that same Mise binary
+pin, matching the locked Nixpkgs Mise version when introduced. They still build
+the native Hey launcher and exercise real task dispatch and checkout trust.
+They do not compile Mise or its Rust dependencies. Installed host packages keep
+their existing Nixpkgs or Homebrew Mise selection. Updating the binary recipe
+selects all three checks. Linux uses the upstream static musl binary; Darwin
+uses the upstream ARM64 executable.
 
 Selection includes committed branch changes relative to the merge-base with
 `origin/main`, plus staged, unstaged and untracked files. Without `origin/main`,
@@ -93,6 +103,12 @@ forced into unrelated repairs. Evidence remains useful until its inputs change;
 there is no one-shot completion token or persistent success cache.
 
 ## CI uses the same selection
+
+Changes to `flake.nix`, `flake.lock`, `lib/` or `overlays/` still select all
+portable checks. The root flake defines the checks and shared package set, so a
+path-only selector cannot tell which check definitions or dependencies changed.
+Narrowing this rule without dependency-aware selection would omit verification.
+It does not select host or VM builds; those remain explicit platform checks.
 
 `Checks (Linux)` runs the shared portable runner. PRs use
 the PR base SHA; main pushes use the previous SHA. Candidate pushes use the

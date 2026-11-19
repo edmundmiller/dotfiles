@@ -26,6 +26,7 @@ CHECKS = {
         ".agents/resume",
         ".agents/nix-env.sh",
         ".agents/orb-tools.nix",
+        ".agents/mise-binary.nix",
         "tests/test_orb_setup.py",
         "packages/hey/*",
         "packages/bend/*",
@@ -34,6 +35,7 @@ CHECKS = {
         "scripts/validation.py",
     ],
     "validation-tests": [
+        ".agents/mise-binary.nix",
         "scripts/validation.py",
         "scripts/run_validation_tests.py",
         "scripts/nuc_shipping.py",
@@ -75,7 +77,9 @@ CHECKS = {
         "scripts/renovate_admission.py",
         ".github/workflows/renovate-admission.yml",
     ],
-    "hey-native": ["bin/hey", "packages/hey/*", "packages/bend/*"],
+    "hey-native": [
+        "bin/hey", "packages/hey/*", "packages/bend/*", ".agents/mise-binary.nix"
+    ],
     "hass-health-tests": ["modules/services/hass/*"],
     "gatus-alerting-tests": ["modules/services/gatus/*", "overlays/gatus/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],

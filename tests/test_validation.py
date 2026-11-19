@@ -316,6 +316,11 @@ class ValidationTests(unittest.TestCase):
                 self.selection("scripts/validation.py")["checks"]
             )
         )
+        self.write(".agents/mise-binary.nix", "probe\n")
+        self.assertEqual(
+            set(self.selection(".agents/mise-binary.nix")["checks"]),
+            {"orb-setup-tests", "validation-tests", "hey-native"},
+        )
 
     def test_unas_vm_checks_are_excluded_from_portable_plans(self):
         vm_checks = {"unas-recovery", "unas-late-bulk"}

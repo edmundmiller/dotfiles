@@ -22,7 +22,9 @@ let
         inherit (locked) url narHash;
       };
   pkgs = import source.outPath { system = builtins.currentSystem; };
+  mise = pkgs.callPackage ./mise-binary.nix { };
   hey = pkgs.callPackage ../packages/hey {
+    inherit mise;
     my.bend = pkgs.callPackage ../packages/bend { };
   };
 in
@@ -30,7 +32,7 @@ pkgs.buildEnv {
   name = "dotfiles-orb-tools";
   paths = [
     hey
-    pkgs.mise
+    mise
     pkgs.prek
     pkgs.jujutsu
   ];

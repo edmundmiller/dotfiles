@@ -67,7 +67,7 @@ class OrbSetupTests(unittest.TestCase):
             home.mkdir()
             repo = root / "repo"
             (repo / ".agents").mkdir(parents=True)
-            for name in ("setup", "resume", "nix-env.sh", "orb-tools.nix"):
+            for name in ("setup", "resume", "nix-env.sh", "orb-tools.nix", "mise-binary.nix"):
                 shutil.copy2(ROOT / ".agents" / name, repo / ".agents" / name)
             tools = root / "tools"
             tools.mkdir()

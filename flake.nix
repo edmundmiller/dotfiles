@@ -569,6 +569,8 @@
         }:
         let
           unstable = mkPkgs nixpkgs-unstable [ ] system;
+          toolingMise = pkgs.callPackage ./.agents/mise-binary.nix { };
+          toolingHey = self.packages.${system}.hey.override { mise = toolingMise; };
           displayRuby = pkgs.ruby_4_0;
           displayBundler = pkgs.bundler.override { ruby = displayRuby; };
           displayTrmnlGems = pkgs.bundlerEnv {
@@ -670,7 +672,6 @@
                 # Shell essentials
                 zsh
                 tmux
-                mise
                 nushell
                 starship
 
@@ -689,7 +690,8 @@
                 just
               ])
               ++ [
-                self.packages.${system}.hey
+                toolingMise
+                toolingHey
                 self.packages.${system}.validation-tools
               ];
           };
@@ -1178,7 +1180,7 @@
             # deploy-rs checks - validates deployment configurations (merge attrset)
             (lib.optionalAttrs (system == "x86_64-linux") (deploy-rs.lib.${system}.deployChecks self.deploy))
             // {
-              hey-native = self.packages.${system}.hey;
+              hey-native = toolingHey;
 
               callstack-diff = self.packages.${system}.callstack-diff.overrideAttrs (old: {
                 pname = "callstack-diff-checks";
@@ -1285,13 +1287,14 @@
                         ./.agents/resume
                         ./.agents/nix-env.sh
                         ./.agents/orb-tools.nix
+                        ./.agents/mise-binary.nix
                         ./tests/test_orb_setup.py
                       ];
                     };
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.git
-                      pkgs.mise
+                      toolingMise
                       pkgs.python3
                     ]
                     ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.util-linux ];
@@ -1313,6 +1316,7 @@
                         inherit lib;
                         # Only build the real launcher, not the unrelated Pi binary.
                         pkgs = pkgs // {
+                          mise = toolingMise;
                           llm-agents.pi = pkgs.hello;
                         };
                         piSecretPreflightScript = "true";
@@ -1321,11 +1325,11 @@
                       pkgs.bash
                       pkgs.git
                       pkgs.jq
-                      pkgs.mise
+                      toolingMise
                       pkgs.nushell
                       pkgs.python3
                       pkgs.ripgrep
-                      self.packages.${system}.hey
+                      toolingHey
                     ]
                     ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.util-linux ];
                   }
