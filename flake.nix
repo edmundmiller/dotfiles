@@ -1348,6 +1348,7 @@
                       tests/test_amp_orb_dispatch.py \
                       tests/test_candidate_ci.py \
                       tests/test_validation.py \
+                      tests/test_nuc_rollout.py \
                       tests/test_ci_check_cache.py \
                       tests/test_beads_filter.py \
                       tests/test_amp_runner_sync.py

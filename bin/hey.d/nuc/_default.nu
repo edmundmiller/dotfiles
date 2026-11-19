@@ -5,9 +5,9 @@
 use ../.lib/common.nu *
 use ../.lib/remote.nu *
 
-def main [mode: string = "auto", worktree_mode: string = "switch"] {
+def main [mode: string = "auto", worktree_mode: string = "switch", guard: string = "exact"] {
   if $mode == "revision" {
-    nuc-revision-deploy $worktree_mode
+    nuc-revision-deploy $worktree_mode $guard
     return
   }
   let ctx = (context)
@@ -35,7 +35,7 @@ def main [mode: string = "auto", worktree_mode: string = "switch"] {
   }
 
   if $mode != "auto" {
-    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm, validate, revision <SHA>"
+    print -e "error: hey nuc mode must be one of: auto, local, wt, worktree, dry-activate, test, switch, build, vm, validate, revision <SHA> [exact|published]"
     error make {msg: "invalid hey nuc mode"}
   }
 

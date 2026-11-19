@@ -1,19 +1,20 @@
 name: Deploy NUC
-run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
     inputs:
       expected_sha:
-        description: Exact published main workflow commit (40-character lowercase SHA)
+        description: Exact published main workflow commit (40-character lowercase SHA); rollout records the main it was dispatched for
         required: true
         type: string
       operation:
-        description: Deploy, inspect HA/orbs, or enable approved Note 4C serial access
+        description: Deploy, roll out newest green main (standing authority), inspect HA/orbs, or enable approved Note 4C serial access
         type: choice
         default: deploy
         options:
           - deploy
+          - rollout
           - ha-diagnostics
           - ha-climate-diagnostics
           - ha-climate-recurrence
@@ -60,6 +61,8 @@ on:
 permissions:
   contents: read
 
+# One run at a time. A newer pending run replaces an older pending one; an
+# active switch is never cancelled. Rollout picks its target when it starts.
 concurrency:
   group: deploy-nuc
   cancel-in-progress: false
@@ -78,14 +81,30 @@ jobs:
       - name: Require requested deployment revision
         env:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
+          OPERATION: ${{ inputs.operation }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ || "$EXPECTED_SHA" != "$DEPLOY_SHA" ]]; then
+          # Rollout records the main it was dispatched for; it selects its target later.
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ||
+                ( "${OPERATION:-deploy}" != rollout && "$EXPECTED_SHA" != "$DEPLOY_SHA" ) ]]; then
             echo "NUC deployment revision mismatch: expected_sha must be the exact captured main commit" >&2
             exit 1
           fi
+      - name: Require standing rollout authority
+        if: inputs.operation == 'rollout'
+        env:
+          NUC_ROLLOUT: ${{ vars.NUC_ROLLOUT }}
+        shell: bash
+        run: |
+          # Per-task approvals never grant this; only the repository variable does.
+          # Rollout selects only commits whose latest exact-main CI already succeeded.
+          if [[ "$NUC_ROLLOUT" != continuous ]]; then
+            echo "NUC rollout requires repository variable NUC_ROLLOUT=continuous" >&2
+            exit 1
+          fi
       - name: Wait for exact-main CI in GitHub
+        if: inputs.operation != 'rollout'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -137,14 +156,18 @@ jobs:
       - name: Require requested deployment revision
         env:
           EXPECTED_SHA: ${{ inputs.expected_sha }}
+          OPERATION: ${{ inputs.operation }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ || "$EXPECTED_SHA" != "$DEPLOY_SHA" ]]; then
+          # Rollout never deploys expected_sha itself; it selects from live main below.
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ||
+                ( "${OPERATION:-deploy}" != rollout && "$EXPECTED_SHA" != "$DEPLOY_SHA" ) ]]; then
             echo "NUC deployment revision mismatch: expected_sha must be the exact captured main commit" >&2
             exit 1
           fi
       - name: Require successful main CI for this exact commit
+        if: inputs.operation != 'rollout'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -163,6 +186,8 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+          # Rollout needs main's history for ancestry, trailers and coalescing.
+          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@2cb76beab460be7e44442c7ebdcbc30b638416df
       - name: Join tailnet with short-lived GitHub identity
         uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4
@@ -249,6 +274,55 @@ jobs:
             uname -a
             exec sudo -n uv run --no-project python - setup
           ' < modules/services/hass/monitor-gatus.py
+      - name: Read the active NUC generation before rollout
+        id: before
+        if: inputs.operation == 'rollout'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2016
+          revision=$(tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            nixos-version --configuration-revision
+          ')
+          printf 'configuration_revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+          printf 'monotonic=%s\n' "$(tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'cut -d" " -f1 /proc/uptime')" >> "$GITHUB_OUTPUT"
+      - name: Select the newest green published commit
+        id: select
+        if: inputs.operation == 'rollout'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONFIGURATION_REVISION: ${{ steps.before.outputs.configuration_revision }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --quiet --no-tags origin main
+          main=$(git rev-parse FETCH_HEAD)
+          git merge-base --is-ancestor "$DEPLOY_SHA" "$main"
+          python3 scripts/nuc_rollout.py select --main "$main" \
+            --configuration-revision "$CONFIGURATION_REVISION" | tee "$RUNNER_TEMP/selection.json"
+          {
+            printf 'main=%s\n' "$main"
+            printf 'outcome=%s\n' "$(jq -er .outcome "$RUNNER_TEMP/selection.json")"
+            printf 'target=%s\n' "$(jq -r '.target // ""' "$RUNNER_TEMP/selection.json")"
+            printf 'previous=%s\n' "$(jq -r '.active // ""' "$RUNNER_TEMP/selection.json")"
+          } >> "$GITHUB_OUTPUT"
+      - name: Build and activate the selected revision with the published-ancestry guard
+        id: activate
+        if: inputs.operation == 'rollout' && steps.select.outputs.target != ''
+        env:
+          TARGET: ${{ steps.select.outputs.target }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Trusted main code drives the same pinned flake, provenance readback and
+          # host lock as exact deployments; only the guard accepts a trailing target.
+          nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
+          nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
+            env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$TARGET" published 2>&1 |
+            tee "$RUNNER_TEMP/activate.log"
       - name: Fetch, build, activate and verify on the NUC
         if: inputs.operation == 'deploy'
         shell: bash
@@ -264,7 +338,8 @@ jobs:
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- verify' < scripts/amp-orb-pilot.sh
       - name: Verify HA-runtime email receiver after activation
-        if: inputs.operation == 'deploy'
+        id: health
+        if: inputs.operation == 'deploy' || (inputs.operation == 'rollout' && steps.activate.outcome == 'success')
         shell: bash
         run: |
           set -euo pipefail
@@ -287,7 +362,8 @@ jobs:
             printf "HA-runtime-only email receiver is active, loopback-only and healthy; no production events injected.\n"
           '
       - name: Verify HA-runtime Notion receiver after activation
-        if: inputs.operation == 'deploy'
+        id: notion-health
+        if: inputs.operation == 'deploy' || (inputs.operation == 'rollout' && steps.activate.outcome == 'success')
         shell: bash
         run: |
           set -euo pipefail
@@ -325,11 +401,109 @@ jobs:
               raise SystemExit('Notion runtime read-only authentication/schema check failed; details suppressed') from None
           print('Notion runtime credential authenticated and incident schema matched; no data written.')
           PY
+      - name: Read back the active generation and affected services
+        if: always() && inputs.operation == 'rollout' && steps.select.outputs.target != ''
+        env:
+          SINCE: ${{ steps.before.outputs.monotonic }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Units whose state changed since activation started are the affected services.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "SINCE='$SINCE' bash -s" > "$RUNNER_TEMP/readback.json" <<'READBACK'
+          set -eu
+          test "$(hostname)" = nuc
+          since_us=$(awk -v s="${SINCE:-0}" 'BEGIN { printf "%.0f", s * 1000000 }')
+          units=$(systemctl list-units --type=service --all --no-legend --plain | awk '{print $1}')
+          changed=$(systemctl show -p Id -p ActiveState -p SubState -p Result -p StateChangeTimestampMonotonic $units |
+            awk -v since="$since_us" 'BEGIN { RS=""; FS="\n" } {
+              delete f; for (i = 1; i <= NF; i++) { split($i, kv, "="); f[kv[1]] = substr($i, length(kv[1]) + 2) }
+              if (f["StateChangeTimestampMonotonic"] + 0 > since + 0)
+                printf "{\"Id\":\"%s\",\"ActiveState\":\"%s\",\"SubState\":\"%s\",\"Result\":\"%s\"}\n", f["Id"], f["ActiveState"], f["SubState"], f["Result"]
+            }' | jq -s .)
+          failed=$(systemctl list-units --failed --no-legend --plain | awk '{print $1}' | jq -R . | jq -s .)
+          jq -n --arg revision "$(nixos-version --configuration-revision || true)" \
+            --arg current "$(readlink -f /run/current-system)" --arg booted "$(readlink -f /run/booted-system)" \
+            --argjson changed "$changed" --argjson failed "$failed" \
+            '{configurationRevision: $revision, currentSystem: $current, bootedSystem: $booted,
+              changedUnits: $changed, failedUnits: $failed}'
+          READBACK
+      - name: Classify and report the rollout
+        id: report
+        if: always() && inputs.operation == 'rollout'
+        env:
+          OUTCOME: ${{ steps.select.outputs.outcome }}
+          TARGET: ${{ steps.select.outputs.target }}
+          PREVIOUS: ${{ steps.select.outputs.previous }}
+          MAIN: ${{ steps.select.outputs.main }}
+          ACTIVATION: ${{ steps.activate.outcome }}
+          HEALTH: ${{ steps.health.outcome == 'success' && steps.notion-health.outcome == 'success' && 'success' || 'failure' }}
+          PYTHONDONTWRITEBYTECODE: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/report"
+          if [[ -n "$TARGET" ]]; then
+            python3 scripts/nuc_rollout.py report --previous "$PREVIOUS" --target "$TARGET" --main "$MAIN" \
+              --activation "$ACTIVATION" --health "$HEALTH" \
+              --readback "$RUNNER_TEMP/readback.json" --log "$RUNNER_TEMP/activate.log" > "$RUNNER_TEMP/report/report.json"
+          elif [[ -f "$RUNNER_TEMP/selection.json" ]]; then
+            cp "$RUNNER_TEMP/selection.json" "$RUNNER_TEMP/report/report.json"
+          else
+            jq -n '{schemaVersion: 1, outcome: "selection_failed", next: "Inspect this run; the host was not changed."}' \
+              > "$RUNNER_TEMP/report/report.json"
+          fi
+          outcome=$(jq -er .outcome "$RUNNER_TEMP/report/report.json")
+          case "$outcome" in
+            deployed) marker=nuc-rollout-deployed ;;
+            host_busy) marker=nuc-rollout-deferred ;;
+            not_activated|activated_unhealthy) marker="nuc-rollout-failed-$TARGET" ;;
+            unknown|unknown_active) marker=nuc-rollout-blocked ;;
+            *) marker="" ;;
+          esac
+          printf 'outcome=%s\nmarker=%s\n' "$outcome" "$marker" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.operation == 'rollout' && steps.report.outcome == 'success'
+        with:
+          name: nuc-rollout-report
+          path: ${{ runner.temp }}/report/report.json
+          retention-days: 90
+          if-no-files-found: error
+      # Fixed names are queryable state: failure excludes only its exact SHA,
+      # blocked stops rollout until a later deployed marker, deferred allows a retry.
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.report.outputs.marker != ''
+        with:
+          name: ${{ steps.report.outputs.marker }}
+          path: ${{ runner.temp }}/report/report.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Fail visibly unless the rollout succeeded or had nothing to do
+        if: always() && inputs.operation == 'rollout'
+        env:
+          OUTCOME: ${{ steps.report.outputs.outcome }}
+        shell: bash
+        run: |
+          case "$OUTCOME" in
+            deployed|current|nothing_to_activate|nothing_eligible|host_busy) ;;
+            *) echo "::error::NUC rollout outcome: ${OUTCOME:-unreported}. See the rollout report artifact."; exit 1 ;;
+          esac
       - name: Record deployed revision
         if: inputs.operation == 'deploy'
         run: |
           printf 'Deployed dotfiles [%s](https://github.com/edmundmiller/dotfiles/commit/%s) to NUC.\n' \
             "$DEPLOY_SHA" "$DEPLOY_SHA" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p "$RUNNER_TEMP/report"
+          jq -n --arg sha "$DEPLOY_SHA" '{schemaVersion: 1, outcome: "deployed", target: $sha, exact: true}' \
+            > "$RUNNER_TEMP/report/report.json"
+      # A successful exact deployment also clears an earlier blocked rollout.
+      - uses: actions/upload-artifact@v4
+        if: inputs.operation == 'deploy'
+        with:
+          name: nuc-rollout-deployed
+          path: ${{ runner.temp }}/report/report.json
+          retention-days: 90
+          if-no-files-found: error
       - name: Allow two automatic HA monitor runs
         if: inputs.operation == 'deploy' && inputs.ha_monitor
         shell: bash

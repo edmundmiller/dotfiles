@@ -78,9 +78,16 @@ export def nuc-local-rebuild [] {
   nuc-post-deploy-check true
 }
 
-export def nuc-revision-deploy [revision: string] {
+export def nuc-revision-deploy [revision: string, guard: string = "exact"] {
   if not ($revision =~ '^[0-9a-f]{40}$') {
     error make {msg: "NUC revision deployment requires an exact 40-character lowercase Git SHA"}
+  }
+  # exact: the SHA must still be live main. published: continuous rollout may
+  # activate a green commit main has passed, but it must remain reachable from main.
+  let guard_flag = match $guard {
+    "exact" => $"--nuc-deploy-expected-main=($revision)"
+    "published" => $"--nuc-deploy-published=($revision)"
+    _ => { error make {msg: "NUC revision guard must be exact or published"} }
   }
   let ctx = (context)
   let lock = (^git -C $ctx.flake_dir show $"($revision):flake.lock" | complete)
@@ -99,7 +106,7 @@ export def nuc-revision-deploy [revision: string] {
     'export PATH="/run/wrappers/bin:$PATH"'
     'printf "hostname=%s\n" "$(hostname)"; uname -a'
     'test "$(hostname)" = nuc'
-    $"sudo -n nix-private-github --nuc-deploy-expected-main=($revision) --nuc-deploy-source-head=($revision) --nuc-deploy-source-base=($revision) --nuc-deploy-source-owner=github-nuc-deploy nixos-rebuild switch --flake github:edmundmiller/dotfiles/($revision)#nuc --show-trace --accept-flake-config --max-jobs 1"
+    $"sudo -n nix-private-github ($guard_flag) --nuc-deploy-source-head=($revision) --nuc-deploy-source-base=($revision) --nuc-deploy-source-owner=github-nuc-deploy nixos-rebuild switch --flake github:edmundmiller/dotfiles/($revision)#nuc --show-trace --accept-flake-config --max-jobs 1"
     'actual="$(nixos-version --configuration-revision)"'
     'printf "configurationRevision=%s\n" "$actual"'
     $"test \"$actual\" = '($expected)'"

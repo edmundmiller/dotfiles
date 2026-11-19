@@ -67,6 +67,8 @@ jobs:
     timeout-minutes: 5
     env:
       GH_TOKEN: ${{ secrets.DOTFILES_SHIP_TOKEN }}
+      # Standing NUC rollout authority; Ship then publishes and never dispatches deployment.
+      NUC_ROLLOUT: ${{ vars.NUC_ROLLOUT }}
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
       # Always keep trusted main checked out, including between successor steps.

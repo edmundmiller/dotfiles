@@ -178,6 +178,20 @@ thread; reporting still requires an unarchived listener. Updating the saved Amp
 Ship prompt is a separate approved project-setting action. The exact proposed
 text is `.agents/ship.md`; no prompt setting changes when the file is edited.
 
+### Standing NUC rollout
+
+`NUC_ROLLOUT=continuous` is the standing NUC activation authority. Edmund
+approves this repository-settings change separately; Ship requests never set
+or imply it, and `paused` revokes it. While it is enabled, Ship ends at
+publication, with `deployment: standing_rollout` or `publication_only`, and the
+[continuous rollout](deploy-nuc.md#continuous-rollout) route activates the
+newest green published commit later. Ship's revocation does not pause standing
+rollout. For push-only or no-deploy work, add `NUC-Rollout: publication-only`
+to every task commit: the commit then never triggers activation, but it rides
+along with the next rollout. Use `NUC-Rollout: hold` to stop automatic rollout
+before a commit. With rollout disabled, the exact-request deployment and
+stale-main guards above apply unchanged.
+
 ## Small admission suite
 
 Candidates use the same changed-path portable/Linux selection as main, with

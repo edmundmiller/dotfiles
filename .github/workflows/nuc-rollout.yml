@@ -1,0 +1,51 @@
+name: NUC rollout
+run-name: NUC rollout wake-up (${{ github.event_name }})
+
+# Wake-up only. Standing authority is the repository variable
+# NUC_ROLLOUT=continuous; per-task Ship approvals never enable this workflow.
+# It dispatches Deploy NUC operation=rollout because the tailnet identity trusts
+# only workflow_dispatch. That run picks the newest green published commit.
+on:
+  workflow_run:
+    workflows: [CI, Deploy NUC]
+    types: [completed]
+  schedule:
+    # The only automatic retry of a deferred (host-busy) rollout; also catches missed events.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: nuc-rollout
+  cancel-in-progress: false
+
+jobs:
+  wake:
+    if: >-
+      github.repository == 'edmundmiller/dotfiles' && vars.NUC_ROLLOUT == 'continuous' &&
+      (github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NUC_ROLLOUT: ${{ vars.NUC_ROLLOUT }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Request one rollout when current main is unevaluated
+        env:
+          EVENT: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "$EVENT" != workflow_run ]]; then args=(--retry-deferred); fi
+          python3 scripts/nuc_rollout.py dispatch "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

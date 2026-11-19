@@ -177,6 +177,27 @@ class ShipTests(unittest.TestCase):
         self.assertNotEqual(self.cli("advance", self.event(main=True)).returncode, 0)
         self.assertEqual(len(self.state()["dispatches"]), 1)
 
+    def test_standing_rollout_never_turns_task_approval_into_a_dispatch(self):
+        self.env["NUC_ROLLOUT"] = "continuous"
+        self.assertEqual(self.cli("advance", self.event()).returncode, 0)
+        self.assertEqual(self.f.remote_main(), self.f.sha)
+        self.main_ci()
+        result = self.cli("advance", self.event(main=True))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["deployment"], "standing_rollout")
+        self.assertFalse(self.state().get("dispatches"))
+        self.assertNotIn(f"refs/tags/ship-deploy/{self.f.sha}", self.state().get("refs", {}))
+
+    def test_standing_rollout_requires_explicit_publication_only_commits(self):
+        self.env["NUC_ROLLOUT"] = "continuous"
+        inputs = self.inputs | {"deploy": "false"}
+        result = self.cli("register", {"ref": "refs/heads/main", "inputs": inputs})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("NUC-Rollout: publication-only", result.stderr)
+        self.env["NUC_ROLLOUT"] = "paused"  # Without standing authority nothing changes.
+        self.assertEqual(self.cli("register", {"ref": "refs/heads/main",
+                                               "inputs": inputs}).returncode, 0)
+
     def test_ci_finished_before_registration_is_not_a_lost_event(self):
         self.f.state["artifacts"] = []
         self.f.state["requests"][0]["status"] = "in_progress"

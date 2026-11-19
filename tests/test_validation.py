@@ -986,6 +986,20 @@ class NucDeploymentWorkflowTests(unittest.TestCase):
                 else:
                     self.assertNotEqual(result.returncode, 0, result.stdout)
                     self.assertIn("NUC deployment revision mismatch", result.stderr)
+        # Rollout may record a main that has since advanced, but never a non-SHA.
+        for expected_sha, accepted in (
+            ("89abcdef0123456789abcdef0123456789abcdef", True),
+            ("$(exit 0)", False),
+            ("", False),
+        ):
+            with self.subTest(operation="rollout", expected_sha=expected_sha):
+                result = subprocess.run(
+                    ["bash", "-c", github + gate],
+                    env=os.environ | {"DEPLOY_SHA": captured_sha,
+                                      "EXPECTED_SHA": expected_sha, "OPERATION": "rollout"},
+                    capture_output=True, text=True, timeout=5,
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
 
 
 subprocess_run = subprocess.run

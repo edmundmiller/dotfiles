@@ -674,6 +674,26 @@ for case in [
     assert ($activation | str contains $"--flake github:edmundmiller/dotfiles/($deploy_revision)#nuc")
   }
 }
+rm -f $revision_marker
+let published_ok = (with-env {
+  PATH: ([$revision_bin] ++ $env.PATH)
+  MISE_PROJECT_ROOT: $revision_repo
+  NUC_TEST_HOST: "nuc"
+  NUC_TEST_PROVENANCE: $deployed_provenance
+  NUC_TEST_ACTIVATION: $revision_marker
+  NUC_TEST_REBUILD_STATUS: "0"
+  NUC_TEST_TIMER_STATUS: "4"
+  NUC_TEST_SSH_STATUS: "0"
+} { (^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision published | complete).exit_code == 0 })
+assert $published_ok
+let published_activation = (open --raw $revision_marker)
+assert ($published_activation | str contains $"--nuc-deploy-published=($deploy_revision)")
+assert not ($published_activation | str contains "--nuc-deploy-expected-main")
+assert ($published_activation | str contains $"--flake github:edmundmiller/dotfiles/($deploy_revision)#nuc")
+rm -f $revision_marker
+let unknown_guard_blocked = ((^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision latest | complete).exit_code != 0)
+assert $unknown_guard_blocked
+assert not ($revision_marker | path exists)
 let invalid_revision_blocked = ((^$nu.current-exe --no-config-file $nuc_task revision "main; exit 0" | complete).exit_code != 0)
 assert $invalid_revision_blocked
 rm -rf $temp_dir

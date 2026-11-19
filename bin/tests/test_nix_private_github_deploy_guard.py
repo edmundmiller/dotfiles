@@ -33,8 +33,14 @@ class NucDeployGuardTest(unittest.TestCase):
         self.fake_git.write_text(
             f"#!{bash}\n"
             "set -euo pipefail\n"
+            'if [[ "${1:-}" == -C ]]; then shift 2; fi\n'
             'case "${1:-}" in\n'
             "  rev-parse) exit 1 ;;\n"
+            "  init) exit 0 ;;\n"
+            '  fetch) printf \'%s\\n\' "$*" >>"$FAKE_GIT_LOG"; exit "${FAKE_GIT_FETCH_STATUS:-0}" ;;\n'
+            '  merge-base) printf \'%s\\n\' "$*" >>"$FAKE_GIT_LOG"; '
+            'if [[ "${3:-}" == "${FAKE_ACTIVE_SHA:-}" ]]; then exit "${FAKE_ACTIVE_ANCESTOR_STATUS:-0}"; fi; '
+            'exit "${FAKE_GIT_ANCESTOR_STATUS:-1}" ;;\n'
             "  ls-remote)\n"
             '    if [[ -n "${FAKE_GIT_REMOTE_MAIN:-}" ]]; then\n'
             '      printf \'%s\\trefs/heads/main\\n\' "$FAKE_GIT_REMOTE_MAIN"\n'
@@ -46,6 +52,9 @@ class NucDeployGuardTest(unittest.TestCase):
             encoding="utf-8",
         )
         self.fake_git.chmod(0o755)
+        version = self.git_bin / "nixos-version"
+        version.write_text(f"#!{bash}\nprintf '%s\\n' \"${{FAKE_ACTIVE_REVISION}}\"\n")
+        version.chmod(0o755)
         self.command.write_text(
             f"#!{bash}\n"
             "set -euo pipefail\n"
@@ -60,12 +69,16 @@ class NucDeployGuardTest(unittest.TestCase):
         )
         self.command.chmod(0o755)
         self.env = os.environ | {
+            "PATH": f"{self.git_bin}{os.pathsep}{os.environ['PATH']}",
             "GITHUB_NIX_TOKEN_FILE": str(self.token),
             "NIXOS_DEPLOY_LOCK_FILE": str(self.root / "deploy.lock"),
             "NIXOS_DEPLOY_OWNER_FILE": str(self.root / "deploy.owner"),
             "NIXOS_DEPLOY_REMOTE_MAIN": "main-sha",
             "COMMAND_MARKER": str(self.marker),
             "COMMAND_READY": str(self.ready),
+            "FAKE_GIT_LOG": str(self.root / "git.log"),
+            "FAKE_ACTIVE_SHA": "d" * 40,
+            "FAKE_ACTIVE_REVISION": f"dotfiles={'d' * 40};agents-workspace={'e' * 40}",
         }
 
     def run_wrapper(
@@ -308,6 +321,78 @@ class NucDeployGuardTest(unittest.TestCase):
                         f"github:edmundmiller/dotfiles/{approved}#nuc",
                         self.marker.read_text(),
                     )
+
+    def test_published_revision_may_trail_live_main_but_must_be_reachable(self) -> None:
+        approved, newer = "a" * 40, "b" * 40
+        for current, fetch, ancestor, allowed in [
+            (approved, "0", "1", True),  # Equal to main needs no history.
+            (newer, "0", "0", True),  # Main advanced past a green commit.
+            (newer, "0", "1", False),  # Unpublished or force-pushed away.
+            (newer, "128", "0", False),  # History unavailable fails closed.
+            ("not-a-sha", "0", "0", False),
+        ]:
+            with self.subTest(current=current, fetch=fetch, ancestor=ancestor):
+                self.marker.unlink(missing_ok=True)
+                (self.root / "git.log").unlink(missing_ok=True)
+                result = self.run_wrapper(
+                    f"--nuc-deploy-published={approved}",
+                    "--nuc-deploy-allow-stale",
+                    str(self.command), "switch", "--flake",
+                    f"github:edmundmiller/dotfiles/{approved}#nuc",
+                    env={
+                        "FAKE_GIT_REMOTE_MAIN": current,
+                        "FAKE_GIT_FETCH_STATUS": fetch,
+                        "FAKE_GIT_ANCESTOR_STATUS": ancestor,
+                        "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                        "NIXOS_DEPLOY_REMOTE_MAIN": approved,
+                    },
+                )
+                self.assertEqual(result.returncode == 0, allowed, result.stderr)
+                self.assertEqual(self.marker.exists(), allowed)
+                if current == newer and fetch == "0":
+                    self.assertIn(
+                        f"merge-base --is-ancestor {approved} {newer}",
+                        (self.root / "git.log").read_text(),
+                    )
+
+    def test_published_revision_keeps_exact_flake_binding(self) -> None:
+        approved = "a" * 40
+        for args in [
+            [f"--nuc-deploy-published={approved}", str(self.command), "switch",
+             "--flake", "github:edmundmiller/dotfiles/" + "b" * 40 + "#nuc"],
+            [f"--nuc-deploy-published={approved}", str(self.command), "--rollback", "switch"],
+            [f"--nuc-deploy-published={approved}", f"--nuc-deploy-expected-main={approved}",
+             str(self.command), "switch", "--flake",
+             f"github:edmundmiller/dotfiles/{approved}#nuc"],
+            ["--nuc-deploy-published=main", str(self.command), "switch"],
+        ]:
+            with self.subTest(args=args):
+                result = self.run_wrapper(
+                    *args, env={"FAKE_GIT_REMOTE_MAIN": approved,
+                                "NIXOS_DEPLOY_GIT": str(self.fake_git)},
+                )
+                self.assertEqual(result.returncode, 64, result.stderr)
+                self.assertFalse(self.marker.exists())
+
+    def test_published_revision_rechecks_active_generation_under_lock(self) -> None:
+        approved = "a" * 40
+        for revision, ancestor, allowed in [
+            (f"dotfiles={'d' * 40};agents-workspace={'e' * 40}", "0", True),
+            (f"dotfiles={'d' * 40};agents-workspace={'e' * 40}", "1", False),
+            ("unknown-generation", "0", False),
+        ]:
+            with self.subTest(revision=revision, ancestor=ancestor):
+                self.marker.unlink(missing_ok=True)
+                result = self.run_wrapper(
+                    f"--nuc-deploy-published={approved}", str(self.command), "switch", "--flake",
+                    f"github:edmundmiller/dotfiles/{approved}#nuc",
+                    env={"FAKE_GIT_REMOTE_MAIN": approved,
+                         "FAKE_ACTIVE_REVISION": revision,
+                         "FAKE_ACTIVE_ANCESTOR_STATUS": ancestor,
+                         "NIXOS_DEPLOY_GIT": str(self.fake_git)},
+                )
+                self.assertEqual(result.returncode == 0, allowed, result.stderr)
+                self.assertEqual(self.marker.exists(), allowed)
 
     def test_approved_revision_rejects_branch_names_before_activation(self) -> None:
         result = self.run_wrapper(

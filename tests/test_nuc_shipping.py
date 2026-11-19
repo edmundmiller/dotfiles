@@ -403,7 +403,16 @@ gh() {
             self.assertNotIn(privileged, waiting)
             self.assertIn(privileged, deployment)
         self.assertIn("needs: wait-for-ci", deployment)
-        self.assertNotIn("always()", deployment)
+        # A failed wait must skip the job; only rollout readback/report steps run after failure.
+        self.assertNotIn("always()", deployment.split("    steps:\n", 1)[0])
+        self.assertIn(
+            "- name: Require standing rollout authority\n        if: inputs.operation == 'rollout'\n",
+            waiting,
+        )
+        self.assertIn('if [[ "$NUC_ROLLOUT" != continuous ]]; then', waiting)
+        self.assertIn("NUC_ROLLOUT: ${{ vars.NUC_ROLLOUT }}", waiting)
+        self.assertIn("mise run nuc revision \"$TARGET\" published", deployment)
+        self.assertIn('mise run nuc revision "$DEPLOY_SHA"\n', deployment)
         self.assertIn("inputs.expected_sha", deployment)
         self.assertIn("mise run nuc revision", deployment)
         for name in (

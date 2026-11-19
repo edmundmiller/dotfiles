@@ -13,6 +13,7 @@ import tempfile
 
 import candidate_ci as ci
 import nuc_shipping as nuc
+import nuc_rollout as rollout
 
 WORKFLOW = ".github/workflows/ship.yml"
 ARTIFACT = "ship-request-v1"
@@ -34,6 +35,10 @@ def request_options(inputs):
     if options["deploy_rebased"] == "true" and inputs["deploy"] != "true":
         raise ValueError("Rebased deployment requires deployment authority")
     return options if options["allow_clean_rebase"] == "true" else {}
+
+
+def continuous():
+    return os.environ.get("NUC_ROLLOUT") == "continuous"
 
 
 def api(endpoint, payload=None):
@@ -108,6 +113,9 @@ def register(event):
         raise ValueError("Candidate ref differs from the authorized revision")
     ci.git("fetch", "--no-tags", "origin", sha)
     ci.git("merge-base", "--is-ancestor", base, sha)
+    if continuous() and inputs["deploy"] == "false":
+        # Standing rollout would otherwise activate this no-deploy task later.
+        rollout.require_publication_only(base, sha)
     if options:
         ci.git("fetch", "--no-tags", "origin", main, captured)
         ci.git("merge-base", "--is-ancestor", base, captured)
@@ -412,6 +420,11 @@ def advance(event, record=None, successor=None):
         refs = api(f"git/matching-refs/tags/ship-landed/{sha}")
         if not any(item["ref"] == landed_ref and item["object"]["sha"] == sha for item in refs):
             raise ValueError("Main is published but compliant Ship landing is unproved; inspect the original run")
+    if continuous():
+        # Standing rollout owns activation; a task approval never dispatches,
+        # so it cannot become approval for whatever main holds later.
+        return {"state": "published", "sha": sha, "deployment":
+                "standing_rollout" if record["deploy"] == "true" else "publication_only"}
     if record["deploy"] == "false":
         return {"state": "published", "sha": sha, "deployment": "not_authorized"}
     query = ci.urlencode(dict(branch="main", event="push", head_sha=sha, per_page=1))

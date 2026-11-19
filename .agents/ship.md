@@ -60,3 +60,11 @@ deployment options. Missing workflow/credential access is a blocker, not a
 reason to provision SSH, reuse an unrelated token, change access policy, or
 weaken CI. Do not change live rulesets or this project's saved Ship prompt
 without approval. This invocation grants no unrelated deployment or cleanup.
+
+Standing NUC rollout: when the repository variable NUC_ROLLOUT=continuous is
+enabled, Ship reports standing_rollout or publication_only and never dispatches
+Deploy NUC. Report publication on its own, without waiting for host readback,
+and report activation from the later nuc-rollout-report artifact. For push-only
+or no-deploy, add "NUC-Rollout: publication-only" to every task commit; add
+"NUC-Rollout: hold" only when the user wants rollout stopped before the change.
+Never set or change NUC_ROLLOUT as part of shipping.

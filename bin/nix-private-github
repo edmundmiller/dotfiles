@@ -5,6 +5,7 @@ token_file="${GITHUB_NIX_TOKEN_FILE:-/var/lib/opnix/secrets/githubNixToken}"
 deploy_source_head=""
 deploy_source_base=""
 deploy_expected_main=""
+deploy_published=""
 deploy_source_owner="${SUDO_USER:-${USER:-unknown}}"
 deploy_allow_stale="${NIXOS_DEPLOY_ALLOW_STALE:-0}"
 
@@ -14,6 +15,14 @@ while [[ $# -gt 0 ]]; do
       deploy_expected_main="${1#*=}"
       if [[ ! "$deploy_expected_main" =~ ^[0-9a-f]{40}$ ]]; then
         echo "nix-private-github: expected main must be an exact commit SHA" >&2
+        exit 64
+      fi
+      shift
+      ;;
+    --nuc-deploy-published=*)
+      deploy_published="${1#*=}"
+      if [[ ! "$deploy_published" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "nix-private-github: published revision must be an exact commit SHA" >&2
         exit 64
       fi
       shift
@@ -79,9 +88,15 @@ if [[ "$command_name" == "nixos-rebuild" ]]; then
   done
 fi
 
-# This option binds the fetched source as well as live main. A matching approval
+if [[ -n "$deploy_expected_main" && -n "$deploy_published" ]]; then
+  echo "nix-private-github: choose exactly one approved revision guard" >&2
+  exit 64
+fi
+deploy_approved="${deploy_expected_main:-$deploy_published}"
+
+# These options bind the fetched source as well as live main. A matching approval
 # must not accidentally accompany another flake, a local tree, or rollback.
-if [[ -n "$deploy_expected_main" ]]; then
+if [[ -n "$deploy_approved" ]]; then
   deploy_flakes=()
   previous=""
   for arg in "${@:2}"; do
@@ -96,7 +111,7 @@ if [[ -n "$deploy_expected_main" ]]; then
     fi
     previous="$arg"
   done
-  if [[ "$deploy_mutation" != 1 || ${#deploy_flakes[@]} != 1 || "${deploy_flakes[0]:-}" != "github:edmundmiller/dotfiles/${deploy_expected_main}#nuc" ]]; then
+  if [[ "$deploy_mutation" != 1 || ${#deploy_flakes[@]} != 1 || "${deploy_flakes[0]:-}" != "github:edmundmiller/dotfiles/${deploy_approved}#nuc" ]]; then
     echo "nix-private-github: approved revision requires the exact pinned NUC flake" >&2
     exit 64
   fi
@@ -161,12 +176,12 @@ if [[ -z "$deploy_source_head" || -z "$deploy_source_base" ]]; then
 fi
 
 deploy_git="${NIXOS_DEPLOY_GIT:-git}"
-if [[ "$dotfiles_remote_flake" -eq 1 || -n "$deploy_expected_main" ]]; then
+if [[ "$dotfiles_remote_flake" -eq 1 || -n "$deploy_approved" ]]; then
   remote_main=""
 else
   remote_main="${NIXOS_DEPLOY_REMOTE_MAIN:-}"
 fi
-if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 || -n "$deploy_expected_main" ]]; then
+if [[ "$remote_flake" -eq 0 || "$dotfiles_remote_flake" -eq 1 || -n "$deploy_approved" ]]; then
   if [[ -z "$remote_main" ]]; then
     if ! remote_main_output="$(
       "$deploy_git" ls-remote \
@@ -189,6 +204,36 @@ fi
 if [[ -n "$deploy_expected_main" && "$remote_main" != "$deploy_expected_main" ]]; then
   echo "nix-private-github: approved commit is no longer dotfiles origin/main; rerun CI and deployment" >&2
   exit 65
+fi
+
+# Continuous rollout may activate a green commit that main has since passed.
+# Check both publication and the actual active generation under the switch lock:
+# an operator may have advanced the host since the workflow selected its target.
+if [[ -n "$deploy_published" ]]; then
+  if [[ ! "$remote_main" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "nix-private-github: current dotfiles origin/main is not a commit SHA" >&2
+    exit 65
+  fi
+  active_revision="$(nixos-version --configuration-revision)"
+  if [[ ! "$active_revision" =~ ^dotfiles=([0-9a-f]{40})\;agents-workspace=[0-9a-f]{40}$ ]]; then
+    echo "nix-private-github: cannot identify active dotfiles revision; refusing automatic activation" >&2
+    exit 65
+  fi
+  active_sha="${BASH_REMATCH[1]}"
+  ancestry_dir="$(mktemp -d)"
+  if ! {
+    "$deploy_git" -C "$ancestry_dir" init --quiet --bare &&
+      "$deploy_git" -C "$ancestry_dir" fetch --quiet --no-tags --filter=tree:0 \
+        https://github.com/edmundmiller/dotfiles.git "$remote_main" &&
+      { [[ "$deploy_published" == "$remote_main" ]] ||
+        "$deploy_git" -C "$ancestry_dir" merge-base --is-ancestor "$deploy_published" "$remote_main"; } &&
+      "$deploy_git" -C "$ancestry_dir" merge-base --is-ancestor "$active_sha" "$deploy_published"
+  }; then
+    rm -rf "$ancestry_dir"
+    echo "nix-private-github: target must be published on main and descend from the active generation" >&2
+    exit 65
+  fi
+  rm -rf "$ancestry_dir"
 fi
 
 if [[ "$dotfiles_remote_flake" -eq 1 ]]; then

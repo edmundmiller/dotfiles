@@ -191,7 +191,8 @@ or tailnet enrollment. The workflow deploys only when the requested SHA equals
 the commit captured at dispatch. It requires the latest main-push CI run for
 that exact commit to have completed successfully. Missing, failed, or running
 CI blocks deployment. If main moves before the NUC acquires its deployment
-lock, dispatch again for the new commit after its CI succeeds.
+lock, the exact request stops; with standing rollout enabled, the
+[continuous rollout](#continuous-rollout) route catches up instead.
 
 Tailscale trusts only this repository's `deploy-nuc.yml` workflow on main,
 running through `workflow_dispatch` in the `nuc` environment on GitHub-hosted
@@ -503,6 +504,109 @@ generation through the existing authorized `hey nuc-rollback` procedure;
 `hey nuc revision` deliberately refuses older main commits. A rollback to an
 older generation may restore its upgrade timer, which must be checked before
 leaving the host unattended. Do not restore the wildcard source grant to fix CI.
+
+## Continuous rollout
+
+Routine NUC catch-up runs after publication, not inside it. A host failure
+never blocks Ship, CI or the next publication.
+
+**Standing authority.** The repository variable `NUC_ROLLOUT=continuous`
+enables rollout. Edmund approves that settings change separately; shipping
+never sets it. Unset or any other value disables rollout, and `paused` revokes
+it. Ship's `--deploy`, `--deploy-rebased` and authority strings never enable
+it. While it is enabled, Ship publishes and returns `deployment:
+standing_rollout` (deploy requested) or `publication_only`, and never dispatches
+Deploy NUC itself. A task approval therefore cannot become approval for
+whatever main holds later.
+
+**Opting out.** Commit trailers control rollout:
+
+- `NUC-Rollout: publication-only` stops the commit from triggering activation
+  by itself. If every commit since the active revision carries it, the run
+  reports `nothing_to_activate`. The commit still rides along with the next
+  eligible rollout: a commit on main is never kept off the host. While rollout
+  is enabled, Ship rejects a no-deploy request unless every task commit has
+  this trailer or `hold`.
+- `NUC-Rollout: hold` stops automatic rollout before that commit. Rollout
+  resumes after a human deploys an exact SHA at or past it through
+  `operation=deploy`.
+
+Unknown trailer values fail closed.
+
+**Triggers and coalescing.** `nuc-rollout.yml` wakes on completed main CI, on
+completed Deploy NUC runs, on an hourly sweep, or by hand. It dispatches Deploy
+NUC `operation=rollout` once for each unevaluated main head, because the tailnet
+identity trusts only `workflow_dispatch`. It never displaces a pending run. The
+shared `deploy-nuc` concurrency group serializes runs without cancelling an
+active switch. Each rollout picks its target when it starts, so revisions that
+landed while a switch was running collapse into a single later rollout.
+
+**Selection** (`scripts/nuc_rollout.py select`). The target is the newest
+first-parent commit, at or before live main, that meets all of these:
+
+- Its latest main-push `ci.yml` attempt succeeded. Pending, failed or rerun
+  commits fall back to an older green commit.
+- It descends from the host's active `dotfiles=` revision.
+- It is not past a `hold`.
+- It has no `nuc-rollout-failed-<sha>` marker. That marker excludes only its
+  exact SHA, so a newer green descendant is the fix-forward retry.
+
+These cases stop instead of selecting:
+
+| Outcome            | Condition                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| `diverged`         | The active revision is unpublished or more than 100 commits behind main. Rollout never downgrades. |
+| `blocked`          | A `nuc-rollout-blocked` marker is newer than the last `nuc-rollout-deployed`.                      |
+| `current`          | The host already runs live main.                                                                   |
+| `nothing_eligible` | No commit qualifies yet.                                                                           |
+
+**Activation guard.** The rollout calls `hey nuc revision <SHA> published`. That
+command keeps the exact pinned-flake build, provenance readback and host lock.
+Under that lock, the host wrapper's `--nuc-deploy-published` checks that the
+target is still reachable from live `origin/main`; it no longer requires the
+target to _be_ main. Exact deployments keep `--nuc-deploy-expected-main`.
+Hosts running an older wrapper reject the new flag, so an exact deployment of
+the implementation must bootstrap it first.
+
+**Failure handling.** After activation, the run always reads the host back:
+configurationRevision, `/run/current-system`, `/run/booted-system`, failed
+units, and the service units whose state changed during the run. It classifies
+the result from that readback, never from the exit status alone:
+
+| Outcome               | Meaning                                 | Next                                                                             |
+| --------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
+| `deployed`            | Target active and health checks passed. | Writes `nuc-rollout-deployed`.                                                   |
+| `host_busy`           | Lock held; host unchanged.              | Writes `nuc-rollout-deferred`; the next trigger or sweep retries.                |
+| `not_activated`       | Previous generation still active.       | Writes `nuc-rollout-failed-<sha>`; fix forward.                                  |
+| `activated_unhealthy` | Target active, health failed.           | Writes `nuc-rollout-failed-<sha>`; repair forward or `hey nuc rollback`.         |
+| `unknown`             | Neither revision is active.             | Writes `nuc-rollout-blocked`; a human inspects the host or deploys an exact SHA. |
+
+A failed SHA is never redeployed automatically. A successful exact deployment
+writes `nuc-rollout-deployed` and clears `blocked`.
+
+**Reporting to Amp.** Every rollout run uploads a `nuc-rollout-report` JSON
+artifact and writes a step summary. Both include the target, previous and
+active revisions, live main, the classification, changed units with their
+state, failed units, the run URL and the next action. Any outcome other than
+`deployed`, `current`, `nothing_to_activate`, `nothing_eligible` or
+`host_busy` fails the run. Amp is notified through a standing GitHub CI
+subscription on `deploy-nuc.yml` for `main`. Creating that subscription needs
+approval.
+
+**Checks before and after publication.** The required pre-publication checks
+are unchanged: affected-path `Flake Check (Linux)` and `Check Formatting` on
+the exact candidate. These run after publication and gate or verify rollout,
+not publication:
+
+- exact-main push CI,
+- the full NUC toplevel build on the host,
+- activation,
+- provenance readback,
+- HA-runtime email receiver checks,
+- changed-unit health.
+
+Darwin, service VM and full NixOS platform suites stay opt-in exactly as
+before. None moved, and none was dropped.
 
 ## Cron trigger ownership
 
