@@ -774,7 +774,8 @@ class PlantEntityDiagnosticsTests(unittest.TestCase):
 
 
 class ClimateEntityDiagnosticsTests(unittest.TestCase):
-    def invoke(self, lines=(), error=None, denied=False, args=(), state_error=None, state=None):
+    def invoke(self, lines=(), error=None, denied=False, args=(), state_error=None, state=None,
+               diagnostics=None, diagnostics_error=None, device_id="d" * 32):
         socket = MagicMock()
         socket.__enter__.return_value = socket
 
@@ -791,7 +792,7 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             {"id": 1, "type": "result", "success": not denied, "result": {
                 "entity_id": "climate.master_suite", "platform": "homekit_controller",
                 "config_entry_id": "a" * 32, "disabled_by": None,
-                "unique_id": "private-device", "name": "private-title",
+                "device_id": device_id, "unique_id": "private-device", "name": "private-title",
             }, "error": {"message": "private-error"}},
             {"id": 2, "type": "result", "success": True, "result": [
                 {"entry_id": "b" * 32, "domain": "ecobee", "state": "setup_error"},
@@ -820,13 +821,32 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             "attributes": {"private": "192.0.2.42"}, "context": {"user_id": "private"},
         }
 
+        diagnostic = diagnostics if diagnostics is not None else {
+            "home_assistant": {"version": "2026.11.0", "private": "private"},
+            "data": {
+                "config-entry": {"title": "private", "data": {"Connection": "IP", "iOSDeviceLTSK": "private"}},
+                "device": {"manfacturer": "ecobee", "model": "EB-STATE5-01",
+                           "sw_version": "4.9.30.7", "hw_version": "1.0", "name": "private",
+                           "entities": [{"state": "private"}]},
+                "entity-map": [{"private": "192.0.2.42"}],
+            },
+        }
+
         def state_response(request, **_kwargs):
-            if request.full_url != "http://127.0.0.1:8123/api/states/climate.master_suite" or request.get_method() != "GET":
-                raise PermissionError("Fixture rejects unrelated state or writes")
-            if state_error:
-                raise state_error
+            if request.get_method() != "GET":
+                raise PermissionError("Fixture rejects writes")
+            if request.full_url == "http://127.0.0.1:8123/api/states/climate.master_suite":
+                if state_error:
+                    raise state_error
+                body = state
+            elif request.full_url == f"http://127.0.0.1:8123/api/diagnostics/config_entry/{'a' * 32}/device/{'d' * 32}":
+                if diagnostics_error:
+                    raise diagnostics_error
+                body = diagnostic
+            else:
+                raise PermissionError("Fixture rejects unrelated reads")
             response = MagicMock()
-            response.__enter__.return_value = io.StringIO(json.dumps(state))
+            response.__enter__.return_value = io.StringIO(json.dumps(body))
             return response
 
         output = io.StringIO()
@@ -988,6 +1008,35 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
         self.assertEqual(journal["category_counts"], [{
             "scope": "homekit_library_not_entity_specific", "category": "connection_failure", "count": 1,
         }])
+
+    def test_recurrence_device_metadata_uses_registry_link_and_stays_partial_on_denial(self):
+        args = ["--incident-start", "2026-11-01T07:00:00Z", "--incident-cutoff", "2026-11-01T07:05:00Z"]
+        records = [self.record("2026-11-01T07:01:00Z", "retained private")]
+        code, result = self.invoke(records, args=args)
+        self.assertEqual(code, 0)
+        device = result["mapping"]["device"]
+        self.assertEqual({key: device[key] for key in (
+            "status", "manufacturer", "model", "firmware", "hardware_version", "ha_version", "transport",
+        )}, {"status": "ok", "manufacturer": "ecobee", "model": "EB-STATE5-01", "firmware": "4.9.30.7",
+            "hardware_version": "1.0", "ha_version": "2026.11.0", "transport": "IP"})
+        for options in ({"device_id": None}, {"device_id": "../private"},
+                        {"diagnostics_error": PermissionError("private")}, {"diagnostics": {}}):
+            with self.subTest(options=options):
+                code, partial = self.invoke(records, args=args, **options)
+                self.assertEqual(code, 2)
+                self.assertEqual(partial["mapping"]["device"]["status"], "unknown")
+                self.assertEqual(partial["mapping"]["platform"], "homekit_controller")
+                self.assertEqual(partial["current_state"]["state"], "heat")
+                self.assertEqual(partial["journal"]["retained_records_in_windows"], 1)
+        code, result = self.invoke(records, args=args, diagnostics={
+            "home_assistant": {"version": "2026.11.0"},
+            "data": {"device": {"model": "bad\nprivate", "sw_version": ["private"]},
+                     "config-entry": {"data": {"Connection": "private"}}},
+        })
+        self.assertEqual(code, 0)
+        self.assertIsNone(result["mapping"]["device"]["model"])
+        self.assertIsNone(result["mapping"]["device"]["firmware"])
+        self.assertEqual(result["mapping"]["device"]["transport"], "unknown")
 
     def test_recurrence_caps_window_and_does_not_export_unbounded_events(self):
         args = ["--incident-start", "2026-11-01T06:59:00.123456Z", "--incident-cutoff", "2026-11-01T08:00:00Z"]

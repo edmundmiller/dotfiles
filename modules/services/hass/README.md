@@ -226,9 +226,17 @@ UTC timestamps. An aggregate monitor failure alone does not identify this entity
    checker timing, retention/decoding omissions and the run link. Entity-specific,
    integration-wide and `aiohomekit` library evidence have separate attribution
    scopes. Zero matches do not prove absence of errors; separately stored
-   traceback records may remain unassociated. Keep raw logs, addresses,
-   attributes and credentials on-host. Passive endpoint metadata is disabled
-   while entity-to-endpoint association is unproved.
+   traceback records may remain unassociated. The recurrence snapshot also
+   follows the fixed entity's registry device ID to HA's device-scoped HomeKit
+   diagnostics GET. Export only reported manufacturer, model, firmware, hardware
+   version, HA version and an allowlisted transport type. Missing linkage,
+   denied access or unsupported diagnostics preserve the other evidence, mark
+   device metadata unknown and exit 2. Do not infer IP transport from missing
+   metadata or equate reported hardware metadata with physical verification.
+   Historical no-argument reads do not request device diagnostics. Keep the raw
+   diagnostic response, entity map, other states, pairing data, identifiers,
+   logs, addresses, attributes and credentials on-host. Passive endpoint metadata
+   remains disabled while entity-to-endpoint association is unproved.
 
 This procedure grants no standing execution authority or new automation. It
 changes no live logging or settings and permits no restart, reload, active

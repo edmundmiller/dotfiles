@@ -47,7 +47,31 @@ def request(socket, request_id, command, **fields):
     return reply["result"]
 
 
-def mapping(socket):
+def device_details(token, entry_id, device_id):
+    if not isinstance(device_id, str) or not re.fullmatch(r"[A-Za-z0-9]+", device_id):
+        raise ValueError("No registry-linked device")
+    # HA verifies that the requested device belongs to this config entry.
+    url = f"http://127.0.0.1:8123/api/diagnostics/config_entry/{entry_id}/device/{device_id}"
+    with urlopen(Request(url, headers={"Authorization": "Bearer " + token}), timeout=10) as response:
+        diagnostic = json.load(response)
+    data = diagnostic["data"]
+    device = data["device"]
+    details = {"status": "ok", "source": "HA device-scoped HomeKit diagnostics; execution-time metadata only"}
+    # The upstream diagnostics field is misspelled manfacturer in HA 2026.11.0.
+    for field, value in {
+        "manufacturer": device.get("manufacturer", device.get("manfacturer")),
+        "model": device.get("model"), "firmware": device.get("sw_version"),
+        "hardware_version": device.get("hw_version"),
+        "ha_version": diagnostic["home_assistant"].get("version"),
+    }.items():
+        details[field] = value if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 ._()+/:-]{0,127}", value) else None
+    transport = data["config-entry"]["data"].get("Connection")
+    details["transport"] = transport if transport in {"IP", "BLE", "CoAP"} else "unknown"
+    details["coverage"] = "Reported device metadata, not physical inspection, historical transport proof or endpoint association. No raw diagnostics, entity map, device IDs, pairing data, addresses or other entity states exported."
+    return details
+
+
+def mapping(socket, token=None):
     entity = request(socket, 1, "config/entity_registry/get", entity_id=ENTITY)
     platform = entity["platform"]
     entry_id = entity["config_entry_id"]
@@ -59,7 +83,7 @@ def mapping(socket):
     if not re.fullmatch(r"[a-z0-9_]+", entry["domain"]):
         raise ValueError("Unsupported domain")
     state = entry["state"]
-    return {
+    result = {
         "entity_id": ENTITY,
         "platform": platform,
         "config_entry_id": entry_id,
@@ -71,6 +95,14 @@ def mapping(socket):
         "entity_disabled": entity.get("disabled_by") is not None,
         "integration_disabled": entry.get("disabled_by") is not None,
     }
+    if token is not None:
+        try:
+            if platform != "homekit_controller" or entry["domain"] != "homekit_controller":
+                raise ValueError("Unsupported device diagnostics")
+            result["device"] = device_details(token, entry_id, entity.get("device_id"))
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            result["device"] = {"status": "unknown", "error_type": type(error).__name__}
+    return result
 
 
 def journal_summary(text, entity_mapping, windows=WINDOWS, recurrence=False):
@@ -246,7 +278,7 @@ def current_state(token):
         "last_changed": utc_time(state["last_changed"]).isoformat(),
         "last_updated": utc_time(state["last_updated"]).isoformat(),
         "observed_at": datetime.now(timezone.utc).isoformat(),
-        "coverage": "Current snapshot only, not state or mapping during an earlier incident. Device maker/model and endpoint association are not exported or established.",
+        "coverage": "Current snapshot only, not state or mapping during an earlier incident. Device diagnostics, when available, report metadata rather than physical verification. Endpoint association is not established.",
     }
 
 
@@ -270,7 +302,7 @@ def main():
         socket.send(json.dumps({"type": "auth", "access_token": token}))
         if json.loads(socket.recv(timeout=10)).get("type") != "auth_ok":
             raise ValueError("Authentication failed")
-        entity_mapping = mapping(socket)
+        entity_mapping = mapping(socket, token if recurrence else None)
     state = None
     if recurrence:
         try:
@@ -302,7 +334,9 @@ def main():
             "reason": "No verified entity-to-endpoint association; no socket, route, neighbor reads or active probes",
         }})
     print(json.dumps(result, sort_keys=True))
-    return 0 if summary.get("retained_records_in_windows") and (not recurrence or state.get("status") != "unknown") else 2
+    return 0 if summary.get("retained_records_in_windows") and (not recurrence or (
+        state.get("status") != "unknown" and entity_mapping["device"]["status"] == "ok"
+    )) else 2
 
 
 if __name__ == "__main__":
