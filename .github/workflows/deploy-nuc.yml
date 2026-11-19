@@ -534,10 +534,20 @@ jobs:
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "
             set -eu
             test \"\$(hostname)\" = nuc
-            printf 'configurationRevision=%s\\n' \"\$(nixos-version --configuration-revision)\"
-            systemctl show hass-health.service -p ActiveState -p SubState -p Result -p ExecMainStatus
+            printf 'configurationRevision=%s\\n' \"\$(nixos-version --configuration-revision)\" >&2
+            systemctl show hass-health.service -p ActiveState -p SubState -p Result -p ExecMainStatus >&2
             exec sudo -n uv run --no-project python - status --since-hours 24 $REQUIRE_LIVE
-          " < modules/services/hass/monitor-gatus.py
+          " < modules/services/hass/monitor-gatus.py > "$RUNNER_TEMP/ha-monitor.json"
+          # gh run view silently drops log lines over 64 KiB. Validate the report
+          # and print short JSON lines, preserving unhealthy evidence too.
+          jq -e -s '
+            if length == 1 and (.[0] |
+              .backend == "gatus" and (.observed_at | type == "string") and
+              (.probes | type == "array") and (.probe_coverage | type == "object") and
+              (.journal | type == "object") and (.local_status | type == "object") and
+              (.timer_active | type == "boolean") and (.status_server_active | type == "boolean"))
+            then .[0] else error("Missing or invalid HA monitor aggregate report") end
+          ' "$RUNNER_TEMP/ha-monitor.json"
       - name: Restart Bluetooth once and allow automatic HA retry
         if: inputs.operation == 'ha-diagnostics' && inputs.restart_bluetooth
         shell: bash

@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 from urllib.error import HTTPError
@@ -17,6 +18,10 @@ READY = Path("/var/lib/hass-health/nuc-ha-runtime-gatus.ready")
 STATUS = Path("/run/hass-health/status.json")
 ENDPOINT = "/api/v1/endpoints/smart-home_home-assistant-runtime/statuses?pageSize=1500"
 MAX_AGE = 300
+CRITICAL_ENTITIES = {
+    "climate.main_floor", "climate.master_suite", "script.goodnight",
+    "script.good_morning", "script.get_ready_for_bed",
+}
 
 
 def timestamp(value):
@@ -119,6 +124,38 @@ def inspect(args):
     reports.sort(key=lambda item: item["observed_at"])
     samples.sort(key=lambda item: item["observed_at"])
     recent_reports = [item for item in reports if timestamp(item["observed_at"]) >= cutoff]
+    entity_failures = [
+        {"observed_at": item["observed_at"], "entity_id": failure["entity_id"], "state": failure["state"]}
+        for item in recent_reports
+        for failure in item["checks"].get("critical_entities", {}).get("failures", [])
+        if failure.get("entity_id") in CRITICAL_ENTITIES and failure.get("state") in {"missing", "unknown", "unavailable"}
+    ]
+    alert_journal = subprocess.run(
+        ["journalctl", "-u", "gatus-email.service", "-u", "gatus.service", "--since", cutoff.isoformat(), "-o", "json", "--no-pager"],
+        check=True, capture_output=True, text=True, timeout=20,
+    )
+    alert_records = Counter()
+    alert_errors = []
+    for line in alert_journal.stdout.splitlines():
+        record = json.loads(line)
+        unit = record.get("_SYSTEMD_UNIT")
+        if unit not in {"gatus-email.service", "gatus.service"}:
+            continue
+        alert_records[unit] += 1
+        message = record.get("MESSAGE", "")
+        if not isinstance(message, str):
+            continue
+        category = None
+        if unit == "gatus-email.service" and message.startswith("Email delivery: "):
+            error = message.removeprefix("Email delivery: ")
+            category = error if re.fullmatch(r"email-http-[0-9]{3}|email-network-or-response|email-invalid-receipt", error) else "unclassified_email_error"
+        elif unit == "gatus.service" and "Receiver rejected pending transition" in message and "endpoint=smart-home_home-assistant-runtime route=gatus-email" in message:
+            category = "producer_receiver_rejected"
+        if category:
+            alert_errors.append({
+                "observed_at": datetime.fromtimestamp(int(record["__REALTIME_TIMESTAMP"]) / 1_000_000, UTC).isoformat(),
+                "category": category,
+            })
     probes_in_window = [probe for probe in probes if timestamp(probe["timestamp"]) >= cutoff]
     correlation = Counter()
     observed_samples = set()
@@ -181,6 +218,14 @@ def inspect(args):
         "probe_report_correlation": dict(correlation),
         # A failure at the end of the window may not have been probed yet.
         "failed_samples_not_observed": sum(item["observed_at"] not in observed_samples for item in failed_samples),
+        "critical_entity_failures": entity_failures[:100],
+        "critical_entity_failures_not_exported": max(0, len(entity_failures) - 100),
+        "alert_journal": {
+            "retained_records": dict(alert_records),
+            "errors": alert_errors[:100],
+            "errors_not_exported": max(0, len(alert_errors) - 100),
+            "provider_receipts": "unavailable: production receiver logs errors, not successful provider receipts; absence of errors is not delivery proof",
+        },
         "journal": {
             "reports": len(recent_reports),
             "first_observed_at": recent_reports[0]["observed_at"] if recent_reports else None,

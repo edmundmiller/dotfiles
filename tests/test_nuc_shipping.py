@@ -529,6 +529,54 @@ gh() {
                 self.assertEqual(json.loads(result.stdout), report)
                 self.assertIn("backup_repair", (self.root / "summary").read_text())
 
+    def test_monitor_observation_requires_one_aggregate_report(self):
+        report = {
+            "backend": "gatus", "observed_at": "2026-11-19T22:52:33Z",
+            "probes": [{"timestamp": "2026-11-19T22:52:00Z", "success": False}] * 1500,
+            "probe_coverage": {"complete": False}, "journal": {"last_status": "unhealthy"},
+            "local_status": {"status": "unhealthy"},
+            "timer_active": True, "status_server_active": True,
+        }
+        sudo = self.root / "sudo"
+        sudo.write_text(
+            f"#!{sys.executable}\n"
+            "import os, sys\n"
+            "source = sys.stdin.read()\n"
+            "if source:\n"
+            "    assert 'def inspect(args):' in source\n"
+            "    assert sys.argv[1:] == ['-n', 'uv', 'run', '--no-project', 'python', '-', 'status', '--since-hours', '24']\n"
+            "    print(os.environ['MONITOR_OUTPUT'], end='')\n"
+            "sys.exit(int(os.environ['READ_CODE']))\n"
+        )
+        sudo.chmod(0o755)
+        setup = r"""
+            tailscale() { bash -c "$3"; }
+            hostname() { printf 'nuc\n'; }
+            nixos-version() { printf 'unchanged-revision\n'; }
+            systemctl() { printf 'Result=success\n'; }
+            export -f hostname nixos-version systemctl
+        """
+        self.assertGreater(len(json.dumps(report)), 65536)
+        self.env.update(RUNNER_TEMP=str(self.root), REQUIRE_LIVE="")
+        for output, code, accepted in (
+            (json.dumps(report), 0, True),
+            ("", 0, False),
+            ("{}", 0, False),
+            (json.dumps(report | {"probes": []}) * 2, 0, False),
+            (json.dumps(report), 2, False),
+        ):
+            with self.subTest(output=output, code=code):
+                self.env.update(MONITOR_OUTPUT=output, READ_CODE=str(code))
+                result = self.workflow_shell(
+                    "Inspect Gatus history and privacy-filtered HA runtime aggregates",
+                    setup=textwrap.dedent(setup),
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                if accepted:
+                    self.assertEqual(json.loads(result.stdout), report)
+                    self.assertLess(max(map(len, result.stdout.splitlines())), 65536)
+                    self.assertIn("unchanged-revision", result.stderr)
+
     def test_climate_diagnostics_is_isolated_and_preserves_read_failures(self):
         name = "Inspect climate mapping and categorized retained errors without activation"
         workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
@@ -962,6 +1010,7 @@ class HaMonitorTests(unittest.TestCase):
              "status": "healthy", "checks": {"repairs": {"status": "healthy", "issues": ["private-HA-report"]}}}
             for seconds in (120, 0)
         ]
+        self.alert_logs = []
         self.timer_active = True
         self.server_active = True
         self.api_failure = False
@@ -985,7 +1034,8 @@ class HaMonitorTests(unittest.TestCase):
 
     def command(self, args, **_kwargs):
         if args[0] == "journalctl":
-            return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, self.reports + self.samples)))
+            records = self.reports + self.samples if args[2] == "hass-health.service" else self.alert_logs
+            return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, records)))
         active = self.timer_active if args[-1] == "hass-health.timer" else self.server_active
         return subprocess.CompletedProcess(args, 0 if active else 3)
 
@@ -996,6 +1046,30 @@ class HaMonitorTests(unittest.TestCase):
                 runpy.run_path(str(ROOT / "modules/services/hass/monitor-gatus.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
         return exit_status.exception.code, json.loads(output.getvalue())
+
+    def test_status_identifies_allowlisted_failures_without_exposing_journals(self):
+        self.reports[0]["checks"]["critical_entities"] = {
+            "status": "unhealthy", "failures": [
+                {"entity_id": "climate.master_suite", "state": "unavailable", "attributes": "private"},
+                {"entity_id": "sensor.private", "state": "unknown"},
+            ],
+        }
+        stamp = str(int(self.now.timestamp() * 1_000_000))
+        self.alert_logs = [
+            {"_SYSTEMD_UNIT": "gatus-email.service", "__REALTIME_TIMESTAMP": stamp, "MESSAGE": "Email delivery: email-http-409"},
+            {"_SYSTEMD_UNIT": "gatus-email.service", "__REALTIME_TIMESTAMP": stamp, "MESSAGE": "Email delivery: private-response"},
+            {"_SYSTEMD_UNIT": "gatus.service", "__REALTIME_TIMESTAMP": stamp, "MESSAGE": "[watchdog.durableAlert] Receiver rejected pending transition for endpoint=smart-home_home-assistant-runtime route=gatus-email"},
+            {"_SYSTEMD_UNIT": "gatus.service", "__REALTIME_TIMESTAMP": stamp, "MESSAGE": "private-unrelated-message"},
+        ]
+        code, result = self.invoke("status")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["critical_entity_failures"], [{
+            "observed_at": self.reports[0]["observed_at"], "entity_id": "climate.master_suite", "state": "unavailable",
+        }])
+        self.assertEqual([event["category"] for event in result["alert_journal"]["errors"]],
+                         ["email-http-409", "unclassified_email_error", "producer_receiver_rejected"])
+        self.assertEqual(result["alert_journal"]["retained_records"], {"gatus-email.service": 2, "gatus.service": 2})
+        self.assertIn("absence of errors is not delivery proof", result["alert_journal"]["provider_receipts"])
 
     def test_setup_arms_only_after_local_backend_and_credential_validation(self):
         self.ready.unlink()
