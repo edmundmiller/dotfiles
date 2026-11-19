@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Shared by setup, resume, and non-interactive login shells.
 nix_bin="$(command -v nix || true)"
+# Without a PATH match, the derived profile must not become /etc/profile.d/nix.sh.
 for nix_env in \
-  "${nix_bin%/bin/nix}/etc/profile.d/nix.sh" \
+  "${nix_bin:+${nix_bin%/bin/nix}/etc/profile.d/nix.sh}" \
   /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
   "$HOME/.nix-profile/etc/profile.d/nix.sh" \
   "${XDG_STATE_HOME:-$HOME/.local/state}/nix/profile/etc/profile.d/nix.sh"; do
