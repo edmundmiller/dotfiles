@@ -113,4 +113,7 @@ in
     # exported shares
     exports = lib.concatStringsSep "" fsExports;
   };
+
+  # Never export empty directories on the OS disk when a data mount fails.
+  systemd.services.nfs-server.unitConfig.RequiresMountsFor = fileSystems;
 }
