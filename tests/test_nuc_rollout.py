@@ -108,10 +108,36 @@ class RolloutTests(unittest.TestCase):
     def test_newest_green_commit_supersedes_pending_and_older_revisions(self):
         self.commit("b", ci="success")
         c = self.commit("c", ci="success")
+        red = self.commit("broken main", ci="failure")
         d = self.commit("d", ci="pending")
         result = self.select()
-        self.assertEqual((result["outcome"], result["target"], result["superseded"]), ("selected", c, 1))
-        self.assertEqual(result["skipped"], [{"sha": d, "reason": "ci_pending"}])
+        self.assertEqual((result["outcome"], result["target"], result["superseded"]), ("selected", c, 2))
+        self.assertEqual(result["skipped"], [
+            {"sha": d, "reason": "ci_pending"}, {"sha": red, "reason": "ci_failure"}])
+
+    def test_red_main_waits_for_a_green_fix_without_selecting_the_failed_sha(self):
+        red = self.commit("broken main", ci="failure")
+        self.assertEqual(self.select()["outcome"], "nothing_eligible")
+        green = self.commit("fix forward", ci="success")
+        self.assertNotEqual(red, green)
+        self.assertEqual(self.select()["target"], green)
+
+    def test_recheck_blocks_a_target_rerun_but_not_an_unrelated_red_main(self):
+        target = self.commit("green target", ci="success")
+        self.commit("newer red main", ci="failure")
+        for state in ("success", "failure", "pending"):
+            with self.subTest(target_ci=state):
+                self.ci(target, state)
+                self.save()
+                result = subprocess.run(
+                    [sys.executable, str(ROOT / "scripts/nuc_rollout.py"), "verify", "--sha", target],
+                    cwd=self.repo, env=self.env, text=True, capture_output=True, timeout=30)
+                if state == "success":
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(json.loads(result.stdout)["target"], target)
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("Latest main-push CI", result.stderr)
 
     def test_newer_failed_rerun_hides_an_earlier_success(self):
         b = self.commit("b", ci="success")

@@ -302,48 +302,22 @@ Backup Repair, even when the Bluetooth restart itself succeeds.
 
 ### Ship from an Amp orb
 
-The dotfiles Amp project's custom Ship prompt authorizes publication and NUC
-activation unless the user specifies push-only or no-deploy. Orbs dispatch
-the GitHub workflow instead of attempting `ssh nuc` or joining the tailnet.
-The workflow runs `hey nuc revision <SHA>` on their behalf.
+Use [main-first publication](candidate-ci.md) for task changes. Run affected local checks, reconcile onto main, push normally and report its exact CI run. Do not wait for a candidate branch or register a Ship request. Publication does not require NUC access or a cross-task deployment slot.
 
-Use the [durable Ship handoff](candidate-ci.md#durable-ship-handoff) for normal
-publication and deployment. Immediately after submitting the candidate,
-register its exact base/SHA and existing authority with `scripts/ship.py request`.
-Add `--deploy` only when activation is authorized. GitHub records the request,
-lands after candidate CI, and dispatches Deploy NUC after exact-main CI.
-Neither transition depends on an Amp completion subscription or a running Orb.
-The existing Deploy NUC guards and runtime verification remain unchanged.
+When independently enabled, [continuous rollout](#continuous-rollout) catches the NUC up to green main. Main may be red or pending without making that revision eligible for activation. The rollout owns its pinned target, host lock, no-downgrade guard, provenance and health report. GitHub retains those reports, but durable Amp deployment notifications are not configured. A push or green CI is not proof of host activation.
 
-New requests may opt into [bounded clean rebasing](candidate-ci.md#automatic-clean-rebase-for-new-requests)
-with `--allow-clean-rebase`. Deployment then requires separate approval for
-newer main plus the replayed task, expressed as both `--deploy` and
-`--deploy-rebased`. Existing accepted requests remain exact-only. Each successor
-must pass fresh candidate checks and successful exact-main push CI before its
-own SHA can be deployed. Main movement after landing still stops deployment;
-it never authorizes deploying a different head. Publishing the implementation
-does not update the saved Amp Ship prompt or authorize a deployment canary.
+For publication-only work, add `NUC-Rollout: publication-only` to every task commit before pushing. It does not trigger a rollout by itself, but the next eligible revision can include it. A `hold` trailer stops rollout before a commit when the user requires that stronger boundary. Never set or change `NUC_ROLLOUT` as part of shipping a task.
 
-Never keep an Orb active just to wait for CI. Confirmed GitHub registration
-must survive source-thread archival. Archival disables that thread's Amp
-notifications, not authorized shipping. Preserve run links and the receipt
-for later inspection by an authorized owner. Missing registration or reporting
-is a named blocker, not a completed handoff. Failed Ship runs, deployment claims
-and original approval references must survive recovery. Claim pause or billing
-savings only with measured evidence.
+Orbs use GitHub's existing tailnet identity rather than provisioning SSH or joining the tailnet themselves. An explicit exact deployment remains available below when standing rollout is disabled or a special operation is approved. That authority stays exact and does not expand to later main. Retain original approval references, request claims and run links. Do not keep an Orb active to wait for CI; archival stops that thread's notifications, not GitHub rollout. Missing reporting is a named limitation.
 
 #### Manual exact-main requests and special deployment options
 
-The direct `nuc_shipping.py` route below remains available for an already
-published exact revision and explicitly approved pilot/monitor operations.
-It does not close the candidate-to-main continuation gap. Do not use it as an
-automatic fallback for missing Ship registration or shipping credentials.
+The `nuc_shipping.py` route below requests one already published exact revision or explicitly approved pilot/monitor operations. Routine continuous rollout needs no per-task dispatch. Do not request a duplicate exact activation merely because a rollout is still pending.
 
 GitHub owns CI waiting and activation. The agent's submission stage ends after
 publishing the authorized revision, handing off one bound deployment request,
 and establishing completion reporting. It does not require CI to have started
-or finished. Only `workflow_dispatch` can request deployment; neither a push
-nor a CI completion authorizes activation.
+or finished. Only `workflow_dispatch` requests this exact deployment. A push or CI event alone grants no activation authority; the continuous route instead relies on the separately approved repository variable.
 
 Keep the same owner thread and existing schema-v2 agent-run receipt. Record the
 explicit Ship invocation or user authorization. For push-only or no-deploy,
@@ -510,23 +484,14 @@ leaving the host unattended. Do not restore the wildcard source grant to fix CI.
 Routine NUC catch-up runs after publication, not inside it. A host failure
 never blocks Ship, CI or the next publication.
 
-**Standing authority.** The repository variable `NUC_ROLLOUT=continuous`
-enables rollout. Edmund approves that settings change separately; shipping
-never sets it. Unset or any other value disables rollout, and `paused` revokes
-it. Ship's `--deploy`, `--deploy-rebased` and authority strings never enable
-it. While it is enabled, Ship publishes and returns `deployment:
-standing_rollout` (deploy requested) or `publication_only`, and never dispatches
-Deploy NUC itself. A task approval therefore cannot become approval for
-whatever main holds later.
+**Standing authority.** The repository variable `NUC_ROLLOUT=continuous` enables rollout. Edmund approves that settings change separately; shipping never sets it. Unset or any other value disables rollout, and `paused` revokes it. Routine Ship only publishes to main. No per-task request or approval enables deployment of arbitrary later main; combined-revision rollout relies on this standing authority.
 
 **Opting out.** Commit trailers control rollout:
 
 - `NUC-Rollout: publication-only` stops the commit from triggering activation
   by itself. If every commit since the active revision carries it, the run
   reports `nothing_to_activate`. The commit still rides along with the next
-  eligible rollout: a commit on main is never kept off the host. While rollout
-  is enabled, Ship rejects a no-deploy request unless every task commit has
-  this trailer or `hold`.
+  eligible rollout: a commit on main is never kept off the host. For no-deploy work, add this trailer or `hold` to every task commit before pushing. There is no registered Ship request to enforce or revoke that choice afterward.
 - `NUC-Rollout: hold` stops automatic rollout before that commit. Rollout
   resumes after a human deploys an exact SHA at or past it through
   `operation=deploy`.
@@ -565,6 +530,7 @@ command keeps the exact pinned-flake build, provenance readback and host lock.
 Under that lock, the host wrapper's `--nuc-deploy-published` checks that the
 target is still reachable from live `origin/main`; it no longer requires the
 target to _be_ main. Exact deployments keep `--nuc-deploy-expected-main`.
+The workflow rechecks the target's latest main-push CI immediately before calling the host build and activation command. A red newer main does not invalidate an older green target, but a failed or pending rerun of the target itself blocks it.
 Hosts running an older wrapper reject the new flag, so an exact deployment of
 the implementation must bootstrap it first.
 
@@ -589,14 +555,11 @@ artifact and writes a step summary. Both include the target, previous and
 active revisions, live main, the classification, changed units with their
 state, failed units, the run URL and the next action. Any outcome other than
 `deployed`, `current`, `nothing_to_activate`, `nothing_eligible` or
-`host_busy` fails the run. Amp is notified through a standing GitHub CI
-subscription on `deploy-nuc.yml` for `main`. Creating that subscription needs
-approval.
+`host_busy` fails the run.
 
-**Checks before and after publication.** The required pre-publication checks
-are unchanged: affected-path `Flake Check (Linux)` and `Check Formatting` on
-the exact candidate. These run after publication and gate or verify rollout,
-not publication:
+No standing Amp deployment listener is configured. The exposed CI subscription tool requires an exact SHA and cannot follow future `main` revisions. Exact-SHA follow-ups are finite, not durable rollout reporting. Report this notification gap and link the GitHub run rather than claiming Amp will catch every deployment failure. A future standing listener needs supported branch/workflow subscription tooling and separate setup authority. Publishing this policy neither enables rollout nor creates that listener.
+
+**Checks before and after publication.** Before publishing, run affected local `hey check` paths and focused task checks. Hosted CI runs on main after publication; a failure is fixed forward, not a reason to reset main. These checks gate or verify rollout, not task publication:
 
 - exact-main push CI,
 - the full NUC toplevel build on the host,

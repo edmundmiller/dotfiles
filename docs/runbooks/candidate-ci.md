@@ -1,387 +1,81 @@
 ---
-purpose: Admit the exact hosted-CI-tested commit to main without mandatory PRs.
-applies_to: Authorized dotfiles publication and main ruleset rollout.
-entrypoint: python3 scripts/candidate_ci.py submit --base BASE --sha SHA
-verification: python3 -m unittest tests.test_candidate_ci tests.test_ci_check_cache tests.test_validation
-update_when: Candidate refs, required contexts, publication, or live policy changes.
+purpose: Publish task changes to main after local checks and deploy only green main revisions.
+applies_to: Authorized dotfiles publication, main CI and the publishing-policy cutover.
+entrypoint: Run affected hey check paths, reconcile onto origin/main and push normally.
+verification: Verify remote publication, exact-SHA main CI and separate NUC rollout readback.
+update_when: Publication authority, main protection, CI selection or rollout gates change.
 ---
 
-# Candidate CI before main
+# Main-first publication
 
-Publication authority is required before submitting a candidate branch or
-advancing main. Implementation and local testing authorize neither operation.
-Deployment and live settings changes need their own explicit approval.
+The filename is retained for existing links and the separate Renovate candidate pilot. Routine task publication does not use candidate branches or the former Ship controller.
 
-## Publication and activation scope
+## Publish
 
-Publication and NUC activation are separate outcomes. A publication-only request finishes when the exact passing candidate has landed and remote readback confirms publication; it needs no host access or runtime readback. Report activation as not requested rather than pending. Subscribe to Ship and CI for publication reporting, and to Deploy NUC only when activation is authorized.
+With explicit publication authority:
 
-An explicit deployment request still requires its exact revision, successful main CI and host verification. Publication-only completion changes neither required checks nor accepted requests' authority. A local no-deploy instruction cannot revoke an already registered deployment; use the revocation and recovery procedure below.
+1. Preserve unrelated changes. Fetch `origin/main` and reconcile only the task's commits onto it. Inspect the resulting diff.
+2. Run `hey check` on the task-owned paths and the focused checks needed for the change. Fix local failures. A changed shared Nix input can still select broad checks; do not suppress that selection to make publication faster. Host builds, Darwin and service VMs remain explicit platform validation, not mandatory publication gates for unrelated work.
+3. Commit with the originating Amp thread, inspect the committed diff and push normally with `git push origin HEAD:main`. Verify the remote commit. If another writer wins the race, fetch, reconcile and rerun affected checks before another normal push. Never force or bypass a live rule. An uncertain push requires readback before retrying.
+4. Subscribe to `ci.yml` for the exact published SHA and retain its run URL. Report publication immediately, with CI pending if it is still running. Do not keep an Orb active to wait for it.
 
-## Publication contract
+There is no agent candidate branch, exact-base request, automatic replay lineage or cross-task publication slot. No PR is required unless explicitly requested. Ordinary concurrent Git pushes arbitrate publication. Temporary cutover coordination still applies to work already queued under the old policy.
 
-1. Commit task-owned work, fetch `origin/main`, reconcile onto its exact base,
-   and run affected local checks. Include the originating Amp thread in the
-   commit record. Keep the candidate checkout clean and retain its existing
-   receipt. Do not create a merge commit just to land it.
-2. With publication authorized, run
-   `python3 scripts/candidate_ci.py submit --base BASE --sha SHA`, replacing
-   both values with exact 40-character commit IDs. This pushes only
-   `candidate/BASE/SHA`; it does not update main. The helper requires HEAD to
-   equal SHA, BASE to be its ancestor, and remote main to equal BASE.
-3. Before ending the turn, register the authorized continuation with
-   `python3 scripts/ship.py request --receipt RECEIPT --base BASE --sha SHA --thread THREAD_URL --authority APPROVAL_REFERENCE`.
-   Add `--deploy` only with explicit NUC activation authority. The request
-   defaults to publication only. Add `--allow-clean-rebase` only with the
-   [bounded replay authority](#automatic-clean-rebase-for-new-requests) below;
-   deploying its result also requires `--deploy-rebased`. Record the request state/run, original
-   authority and reporting subscriptions in the existing receipt. Candidate
-   submission alone is not a completed handoff. Missing Ship workflow or
-   credential access is a blocker; no watcher or agent-only fallback is used.
-4. GitHub's `ship.yml` registers the authority in an attempt-bound artifact and
-   reacts to `ci.yml` completion events. It checks already-completed CI during
-   registration too, so a fast CI completion cannot be lost. It uses the existing
-   `python3 scripts/candidate_ci.py land --base BASE --sha SHA` guard. This checks the
-   latest candidate push run of `ci.yml`, its exact SHA/branch and latest attempt,
-   and both required contexts in that attempt. Missing, failed, cancelled,
-   skipped or pending results block main. The helper pins GitHub API reads to
-   `github.com` instead of inheriting an unrelated `GH_HOST`.
-5. Landing is a normal, non-forced Git push of SHA to main, followed by remote
-   readback. There is no PR, squash, merge commit, or force-updated candidate. If
-   another unrelated commit wins the race, Git rejects the push. Exact-only
-   requests stop for manual reconciliation. Opt-in requests may prepare a new
-   candidate and rerun hosted checks. Old CI does not
-   certify a new SHA. A successful push with a bypass warning is reported as
-   noncompliant publication, never as a clean landing.
+Main CI may fail. Inspect its latest attempt and fix task-caused failures forward on main within existing publication authority. A new fix gets its own local checks and ordinary main CI. Report unrelated failures rather than silently changing unrelated work. Do not erase published commits, reuse old SHA attestations or disable checks to manufacture a green release.
 
-An interrupted push can have succeeded. Inspect the exact remote refs before
-retrying. If main already equals SHA, verify the saved candidate run and record
-publication rather than pushing again. Retain candidate refs while evidence is
-needed; this helper does not delete remote branches.
+## Publication and activation
 
-## Durable Ship handoff
+Publication is a verified main push. NUC activation is a separate outcome with its own authority and host evidence. A publication-only task finishes at verified landing without host access; its main-CI result still needs reporting and task-caused failures still need repair.
 
-The authorization artifact contains the exact base, candidate, publication and
-deployment choice, human approval reference, owner thread, and dispatch run and
-attempt. Exact-only requests must dispatch on the captured main base. A candidate
-push or CI event without this record never authorizes landing or activation.
-The trusted default-branch continuation reads no candidate code or CI artifact
-for authorization. It keeps trusted main checked out for every workflow step.
+When separately enabled with `NUC_ROLLOUT=continuous`, [continuous rollout](deploy-nuc.md#continuous-rollout) selects the newest eligible published main revision whose latest main-push CI passed. If the head is red or pending, that head cannot deploy. An older green descendant of the active revision can deploy instead. A failed rollout does not block publication; fix forward, then let a newer green revision become eligible.
 
-Candidate and main CI remain independent gates. A main CI completion event
-dispatches Deploy NUC only for the saved exact revision after checking live
-main and latest main-push CI. A `refs/tags/ship-landed/SHA` marker is written
-only after compliant landing and remote readback. An uncertain or bypassed
-push cannot resume into deployment merely because main now equals SHA.
-The continuation creates `refs/tags/ship-deploy/SHA` before dispatch to prevent
-duplicate deliveries or reruns from deploying twice.
-Ambiguous dispatches and existing claims stop with a failed Ship run and an
-operator recovery instruction. Never delete a claim or retry deployment
-without inspecting the original runs and renewed retry authority.
+The exact target, pinned build, host lock, ancestry/no-downgrade checks, provenance readback and service health remain mandatory. Report the actual active revision, not merely the newest pushed SHA. Standing authority permits combined revisions; an old task's exact-deployment approval does not. Setting or pausing rollout is a separate repository-settings action.
 
-Requests and artifacts expire after seven days. To revoke future continuation,
-run `python3 scripts/ship.py revoke --sha SHA`. This creates the durable
-`refs/tags/ship-revoked/SHA` marker even when registration already completed.
-Cancel any in-flight Ship and accepted Deploy NUC runs separately, then inspect
-actual activation. Cancellation alone cannot revoke a completed registration.
-A rerun of registration creates a new attempt and can repeat writes, so it
-needs explicit retry approval. A revocation marker continues to block reruns.
+For push-only/no-deploy work, every task commit needs `NUC-Rollout: publication-only` before publication. It does not trigger activation by itself, but later eligible rollouts can include it. `NUC-Rollout: hold` is the stronger stop before a commit; resuming past it requires an explicitly approved exact deployment. Neither trailer removes commits from main or from future host configurations.
 
-The owner subscribes to `ship.yml`, `ci.yml`, and `deploy-nuc.yml` for reporting,
-not orchestration, and records their IDs and run URLs. The initial Ship
-dispatch captures main at dispatch, not SHA. For exact-only requests this is
-BASE; an opt-in request can capture a newer descendant. Its reporting subscription must match that
-captured head; later continuations and Deploy NUC capture the published SHA.
-Never keep an Orb active just to wait for CI. After confirmed registration,
-archiving the source thread must not stop authorized publication or deployment.
-Archival disables that thread's notifications, not GitHub's saved authority.
-Preserve run links and the receipt for later inspection by an authorized owner.
-A failed/missing subscription is a reporting blocker, not a reason to redispatch
-accepted work. Check a completed run immediately; never rely solely on a future
-event. Do not claim registered handoff until the dispatch's authorization
-artifact is present. Measure pause and billing effects before claiming savings.
+If rollout is disabled, leave it disabled. A separately authorized [manual exact deployment](deploy-nuc.md#manual-exact-main-requests-and-special-deployment-options) remains available. Its exact-main and CI guards are not permission to substitute a later revision. An uncertain deployment dispatch requires readback, not another dispatch.
 
-### Automatic clean rebase for new requests
+Subscribe to exact-SHA main CI for publication reporting. Use a standing Deploy NUC listener only when one is configured; the current [rollout reporting gap](deploy-nuc.md#continuous-rollout) must be reported rather than hidden behind finite exact-SHA follow-ups. GitHub handles rollout independently of an Orb or source-thread archival. Missing reporting is a named limitation, not evidence of activation. Editing `.agents/ship.md` never updates the saved Amp prompt by itself.
 
-`request --allow-clean-rebase` registers v2 authority to replay the original
-task onto descendant main up to three times within the original seven-day
-expiry. All raw workflow options default off. Existing v1 artifacts and receipts
-remain exact-only; never retrofit an accepted request or replace its receipt.
-When deploying, `--deploy --deploy-rebased` explicitly authorizes activation of
-newer main plus the replayed task after fresh candidate and exact-main CI.
-Omitting either rebase or deployment authority cannot silently widen permission.
+## Approved cutover required
 
-Ship requires successful latest candidate checks before replay. It replays the
-complete original `BASE..SHA` series in an isolated local clone, with no shipping
-credential environment, repository Git config, hooks, custom filters or rerere
-resolutions. Conflicts, merge commits, newly empty commits, changed commit counts
-and failed checks stop the request. Main must descend from the original base.
-No agent resolves conflicts or changes source in this continuation.
+The live main ruleset can still require pre-push statuses. This source change alone cannot make a direct push legal. Until the cutover is approved and completed, publish this migration through the existing exact-candidate path, not a direct-main probe:
 
-Each successor records its root run/attempt, original SHA, predecessor,
-generation, new base/SHA and producing run/attempt. The immutable
-`ship-successor-v2-ATTEMPT` artifact is uploaded before an atomic push creates
-`ship-next/ROOT_RUN-ROOT_ATTEMPT/PREVIOUS_SHA`, `ship-source/NEW_SHA`, and
-`candidate/NEW_BASE/NEW_SHA`. The annotated tags locate the trusted record;
-they do not grant authority. Ship verifies the producing main workflow and
-artifact, root identity, both indexes and generation chain on continuation.
-Create-only tags arbitrate competing events without holding a runner through CI.
-Missing or mismatched records stop; retain the refs and run URLs for recovery.
-Successor verification reads the exact producing attempt and its immutable
-artifact, so an approved producer retry does not invalidate an existing successor.
-Root authorization still follows its latest dispatch attempt, expiry and revocation.
-
-Every generation gets fresh ordinary push CI. `--darwin` and `--services-vm`
-also require fresh hosted platform validation of the original and every successor.
-Ship creates a `ship-validation/ROOT_RUN-ROOT_ATTEMPT-SHA` claim before dispatch,
-correlates its CI run title, and requires all selected jobs to succeed in the
-latest attempt. An unrelated manual run title cannot complete that handoff.
-Lost dispatch replies remain claimed and fail visibly, never automatically redispatch.
-An existing claim with no visible correlated run fails with a recovery instruction,
-not ordinary pending status. Inspect the original Ship and Actions runs before
-retrying anything. If the accepted CI run becomes visible later, its completion
-event can resume the request without another dispatch.
-
-Late events for old generations reconcile the saved current generation.
-Successor publication immediately checks CI again to close fast-completion races.
-A second main race during admission can replay only after a proved pre-write
-base mismatch or non-fast-forward rejection. Unknown push outcomes still stop.
-If CI completes and main moves again during successor publication itself, Ship
-stops visibly rather than creating a second, unuploaded artifact in one attempt.
-
-After any generation lands, rebasing is closed. Main moving afterward still
-blocks deployment; Ship cannot deploy newer main or republish the task to regain
-freshness. Root revocation blocks every successor; revoking a generation also
-blocks its descendants. Revoke the original SHA when stopping the whole request,
-cancel accepted runs separately and inspect host state.
-
-Roll out through the existing exact-only candidate path. With separate approval,
-exercise publication-only rebasing first, then a rebased deployment canary.
-Publishing this code does not authorize either canary or change Amp settings.
-Activating the reviewed `.agents/ship.md` copy is a separate settings operation.
-
-### One-time rollout approval
-
-Publish this implementation through the existing manual candidate/land route
-only with explicit publication approval. The new workflow must be on main
-before it can accept dispatches or `workflow_run` events. Provision a dedicated
-repository-scoped `DOTFILES_SHIP_TOKEN` with Contents and Actions read/write
-and no branch-protection bypass. Workflow-file changes may additionally need
-Workflows write. Do not repurpose the Renovate or private-input credentials.
-The built-in `GITHUB_TOKEN` suppresses downstream push CI, so it cannot land
-for this route. A missing credential fails before registration.
-
-After rollout, test publication-only shipping first, then an explicitly
-authorized NUC deployment, including a deliberately archived disposable owner
-thread if approved. The GitHub control path should complete without that
-thread; reporting still requires an unarchived listener. Updating the saved Amp
-Ship prompt is a separate approved project-setting action. The exact proposed
-text is `.agents/ship.md`; no prompt setting changes when the file is edited.
-
-### Standing NUC rollout
-
-`NUC_ROLLOUT=continuous` is the standing NUC activation authority. Edmund
-approves this repository-settings change separately; Ship requests never set
-or imply it, and `paused` revokes it. While it is enabled, Ship ends at
-publication, with `deployment: standing_rollout` or `publication_only`, and the
-[continuous rollout](deploy-nuc.md#continuous-rollout) route activates the
-newest green published commit later. Ship's revocation does not pause standing
-rollout. For push-only or no-deploy work, add `NUC-Rollout: publication-only`
-to every task commit: the commit then never triggers activation, but it rides
-along with the next rollout. Use `NUC-Rollout: hold` to stop automatic rollout
-before a commit. With rollout disabled, the exact-request deployment and
-stale-main guards above apply unchanged.
-
-## Small admission suite
-
-Candidates use the same changed-path portable/Linux selection as main, with
-affected formatting/lint, repository tests and package checks. A small planner
-validates the candidate ref and passes its explicit BASE to Linux.
-A new candidate branch's zero `before` SHA must not turn a
-docs change into a full repository run. Shared Nix inputs still select broad
-checks deliberately; "small" is not a fixed list that omits affected consumers.
-
-The existing `Flake Check (Linux)` and `Check Formatting` contexts both aggregate
-successful planning, Linux, and every selected platform job. They are compatibility
-names for one logical gate, not two independent full-suite certifications.
-Failures and unexpected skips remain fail-closed. No required-context rename
-or new duplicate test list is part of this rollout.
-
-Native Darwin and service VMs remain opt-in. Mac activation still requires the
-exact candidate's native Darwin checks, including forced `system.drvPath`
-evaluation. A portable green does not prove a Mac build, service VM, or runtime
-activation. Run affected target checks before activating that target.
-
-Main-push CI remains enabled. Authorized NUC deployment still waits in GitHub
-for the latest successful exact-main push run and retains the SHA, stale-main,
-provenance and deployment-lock guards. Candidate success cannot substitute for
-that main-push run. This conservatively retains post-main validation work; it
-does not claim to eliminate all duplicate builds or prove lower hosted cost.
-The event-driven Ship route dispatches only after main CI, avoiding an occupied
-Deploy NUC wait runner during that CI. The existing candidate output reuse below
-still saves rebuilds without skipping main validation. Use the [NUC handoff](deploy-nuc.md#ship-from-an-amp-orb)
-only when deployment is authorized. Hosted skill publication still needs served-artifact
-parity; host activation is not hosted-skill delivery evidence.
-
-## Candidate output reuse
-
-Linux candidate validation optionally exports its successful portable Nix check
-outputs to a three-day run artifact. Main still runs the same selector, hooks,
-package tests and `nix build` commands. Before validation, it imports outputs
-only from the latest successful exact `candidate/BASE/SHA` push run of `ci.yml`,
-with both required contexts successful in that attempt. Artifacts are bound to
-that run, SHA and attempt, not searched by name across PRs or workflows. Only
-candidate pushes publish; PRs neither publish nor consume this handoff.
-
-GitHub's ordinary branch caches cannot flow from candidate branches to main.
-Its public-repository caches and artifacts are readable by other users, so
-neither a whole-store cache nor an unrestricted closure artifact is safe for
-our private `tnote`, `agents-workspace` and Rex inputs. The existing Security
-workflow's magic-cache configuration is not a candidate-to-main solution.
-
-`scripts/ci_check_cache.py` accepts only empty nonexecutable files or empty
-directories with no store references. It compares each complete Nix export to
-the canonical empty encoding, including metadata. Only public check names and
-their store/deriver hashes leave the runner. No source, derivation contents,
-dependency closures, logs, netrc files or credentials enter the artifact.
-Nonempty outputs such as the callstack package are deliberately excluded.
-The standard read-only Actions token downloads artifacts; existing private-input
-credentials and repository settings do not change.
-
-Nix still computes the current derivation. An imported exact output is a cache
-hit, not a separate check-skipping rule. Different outputs build normally.
-Missing, expired, malformed or unavailable artifacts fall back to ordinary
-validation. No cache result can make a failed validation pass. A Nix export
-format change also causes a cache miss rather than publishing unknown bytes.
-Darwin and service VM jobs retain their existing behavior.
-
-For hosted evidence, retain the candidate's `Check cache: exported` count,
-main's `Check cache: imported` count and source run URL, and both jobs' timed
-validation logs at the identical SHA. Confirm cacheable checks do not rebuild,
-noncacheable work still runs, and both required contexts pass. Local fixture
-timings are not a hosted speedup claim. Publishing the candidate and landing
-its exact green SHA require explicit publication approval; no deployment or
-settings changes are needed. Roll back through a normal candidate revert.
-
-## Public HA dependencies in GitHub cache
-
-Linux CI uses GitHub's existing cache service for public Home Assistant package
-outputs. No Cachix or FlakeHub account, cache secret, OIDC grant, protected
-environment or paid plan is required. The validation step and its credentials
-are unchanged. Every cache step is optional; a miss, corrupt archive, import
-error or save failure leaves the ordinary checks authoritative.
-
-GitHub caches from `main` are readable by fork PRs. This is deliberately a
-**public-dependencies-only cache**, not a private cache with a workflow `if`
-pretending to enforce confidentiality. Our PR jobs do not restore or save it,
-and PR merge-ref caches cannot seed trusted main/candidate pushes. Forks can
-still read the public archive through their own workflows. Never put private
-inputs, a whole store, a before/after store diff or host configuration in it.
-
-`scripts/ci_dependency_cache.py` enables caching only for trusted main or exact
-candidate pushes selecting the existing HA behavior or robot tests. To select
-export roots, it evaluates the public `nixpkgs-hass` pin and the existing public
-HA overlay in isolation, using the upstream NixOS package default. It does not
-evaluate this repository's flake or import NUC configuration. Only already-built
-public HA package outputs and their runtime dependencies are exported. There
-is no cache-only dependency build, private source fetch or final check output.
-Other heavy packages can be added only with an equally public provenance path.
-
-The cache key includes the OS, lock file and public HA overlay contents. There
-are no broad restore prefixes. After successful validation on a miss, an atomic
-Nix export is saved by pinned `actions/cache/save`; later runs restore and
-import it before executing the unchanged validation. Only that export directory
-is cached, never Nix's database, source trees, netrc files or token directories.
-Changes to the allowlist or export format must bump the key's `public-ha-v1`
-version. Leave GitHub's existing storage limit and eviction policy unchanged.
-
-A main-produced cache can warm later candidates. A candidate-produced cache
-can warm reruns of that same candidate, but GitHub does not let it flow upward
-to main or sideways to sibling candidates. To seed main without rebuilding,
-the candidate retains a separate public-only dependency artifact for three days.
-On a main cache miss, the helper downloads it only from the exact successful
-candidate's current attempt, using the existing admission verifier and checking
-the source repository again. Main imports those packages and saves its own
-branch cache after validation. The empty-output artifact and handoff remain
-unchanged. Never include private dependencies in either public transport.
-
-The bootstrap artifact adds upload/download time on cold keys. It avoids an
-extra dependency build when main reuses empty final check outputs, but its
-hosted transfer cost still needs measurement. Do not promise cross-branch private
-dependency reuse or claim a local import measures hosted cache transfer speed.
-
-For hosted measurements, compare cold and warm attempts at the same SHA and
-selected derivations on fresh runners. Record archive bytes, cache hit/miss,
-restore/import/export/save time and validation/job walls. Measure the default-
-branch sharing direction only after separately authorized landing. Cache
-publication and workflow runs still need their own authorization; this section
-does not authorize main landing or deployment.
-
-## Live changes requiring separate approval
-
-The helper is not a security boundary. GitHub must reject unchecked main writes
-even when a caller skips the helper. After approval, an administrator should
-update existing ruleset `14372116`, `Protect main`, without deleting it:
-
-- Keep active enforcement, the exact `refs/heads/main` target, and the
-  `non_fast_forward` rule. Do not require pull requests or reviews.
-- Keep `Flake Check (Linux)` and `Check Formatting` required. Bind each to
-  GitHub Actions integration ID `15368`, verified from this repository's check
-  runs, rather than accepting a same-name status from another integration.
-- Remove the always-on RepositoryRole bypass. Desired `bypass_actors` is `[]`.
-  Do not replace it with another blanket bypass. Keep repository push access
-  restricted to the existing authorized writers; no access grant is needed.
-- Keep `do_not_enforce_on_create: false` and
-  `strict_required_status_checks_policy: false`. The helper checks the exact
-  base and ancestry; this rollout does not add PR update-branch semantics.
-
-The required-status rule's reviewed replacement parameters are:
-
-```json
-{
-  "do_not_enforce_on_create": false,
-  "strict_required_status_checks_policy": false,
-  "required_status_checks": [
-    { "context": "Flake Check (Linux)", "integration_id": 15368 },
-    { "context": "Check Formatting", "integration_id": 15368 }
-  ]
-}
+```bash
+python3 scripts/candidate_ci.py submit --base BASE --sha SHA
+# After the latest candidate CI attempt and both contexts pass:
+python3 scripts/candidate_ci.py land --base BASE --sha SHA
 ```
 
-Read the complete live ruleset immediately before updating it. Preserve any
-newer unrelated rules and save its prior JSON for recovery. Apply the reviewed
-parameter change and empty bypass list, then read back the full ruleset. Do not
-send this parameter fragment as a whole-ruleset replacement.
+These commands require publication approval and exact 40-character IDs. A moved base requires reconciliation and fresh affected checks; never use force or bypass. Do not start a new legacy Ship request for this migration.
 
-Separately approve replacing the Amp project's saved custom Ship prompt with
-the reviewed `.agents/ship.md`. Editing the source file alone does not update
-Amp settings. Do not activate the old direct-main Ship prompt as a workaround.
-Legacy commands that combine direct main publication with activation, such as
-`hey agents-rollout`, are not this route. Prepare their source changes locally
-and submit the resulting dotfiles candidate instead.
+The approved administrator cutover is:
 
-## Authorized rollout and recovery
+1. Coordinate with owners of existing accepted Ship requests. Let them finish or obtain explicit revocation and cancellation authority before removing their controller. Retain old receipts, refs, artifacts and run links; this change does not revoke accepted authority or delete evidence. Do not translate exact approvals into standing deployment authority.
+2. Land this migration through the existing passing-candidate route. The removed workflow no longer accepts new requests; already accepted or running work must have been settled first.
+3. Read and save the full live ruleset `14372116`, `Protect main`. Remove only its `required_status_checks` rule so main publication no longer waits for hosted CI. Preserve active enforcement, the exact main target, `non_fast_forward`, an empty bypass list and any unrelated current rules. Do not add PR requirements or a blanket bypass. Read the full ruleset back. This is an explicit approval to change publication policy, not a weakening of the CI gate before host activation.
+4. With separate Amp-settings approval, replace the saved Ship prompt with `.agents/ship.md`. Leave tokens, access policy and rollout settings unchanged. Confirm the standing rollout listener is reporting, or name the reporting blocker.
 
-After explicit publication and settings approval:
+No live setting changes happen merely by landing the code. If access to rules or saved prompts is unavailable, report the specific blocker. Do not provision a new credential or use an unrelated token. Existing queued tasks retain their current ordering until their owners coordinate the cutover; this policy does not rearrange accepted requests.
 
-1. Submit this implementation as a candidate. GitHub uses the candidate's
-   version of `ci.yml` for its push trigger, so candidate checks can run before
-   the implementation is on main. Subscribe, then inspect the actual run,
-   selected base and required contexts. Do not claim hosted proof from local
-   simulated GitHub responses.
-2. Apply and verify the reviewed ruleset changes before landing. If GitHub
-   rejects the exact green candidate, inspect the required-context provider and
-   commit identities. Do not turn bypass back on or create a PR merely to mask
-   a configuration error.
-3. Land the exact green SHA, verify remote main, then activate the approved
-   custom Ship prompt. No deployment follows unless separately authorized.
-4. Verify server-side rejection of an unvalidated main update only in an
-   explicitly approved disposable test repository with equivalent rules. Do
-   not probe production main with an unchecked commit: a misconfiguration
-   could actually land it.
+To recover code, publish a checked fix or revert as a new main commit. Pausing rollout and changing main protection require their own authorization. Never reset main backward.
 
-For code rollback, submit a revert through the same candidate path. A
-settings rollback requires administrator approval and the saved prior JSON;
-restoring bypass would explicitly weaken admission protection. Do not reset
-or force main backward. If access is blocked, an administrator should repair
-the narrow ruleset error rather than grant the agent new privileges.
+## CI selection and platform checks
+
+Main push CI uses the previous main SHA as `VALIDATION_BASE`. PR CI uses the PR base. Both run the existing affected-path formatting, lint, tests and package checks. `Flake Check (Linux)` and `Check Formatting` remain stable reporting names for the same aggregate gate, including every explicitly selected platform job. Missing, failed, cancelled or unexpectedly skipped jobs fail the gate. These results gate deployment, not routine task publication after cutover.
+
+Native Darwin and service VMs stay opt-in. Run affected native validation before activating that platform. Portable green does not certify a Mac system, a service VM, host runtime health or hosted-skill delivery. Earlier results never certify a rewritten revision.
+
+## Renovate candidate pilot
+
+The [types-only Renovate pilot](renovate.md#types-only-candidate-pilot) retains its independent, unattended candidate admission. It still uses `candidate/BASE/SHA`, `scripts/candidate_ci.py` and exact successful latest-attempt checks before a normal fast-forward. This exception is not the route for agent task publication and grants no general bot automerge authority. No existing dependency PR is merged, closed or rearranged by this change.
+
+Candidate CI keeps its encoded base planner so a newly created bot branch does not accidentally select the whole repository from GitHub's zero before-SHA. Private-input isolation and the existing optional candidate-output transport remain unchanged.
+
+### Output and dependency reuse
+
+Only the latest successful exact candidate run and attempt can seed its corresponding main validation. `scripts/ci_check_cache.py` accepts only canonical empty, nonexecutable outputs with no references. No source, derivation contents, private dependency closures, credentials or logs may enter that public artifact. Main still computes the current derivations and runs its ordinary validation. An imported exact derivation output is a cache hit, not a transferable green-SHA attestation. A cache miss or malformed artifact never makes validation pass.
+
+The public HA cache in `scripts/ci_dependency_cache.py` remains public-dependencies-only. It evaluates the public nixpkgs-hass pin and HA overlay in isolation, never the private flake or host configuration. Only realized public packages and their runtime dependencies are exported. PRs do not restore or save it, but fork users can read main caches, so a workflow condition is not a confidentiality boundary. Never export a whole store or widen the allowlist to private inputs, test outputs or host data.
+
+The cache key still includes OS, lock file and the public HA overlay, with no broad restore prefixes. The optional exact-candidate artifact can seed main's cache for the Renovate path. Missing, expired or unavailable archives fall back to ordinary validation. Credentials, cache visibility and hosted storage limits do not change. Keep the existing strict format checks and bump cache versions when changing their formats. Measure hosted transfer and build time before claiming a speedup.

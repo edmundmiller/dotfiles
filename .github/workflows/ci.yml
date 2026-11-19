@@ -1,8 +1,8 @@
 name: CI
-run-name: ${{ inputs.ship_request && format('Ship validation {0}', inputs.ship_request) || '' }}
 
 on:
   push:
+    # Agent tasks publish straight to main. Candidates remain for the Renovate types pilot.
     branches: [main, "candidate/**"]
   pull_request:
   workflow_dispatch:
@@ -15,9 +15,6 @@ on:
         description: Run the service VM suite
         type: boolean
         default: false
-      ship_request:
-        description: Ship validation correlation only; never grants publication or deployment authority
-        type: string
 
 permissions:
   contents: read
@@ -159,7 +156,7 @@ jobs:
           retention-days: 3
           if-no-files-found: warn
 
-  # Preserve the contexts required by main without weakening branch protection.
+  # Keep stable result names for reporting, Renovate admission and deployment CI.
   required-checks:
     name: ${{ matrix.context }}
     needs: [plan, checks, darwin, vm-services]

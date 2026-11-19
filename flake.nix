@@ -1349,7 +1349,6 @@
                     git init --quiet
                     # Start the longest modules first; each keeps its own process and HOME/TMPDIR.
                     PYTHONDONTWRITEBYTECODE=1 python3 scripts/run_validation_tests.py \
-                      tests/test_ship.py \
                       tests/test_renovate_admission.py \
                       tests/test_mise_tasks.py \
                       tests/test_nuc_shipping.py \

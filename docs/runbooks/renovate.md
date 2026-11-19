@@ -70,10 +70,7 @@ individual PRs. Bump those with `hey upgrade` when the PAT cannot see the repo.
 
 ## Admission and automerge
 
-Renovate automerge is disabled for every update class, including lock maintenance
-and security fixes. Follow [candidate CI](candidate-ci.md) for authorized
-publication. A dependency PR is an optional review artifact, not a required
-landing route. Preserve provider-bound checks and the empty bypass list.
+Renovate automerge is disabled for every update class, including lock maintenance and security fixes. Agent-reviewed updates follow [main-first publication](candidate-ci.md). A dependency PR is an optional review artifact, not a required landing route. The unattended types-only pilot below keeps its own exact-candidate checks; this change does not expand bot authority.
 
 Disabling Renovate automerge does not cancel existing GitHub auto-merge requests.
 Inspect those separately and cancel them only with explicit approval.
@@ -83,18 +80,14 @@ requires checks on its branch, but `ci.yml` only handles main/candidate pushes
 and PR events. It does not submit `candidate/BASE/SHA` or verify that candidate's
 latest workflow attempt. Adding CI on Renovate branches alone would still omit
 that admission step. GitHub PR squash/rebase/merge methods create or rewrite
-commits rather than normally fast-forwarding main to the tested candidate SHA.
-The former patch-repair `gh pr merge --auto --squash` step was therefore not a
-compatible substitute, even with green required contexts.
+commits rather than normally fast-forwarding main to the tested candidate SHA. They are not substitutes for the types-only pilot's exact-candidate admission. Other repairs remain proposals until authorized publication.
 
 There is also a package evidence gap. The hash-refresh command detects changed
 Nix files, not JavaScript-only manifest or lock changes. It neither regenerates
 all `bun.nix` files nor refreshes every `npmDepsHash` after lock-only updates.
 The portable validation selector does not build every affected Nix package.
 An artifact error or manifest-only green PR must not be admitted unchanged.
-Package integration must regenerate the owner's actual locks, generated Nix
-dependencies and hashes, run focused tests and build the affected package before
-submitting fresh candidate CI. This policy change does not repair existing PRs.
+Package integration must regenerate the owner's actual locks, generated Nix dependencies and hashes, run focused tests and build the affected package before publication. The unattended types pilot additionally runs fresh candidate CI. This policy change does not repair existing PRs.
 
 ## Types-only candidate pilot
 
@@ -138,7 +131,7 @@ The shared selector routes callstack manifest/lock/generated-file changes to a
 Nix check with frozen development installation, `lint:setup`, deterministic lint
 and tests, and generator reproducibility. The same check builds the production
 package and exercises its installed CLI against a known call-tree fixture.
-Live-model evals are excluded. Linux evidence does not authorize Mac activation.
+Live-model evals are excluded. Linux evidence does not authorize Mac activation. Candidate admission here is specific to this unattended bot; ordinary task Ship no longer waits for it.
 
 The publishing job uploads a SHA-bound `types-candidate-ATTEMPT` record. On CI
 completion the controller verifies the record and its successful publisher attempt,

@@ -39,23 +39,11 @@ The [guardrails](docs/agent-guardrails.md) define source ownership and approval
 boundaries. Commit, publish, deploy, or clean up only within the user's request;
 publication and host activation are not implied by completing local edits.
 
-For authorized publication to main, follow
-[candidate CI](docs/runbooks/candidate-ci.md). Submit the candidate and its
-explicit Ship authorization in the same submission turn. GitHub owns the
-event-driven landing after candidate CI; an Amp subscription only reports it.
-Candidate submission alone is not a completed handoff. No PR is required.
-Do not push unchecked task commits directly to main or bypass required statuses.
+For authorized publication, follow the [main-first workflow](docs/runbooks/candidate-ci.md). Run affected local checks, reconcile onto fetched main and push normally. No candidate branch, registered Ship request, PR or cross-task publication slot is needed after the approved cutover. Respect live repository rules; never bypass a rejection. Subscribe to CI for the exact pushed SHA. CI may fail on main; inspect the failure and publish a task-caused fix forward within existing authority. Keep unrelated work out of the fix.
 
-For authorized NUC shipping, follow the request handoff in
-[NUC shipping](docs/runbooks/deploy-nuc.md#ship-from-an-amp-orb). The registered
-Ship request owns deployment after exact-main CI. Persist the authority,
-request/run identities and reporting subscriptions in the existing receipt.
-Never keep an Orb active just to wait for CI. After confirmed registration,
-GitHub continues authorized shipping even if the source thread is archived.
-Archival disables that thread's notifications, not the registered request.
-Retain run links and the receipt for later inspection by an authorized owner.
-Completion events resume inspection, not publication or another deployment,
-and grant no new authority. Do not infer pause or billing savings from idleness.
+Publication and activation are separate outcomes. [Continuous NUC rollout](docs/runbooks/deploy-nuc.md#continuous-rollout) uses standing authority to select green main revisions independently of task publication. Pending or failed CI never permits that revision to activate. A task's exact-deployment approval does not enable continuous rollout or authorize later main. Report host provenance and affected-service health separately from the push and CI results. Publication-only work finishes at verified landing, without host access.
+
+Retain run links, authority references and existing receipts for inspection. CI and deployment events report progress; they grant no new authority. GitHub rollout does not depend on a running Orb or an unarchived source thread. Archival disables that thread's notifications, so preserve standing reporting independently. Do not keep an Orb active to wait for CI or claim pause or billing savings without evidence.
 
 Cross-model review is optional and runs only on explicit request. It is not a
 quality gate. `hey check` never applies repairs to source; use `nix fmt` for

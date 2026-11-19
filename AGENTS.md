@@ -15,10 +15,11 @@ their inventories.
 
 - Host activation, deployment, publication, secret rotation, and destructive
   cleanup need explicit authorization. Local edits and checks do not imply it.
-- Publication to main uses [candidate CI](docs/runbooks/candidate-ci.md): hosted
-  checks first, then the exact passing SHA, without mandatory PRs or bypasses.
-  Create a PR only when explicitly requested or required by live repository
-  policy. Pending or failed candidate checks are not a PR requirement.
+- Publication follows the [main-first workflow](docs/runbooks/candidate-ci.md):
+  affected local checks, a normal main push, then hosted CI. NUC rollout selects
+  only green main revisions. No PR or cross-task publication slot is required.
+  Respect live rules; the runbook's approved cutover is required before using
+  direct-main publication where required pre-push statuses still apply.
 - Use `hey` for guarded system operations: `hey re` / `hey rebuild` for Darwin,
   `hey nuc` for NUC deployment, and `hey skills-update` / `hey skills-sync` for
   catalog updates. Details: [command policy](docs/adr/0001-agent-command-policy.md).

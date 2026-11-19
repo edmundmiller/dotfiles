@@ -219,7 +219,7 @@ record its checkout and ignored-file baselines before migration.
 Changing create flags does not update an existing container. After explicit
 approval to publish, deploy and migrate this orb:
 
-1. Publish through candidate CI and deploy the exact passing main revision with
+1. Publish through the [main-first workflow](candidate-ci.md) and deploy the exact green main revision with
    the guarded `hey nuc` route. Do not request the pilot recovery or smoke-test
    options, which require stopping unrelated pilot containers.
 2. Pause the household agent thread in Amp. Confirm the provider has stopped its
@@ -429,8 +429,7 @@ unmapped original. The current hotplug orb is
 
 Container renames do not revoke the deployed grant for future containers. To
 remove future Note 4C access, separately authorize a source change removing the
-NUC pin/udev/export wiring and publish/deploy it through candidate CI and exact-main
-deployment. Review running containers too; removing a create flag does not change
+NUC pin/udev/export wiring and publish it through the [main-first workflow](candidate-ci.md), followed by the separately approved exact green-main deployment. Review running containers too; removing a create flag does not change
 an existing mapping. Do not revoke access merely to restore device firmware.
 
 ## Approval and installation boundary

@@ -57,26 +57,21 @@ def github(endpoint, paginate=False):
     return json.loads(subprocess.check_output(command, text=True, timeout=30))
 
 
-def candidate_runs(base, sha, event="push", title=None):
+def candidate_runs(base, sha):
     branch = candidate_branch(base, sha)
-    query = urlencode({"branch": branch, "event": event, "head_sha": sha,
-                       "per_page": 100 if title else 1})
+    query = urlencode({"branch": branch, "event": "push", "head_sha": sha, "per_page": 1})
     endpoint = f"actions/workflows/ci.yml/runs?{query}"
-    if title:
-        pages = github(endpoint, paginate=True)
-        return [run for page in pages for run in page["workflow_runs"]
-                if run["display_title"] == title]
     return github(endpoint)["workflow_runs"]
 
 
-def passing_candidate(base, sha, event="push", title=None, required=REQUIRED):
+def passing_candidate(base, sha):
     branch = candidate_branch(base, sha)
-    runs = candidate_runs(base, sha, event, title)
+    runs = candidate_runs(base, sha)
     if not runs:
         raise ValueError("Candidate CI has not started; resume on its completion event")
     run = runs[0]
     expected = {
-        "head_sha": sha, "head_branch": branch, "event": event,
+        "head_sha": sha, "head_branch": branch, "event": "push",
         "path": ".github/workflows/ci.yml", "status": "completed", "conclusion": "success",
     }
     if any(run.get(key) != value for key, value in expected.items()):
@@ -87,13 +82,13 @@ def passing_candidate(base, sha, event="push", title=None, required=REQUIRED):
         f"actions/runs/{run['id']}/attempts/{run['run_attempt']}/jobs?per_page=100",
         paginate=True,
     )
-    jobs = [job for page in pages for job in page["jobs"] if job["name"] in required]
-    if len(jobs) != len(required) or {job["name"] for job in jobs} != required or any(
+    jobs = [job for page in pages for job in page["jobs"] if job["name"] in REQUIRED]
+    if len(jobs) != len(REQUIRED) or {job["name"] for job in jobs} != REQUIRED or any(
         job["conclusion"] != "success" for job in jobs
     ):
         raise ValueError("Required candidate checks are missing or unsuccessful")
     # A failed/running rerun must not be hidden behind an earlier successful attempt.
-    if candidate_runs(base, sha, event, title) != runs:
+    if candidate_runs(base, sha) != runs:
         raise ValueError("CI changed during inspection; inspect the latest attempt again")
     return run["html_url"]
 

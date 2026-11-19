@@ -314,9 +314,14 @@ jobs:
         if: inputs.operation == 'rollout' && steps.select.outputs.target != ''
         env:
           TARGET: ${{ steps.select.outputs.target }}
+          GH_TOKEN: ${{ github.token }}
+          PYTHONDONTWRITEBYTECODE: "1"
         shell: bash
         run: |
           set -euo pipefail
+          # A target rerun may have failed or started after selection. Newer red
+          # main commits are irrelevant; only this exact target must remain green.
+          python3 scripts/nuc_rollout.py verify --sha "$TARGET"
           # Trusted main code drives the same pinned flake, provenance readback and
           # host lock as exact deployments; only the guard accepts a trailing target.
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)

@@ -65,7 +65,7 @@ recovery directory. Never publish that database.
 Run `hey check` and `hey check --platform darwin` for the exact candidate.
 Use a supervised PTY for `hey re build`. Inspect the resulting activation and
 service changes before switching. These checks do not activate either host.
-Publication follows [candidate CI](candidate-ci.md), with the exact passing SHA.
+Publication follows the [main-first workflow](candidate-ci.md). Native validation still must pass for the exact revision before Mac activation.
 No NUC deployment belongs to this migration.
 
 ## Install and activate

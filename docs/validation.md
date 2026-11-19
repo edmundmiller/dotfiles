@@ -121,8 +121,7 @@ landing. Candidate manual dispatches use the same encoded base. `--ci` consumes
 `VALIDATION_BASE`; other manual events with no usable base run the full portable suite. The
 lightweight planning job validates the candidate base before passing it to Linux.
 Legacy Herdr TOML and VM checks have been removed; native Herdr tests remain.
-See [candidate admission](runbooks/candidate-ci.md) for the
-pre-main publication route and the separately approved live settings.
+The candidate route is retained for the unattended Renovate types pilot. Agent tasks instead use [main-first publication](runbooks/candidate-ci.md): affected local checks, a normal main push, then hosted CI. Main CI may fail; fix task-caused failures forward. NUC rollout only selects green main revisions. The approved ruleset/prompt cutover is required before direct-main publication can replace the former candidate policy.
 
 Ordinary PR, candidate and main-push CI allocates no Mac runner. Linux waits only
 for lightweight planning, not Darwin;
@@ -132,10 +131,7 @@ CI on that candidate with `darwin=true`. The optional job always runs native
 validation, even when the candidate has no changed files. Service VMs are separately
 opt-in with `services_vm=true`. Neither platform command activates or deploys a host.
 
-New clean-rebase Ship requests can select `--darwin` and `--services-vm` to carry
-these requirements through every successor. Ship correlates each hosted dispatch
-with its root request and exact candidate SHA. Earlier native results never
-certify a rebased SHA. See the [replay contract](runbooks/candidate-ci.md#automatic-clean-rebase-for-new-requests).
+Dispatch optional platform checks on the published revision when they are needed, with `darwin=true` or `services_vm=true`. Inspect the captured SHA and latest attempt. Before activation, rerun checks affected by a rebase; earlier native results never certify a different SHA. There is no Ship replay controller or request-specific platform dispatch.
 
 Darwin evaluates each host's `system.drvPath`, not merely its outer attribute set.
 Herdr's import-from-derivation requires a native Darwin builder even during
@@ -157,8 +153,7 @@ The required `Flake Check (Linux)` and `Check Formatting` compatibility contexts
 require successful planning, Linux checks, and every selected platform job.
 Failure, cancellation, missing results, or an unexpected skip fails both contexts.
 An unselected platform job must be skipped. Native Darwin is required only when
-explicitly requested; branch protection and exact-main NUC deployment guards
-stay unchanged.
+explicitly requested. The publication cutover removes required pre-push statuses, not these CI results or the green-main NUC deployment gate.
 Native checks do not repeat the portable formatting/lint suite.
 The Linux and Darwin validation jobs read private flake inputs with the
 `NIX_PRIVATE_GITHUB_TOKEN` repository secret. Linux display tests need the pinned

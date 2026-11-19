@@ -46,16 +46,6 @@ def trailers(rev_range):
     return result
 
 
-def require_publication_only(base, sha):
-    """Under standing rollout, a no-deploy request must say so in its commits."""
-    missing = [commit for commit, values in trailers(f"{base}..{sha}").items() if not values]
-    if missing:
-        raise ValueError(
-            f"Continuous NUC rollout is on: add '{TRAILER}: publication-only' (or hold) to "
-            f"every commit, or request deployment. Missing: {', '.join(missing)}"
-        )
-
-
 def artifacts(name):
     query = urlencode({"name": name, "per_page": 100})
     return [item for item in ci.github(f"actions/artifacts?{query}")["artifacts"]
@@ -77,6 +67,13 @@ def main_ci_states():
             raise ValueError("CI identity mismatch")
         states[run["head_sha"]] = (run["conclusion"] if run["status"] == "completed" else "pending")
     return states
+
+
+def verify_main_ci(sha):
+    """Recheck the selected target immediately before invoking host activation."""
+    if not SHA.fullmatch(sha) or main_ci_states().get(sha) != "success":
+        raise ValueError("Latest main-push CI for the selected revision did not succeed")
+    return {"outcome": "ci_verified", "target": sha}
 
 
 def parse_active(configuration_revision):
@@ -235,6 +232,7 @@ def main():
     command = commands.add_parser("select")
     command.add_argument("--main", required=True)
     command.add_argument("--configuration-revision", required=True)
+    commands.add_parser("verify").add_argument("--sha", required=True)
     command = commands.add_parser("report")
     for name in ("previous", "target", "main", "activation", "health"):
         command.add_argument(f"--{name}", required=True)
@@ -246,6 +244,8 @@ def main():
             result = dispatch(args.retry_deferred)
         elif args.command == "select":
             result = select(args.main, parse_active(args.configuration_revision))
+        elif args.command == "verify":
+            result = verify_main_ci(args.sha)
         else:
             result = report(args)
         print(json.dumps(result, sort_keys=True))

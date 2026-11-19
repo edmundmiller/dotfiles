@@ -282,7 +282,7 @@ jobs:
           gh auth setup-git
           git push origin "HEAD:refs/heads/$HEAD_REF"
 
-      - name: Record candidate admission requirement
+      - name: Record publication approval requirement
         run: |
           echo "Patch validation completed; main unchanged." >> "$GITHUB_STEP_SUMMARY"
-          echo "Publication requires separately authorized candidate CI and exact-green-SHA fast-forward landing. See docs/runbooks/candidate-ci.md." >> "$GITHUB_STEP_SUMMARY"
+          echo "Publication requires separate approval and the main-first task workflow. The unattended types pilot alone retains candidate admission. See docs/runbooks/candidate-ci.md." >> "$GITHUB_STEP_SUMMARY"
