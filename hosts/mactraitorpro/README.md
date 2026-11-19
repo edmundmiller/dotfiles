@@ -10,6 +10,12 @@ update_when: Host hardware, activation policy, or recovery procedures change.
 
 Human-facing setup and troubleshooting for the personal Mac.
 
+## tinyTouch fingerprint login
+
+Use [the shared Mac setup runbook](../../docs/runbooks/tinytouch-macos.md) to
+install the pinned CLI and pair this Mac in HID mode. Pairing runs separately
+from `hey re` and preserves Seqeratop's registration and the enrolled finger.
+
 ## Workload placement
 
 - [Amp Orb, Mac, NUC, and Meshify routing](workload-placement.md) — keeps

@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -114,6 +115,7 @@ class MiseTasksTests(unittest.TestCase):
             'skills:sync': ['skills-sync'],
             'skills:update': ['skills-update'],
             'test': [],
+            'tinytouch-setup': [],
             'unas': [],
             'unas:recover': ['unas-recover'],
             'unas:ssh': ['unas-ssh'],
@@ -138,6 +140,83 @@ class MiseTasksTests(unittest.TestCase):
                 self.assertEqual({task["name"]: task["aliases"] for task in tasks}, expected)
                 for task in tasks:
                     self.assertTrue(Path(task["source"]).is_relative_to(self.root / "bin/hey.d"))
+
+    @unittest.skipUnless(sys.platform == "darwin", "tinyTouch requires macOS")
+    def test_tinytouch_install_is_idempotent_and_pairing_is_explicit(self):
+        self.copy_project()
+        home = self.root / "private home"
+        cli = home / ".local/bin/tinytouch"
+        cli.parent.mkdir(parents=True)
+        cli.write_text(
+            '#!/bin/sh\n'
+            'if [ "$1" = --version ]; then echo "tinyTouch CLI 0.1.35"; exit; fi\n'
+            'printf "<%s>\\n" "$@"\nexit 23\n'
+        )
+        cli.chmod(0o755)
+        self.env["HOME"] = str(home)
+        for _ in range(2):
+            result = self.run_command("hey", "tinytouch-setup")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("is installed", result.stdout)
+            self.assertNotIn("<setup>", result.stdout)
+        result = self.run_command(
+            "hey", "tinytouch-setup", "--pair", "--port", "/dev/cu.test device"
+        )
+        self.assertEqual(result.returncode, 23, result.stderr)
+        self.assertIn(
+            "<--port>\n</dev/cu.test device>\n<setup>\n<--mode>\n<hid>\n<--skip-enroll>",
+            result.stdout,
+        )
+
+    @unittest.skipUnless(sys.platform == "darwin", "tinyTouch requires macOS")
+    def test_tinytouch_rejects_changed_installer_without_executing_it(self):
+        self.copy_project()
+        home = self.root / "private home"
+        home.mkdir()
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        curl = tools / "curl"
+        curl.write_text(
+            '#!/bin/sh\n'
+            'while [ "$1" != --output ]; do shift; done\n'
+            'printf \'touch "$HOME/untrusted-installer-ran"\\n\' > "$2"\n'
+        )
+        curl.chmod(0o755)
+        self.env |= {"HOME": str(home), "PATH": f"{tools}{os.pathsep}{self.env['PATH']}"}
+        result = self.run_command("hey", "tinytouch-setup", "--pair")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("installer checksum mismatch", result.stderr)
+        self.assertFalse((home / "untrusted-installer-ran").exists())
+        self.assertFalse((home / ".local/bin/tinytouch").exists())
+
+    @unittest.skipUnless(sys.platform == "darwin", "tinyTouch requires macOS")
+    def test_tinytouch_download_failure_explains_error_and_preserves_old_cli(self):
+        self.copy_project()
+        home = self.root / "private home"
+        cli = home / ".local/bin/tinytouch"
+        cli.parent.mkdir(parents=True)
+        cli.write_text('#!/bin/sh\necho "tinyTouch CLI 0.0.1"\n')
+        cli.chmod(0o755)
+        original_cli = cli.read_bytes()
+        tools = self.root / "fake-tools"
+        tools.mkdir()
+        curl = tools / "curl"
+        curl.write_text('#!/bin/sh\necho "fixture: connection refused" >&2\nexit 22\n')
+        curl.chmod(0o755)
+        self.env |= {
+            "HOME": str(home),
+            "PATH": f"{tools}{os.pathsep}{self.env['PATH']}",
+        }
+        result = self.run_command("hey", "tinytouch-setup", "--pair")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            "tinyTouch installer download failed; the installed CLI was not replaced",
+            result.stderr,
+        )
+        self.assertIn("fixture: connection refused", result.stderr)
+        self.assertNotIn("External command had a non-zero exit code", result.stderr)
+        self.assertEqual(cli.read_bytes(), original_cli)
+        self.assertFalse((home / "Library").exists())
 
     def test_discovered_file_dispatch_preserves_raw_arguments_and_exit_status(self):
         self.copy_project()
