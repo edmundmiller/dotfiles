@@ -54,6 +54,8 @@ deployment workflow. A local configuration edit does not start the downloader.
 - State persists under `/var/lib/nixos-containers/qb`. The old Gluetun directory
   is not imported or deleted. New torrents default to stopped, but a client can
   override that default. Do not connect Radarr or Sonarr during validation.
+  The generated configuration declares migration version 8 for qBittorrent 5.2.2,
+  preventing its legacy paused-setting migration from resetting that default.
 
 ## Requirements before an authorized deployment
 
@@ -132,6 +134,8 @@ against the generated enrollment script and settings. It verifies enrollment
 before named-exit selection and identity reuse after the enrollment file is gone.
 It covers delayed exit availability and rejects a missing configured exit even
 when another exit is online.
+The authenticated application API must report `tailscale0` as the binding and
+new torrents stopped, including after a restart regenerates the configuration.
 Neither fixture proves a real Mullvad session or NAS access.
 
 After an authorized deployment, validate the new device's selected Mullvad exit,

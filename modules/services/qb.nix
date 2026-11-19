@@ -174,8 +174,9 @@ in
             webuiPort = 8090;
             serverConfig = {
               LegalNotice.Accepted = true;
+              Meta.MigrationVersion = 8;
               BitTorrent.Session = {
-                InterfaceName = "tailscale0";
+                Interface = "tailscale0";
                 DefaultSavePath = "/data/media/downloads/complete";
                 TempPath = "/data/media/downloads/incomplete";
                 TempPathEnabled = true;

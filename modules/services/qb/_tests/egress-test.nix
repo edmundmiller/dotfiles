@@ -103,6 +103,7 @@ dotfilesLib.mkServiceVmTest {
     };
   };
   testScript = ''
+    import json
     import shlex
 
     start_all()
@@ -137,13 +138,16 @@ dotfilesLib.mkServiceVmTest {
         machine.wait_until_succeeds(as_downloader("curl -fsS --max-time 3 http://198.18.0.2:18082/marker | grep -x tunnel"))
         machine.wait_until_succeeds(as_downloader("curl -gfsS --max-time 3 http://[fd00:51::2]:18082/marker | grep -x tunnel"))
 
-    with subtest("The real WebUI keeps its secret-backed login across restarts"):
+    with subtest("The real WebUI keeps login and downloader safety settings across restarts"):
         for action in ["start", "restart"]:
             machine.succeed(inside("systemctl " + action + " qbittorrent || { journalctl -b -u qbittorrent --no-pager; exit 1; }"))
             machine.wait_until_succeeds(inside("test $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/v2/app/version) = 403"))
             machine.succeed(inside("test $(curl -sS -o /dev/null -w '%{http_code}' --data 'username=media-test&password=wrong' http://127.0.0.1:8090/api/v2/auth/login) = 401"))
             machine.succeed(inside("curl -fsS -c /tmp/qb-cookie --data 'username=media-test&password=qb-vm-password' http://127.0.0.1:8090/api/v2/auth/login -o /dev/null"))
             machine.succeed(inside("test $(curl -sS -b /tmp/qb-cookie -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/v2/app/version) = 200"))
+            preferences = json.loads(machine.succeed(inside("curl -fsS -b /tmp/qb-cookie http://127.0.0.1:8090/api/v2/app/preferences")))
+            safety_settings = {key: preferences[key] for key in ["current_network_interface", "add_stopped_enabled"]}
+            assert safety_settings == {"current_network_interface": "tailscale0", "add_stopped_enabled": True}, safety_settings
         machine.fail("curl -fsS --max-time 3 http://192.168.150.2:8090/")
 
     with subtest("Invalid WebUI credentials prevent downloader startup"):
