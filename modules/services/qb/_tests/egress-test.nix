@@ -146,8 +146,8 @@ dotfilesLib.mkServiceVmTest {
             machine.succeed(inside("curl -fsS -c /tmp/qb-cookie --data 'username=media-test&password=qb-vm-password' http://127.0.0.1:8090/api/v2/auth/login -o /dev/null"))
             machine.succeed(inside("test $(curl -sS -b /tmp/qb-cookie -o /dev/null -w '%{http_code}' http://127.0.0.1:8090/api/v2/app/version) = 200"))
             preferences = json.loads(machine.succeed(inside("curl -fsS -b /tmp/qb-cookie http://127.0.0.1:8090/api/v2/app/preferences")))
-            safety_settings = {key: preferences[key] for key in ["current_network_interface", "add_stopped_enabled"]}
-            assert safety_settings == {"current_network_interface": "tailscale0", "add_stopped_enabled": True}, safety_settings
+            safety_settings = {key: preferences[key] for key in ["current_network_interface", "add_stopped_enabled", "upnp", "web_ui_upnp"]}
+            assert safety_settings == {"current_network_interface": "tailscale0", "add_stopped_enabled": True, "upnp": False, "web_ui_upnp": False}, safety_settings
         machine.fail("curl -fsS --max-time 3 http://192.168.150.2:8090/")
 
     with subtest("Invalid WebUI credentials prevent downloader startup"):

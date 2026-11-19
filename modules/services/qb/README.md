@@ -135,7 +135,8 @@ before named-exit selection and identity reuse after the enrollment file is gone
 It covers delayed exit availability and rejects a missing configured exit even
 when another exit is online.
 The authenticated application API must report `tailscale0` as the binding and
-new torrents stopped, including after a restart regenerates the configuration.
+new torrents stopped, with torrent and WebUI UPnP disabled, including after a
+restart regenerates the configuration.
 Neither fixture proves a real Mullvad session or NAS access.
 
 After an authorized deployment, validate the new device's selected Mullvad exit,

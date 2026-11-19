@@ -175,13 +175,13 @@ in
             serverConfig = {
               LegalNotice.Accepted = true;
               Meta.MigrationVersion = 8;
+              Network.PortForwardingEnabled = false;
               BitTorrent.Session = {
                 Interface = "tailscale0";
                 DefaultSavePath = "/data/media/downloads/complete";
                 TempPath = "/data/media/downloads/incomplete";
                 TempPathEnabled = true;
                 AddTorrentStopped = true;
-                UPnP = false;
               };
               Preferences.WebUI = {
                 Address = "127.0.0.1";
