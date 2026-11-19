@@ -20,6 +20,9 @@ prefs = {}
 enrolled = threading.Event()
 starts = []
 edits = []
+exit_status_reads = 0
+exit_unavailable = False
+edit_readiness = []
 
 
 class LocalAPI(http.server.BaseHTTPRequestHandler):
@@ -44,16 +47,21 @@ class LocalAPI(http.server.BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(value).encode())
 
     def do_GET(self):
+        global exit_status_reads
         path = self.path.split("?")[0]
         if path == "/localapi/v0/status":
+            if enrolled.is_set():
+                exit_status_reads += 1
+            matching_exit = exit_status_reads >= 3 and not exit_unavailable
             self.respond({
                 "BackendState": "Running" if enrolled.is_set() else "NeedsLogin",
                 "Self": {"TailscaleIPs": ["100.64.0.2"]},
                 "Peer": {
                     "nodekey:" + "1" * 64: {
-                        "DNSName": startup["exitNode"] + ".",
+                        "DNSName": startup["exitNode"] + "." if matching_exit else "other.mullvad.ts.net.",
                         "TailscaleIPs": ["100.64.0.9"],
                         "ExitNodeOption": True,
+                        "Online": not matching_exit or exit_status_reads >= 4,
                     }
                 } if enrolled.is_set() else {},
             })
@@ -86,6 +94,7 @@ class LocalAPI(http.server.BaseHTTPRequestHandler):
 
     def do_PATCH(self):
         assert self.path == "/localapi/v0/prefs"
+        edit_readiness.append(exit_status_reads >= 4 and not exit_unavailable)
         edits.append(json.loads(self.read_body()))
         self.respond({})
 
@@ -105,6 +114,10 @@ with tempfile.TemporaryDirectory(prefix="qb-startup-") as directory:
         + " --socket=" + shlex.quote(str(socket)) + ' "$@"\n'
     )
     wrapper.chmod(0o700)
+    # Advance the readiness fixture on status reads, not wall-clock sleeps.
+    sleep = root / "sleep"
+    sleep.write_text("#!/bin/sh\nexit 0\n")
+    sleep.chmod(0o700)
     environment = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"])
     script = startup["script"].replace("/run/qb-tailscale-auth", str(key))
     with Server(str(socket), LocalAPI) as server:
@@ -114,6 +127,9 @@ with tempfile.TemporaryDirectory(prefix="qb-startup-") as directory:
                 subprocess.run(["sh", "-eu", "-c", script], env=environment, check=True, timeout=15)
                 subprocess.run([str(wrapper), "set", *startup["setFlags"]], check=True, timeout=15)
                 key.unlink(missing_ok=True)
+            exit_unavailable = True
+            result = subprocess.run(["sh", "-eu", "-c", script], env=environment, timeout=15)
+            assert result.returncode != 0, "An absent configured exit must fail without enrolling again"
         finally:
             server.shutdown()
 
@@ -123,6 +139,7 @@ assert starts[0]["UpdatePrefs"]["AdvertiseTags"] == ["tag:qb-downloads"]
 assert starts[0]["UpdatePrefs"]["Hostname"] == "qb-downloads"
 assert starts[0]["UpdatePrefs"]["ExitNodeIP"] in ("", None), "Enroll before resolving an exit"
 assert len(edits) == 2
+assert all(edit_readiness), "Never select an exit before the configured peer is online"
 for edit in edits:
     assert edit["ExitNodeIP"] == "100.64.0.9", "Resolve the configured exit after enrollment"
     assert edit["ExitNodeIPSet"] is True

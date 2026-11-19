@@ -16,7 +16,10 @@ deployment workflow. A local configuration edit does not start the downloader.
   host then queues `qb-workload.target` for enrollment, exit configuration,
   qBittorrent and Serve, so enrollment cannot deadlock guest readiness.
 - Initial enrollment advertises the downloader tag without selecting an exit.
-  Once the peer map is available, `tailscaled-set` selects the configured exit.
+  Enrollment waits up to 60 seconds for the configured exit to appear online
+  and eligible in the peer map, which can arrive after Tailscale reports Running.
+  Only then can `tailscaled-set` select that exit. An unavailable exit fails
+  startup without selecting another node or requesting a new enrollment key.
   qBittorrent cannot start before that configuration and its Mullvad check pass.
 - qBittorrent binds to `tailscale0`. An independent nftables output rule rejects
   its IPv4 and IPv6 traffic on every interface except loopback and `tailscale0`.
@@ -125,6 +128,8 @@ veth before the downloader starts, catching container boot deadlocks. A separate
 local daemon-API fixture runs the real Tailscale CLI
 against the generated enrollment script and settings. It verifies enrollment
 before named-exit selection and identity reuse after the enrollment file is gone.
+It covers delayed exit availability and rejects a missing configured exit even
+when another exit is online.
 Neither fixture proves a real Mullvad session or NAS access.
 
 After an authorized deployment, validate the new device's selected Mullvad exit,

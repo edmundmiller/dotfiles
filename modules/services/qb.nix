@@ -141,6 +141,7 @@ in
             serviceConfig = {
               Type = mkForce "oneshot";
               RemainAfterExit = true;
+              TimeoutStartSec = "150s";
             };
             # The upstream autoconnect script expands the key into argv.
             script = mkForce ''
@@ -149,9 +150,22 @@ in
                   --advertise-tags=tag:qb-downloads \
                   --exit-node-allow-lan-access=false --accept-dns=false --timeout=60s
               fi
+              for _attempt in $(seq 1 30); do
+                if tailscale status --json | jq --exit-status \
+                  --arg exit ${escapeShellArg "${cfg.mullvadExitNode}."} \
+                  'any(.Peer[]?; .DNSName == $exit and .ExitNodeOption == true and .Online == true)' >/dev/null; then
+                  exit 0
+                fi
+                sleep 2
+              done
+              echo "Configured Mullvad exit is not online after enrollment" >&2
+              exit 1
             '';
           };
-          systemd.services.tailscaled-set.wantedBy = mkForce [ "qb-workload.target" ];
+          systemd.services.tailscaled-set = {
+            wantedBy = mkForce [ "qb-workload.target" ];
+            requires = [ "tailscaled-autoconnect.service" ];
+          };
           users.users.qbittorrent.uid = mediaUid;
           users.groups.${mediaGroup}.gid = mediaGid;
           services.qbittorrent = {
