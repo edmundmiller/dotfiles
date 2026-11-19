@@ -108,10 +108,13 @@ def journal_summary(text, entity_mapping, windows=WINDOWS, recurrence=False):
             binary_messages += 1
         if recurrence and record.get("_SYSTEMD_UNIT") == "hass-health.service":
             try:
+                # systemd lifecycle messages and completion samples are not HA reports.
+                if isinstance(message, str) and not message.startswith("{"):
+                    continue
                 report = json.loads(message)
                 if not isinstance(report, dict):
                     raise ValueError("Unsupported checker report")
-                if report.get("schema_version") != 1:
+                if report.get("schema_version") != 1 or report.get("kind") == "ha_monitor_sample":
                     continue
                 critical = report["checks"]["critical_entities"]
                 if critical["status"] not in {"healthy", "unhealthy", "unknown"}:
@@ -281,7 +284,8 @@ def main():
         timestamp_format = "%Y-%m-%d %H:%M:%S.%f UTC" if recurrence else "%Y-%m-%d %H:%M:%S UTC"
         journal = subprocess.run(
             ["journalctl", *units, "--since", windows[0][0].strftime(timestamp_format),
-             "--until", windows[-1][1].strftime(timestamp_format), "-o", "json", "--no-pager"],
+             # JSON output otherwise replaces fields over 4096 bytes with null.
+             "--until", windows[-1][1].strftime(timestamp_format), "-o", "json", "--all", "--no-pager"],
             capture_output=True, text=True, check=True, timeout=20,
         )
         summary = journal_summary(journal.stdout, entity_mapping, windows, recurrence)

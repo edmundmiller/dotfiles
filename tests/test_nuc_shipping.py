@@ -802,7 +802,18 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
         client.connect.return_value = socket
         modules = {name: MagicMock() for name in ("websockets", "websockets.sync")}
         modules["websockets.sync.client"] = client
-        journal = subprocess.CompletedProcess([], 0, "\n".join(map(json.dumps, lines)))
+        def read_journal(command, **_kwargs):
+            if error:
+                raise error
+            # journalctl JSON replaces oversized fields with null unless --all is set.
+            records = [
+                record | {"MESSAGE": None}
+                if "--all" not in command and isinstance(record.get("MESSAGE"), str)
+                and len(record["MESSAGE"].encode()) > 4096 else record
+                for record in lines
+            ]
+            return subprocess.CompletedProcess(command, 0, "\n".join(map(json.dumps, records)))
+
         state = state if state is not None else {
             "entity_id": "climate.master_suite", "state": "heat",
             "last_changed": "2026-11-01T07:02:00Z", "last_updated": "2026-11-01T07:03:00Z",
@@ -819,7 +830,7 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             return response
 
         output = io.StringIO()
-        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("subprocess.run", return_value=journal, side_effect=error), patch("urllib.request.urlopen", side_effect=state_response), patch.object(sys, "argv", ["reader", *args]), patch("sys.stdout", output):
+        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("subprocess.run", side_effect=read_journal), patch("urllib.request.urlopen", side_effect=state_response), patch.object(sys, "argv", ["reader", *args]), patch("sys.stdout", output):
             with self.assertRaises(SystemExit) as exit_status:
                 runpy.run_path(str(ROOT / "modules/services/hass/climate-entity-diagnostics.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
@@ -946,6 +957,37 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
                          "critical_entities_status": "unhealthy", "entity_failures": ["unavailable"]}])
         self.assertEqual(journal["retention_by_window"][0]["first_retained_ha_record"], "2026-11-01T06:54:00+00:00")
         self.assertEqual(journal["retention_by_window"][0]["last_retained_ha_record"], "2026-11-01T07:10:00+00:00")
+
+    def test_recurrence_reads_oversized_reports_and_errors_without_exporting_contents(self):
+        args = ["--incident-start", "2026-11-01T07:00:00Z", "--incident-cutoff", "2026-11-01T07:05:00Z"]
+        unit = {"_SYSTEMD_UNIT": "hass-health.service"}
+        report = {
+            "schema_version": 1, "observed_at": "2026-11-01T07:01:00Z",
+            "checks": {"critical_entities": {"status": "unhealthy", "failures": [
+                {"entity_id": "climate.master_suite", "state": "unavailable"},
+            ]}}, "private": "private" * 1000,
+        }
+        code, result = self.invoke([
+            self.record("2026-11-01T07:01:01Z", json.dumps(report)) | unit,
+            self.record("2026-11-01T07:01:02Z", "Finished private service") | unit,
+            self.record("2026-11-01T07:01:03Z", json.dumps({
+                "schema_version": 1, "kind": "ha_monitor_sample", "observed_at": "2026-11-01T07:01:03Z",
+            })) | unit,
+            self.record("2026-11-01T07:01:04Z", "{invalid private report") | unit,
+            self.record("2026-11-01T07:01:05Z",
+                        "2026-11-01 07:01:05 ERROR (MainThread) [aiohomekit] connection reset " + "private" * 1000),
+        ], args=args)
+        self.assertEqual(code, 0)
+        journal = result["journal"]
+        self.assertEqual(journal["checker_reports"], [{
+            "observed_at": "2026-11-01T07:01:00+00:00",
+            "critical_entities_status": "unhealthy", "entity_failures": ["unavailable"],
+        }])
+        self.assertEqual(journal["malformed_checker_records_not_classified"], 1)
+        self.assertEqual(journal["nontext_messages_not_classified"], 0)
+        self.assertEqual(journal["category_counts"], [{
+            "scope": "homekit_library_not_entity_specific", "category": "connection_failure", "count": 1,
+        }])
 
     def test_recurrence_caps_window_and_does_not_export_unbounded_events(self):
         args = ["--incident-start", "2026-11-01T06:59:00.123456Z", "--incident-cutoff", "2026-11-01T08:00:00Z"]
