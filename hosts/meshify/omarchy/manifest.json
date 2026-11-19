@@ -103,6 +103,12 @@
       "sourceMode": "0644"
     },
     {
+      "source": "config/systemd/user/rex.service.d/override.conf",
+      "target": ".config/systemd/user/rex.service.d/override.conf",
+      "mode": "0644",
+      "sourceMode": "0644"
+    },
+    {
       "source": "config/systemd/user/omarchy-plugin-watch.service",
       "target": ".config/systemd/user/omarchy-plugin-watch.service",
       "mode": "0644",
