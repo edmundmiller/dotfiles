@@ -11,8 +11,19 @@ o.launch_on_start("wlsunset -l 33.1 -L -96.8 -t 4000 -T 6500")
 o.window("steam_app_.*", { idle_inhibit = "fullscreen" })
 
 -- Keep BakkesMod's Proton windows, including its untitled status window, out of
--- the active gaming workspaces.
-o.window({ class = "^steam_proton$", xwayland = true }, { workspace = "10 silent" })
+-- the active gaming workspaces and prevent them from stealing focus.
+o.window({ class = "^steam_proton$", xwayland = true }, {
+  workspace = "10 silent",
+  no_initial_focus = true,
+  focus_on_activate = false,
+})
+
+-- The injector otherwise fills the workspace with a large white window.
+o.window({ class = "^steam_proton$", title = "^BakkesModInjectorCpp$", xwayland = true }, {
+  float = true,
+  size = { 640, 480 },
+  center = true,
+})
 
 -- Keep Grok Bot on its dedicated workspace without changing the active workspace.
 o.window("^grok-bot$", { workspace = "10 silent" })
