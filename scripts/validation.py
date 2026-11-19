@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -80,6 +81,7 @@ CHECKS = {
     ],
     "hass-health-tests": ["modules/services/hass/*"],
     "gatus-alerting-tests": ["modules/services/gatus/*", "overlays/gatus/*"],
+    "gatus-native-tests": ["modules/services/gatus/*", "overlays/gatus/*"],
     "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",
@@ -117,6 +119,7 @@ CHECKS = {
     ],
     "done-delivery-tests": [
         "skills/catalog/done/*",
+        "skills/flake.nix",
         "packages/bend/*",
         "scripts/check_done_bundle.py",
         "bin/hey.d/skills/amp-stage-done",
@@ -185,6 +188,7 @@ CHECKS = {
     ],
     "ast-grep-tests": ["ast-grep/*", "sgconfig.yml"],
     "displayctl-tests": ["packages/displayctl/*"],
+    "displayctl-tnote-integration": ["packages/displayctl/*"],
     "trmnl-agent-message-structure": ["config/trmnl/agent-message/*"],
     "nix-private-github": [
         "bin/nix-private-github",
@@ -222,6 +226,15 @@ CHECKS = {
     ],
     "nuc-hermes-displayctl-wiring": ["hosts/nuc/*", "packages/displayctl/*"],
     "nuc-hermes-cron-failure-summary": ["tests/test_hermes_cron_failure_summary.py"],
+}
+
+# These checks build complete applications or their toolchains. Keep them
+# explicit instead of compiling unrelated native packages on routine CI pushes.
+PACKAGE_BUILD_CHECKS = {
+    "callstack-diff",
+    "hunk-config-compatibility",
+    "gatus-native-tests",
+    "displayctl-tnote-integration",
 }
 
 LINUX_CHECKS = {
@@ -441,10 +454,15 @@ def plan(root, args):
                 files, patterns + ["flake.nix", "flake.lock", "lib/*", "overlays/*"]
             )
         ]
+    deferred = []
+    if not args.package_builds:
+        deferred = [name for name in checks if name in PACKAGE_BUILD_CHECKS]
+        checks = [name for name in checks if name not in PACKAGE_BUILD_CHECKS]
     return {
         "files": files,
         "hooks": bool(files) and not args.packages_only,
         "checks": checks,
+        "deferred_checks": deferred,
         "packages": packages,
         "integration": integration,
         "flue": not args.packages_only
@@ -529,6 +547,7 @@ def execute(root, selection, github_token=""):
         if len(command) >= 40:
             display += " … (file list: hey check --plan)"
         print(f"==> {label}: {display}", flush=True)
+        started = time.monotonic()
         try:
             result = subprocess.run(
                 command,
@@ -545,6 +564,10 @@ def execute(root, selection, github_token=""):
             )
             failures.append(label)
             return None
+        print(
+            f"<== {label}: exit {result.returncode}, {time.monotonic() - started:.3f}s",
+            flush=True,
+        )
         if result.returncode:
             failures.append(label)
             print(f"FAIL {label} (exit {result.returncode})", file=sys.stderr)
@@ -588,18 +611,23 @@ def execute(root, selection, github_token=""):
             nix + ["eval", "--raw", "--impure", "--expr", "builtins.currentSystem"],
             capture=True,
         )
-    if system:
-        for name in selection["checks"]:
-            outputs = run(
-                name,
-                build
-                + (["--print-out-paths"] if cache_directory else [])
-                + [f".#checks.{system}.{name}"],
-                env=env,
-                capture=bool(cache_directory),
-            )
-            if cache_directory and outputs:
-                cache_outputs.extend(f"{name}={path}" for path in outputs.splitlines())
+    if system and selection["checks"]:
+        # One evaluator and one dependency graph. Nix schedules independent
+        # builds within its configured job/core limits, including after failures.
+        outputs = run(
+            "Nix checks",
+            build
+            + ["--keep-going"]
+            + (["--print-out-paths"] if cache_directory else [])
+            + [f".#checks.{system}.{name}" for name in selection["checks"]],
+            env=env,
+            capture=bool(cache_directory),
+        )
+        if cache_directory and outputs:
+            for path in outputs.splitlines():
+                name = Path(path).name[33:]
+                if name in selection["checks"]:
+                    cache_outputs.append(f"{name}={path}")
     target = selection["platform"]
     if target == "darwin":
         for host in ("MacTraitor-Pro", "Seqeratop"):
@@ -756,6 +784,11 @@ def main(argv=None):
     )
     parser.add_argument("--packages-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
+        "--package-builds",
+        action="store_true",
+        help="Include affected native application builds and packaged integration tests",
+    )
+    parser.add_argument(
         "--ci",
         action="store_true",
         help="Use VALIDATION_BASE; absent/zero base runs full; skip unaffected platform suites",
@@ -776,6 +809,9 @@ def main(argv=None):
         help="Repository-relative changed-file scopes (task-owned paths)",
     )
     args = parser.parse_args(argv)
+    # A missing CI baseline expands source coverage, not permission to compile
+    # applications. Only an explicit --full or --package-builds does that.
+    args.package_builds = args.package_builds or args.full
     github_token = os.environ.pop("NIX_GITHUB_TOKEN", "").strip()
     if args.ci:
         base = args.base_ref or os.environ.get("VALIDATION_BASE", "")
@@ -817,6 +853,12 @@ def main(argv=None):
             f"Validation: {len(selection['files'])} files, {len(selection['checks'])} Nix checks, {len(selection['packages'])} packages",
             flush=True,
         )
+        if selection.get("deferred_checks"):
+            print(
+                "Package builds deferred (use --package-builds or --full): "
+                + ", ".join(selection["deferred_checks"]),
+                flush=True,
+            )
         if not any(
             selection[k]
             for k in ("hooks", "checks", "packages", "integration", "platform")

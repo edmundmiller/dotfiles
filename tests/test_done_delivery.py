@@ -15,6 +15,15 @@ CHECK = ROOT / "scripts/check_done_bundle.py"
 
 
 class DoneDeliveryTest(unittest.TestCase):
+    def staging_fixture(self, root: Path) -> str:
+        # Filesystem replacement cases do not need to rerun the closeout suite.
+        # test_materialized_bundle_runs_existing_contract keeps the real verifier.
+        fixture = root / "source"
+        shutil.copytree(SOURCE, fixture / "skills/catalog/done")
+        (fixture / "scripts").mkdir()
+        (fixture / "scripts/check_done_bundle.py").write_text("print('{}')\n")
+        return str(fixture)
+
     def check_bundle(self, bundle: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(CHECK), str(bundle)],
@@ -68,7 +77,7 @@ class DoneDeliveryTest(unittest.TestCase):
                 result = subprocess.run(
                     ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), str(target)],
                     cwd=ROOT,
-                    env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT)},
+                    env={**os.environ, "MISE_PROJECT_ROOT": self.staging_fixture(Path(tmp))},
                     capture_output=True,
                     text=True,
                 )
@@ -121,7 +130,7 @@ os.execv({shutil.which("mv")!r}, [{shutil.which("mv")!r}, *sys.argv[1:]])
                 result = subprocess.run(
                     ["bash", str(ROOT / "bin/hey.d/skills/amp-stage-done"), str(repo)],
                     cwd=ROOT,
-                    env={**os.environ, "MISE_PROJECT_ROOT": str(ROOT),
+                    env={**os.environ, "MISE_PROJECT_ROOT": self.staging_fixture(Path(tmp)),
                          "PATH": str(tools) + os.pathsep + os.environ["PATH"]},
                     capture_output=True,
                     text=True,

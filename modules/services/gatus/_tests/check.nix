@@ -1,4 +1,8 @@
-{ pkgs, inputs }:
+{
+  pkgs,
+  inputs,
+  native ? false,
+}:
 let
   lib = pkgs.lib.extend (
     self: _super: {
@@ -106,17 +110,14 @@ let
     }
   );
 in
-pkgs.runCommand "gatus-alerting-tests"
+pkgs.runCommand (if native then "gatus-native-tests" else "gatus-alerting-tests")
   {
-    nativeBuildInputs = [
-      pkgs.python3
-      pkgs.gatus
-    ];
+    nativeBuildInputs = [ pkgs.python3 ];
   }
   ''
     export PYTHONDONTWRITEBYTECODE=1
     export GATUS_CONFIG_FIXTURES=${fixtures}
-    export GATUS_BINARY=${pkgs.gatus}/bin/gatus
+    ${lib.optionalString native "export GATUS_BINARY=${pkgs.gatus}/bin/gatus"}
     python3 ${./test_notion_incidents.py} ${../incident-delivery.py} -v
     touch "$out"
   ''

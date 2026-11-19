@@ -18,6 +18,7 @@ Run them inside the checkout, or use `mise --cd <checkout> run check`.
 | `hey check path...`                | The same routing, limited to changed task-owned paths                              |
 | `hey check --plan`                 | JSON selection only; no check execution or source snapshot                         |
 | `hey check --full`                 | All portable checks, formatting/lint, all workspace packages and integration tests |
+| `hey check --package-builds`       | Changed-work checks plus affected native application builds and integrations       |
 | `hey check --platform darwin`      | Both host derivations and native checks, aarch64 Darwin only                       |
 | `hey check --platform nixos`       | Full Linux flake check, including host, deployment and VM checks                   |
 | `hey check --platform services-vm` | Service VM suite only, x86_64 Linux                                                |
@@ -91,6 +92,12 @@ then rerun `hey check`. Missing tools or private inputs are failures with concre
 diagnostics, never silent passes. Snapshot commits explicitly disable signing;
 real commits retain the user's signing policy.
 
+Selected Nix checks run in one `nix build --keep-going` invocation. Nix evaluates
+their shared dependency graph once and schedules independent derivations within
+the builder's configured job/core limits. A failed build still fails validation;
+independent builds and later package suites continue. Each validation phase logs
+its elapsed time and exit status.
+
 The `validation-tests` derivation runs its existing unittest modules in separate
 processes, starting the longest modules first. Concurrency respects
 `NIX_BUILD_CORES`, with a maximum of four workers; zero means automatic CPU
@@ -106,10 +113,34 @@ there is no one-shot completion token or persistent success cache.
 ## CI uses the same selection
 
 Changes to `flake.nix`, `flake.lock`, `lib/` or `overlays/` still select all
-portable checks. The root flake defines the checks and shared package set, so a
-path-only selector cannot tell which check definitions or dependencies changed.
-Narrowing this rule without dependency-aware selection would omit verification.
-It does not select host or VM builds; those remain explicit platform checks.
+portable source checks. These files own shared definitions and dependencies;
+file-name-only selection could miss their consumers. Nix reuses unchanged
+realized outputs, with bounded source sets where the tests permit them.
+Host and VM builds remain separate explicit platform checks.
+
+Routine checks do not build callstack-diff, Hunk, Gatus or tnote applications.
+Gatus configuration and Python delivery tests and displayctl source/CLI tests
+remain in the default suite. Native Gatus tests and packaged tnote integration
+are separate `gatus-native-tests` and `displayctl-tnote-integration` derivations.
+Use `--package-builds` for these and the callstack-diff/Hunk packaged checks,
+or dispatch CI with `package_builds=true`. `--full` includes them all. The plan
+and logs list deferred checks explicitly. A green routine run does not certify
+these packages. Validate them before deploying changes to those applications.
+
+The delivery suite runs the real bundle verifier end to end once. Filesystem
+replacement and interruption fixtures substitute only that verifier, rather
+than recursively running the entire closeout suite for each replacement case.
+Its Nix source includes only the bundle, staging tool and test inputs, so
+unrelated repository edits do not invalidate that check output.
+
+Public HA dependency archives and exact-candidate empty-output reuse remain
+optional optimizations. Main pushes also restore and save validated empty check
+outputs in a main-only GitHub cache. A narrow selection retains other checks'
+previous outputs, with one entry per check. Nix reuses an imported output only
+when its derivation identity still matches; changed checks run normally.
+The importer rejects nonempty data, references, unknown metadata, oversized
+archives and non-main events. No whole-store cache is uploaded: the store can
+contain private inputs and host data. Cache misses never skip validation.
 
 `Checks (Linux)` runs the shared portable runner. PRs use
 the PR base SHA; main pushes use the previous SHA. Candidate pushes use the
@@ -118,7 +149,8 @@ of a new branch. The planner rejects mismatched candidate refs, non-ancestor
 bases, or a checked-out SHA that differs from the encoded candidate. A newer
 descendant main does not invalidate testing; exact-base admission still guards
 landing. Candidate manual dispatches use the same encoded base. `--ci` consumes
-`VALIDATION_BASE`; other manual events with no usable base run the full portable suite. The
+`VALIDATION_BASE`; events with no usable base run every portable source check,
+but still defer application builds unless explicitly requested. The
 lightweight planning job validates the candidate base before passing it to Linux.
 Legacy Herdr TOML and VM checks have been removed; native Herdr tests remain.
 The candidate route is retained for the unattended Renovate types pilot. Agent tasks instead use [main-first publication](runbooks/candidate-ci.md): affected local checks, a normal main push, then hosted CI. Main CI may fail; fix task-caused failures forward. NUC rollout only selects green main revisions. The approved ruleset/prompt cutover is required before direct-main publication can replace the former candidate policy.

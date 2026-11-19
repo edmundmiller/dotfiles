@@ -1365,6 +1365,19 @@
               done-delivery-tests =
                 pkgs.runCommand "done-delivery-tests"
                   {
+                    src = lib.fileset.toSource {
+                      root = ./.;
+                      fileset = lib.fileset.unions [
+                        ./skills/catalog/done
+                        ./skills/flake.nix
+                        ./scripts/check_done_bundle.py
+                        ./bin/hey.d/skills/amp-stage-done
+                        ./tests/done_bend.py
+                        ./tests/test_done_closeout.py
+                        ./tests/test_done_delivery.py
+                        ./tests/test_done_skill.py
+                      ];
+                    };
                     nativeBuildInputs = [
                       pkgs.bash
                       pkgs.coreutils
@@ -1382,7 +1395,7 @@
                     export GIT_CONFIG_COUNT=1
                     export GIT_CONFIG_KEY_0=commit.gpgsign
                     export GIT_CONFIG_VALUE_0=false
-                    cp -R ${./.} "$TMPDIR/source"
+                    cp -R "$src" "$TMPDIR/source"
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
@@ -1394,13 +1407,17 @@
                 pkgs.runCommand "displayctl-tests"
                   {
                     nativeBuildInputs = [ pkgs.python3 ];
-                    DISPLAYCTL_TEST_TNOTE = "${inputs.tnote.packages.${system}.default}/bin/tnote";
                   }
                   ''
                     cd ${./packages/displayctl}
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_displayctl.py test_tasks.py
                     touch $out
                   '';
+
+              displayctl-tnote-integration = self.checks.${system}.displayctl-tests.overrideAttrs {
+                name = "displayctl-tnote-integration";
+                DISPLAYCTL_TEST_TNOTE = "${inputs.tnote.packages.${system}.default}/bin/tnote";
+              };
 
               trmnl-agent-message-structure =
                 pkgs.runCommand "trmnl-agent-message-structure"
@@ -1774,6 +1791,12 @@
               gatus-alerting-tests = import ./modules/services/gatus/_tests/check.nix {
                 inherit inputs;
                 pkgs = pkgs.extend self.overlays.gatus;
+              };
+
+              gatus-native-tests = import ./modules/services/gatus/_tests/check.nix {
+                inherit inputs;
+                pkgs = pkgs.extend self.overlays.gatus;
+                native = true;
               };
 
               hass-health-tests =

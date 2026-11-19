@@ -103,7 +103,7 @@ class CheckCacheTests(unittest.TestCase):
         step = workflow.split(
             "      - name: Restore exact successful candidate check outputs\n", 1
         )[1].split("      - name:", 1)[0]
-        command = shlex.split(step.split("        run: ", 1)[1].strip())
+        command = shlex.split(step.split("        run: ", 1)[1].splitlines()[0])
         env = os.environ.copy()
         env.pop("PYTHONDONTWRITEBYTECODE", None)
         env["GITHUB_EVENT_NAME"] = "workflow_dispatch"
@@ -128,6 +128,48 @@ class CheckCacheTests(unittest.TestCase):
         self.assertEqual(imported, [base64.b64decode(self.entry["export"])])
         self.assertIn("imported 1 empty outputs", output)
         self.assertIn(self.url, output)
+
+    def test_main_cache_imports_only_validated_outputs_on_trusted_main_pushes(self):
+        scenarios = (
+            ("valid", {}, [self.entry], cache.VERSION),
+            ("private", {}, [self.entry, self.entry | {"private": "PRIVATE-SENTINEL"}], cache.VERSION),
+            ("event", {"GITHUB_EVENT_NAME": "pull_request"}, [self.entry], cache.VERSION),
+            ("ref", {"GITHUB_REF": "refs/heads/candidate/x/y"}, [self.entry], cache.VERSION),
+            ("repo", {"GITHUB_REPOSITORY": "attacker/dotfiles"}, [self.entry], cache.VERSION),
+            ("sha", {"GITHUB_SHA": "c" * 40}, [self.entry], cache.VERSION),
+            ("version", {}, [self.entry], "unknown"),
+            ("oversize", {}, [self.entry], cache.VERSION),
+            ("missing", {}, [self.entry], cache.VERSION),
+        )
+        for label, env, entries, version in scenarios:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                source = Path(directory) / "checks.json"
+                source.write_text(json.dumps(dict(version=version, entries=entries)))
+                if label == "oversize":
+                    source.write_bytes(b" " * (cache.LIMIT + 1))
+                elif label == "missing":
+                    source.unlink()
+                imported = []
+                with (
+                    patch.dict(os.environ, {"GITHUB_REPOSITORY": "edmundmiller/dotfiles"} | env),
+                    patch.object(cache.sys, "argv", ["ci_check_cache", "restore-main", directory]),
+                    patch.object(cache.subprocess, "run", side_effect=lambda *a, **kw: imported.append(kw["input"])),
+                    contextlib.redirect_stdout(io.StringIO()) as output,
+                ):
+                    self.assertEqual(cache.main(), 0)
+                self.assertEqual(imported, [base64.b64decode(self.entry["export"])] if label == "valid" else [])
+                self.assertIn("imported 1 empty outputs" if label == "valid" else "normal validation still required", output.getvalue())
+
+    def test_small_selections_preserve_only_validated_previous_cache_entries(self):
+        for private in (False, True):
+            with self.subTest(private=private), tempfile.TemporaryDirectory() as directory:
+                source = Path(directory) / "checks.json"
+                entry = self.entry | ({"private": "PRIVATE-SENTINEL"} if private else {})
+                source.write_text(json.dumps(dict(version=cache.VERSION, entries=[entry])))
+                cache.save(directory, [])
+                payload = source.read_text()
+                self.assertEqual(json.loads(payload)["entries"], [] if private else [self.entry])
+                self.assertNotIn("PRIVATE-SENTINEL", payload)
 
     def test_untrusted_or_unavailable_sources_are_cache_misses(self):
         scenarios = [
@@ -182,6 +224,7 @@ class CheckCacheTests(unittest.TestCase):
             ("path", "/nix/store/" + "0" * 32 + "-private-source"),
             ("deriver", "/nix/store/" + "0" * 32 + "-private-source.drv"),
             ("kind", "symlink"),
+            ("private", "PRIVATE-SENTINEL"),
         ):
             with self.subTest(field=field):
                 bad = self.entry | {field: value}
@@ -427,9 +470,9 @@ class PublicDependencyCacheTests(unittest.TestCase):
             .split("        run: |\n", 1)[1]
             .split("      - name:", 1)[0]
         )
-        for status in (0, 17):
+        for status, package_builds in ((0, "false"), (17, "false"), (0, "true")):
             with (
-                self.subTest(status=status),
+                self.subTest(status=status, package_builds=package_builds),
                 tempfile.TemporaryDirectory() as directory,
             ):
                 trace = Path(directory) / "trace"
@@ -442,6 +485,7 @@ class PublicDependencyCacheTests(unittest.TestCase):
                     | {
                         "NIX_GITHUB_TOKEN": "fixture-github",
                         "REX_TOKEN": "fixture-rex",
+                        "VALIDATION_PACKAGE_BUILDS": package_builds,
                         "RUNNER_TEMP": directory,
                         "TRACE": str(trace),
                         "STATUS": str(status),
@@ -451,7 +495,8 @@ class PublicDependencyCacheTests(unittest.TestCase):
                 self.assertEqual(result.returncode, status, result.stderr)
                 self.assertEqual(
                     trace.read_text().strip(),
-                    "shell .#validation-tools --command python3 scripts/validation.py --ci",
+                    "shell .#validation-tools --command python3 scripts/validation.py --ci"
+                    + (" --package-builds" if package_builds == "true" else ""),
                 )
                 self.assertEqual(list(Path(directory).glob("rex-netrc.*")), [])
 

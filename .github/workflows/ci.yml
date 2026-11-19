@@ -15,6 +15,10 @@ on:
         description: Run the service VM suite
         type: boolean
         default: false
+      package_builds:
+        description: Include native application builds and packaged integration tests
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -101,11 +105,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PYTHONDONTWRITEBYTECODE: "1"
         run: python3 -m scripts.ci_check_cache restore
+      # This main-only cache contains canonical empty outputs, never sources,
+      # references or closures. Changed derivations still build normally.
+      - name: Restore main empty check archive
+        id: empty-checks-restore
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'edmundmiller/dotfiles'
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ runner.temp }}/empty-check-cache/checks.json
+          key: main-empty-checks-v1-${{ runner.os }}-${{ github.sha }}-${{ github.run_attempt }}
+          restore-keys: main-empty-checks-v1-${{ runner.os }}-
+      - name: Import main empty check outputs
+        if: steps.empty-checks-restore.outputs.cache-matched-key != ''
+        continue-on-error: true
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 -m scripts.ci_check_cache restore-main "$RUNNER_TEMP/empty-check-cache"
       - name: Validate (same runner as hey check)
         env:
-          CI_CHECK_CACHE_DIR: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/candidate/') && format('{0}/empty-check-cache', runner.temp) || '' }}
+          CI_CHECK_CACHE_DIR: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/candidate/')) && format('{0}/empty-check-cache', runner.temp) || '' }}
           NIX_GITHUB_TOKEN: ${{ secrets.NIX_PRIVATE_GITHUB_TOKEN }}
           REX_TOKEN: ${{ secrets.REX_TOKEN }}
+          VALIDATION_PACKAGE_BUILDS: ${{ github.event_name == 'workflow_dispatch' && inputs.package_builds }}
         run: |
           if [[ -z "$NIX_GITHUB_TOKEN" ]]; then
             echo "::error::Configure NIX_PRIVATE_GITHUB_TOKEN with read-only access to the private tnote and agents-workspace repositories."
@@ -121,7 +143,11 @@ jobs:
           printf 'machine pkgs.superlogical.com login rex password %s\n' "$REX_TOKEN" > "$rex_netrc"
           unset REX_TOKEN
           export NIX_CONFIG="${NIX_CONFIG:-}"$'\n'"netrc-file = $rex_netrc"
-          nix shell .#validation-tools --command python3 scripts/validation.py --ci
+          flags=(--ci)
+          if [[ "$VALIDATION_PACKAGE_BUILDS" == true ]]; then
+            flags+=(--package-builds)
+          fi
+          nix shell .#validation-tools --command python3 scripts/validation.py "${flags[@]}"
       - name: Export only realized public HA dependencies
         id: public-ha-export
         if: steps.public-ha-plan.outputs.enabled == 'true' && steps.public-ha-restore.outputs.cache-hit != 'true'
@@ -146,6 +172,13 @@ jobs:
           compression-level: 0
           retention-days: 3
           if-no-files-found: warn
+      - name: Save main empty check outputs
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'edmundmiller/dotfiles'
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ runner.temp }}/empty-check-cache/checks.json
+          key: main-empty-checks-v1-${{ runner.os }}-${{ github.sha }}-${{ github.run_attempt }}
       - name: Retain only empty candidate check outputs
         if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/candidate/')
         continue-on-error: true

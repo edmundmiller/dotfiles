@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -107,7 +108,8 @@ class ValidationTests(unittest.TestCase):
         self.assertFalse(v.matches(["config/jj/config.toml"], patterns))
 
         self.write("flake.lock", "changed")
-        self.assertIn("hunk-config-compatibility", self.selection()["checks"])
+        self.assertIn("hunk-config-compatibility", self.selection()["deferred_checks"])
+        self.assertIn("hunk-config-compatibility", self.selection("--package-builds")["checks"])
 
     def test_mcp_sources_select_shared_reconciliation_tests(self):
         for path in (
@@ -167,7 +169,8 @@ class ValidationTests(unittest.TestCase):
         ):
             with self.subTest(path=path):
                 self.write(path, "changed")
-                self.assertIn("callstack-diff", self.selection(path)["checks"])
+                self.assertIn("callstack-diff", self.selection(path)["deferred_checks"])
+                self.assertIn("callstack-diff", self.selection("--package-builds", path)["checks"])
         self.write("packages/acpx/package.json", "{}")
         self.assertNotIn("callstack-diff", self.selection("packages/acpx")["checks"])
 
@@ -217,7 +220,56 @@ class ValidationTests(unittest.TestCase):
             )
         for base in ("", "0" * 40):
             with patch.dict(os.environ, {"VALIDATION_BASE": base}):
-                self.assertEqual(self.selection("--ci"), self.selection("--full"))
+                self.assertEqual(self.selection("--ci", "--package-builds"), self.selection("--full"))
+                quick = self.selection("--ci")
+                self.assertFalse(v.PACKAGE_BUILD_CHECKS & set(quick["checks"]))
+                self.assertTrue(v.PACKAGE_BUILD_CHECKS <= set(quick["deferred_checks"]))
+
+    def test_native_package_checks_are_explicit_but_source_contracts_remain(self):
+        self.write("flake.nix", "shared change")
+        quick = self.selection()
+        self.assertFalse(v.PACKAGE_BUILD_CHECKS & set(quick["checks"]))
+        self.assertEqual(set(quick["deferred_checks"]), v.PACKAGE_BUILD_CHECKS)
+        self.assertTrue({"displayctl-tests", "gatus-alerting-tests"} <= set(quick["checks"]))
+        for flags in (("--package-builds",), ("--full",)):
+            expanded = self.selection(*flags)
+            self.assertTrue(v.PACKAGE_BUILD_CHECKS <= set(expanded["checks"]))
+            self.assertEqual(expanded["deferred_checks"], [])
+
+    def test_batched_checks_continue_independent_work_and_report_failure(self):
+        tools = Path(self.temp.name) / "tools"
+        tools.mkdir()
+        marker = Path(self.temp.name) / "completed"
+        nix = tools / "nix"
+        nix.write_text(textwrap.dedent(f"""\
+            #!{sys.executable}
+            from pathlib import Path
+            import sys
+            if 'eval' in sys.argv:
+                print('x86_64-linux')
+                sys.exit(0)
+            for name in sys.argv:
+                if name.startswith('.#checks.'):
+                    with Path({str(marker)!r}).open('a') as output:
+                        output.write(name + '\\n')
+                    if name.endswith('.orb-setup-tests') and '--keep-going' not in sys.argv:
+                        sys.exit(7)
+            sys.exit(7)
+            """))
+        nix.chmod(0o755)
+        selection = dict(files=[], hooks=False, checks=["orb-setup-tests", "validation-tests"],
+                         platform=None, packages=[], integration=False, flue=False)
+        with (
+            patch.dict(os.environ, {"PATH": str(tools) + os.pathsep + os.environ["PATH"], "CI_CHECK_CACHE_DIR": ""}),
+            contextlib.redirect_stdout(io.StringIO()),
+            contextlib.redirect_stderr(io.StringIO()) as errors,
+        ):
+            code = v.execute(self.root, selection, "fixture-token")
+        self.assertEqual(code, 1)
+        self.assertIn("FAILED: Nix checks", errors.getvalue())
+        self.assertEqual(marker.read_text().splitlines(), [
+            ".#checks.x86_64-linux.orb-setup-tests", ".#checks.x86_64-linux.validation-tests",
+        ])
 
     def test_ci_platform_routes_both_sides_of_dependency_boundary(self):
         with (

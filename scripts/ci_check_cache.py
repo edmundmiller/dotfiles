@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Transfer only empty Nix check outputs from successful exact candidates.
+"""Reuse only empty Nix check outputs from trusted main and exact candidates.
 
 GitHub branch caches cannot flow from candidate to main. Run artifacts can,
 but are public here: never archive the store, sources, closures or credentials.
@@ -58,6 +58,8 @@ def empty_export(path, kind, deriver):
 
 
 def checked_export(entry):
+    if set(entry) != {"check", "path", "kind", "deriver", "export"}:
+        raise ValueError("Unexpected check cache metadata")
     name, path, kind, deriver = (entry[k] for k in ("check", "path", "kind", "deriver"))
     if name not in CHECKS | LINUX_CHECKS or kind not in ("regular", "directory"):
         raise ValueError("Not a portable empty check output")
@@ -109,13 +111,27 @@ def save(directory, outputs):
         except ValueError:
             continue
         entries.append(entry)
-    payload = json.dumps(dict(version=VERSION, entries=entries)).encode()
+    target = Path(directory)
+    source = target / "checks.json"
+    previous = []
+    try:
+        if source.stat().st_size <= LIMIT:
+            cached = json.loads(source.read_bytes())
+            if cached["version"] == VERSION:
+                for entry in cached["entries"]:
+                    checked_export(entry)
+                previous = cached["entries"]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    # Keep one result per check across narrowly scoped main pushes, rather than
+    # discarding yesterday's unchanged results when today's selection is small.
+    combined = {entry["check"]: entry for entry in previous + entries}
+    payload = json.dumps(dict(version=VERSION, entries=list(combined.values()))).encode()
     if len(payload) > LIMIT:
         raise ValueError("Check cache exceeds size limit")
-    target = Path(directory)
     target.mkdir(parents=True, exist_ok=True)
     (target / "checks.json").write_bytes(payload)
-    print(f"Check cache: exported {len(entries)} empty outputs ({len(payload)} bytes)")
+    print(f"Check cache: exported {len(combined)} empty outputs ({len(payload)} bytes)")
 
 
 def restore():
@@ -175,10 +191,34 @@ def restore():
     print(f"Check cache: imported {len(exports)} empty outputs from {url}")
 
 
+def restore_main(directory):
+    if (
+        os.environ.get("GITHUB_EVENT_NAME") != "push"
+        or os.environ.get("GITHUB_REF") != "refs/heads/main"
+        or os.environ.get("GITHUB_REPOSITORY") != candidate_ci.REPOSITORY
+        or candidate_ci.git("rev-parse", "HEAD") != os.environ.get("GITHUB_SHA")
+    ):
+        raise ValueError("Main cache is only for this repository's main pushes")
+    source = Path(directory) / "checks.json"
+    if source.stat().st_size > LIMIT:
+        raise ValueError("Check cache exceeds size limit")
+    payload = json.loads(source.read_bytes())
+    if payload["version"] != VERSION:
+        raise ValueError("Unknown check cache format")
+    # Validate every entry before importing any. Nix's derivation identity, not
+    # the cache key or old run's status, decides whether a check can be reused.
+    exports = [checked_export(entry) for entry in payload["entries"]]
+    for data in exports:
+        subprocess.run(["nix-store", "--import"], input=data, check=True, timeout=30)
+    print(f"Check cache: imported {len(exports)} empty outputs from main cache")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("restore")
+    command = commands.add_parser("restore-main")
+    command.add_argument("directory")
     command = commands.add_parser("save")
     command.add_argument("directory")
     command.add_argument("outputs", nargs="*")
@@ -186,6 +226,8 @@ def main():
     try:
         if args.command == "restore":
             restore()
+        elif args.command == "restore-main":
+            restore_main(args.directory)
         else:
             save(args.directory, args.outputs)
     except (
