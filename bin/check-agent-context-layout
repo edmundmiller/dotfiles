@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Check repository paths passed by prek, not global runtime deployment targets.
+invalid=0
+for path in "$@"; do
+  case "$path" in
+    CLAUDE.md | */CLAUDE.md)
+      echo "Use AGENTS.md instead of CLAUDE.md: $path" >&2
+      invalid=1
+      ;;
+  esac
+  case "/$path" in
+    */.pi/skills | */.pi/skills/* | */.claude/skills | */.claude/skills/*)
+      echo "Keep repo-specific skills in .agents/skills/: $path" >&2
+      invalid=1
+      ;;
+  esac
+done
+exit "$invalid"

@@ -150,6 +150,8 @@ CHECKS = {
     ],
     "agent-instruction-tests": [
         "AGENTS.md",
+        "bin/check-agent-context-layout",
+        "tests/test_agent_context_layout.py",
         "config/agents/AGENTS.md",
         "docs/agents/unslop.md",
         "skills/catalog/unslop/*",
@@ -580,6 +582,16 @@ def execute(root, selection, github_token=""):
     nix = ["nix", "--accept-flake-config"]
     build = nix + ["build", "--no-link", "--no-write-lock-file", "--print-build-logs"]
     if selection["hooks"]:
+        # Path policy must see directory and dangling symlinks that formatters skip.
+        paths = [
+            f for f in selection["files"]
+            if (root / f).is_file() or (root / f).is_symlink()
+        ]
+        if paths:
+            run(
+                "agent context paths",
+                ["bash", "bin/check-agent-context-layout", *paths],
+            )
         config = run(
             "hook configuration",
             build + ["--print-out-paths", ".#pre-commit-config"],

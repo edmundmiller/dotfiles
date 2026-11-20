@@ -34,8 +34,11 @@ their inventories.
 
 ## Task routes
 
+- Issues/specs: use `br` from the repository root; see [issue tracker](docs/agents/issue-tracker.md) and [triage labels](docs/agents/triage-labels.md).
+- Domain context: [CONTEXT.md](CONTEXT.md) and relevant [ADRs](docs/adr/); see [domain guidance](docs/agents/domain.md).
 - Agent configuration: [config/agents](config/agents/AGENTS.md).
-- Skills and selection: [skills](skills/AGENTS.md).
+- Skills and selection: [skills](skills/AGENTS.md). Read matching dotfiles-only skills under `.agents/skills/` directly if the runtime does not discover that directory.
+- Repository instructions belong in `AGENTS.md`, and repo-specific skills in `.agents/skills/`. Prek rejects `CLAUDE.md` files and repository `.pi/skills/` or `.claude/skills/` entries. Global runtime deployment paths are separate.
 - Writing: load [unslop](skills/catalog/unslop/SKILL.md) when drafting
   user-visible prose. Distinct from `deslop`, `anti-slop`, and `no-ai-slop`.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).

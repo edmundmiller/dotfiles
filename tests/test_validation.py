@@ -584,6 +584,51 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual((self.root / "owned.md").read_text(), "bad formatting")
         self.assertEqual((self.root / "unrelated.md").read_text(), "must not change")
 
+    def test_agent_context_paths_reject_symlinks_without_rejecting_deletions(self):
+        self.write(
+            "bin/check-agent-context-layout",
+            (v.ROOT / "bin/check-agent-context-layout").read_text(),
+        )
+        self.write("canonical/SKILL.md", "# Fixture\n")
+        removed = self.write("removed/CLAUDE.md", "retired\n")
+        self.commit()
+        v.git(self.root, "update-ref", "refs/remotes/origin/main", "HEAD")
+        removed.unlink()
+
+        def tools(command, **kwargs):
+            if command[0] in ("git", "bash"):
+                return subprocess_run(command, **kwargs)
+            return subprocess.CompletedProcess(command, 0, stdout="/fake/config\n")
+
+        for name, kind, expected in (
+            ("CLAUDE.md", "file", 1),
+            ("nested/CLAUDE.md", "dangling", 1),
+            (".pi/skills", "directory", 1),
+            ("nested/.claude/skills", "dangling", 1),
+            ("AGENTS.md", "dangling", 0),
+            (".agents/skills", "directory", 0),
+            (".pi/prompts", "directory", 0),
+        ):
+            with self.subTest(name=name, kind=kind):
+                path = self.root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                if kind == "file":
+                    path.write_text("# Fixture\n")
+                else:
+                    target = self.root / ("canonical" if kind == "directory" else "missing")
+                    path.symlink_to(os.path.relpath(target, path.parent))
+                before = v.fingerprint(self.root)
+                with (
+                    patch.object(v, "nix_env", return_value={}),
+                    patch("scripts.validation.subprocess.run", side_effect=tools),
+                ):
+                    code, _, error = self.invoke()
+                self.assertEqual(code, expected, error)
+                if expected:
+                    self.assertIn("agent context paths", error)
+                self.assertEqual(before, v.fingerprint(self.root))
+                path.unlink()
+
     def test_removed_plugin_files_need_no_plugin_linter(self):
         plugin = self.write("config/claude/plugins/retired/README.md", "retired")
         lint_config = self.write(".claudelint.toml", "retired")

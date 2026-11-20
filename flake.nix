@@ -768,6 +768,24 @@
                 args = [ "--assume-in-merge" ];
                 stages = [ "pre-commit" ];
               };
+              forbid-claude-instructions = {
+                enable = true;
+                name = "use AGENTS.md instead of CLAUDE.md";
+                entry = "${pkgs.bash}/bin/bash ${./bin/check-agent-context-layout}";
+                language = "system";
+                types = [ ];
+                files = "(^|/)CLAUDE\\.md$";
+                stages = [ "pre-commit" ];
+              };
+              forbid-runtime-repo-skills = {
+                enable = true;
+                name = "keep repo skills in .agents/skills";
+                entry = "${pkgs.bash}/bin/bash ${./bin/check-agent-context-layout}";
+                language = "system";
+                types = [ ];
+                files = "(^|/)\\.(pi|claude)/skills(/|$)";
+                stages = [ "pre-commit" ];
+              };
               agent-instructions = {
                 enable = true;
                 name = "agent-instructions";
@@ -1520,6 +1538,7 @@
                       )
                     }
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
+                      tests/test_agent_context_layout.py \
                       tests/test_agent_instruction_wiring.py \
                       tests/test_agent_response_contract.py \
                       tests/test_retired_moshi.py \
