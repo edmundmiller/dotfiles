@@ -1,5 +1,8 @@
 # Opensessions-First Tmux ADE Spec
 
+> Archived design. This historical tmux-first ADE proposal is not current
+> operating guidance. Use [AGENT_WORKFLOW.md](../../../../AGENT_WORKFLOW.md).
+
 Status: Draft 7
 
 ## Summary

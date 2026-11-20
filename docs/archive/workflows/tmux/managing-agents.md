@@ -1,5 +1,8 @@
 # Managing agents in tmux
 
+> Archived design. This does not set the current agent workflow. Use
+> [AGENT_WORKFLOW.md](../../../../AGENT_WORKFLOW.md) and the owning module.
+
 Status: Draft 2
 Audience: human operators and coding agents working in this dotfiles repo
 

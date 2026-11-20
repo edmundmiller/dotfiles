@@ -1,21 +1,21 @@
 ---
 purpose: Record the retired legacy Review Box bridge and its source contract.
-applies_to: Maintaining retained legacy sources, not native Herdr operation.
+applies_to: Historical Review Box state and recovery evidence.
 entrypoint: Use config/herdr/README.md for native herdr-app and hc workflows.
-verification: Run the retained Pi package tests and native Herdr checks.
-update_when: Native review routing or the retained legacy source contract changes.
+verification: Historical record only; the implementation and tests are removed.
+update_when: Historical recovery evidence needs clarification.
 ---
 
 # Review Box
 
-The legacy Review Box is no longer packaged or installed by Nix. Git's ghui
+The legacy Review Box implementation and tests have been removed. Git's ghui
 configuration no longer supplies a Review Box command or repository mapping.
 Native Herdr uses `herdr-app` and `hc`, not the old TUI workspace protocol.
 Use `herdr-dev open /path/to/checkout` for an existing checkout and Hunk tab.
 It selects `$DEFAULT_CODING_AGENT`, with Pi as the fallback. MacTraitor-Pro
 defaults to Amp and Seqeratop to Pi. An explicit `--agent` overrides that choice.
 
-The remaining sections describe retained legacy source behavior, not an
+The remaining sections describe the retired implementation, not an
 installed native workflow. Existing manifests, worktrees and sessions are left
 untouched. No automatic conversion to native spaces is provided.
 
@@ -78,13 +78,8 @@ The manifest is mode `0600`, written atomically, and contains exactly:
 
 Errors produce a JSON object on stdout and a diagnostic on stderr.
 
-## Source verification
+## Verification
 
-```sh
-cd packages/pi-packages
-bun test pi-herdr/extensions pi-review-box/test
-```
-
-Nix does not expose a `review-box` package or install this command. Native hosts
-also filter the legacy Pi packages. See [Herdr](../config/herdr/README.md) for
-native configuration and verification.
+The retired package tests are no longer available. See
+[Herdr](../../../config/herdr/README.md) for supported native configuration
+and verification. Do not use the historical commands above for native sessions.

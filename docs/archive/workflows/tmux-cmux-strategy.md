@@ -8,6 +8,10 @@ update_when: Workspace names, keybindings, bootstrap behavior, or ownership chan
 
 # tmux-native strategy inspired by cmux concepts
 
+> Historical design. `bin/tmx` remains available. Enabled tmux hosts still load
+> the cmux-concept snippet through the module's default `rcFiles`. Override that
+> list to omit it. This plan is not the repository's target agent workflow.
+
 This plan borrows **organization habits** from cmux while staying fully tmux-native.
 
 > Context: cmux does not attach to external tmux sessions as part of its own UI model. Its tmux compatibility layer is command emulation, not tmux server/session attachment.

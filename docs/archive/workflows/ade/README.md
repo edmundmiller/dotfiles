@@ -1,5 +1,8 @@
 # ADE Docs
 
+> Archived. This records the former tmux-first design, not a current target or
+> agent instruction. See [current workflow authority](../../../../AGENT_WORKFLOW.md).
+
 This folder is the starting point for a repo-local **Agentic Development
 Environment (ADE)** spec.
 

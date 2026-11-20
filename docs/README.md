@@ -35,13 +35,13 @@ update_when: A canonical doc is added, moved, or changes ownership.
 - [../.agents/skills/nix-darwin-reference/SKILL.md](../.agents/skills/nix-darwin-reference/SKILL.md)
   — Darwin/macOS Nix workflow; keep it out of global agent prompts
 
-### ADE / workflows
+### Terminal workflows
 
-- [ade/README.md](./ade/README.md) — Agentic Development Environment docs index
-- [ade/tmux-ade-spec.md](./ade/tmux-ade-spec.md) — first spec for a
-  tmux-centered Agentic Development Environment
-- [tmux/managing-agents.md](./tmux/managing-agents.md) — user-first tmux agent
-  launch model and architecture layering
+- [Herdr](../config/herdr/README.md) documents the native app, core,
+  managed preferences and recovery boundaries.
+
+Retired ADE plans and legacy workflow contracts are retained under
+`docs/archive/workflows/` for historical inspection, not as operating guidance.
 
 ### Runbooks
 
