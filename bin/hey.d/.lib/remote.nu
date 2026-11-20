@@ -108,7 +108,11 @@ export def nuc-revision-deploy [revision: string, guard: string = "exact"] {
   # Bootstrap the guard from the exact CI-tested source; the live wrapper may
   # predate this option. It still acquires the canonical host deployment lock.
   let source_command = if $preserve_ha {
-    'source="$(sudo -n nix-private-github nix flake metadata --json github:edmundmiller/dotfiles/REVISION | jq -er .path)"' | str replace 'REVISION' $revision
+    [
+      'source_json="$(sudo -n nix-private-github nix flake prefetch --json github:edmundmiller/dotfiles/REVISION)"'
+      'source="$(printf %s "$source_json" | jq -er .storePath)"'
+      'test -f "$source/bin/nix-private-github"'
+    ] | str join "\n" | str replace 'REVISION' $revision
   } else { ':' }
   let wrapper = if $preserve_ha {
     'bash "$source/bin/nix-private-github" --nuc-deploy-preserve-home-assistant'

@@ -639,7 +639,20 @@ let host_commands = {
   tailscale: 'test "$1" = ssh && test "$2" = emiller@nuc.cinnamon-rooster.ts.net || exit 2; exec bash -c "$3"'
   hostname: 'printf "%s\n" "$NUC_TEST_HOST"'
   nix: 'echo x86_64-linux'
-  sudo: 'printf "%s\n" "$*" > "$NUC_TEST_ACTIVATION"; exit "$NUC_TEST_REBUILD_STATUS"'
+  jq: 'test "$1" = -er || exit 2; field="${2#.}"; exec "$NUC_TEST_NU" --stdin -c "from json | get $field"'
+  sudo: 'if [[ "${NUC_PRESERVE_HA:-false}" == true ]]; then shift; exec "$@"; fi; printf "%s\n" "$*" > "$NUC_TEST_ACTIVATION"; exit "$NUC_TEST_REBUILD_STATUS"'
+  nix-private-github: r#'
+    test "$1" = nix && test "$2" = flake || exit 2
+    if [[ "$3" == prefetch ]]; then
+      if [[ "$NUC_TEST_PREFETCH_STATUS" != 0 ]]; then exit "$NUC_TEST_PREFETCH_STATUS"; fi
+      mkdir -p "$NUC_TEST_SOURCE/bin"
+      cp "$NUC_TEST_WRAPPER" "$NUC_TEST_SOURCE/bin/nix-private-github"
+      printf '{"storePath":"%s"}\n' "$NUC_TEST_SOURCE"
+    elif [[ "$3" == metadata ]]; then
+      # Lazy metadata reports the source without materializing it.
+      printf '{"path":"%s"}\n' "$NUC_TEST_SOURCE"
+    else exit 2; fi
+  '#
   nixos-version: 'printf "%s\n" "$NUC_TEST_PROVENANCE"'
   systemctl: 'if [[ "$*" == *nixos-upgrade.timer* ]]; then exit "$NUC_TEST_TIMER_STATUS"; fi; if [[ "$*" == "is-active sshd.service" ]]; then exit "$NUC_TEST_SSH_STATUS"; fi; exit 0'
 }
@@ -690,6 +703,34 @@ let published_activation = (open --raw $revision_marker)
 assert ($published_activation | str contains $"--nuc-deploy-published=($deploy_revision)")
 assert not ($published_activation | str contains "--nuc-deploy-expected-main")
 assert ($published_activation | str contains $"--flake github:edmundmiller/dotfiles/($deploy_revision)#nuc")
+rm -f $revision_marker
+let bootstrap_source = ($temp_dir | path join "not-yet-materialized-source")
+let bootstrap_wrapper = ($temp_dir | path join "bootstrap-wrapper")
+'printf "%s\n" "$*" > "$NUC_TEST_ACTIVATION"' | save $bootstrap_wrapper
+for prefetch_status in ["0" "65"] {
+  rm -f $revision_marker
+  let preserved = (with-env {
+    PATH: ([$revision_bin] ++ $env.PATH)
+    MISE_PROJECT_ROOT: $revision_repo
+    NUC_PRESERVE_HA: "true"
+    NUC_TEST_HOST: "nuc"
+    NUC_TEST_PROVENANCE: $deployed_provenance
+    NUC_TEST_ACTIVATION: $revision_marker
+    NUC_TEST_TIMER_STATUS: "4"
+    NUC_TEST_SSH_STATUS: "0"
+    NUC_TEST_SOURCE: $bootstrap_source
+    NUC_TEST_WRAPPER: $bootstrap_wrapper
+    NUC_TEST_NU: $nu.current-exe
+    NUC_TEST_PREFETCH_STATUS: $prefetch_status
+  } { ^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision | complete })
+  assert equal ($preserved.exit_code == 0) ($prefetch_status == "0")
+  assert equal ($revision_marker | path exists) ($prefetch_status == "0")
+  if $prefetch_status == "0" {
+    let activation = (open --raw $revision_marker)
+    assert ($activation | str contains "--nuc-deploy-preserve-home-assistant")
+    assert ($activation | str contains $"--nuc-deploy-expected-main=($deploy_revision)")
+  }
+}
 rm -f $revision_marker
 let unknown_guard_blocked = ((^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision latest | complete).exit_code != 0)
 assert $unknown_guard_blocked
