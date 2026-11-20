@@ -463,6 +463,15 @@ writing anything. The token comes from `TOWER_ACCESS_TOKEN` or
 cannot answer prompts, so approve the 1Password SSH key with a plain
 `ssh seqera-studio-a<id> true` if `machine add` reports an auth failure.
 
+`herdr-studios rex <alias-or-session>` installs Rex on one running Studio.
+Run `sync` first so the alias exists. The command creates `/run/user/<uid>`
+when the SSH session has no writable runtime directory. When `XDG_RUNTIME_DIR`
+is unset and `/etc/environment` is writable, it records the variable there so
+the following ssh sees it. It runs
+`rex server install ssh://seqera-studio-a<sessionId>` and retries an ssh exit
+255. It prints the `ssh://` URL. Run `rex` again after the Studio restarts.
+It does not start, stop, or delete a Studio.
+
 ## Reloading after edits
 
 After editing the live config or applying a rebuild, reload the running Herdr server:

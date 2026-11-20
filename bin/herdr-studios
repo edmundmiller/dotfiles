@@ -3,11 +3,15 @@
 #
 #   herdr-studios list [--all-users] [--include-stopped]
 #   herdr-studios sync [--all-users] [--dry-run]
+#   herdr-studios rex <alias-or-session> [--all-users] [--dry-run]
 #
 # sync writes one ssh Host alias per studio (seqera-studio-a<sessionId>) to
 # ~/.ssh/seqera-studios.conf and adds running studios to Herdr.
 # Native preserves saved machines; legacy enables/disables/removes them.
 # HERDR_BACKEND selects native or legacy (default: native).
+# rex installs the Rex server on one running studio and prints ssh://<alias>.
+# Run sync first. Run rex again after the Studio restarts.
+# rex does not start, stop, or delete a Studio.
 
 set -euo pipefail
 
@@ -22,21 +26,37 @@ case $backend in
 esac
 
 usage() {
-  sed -n '2,10s/^# \{0,1\}//p' "$0" >&2
+  sed -n '2,14s/^# \{0,1\}//p' "$0" >&2
 }
 
 cmd=${1:-}
+if [[ $cmd == -h || $cmd == --help ]]; then
+  usage
+  exit 0
+fi
 [[ -n $cmd ]] && shift || true
-all_users=false include_stopped=false dry_run=false
+all_users=false include_stopped=false dry_run=false target=
 for arg in "$@"; do
   case $arg in
     --all-users) all_users=true ;;
     --include-stopped) include_stopped=true ;;
     --dry-run) dry_run=true ;;
     -h | --help) usage; exit 0 ;;
-    *) usage; exit 1 ;;
+    --*) usage; exit 1 ;;
+    *)
+      [[ -z $target ]] || { usage; exit 1; }
+      target=$arg
+      ;;
   esac
 done
+if [[ $cmd != rex && -n $target ]]; then
+  usage
+  exit 1
+fi
+if [[ $cmd == rex && -z $target ]]; then
+  usage
+  exit 1
+fi
 
 token="${TOWER_ACCESS_TOKEN:-${SEQERA_ACCESS_TOKEN:-}}"
 [[ -n $token ]] || token=$(op read "$op_ref")
@@ -223,6 +243,60 @@ Host \(.alias)
       | select(($t | startswith($p)) and ($cur | index($t) | not))
       | .id' <<<"$saved" |
       while read -r id; do run herdr machine remove "$id" || true; done
+    ;;
+
+  rex)
+    retry_255() {
+      local try status
+      for try in 1 2 3; do
+        if $dry_run; then
+          echo "+ $*"
+          return 0
+        fi
+        "$@" && return 0
+        status=$?
+        if [[ $status -ne 255 || $try -eq 3 ]]; then
+          return "$status"
+        fi
+        echo "  retrying ($try/3) after ssh exit 255" >&2
+      done
+    }
+
+    match=$(jq -c --arg t "$target" '
+      [ .[] | select(.status == "running" and (.alias == $t or .sessionId == $t)) ]
+    ' <<<"$studios")
+    count=$(jq 'length' <<<"$match")
+    if [[ $count -eq 0 ]]; then
+      echo "herdr-studios: no running studio matches $target" >&2
+      exit 1
+    fi
+    if [[ $count -ne 1 ]]; then
+      echo "herdr-studios: $target matches $count running studios" >&2
+      exit 1
+    fi
+    studio_alias=$(jq -r '.[0].alias' <<<"$match")
+
+    prepare_runtime=$(cat <<'EOF'
+set -eu
+uid=$(id -u)
+dir=${XDG_RUNTIME_DIR:-/run/user/$uid}
+if [ ! -d "$dir" ]; then
+  mkdir -p "$dir"
+  chmod 700 "$dir"
+elif [ ! -w "$dir" ]; then
+  echo "herdr-studios: runtime dir not writable: $dir" >&2
+  exit 1
+fi
+if [ -z "${XDG_RUNTIME_DIR:-}" ] && [ -w /etc/environment ]; then
+  if ! grep -q '^XDG_RUNTIME_DIR=' /etc/environment; then
+    printf 'XDG_RUNTIME_DIR=/run/user/%s\n' "$uid" >> /etc/environment
+  fi
+fi
+EOF
+)
+    retry_255 ssh -o BatchMode=yes "$studio_alias" "$prepare_runtime"
+    retry_255 rex server install "ssh://$studio_alias"
+    echo "ssh://$studio_alias"
     ;;
 
   *)
