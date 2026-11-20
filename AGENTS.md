@@ -62,3 +62,19 @@ staging. `hey check --plan` shows routing. See [validation](docs/validation.md)
 for CI parity, setup, and exclusions. Read-only tasks need no completion check.
 Repair task-caused failures, report unrelated or unavailable checks honestly,
 and rerun checks after changing their inputs.
+
+## Spring-cleaning history
+
+For questions about former keybindings, tools, configuration or workflows, use the commit map below rather than assuming deleted files never existed. Distinguish historical bindings from supported ones; this history does not authorize restoring retired functionality. Current native Herdr bindings live under `config/herdr/native/`, including `keys.json` and `mods/dotfiles-prefix/`; Ghostty bindings live in `config/ghostty/keybindings.conf` and its owning module.
+
+The seven-commit batch spans `afe25148..ef571fdd`:
+
+- `fc20529b` canonicalizes agent context. Former `CLAUDE.md` instructions and generic upstream Claude docs were removed; repository skills moved to `.agents/skills/` with deterministic prek path guards.
+- `3202af00` retires Linux desktop stacks and Meshify's NixOS fallback. Look before this commit for `config/sxhkd/sxhkdrc`, BSPWM/GNOME configuration, Rofi helpers and st wiring. Meshify hardware/storage records remain; current recovery lives under `hosts/meshify/omarchy/`.
+- `a63fb771` retires legacy Herdr while preserving native Herdr. Look before it for `config/herdr/config.toml` keybindings, `workspace-manager.yml`, old plugins, Review Box adapters and the legacy Ghostty frontend. The old Pi palettes remain standalone themes.
+- `e96b9dbd` retires tmux/cmux, Opensessions, Jmux, dmux and workmux, including Mac/NUC selections. Look before it for `config/tmux/config`, `config/tmux/which-key.yaml`, `modules/shell/tmux/` and session/worktree helpers. Scratchpad, daily notes and Pi worktree naming remain independent of tmux.
+- `35bd0283` refreshes host setup and guarded recovery guidance, replacing obsolete README inventories and the manual Homebrew activation workaround.
+- `e45864bc` archives ADE, tmux/cmux and Review Box designs under `docs/archive/workflows/`, preserving historical state/recovery evidence outside current operating guidance.
+- `ef571fdd` moves root `MISSION.md`, `NOTES.md` and `RESOURCES.md` under `lessons/`.
+
+Read a removed file from its removal commit's parent, for example `git show e96b9dbd^:config/tmux/which-key.yaml`; use `git show e96b9dbd -- <path>` for the removal rationale and diff. If commit IDs change after restacking, locate the subjects with `git log --all --oneline`. Legacy themes, including Alucard on UNAS, remain supported outside their retired desktop/tmux integrations.
