@@ -33,7 +33,6 @@ in
           "desktop/themes"
           "desktop/gaming"
           "desktop/vm"
-          "desktop/gnome"
         ];
         # No Darwin-only module paths currently.
         nixosOnlyFiles = [
@@ -49,10 +48,7 @@ in
           "nixos-base.nix"
           "fonts-nixos.nix"
           "browsers-nixos.nix"
-          "desktop/default.nix" # X11-specific desktop config
-          "desktop/gnome.nix" # GNOME desktop environment
-          "desktop/kde.nix" # KDE desktop environment
-          "desktop/bspwm.nix" # BSPWM window manager
+          "desktop/default.nix" # Optional shared Linux desktop packages/fonts
           # NixOS-only shell modules
           "nushell.nix"
           "yubikey.nix"

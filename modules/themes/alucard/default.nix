@@ -118,32 +118,6 @@ in
           (mkIf (!isDarwin) (
             with config.modules;
             mkMerge [
-              (mkIf desktop.bspwm.enable {
-                "bspwm/rc.d/00-theme".source = ./config/bspwmrc;
-                "bspwm/rc.d/95-polybar".source = ./config/polybar/run.sh;
-              })
-              (mkIf desktop.apps.rofi.enable {
-                "rofi/theme" = {
-                  source = ./config/rofi;
-                  recursive = true;
-                };
-              })
-              (mkIf (desktop.bspwm.enable || desktop.stumpwm.enable) {
-                "polybar" = {
-                  source = ./config/polybar;
-                  recursive = true;
-                };
-                "dunst/dunstrc".text = import ./config/dunstrc cfg;
-                "Dracula-purple-solid-kvantum" = {
-                  recursive = true;
-                  source = "${pkgs.unstable.dracula-theme}/share/themes/Dracula/kde/kvantum/Dracula-purple-solid";
-                  target = "Kvantum/Dracula-purple-solid";
-                };
-                "kvantum.kvconfig" = {
-                  text = "theme=Dracula-purple-solid";
-                  target = "Kvantum/kvantum.kvconfig";
-                };
-              })
               (mkIf desktop.media.graphics.vector.enable {
                 "inkscape/templates/default.svg".source = ./config/inkscape/default-template.svg;
               })

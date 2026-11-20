@@ -38,7 +38,7 @@ graph TB
     mod_shell["shell/<br/>zsh · git · jj · tmux<br/>1password · ai · pi<br/>ssh · direnv · claude"]
     mod_editors["editors/<br/>emacs · vim · helix<br/>code · file-assoc"]
     mod_dev["dev/<br/>node · python · rust<br/>R · lua · nix · shell"]
-    mod_desktop["desktop/<br/>apps · browsers · term<br/>media · macos · gnome"]
+    mod_desktop["desktop/<br/>apps · browsers · term<br/>media · macos"]
     mod_services["services/<br/>hass · jellyfin · homepage<br/>containers · tailscale<br/>deploy-rs · obsidian-sync · gatus"]
     mod_hardware["hardware/<br/>bluetooth · fs · audio"]
     mod_themes["themes/<br/>alucard"]
@@ -74,7 +74,6 @@ graph TB
     subgraph NixOS["NixOS (x86_64-linux)"]
       nuc["nuc<br/>(home server:<br/>HA · Hermes<br/>Jellyfin · Homepage)"]
       unas["unas<br/>(NAS: ZFS · Syncthing<br/>Time Machine)"]
-      gandi["gandi<br/>(VPS: minimal)"]
     end
     shared["shared/<br/>_home.nix · _server.nix"]
   end
@@ -84,6 +83,8 @@ graph TB
   flake_nix -->|"darwinSystem"| Darwin
   shared --> nuc
   shared --> unas
+  omarchy["hosts/meshify/omarchy/<br/>(supported desktop recovery)"]
+  Hosts --> omarchy
 
   %% ── Secrets ───────────────────────────────────────────────────
   subgraph Secrets["Secrets Management"]
@@ -143,7 +144,7 @@ graph TB
   classDef config fill:#f0ad4e,stroke:#333,color:#000
 
   class mactraitorpro,seqeratop darwin
-  class nuc,unas,gandi nixos
+  class nuc,unas nixos
   class agenix_secrets,opnix_secrets secret
   class nix_packages,ts_packages pkg
   class cfg_ghostty,cfg_git,cfg_tmux,cfg_zsh,cfg_nvim,cfg_agents,cfg_lazygit,cfg_others config

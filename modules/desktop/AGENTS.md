@@ -1,11 +1,11 @@
 # Desktop modules
 
-Most desktop modules target Linux X11/Wayland; `macos/` owns Darwin defaults.
-Apps, media, and terminals may support both platforms.
+`macos/` owns Darwin defaults. Apps, media, and terminals may support both
+platforms. Meshify's desktop recovery belongs to `hosts/meshify/omarchy/`.
 
-Shared `default.nix` font/compositor/Qt/GTK configuration activates only with
-`services.xserver.enable`. Window-manager/desktop selections are mutually
-exclusive, enforced by assertion.
+Shared Linux fonts and applications in `default.nix` require an explicit
+`modules.desktop.enable = true`. They do not select X11, a compositor, or a
+desktop environment. GNOME, KDE, Rofi and st deployments are retired.
 
 Run `hey check modules/desktop` for shared edits. Add the target platform check
 for changes to assertions, package availability, or generated desktop settings;

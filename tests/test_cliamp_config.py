@@ -27,8 +27,8 @@ def test_nightrider_is_fetched_and_trusted_without_vendoring_source() -> None:
     assert not (ROOT / "config" / "cliamp" / "plugins").exists()
 
 
-def test_cliamp_is_enabled_on_interactive_hosts() -> None:
-    for host in ("mactraitorpro", "meshify", "seqeratop"):
+def test_cliamp_is_enabled_on_interactive_nix_hosts() -> None:
+    for host in ("mactraitorpro", "seqeratop"):
         host_config = (ROOT / "hosts" / host / "default.nix").read_text()
         assert "cliamp.enable = true;" in host_config
 

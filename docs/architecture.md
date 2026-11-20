@@ -30,7 +30,7 @@ graph TB
   Inputs --> flake
 
   flake --> darwin["Darwin hosts<br/>mactraitorpro · seqeratop"]
-  flake --> nixos["NixOS hosts<br/>nuc · unas · gandi"]
+  flake --> nixos["NixOS hosts<br/>nuc · unas"]
   flake --> modules["modules/"]
   flake --> packages["packages/ · packages/pi-packages/"]
   flake --> deploy["deploy-rs"]
@@ -50,7 +50,7 @@ The repository is a single Nix flake (`flake.nix`) built with **flake-parts**. K
 | Output                 | Description                                                   |
 | ---------------------- | ------------------------------------------------------------- |
 | `darwinConfigurations` | macOS system configs (MacTraitor-Pro, Seqeratop)              |
-| `nixosConfigurations`  | NixOS system configs (nuc, unas, gandi, meshify)              |
+| `nixosConfigurations`  | NixOS system configs (nuc, unas and NUC rollout variants)     |
 | `deploy.nodes`         | deploy-rs targets for remote deployment                       |
 | `packages`             | Custom Nix derivations (zele, dmux, zunit, …)                 |
 | `overlays`             | `pkgs.unstable` and `pkgs.my` (custom packages)               |
@@ -67,7 +67,7 @@ modules/
 ├── shell/          # zsh, git, jj, tmux, 1password, ai, pi, ssh, direnv, claude
 ├── editors/        # emacs, vim, helix, VS Code, file associations
 ├── dev/            # node, python, rust, R, lua, nix, shell, nextflow
-├── desktop/        # apps, browsers, terminals (ghostty), media, macos, gnome
+├── desktop/        # apps, browsers, terminals (ghostty), media, macos
 │   ├── apps/       # raycast, discord, mail
 │   ├── term/       # ghostty, kitty, wezterm
 │   └── macos/      # macOS-specific (homebrew, defaults)
@@ -105,12 +105,15 @@ Darwin hosts are built with `nix-darwin` and configured inline in `flake.nix` (n
 
 ### NixOS Hosts (x86_64-linux)
 
-| Host        | Machine                 | User      | Notable                                           |
-| ----------- | ----------------------- | --------- | ------------------------------------------------- |
-| **nuc**     | Intel NUC (home server) | `emiller` | Home Assistant, Hermes, Jellyfin, Homepage, Gatus |
-| **unas**    | NAS                     | `emiller` | ZFS, Syncthing, Time Machine backup, NFS exports  |
-| **gandi**   | Gandi VPS               | `emiller` | Minimal server: SSH, Syncthing, Tailscale         |
-| **meshify** | Desktop (inactive)      | —         | Legacy workstation config                         |
+| Host     | Machine                 | User      | Notable                                           |
+| -------- | ----------------------- | --------- | ------------------------------------------------- |
+| **nuc**  | Intel NUC (home server) | `emiller` | Home Assistant, Hermes, Jellyfin, Homepage, Gatus |
+| **unas** | NAS                     | `emiller` | ZFS, Syncthing, Time Machine backup, NFS exports  |
+
+Meshify uses its [Omarchy recovery configuration](../hosts/meshify/omarchy/README.md).
+Its NixOS fallback is retired and no longer exported by the flake. Former
+hardware and storage declarations remain under `hosts/meshify/` as historical
+evidence. The server configurations remain NixOS.
 
 NixOS hosts are built via `lib/nixos.nix` → `mkHost`, which adds opnix, the `agents-workspace` hermes module, and skills-catalog modules.
 
@@ -201,7 +204,7 @@ After changing `skills/flake.nix` or `skills/flake.lock`, run `hey skills-sync` 
 | -------------------- | ------------------------------------------------- | ----------------------------- |
 | **1Password**        | Secret management (opnix service account)         | All hosts                     |
 | **GitHub**           | Source repo, deploy-rs target, agent integrations | All hosts                     |
-| **Tailscale**        | Mesh VPN connecting all machines                  | nuc, unas, gandi              |
+| **Tailscale**        | Mesh VPN connecting all machines                  | nuc, unas                     |
 | **healthchecks.io**  | Cron/service uptime monitoring                    | nuc (gatus, obsidian-sync, …) |
 | **Linear**           | Issue tracking and agent integrations             | nuc                           |
 | **Telegram**         | Bot interface for Hermes agents                   | nuc                           |

@@ -5,7 +5,6 @@
   config,
   lib,
   pkgs,
-  isDarwin,
   ...
 }:
 with lib;
@@ -106,14 +105,6 @@ in
         modules.theme.onReload.xtheme = xrdb;
       }
     )
-
-    # Desktop-specific theme integration (NixOS only)
-    (mkIf (!isDarwin && config.modules.desktop.bspwm.enable or false) {
-      home.configFile."bspwm/rc.d/05-init" = {
-        text = "$XDG_CONFIG_HOME/xtheme.init";
-        executable = true;
-      };
-    })
 
     {
       home.configFile = {
