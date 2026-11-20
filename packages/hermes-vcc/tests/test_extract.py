@@ -1,6 +1,5 @@
 """Tests for hermes_vcc.extract"""
 
-import pytest
 from hermes_vcc.extract import (
     extract_goals,
     extract_preferences,

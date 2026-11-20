@@ -1,7 +1,6 @@
 """Tests for hermes_vcc.recall."""
 
 import json
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
