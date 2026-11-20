@@ -468,8 +468,7 @@ Run `sync` first so the alias exists. The command creates `/run/user/<uid>`
 when the SSH session has no writable runtime directory. When `XDG_RUNTIME_DIR`
 is unset and `/etc/environment` is writable, it records the variable there so
 the following ssh sees it. It runs
-`rex server install ssh://seqera-studio-a<sessionId>` and retries an ssh exit
-255. It prints the `ssh://` URL. Run `rex` again after the Studio restarts.
+`rex server install ssh://seqera-studio-a<sessionId>` and retries an ssh exit 255. It prints the `ssh://` URL. Run `rex` again after the Studio restarts.
 It does not start, stop, or delete a Studio.
 
 ## Reloading after edits
