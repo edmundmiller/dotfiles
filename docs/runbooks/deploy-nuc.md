@@ -52,6 +52,29 @@ The older cron-ownership and Buzz-rollout sections below are recovery history
 for the parked patch stack, not instructions for this configuration. Do not
 run their cutover or timer-health procedures on the Cadu-focused deployment.
 
+## HA-preserving diagnostic deployments
+
+For a separately authorized diagnostic deployment that must not interrupt HA,
+pass `--preserve-ha` to `scripts/nuc_shipping.py request`, or set the manual
+workflow input `preserve_ha=true`. `hey nuc revision` receives
+`NUC_PRESERVE_HA=true`. Ordinary deployments keep their existing behavior.
+
+The exact published source supplies the preservation guard so this also works
+when the installed wrapper predates it. Under the existing deployment lock, the
+guard builds the selected whole-system closure, compares HA and Gatus/receiver
+units, drop-ins and activation membership with `/run/current-system`, rejects
+pending HA daemon reloads and protected-unit runtime overrides, and checks a dry
+activation for HA or dependency changes. This also refuses unrelated receiver
+activation or alert-configuration changes bundled into intervening main commits.
+It rechecks live main after building and verifies HA's unchanged PID/start after
+switch. A refusal is not deployment success and does not authorize disabling
+restarts, modifying the live generation or resetting an observation window.
+
+The system-level climate capture hook can install without a changed HA package.
+Actual HomeKit connection/characteristic internals still require HA-side
+instrumentation; see the [capture contract](../../modules/services/hass/README.md#automatic-checker-triggered-snapshots).
+Do not claim those fields are captured when running HA reports them unknown.
+
 ## Overview
 
 The NUC evaluates and builds its own NixOS configuration. The manual

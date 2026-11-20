@@ -101,12 +101,25 @@ export def nuc-revision-deploy [revision: string, guard: string = "exact"] {
     error make {msg: "approved revision lacks an exact agents-workspace pin"}
   }
   let expected = $"dotfiles=($revision);agents-workspace=($agents_revision)"
+  let preserve_ha = (($env.NUC_PRESERVE_HA? | default "false") == "true")
+  if $preserve_ha and ($guard != "exact") {
+    error make {msg: "HA-preserving deployment requires exact-main authority"}
+  }
+  # Bootstrap the guard from the exact CI-tested source; the live wrapper may
+  # predate this option. It still acquires the canonical host deployment lock.
+  let source_command = if $preserve_ha {
+    'source="$(sudo -n nix-private-github nix flake metadata --json github:edmundmiller/dotfiles/REVISION | jq -er .path)"' | str replace 'REVISION' $revision
+  } else { ':' }
+  let wrapper = if $preserve_ha {
+    'bash "$source/bin/nix-private-github" --nuc-deploy-preserve-home-assistant'
+  } else { 'nix-private-github' }
   let script = ([
     'set -eu'
     'export PATH="/run/wrappers/bin:$PATH"'
     'printf "hostname=%s\n" "$(hostname)"; uname -a'
     'test "$(hostname)" = nuc'
-    $"sudo -n nix-private-github ($guard_flag) --nuc-deploy-source-head=($revision) --nuc-deploy-source-base=($revision) --nuc-deploy-source-owner=github-nuc-deploy nixos-rebuild switch --flake github:edmundmiller/dotfiles/($revision)#nuc --show-trace --accept-flake-config --max-jobs 1"
+    $source_command
+    $"sudo -n ($wrapper) ($guard_flag) --nuc-deploy-source-head=($revision) --nuc-deploy-source-base=($revision) --nuc-deploy-source-owner=github-nuc-deploy nixos-rebuild switch --flake github:edmundmiller/dotfiles/($revision)#nuc --show-trace --accept-flake-config --max-jobs 1"
     'actual="$(nixos-version --configuration-revision)"'
     'printf "configurationRevision=%s\n" "$actual"'
     $"test \"$actual\" = '($expected)'"

@@ -178,6 +178,23 @@ def health(ha, args, now):
 
     def entities():
         states = {state["entity_id"]: state for state in ha.request("get_states")}
+        if args.climate_capture_request:
+            # A separate path-triggered unit does diagnostics. Never delay or
+            # change the health result because a capture cannot be queued.
+            entity = states.get("climate.master_suite")
+            observed = entity.get("state") if entity else "missing"
+            sample = {
+                "observed_at": now.isoformat(),
+                "state": observed if observed in {"unavailable", "unknown", "missing"} else "available",
+            }
+            try:
+                path = Path(args.climate_capture_request)
+                temporary = path.with_suffix(".tmp")
+                temporary.write_text(json.dumps(sample))
+                temporary.chmod(0o644)
+                temporary.replace(path)
+            except OSError:
+                print("Climate diagnostic request could not be queued.", file=sys.stderr)
         failures = []
         for entity_id in args.entity:
             state = states.get(entity_id)
@@ -309,6 +326,10 @@ def parser():
         help="Report this exact dated Repair warning without failing; repeat as needed. Errors always fail.",
     )
     status.add_argument("--since-hours", type=positive_number, default=24)
+    status.add_argument(
+        "--climate-capture-request",
+        help="Atomically queue only the fixed climate entity's availability for a separate system unit.",
+    )
     traces = commands.add_parser(
         "traces",
         help="Read retained traces without variables, payloads, or error text.",

@@ -45,6 +45,10 @@ on:
         description: Arm the local HA runtime monitor for Gatus and verify live timer runs (requires approval)
         default: false
         type: boolean
+      preserve_ha:
+        description: Deploy only if the exact target closure and dry activation preserve the running HA service
+        default: false
+        type: boolean
       orb_pilot:
         description: Run NUC orb capacity preflight and live container-backend smoke tests
         default: false
@@ -328,14 +332,58 @@ jobs:
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
             env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$TARGET" published 2>&1 |
             tee "$RUNNER_TEMP/activate.log"
+      - name: Inspect existing network event sources without device traffic
+        if: inputs.operation == 'deploy' && inputs.preserve_ha
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Inventory runs before activation, including when preservation refuses it.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            printf "configurationRevision=%s\\n" "$(nixos-version --configuration-revision)"
+            exec sudo -n uv run --no-project --script - --network-sources
+          ' < modules/services/hass/climate-entity-diagnostics.py
       - name: Fetch, build, activate and verify on the NUC
         if: inputs.operation == 'deploy'
+        env:
+          NUC_PRESERVE_HA: ${{ inputs.preserve_ha && 'true' || 'false' }}
         shell: bash
         run: |
           set -euo pipefail
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
             env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$DEPLOY_SHA"
+      - name: Verify automatic climate capture from the existing checker
+        if: inputs.operation == 'deploy' && inputs.preserve_ha
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This is an inventory read, not a synthetic outage or device probe.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            systemctl is-active hass-climate-capture.path hass-health.timer home-assistant.service
+            # Observe a real checker-triggered invocation, not a synthetic outage
+            # or forced checker run. The existing timer and assessment stay intact.
+            for attempt in $(seq 1 18); do
+              started=$(systemctl show hass-climate-capture.service -p ExecMainStartTimestampMonotonic --value)
+              state=$(systemctl show hass-climate-capture.service -p ActiveState --value)
+              test "$state" != failed
+              if test "${started:-0}" -gt 0 && test "$state" = inactive; then
+                test "$(systemctl show hass-climate-capture.service -p Result --value)" = success
+                test "$(systemctl show hass-climate-capture.service -p ExecMainStatus --value)" = 0
+                test "$(sudo -n stat -Lc %a /var/lib/hass-climate-capture/incident.json)" = 600
+                break
+              fi
+              test "$attempt" -lt 18
+              sleep 10
+            done
+            printf "automatic_climate_path=active checker_trigger=observed private_state=600\\n"
+            printf "configurationRevision=%s\\n" "$(nixos-version --configuration-revision)"
+          '
       - name: Verify live orb pilot backend
         if: inputs.operation == 'deploy' && inputs.orb_pilot
         shell: bash

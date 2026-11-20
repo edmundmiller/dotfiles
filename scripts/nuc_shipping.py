@@ -118,6 +118,8 @@ def shipping_command(args, receipt, path):
             raise ValueError("NUC shipping already recorded with different pilot recovery")
         if shipping.get("haMonitor", False) != args.ha_monitor:
             raise ValueError("NUC shipping already recorded with different HA monitor setup")
+        if shipping.get("preserveHa", False) != args.preserve_ha:
+            raise ValueError("NUC shipping already recorded with different HA continuity requirements")
         if args.no_deploy and shipping["state"] in ("dispatch_unknown", "dispatched"):
             raise ValueError(
                 "NUC shipping already submitted: cancel the identified GitHub run to revoke it"
@@ -149,6 +151,7 @@ def shipping_command(args, receipt, path):
             "orbPilot": args.orb_pilot,
             "recoverOrbPilot": args.recover_orb_pilot,
             "haMonitor": args.ha_monitor,
+            "preserveHa": args.preserve_ha,
             "state": "request_pending",
             "nextAction": "Submit the authorized request after confirming GitHub access and exact main.",
         }
@@ -180,6 +183,8 @@ def shipping_command(args, receipt, path):
         inputs["recover_orb_pilot"] = "true"
     if shipping.get("haMonitor", False):
         inputs["ha_monitor"] = "true"
+    if shipping.get("preserveHa", False):
+        inputs["preserve_ha"] = "true"
     github_api(
         f"{API_ROOT}/actions/workflows/deploy-nuc.yml/dispatches",
         {"ref": "main", "inputs": inputs},
@@ -214,6 +219,11 @@ def main():
         "--ha-monitor",
         action="store_true",
         help="Arm the approved HA runtime monitor for Gatus and verify live timer runs",
+    )
+    request.add_argument(
+        "--preserve-ha",
+        action="store_true",
+        help="Refuse activation if the selected closure or dry plan may interrupt HA.",
     )
     request.add_argument(
         "--no-deploy",

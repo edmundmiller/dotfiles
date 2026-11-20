@@ -47,6 +47,34 @@ def request(socket, request_id, command, **fields):
     return reply["result"]
 
 
+def availability_summary(data):
+    """Keep cached status only; never infer a connection failure from entity state."""
+    source = data.get("recurrence-availability")
+    if not isinstance(source, dict) or source.get("entity_id") != ENTITY:
+        return {"status": "unknown", "reason": "Running HA diagnostics does not expose cached availability"}
+    labels = {
+        "current_temperature", "target_temperature", "current_heating_cooling_state",
+        "target_heating_cooling_state", "temperature_display_units",
+        "cooling_threshold_temperature", "heating_threshold_temperature",
+        "current_relative_humidity", "target_relative_humidity", "other",
+    }
+    chars = source["characteristics"]
+    connection = source["connection_available"]
+    if type(connection) is not bool or not isinstance(chars, list) or not 1 <= len(chars) <= 64:
+        raise ValueError("Incomplete cached availability")
+    selected = []
+    for char in chars:
+        code = char["status_code"]
+        if (char["type"] not in labels or type(char["available"]) is not bool
+                or type(code) is not int or code not in {0, *range(-70412, -70400)}):
+            raise ValueError("Unsupported characteristic status")
+        selected.append({key: char[key] for key in ("type", "status_code", "available")})
+    return {
+        "status": "ok", "connection_available": connection, "characteristics": selected,
+        "coverage": "Cached HA in-memory status at capture time, not a device poll or historical state. No characteristic values or identifiers.",
+    }
+
+
 def device_details(token, entry_id, device_id):
     if not isinstance(device_id, str) or not re.fullmatch(r"[A-Za-z0-9]+", device_id):
         raise ValueError("No registry-linked device")
@@ -68,10 +96,14 @@ def device_details(token, entry_id, device_id):
     transport = data["config-entry"]["data"].get("Connection")
     details["transport"] = transport if transport in {"IP", "BLE", "CoAP"} else "unknown"
     details["coverage"] = "Reported device metadata, not physical inspection, historical transport proof or endpoint association. No raw diagnostics, entity map, device IDs, pairing data, addresses or other entity states exported."
+    try:
+        details["availability"] = availability_summary(data)
+    except (ValueError, KeyError, TypeError):
+        details["availability"] = {"status": "unknown", "reason": "Unsupported cached availability response"}
     return details
 
 
-def mapping(socket, token=None):
+def mapping(socket, token=None, include_network=False):
     entity = request(socket, 1, "config/entity_registry/get", entity_id=ENTITY)
     platform = entity["platform"]
     entry_id = entity["config_entry_id"]
@@ -95,6 +127,33 @@ def mapping(socket, token=None):
         "entity_disabled": entity.get("disabled_by") is not None,
         "integration_disabled": entry.get("disabled_by") is not None,
     }
+    if include_network:
+        domains = {"unifi", "unifi_site_manager", "asuswrt", "asusrouter", "fritz",
+                   "ubus", "mikrotik", "netgear", "tplink_omada", "opnsense", "pfsense", "ddwrt"}
+        result["network_sources"] = {
+            "controller_integrations": sorted({item["domain"] for item in entries
+                                               if item.get("domain") in domains and not item.get("disabled_by")}),
+            "association_events": "not_collected",
+            "coverage": "Configured HA controller domains and local service/routing metadata only; no controller login or LAN discovery scan. No verified thermostat-to-AP/client association or authenticated controller event source has been established. A default gateway alone cannot supply client events.",
+        }
+        units = ["unifi.service", "dnsmasq.service", "kea-dhcp4.service", "dhcpd4.service", "adguardhome.service"]
+        try:
+            local = subprocess.run(["systemctl", "is-active", *units], capture_output=True,
+                                   text=True, check=False, timeout=3)
+            result["network_sources"]["active_local_services"] = [
+                unit for unit, status in zip(units, local.stdout.splitlines(), strict=True) if status == "active"
+            ]
+        except (OSError, ValueError, subprocess.SubprocessError):
+            result["network_sources"]["active_local_services"] = "unknown"
+        try:
+            routes = subprocess.run(["ip", "-j", "route", "show", "default"], capture_output=True,
+                                    text=True, check=True, timeout=3)
+            routes = json.loads(routes.stdout)
+            if not isinstance(routes, list):
+                raise ValueError("Unsupported routing metadata")
+            result["network_sources"]["default_route_present"] = bool(routes)
+        except (OSError, ValueError, subprocess.SubprocessError):
+            result["network_sources"]["default_route_present"] = "unknown"
     if token is not None:
         try:
             if platform != "homekit_controller" or entry["domain"] != "homekit_controller":
@@ -282,19 +341,7 @@ def current_state(token):
     }
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--incident-start")
-    parser.add_argument("--incident-cutoff")
-    parser.add_argument("--recovered-at", default="")
-    args = parser.parse_args()
-    recurrence = any((args.incident_start, args.incident_cutoff, args.recovered_at))
-    if recurrence and not (args.incident_start and args.incident_cutoff):
-        raise ValueError("Both incident bounds required")
-    windows, incident = (incident_window(args.incident_start, args.incident_cutoff,
-                                        args.recovered_at, datetime.now(timezone.utc))
-                         if recurrence else (WINDOWS, None))
-    token = Path("/run/agenix/ha-hermes-token").read_text().strip()
+def read_mapping(token, device=False, network=False):
     with connect("ws://127.0.0.1:8123/api/websocket", open_timeout=10,
                  close_timeout=1, max_size=16 * 1024 * 1024, proxy=None) as socket:
         if json.loads(socket.recv(timeout=10)).get("type") != "auth_required":
@@ -302,7 +349,95 @@ def main():
         socket.send(json.dumps({"type": "auth", "access_token": token}))
         if json.loads(socket.recv(timeout=10)).get("type") != "auth_ok":
             raise ValueError("Authentication failed")
-        entity_mapping = mapping(socket, token if recurrence else None)
+        return mapping(socket, token if device else None, network)
+
+
+def save_private(path, value):
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(value, sort_keys=True))
+    temporary.chmod(0o600)
+    temporary.replace(path)
+
+
+def automatic_capture(args):
+    """Reserve bounded attempts before HA reads; never change checker health."""
+    sample = json.loads(args.automatic_request.read_text())
+    observed = utc_time(sample["observed_at"])
+    now = datetime.now(timezone.utc)
+    if not 0 <= (now - observed).total_seconds() <= 180:
+        raise ValueError("Stale checker request")
+    state_path = args.state_directory / "incident.json"
+    try:
+        previous = json.loads(state_path.read_text())
+    except FileNotFoundError:
+        previous = {"last_processed": "1970-01-01T00:00:00+00:00", "active": False}
+    if observed <= utc_time(previous["last_processed"]):
+        return 0
+    previous["last_processed"] = observed.isoformat()
+    state = sample["state"]
+    if state not in {"available", "unavailable", "unknown", "missing"}:
+        raise ValueError("Invalid checker state")
+    phase = None
+    if state == "unavailable":
+        if not previous["active"]:
+            previous.update(active=True, incident_start=observed.isoformat(), attempts=0)
+        if previous["attempts"] < 3:
+            previous["attempts"] += 1
+            phase = "unavailable"
+    elif state == "available" and previous["active"]:
+        previous["active"] = False
+        phase = "recovery"
+    # Persist before I/O: a killed/failed read consumes its attempt, not a retry loop.
+    save_private(state_path, previous)
+    if phase is None:
+        return 0
+    result = {
+        "kind": "ha_climate_recurrence_capture", "schema_version": 1,
+        "incident_start": previous["incident_start"], "phase": phase,
+        "checker_observed_at": observed.isoformat(), "observed_at": now.isoformat(),
+        "entity_id": ENTITY, "attempt": previous["attempts"],
+        "coverage": "At most three failure snapshots and one recovery snapshot per observed incident. Checker samples can miss shorter outages; a changed state during capture is not incident-time proof. Failed attempts are bounded and consumed. No device poll, reconnect, service call, logging change or active network probe.",
+    }
+    try:
+        token = args.token_file.read_text().strip()
+        if not token:
+            raise ValueError("Missing credential")
+        result["mapping"] = read_mapping(token, device=True, network=True)
+        result["current_state"] = current_state(token)
+        result["status"] = "ok" if result["mapping"].get("device", {}).get("availability", {}).get("status") == "ok" else "partial"
+    except Exception as error:
+        result.update(status="unknown", error_type=type(error).__name__)
+    save_private(args.state_directory / "latest.json", result)
+    print(json.dumps(result, sort_keys=True), flush=True)
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--incident-start")
+    parser.add_argument("--incident-cutoff")
+    parser.add_argument("--recovered-at", default="")
+    parser.add_argument("--automatic-request", type=Path)
+    parser.add_argument("--state-directory", type=Path)
+    parser.add_argument("--token-file", type=Path, default=Path("/run/agenix/ha-hermes-token"))
+    parser.add_argument("--network-sources", action="store_true")
+    args = parser.parse_args()
+    recurrence = any((args.incident_start, args.incident_cutoff, args.recovered_at))
+    if args.automatic_request:
+        if recurrence or not args.state_directory:
+            raise ValueError("Automatic capture requires a state directory, not incident arguments")
+        return automatic_capture(args)
+    if recurrence and not (args.incident_start and args.incident_cutoff):
+        raise ValueError("Both incident bounds required")
+    windows, incident = (incident_window(args.incident_start, args.incident_cutoff,
+                                        args.recovered_at, datetime.now(timezone.utc))
+                         if recurrence else (WINDOWS, None))
+    token = args.token_file.read_text().strip()
+    entity_mapping = read_mapping(token, device=recurrence, network=args.network_sources)
+    if args.network_sources and not recurrence:
+        print(json.dumps({"observed_at": datetime.now(timezone.utc).isoformat(),
+                          "mapping": entity_mapping}, sort_keys=True))
+        return 0
     state = None
     if recurrence:
         try:

@@ -116,6 +116,61 @@ class NucDeployGuardTest(unittest.TestCase):
             "--nuc-deploy-source-owner=test-owner",
         ]
 
+    def test_ha_preserving_switch_rejects_changed_closure_and_dependency_restart(self) -> None:
+        bash = shutil.which("bash")
+        real_readlink = shutil.which("readlink")
+        old = self.root / "active"
+        target = self.root / "target"
+        for root in (old, target):
+            unit = root / "etc/systemd/system/home-assistant.service"
+            unit.parent.mkdir(parents=True)
+            unit.write_text("[Service]\nExecStart=/same/ha\n")
+        (target / "bin").mkdir()
+        plan = target / "bin/switch-to-configuration"
+        plan.write_text(f"#!{bash}\nprintf '%s\\n' \"${{FAKE_ACTIVATION_PLAN:-unchanged}}\"\n")
+        plan.chmod(0o755)
+        commands = {
+            "readlink": f'if [[ "$*" == "-f /run/current-system" ]]; then echo "{old}"; else exec "{real_readlink}" "$@"; fi',
+            "systemctl": 'if [[ "$1" == is-active ]]; then exit 0; fi; if [[ "$*" == *NeedDaemonReload* ]]; then echo no; else echo MainPID=123; echo ActiveEnterTimestampMonotonic=456; fi',
+            "nix": f'if flock -n "$NIXOS_DEPLOY_LOCK_FILE" true; then exit 91; fi; echo "{target}"',
+        }
+        for name, body in commands.items():
+            command = self.git_bin / name
+            command.write_text(f"#!{bash}\nset -eu\n{body}\n")
+            command.chmod(0o755)
+        sha = "a" * 40
+        args = [f"--nuc-deploy-expected-main={sha}", "--nuc-deploy-preserve-home-assistant",
+                *self.source_args(), str(self.command), "switch", "--flake", f"github:edmundmiller/dotfiles/{sha}#nuc"]
+        # The packaged application prepends coreutils to PATH. Export shell
+        # boundary stubs so the test never inspects the build host's generation.
+        env = {"FAKE_GIT_REMOTE_MAIN": sha, "NIXOS_DEPLOY_GIT": str(self.fake_git)} | {
+            f"BASH_FUNC_{name}%%": f'() {{ "{self.git_bin / name}" "$@"; }}'
+            for name in commands
+        }
+        result = self.run_wrapper(*args, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(self.marker.exists())
+        self.assertIn("ha_continuity=verified_same_pid_and_start", result.stdout)
+        self.marker.unlink()
+        target_unit = target / "etc/systemd/system/home-assistant.service"
+        target_unit.write_text("[Service]\nExecStart=/different/ha\n")
+        result = self.run_wrapper(*args, env=env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("protected unit home-assistant.service would change", result.stderr)
+        self.assertFalse(self.marker.exists())
+        target_unit.write_text((old / "etc/systemd/system/home-assistant.service").read_text())
+        alert_unit = target_unit.with_name("gatus-notion.service")
+        alert_unit.write_text("[Service]\nExecStart=/unrelated/new/receiver\n")
+        result = self.run_wrapper(*args, env=env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("protected unit gatus-notion.service would change", result.stderr)
+        self.assertFalse(self.marker.exists())
+        alert_unit.unlink()
+        result = self.run_wrapper(*args, env=env | {"FAKE_ACTIVATION_PLAN": "would restart postgresql.service"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("may interrupt HA", result.stderr)
+        self.assertFalse(self.marker.exists())
+
     def test_current_main_snapshot_runs(self) -> None:
         result = self.run_wrapper(*self.source_args(), str(self.command), "switch")
         self.assertEqual(result.returncode, 0, result.stderr)

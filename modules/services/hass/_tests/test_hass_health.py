@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 from datetime import UTC, datetime, timedelta
@@ -158,6 +159,27 @@ class HassHealthTest(unittest.TestCase):
             "climate.test",
             *extra,
         )
+
+    def test_diagnostic_request_is_private_and_does_not_change_health_semantics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            request_path = Path(directory) / "capture.json"
+            self.responses["get_states"].append({
+                "entity_id": "climate.master_suite", "state": "unavailable",
+                "attributes": {"secret": "private"},
+            })
+            for state, code, queued in [("unavailable", 1, "unavailable"),
+                                        ("unknown", 1, "unknown"), ("heat", 0, "available")]:
+                self.responses["get_states"][-1]["state"] = state
+                result_code, report = self.health(
+                    "--entity", "climate.master_suite", "--climate-capture-request", str(request_path),
+                )
+                self.assertEqual(result_code, code)
+                sample = json.loads(request_path.read_text())
+                self.assertEqual(set(sample), {"observed_at", "state"})
+                self.assertEqual(sample["state"], queued)
+                self.assertEqual(sample["observed_at"], report["observed_at"])
+                self.assertEqual(request_path.stat().st_mode & 0o777, 0o644)
+                self.assertNotIn("private", request_path.read_text())
 
     def test_healthy_ignores_disabled_integrations_dismissed_repairs_and_old_errors(
         self,

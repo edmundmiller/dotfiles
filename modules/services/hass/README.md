@@ -188,6 +188,51 @@ paid plan is enabled by this monitoring code.
 
 ## Climate recurrence diagnostics
 
+### Automatic checker-triggered snapshots
+
+When runtime monitoring is armed, `hass-health` atomically writes only the fixed
+`climate.master_suite` availability and check time to its runtime directory.
+`hass-climate-capture.path` starts a separate credential-isolated oneshot. Capture
+latency, timeout and failure do not change the health result or delay publication
+to Gatus. The existing two-minute checker cadence and Gatus/email policy remain
+unchanged. This observes checker samples, not every HA state transition.
+
+The reader reserves at most three attempts while unavailable and one on sampled
+recovery per incident. Unknown/missing samples do not declare recovery. Duplicate,
+future or older-than-180-second requests cannot trigger another HA read. Attempts
+are consumed before I/O, including failed or killed reads. A new incident begins
+only after an observed recovery. Sanitized snapshots go to the service journal;
+`/var/lib/hass-climate-capture/latest.json` and `incident.json` retain the latest
+snapshot and deduplication state with mode 0600 under a private state directory.
+No retention cleanup or deletion is added. The unit has a 75-second deadline and
+permits IP traffic only to loopback, never to the thermostat or a router.
+
+The desired discriminating evidence is cached shared HomeKit connection
+availability and relevant characteristic status codes, without values, names,
+identifiers, pairing material or addresses. Stock HA 2026.11.0 diagnostics omits
+these fields. Until HA-side read-only instrumentation is loaded, snapshots mark
+this evidence **unknown** and the capture **partial**. Entity unavailability is
+never substituted for connection failure. Installing the system-level trigger
+does not by itself expose those HA internals, and does not authorize restarting
+HA to add them.
+
+Each capture inventories only allowlisted configured HA router/controller domains,
+active local controller/DHCP service names, and whether a default route exists.
+`--network-sources` performs that same inventory alone, without historical journals.
+No credentials, addresses, leases or unrelated entity data are exported. A default
+gateway is not an authenticated client-event source. AP/DHCP events remain
+uncollected until a read-only controller source and thermostat association are
+verified; no LAN scan or active thermostat probe is used to discover one.
+
+Deploy with the `preserve_ha` workflow input or `nuc_shipping.py request
+--preserve-ha`. This builds the exact target under the normal host lock, compares
+HA unit/drop-in and activation membership against the actual live generation,
+checks the dry activation for HA/dependency interruption, rechecks current main,
+and verifies the same HA PID/start afterward. A changed HA closure is refused,
+not hidden by disabling restarts. Publication alone is not installation proof.
+
+### Bounded historical reads
+
 When a user reports `climate.master_suite` unavailable or existing checker
 evidence identifies that entity, use the published `ha-climate-recurrence`
 operation in `.github/workflows/deploy-nuc.yml`. Agents prepare the inputs and

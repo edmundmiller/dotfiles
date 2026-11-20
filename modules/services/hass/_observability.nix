@@ -68,6 +68,7 @@ in
             exec ${healthCommand}/bin/hass-health health --json \
               --url http://[::1]:8123 \
               --token-file "$CREDENTIALS_DIRECTORY/ha-token" \
+              --climate-capture-request /run/hass-health/climate-capture.json \
               ${lib.escapeShellArgs (
                 lib.concatMap (warning: [
                   "--expected-warning"
@@ -77,6 +78,53 @@ in
           '';
           # Capture timeout/signal failures too, without publishing HA contents.
           ExecStopPost = "${pkgs.python3}/bin/python3 ${./monitor-gatus.py} publish --status-file ${statusFile}";
+        };
+      };
+
+      # This path-triggered unit is independent of checker success and timeout.
+      # An unhealthy health service must still publish to Gatus immediately.
+      systemd.paths.hass-climate-capture = lib.mkIf cfg.enable {
+        description = "Capture sampled master-suite unavailability without an agent";
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.ConditionPathExists = readyFile;
+        pathConfig.PathChanged = "/run/hass-health/climate-capture.json";
+      };
+
+      systemd.services.hass-climate-capture = lib.mkIf cfg.enable {
+        description = "Record bounded privacy-filtered cached HomeKit diagnostics";
+        path = [
+          pkgs.systemd
+          pkgs.iproute2
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          DynamicUser = true;
+          LoadCredential = [ "ha-token:${cfg.tokenFile}" ];
+          StateDirectory = "hass-climate-capture";
+          StateDirectoryMode = "0700";
+          BindReadOnlyPaths = [ "/run/hass-health:/run/hass-health-request" ];
+          TimeoutStartSec = "75s";
+          TimeoutStopSec = "5s";
+          UMask = "0077";
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          RestrictAddressFamilies = [
+            "AF_UNIX"
+            "AF_INET"
+            "AF_INET6"
+            "AF_NETLINK"
+          ];
+          IPAddressDeny = "any";
+          IPAddressAllow = "localhost";
+          ExecStart = pkgs.writeShellScript "hass-climate-capture" ''
+            exec ${pkgs.python3.withPackages (ps: [ ps.websockets ])}/bin/python3 \
+              ${./climate-entity-diagnostics.py} \
+              --automatic-request /run/hass-health-request/climate-capture.json \
+              --state-directory "$STATE_DIRECTORY" \
+              --token-file "$CREDENTIALS_DIRECTORY/ha-token"
+          '';
         };
       };
 

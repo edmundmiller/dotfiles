@@ -6,6 +6,7 @@ deploy_source_head=""
 deploy_source_base=""
 deploy_expected_main=""
 deploy_published=""
+preserve_ha=0
 deploy_source_owner="${SUDO_USER:-${USER:-unknown}}"
 deploy_allow_stale="${NIXOS_DEPLOY_ALLOW_STALE:-0}"
 
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
         echo "nix-private-github: published revision must be an exact commit SHA" >&2
         exit 64
       fi
+      shift
+      ;;
+    --nuc-deploy-preserve-home-assistant)
+      preserve_ha=1
       shift
       ;;
     --nuc-deploy-source-head=*)
@@ -115,6 +120,11 @@ if [[ -n "$deploy_approved" ]]; then
     echo "nix-private-github: approved revision requires the exact pinned NUC flake" >&2
     exit 64
   fi
+fi
+
+if [[ "$preserve_ha" == 1 && ( -z "$deploy_expected_main" || "$deploy_mutation" != 1 || " $* " != *" switch "* ) ]]; then
+  echo "nix-private-github: HA preservation requires an exact-main switch" >&2
+  exit 64
 fi
 
 if [[ "$deploy_mutation" -eq 0 ]]; then
@@ -284,6 +294,47 @@ fi
 
 write_deploy_owner
 
+if [[ "$preserve_ha" == 1 ]]; then
+  # Build and compare the entire selected generation under the existing host
+  # deployment lock. Never disable restarts to hide an incompatible closure.
+  old_system="$(readlink -f /run/current-system)"
+  printf 'configurationRevisionBefore=%s\n' "$(nixos-version --configuration-revision)"
+  printf 'activeSystemBefore=%s\n' "$old_system"
+  systemctl is-active --quiet home-assistant.service
+  test "$(systemctl show home-assistant.service -p NeedDaemonReload --value)" = no
+  ha_before="$(systemctl show home-assistant.service -p MainPID -p ActiveEnterTimestampMonotonic)"
+  target="$(nix build --no-link --print-out-paths --accept-flake-config --max-jobs 1 \
+    "github:edmundmiller/dotfiles/${deploy_expected_main}#nixosConfigurations.nuc.config.system.build.toplevel")"
+  test -f "$old_system/etc/systemd/system/home-assistant.service"
+  for service in home-assistant.service gatus.service gatus-email.service gatus-notion.service; do
+    for directory in "$service" "$service.d" "multi-user.target.wants/$service"; do
+      old="$old_system/etc/systemd/system/$directory"
+      new="$target/etc/systemd/system/$directory"
+      if [[ -e "$old" || -e "$new" ]] && ! diff -qr "$old" "$new" >/dev/null 2>&1; then
+        echo "nix-private-github: protected unit $service would change; refusing activation" >&2
+        exit 65
+      fi
+    done
+    for prefix in /run/systemd/system /run/systemd/system.control /etc/systemd/system.control; do
+      if [[ -e "$prefix/$service" || -e "$prefix/$service.d" ]]; then
+        echo "nix-private-github: protected unit $service has a runtime override; refusing activation" >&2
+        exit 65
+      fi
+    done
+  done
+  if ! plan="$("$target/bin/switch-to-configuration" dry-activate 2>&1)" ||
+    grep -Eq '(home-assistant|postgresql[^ ]*|dbus|bluetooth|networking|systemd-udevd|systemd-networkd|NetworkManager|systemd-resolved)\.service' <<<"$plan"; then
+    echo "nix-private-github: activation plan may interrupt HA or its dependencies; refusing activation" >&2
+    exit 65
+  fi
+  test "$(readlink -f /run/current-system)" = "$old_system"
+  test "$(systemctl show home-assistant.service -p MainPID -p ActiveEnterTimestampMonotonic)" = "$ha_before"
+  main_now="$("$deploy_git" ls-remote https://github.com/edmundmiller/dotfiles.git refs/heads/main)"
+  read -r main_sha _ <<<"$main_now"
+  test "$main_sha" = "$deploy_expected_main"
+  printf 'ha_preservation_guard=passed target=%s\n' "$target"
+fi
+
 "$@" &
 deploy_child_pid=$!
 set +e
@@ -291,4 +342,12 @@ wait "$deploy_child_pid"
 status=$?
 set -e
 deploy_child_pid=""
+if [[ "$preserve_ha" == 1 ]]; then
+  if ! systemctl is-active --quiet home-assistant.service ||
+    [[ "$(systemctl show home-assistant.service -p MainPID -p ActiveEnterTimestampMonotonic)" != "$ha_before" ]]; then
+    echo "nix-private-github: HA continuity verification failed; preserve the observation gap" >&2
+    exit 65
+  fi
+  echo "ha_continuity=verified_same_pid_and_start"
+fi
 exit "$status"

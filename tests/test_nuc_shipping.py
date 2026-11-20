@@ -72,6 +72,8 @@ elif path.endswith("deploy-nuc.yml/dispatches"):
         inputs["recover_orb_pilot"] = "true"
     if state.get("ha_monitor"):
         inputs["ha_monitor"] = "true"
+    if state.get("preserve_ha"):
+        inputs["preserve_ha"] = "true"
     assert payload == {"ref": "main", "inputs": inputs}
     with (root / "dispatches").open("a") as out:
         out.write(json.dumps(payload) + "\n")
@@ -184,6 +186,16 @@ class NucShippingTests(unittest.TestCase):
         self.assertTrue(json.loads(result.stdout)["haMonitor"])
         self.assertNotEqual(self.request().returncode, 0)
         self.assertEqual(self.request("--ha-monitor").returncode, 0)
+        self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
+
+    def test_ha_continuity_requirement_survives_dispatch_and_cannot_be_dropped(self):
+        self.github["preserve_ha"] = True
+        self.save_github()
+        result = self.request("--preserve-ha")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(json.loads(result.stdout)["preserveHa"])
+        self.assertNotEqual(self.request().returncode, 0)
+        self.assertEqual(self.request("--preserve-ha").returncode, 0)
         self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
 
     def test_no_deploy_is_offline_and_cannot_be_rearmed_by_replay(self):
@@ -850,15 +862,80 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             return response
 
         output = io.StringIO()
-        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", return_value="private-token"), patch("subprocess.run", side_effect=read_journal), patch("urllib.request.urlopen", side_effect=state_response), patch.object(sys, "argv", ["reader", *args]), patch("sys.stdout", output):
+        read_text = Path.read_text
+        def read_file(path, *positional, **keywords):
+            if str(path) == "/run/agenix/ha-hermes-token":
+                return "private-token"
+            return read_text(path, *positional, **keywords)
+
+        with patch.dict(sys.modules, modules), patch.object(Path, "read_text", read_file), patch("subprocess.run", side_effect=read_journal), patch("urllib.request.urlopen", side_effect=state_response), patch.object(sys, "argv", ["reader", *args]), patch("sys.stdout", output):
             with self.assertRaises(SystemExit) as exit_status:
                 runpy.run_path(str(ROOT / "modules/services/hass/climate-entity-diagnostics.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
         self.assertNotIn("192.0.2.42", output.getvalue())
-        return exit_status.exception.code, json.loads(output.getvalue())
+        return exit_status.exception.code, json.loads(output.getvalue()) if output.getvalue() else None
 
     def record(self, at, message):
         return {"__REALTIME_TIMESTAMP": str(round(datetime.fromisoformat(at).timestamp() * 1_000_000)), "MESSAGE": message}
+
+    def test_automatic_capture_bounds_incidents_preserves_recovery_and_rejects_stale_requests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request_path = root / "request.json"
+            args = ["--automatic-request", str(request_path), "--state-directory", str(root)]
+            for state, expected in [
+                ("available", None), ("unavailable", "unavailable"),
+                ("unavailable", "unavailable"), ("unknown", None),
+                ("unavailable", "unavailable"), ("unavailable", None),
+                ("available", "recovery"), ("available", None), ("unavailable", "unavailable"),
+            ]:
+                request_path.write_text(json.dumps({"observed_at": datetime.now(UTC).isoformat(), "state": state}))
+                code, result = self.invoke(args=args)
+                self.assertEqual(code, 0)
+                if expected is None:
+                    self.assertIsNone(result)
+                else:
+                    self.assertEqual(result["phase"], expected)
+                    self.assertEqual(result["status"], "partial")
+                    self.assertEqual(result["mapping"]["device"]["availability"]["status"], "unknown")
+                    self.assertEqual(result["mapping"]["network_sources"]["controller_integrations"], [])
+                    self.assertEqual((root / "latest.json").stat().st_mode & 0o777, 0o600)
+                # The same request must not consume another attempt or repeat a GET.
+                self.assertEqual(self.invoke(args=args), (0, None))
+            self.assertEqual(json.loads((root / "incident.json").read_text())["attempts"], 1)
+            for observed in (datetime.now(UTC) - timedelta(seconds=181), datetime.now(UTC) + timedelta(seconds=5)):
+                request_path.write_text(json.dumps({"observed_at": observed.isoformat(), "state": "unavailable"}))
+                self.assertEqual(self.invoke(args=args)[0], 2)
+            request_path.write_text(json.dumps({"observed_at": datetime.now(UTC).isoformat(), "state": "unavailable"}))
+            code, result = self.invoke(args=args, denied=True)
+            self.assertEqual((code, result["status"]), (0, "unknown"))
+            self.assertEqual(json.loads((root / "incident.json").read_text())["attempts"], 2)
+
+    def test_cached_availability_does_not_conflate_characteristic_and_connection_failure(self):
+        records = [self.record("2026-11-01T07:00:00+00:00", "unrelated")]
+        args = ["--incident-start", "2026-11-01T07:00:00Z", "--incident-cutoff", "2026-11-01T07:01:00Z"]
+        for connected, char_available, code in [(True, False, -70402), (False, True, 0)]:
+            diagnostic = {
+                "home_assistant": {"version": "2026.11.0"},
+                "data": {
+                    "device": {}, "config-entry": {"data": {"Connection": "IP"}},
+                    "recurrence-availability": {
+                        "entity_id": "climate.master_suite", "connection_available": connected,
+                        "characteristics": [{"type": "current_temperature", "status_code": code,
+                                             "available": char_available, "value": "private", "iid": "private"}],
+                        "pairing_data": "private",
+                    },
+                },
+            }
+            result = self.invoke(records, args=args, diagnostics=diagnostic)[1]
+            availability = result["mapping"]["device"]["availability"]
+            self.assertEqual(availability["connection_available"], connected)
+            self.assertEqual(availability["characteristics"], [{
+                "type": "current_temperature", "status_code": code, "available": char_available,
+            }])
+            diagnostic["data"]["recurrence-availability"]["characteristics"][0]["status_code"] = "private"
+            result = self.invoke(records, args=args, diagnostics=diagnostic)[1]
+            self.assertEqual(result["mapping"]["device"]["availability"]["status"], "unknown")
 
     def test_runtime_mapping_and_bounded_error_categories_are_private(self):
         def record(at, message):
