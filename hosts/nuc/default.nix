@@ -2434,7 +2434,6 @@ in
         # with `node: command not found`, blocking nixos-rebuild.
         stack.enable = false;
       };
-      tmux.enable = true;
       zsh.enable = true;
       displayctl.enable = true;
       herdr.enable = true;

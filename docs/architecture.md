@@ -52,7 +52,7 @@ The repository is a single Nix flake (`flake.nix`) built with **flake-parts**. K
 | `darwinConfigurations` | macOS system configs (MacTraitor-Pro, Seqeratop)              |
 | `nixosConfigurations`  | NixOS system configs (nuc, unas and NUC rollout variants)     |
 | `deploy.nodes`         | deploy-rs targets for remote deployment                       |
-| `packages`             | Custom Nix derivations (zele, dmux, zunit, …)                 |
+| `packages`             | Custom Nix derivations (zele, hunk, zunit, …)                 |
 | `overlays`             | `pkgs.unstable` and `pkgs.my` (custom packages)               |
 | `devShells`            | Development shells (`default` with linters, `agent` headless) |
 | `checks`               | deploy-rs validation, zunit tests, HA assertions              |
@@ -64,7 +64,7 @@ All configuration lives under `modules/`, organized by domain:
 
 ```
 modules/
-├── shell/          # zsh, git, jj, tmux, 1password, ai, pi, ssh, direnv, claude
+├── shell/          # zsh, git, jj, native Herdr, 1password, ssh, direnv
 ├── editors/        # emacs, vim, helix, VS Code, file associations
 ├── dev/            # node, python, rust, R, lua, nix, shell, nextflow
 ├── desktop/        # apps, browsers, terminals (ghostty), media, macos
@@ -88,7 +88,7 @@ The root `default.nix` imports all modules with **platform filtering** — NixOS
 
 ### Config Files
 
-Application dotfiles live in `config/` (40+ apps: ghostty, git, tmux, zsh, nvim, lazygit, agents, etc.). Modules wire them into the system via home-manager's `home.configFile` or `home.file`, which symlinks them from the Nix store to `~/.config/`.
+Application dotfiles live in `config/`, including Ghostty, native Herdr, Git, zsh, Neovim, lazygit and agents. Modules wire them into the system through Home Manager's `home.configFile` or `home.file`.
 
 **Config files are read-only at their target path.** Edit the source in `config/`, then rebuild.
 
@@ -178,10 +178,8 @@ Darwin hosts use local `darwin-rebuild switch` (deploy-rs wraps this but rollbac
 Custom derivations available as `pkgs.my.*` via the default overlay. ~40 packages including:
 
 - **zele** — CLI tool (patched upstream)
-- **dmux** — tmux session manager
 - **druk** — terminal code editor (`modules.shell.druk`)
 - **zunit** — Zsh unit test framework
-- **tmux plugins** — smart-name, smooth-scroll, opencode-integrated
 
 ### TypeScript Packages (`packages/pi-packages/`)
 

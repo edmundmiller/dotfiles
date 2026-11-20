@@ -1,6 +1,6 @@
 # Rex
 
-`init.lua` uses the tmux/Herdr `Ctrl+C` prefix and Ghostty resize shortcuts.
+`init.lua` uses the `Ctrl+C` prefix and Ghostty resize shortcuts.
 `modules.shell.rex.enable` deploys it to `~/.config/rex/init.lua` on both Macs.
 Install the Rex beta app separately. `env.zsh` adds the bundled CLI to `PATH`
 from `/Applications` or `~/Applications`, so shells and tools launched from them

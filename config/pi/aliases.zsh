@@ -40,13 +40,13 @@ _pi_dotfiles_bin() {
   print -r -- "$bin_dir"
 }
 
-_pi_source_tmux_lib() {
+_pi_source_worktree_lib() {
   local dotfiles_bin lib_path
   dotfiles_bin=$(_pi_dotfiles_bin) || return 1
-  lib_path="$dotfiles_bin/tmux-lib.sh"
+  lib_path="$dotfiles_bin/worktree-lib.sh"
   [[ -f "$lib_path" ]] || return 1
 
-  # shellcheck source=bin/tmux-lib.sh
+  # shellcheck source=bin/worktree-lib.sh
   source "$lib_path"
 }
 
@@ -136,8 +136,8 @@ EOF
     shift
   fi
 
-  _pi_source_tmux_lib || {
-    print -u2 'error: tmux worktree helpers not found'
+  _pi_source_worktree_lib || {
+    print -u2 'error: Git worktree helpers not found'
     return 1
   }
 

@@ -35,7 +35,7 @@ graph TB
   %% ── Module System ─────────────────────────────────────────────
   subgraph Modules["modules/  (NixOS modules)"]
     direction TB
-    mod_shell["shell/<br/>zsh · git · jj · tmux<br/>1password · ai · pi<br/>ssh · direnv · claude"]
+    mod_shell["shell/<br/>zsh · git · jj · Herdr<br/>1password · ssh · direnv"]
     mod_editors["editors/<br/>emacs · vim · helix<br/>code · file-assoc"]
     mod_dev["dev/<br/>node · python · rust<br/>R · lua · nix · shell"]
     mod_desktop["desktop/<br/>apps · browsers · term<br/>media · macos"]
@@ -53,7 +53,7 @@ graph TB
     direction TB
     cfg_ghostty["ghostty/"]
     cfg_git["git/"]
-    cfg_tmux["tmux/"]
+    cfg_herdr["herdr/native/"]
     cfg_zsh["zsh/"]
     cfg_nvim["nvim/"]
     cfg_agents["agents/<br/>claude · opencode · pi"]
@@ -101,7 +101,7 @@ graph TB
 
   %% ── Packages ──────────────────────────────────────────────────
   subgraph Packages["Custom Packages"]
-    nix_packages["packages/<br/>(Nix derivations:<br/>zele · dmux · zunit · …)"]
+    nix_packages["packages/<br/>(Nix derivations:<br/>zele · hunk · zunit · …)"]
     ts_packages["packages/pi-packages/<br/>(TypeScript monorepo:<br/>pi-dcp · pi-qmd<br/>pi-scurl · pi-beads · …)"]
   end
 
@@ -147,4 +147,4 @@ graph TB
   class nuc,unas nixos
   class agenix_secrets,opnix_secrets secret
   class nix_packages,ts_packages pkg
-  class cfg_ghostty,cfg_git,cfg_tmux,cfg_zsh,cfg_nvim,cfg_agents,cfg_lazygit,cfg_others config
+  class cfg_ghostty,cfg_git,cfg_herdr,cfg_zsh,cfg_nvim,cfg_agents,cfg_lazygit,cfg_others config

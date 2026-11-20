@@ -1,4 +1,4 @@
-// Pi extension: records PID, tmux pane/session, and agent status into session JSONL
+// Pi extension: records process identity and agent status into session JSONL
 // Adapted from https://github.com/richardgill/nix
 import type {
   ExtensionAPI,
@@ -10,11 +10,6 @@ type ProcessInfoEntry = {
   hasUI: boolean;
   pid: number;
   ppid: number;
-  tmux: {
-    env: string | null;
-    pane: string | null;
-    session: string | null;
-  };
 };
 
 type StatusEntry = {
@@ -41,42 +36,11 @@ const appendEntry = <T>(pi: ExtensionAPI, customType: string, data: T): void => 
   }
 };
 
-const resolveTmuxSession = async (
-  pi: ExtensionAPI,
-  cwd: string,
-  tmuxEnv: string | null
-): Promise<string | null> => {
-  if (!tmuxEnv) return null;
-  try {
-    const result = await pi.exec("tmux", ["display-message", "-p", "#S"], {
-      cwd,
-      timeout: 2000,
-    });
-    if (result.code !== 0) return null;
-    const session = result.stdout.trim();
-    return session.length > 0 ? session : null;
-  } catch {
-    return null;
-  }
-};
-
-const buildProcessInfo = async (
-  pi: ExtensionAPI,
-  ctx: ExtensionContext
-): Promise<ProcessInfoEntry> => {
-  const tmuxEnv = process.env.TMUX ?? null;
-  const tmuxPane = process.env.TMUX_PANE ?? null;
-  const tmuxSession = await resolveTmuxSession(pi, ctx.cwd, tmuxEnv);
-
+const buildProcessInfo = (ctx: ExtensionContext): ProcessInfoEntry => {
   return {
     hasUI: ctx.hasUI,
     pid: process.pid,
     ppid: process.ppid,
-    tmux: {
-      env: tmuxEnv,
-      pane: tmuxPane,
-      session: tmuxSession,
-    },
   };
 };
 
@@ -102,7 +66,7 @@ const recordSessionSwitch = (pi: ExtensionAPI, event: SessionBeforeSwitchEvent):
 
 const recordProcessInfo = async (pi: ExtensionAPI, ctx: ExtensionContext): Promise<void> => {
   try {
-    const info = await buildProcessInfo(pi, ctx);
+    const info = buildProcessInfo(ctx);
     appendEntry(pi, "process-info", info);
   } catch (error) {
     if (!isStaleContextError(error)) throw error;

@@ -19,7 +19,7 @@ return {
       'Obsidian',
     },
     keys = {
-      -- Daily-note workflow (mirrors tmux bind-N / bind-`)
+      -- Daily-note workflow
       { '<leader>od', '<cmd>Obsidian today<cr>',         desc = 'Obsidian: today' },
       { '<leader>oD', '<cmd>Obsidian dailies<cr>',       desc = 'Obsidian: browse dailies' },
       { '<leader>ot', '<cmd>Obsidian tomorrow<cr>',      desc = 'Obsidian: tomorrow' },

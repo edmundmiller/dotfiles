@@ -1,7 +1,7 @@
 # packages/agent-icons/default.nix
 #
 # Custom font mapping AI agent logos to Private Use Area codepoints.
-# Used with Ghostty's font-codepoint-map to render agent icons in tmux.
+# Used with Ghostty's font-codepoint-map to render agent icons.
 #
 # Codepoints:
 #   U+F5000 = claude

@@ -6,7 +6,7 @@
 # Key features:
 # - Priority-based PR sections (urgent, needs review, recently updated)
 # - Optimal workflow integration: gh-dash for triage + Neovim (gh.nvim) for deep review
-# - tmux integration for parallel PR reviews
+# - Neovim review in the invoking terminal
 # - Size-aware review workflow (guide recommends <200 lines for quick reviews)
 # - SLA-based organization (critical <2h, high <4h, normal <24h)
 
@@ -169,11 +169,7 @@ keybindings:
     - key: "C"
       name: "review in nvim"
       command: >
-        if command -v tmux &> /dev/null && [ -n "$TMUX" ]; then
-          tmux new-window -c {{.RepoPath}} "gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR'";
-        else
-          (cd {{.RepoPath}} && gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR');
-        fi
+        (cd {{.RepoPath}} && gh pr checkout {{.PrNumber}} && nvim -c 'GHOpenPR');
 
     # Quick approve with comment
     - key: "a"

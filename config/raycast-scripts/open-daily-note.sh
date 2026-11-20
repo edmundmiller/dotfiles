@@ -10,7 +10,7 @@
 # @raycast.icon 📝
 # @raycast.author Edmund Miller
 # @raycast.authorURL https://github.com/edmundmiller
-# @raycast.description Opens today's daily note in tmux + nvim via Ghostty
+# @raycast.description Opens today's daily note in nvim via Ghostty
 
 # Open Ghostty with daily-note script
 open -na "Ghostty.app" --args -e "$DOTFILES_BIN/daily-note"

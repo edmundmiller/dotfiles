@@ -1,6 +1,6 @@
-# Kitty Keybindings (Tmux-Style)
+# Kitty prefix keybindings
 
-Prefix: `ctrl+c` (matches tmux, press twice to send SIGINT)
+Prefix: `ctrl+c` (press twice to send SIGINT)
 
 Based on [hlissner/dotfiles tmux.conf](https://github.com/hlissner/dotfiles/blob/master/config/tmux/tmux.conf)
 

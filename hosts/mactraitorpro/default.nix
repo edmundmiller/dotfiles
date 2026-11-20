@@ -119,22 +119,11 @@ in
           lazydiff.enable = true;
         };
         jj.enable = true;
-        # Keep tmux available for persistent agent terminals; Herdr still owns
-        # Ghostty startup and remains the preferred pane/workspace layer.
-        tmux.enable = true;
-        tmux.workmux.enable = false;
         acpx.enable = true;
         cliamp.enable = true;
         herdr.enable = true;
         rex.enable = true;
         herald.enable = true;
-        tmux.jmux.enable = false;
-        tmux.jmux.package = pkgs.my.jmux;
-        tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
-        tmux.opensessions.enable = false;
-        tmux.experimental.sessionDots.enable = false;
-        tmux.experimental.agentStatus.enable = false;
-        dmux.enable = false;
         displayctl.enable = true;
         zsh = {
           enable = true;

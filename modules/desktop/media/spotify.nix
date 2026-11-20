@@ -31,30 +31,6 @@ in
       # # spotify playback. See
       # # https://github.com/Rigellute/spotify-tui/issues/147 or for spotifyd to
       # # get fixed.
-      # master.spotifyd
-      # (writeScriptBin "spt" ''
-      #   #!${stdenv.shell}
-      #   if ! systemctl --user is-active spotifyd >/dev/null; then
-      #     systemctl --user start spotifyd
-      #   fi
-      #   echo $TMUX >/tmp/spt.tmux
-      #   exec ${master.spotify-tui}/bin/spt
-      # '')
-
-      # # Since dbus doesn't work with Nix's spotifyd/spotify-tui, and I always
-      # # use tmux for my terminal, may as well exploit tmux to control spotify.
-      # playerctl
-      # (writeScriptBin "spt-send" ''
-      #    #!${stdenv.shell}
-      #    dbus_cmd='playerctl -p spotify'
-      #    tmux_cmd="tmux send-keys -t $(cat /tmp/spt.tmux | cut -d, -f3)"
-      #    case "$1" in
-      #      toggle) $dbus_cmd play-pause 2>/dev/null || $tmux_cmd " " ;;
-      #      next) $dbus_cmd next 2>/dev/null       || $tmux_cmd n ;;
-      #      prev) $dbus_cmd previous 2>/dev/null   || $tmux_cmd p ;;
-      #    esac
-      #  '')
-
       # (writeScriptBin "spt-send-notify" ''
       #    #!${stdenv.shell}
       #    client_id=$(pass www/spotify.com | grep -E '^client_id:' | awk '{print $2}')

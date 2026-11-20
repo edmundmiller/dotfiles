@@ -87,12 +87,12 @@ class ValidationTests(unittest.TestCase):
         )
 
     def test_rename_selects_old_and_new_owner(self):
-        self.write("config/tmux/old", "move\n")
+        self.write("config/zsh/old", "move\n")
         self.commit()
         v.git(self.root, "update-ref", "refs/remotes/origin/main", "HEAD")
-        v.git(self.root, "mv", "config/tmux/old", "new")
+        v.git(self.root, "mv", "config/zsh/old", "new")
         selected = self.selection()
-        self.assertEqual(selected["files"], ["config/tmux/old", "new"])
+        self.assertEqual(selected["files"], ["config/zsh/old", "new"])
         self.assertIn("zunit-tests", selected["checks"])
 
     def test_hunk_changes_select_runtime_config_compatibility(self):

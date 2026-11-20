@@ -37,11 +37,6 @@
       flake = false;
     };
 
-    mitsuhiko-agent-stuff = {
-      url = "github:mitsuhiko/agent-stuff";
-      flake = false;
-    };
-
     shaping-skills = {
       url = "github:rjs/shaping-skills";
       flake = false;
@@ -318,12 +313,6 @@
             "stack"
             "enable"
           ];
-        tmuxEnabled = moduleEnabled [
-          "modules"
-          "shell"
-          "tmux"
-          "enable"
-        ];
         skillDoctorWithPi = pkgs.applyPatches {
           name = "skill-doctor-with-pi";
           src = inputs.common-skills.outPath + "/.agents/skills/skill-doctor";
@@ -706,12 +695,6 @@
                   filter.maxDepth = 2;
                 };
 
-                mitsuhiko = {
-                  path = inputs.mitsuhiko-agent-stuff.outPath;
-                  subdir = "skills/tmux";
-                  filter.maxDepth = 1;
-                };
-
                 shaping = {
                   path = inputs.shaping-skills.outPath;
                   subdir = ".";
@@ -950,11 +933,6 @@
                 skill-doctor.from = "common-skill-doctor";
                 skill-doctor.path = ".";
 
-                # Mitsuhiko's tmux skill is only useful on hosts where tmux itself is enabled.
-              }
-              // lib.optionalAttrs tmuxEnabled {
-                tmux.from = "mitsuhiko";
-                tmux.path = ".";
               }
               // lib.optionalAttrs hunkEnabled {
                 hunk-review.from = "hunk";

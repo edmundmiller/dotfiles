@@ -41,8 +41,11 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
--- Split/pane navigation is handled by vim-tmux-navigator in
--- `lua/custom/plugins/tmux-navigator.lua`.
+-- Navigate Neovim splits without an external multiplexer.
+vim.keymap.set('n', '<C-h>', '<C-w>h', { desc = 'Focus left split' })
+vim.keymap.set('n', '<C-j>', '<C-w>j', { desc = 'Focus lower split' })
+vim.keymap.set('n', '<C-k>', '<C-w>k', { desc = 'Focus upper split' })
+vim.keymap.set('n', '<C-l>', '<C-w>l', { desc = 'Focus right split' })
 
 -- Hunk TUI (https://github.com/modem-dev/hunk) — open in a new tab terminal.
 -- Named `:Hdiff` to avoid confusion with julienvincent/hunk.nvim (`:DiffEditor`).

@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-# todo.sh intentionally owns the short t/ta commands; tmux project entry is tmproj/tp.
+# todo.sh owns the short t/ta commands.
 alias t="todo.sh"
 alias ta="t add"
 alias td="t do"

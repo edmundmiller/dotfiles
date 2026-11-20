@@ -90,10 +90,9 @@ in
         # Uses dark-theme.auto.conf and light-theme.auto.conf based on OS appearance
 
         ########################################
-        # Tmux-Style Keybindings               #
+        # Prefix keybindings                  #
         ########################################
-        # Prefix: ctrl+c (matches tmux config, press twice to send SIGINT)
-        # Based on: https://github.com/hlissner/dotfiles/blob/master/config/tmux/tmux.conf
+        # Prefix: ctrl+c (press twice to send SIGINT)
         map ctrl+c>ctrl+c send_text all \x03
 
         ## Window/Tab Management
@@ -152,7 +151,7 @@ in
         map ctrl+c>r load_config_file
         map ctrl+c>ctrl+r clear_terminal reset active
 
-        ## Resize (not in tmux config, but useful)
+        ## Resize
         map ctrl+c>left resize_window narrower
         map ctrl+c>right resize_window wider
         map ctrl+c>up resize_window taller

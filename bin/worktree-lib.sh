@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared tmux/worktree shell helpers.
+# Shared Git worktree naming helpers.
 
 sanitize_component() {
   local value="$1"
@@ -48,39 +48,4 @@ resolve_repo_stem() {
   fi
 
   printf '%s\n' "$(sanitize_component "$current_base")"
-}
-
-create_sibling_worktree() {
-  local checkout_root="$1"
-  local requested_name="$2"
-  local repo_stem slug worktree_name worktree_path branch_name
-
-  if ! git -C "$checkout_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    echo "error: not inside a git worktree: $checkout_root" >&2
-    return 1
-  fi
-
-  slug=$(sanitize_component "$requested_name")
-  if [[ -z "$slug" ]]; then
-    echo "error: empty worktree name after sanitization" >&2
-    return 1
-  fi
-
-  repo_stem=$(resolve_repo_stem "$checkout_root")
-  worktree_name="${repo_stem}-${slug}"
-  worktree_path="$(dirname -- "$checkout_root")/${worktree_name}"
-  branch_name="$worktree_name"
-
-  if [[ -e "$worktree_path" ]]; then
-    echo "error: worktree path already exists: $worktree_path" >&2
-    return 1
-  fi
-
-  if git -C "$checkout_root" show-ref --verify --quiet "refs/heads/$branch_name"; then
-    git -C "$checkout_root" worktree add --quiet "$worktree_path" "$branch_name"
-  else
-    git -C "$checkout_root" worktree add --quiet -b "$branch_name" "$worktree_path" HEAD
-  fi
-
-  printf '%s\n' "$worktree_path"
 }

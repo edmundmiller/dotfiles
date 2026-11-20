@@ -389,7 +389,6 @@
               gitnexus
               mcporter
               rtk
-              workmux
               ;
             inherit (pkgs.llm-agents) pi;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
@@ -410,7 +409,6 @@
               gitnexus
               mcporter
               rtk
-              workmux
               ;
             inherit (darwinPkgs.llm-agents)
               gitbutler
@@ -648,7 +646,6 @@
 
                 # Shell essentials
                 zsh
-                tmux
                 nushell
                 starship
 
@@ -1574,10 +1571,8 @@
                       pkgs.gnused
                       pkgs.bash
                       pkgs.lua
-                      pkgs.sesh
                       pkgs.fzf
                       pkgs.zoxide
-                      pkgs.tmux
                     ];
                   }
                   ''
@@ -1590,11 +1585,6 @@
                     git config --global user.name "Test User"
                     git config --global init.defaultBranch main
 
-                    # Start a headless tmux server on the default socket
-                    export TMUX_TMPDIR=$TMPDIR
-                    tmux new-session -d -s ci-session 2>/dev/null || true
-                    # Mark as headless so popup test stays skipped
-                    export ZUNIT_HEADLESS=1
                     export LUA_BIN=${pkgs.lua}/bin/lua
 
                     # Seed zoxide database in writable temp storage
@@ -1613,7 +1603,6 @@
                     cp -R ${./.} source
                     chmod -R u+w source
                     cd source
-                    patchShebangs config/tmux/*.sh config/tmux/*.ts
                     export DOTFILES_TEST_ROOT=$PWD
                     for test in config/*/tests/*.zunit; do
                       if [ -f "$test" ]; then
@@ -1622,15 +1611,12 @@
                       fi
                     done
 
-                    bun test ./config/tmux/tests/agent-hunk-sessions.test.ts
-
                     # Cleanup
-                    tmux -L default kill-server 2>/dev/null || true
                     rm -rf $ZOXIDE_TEST_DIRS 2>/dev/null || true
 
                     # Create success marker
                     mkdir -p $out
-                    echo "All tmux tests passed" > $out/result
+                    echo "All shell tests passed" > $out/result
                   '';
 
               nix-private-github =

@@ -5,7 +5,6 @@ vault_dir="${OBSIDIAN_VAULT_DIR:-$HOME/obsidian-vault}"
 daily_dir="$vault_dir/00_Inbox/Daily"
 note_date="$(date +%Y-%m-%d)"
 note_path="$daily_dir/$note_date.md"
-session_name="daily-note"
 
 mkdir -p "$daily_dir"
 
@@ -21,24 +20,4 @@ if [ ! -f "$note_path" ]; then
 EOF
 fi
 
-# If called with --popup flag, just open nvim directly (for tmux popups)
-if [[ "${1:-}" == "--popup" ]]; then
-  exec nvim "$note_path"
-fi
-
-# Otherwise, create/switch to persistent session
-if tmux has-session -t "$session_name" 2>/dev/null; then
-  if [ -n "${TMUX:-}" ]; then
-    tmux switch-client -t "$session_name"
-  else
-    tmux attach-session -t "$session_name"
-  fi
-else
-  tmux new-session -d -s "$session_name" -c "$daily_dir" "nvim \"$note_path\""
-
-  if [ -n "${TMUX:-}" ]; then
-    tmux switch-client -t "$session_name"
-  else
-    tmux attach-session -t "$session_name"
-  fi
-fi
+exec nvim "$note_path"

@@ -132,20 +132,6 @@
       "count": 1
     }
   },
-  "config/tmux/agent-hunk-sessions.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 2
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 3
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 3
-    },
-    "anti-slop/no-unsafe-dictionary-type": {
-      "count": 2
-    }
-  },
   "packages/callstack-diff/evals/complaint.ts": {
     "anti-slop/no-known-value-widening": {
       "count": 1
@@ -197,25 +183,6 @@
     },
     "anti-slop/no-runtime-typeof": {
       "count": 1
-    }
-  },
-  "packages/dmux/lib/dmux-openrouter-shim.cjs": {
-    "anti-slop/no-runtime-typeof": {
-      "count": 3
-    }
-  },
-  "packages/opencode-tmux-namer/src/index.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    },
-    "anti-slop/no-runtime-typeof": {
-      "count": 7
-    },
-    "anti-slop/no-unknown-parameters": {
-      "count": 1
-    },
-    "anti-slop/require-safety-comment-for-type-assertion": {
-      "count": 2
     }
   },
   "packages/pi-packages/pi-agentmap/tests/extension.test.ts": {
@@ -612,26 +579,6 @@
   "packages/pi-packages/tests/sub-limits-pace.test.ts": {
     "anti-slop/no-runtime-typeof": {
       "count": 3
-    }
-  },
-  "packages/tmux-smart-name/src/menu.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    }
-  },
-  "packages/tmux-smart-name/src/naming.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    }
-  },
-  "packages/tmux-smart-name/src/process.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 1
-    }
-  },
-  "packages/tmux-smart-name/src/status.ts": {
-    "anti-slop/no-known-value-widening": {
-      "count": 4
     }
   },
   "tests/skill-evals/done-skill-scorer.ts": {

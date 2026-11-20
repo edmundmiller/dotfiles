@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tnote-capture: Interactive task capture via gum
-# Launched from tmux popup (prefix + T)
+# Run in an interactive terminal.
 
 set -euo pipefail
 

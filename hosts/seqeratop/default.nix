@@ -42,51 +42,12 @@
         git.enable = true;
         git.hunk.enable = true;
         jj.enable = true;
-        tmux.enable = true;
         acpx.enable = true;
         cliamp.enable = true;
-        tmux.jmux.enable = false;
         herdr.enable = true;
         # Work laptop: don't register the NUC as an hc machine on activation.
         herdr.native.machines = { };
         rex.enable = true;
-        tmux.jmux.configFile = "${config.dotfiles.configDir}/jmux/config.json";
-        tmux.opensessions.enable = true;
-        dmux.enable = false;
-        tmux.sesh.sessions = [
-          {
-            name = "dotfiles";
-            path = "~/.config/dotfiles";
-          }
-          {
-            name = "platform";
-            path = "~/src/seqera/platform";
-          }
-          {
-            name = "nf-core";
-            path = "~/src/nf-core";
-          }
-          {
-            name = "nextflow";
-            path = "~/src/nextflow/nextflow";
-          }
-          {
-            name = "nf-xpack";
-            path = "~/src/seqera/nf-xpack";
-          }
-          {
-            name = "portal";
-            path = "~/src/seqera/portal";
-          }
-          {
-            name = "portal-main";
-            path = "~/src/seqera/portal/main";
-          }
-          {
-            name = "scientific-engagement";
-            path = "~/src/seqera/scientific-engagment";
-          }
-        ];
         zsh.enable = true;
         mo.enable = true;
         # Scan roots for `mo purge` (build-artifact cleanup). This list
@@ -212,7 +173,7 @@
     # Override the primary user for this host
     system.primaryUser = "edmundmiller";
 
-    # Touch ID for sudo. reattach moves panes started by the Rex or tmux server
+    # Touch ID for sudo. reattach moves panes started by the Rex server
     # into the GUI session, where pam_tid can reach the sensor. It needs the
     # lid open or the Magic Keyboard connected.
     security.pam.services.sudo_local = {

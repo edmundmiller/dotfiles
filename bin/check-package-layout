@@ -24,9 +24,6 @@ for path in "$@"; do
     packages/slop-scan.nix | \
     packages/snakefmt.nix | \
     packages/sqruff.nix | \
-    packages/tmux-agent-status.nix | \
-    packages/tmux-file-picker.nix | \
-    packages/tmux-window-name.nix | \
     packages/zunit.nix)
       ;;
     *)

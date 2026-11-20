@@ -6,9 +6,3 @@ config-file = ui.conf
 config-file = behavior.conf
 config-file = macos.conf
 config-file = keybindings.conf
-
-# WORKSPACE OWNER INTEGRATION:
-# The base keybindings target tmux; the Nix module selects the startup owner.
-#
-# For reference, Ghostty native tmux-style bindings are archived in:
-# tmux-style-keybindings.conf.disabled

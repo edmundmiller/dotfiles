@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # br-capture: Interactive br issue capture via gum
-# Launched from tmux popup (prefix + i)
+# Run in an interactive terminal.
 
 set -euo pipefail
 

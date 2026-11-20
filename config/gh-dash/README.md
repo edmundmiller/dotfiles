@@ -61,7 +61,7 @@ The dashboard is organized into focused sections for different types of work, fo
 
 - `o` - Open PR in browser
 - `O` - Checkout PR locally
-- `C` - **Review in Neovim** (opens gh.nvim in tmux window - optimal workflow!)
+- `C` - Review in Neovim with gh.nvim in the invoking terminal
 - `a` - Quick approve with "LGTM! ✅"
 - `A` - Approve with custom comment
 - `r` - Request changes
@@ -127,15 +127,14 @@ This setup implements the **optimal strategy from the CLI PR tools guide**: use 
 
 1. Launch `gh dash`
 2. Navigate to "🚨 Urgent" or "👁️ Needs My Review" section
-3. Press `C` on a PR to open it in Neovim with gh.nvim in a new tmux window
+3. Press `C` on a PR to open it in Neovim with gh.nvim in the invoking terminal
 4. Review the PR in the editor with full LSP support and context
 5. Return to gh-dash, press `a` to approve or `r` to request changes
-6. Manage 3-5 PRs in parallel using tmux windows
+6. Finish or leave the editor to return to the queue
 
 **Benefits**:
 
 - Combines gh-dash's superior triage with Neovim's deep review interface
-- tmux integration enables parallel PR reviews without context switching
 - Full LSP functionality (go-to-definition, find-references) on PR code
 - No browser required for entire workflow
 
@@ -221,7 +220,7 @@ keybindings:
 3. **Quick actions**: Master `a`, `m`, `C`, and `O` for common operations
 4. **Preview mode**: Keep preview open to quickly scan PR details
 5. **Copy URLs**: Use `y` to easily share PRs in Slack/email
-6. **tmux workflow**: Use `C` keybinding to review 3-5 PRs in parallel tmux windows
+6. Use `C` to review in Neovim, then return to the queue
 7. **SLA awareness**: Prioritize based on urgency (urgent <2h, high <4h, normal <24h)
 
 ## Best Practices from the Guide
@@ -238,7 +237,7 @@ keybindings:
 2. **Deep review in Neovim**: Press `C` for complex PRs requiring code context
 3. **Quick actions for simple PRs**: Use `a` for obvious approvals
 4. **Check CI status**: Press `s` before reviewing to ensure tests pass
-5. **Parallel reviews**: Manage multiple PRs simultaneously in tmux windows
+5. Return to the queue after each review
 
 ### Managing High Volume
 

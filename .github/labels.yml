@@ -35,7 +35,7 @@
 # Area labels
 - name: "area:shell"
   color: "c5def5"
-  description: "Shell configuration (zsh, tmux, etc.)"
+  description: "Shell configuration and command-line tools"
 
 - name: "area:editor"
   color: "c5def5"

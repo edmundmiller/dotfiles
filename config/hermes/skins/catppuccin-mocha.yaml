@@ -1,5 +1,5 @@
 name: catppuccin-mocha
-description: Catppuccin Mocha — polished dark skin matched to the tmux theme
+description: Catppuccin Mocha dark skin
 
 colors:
   banner_border: "#7f849c"

@@ -82,7 +82,7 @@ CHECKS = {
     "hass-health-tests": ["modules/services/hass/*"],
     "gatus-alerting-tests": ["modules/services/gatus/*", "overlays/gatus/*"],
     "gatus-native-tests": ["modules/services/gatus/*", "overlays/gatus/*"],
-    "zunit-tests": ["config/tmux/*", "config/zsh/*", "packages/zunit/*"],
+    "zunit-tests": ["config/zsh/*", "packages/zunit/*"],
     "package-harness-tests": [
         "packages/package-harness/*",
         "packages/*/default.nix",

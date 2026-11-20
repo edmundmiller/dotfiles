@@ -1,5 +1,5 @@
 -- https://www.superlogical.com/rex/docs/customize/config
--- Match tmux/Herdr's prefix without launching either multiplexer inside Rex.
+-- Use the shared Ctrl+C prefix without launching another terminal inside Rex.
 -- Reload on the server host with: rex config reload
 
 -- The Nix module loads the pinned macOS extension here. A source-only config

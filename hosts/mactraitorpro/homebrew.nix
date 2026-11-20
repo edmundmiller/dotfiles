@@ -14,8 +14,6 @@
       clone_target = "https://github.com/tornikegomareli/Talkify";
       trusted = true;
     }
-    "joshmedeski/sesh" # Smart tmux session manager with zoxide integration
-    "ahkohd/oyo" # oy - tmux session manager
   ];
 
   brews = [
@@ -51,11 +49,8 @@
     "shfmt"
     "terminal-notifier"
     "thefuck"
-    # "tmux"  # Using Nix-managed tmux for custom config
     "tree"
     "wget"
-    "joshmedeski/sesh/sesh"
-    "ahkohd/oyo/oy"
     "zoxide"
 
     # Cloud and infrastructure
