@@ -1,6 +1,5 @@
 """Tests for hermes_vcc/compaction.py"""
 
-import pytest
 from hermes_vcc.compaction import (
     build_brief_transcript,
     build_outstanding_context,

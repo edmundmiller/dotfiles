@@ -1,8 +1,5 @@
 """End-to-end: archive -> read files directly (pure VCC approach)."""
 
-import json
-from pathlib import Path
-
 from hermes_vcc.archive import archive_before_compression
 from hermes_vcc.enhanced_summary import compile_to_brief
 from hermes_vcc.recovery import list_archives

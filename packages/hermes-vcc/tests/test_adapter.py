@@ -1,11 +1,6 @@
 """Tests for the format adapter: Hermes OpenAI -> VCC Anthropic JSONL."""
 
 import json
-import sys
-import tempfile
-from pathlib import Path
-
-import pytest
 
 from hermes_vcc.adapter import (
     convert_conversation,

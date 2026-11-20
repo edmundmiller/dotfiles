@@ -1,9 +1,6 @@
 """Tests for hermes_vcc.archive — pre-compression archival system."""
 
-import json
 from pathlib import Path
-
-import pytest
 
 from hermes_vcc.archive import (
     archive_before_compression,
