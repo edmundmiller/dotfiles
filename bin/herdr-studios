@@ -287,8 +287,10 @@ elif [ ! -w "$dir" ]; then
   echo "herdr-studios: runtime dir not writable: $dir" >&2
   exit 1
 fi
-if [ -z "${XDG_RUNTIME_DIR:-}" ] && [ -w /etc/environment ]; then
-  if ! grep -q '^XDG_RUNTIME_DIR=' /etc/environment; then
+if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
+  if [ ! -w /etc/environment ]; then
+    echo 'herdr-studios: /etc/environment is not writable; rex may not see XDG_RUNTIME_DIR' >&2
+  elif ! grep -q '^XDG_RUNTIME_DIR=' /etc/environment; then
     printf '\nXDG_RUNTIME_DIR=/run/user/%s\n' "$uid" >> /etc/environment
   fi
 fi
