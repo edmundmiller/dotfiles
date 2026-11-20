@@ -69,10 +69,8 @@ Test Coverage (35 tests):
     - Character limit awareness (3 tests)
 """
 
-import json
 import re
 import subprocess
-import sys
 from pathlib import Path
 from typing import Annotated, Optional
 
