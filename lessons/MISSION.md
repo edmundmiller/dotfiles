@@ -1,7 +1,7 @@
 ---
 purpose: Ground lessons about why agentic software factories fail.
 applies_to: Teaching sessions about safe AI-assisted software development.
-entrypoint: Start with lessons/0001-why-software-factories-fail.html.
+entrypoint: Start with 0001-why-software-factories-fail.html in this directory.
 verification: Learner can diagnose reward, blind spot, delay, and steering point.
 update_when: The learner's desired real-world outcome changes.
 ---
