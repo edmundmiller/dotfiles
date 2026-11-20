@@ -1,71 +1,29 @@
-diff --git i/docs/features/dictation.md w/docs/features/dictation.md
-index bdc8b74..1d5af15 100644
---- i/docs/features/dictation.md
-+++ w/docs/features/dictation.md
-@@ -124,13 +124,23 @@ Release or locked finishing press                     // dictate.release-tail
-   -> A press inside the tail starts after the old clip finishes, with its own pre-roll
+diff --git i/src/dictation.rs w/src/dictation.rs
+index 9b388f3..420c263 100644
+--- i/src/dictation.rs
++++ w/src/dictation.rs
+@@ -11,6 +11,8 @@ pub(crate) mod diagnostics;
+ pub(crate) mod filler_words;
+ pub(crate) mod indicator;
+ pub(crate) mod live_text;
++#[cfg(target_os = "macos")]
++mod microphone_idle;
+ #[cfg_attr(target_os = "macos", allow(dead_code))]
+ pub(crate) mod modes;
+ #[cfg_attr(any(target_os = "linux", target_os = "windows"), allow(dead_code))]
+diff --git i/src/dictation/audio.rs w/src/dictation/audio.rs
+index 131c1e6..d55ba75 100644
+--- i/src/dictation/audio.rs
++++ w/src/dictation/audio.rs
+@@ -11,6 +11,7 @@ use color_eyre::eyre::{Result, eyre};
  
- Release when idle -> Press shortcut                   // dictate.cold-microphone
--  -> Open microphone asynchronously, no pre-roll
-+  -> Reuse the warm microphone, or open asynchronously without pre-roll
-      ├── Release before readiness -> Discard
-      ├── Stream fails before the hold threshold -> Reopen for the same press
-      └── Ready while held or locked -> Capture
--  -> Capture idle -> Microphone can close             // accepted jobs do not keep it open
-+  -> Capture idle -> Keep open for 30 seconds, then close
-+     └── Another capture -> Restart the idle countdown after it ends
- ```
- 
-+The local Nix patch keeps the microphone indicator visible during this grace
-+period. Startup stays cold in Release when idle mode. Selecting that mode while
-+idle releases immediately; a cancelled pending open still closes immediately.
-+Keep ready and Commands retain continuous capture. Timer boundary/reset tests
-+in `microphone_idle.rs` run without Apple frameworks. The owner regression in
-+`dictation_audio.rs` covers a cancelled cold open, restart, finish, and delayed
-+stream closure. Native microphone and Settings preview verification still
-+require the macOS build toolchain.
-+
- Source: `DictationCapture` in [dictation.rs](../../src/dictation.rs); checks:
- `delayed_press_reconstructs_audio_from_the_original_boundary`,
- `delayed_release_removes_audio_captured_after_the_physical_release`,
-diff --git i/src/app_window.rs w/src/app_window.rs
-index 7de4bb0..bca371d 100644
---- i/src/app_window.rs
-+++ w/src/app_window.rs
-@@ -3888,9 +3888,9 @@ impl AppWindow {
-                     div().flex_1().min_w_0().child(settings_copy(
-                         tr("Release the microphone when idle?"),
-                         if self.settings.commands_enabled {
--                            tr("Opens the microphone on shortcut press without pre-roll and turns Commands off.")
-+                            tr("Closes 30 seconds after dictation. The first press opens the microphone. Turns Commands off.")
-                         } else {
--                            tr("Opens the microphone on shortcut press without pre-roll. Commands remain off.")
-+                            tr("Closes 30 seconds after dictation. The first press opens the microphone. Commands remain off.")
-                         },
-                     )),
-                 )
-@@ -4004,7 +4004,7 @@ impl AppWindow {
-                                 .child(settings_row(
-                                     tr("Microphone mode"),
-                                     if self.settings.release_microphone_while_idle {
--                                        tr("Opens only while holding the shortcut. Disables pre-roll and commands.")
-+                                        tr("Keeps the microphone ready for 30 seconds after dictation. Commands stay off.")
-                                     } else {
-                                         tr("Keeps the microphone open for instant start and pre-roll")
-                                     },
-diff --git i/src/dictation_audio.rs w/src/dictation_audio.rs
-index 610180a..715a2d1 100644
---- i/src/dictation_audio.rs
-+++ w/src/dictation_audio.rs
-@@ -10,6 +10,7 @@ use color_eyre::eyre::{Result, eyre};
- 
+ use crate::audio::recording_environment::{CaptureMarker, RecordingEnvironmentController};
  use crate::audio::{CaptureInstant, RecoveringAudioInput, RecoveringAudioInputEvent};
- use crate::dictation::{DictationCapture, Finish};
-+use crate::microphone_idle::MicrophoneIdleGrace;
- use crate::recording_environment::RecordingEnvironmentController;
- use crate::suppression::PendingInputEvents;
- use crate::transcription_engine::TranscriptionEngine;
-@@ -134,6 +135,7 @@ enum Command {
++use crate::dictation::microphone_idle::MicrophoneIdleGrace;
+ use crate::dictation::{
+     CHUNK_GAP_TOLERANCE, ClipSource, DictationCapture, DictationClip, Finish, MAX_PADDED_GAP,
+     POST_RELEASE_TAIL, ReleaseTail,
+@@ -157,6 +158,7 @@ enum Command {
  struct Owner {
      input: RecoveringAudioInput,
      release_while_idle: bool,
@@ -73,7 +31,7 @@ index 610180a..715a2d1 100644
      pending_capture: Option<PendingCapture>,
      capture: DictationCapture,
      recording_environment: RecordingEnvironmentController,
-@@ -426,6 +428,7 @@ impl Owner {
+@@ -565,6 +567,7 @@ impl Owner {
          let owner = Self {
              input,
              release_while_idle,
@@ -81,27 +39,36 @@ index 610180a..715a2d1 100644
              pending_capture: None,
              capture,
              recording_environment,
-@@ -503,6 +506,7 @@ impl Owner {
-                     }
-                     self.next_recognition_generation();
+@@ -635,6 +638,7 @@ impl Owner {
+                     let _ = reply.send(false);
+                     return true;
                  }
 +                self.idle_grace.reset();
                  self.state.capture_generation.fetch_add(1, Ordering::AcqRel);
                  if self.input.is_open() {
                      self.start_capture_at(kind, at);
-@@ -560,6 +564,11 @@ impl Owner {
+@@ -719,6 +723,10 @@ impl Owner {
              }
              Command::SetReleaseWhileIdle(release) => {
                  self.release_while_idle = release;
 +                self.idle_grace.reset();
-+                // An explicit policy change still releases an idle microphone immediately.
-+                if release && self.capture_idle() {
++                if release && self.capture_idle() && !self.capture_sink_open() {
 +                    self.close_input();
 +                }
              }
+             #[cfg(test)]
              Command::InvalidateRecognition { reply } => {
-                 let _ = reply.send(self.next_recognition_generation());
-@@ -842,8 +851,19 @@ impl Owner {
+@@ -738,6 +746,9 @@ impl Owner {
+                     self.drain_through(through);
+                 }
+                 let _ = reply.send(self.capture_sink.take().map(CaptureSink::close));
++                if self.release_while_idle && self.capture_idle() {
++                    self.close_input();
++                }
+             }
+             Command::Shutdown => return false,
+         }
+@@ -1074,8 +1085,25 @@ impl Owner {
      }
  
      fn reconcile_input(&mut self) {
@@ -109,28 +76,49 @@ index 610180a..715a2d1 100644
 +    }
 +
 +    fn reconcile_input_at(&mut self, now: Instant) {
-+        if !self.release_while_idle || !self.capture_idle() || !self.input.is_active() {
++        if !self.release_while_idle
++            || !self.capture_idle()
++            || !self.input.is_active()
++            || self.capture_sink_open()
++        {
 +            self.idle_grace.reset();
 +        }
-         if self.release_while_idle {
+         if self.release_while_idle && !self.capture_sink_open() {
 -            if self.capture_idle() && self.input.is_active() {
-+            // Never extend a pending/failed open, only a healthy open stream.
++            // Keep only healthy open streams warm, never pending or failed opens.
 +            if self.capture_idle()
 +                && self.input.is_active()
-+                && (!self.input.is_open() || self.idle_grace.expired(now))
++                && (!self.input.is_open()
++                    || self.input.is_recovering()
++                    || self.idle_grace.expired(now))
 +            {
                  self.close_input();
              }
          } else if !self.input.is_active() {
-@@ -867,6 +887,7 @@ impl Owner {
+@@ -1144,7 +1172,13 @@ impl Owner {
+     /// stream failure. A cold microphone closes once idle and opens fresh
+     /// for the next press anyway.
+     fn reopen_silent_stream(&mut self) {
+-        if self.release_while_idle || !self.input.is_open() || self.input.is_recovering() {
++        if self.release_while_idle {
++            if !self.capture_sink_open() {
++                self.close_input();
++            }
++            return;
++        }
++        if !self.input.is_open() || self.input.is_recovering() {
+             return;
+         }
+         tracing::warn!(
+@@ -1158,6 +1192,7 @@ impl Owner {
  
      fn close_input(&mut self) {
          self.input.close();
 +        self.idle_grace.reset();
+         self.stream_opened_at = None;
          self.last_captured_through = None;
          self.next_recognition_generation();
-         self.state.captured_through.store(0, Ordering::Release);
-@@ -929,6 +950,35 @@ mod tests {
+@@ -1289,6 +1324,35 @@ mod tests {
          }));
      }
  
@@ -165,8 +153,8 @@ index 610180a..715a2d1 100644
 +
      #[test]
      fn hotkey_captures_stream_once_intentional_and_others_do_not() {
-         use crate::transcription_engine::Command as EngineCommand;
-@@ -1189,8 +1239,11 @@ mod tests {
+         use crate::transcription::engine::Command as EngineCommand;
+@@ -1604,8 +1668,11 @@ mod tests {
                  panic!("second capture must preserve its original press and produce one clip");
              };
              assert_eq!(clip.duration_ms(), 100);
@@ -179,24 +167,26 @@ index 610180a..715a2d1 100644
              assert!(!owner.input.is_open());
              assert!(!owner.input.is_opening());
              assert!(samples.send((vec![0.25; 480], finished_at)).is_err());
-diff --git i/src/main.rs w/src/main.rs
-index a973c7c..c551455 100644
---- i/src/main.rs
-+++ w/src/main.rs
-@@ -104,6 +104,8 @@ mod meeting_mcp;
- mod meeting_watcher;
- #[cfg(target_os = "macos")]
- mod microphone_activity;
-+#[cfg(target_os = "macos")]
-+mod microphone_idle;
- #[cfg(any(target_os = "macos", target_os = "linux"))]
- #[cfg_attr(target_os = "linux", allow(dead_code))]
- mod moonshine;
-diff --git i/src/microphone_idle.rs w/src/microphone_idle.rs
+diff --git i/src/rune_ui/general.rs w/src/rune_ui/general.rs
+index 6545787..7bb1b8f 100644
+--- i/src/rune_ui/general.rs
++++ w/src/rune_ui/general.rs
+@@ -287,7 +287,9 @@ fn configure_shortcuts_row(ui: &Ui, p: Paint) -> Option<El> {
+ /// (issues 61 and #870's copy). The default keeps it ready.
+ fn microphone_release_row(ui: &Ui, p: Paint) -> (&'static str, CardRow) {
+     let release = ui.settings.release_microphone_while_idle;
+-    let description = if release {
++    let description = if release && cfg!(target_os = "macos") {
++        tr("The mic closes 30 seconds after dictation; the first press opens it")
++    } else if release {
+         tr("The mic opens only while you dictate; the first moment can be clipped")
+     } else {
+         tr("The mic stays ready so dictation starts instantly; your system shows it in use")
+diff --git 1/src/dictation/microphone_idle.rs 2/src/dictation/microphone_idle.rs
 new file mode 100644
 index 0000000..d71eb3b
 --- /dev/null
-+++ w/src/microphone_idle.rs
++++ 2/src/dictation/microphone_idle.rs
 @@ -0,0 +1,49 @@
 +use std::time::{Duration, Instant};
 +

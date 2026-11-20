@@ -1,32 +1,36 @@
 {
   lib,
-  rustPlatform,
+  inputs,
   stdenvNoCC,
   fetchFromGitHub,
   fetchurl,
-  cargo,
-  rustc,
   cmake,
   pkg-config,
   python3,
   unzip,
   writeShellScriptBin,
 }:
-
+let
+  # Hex 3.4's Oxc dependencies require Rust >= 1.97.
+  inherit (inputs.nixpkgs-jj.legacyPackages.${stdenvNoCC.hostPlatform.system})
+    cargo
+    rustc
+    rustPlatform
+    ;
+in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "hex";
-  version = "2.3.1";
+  version = "3.4.0";
 
   src = fetchFromGitHub {
     owner = "anomalyco";
     repo = "hex";
-    rev = "c4b3287d86a74b0aeb26653375040dfa9b344f21"; # app-v2.3.1
-    hash = "sha256-naO1Md+hjM5CatQZj2FbUA1QhkjAGkaPYpCcyYDXpLk=";
+    rev = "8766d096eb3c98a5b1a54cb966a6daa717bc839d"; # v3.4.0
+    hash = "sha256-SF0ZHokSzko63aoa3VvFtLhsQBg5XqZoqaG3TjMdqdw=";
   };
 
   patches = [
     ./patches/0001-lazy-microphone-close.patch
-    ./patches/0002-nix-managed-updates.patch
     ./patches/0003-nix-swift-macro-build.patch
   ];
 
@@ -35,15 +39,16 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     lockFile = "${finalAttrs.src}/Cargo.lock";
     outputHashes = {
       "transcribe-rs-0.3.11" = "sha256-MJJiug3LfbKsuHcL2+LJk95+j5kk/MWzb5ihdBlHLmE=";
-      "gpui-0.2.2" = "sha256-LtFxryxm3guT3e+Sa7sUI9u7ErplqMaWlJyaJlRguRw=";
+      "rune-0.0.1" = "sha256-D0zeghVhWooVKQtxObxQDnGdMO0Zgo6uKrCWi7tVHEo=";
+      "transcribe-cpp-sys-0.4.1" = "sha256-1VztJ0VhPTjAuk4J0NT9KapDOqplegpHOqHsTpfHXWc=";
     };
   };
 
   # Reuse this exact release's icons, command SDK, driver, and native runtime
   # libraries. Its executable is replaced with our source-built binary below.
   releaseBundle = fetchurl {
-    url = "https://downloads.hex.kitlangton.dev/releases/HEX-${finalAttrs.version}-arm64.zip";
-    hash = "sha256-qKgTM0ySxQXGXEzS8+Z44nWLGXOT32L5iCZMPoctTd0=";
+    url = "https://github.com/anomalyco/hex/releases/download/v${finalAttrs.version}/hex-${finalAttrs.version}-macos-arm64.zip";
+    hash = "sha256-GrAkLcO7ARyIVokDy/Hp0wMQhnpG9RaDCYU9b4tMplA=";
   };
 
   nativeBuildInputs = [
@@ -78,6 +83,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   env = {
     HEX_NIX_MANAGED = "1";
+    # Upstream local builds disable all updater checks and installation actions.
+    HEX_LOCAL_BUILD = "1";
     MACOSX_DEPLOYMENT_TARGET = "15.0";
     CC = "/usr/bin/clang";
     CXX = "/usr/bin/clang++";
@@ -116,10 +123,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   doCheck = true;
   checkPhase = ''
     runHook preCheck
-    rustc --edition=2024 --test src/microphone_idle.rs -o "$TMPDIR/microphone-idle-tests"
+    rustc --edition=2024 --test src/dictation/microphone_idle.rs -o "$TMPDIR/microphone-idle-tests"
     "$TMPDIR/microphone-idle-tests"
     cargo test --frozen --release --target aarch64-apple-darwin -j "$NIX_BUILD_CORES" \
-      --bin voice-control dictation_audio::tests
+      --bin hex dictation::audio::tests
     runHook postCheck
   '';
 
@@ -127,13 +134,13 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook preInstall
     mkdir -p "$TMPDIR/hex-release" "$out/Applications" "$out/bin"
     unzip -q "$releaseBundle" -d "$TMPDIR/hex-release"
-    cp -R "$TMPDIR/hex-release/HEX.app" "$out/Applications/Hex.app"
+    cp -R "$TMPDIR/hex-release/Hex.app" "$out/Applications/Hex.app"
     app="$out/Applications/Hex.app"
     chmod -R u+w "$app"
-    install -m755 target/aarch64-apple-darwin/release/voice-control "$app/Contents/MacOS/hex"
+    install -m755 target/aarch64-apple-darwin/release/hex "$app/Contents/MacOS/hex"
     # The original signature no longer covers the executable. Ad-hoc signing
     # needs no developer identity, but macOS permissions may need regranting.
-    /usr/bin/codesign --force --sign - --entitlements app/VoiceControl.entitlements "$app"
+    /usr/bin/codesign --force --sign - --entitlements .github/release/hex.entitlements "$app"
     /usr/bin/codesign --verify --deep --strict "$app"
     ln -s "$app/Contents/MacOS/hex" "$out/bin/hex"
     runHook postInstall

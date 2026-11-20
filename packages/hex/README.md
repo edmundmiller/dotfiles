@@ -1,12 +1,12 @@
 # Hex with lazy microphone close
 
-Pins the Rust app at `app-v2.3.1`, matching source and release resources. This
-replaces the old 0.8.4 prebuilt-app derivation. The host already uses `my.hex`;
+Pins the Rust app at `v3.4.0`, matching source and release resources. This
+replaces the old 2.3.1 derivation. The host already uses `my.hex`;
 no activation or changes to the installed app are required to prepare patches.
 
 ## Microphone behavior
 
-Select **Release when idle** in Hex's microphone settings. After a capture
+Enable **Turn off the mic when not dictating** in Hex's settings. After a capture
 finishes or is cancelled, the patched app keeps the open microphone warm for
 30 seconds. A new capture resets the countdown. Pre-roll is available while
 warm, but the first capture after closure still waits for the device to open.
@@ -14,7 +14,7 @@ The macOS microphone indicator remains visible during the grace period.
 
 Startup stays cold in this mode. Selecting the mode while idle closes the
 microphone immediately, and a cancelled or failed pending open is not kept
-alive. **Keep ready** remains continuous; voice commands still require it.
+alive. Disabling the switch keeps the microphone ready continuously.
 Existing settings are not migrated or changed automatically.
 
 ## Build requirements and ownership
@@ -47,11 +47,11 @@ source and replaces the release executable. The resulting bundle is ad-hoc
 signed, not Developer ID signed or notarized. macOS permissions may need to be
 granted again. Login-item and Gatekeeper behavior require runtime validation.
 
-The second patch disables Sparkle in this package, including manual updates,
-so it cannot replace the local patch with an upstream binary. Update through
-Nix. Model downloads are unaffected.
+Upstream's `HEX_LOCAL_BUILD=1` disables update checks and installation actions,
+so it cannot replace the local patch with an upstream binary. This replaces
+the old Sparkle patch. Update through Nix. Model downloads are unaffected.
 
-The third patch disables Swift macro subprocess sandboxing only for this
+The build patch disables Swift macro subprocess sandboxing only for this
 Nix-managed build. The package also wraps dependency `swift build` calls with
 `--disable-sandbox`, as Quill does, and gives SwiftPM writable cache directories.
 Rust build dependencies remain unstripped to avoid the macOS 27 loader bug in
@@ -62,10 +62,11 @@ Rust 1.96. These build-time settings do not change the app's runtime permissions
 - `pkg-check hex` applies all patches to fresh pinned source, checks Rust
   formatting, runs the standalone timer tests, then the macOS audio-owner tests.
   The last step needs the Apple toolchain and Cargo dependencies. Use the repo's
-  Nix Rust toolchain rather than an older rustup default:
+  Nix Rust toolchain from `nixpkgs-jj`, as the package does, rather than the
+  default toolchain. Hex 3.4 requires Rust 1.97 or newer:
 
   ```sh
-  nix shell --inputs-from . nixpkgs#cargo nixpkgs#rustc --command python3 packages/package-harness/package_harness.py pkg-check hex
+  nix shell --inputs-from . nixpkgs-jj#cargo nixpkgs-jj#rustc --command python3 packages/package-harness/package_harness.py pkg-check hex
   ```
 
   The checks select Apple's C compiler and archiver. A GNU `ar` earlier on PATH
@@ -75,9 +76,13 @@ Rust 1.96. These build-time settings do not change the app's runtime permissions
 - `nix build .#hex --no-link` builds and checks the package without activation.
 - Once built, test cold start, rapid consecutive dictations, a capture longer
   than 30 seconds, Escape during opening, and idle indicator release. Inspect
-  the Settings and release-confirmation previews for the updated copy.
+  the Settings preview for the updated copy.
 
 Host activation remains a separate, explicitly authorized `hey re`. Until a
 successful build and runtime check, the patch and packaging are prepared but
 the resulting app is unverified. A previous nix-darwin generation is the
 rollback path after activation; retain the current app until testing succeeds.
+
+Hex 3 uses the new `anomaly.hex` app identity. Settings, history, and models
+remain in the shared `hex` Application Support folder, but macOS permissions
+and the login item may need to be granted again.
