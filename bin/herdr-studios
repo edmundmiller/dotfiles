@@ -289,7 +289,7 @@ elif [ ! -w "$dir" ]; then
 fi
 if [ -z "${XDG_RUNTIME_DIR:-}" ] && [ -w /etc/environment ]; then
   if ! grep -q '^XDG_RUNTIME_DIR=' /etc/environment; then
-    printf 'XDG_RUNTIME_DIR=/run/user/%s\n' "$uid" >> /etc/environment
+    printf '\nXDG_RUNTIME_DIR=/run/user/%s\n' "$uid" >> /etc/environment
   fi
 fi
 EOF
