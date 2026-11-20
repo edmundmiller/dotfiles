@@ -18,16 +18,11 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 
 ---
 
-|                |                                                           |
-| -------------- | --------------------------------------------------------- |
-| **Shell:**     | zsh + a bunch of Nix magic                                |
-| **DM:**        | lightdm + lightdm-mini-greeter                            |
-| **WM:**        | bspwm + polybar (Linux) / Aerospace (macOS)               |
-| **Editor:**    | [Doom Emacs][doom-emacs] (and nvim when Emacs is napping) |
-| **Terminal:**  | st (Linux) / Ghostty (macOS)                              |
-| **Launcher:**  | rofi (Linux) / Raycast (macOS)                            |
-| **Browser:**   | firefox / Zen Browser / Orion (I collect browsers)        |
-| **GTK Theme:** | [Ant Dracula](https://github.com/EliverLara/Ant-Dracula)  |
+MacTraitor-Pro and Seqeratop use nix-darwin. NUC and UNAS retain their NixOS
+server configurations. Linux desktop work is Omarchy-first; Meshify's
+[Omarchy recovery configuration](hosts/meshify/omarchy/README.md) replaces
+its retired NixOS fallback. Optional desktop modules are not an
+inventory of installed tools.
 
 ---
 
@@ -40,7 +35,7 @@ nixos-rebuild switch --flake .#hostname                   # NixOS
 3. Do your partitions and mount your root to `/mnt` (or don't, I'm not your supervisor)
 4. `git clone https://github.com/edmundmiller/dotfiles /etc/nixos`
 5. Install NixOS: `nixos-install --root /mnt --flake /etc/nixos#XYZ`, where `XYZ` is your
-   hostname. Use `#generic` for a simple, universal config.
+   declared hostname. There is no `#generic` host; adapt a host definition for new hardware.
 6. OPTIONAL: Create a sub-directory in `hosts/` for your device. See [host/nuc]
    as an example.
 7. Reboot!
@@ -100,15 +95,15 @@ host that enables `modules.shell.skillkit`. If you manually reinstall
 
 - **How do I "set up my partitions"?**
 
-  My main host [has a README](hosts/kuro/README.org) you can use as a reference.
-  I set up an EFI+GPT system and partitions with `parted` and `zfs`.
+  Follow the [installation guide](docs/install.md) and the target host's storage
+  declaration. Do not copy another machine's partition layout blindly.
 
   macOS users: You can skip this part and feel smug about it.
 
 - **Why is my build failing with homebrew errors?**
 
-  That's just homebrew being homebrew. The build succeeded, you just need to run the
-  activation with sudo. Check the message at the end of `hey re`.
+  A Homebrew activation error is a failure, not evidence of a successful switch.
+  Use the guarded `hey re` workflow and [rebuild failure runbook](docs/runbooks/rebuild-failure.md).
 
 - **How 2 flakes?**
 

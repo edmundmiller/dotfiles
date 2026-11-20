@@ -38,12 +38,13 @@ Mutating NUC modes (`dry-activate`, `test`, `switch`, `boot`) share `/run/lock/n
 
 ## Quality workflow for broader work
 
-`AGENT_WORKFLOW.md` requires a worklog and review gates for broad, autonomous, high-risk, or multi-session changes. Its implementation expectations are:
+`AGENT_WORKFLOW.md` defines completion and durable handoff. Its implementation expectations are:
 
 - identify the outcome and verification surface before editing;
 - run focused tests continuously and exercise runtime behavior where possible;
 - maintain the canonical doc/runbook when behavior or recovery changes;
-- finish with `hey agent-audit-tests`, `hey agent-finish`, a landing review, and normal Git landing hygiene.
+- run `hey check` on task-owned paths and report verification limitations;
+- keep a checkpoint when a handoff needs one. Worklogs and cross-model review are optional, not completion gates. Publication requires separate authorization.
 
 Treat quality-manifest commands as trusted repository code: they execute shell commands. Do not add secrets or untrusted input to those commands.
 
