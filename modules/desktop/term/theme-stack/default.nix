@@ -11,15 +11,12 @@ let
 
   stacks = {
     catppuccin = {
-      description = "Catppuccin Ghostty inherited by Herdr, with Pi/Hunk adapters pinned explicitly.";
+      description = "Catppuccin Ghostty palette with explicit Hunk light/dark themes.";
       ghosttyConfig = ''
         # Terminal theme stack: Catppuccin substrate for Ghostty; child TUIs are pinned below.
         theme = light:Catppuccin Latte,dark:Catppuccin Mocha
       '';
       ghosttyThemeFiles = { };
-      herdr = {
-        managePiTheme = false;
-      };
       hunk = {
         dark = "catppuccin-mocha";
         light = "catppuccin-latte";
@@ -29,20 +26,14 @@ let
     };
 
     seqera = {
-      description = "Seqera Ghostty palette inherited by Herdr, with a matching Pi adapter.";
+      description = "Seqera Ghostty palette with explicit Hunk light/dark themes.";
       ghosttyConfig = ''
-        # Use source paths rather than named themes: Herdr starts Ghostty with a
-        # private XDG config directory, where named-theme lookup cannot see the
-        # user's ~/.config/ghostty/themes links.
+        # Select the repository's paired light/dark palettes directly.
         theme = light:${configDir}/ghostty/themes/SeqeraLight,dark:${configDir}/ghostty/themes/SeqeraDark
       '';
       ghosttyThemeFiles = {
         SeqeraDark = "${configDir}/ghostty/themes/SeqeraDark";
         SeqeraLight = "${configDir}/ghostty/themes/SeqeraLight";
-      };
-      herdr = {
-        managePiTheme = true;
-        piThemeVariant = "seqera";
       };
       hunk = {
         # Hunk has no Seqera palette; keep the child TUI polarity explicit.
@@ -79,9 +70,8 @@ in
       type = enum (attrNames stacks);
       default = "catppuccin";
       description = ''
-        Host-level terminal theme stack. Herdr inherits the Ghostty palette;
-        this pins the separate Pi and Hunk adapters instead of scattering
-        polarity choices across their individual modules.
+        Host-level Ghostty palette and Hunk light/dark themes.
+        Native Herdr and Pi own their theme selection independently.
       '';
     };
     description = mkOption {
@@ -95,15 +85,6 @@ in
   config = mkIf cfg.enable (mkMerge [
     {
       modules.desktop.term.ghostty.configInit = mkAfter (stack.ghosttyConfig + hunkGhosttyEnv);
-
-      modules.shell.herdr = mkIf config.modules.shell.herdr.enable (
-        {
-          managePiTheme = mkDefault stack.herdr.managePiTheme;
-        }
-        // optionalAttrs (stack.herdr ? piThemeVariant) {
-          piThemeVariant = mkDefault stack.herdr.piThemeVariant;
-        }
-      );
 
       modules.shell.git.hunk.theme = mkIf config.modules.shell.git.hunk.enable {
         dark = mkDefault stack.hunk.dark;

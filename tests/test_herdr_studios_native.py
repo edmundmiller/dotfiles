@@ -191,15 +191,14 @@ def test_platform_default_registers_core_machines(cli, system):
     assert not any(c[0] == "herdr" for c in calls)
 
 
-def test_explicit_legacy_retains_legacy_dry_run(cli):
+def test_stale_legacy_environment_cannot_restore_legacy_operations(cli):
     home, invoke = cli
     result, calls = invoke([studio("91")], flags=("--dry-run",), HERDR_BACKEND="legacy")
     assert result.returncode == 0, result.stderr
-    assert ["herdr", "machine", "list", "--json"] in calls
-    assert "+ install_remote seqera-studio-a91" in result.stdout
-    assert "+ add_machine Analysis 91 seqera-studio-a91" in result.stdout
+    assert ["hc", "machine", "ls", "--json"] in calls
+    assert "+ hc machine add --install --name seqera-studio-a91 seqera-studio-a91" in result.stdout
     assert not (home / ".ssh").exists()
-    assert not any(c[0] in ("hc", "ssh") for c in calls)
+    assert not any(c[0] in ("herdr", "ssh") for c in calls)
 
 
 def test_existing_name_collision_is_preserved(cli):

@@ -186,10 +186,6 @@ class AgentResponseContractTests(unittest.TestCase):
             self.assertIn(expected, workspace_skill)
         self.assertIn("jj diff --git -r @", workspace_skill)
         self.assertIn("Run `jj root --ignore-working-copy`", done_skill)
-        self.assertIn("herdr-jj-workflow", workspace_skill)
-        herdr_skill = (ROOT / "skills/catalog/herdr-jj-workflow/SKILL.md").read_text()
-        for expected in ("approve commit", "HERDR_ENV=1", "guarded cleanup", "Never stop or kill Herdr"):
-            self.assertIn(expected, herdr_skill)
 
     def test_implementers_and_reviewers_share_current_behavioral_criteria(self) -> None:
         core = (ROOT / "config/agents/core.md").read_text()

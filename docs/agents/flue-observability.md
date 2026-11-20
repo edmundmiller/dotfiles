@@ -91,7 +91,7 @@ as zero cost or complete billing reconciliation.
 
 ## Automatic repairs remain bounded
 
-The existing workflow automatically repairs failing Herdr/Hunk patch updates,
+The existing workflow automatically repairs failing Hunk patch updates,
 then validates imported patches in a fresh, read-only container. It now runs
 Flue from trusted base source, probes telemetry before model access, limits the
 repair step to 15 minutes, and checks the ledger before importing or publishing

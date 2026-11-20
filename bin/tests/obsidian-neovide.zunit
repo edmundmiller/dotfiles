@@ -42,12 +42,13 @@ EOF
   assert "$(cat "$NEOVIDE_ARGS_OUT")" contains "+ObsidianProject local-tool"
 }
 
-@test 'uses Herdr active pane cwd by default' {
+@test 'uses invoking cwd and ignores stale legacy pane environment' {
   local repo="$TEST_DIR/herdr-repo"
   mkdir -p "$repo"
   git -C "$repo" init --quiet
 
-  run env NEOVIDE_BIN="$FAKE_NEOVIDE" NEOVIDE_ARGS_OUT="$NEOVIDE_ARGS_OUT" HERDR_ACTIVE_PANE_CWD="$repo" "$SCRIPT"
+  cd "$repo"
+  run env NEOVIDE_BIN="$FAKE_NEOVIDE" NEOVIDE_ARGS_OUT="$NEOVIDE_ARGS_OUT" HERDR_ACTIVE_PANE_CWD="$TEST_DIR" "$SCRIPT"
 
   assert $state equals 0
   assert "$(cat "$NEOVIDE_ARGS_OUT")" contains "+ObsidianProject herdr-repo"

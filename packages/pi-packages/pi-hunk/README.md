@@ -10,7 +10,6 @@ Pi changes code → Hunk shows diff → user reviews/comments → Pi reads comme
 
 ## Tools
 
-- `hunk_diff` — open a Hunk diff review in a new Herdr pane or tab.
 - `hunk_reload` — reload the active Hunk session for the repo.
 - `hunk_review` — read Hunk's session review/context, including patch and notes when requested.
 - `hunk_comments` — list/apply/clear/remove Hunk comments for the repo.
@@ -18,8 +17,8 @@ Pi changes code → Hunk shows diff → user reviews/comments → Pi reads comme
 
 Most tools default to the Pi cwd as the repo anchor and use `hunk session ... --repo <cwd>` when possible.
 
-`hunk_diff` and `hunk_reload` write `.git/hunk/last-pi-turn.json` so Hunk's Last Pi turn source can reload the last Pi-requested diff.
+`hunk_reload` writes `.git/hunk/last-pi-turn.json` for diff reloads so Hunk's Last Pi turn source can reload the last Pi-requested diff.
 
 ## Notes
 
-`hunk_diff` creates its target directly through Herdr because the Hunk UI is interactive and should not block Pi's tool call. Workspace bootstrap and persistent development layouts are owned separately by Workspace Manager.
+The former `hunk_diff` pane launcher used the retired Herdr TUI protocol and is removed. Open Hunk in a terminal or use `herdr-dev open /path/to/checkout` for a native Herdr review tab. The remaining tools operate on Hunk sessions without a multiplexer.

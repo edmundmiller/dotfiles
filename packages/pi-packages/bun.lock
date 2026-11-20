@@ -115,20 +115,6 @@
         "@mariozechner/pi-coding-agent": "*",
       },
     },
-    "pi-herdr": {
-      "name": "pi-herdr",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@mariozechner/pi-coding-agent": "*",
-        "@sinclair/typebox": "*",
-        "@types/node": "^22.0.0",
-        "typescript": "^5.0.0",
-      },
-      "peerDependencies": {
-        "@mariozechner/pi-coding-agent": "*",
-        "@sinclair/typebox": "*",
-      },
-    },
     "pi-hunk": {
       "name": "pi-hunk",
       "version": "0.1.0",
@@ -180,21 +166,6 @@
         "@mariozechner/pi-coding-agent": "*",
         "@mariozechner/pi-tui": "*",
         "@sinclair/typebox": "*",
-      },
-    },
-    "pi-review-box": {
-      "name": "pi-review-box",
-      "version": "0.1.0",
-      "bin": {
-        "review-box": "src/cli.ts",
-      },
-      "dependencies": {
-        "pi-herdr": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/bun": "^1.3.14",
-        "@types/node": "^26.1.1",
-        "typescript": "^5.9.3",
       },
     },
     "pi-rex": {
@@ -1149,8 +1120,6 @@
 
     "pi-git-ai": ["pi-git-ai@workspace:pi-git-ai"],
 
-    "pi-herdr": ["pi-herdr@workspace:pi-herdr"],
-
     "pi-hunk": ["pi-hunk@workspace:pi-hunk"],
 
     "pi-non-interactive": ["pi-non-interactive@workspace:pi-non-interactive"],
@@ -1158,8 +1127,6 @@
     "pi-prompt-stash": ["pi-prompt-stash@workspace:pi-prompt-stash"],
 
     "pi-qmd": ["pi-qmd@workspace:pi-qmd"],
-
-    "pi-review-box": ["pi-review-box@workspace:pi-review-box"],
 
     "pi-rex": ["pi-rex@workspace:pi-rex"],
 
@@ -1543,8 +1510,6 @@
 
     "pi-bash-live-view/@types/node": ["@types/node@24.12.0", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-GYDxsZi3ChgmckRT9HPU0WEhKLP08ev/Yfcq2AstjrDASOYCSXeyjDsHg4v5t4jOj7cyDX3vmprafKlWIG9MXQ=="],
 
-    "pi-herdr/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
-
     "pi-hunk/@types/node": ["@types/node@22.19.11", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-BH7YwL6rA93ReqeQS1c4bsPpcfOmJasG+Fkr6Y59q83f9M1WcBRHR2vM+P9eOisYRcN3ujQoiZY8uk5W+1WL8w=="],
 
     "postcss/nanoid": ["nanoid@3.3.16", "", { "bin": { "nanoid": "bin/nanoid.cjs" } }, "sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q=="],
@@ -1680,8 +1645,6 @@
     "pi-ast-grep/@types/node/undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
 
     "pi-bash-live-view/@types/node/undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
-
-    "pi-herdr/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "pi-hunk/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 

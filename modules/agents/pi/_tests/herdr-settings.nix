@@ -1,24 +1,16 @@
 { lib, pkgs }:
 let
   githubTools = pkgs.writeTextDir "package.json" ''{"name":"github-tools-fixture"}'';
-  legacyHerdr = pkgs.writeTextDir "package.json" ''{"name":"legacy-herdr-fixture"}'';
   render =
-    enabled: backend:
+    enabled:
     (import ../lib/_settings.nix {
       inherit lib;
-      config = {
-        modules.shell.herdr = {
-          enable = enabled;
-          inherit backend;
-          managePiTheme = false;
-        };
-        modules.shell.tmux.enable = false;
-      };
+      config.modules.shell.herdr.enable = enabled;
       cfg = {
         extraPackages = [
           "npm:@ogulcancelik/pi-herdr@9.9.9"
           {
-            source = "npm:@ogulcancelik/pi-herdr";
+            source = "npm:pi-tmux-window-name@1.2.3";
             extensions = [ "custom.ts" ];
           }
         ];
@@ -32,37 +24,24 @@ let
         cursorSdk.enable = false;
         honcho.enable = false;
       };
-      piHerdrPackage = legacyHerdr;
       piGithubToolsPackage = githubTools;
-      herdrVersion = "0.9.1";
-      piSettingsParsed = {
-        packages = [
-          "npm:keep-me"
-          "npm:@ogulcancelik/pi-herdr"
-        ];
-      };
+      piSettingsParsed.packages = [
+        "npm:keep-me"
+        "npm:@ogulcancelik/pi-herdr"
+        "npm:pi-tmux-window-name"
+      ];
     }).piSettingsValidated;
-  nativeSettings = render true "native";
-  legacySettings = render true "legacy";
-  disabledSettings = render false "native";
+  nativeSettings = render true;
+  disabledSettings = render false;
 in
-# These are real derivation-backed strings, unlike a plain source-path fixture.
-# Rendering must retain dependency context without attempting a JSON round trip.
+# Rendering must preserve derivation context without a JSON round trip.
 assert builtins.hasAttr (builtins.unsafeDiscardStringContext githubTools.drvPath) (
   builtins.getContext nativeSettings
 );
-assert builtins.hasAttr (builtins.unsafeDiscardStringContext legacyHerdr.drvPath) (
-  builtins.getContext legacySettings
-);
-assert
-  !(builtins.hasAttr (builtins.unsafeDiscardStringContext legacyHerdr.drvPath) (
-    builtins.getContext nativeSettings
-  ));
 pkgs.runCommand "pi-herdr-settings-tests"
   {
-    inherit nativeSettings legacySettings disabledSettings;
+    inherit nativeSettings disabledSettings;
     githubToolsPath = toString githubTools;
-    legacyHerdrPath = toString legacyHerdr;
     nativeBuildInputs = [ pkgs.python3 ];
   }
   ''
@@ -70,25 +49,15 @@ pkgs.runCommand "pi-herdr-settings-tests"
     import json
     import os
 
-    def sources(key):
-        packages = json.loads(os.environ[key])["packages"]
-        return [item if isinstance(item, str) else item["source"] for item in packages]
-
     for key in ["nativeSettings", "disabledSettings"]:
-        packages = sources(key)
-        assert "npm:keep-me" in packages
-        assert "npm:pi-wakatime" not in packages
-        assert "git:github.com/Thinkscape/pi-status" in packages
-        assert os.environ["githubToolsPath"] in packages
-        assert os.environ["legacyHerdrPath"] not in packages
-        assert not any(item.startswith("npm:@ogulcancelik/pi-herdr") for item in packages)
-
-    legacy = sources("legacySettings")
-    assert os.environ["legacyHerdrPath"] in legacy
-    assert "npm:@ogulcancelik/pi-herdr@0.4.0" in legacy
-    assert "npm:@ogulcancelik/pi-herdr@9.9.9" in legacy
-    assert os.environ["githubToolsPath"] in legacy
-    print("PASS: native and disabled backends filter legacy packages; legacy retains them; Nix dependency context survives")
+        packages = json.loads(os.environ[key])["packages"]
+        sources = [item if isinstance(item, str) else item["source"] for item in packages]
+        assert "npm:keep-me" in sources
+        assert "git:github.com/Thinkscape/pi-status" in sources
+        assert os.environ["githubToolsPath"] in sources
+        assert not any(item.startswith(("npm:@ogulcancelik/pi-herdr", "npm:pi-tmux-window-name")) for item in sources)
+        assert ("npm:pi-interactive-shell" in sources) == (key == "disabledSettings")
+    print("PASS: retired adapters excluded; supported packages and Nix dependency context preserved")
     PY
     touch "$out"
   ''

@@ -2,15 +2,10 @@
   config,
   cfg,
   lib,
-  piHerdrPackage,
   piGithubToolsPackage,
-  herdrVersion,
   piSettingsParsed,
 }:
 let
-  legacyHerdrEnabled =
-    config.modules.shell.herdr.enable && config.modules.shell.herdr.backend == "legacy";
-
   packageSource =
     pkg:
     if builtins.isString pkg then
@@ -23,21 +18,8 @@ let
   # Keep module-specific Pi packages tied to the Nix modules that provide the
   # matching runtime. This prevents stale tools/skills from showing up on hosts
   # that do not run that shell integration, and avoids redundant interactive
-  # shell prompts when tmux/herdr are the preferred persistent workspace layer.
+  # shell prompts when Herdr provides the persistent workspace layer.
   moduleManagedPackageGroups = {
-    # Native agent tools require Herdr 0.7.5+; retain the older plugin below it.
-    herdr = [
-      (toString piHerdrPackage)
-      (
-        if lib.versionAtLeast herdrVersion "0.7.5" then
-          "npm:@ogulcancelik/pi-herdr@0.4.0"
-        else
-          "npm:@ogulcancelik/pi-herdr@0.2.5"
-      )
-    ];
-    tmux = [
-      "npm:pi-tmux-window-name"
-    ];
     interactiveShell = [ "npm:pi-interactive-shell" ];
     # Legacy adapters must be filtered from base settings. pi-mcp-adapter
     # registers /mcp and disables Pi 1.0's native MCP implementation.
@@ -73,7 +55,6 @@ let
 
   moduleManagedPackageSources = lib.concatLists (builtins.attrValues moduleManagedPackageGroups);
   legacyModuleManagedPackageSources = [
-    "npm:@ogulcancelik/pi-herdr"
     "npm:@prinova/pi-github-tools"
   ];
 
@@ -87,14 +68,7 @@ let
     ) packages;
 
   moduleManagedPackages =
-    lib.optionals legacyHerdrEnabled moduleManagedPackageGroups.herdr
-    ++ lib.optionals config.modules.shell.tmux.enable [
-      # Auto-name tmux windows + session titles from first prompt - https://github.com/default-anton/pi-tmux-window-name
-      "npm:pi-tmux-window-name"
-    ]
-    ++ lib.optionals (
-      !(config.modules.shell.tmux.enable || config.modules.shell.herdr.enable)
-    ) moduleManagedPackageGroups.interactiveShell
+    lib.optionals (!config.modules.shell.herdr.enable) moduleManagedPackageGroups.interactiveShell
     ++ lib.optionals cfg.computerUse.enable moduleManagedPackageGroups.computerUse
     ++ lib.optionals cfg.gitTools.enable moduleManagedPackageGroups.gitTools
     ++ lib.optionals cfg.statusUi.enable moduleManagedPackageGroups.statusUi
@@ -107,33 +81,17 @@ let
     ++ lib.optionals cfg.honcho.enable [ "npm:@agney/pi-honcho-memory" ];
 
   piSettingsBase =
-    (
-      piSettingsParsed
-      // {
-        packages = dropModuleManagedPackages piSettingsParsed.packages;
-        enabledModels = lib.unique cfg.enabledModels;
-      }
-      // lib.optionalAttrs (cfg.defaultProvider != null) {
-        inherit (cfg) defaultProvider;
-      }
-      // lib.optionalAttrs (cfg.defaultModel != null) {
-        inherit (cfg) defaultModel;
-      }
-    )
-    // lib.optionalAttrs (legacyHerdrEnabled && config.modules.shell.herdr.managePiTheme) (
-      let
-        herdrThemeName = config.modules.shell.herdr.piThemeName;
-      in
-      {
-        # Herdr ships a matching high-contrast theme into ~/.pi/agent/themes.
-        # Configure it directly in the generated Pi settings so activation does
-        # not need to mutate the read-only Home Manager settings symlink.
-        # The theme name varies by host (`piThemeVariant`), so read it from
-        # the herdr module instead of hardcoding the default name here.
-        theme = "light/${herdrThemeName}";
-        themes = [ "${config.user.home}/.pi/agent/themes/${herdrThemeName}.json" ];
-      }
-    );
+    piSettingsParsed
+    // {
+      packages = dropModuleManagedPackages piSettingsParsed.packages;
+      enabledModels = lib.unique cfg.enabledModels;
+    }
+    // lib.optionalAttrs (cfg.defaultProvider != null) {
+      inherit (cfg) defaultProvider;
+    }
+    // lib.optionalAttrs (cfg.defaultModel != null) {
+      inherit (cfg) defaultModel;
+    };
 
   piSettingsWithExtrasUnfiltered =
     if piPackagesExtra == [ ] then
@@ -148,12 +106,12 @@ let
       package:
       let
         source = packageSource package;
-        legacyPackage =
-          source == toString piHerdrPackage
-          || source == "npm:@ogulcancelik/pi-herdr"
-          || lib.hasPrefix "npm:@ogulcancelik/pi-herdr@" source;
+        retiredPackage = builtins.any (name: source == name || lib.hasPrefix "${name}@" source) [
+          "npm:@ogulcancelik/pi-herdr"
+          "npm:pi-tmux-window-name"
+        ];
       in
-      legacyHerdrEnabled || !legacyPackage
+      !retiredPackage
     ) piSettingsWithExtrasUnfiltered.packages;
   };
 

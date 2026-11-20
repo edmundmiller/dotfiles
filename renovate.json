@@ -14,14 +14,7 @@
   },
   "postUpgradeTasks": {
     "commands": ["nix run --accept-flake-config .#renovate-update-nix-hashes"],
-    "fileFilters": [
-      "packages/**/*.nix",
-      "packages/*.nix",
-      "overlays/herdr/default.nix",
-      "overlays/herdr/package-harness.json",
-      "flake.nix",
-      "flake.lock"
-    ],
+    "fileFilters": ["packages/**/*.nix", "packages/*.nix", "flake.nix", "flake.lock"],
     "executionMode": "branch"
   },
   "customManagers": [
@@ -35,28 +28,6 @@
       "datasourceTemplate": "github-tags",
       "packageNameTemplate": "{{{owner}}}/{{{repo}}}",
       "depNameTemplate": "{{{owner}}}/{{{repo}}}",
-      "versioningTemplate": "loose"
-    },
-    {
-      "customType": "regex",
-      "description": "Keep the patched Herdr overlay on the latest upstream GitHub release tag.",
-      "managerFilePatterns": ["/(^|/)overlays/herdr/default\\.nix$/"],
-      "matchStrings": [
-        "owner\\s*=\\s*\"(?<owner>ogulcancelik)\";[\\s\\S]*?repo\\s*=\\s*\"(?<repo>herdr)\";[\\s\\S]*?rev\\s*=\\s*\"(?<currentValue>v[^\"]+)\";"
-      ],
-      "datasourceTemplate": "github-tags",
-      "packageNameTemplate": "{{{owner}}}/{{{repo}}}",
-      "depNameTemplate": "herdr",
-      "versioningTemplate": "loose"
-    },
-    {
-      "customType": "regex",
-      "description": "Keep Herdr's fresh-source package harness aligned with its overlay.",
-      "managerFilePatterns": ["/(^|/)overlays/herdr/package-harness\\.json$/"],
-      "matchStrings": ["\"ref\"\\s*:\\s*\"(?<currentValue>v[^\"]+)\""],
-      "datasourceTemplate": "github-tags",
-      "packageNameTemplate": "ogulcancelik/herdr",
-      "depNameTemplate": "herdr",
       "versioningTemplate": "loose"
     },
     {
@@ -152,15 +123,6 @@
       "dependencyDashboardApproval": true,
       "automerge": false,
       "labels": ["dependencies", "major"]
-    },
-    {
-      "description": "Keep Herdr patch validation and repair separate from candidate admission.",
-      "matchManagers": ["custom.regex"],
-      "matchDepNames": ["herdr"],
-      "groupName": "Herdr",
-      "groupSlug": "herdr",
-      "labels": ["dependencies", "nix", "packages", "flue-review"],
-      "automerge": false
     },
     {
       "description": "Keep Hunk patch validation and repair separate from candidate admission.",

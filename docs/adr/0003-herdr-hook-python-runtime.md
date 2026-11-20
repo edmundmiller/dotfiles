@@ -1,18 +1,18 @@
 ---
 purpose: Preserve the superseded Python launcher decision for Herdr helpers.
 applies_to: Historical Herdr hook work and standalone Python helper scripts.
-entrypoint: Use Workspace Manager for current worktree layout automation.
-verification: Inspect config/herdr/workspace-manager.yml and validate it with the plugin action.
-update_when: Herdr plugin events or helper runtime ownership changes.
+entrypoint: Read config/herdr/README.md for supported native helpers.
+verification: Historical record only; the described hooks are retired.
+update_when: Historical recovery evidence needs clarification.
 ---
 
 # ADR 0003: Herdr hook scripts use `uv` Python shebangs
 
 ## Status
 
-Superseded first by the Herdr plugin migration and then by Workspace Manager.
-Historical launcher guidance remains relevant only for standalone helper
-scripts. Checkout layout now lives in `config/herdr/workspace-manager.yml`.
+Superseded. The plugin and Workspace Manager replacements described below
+have also been retired. Native Herdr has no replacement jj lifecycle hook.
+The remainder is historical runtime and recovery evidence, not deployment guidance.
 
 ## Context
 

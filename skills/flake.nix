@@ -296,12 +296,6 @@
           hermes = hermesEnabled;
         };
         activeSkillTargets = lib.filter (target: targetEnabled.${target}) allSkillTargets;
-        herdrEnabled = moduleEnabled [
-          "modules"
-          "shell"
-          "herdr"
-          "enable"
-        ];
         rexEnabled = moduleEnabled [
           "modules"
           "shell"
@@ -772,14 +766,6 @@
                   filter.maxDepth = 3;
                 };
 
-                herdr = {
-                  # Checkout-owned package extends upstream guidance with current
-                  # agent CLI workflows, references, and deterministic helpers.
-                  path = ./conditional/herdr;
-                  subdir = ".";
-                  filter.maxDepth = 3;
-                };
-
                 rex = {
                   # Stub copied from "rex skill setup" (rex-stub 2). The guide itself
                   # comes from the installed rex CLI, so this never goes stale.
@@ -984,13 +970,6 @@
               // lib.optionalAttrs stackEnabled {
                 stack.from = "stack";
                 stack.path = ".";
-              }
-              // lib.optionalAttrs herdrEnabled {
-                # Herdr ships a root-level SKILL.md for agents controlling a live herdr
-                # session via its local socket. Only enable it on hosts where the herdr
-                # module is actually turned on.
-                herdr.from = "herdr";
-                herdr.path = "herdr";
               }
               // lib.optionalAttrs rexEnabled {
                 rex = {

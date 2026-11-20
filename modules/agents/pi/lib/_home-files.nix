@@ -16,6 +16,9 @@ promptLinks
   ".pi/agent/AGENTS.md".text = agentCore;
   ".pi/agent/settings.json".text = piSettingsValidated;
   ".pi/agent/keybindings.json".source = "${configDir}/pi/keybindings.json";
+  ".pi/agent/themes/dotfiles-herdr.json".source = "${configDir}/pi/themes/dotfiles-herdr.json";
+  ".pi/agent/themes/dotfiles-herdr-seqera.json".source =
+    "${configDir}/pi/themes/dotfiles-herdr-seqera.json";
   ".pi/agent/extensions/pi-permission-system/config.json" = {
     text = piPermissionSystemConfig;
     # The extension saves toggles by replacing this symlink. Reclaim the
@@ -46,7 +49,6 @@ promptLinks
     "${configDir}/pi/extensions/lib/review-screen.ts";
   ".pi/agent/extensions/generate-commit-message.ts".source =
     "${configDir}/pi/extensions/generate-commit-message.ts";
-  ".pi/agent/extensions/tmux-status.ts".source = "${configDir}/pi/extensions/tmux-status.ts";
   ".pi/agent/extensions/sub-limits.ts".source = "${configDir}/pi/extensions/sub-limits.ts";
   ".pi/agent/extensions/pi-tool-display/config.json".text = builtins.toJSON {
     registerReadToolOverride = false;

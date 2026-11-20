@@ -182,11 +182,11 @@ def test_bad_template_fails_without_creating_preferences(native_config, damage):
     [
         ("native", [], ["hc", "run", "--on", "nuc"]),
         ("native", ["t7", "--observe"], ["hc", "attach", "nuc/t7", "--observe"]),
-        ("legacy", [], ["herdr", "--remote", "nuc"]),
-        ("legacy", ["--help"], ["herdr", "--remote", "nuc", "--help"]),
+        ("legacy", [], ["hc", "run", "--on", "nuc"]),
+        ("legacy", ["t7"], ["hc", "attach", "nuc/t7"]),
     ],
 )
-def test_nuc_alias_routes_to_selected_backend(tmp_path, backend, args, expected):
+def test_nuc_alias_uses_core_despite_stale_backend_environment(tmp_path, backend, args, expected):
     zsh = shutil.which("zsh")
     assert zsh is not None, "zsh is required to check the deployed alias"
     for name in ("hc", "herdr"):

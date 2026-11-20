@@ -23,7 +23,6 @@ or required by that policy; committing or publishing a branch does not imply a P
 | Undo an accidental or partial change, keeping valid work | [rollback](references/rollback.md)                |
 | Restack, retarget, or merge dependent PRs                | [stacks](references/stacks.md)                    |
 | Create, resume, review, or close a jj task workspace     | [workspaces](references/workspaces.md)            |
-| Operate a Herdr jj task through its lifecycle            | the `herdr-jj-workflow` skill                     |
 | Investigate, annotate, split, or clean up jj history     | [history](references/history.md)                  |
 | Merge two jj repositories or recover diverged histories  | [merging repositories](references/merge-repos.md) |
 | Land, publish, verify landing, or clean up a task        | the `done` skill                                  |

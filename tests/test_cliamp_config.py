@@ -31,17 +31,3 @@ def test_cliamp_is_enabled_on_interactive_nix_hosts() -> None:
     for host in ("mactraitorpro", "seqeratop"):
         host_config = (ROOT / "hosts" / host / "default.nix").read_text()
         assert "cliamp.enable = true;" in host_config
-
-
-def test_herdr_installs_cliamp_integration_with_nested_sessions_enabled() -> None:
-    module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
-    config = tomllib.loads((ROOT / "config" / "herdr" / "config.toml").read_text())
-
-    assert config["experimental"]["allow_nested"] is True
-    assert "optionalString config.modules.shell.cliamp.enable" in module
-    assert "install_plugin coryshaw1 herdr-cliamp" in module
-    assert 'command = "herdr-cliamp.open"' not in (
-        ROOT / "config" / "herdr" / "config.toml"
-    ).read_text()
-    assert 'command = "herdr-cliamp.open"' in module
-    assert 'key = "prefix+M"' in module

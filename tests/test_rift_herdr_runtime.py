@@ -6,12 +6,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_rift_is_packaged_only_for_herdr_agent_runtime() -> None:
     package = ROOT / "packages" / "rift"
-    herdr_module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
+    herdr_module = (ROOT / "modules" / "shell" / "herdr" / "native.nix").read_text()
 
     assert (package / "default.nix").is_file()
     assert (package / "package-harness.json").is_file()
-    assert 'config = mkIf (cfg.enable && cfg.backend == "legacy")' in herdr_module
-    assert '"${pkgs.my.rift}/bin"' in herdr_module
     assert 'home.file.".local/bin/rift".source = lib.getExe pkgs.my.rift;' in herdr_module
     assert "pkgs.my.rift" not in (ROOT / "default.nix").read_text()
 
@@ -19,6 +17,6 @@ def test_rift_is_packaged_only_for_herdr_agent_runtime() -> None:
 def test_herdr_tnote_is_optional() -> None:
     herdr_module = (ROOT / "modules" / "shell" / "herdr" / "default.nix").read_text()
 
-    assert "tnote.enable = mkBoolOpt true;" in herdr_module
-    assert 'optional cfg.tnote.enable "${pkgs.my.tnote}/bin"' in herdr_module
-    assert "herdrPackages ++ optional cfg.tnote.enable pkgs.my.tnote" in herdr_module
+    assert "tnote.enable = lib.my.mkBoolOpt true;" in herdr_module
+    native_module = (ROOT / "modules" / "shell" / "herdr" / "native.nix").read_text()
+    assert "lib.optional cfg.tnote.enable pkgs.my.tnote" in native_module

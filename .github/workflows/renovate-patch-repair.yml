@@ -20,8 +20,7 @@ jobs:
       github.event.pull_request.user.login == vars.RENOVATE_LOGIN &&
       github.actor == vars.RENOVATE_LOGIN &&
       contains(github.event.pull_request.labels.*.name, 'flue-review') &&
-      (github.event.pull_request.head.ref == 'renovate/herdr' ||
-       github.event.pull_request.head.ref == 'renovate/hunk')
+      github.event.pull_request.head.ref == 'renovate/hunk'
     runs-on: ubuntu-26.04
     timeout-minutes: 45
     steps:
@@ -32,7 +31,6 @@ jobs:
         run: |
           set -euo pipefail
           case "$HEAD_REF" in
-            renovate/herdr) target=herdr ;;
             renovate/hunk) target=hunk ;;
             *) exit 1 ;;
           esac

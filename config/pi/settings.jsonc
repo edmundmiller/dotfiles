@@ -36,7 +36,7 @@
   // Avoid automatic coaching, model switching, and overlapping context/tool rewriting.
   // Packages - https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md
   // Host/module-specific packages are injected by modules/agents/pi/default.nix
-  // (tmux/herdr, MCP, computer-use, git tooling, status UI, and context/memory).
+  // (MCP, computer-use, git tooling, status UI, and context/memory).
   // Keep this list for packages that should be broad Pi defaults on every enabled host.
   "packages": [
     {
@@ -46,7 +46,7 @@
         "oracle.ts",
         "cost-tracker.ts",
         "speedreading.ts",
-        "process-info.ts", // writes PID/tmux pane/session/status into session JSONL (for pi-sessions picker)
+        "process-info.ts", // writes PID and status into session JSONL
       ],
       "skills": [],
     },
@@ -83,16 +83,14 @@
       "extensions": ["edit.ts"],
       "skills": [],
     },
-    // Semaphore/lock primitives (dep of pi-tmux) - https://github.com/offline-ant/pi-semaphore
+    // Semaphore/lock primitives - https://github.com/offline-ant/pi-semaphore
     {
       "source": "git:github.com/offline-ant/pi-semaphore",
       "extensions": ["extensions/semaphore-locks.ts"],
       "skills": [],
     },
-    // tmux/herdr shell-integration packages are injected by modules/agents/pi.
     // Verified local archives of Pi sessions and referenced output sidecars.
     "npm:@moyai/pi-session-hoarder",
-    // pi-interactive-shell is injected by modules/agents/pi only on hosts without tmux/herdr.
     // Keep normal web fetching without GUI/browser computer-use integration.
     // Smart web_fetch with browser-like TLS impersonation and Defuddle extraction - https://github.com/Thinkscape/agent-smart-fetch
     "npm:pi-smart-fetch@0.3.21",

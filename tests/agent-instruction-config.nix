@@ -43,9 +43,7 @@ let
       desktop.term.ghostty.enable = false;
       shell.herdr = {
         enable = false;
-        backend = "native";
       };
-      shell.tmux.enable = false;
     };
   };
   # Force instructions and Pi approval deployment, not package builds or secrets.
@@ -63,7 +61,6 @@ let
           pkgs.llm-agents.claude-code = "/fixture/claude-code";
           pkgs.my.pi-github-tools = "/fixture/pi-github-tools";
           pkgs.my.pistack = "/fixture/pistack";
-          pkgs.my.herdr.version = "0.9.1";
           isDarwin = false;
         }).config;
     in

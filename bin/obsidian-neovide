@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Open the current project in Neovide and jump to its Obsidian project note.
-# Works from a shell, tmux binding, or Herdr command binding.
+# Works from a shell or a native Herdr command.
 
 set -euo pipefail
 
@@ -8,7 +8,7 @@ usage() {
   cat <<'EOF'
 Usage: obsidian-neovide [PATH]
 
-Open Neovide rooted at PATH (default: Herdr active pane cwd, tmux pane cwd, or $PWD)
+Open Neovide rooted at PATH (default: $PWD)
 and run :ObsidianProject to open/create the matching vault project note.
 EOF
 }
@@ -18,7 +18,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   exit 0
 fi
 
-start_cwd="${1:-${HERDR_ACTIVE_PANE_CWD:-${TMUX_PANE_CURRENT_PATH:-$PWD}}}"
+start_cwd="${1:-$PWD}"
 
 if [[ ! -d "$start_cwd" ]]; then
   echo "obsidian-neovide: not a directory: $start_cwd" >&2

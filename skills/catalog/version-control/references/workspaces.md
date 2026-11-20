@@ -32,11 +32,8 @@ forks are separate and stay in the same checkout; they do not isolate edits.
 
 ## Start or resume in Herdr
 
-Load `herdr-jj-workflow` for Herdr tasks, including review, commit approval,
-publication, and cleanup. It owns the live session, task bookmark, and approval
-gates. Check its backend routing first. Native uses `herdr-app`/`hc` and
-`herdr-dev open PATH` for existing checkouts; do not launch the old TUI.
-The `prefix+a` workspace lifecycle belongs only to the legacy backend.
+Native Herdr uses `herdr-app`/`hc` and `herdr-dev open PATH` for existing
+checkouts. Its jj workspace creation and guarded cleanup are not implemented.
 Record an existing checkout with `hey agent-start` without `--workspace`;
 do not create a second checkout or launch nested Herdr. Keep its guarded
 cleanup and non-colocated review rules. Unsupported native lifecycle operations
@@ -108,8 +105,8 @@ PR, merge, deployment, or cleanup authority.
 Use the `done` skill for an authorized closeout. It shapes the task, rebases
 only its explicit range, publishes the task's explicit bookmark, proves remote
 equality, records the receipt, and cleans this workspace last.
-For Herdr tasks, retain `herdr-jj-workflow`'s commit approval gates and guarded
-cleanup rather than applying Rex session operations.
+For Herdr tasks, preserve commit approval gates and defer unsupported cleanup
+rather than applying Rex session operations or the retired TUI protocol.
 
 Closing a Rex session stops its terminals but preserves its checkout and
 bookmark. Stop only the task's processes, with authority; keep unrelated

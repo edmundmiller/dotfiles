@@ -2,7 +2,11 @@
 
 ## Status
 
-Proposed
+Superseded for legacy Herdr. The record below describes the retired TUI stack,
+not current deployment instructions. `modules/desktop/term/theme-stack/default.nix`
+still coordinates Ghostty and Hunk. Native Herdr owns its own palette.
+The old Pi palettes remain selectable standalone themes in `config/pi/themes/`;
+Herdr no longer forces them. See `config/herdr/README.md` for current ownership.
 
 ## Date
 

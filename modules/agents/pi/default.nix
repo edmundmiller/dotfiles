@@ -37,7 +37,6 @@ let
     inherit pkgs;
     piPkgsDir = ../../../packages/pi-packages;
   };
-  piHerdrPackage = ../../../packages/pi-packages/pi-herdr;
 
   secretRefsJson = pkgs.writeText "pi-secret-references.json" (builtins.toJSON cfg.secretReferences);
   honchoEnv = lib.optionalAttrs cfg.honcho.enable (
@@ -182,11 +181,9 @@ let
       config
       cfg
       lib
-      piHerdrPackage
       piSettingsParsed
       ;
     piGithubToolsPackage = pkgs.my.pi-github-tools;
-    herdrVersion = pkgs.my.herdr.version;
   };
 in
 {

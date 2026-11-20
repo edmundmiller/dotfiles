@@ -20,15 +20,11 @@ hunk resume
 
 If no resumable source exists, open a fresh review from the user-facing terminal. Agents must not launch the interactive TUI in their own tool terminal.
 
-## Dotfiles paired launcher
+## Native Herdr reviews
 
-This repository's tmux workflow pairs an agent pane with a Hunk pane and stamps both with worktree/session metadata.
+`herdr-dev open /path/to/checkout` opens an agent and Hunk in native Herdr. `herdr-dev hunk` opens a review beside the focused local terminal. These helpers do not resume an old review source automatically.
 
-- `config/tmux/open-hunk.sh --resume` executes `hunk resume` and falls back to a fresh diff only when resume support is unavailable.
-- `config/tmux/worktree-agent-hunk.sh` creates or repairs the paired Hunk pane beside OMP, Pi, Hermes, or OpenCode sessions.
-- `config/tmux/agent-hunk-sessions.ts` discovers resumable runtime sessions scoped to known worktrees.
-
-When repairing a pair, preserve the canonical worktree cwd. Do not point a Hunk pane at the repository's main checkout merely because it shares Git history.
+When reopening a review, preserve the canonical worktree cwd. Do not point Hunk at the repository's main checkout merely because it shares Git history.
 
 ## Live session versus resume
 

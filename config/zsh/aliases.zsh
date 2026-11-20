@@ -108,16 +108,6 @@ _agent_safe_cwd() {
     fi
 }
 
-# Herdr already notifies when background agents finish or need input.
-# Suppress Amp's duplicate alert only inside Herdr; keep native alerts elsewhere.
-amp() {
-    if [[ -n "${HERDR_PANE_ID:-}" ]]; then
-        command amp --no-notifications "$@"
-    else
-        command amp "$@"
-    fi
-}
-
 # Claude Code
 cc() {
     local safe_cwd

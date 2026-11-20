@@ -39,14 +39,10 @@ directories. Route an active launcher-owned workspace through its launcher.
 If task revisions land but the recorded task workspace contains unrelated
 dirt, preserve it and return `Landed; cleanup deferred`, never `Done`.
 
-For Herdr, require `HERDR_ENV=1`, `HERDR_WORKSPACE_ID`, clean recorded task
-root, and structured ownership proof, then make teardown the last tool action:
-
-```bash
-bend "${HOME}/.agents/skills/done/scripts/teardown-herdr-worktree.bend" -- "$task_root"
-```
-
-The Herdr teardown must remove the owned worktree without `--force`.
+Native Herdr has no supported guarded worktree teardown here. Preserve its
+checkouts, sessions and receipts, and return `Landed; cleanup deferred` when
+launcher-owned cleanup is required. Do not substitute the retired TUI protocol
+or remove a worktree with `--force`.
 
 For Codex Desktop, require `CODEX_THREAD_ID` and proof that the task root is the
 calling thread's worktree under `${CODEX_HOME:-$HOME/.codex}/worktrees/`. Use

@@ -278,9 +278,9 @@
           text = ''
             set -euo pipefail
 
-            changed_files=$(git diff --name-only -- 'packages/**/*.nix' 'packages/*.nix' 'overlays/herdr/default.nix' 'flake.nix' || true)
+            changed_files=$(git diff --name-only -- 'packages/**/*.nix' 'packages/*.nix' 'flake.nix' || true)
             if [[ -z "''${changed_files}" ]]; then
-              echo "No changed Nix package files, Herdr overlay pin, or Hunk input; skipping refresh."
+              echo "No changed Nix package files or Hunk input; skipping refresh."
               exit 0
             fi
 
@@ -294,26 +294,6 @@
               fi
             }
 
-            refresh_herdr_source_hash() {
-              local file="$1"
-              local rev hash
-              rev=$(perl -ne 'print "$1\n" if /^\s*rev = "([^"]+)";/' "$file")
-              if [[ -z "$rev" ]]; then
-                echo "Herdr source revision is missing from $file" >&2
-                exit 1
-              fi
-              if [[ "$(perl -ne '$count += /^\s*hash = "sha256-[^"]+";$/; END { print $count }' "$file")" != 1 ]]; then
-                echo "Expected exactly one SRI source hash in $file" >&2
-                exit 1
-              fi
-              hash=$(nix-prefetch-github --quiet --json --rev "$rev" herdrdev herdr | jq --raw-output .hash)
-              if [[ "$hash" != sha256-* ]]; then
-                echo "Herdr source prefetch returned an invalid hash: $hash" >&2
-                exit 1
-              fi
-              HERDR_HASH="$hash" perl -0pi -e 's/(^[[:space:]]*hash = ")[^"]+(";$)/$1 . $ENV{HERDR_HASH} . $2/em' "$file"
-            }
-
             flake_package_exists() {
               local attr="$1"
               nix --accept-flake-config eval --raw ".#packages.x86_64-linux.''${attr}.name" >/dev/null 2>&1 \
@@ -325,11 +305,6 @@
               if [[ "$file" == "flake.nix" ]]; then
                 echo "Refreshing flake lock for Hunk ($file)"
                 nix --accept-flake-config flake update hunk
-                continue
-              fi
-              if [[ "$file" == "overlays/herdr/default.nix" ]]; then
-                echo "Refreshing Nix source hash for Herdr ($file)"
-                refresh_herdr_source_hash "$file"
                 continue
               fi
               attr=$(attr_for_file "$file")
@@ -403,7 +378,6 @@
             "neorex"
             "quill"
             "stack"
-            "stream-deck-herdr-plugin"
             "work-calendar-busy"
           ]
           // {
@@ -417,7 +391,7 @@
               rtk
               workmux
               ;
-            inherit (pkgs.llm-agents) herdr pi;
+            inherit (pkgs.llm-agents) pi;
             tnote = inputs.tnote.packages.${linuxSystem}.default;
           };
         # NOTE: jj-spr temporarily disabled - upstream has broken cargo vendoring after flake update
@@ -440,7 +414,6 @@
               ;
             inherit (darwinPkgs.llm-agents)
               gitbutler
-              herdr
               pi
               ;
             tnote = inputs.tnote.packages.${darwinSystem}.default;
@@ -1850,53 +1823,6 @@
                 seqeratopConfig = self.darwinConfigurations.Seqeratop;
                 inherit inputs pkgs;
               };
-
-              herdr-app-launch-config =
-                let
-                  # Keep this compatibility check on the legacy Ghostty frontend.
-                  host = self.darwinConfigurations."MacTraitor-Pro".extendModules {
-                    modules = [ { modules.shell.herdr.backend = lib.mkForce "legacy"; } ];
-                  };
-                  home = host.config.home-manager.users.emiller;
-                  generatedConfig = pkgs.linkFarm "ghostty-launch-test-config" (
-                    (map
-                      (name: {
-                        inherit name;
-                        path = home.xdg.configFile."ghostty/${name}".source;
-                      })
-                      [
-                        "config"
-                        "behavior.conf"
-                        "keybindings.conf"
-                        "herdr.conf"
-                        "herdr-overrides.conf"
-                      ]
-                    )
-                    ++ (map
-                      (name: {
-                        inherit name;
-                        path = ./. + "/config/ghostty/${name}";
-                      })
-                      [
-                        "ui.conf"
-                        "macos.conf"
-                      ]
-                    )
-                  );
-                in
-                pkgs.writeShellApplication {
-                  name = "herdr-app-launch-config";
-                  runtimeInputs = [
-                    pkgs.coreutils
-                    pkgs.gnugrep
-                  ];
-                  text = ''
-                    exec ${pkgs.bash}/bin/bash ${./packages/herdr-ghostty/test-launch-config.sh} \
-                      "${self.packages.${system}.herdr-ghostty}/Applications/Herdr Ghostty.app" \
-                      ${generatedConfig} \
-                      ${pkgs.ghostty-bin}/Applications/Ghostty.app
-                  '';
-                };
 
               hermes-local-libffi-regression =
                 let

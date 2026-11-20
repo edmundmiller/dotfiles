@@ -469,8 +469,6 @@ in
       { lib, ... }:
       {
         home.file = hermesTailscalePluginFiles // {
-          "Library/Application Support/com.elgato.StreamDeck/Plugins/dev.timvdhoorn.herdr-agents.sdPlugin".source =
-            "${pkgs.my.stream-deck-herdr-plugin}/dev.timvdhoorn.herdr-agents.sdPlugin";
           "Library/Application Support/com.clin.clin/config.toml".source =
             "${config.dotfiles.configDir}/clin/config.toml";
         };

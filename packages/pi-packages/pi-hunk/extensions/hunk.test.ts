@@ -26,30 +26,6 @@ function createPiMock(hunkStdout?: string) {
       if (command === "git" && args[0] === "diff") {
         return { code: 0, stdout: "diff --git a/file.txt b/file.txt", stderr: "" };
       }
-      if (command === "herdr" && args[0] === "pane" && args[1] === "split") {
-        return {
-          code: 0,
-          stdout: JSON.stringify({
-            result: {
-              root_pane: { pane_id: 42 },
-              pane: { pane_id: "pane-hunk" },
-            },
-          }),
-          stderr: "",
-        };
-      }
-      if (command === "herdr" && args[0] === "tab" && args[1] === "create") {
-        return {
-          code: 0,
-          stdout: JSON.stringify({
-            result: {
-              root_pane: { pane_id: "tab-hunk" },
-              pane: { pane_id: 42 },
-            },
-          }),
-          stderr: "",
-        };
-      }
       if (command === "hunk" && hunkStdout !== undefined) {
         return { code: 0, stdout: hunkStdout, stderr: "" };
       }
@@ -88,45 +64,31 @@ describe("pi-hunk", () => {
     expect(calls).toEqual([]);
   });
 
-  test("hunk_diff writes Last Pi turn marker for Hunk source switching", async () => {
+  test("hunk_reload preserves Last Pi turn source switching without the retired pane tool", async () => {
     const repo = mkdtempSync(join(tmpdir(), "pi-hunk-marker-"));
     const { calls, tools } = createPiMock();
-    const previousWorkspace = process.env.HERDR_WORKSPACE_ID;
-    const previousPane = process.env.HERDR_PANE_ID;
-    process.env.HERDR_WORKSPACE_ID = "workspace-1";
-    process.env.HERDR_PANE_ID = "pane-pi";
 
     try {
-      await tools.hunk_diff!.execute("1", {
+      expect(tools.hunk_diff).toBeUndefined();
+      await tools.hunk_reload!.execute("1", {
         repo,
         target: "origin/main",
-        staged: true,
         pathspecs: ["src"],
       });
 
-      expect(calls.map((call) => call.command)).toEqual([
-        "git",
-        "git",
-        "git",
-        "herdr",
-        "herdr",
-        "herdr",
-      ]);
-      expect(calls[2]!.args).toEqual(["diff", "--staged", "origin/main", "--", "src"]);
-      expect(calls[3]!.args).toEqual([
-        "pane",
-        "split",
-        "pane-pi",
-        "--direction",
-        "right",
-        "--cwd",
+      expect(calls.map((call) => call.command)).toEqual(["hunk", "git", "git", "git"]);
+      expect(calls[0]!.args).toEqual([
+        "session",
+        "reload",
+        "--repo",
         repo,
-        "--focus",
+        "--",
+        "diff",
+        "origin/main",
+        "--",
+        "src",
       ]);
-      expect(calls[4]!.args).toEqual(["pane", "rename", "pane-hunk", "hunk"]);
-      expect(calls[5]!.args.slice(0, 2)).toEqual(["pane", "run"]);
-      expect(calls[5]!.args[2]).toBe("pane-hunk");
-      expect(calls[5]!.args[3]).toContain("hunk 'diff' '--staged' 'origin/main' '--' 'src'");
+      expect(calls[3]!.args).toEqual(["diff", "origin/main", "--", "src"]);
       const marker = JSON.parse(readFileSync(join(repo, ".git/hunk/last-pi-turn.json"), "utf8"));
       expect(marker).toMatchObject({
         version: 1,
@@ -134,110 +96,13 @@ describe("pi-hunk", () => {
         kind: "patch",
         file: join(repo, ".git/hunk/last-pi-turn.patch"),
         range: "origin/main",
-        staged: true,
+        staged: false,
         pathspecs: ["src"],
       });
       expect(readFileSync(join(repo, ".git/hunk/last-pi-turn.patch"), "utf8")).toContain(
         "diff --git"
       );
     } finally {
-      if (previousWorkspace === undefined) delete process.env.HERDR_WORKSPACE_ID;
-      else process.env.HERDR_WORKSPACE_ID = previousWorkspace;
-      if (previousPane === undefined) delete process.env.HERDR_PANE_ID;
-      else process.env.HERDR_PANE_ID = previousPane;
-      rmSync(repo, { force: true, recursive: true });
-    }
-  });
-
-  test("hunk_diff reads workspace and pane ids from validated Herdr context", async () => {
-    const repo = mkdtempSync(join(tmpdir(), "pi-hunk-context-"));
-    const { calls, tools } = createPiMock();
-    const previousWorkspace = process.env.HERDR_WORKSPACE_ID;
-    const previousPane = process.env.HERDR_PANE_ID;
-    const previousContext = process.env.HERDR_PLUGIN_CONTEXT_JSON;
-    delete process.env.HERDR_WORKSPACE_ID;
-    delete process.env.HERDR_PANE_ID;
-    process.env.HERDR_PLUGIN_CONTEXT_JSON = JSON.stringify({
-      workspace_id: "workspace-context",
-      focused_pane_id: "pane-context",
-    });
-
-    try {
-      await tools.hunk_diff!.execute("1", { repo });
-
-      expect(calls[3]!.args).toEqual([
-        "pane",
-        "split",
-        "pane-context",
-        "--direction",
-        "right",
-        "--cwd",
-        repo,
-        "--focus",
-      ]);
-    } finally {
-      if (previousWorkspace === undefined) delete process.env.HERDR_WORKSPACE_ID;
-      else process.env.HERDR_WORKSPACE_ID = previousWorkspace;
-      if (previousPane === undefined) delete process.env.HERDR_PANE_ID;
-      else process.env.HERDR_PANE_ID = previousPane;
-      if (previousContext === undefined) delete process.env.HERDR_PLUGIN_CONTEXT_JSON;
-      else process.env.HERDR_PLUGIN_CONTEXT_JSON = previousContext;
-      rmSync(repo, { force: true, recursive: true });
-    }
-  });
-
-  test("hunk_diff rejects a non-string workspace id from Herdr context", async () => {
-    const repo = mkdtempSync(join(tmpdir(), "pi-hunk-invalid-context-"));
-    const { calls, tools } = createPiMock();
-    const previousWorkspace = process.env.HERDR_WORKSPACE_ID;
-    const previousContext = process.env.HERDR_PLUGIN_CONTEXT_JSON;
-    delete process.env.HERDR_WORKSPACE_ID;
-    process.env.HERDR_PLUGIN_CONTEXT_JSON = JSON.stringify({ workspace_id: 42 });
-
-    try {
-      await expect(tools.hunk_diff!.execute("1", { repo })).rejects.toThrow(
-        "hunk_diff must run inside a Herdr workspace"
-      );
-      expect(calls.some((call) => call.command === "herdr")).toBe(false);
-    } finally {
-      if (previousWorkspace === undefined) delete process.env.HERDR_WORKSPACE_ID;
-      else process.env.HERDR_WORKSPACE_ID = previousWorkspace;
-      if (previousContext === undefined) delete process.env.HERDR_PLUGIN_CONTEXT_JSON;
-      else process.env.HERDR_PLUGIN_CONTEXT_JSON = previousContext;
-      rmSync(repo, { force: true, recursive: true });
-    }
-  });
-
-  test("hunk_diff accepts a valid requested field when its context sibling is malformed", async () => {
-    const repo = mkdtempSync(join(tmpdir(), "pi-hunk-context-sibling-"));
-    const { calls, tools } = createPiMock();
-    const previousWorkspace = process.env.HERDR_WORKSPACE_ID;
-    const previousContext = process.env.HERDR_PLUGIN_CONTEXT_JSON;
-    delete process.env.HERDR_WORKSPACE_ID;
-    process.env.HERDR_PLUGIN_CONTEXT_JSON = JSON.stringify({
-      workspace_id: "workspace-context",
-      focused_pane_id: 42,
-    });
-
-    try {
-      await tools.hunk_diff!.execute("1", { repo, placement: "tab" });
-
-      expect(calls[3]!.args).toEqual([
-        "tab",
-        "create",
-        "--workspace",
-        "workspace-context",
-        "--cwd",
-        repo,
-        "--label",
-        "hunk",
-      ]);
-      expect(calls[4]!.args).toEqual(["pane", "rename", "tab-hunk", "hunk"]);
-    } finally {
-      if (previousWorkspace === undefined) delete process.env.HERDR_WORKSPACE_ID;
-      else process.env.HERDR_WORKSPACE_ID = previousWorkspace;
-      if (previousContext === undefined) delete process.env.HERDR_PLUGIN_CONTEXT_JSON;
-      else process.env.HERDR_PLUGIN_CONTEXT_JSON = previousContext;
       rmSync(repo, { force: true, recursive: true });
     }
   });

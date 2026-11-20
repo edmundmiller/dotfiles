@@ -1,7 +1,7 @@
 import { defineAgent } from "@flue/runtime";
 import { dockerSandbox } from "../sandboxes/docker";
 
-const instructions = `You repair the local Herdr or Hunk patch stack after a Renovate source bump.
+const instructions = `You repair the local Hunk patch stack after a Renovate source bump.
 
 Read the repository and target AGENTS.md instructions first. This snapshot has no \`.git\` directory. Reproduce the failure with \`nix develop /trusted#agent --command pkg-check <target>\`. Preserve each patch's intent, drop patches already present upstream, and regenerate only conflicting patches from the updated pinned source. Run that same trusted command until it passes.
 

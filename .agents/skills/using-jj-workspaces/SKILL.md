@@ -24,7 +24,7 @@ workspace. Keep Herdr's bindings and bootstrap out of Rex sessions.
 
 ### Inside Herdr
 
-Let `prefix+a` create the task-named jj workspace and open its `$AGENT` tab. Export `AGENT` as the agent executable name or path in the pane's shell environment, without arguments. From that checkout, record the existing workspace without `--workspace`:
+Native Herdr opens existing checkouts but does not provide the retired jj lifecycle bindings. If this is already a task workspace, record it without `--workspace`:
 
 ```bash
 hey agent-start \
@@ -33,9 +33,9 @@ hey agent-start \
   --runtime "$AGENT"
 ```
 
-Herdr's `dev` layout opens `$AGENT` first, then Hunk, without a Git-root condition or a hard-coded OMP fallback. With jj 0.46 or newer, children created from a colocated workspace are also colocated when `git.colocate` is true, its default. Hunk can then review the child checkout directly. Do not launch nested Herdr or create another jj workspace from the new agent session.
+Otherwise use the deterministic launcher below, then open that checkout with `herdr-dev open /path/to/workspace`. Do not create another workspace from the new agent session. Native Herdr does not replace guarded jj cleanup; preserve the receipt and defer unsupported lifecycle operations.
 
-### Outside Herdr
+### Create a workspace
 
 Use the deterministic launcher to create and record the workspace:
 
@@ -68,9 +68,8 @@ Agent runtimes such as Codex Desktop can create Git worktrees before the agent s
 - Mutating one workspace's `@` does not directly move another workspace's `@`.
 - Colocated children also have a Git worktree. Do not run a separate `git worktree add`; keep mutations in jj and retain the task bookmark.
 - Repository-wide operation recovery can affect concurrent work. Inspect `jj op log` and coordinate before `jj undo` or `jj op restore`.
-- In Herdr, task names are durable; workspace, tab, and pane IDs are live handles. Re-read them after lifecycle changes.
 - Before using Hunk, confirm `jj root --ignore-working-copy` and `git rev-parse --show-toplevel` both resolve to this child checkout, not its primary workspace.
-- Existing non-colocated jj children stay non-colocated. Follow `herdr-jj-workflow` to convert one in place with `jj git colocation enable`, or keep reviewing with `jj diff --git -r @` in the agent pane. Record findings plus check output in the worklog when present, otherwise in the final handoff.
+- Existing non-colocated jj children stay non-colocated. Review them with `jj diff --git -r @`; conversion requires a separately authorized lifecycle change. Record findings plus check output in the worklog when present, otherwise in the final handoff.
 
 Stay on one task per workspace. Read other changes with `jj diff -r`, `jj file show -r`, and `jj log -r`; do not use `jj edit` merely to inspect.
 

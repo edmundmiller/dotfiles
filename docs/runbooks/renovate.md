@@ -27,7 +27,7 @@ a second runner would duplicate PRs.
   `nix run --accept-flake-config .#renovate-update-nix-hashes`.
   Only the runner's `RENOVATE_ALLOWED_COMMANDS` authorizes execution. The
   repository config cannot grant that permission.
-- Herdr and Hunk use `.github/workflows/renovate-patch-repair.yml` for patch
+- Hunk uses `.github/workflows/renovate-patch-repair.yml` for patch
   validation and repair. That workflow does not merge or enable GitHub automerge.
 
 ## Expected PR shape
@@ -42,7 +42,7 @@ These are update proposals. Only the types-only pilot can be admitted automatica
 | `renovate/github-actions`                 | Non-major Actions and digest pins                   |
 | `renovate/nix-flake-inputs`               | Versioned flake inputs                              |
 | `renovate/repo-local-nix-package-patches` | Regex-managed Nix package patches plus hash refresh |
-| `renovate/herdr`, `renovate/hunk`         | Overlay/harness and flake tag                       |
+| `renovate/hunk`                           | Patch harness and flake tag                         |
 | `renovate/callstack-types-patches`        | Future stable callstack `@types/bun` minors/patches |
 | Major updates                             | Explicit dashboard selection, separate from minors  |
 

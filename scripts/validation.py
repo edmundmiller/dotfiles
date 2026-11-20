@@ -262,7 +262,6 @@ DARWIN_CHECKS = [
     "mactraitor-fail-closed-activation",
     "apple-container-pilot-assertions",
     "audio-priority-bar-regressions",
-    "herdr-app-launch-config",
     "screentime-backup-darwin-assertions",
     "discrawl-backup-darwin-assertions",
     "darwin-tailscaled-owner-assertions",
@@ -657,16 +656,7 @@ def execute(root, selection, github_token=""):
         if system:
             for name in DARWIN_CHECKS:
                 installable = f".#checks.{system}.{name}"
-                if name == "herdr-app-launch-config":
-                    # Ghostty's real loader needs host Apple APIs that are
-                    # unavailable inside a Nix build sandbox.
-                    run(
-                        name,
-                        nix + ["run", "--no-write-lock-file", installable],
-                        env=env,
-                    )
-                else:
-                    run(name, build + [installable], env=env)
+                run(name, build + [installable], env=env)
     elif target == "nixos":
         run(
             "full NixOS flake (including deployment and VM checks)",

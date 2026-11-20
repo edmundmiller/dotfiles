@@ -28,12 +28,6 @@ let
             type = lib.types.str;
             default = "amp";
           };
-          options.modules.shell.tmux = lib.mkOption {
-            type = lib.types.attrsOf lib.types.anything;
-            default = {
-              enable = false;
-            };
-          };
           options.warnings = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [ ];
@@ -71,8 +65,7 @@ let
   activation = cfg: cfg.home-manager.users.alice.home.activation or { };
   appEnabled =
     cfg:
-    cfg.modules.shell.herdr.backend == "native"
-    && cfg.modules.shell.herdr.native.app.enable
+    cfg.modules.shell.herdr.native.app.enable
     && activation cfg ? herdr-native-core
     && activation cfg ? herdr-native-config
     && cfg.home.configFile ? "herdr-app/mods/dotfiles-dev"
@@ -87,14 +80,11 @@ let
       "t3-spaces"
       "t3-tabs"
     ]
-    && cfg.modules.shell.herdr.package == null
     && !(cfg.home.configFile ? "herdr/config.toml")
     && builtins.elem "herdr-dev" (map lib.getName cfg.user.packages);
   coreOnly =
     cfg:
-    cfg.modules.shell.herdr.backend == "native"
-    && !cfg.modules.shell.herdr.native.app.enable
-    && cfg.env.HERDR_BACKEND == "native"
+    !cfg.modules.shell.herdr.native.app.enable
     && builtins.attrNames (activation cfg) == [ "herdr-native-core" ]
     && (cfg.home.configFile or { }) == { }
     && (cfg.home.file or { }) == { }

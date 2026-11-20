@@ -13,12 +13,6 @@ import sys
 from pathlib import Path
 
 PATCH_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\.patch$")
-HERDR_BLOCK = re.compile(r"(?ms)^(    patches = \[\n)(.*?)(^    \];)$")
-HERDR_REVISION = re.compile(r'(?m)^\s+rev = "([^"]+)";$')
-HERDR_LINE = re.compile(
-    r"^      \./patches/([A-Za-z0-9][A-Za-z0-9._-]*\.patch)( #[^\n]*)?\n",
-    re.MULTILINE,
-)
 MAX_PATCH_BYTES = 5_000_000
 
 
@@ -47,28 +41,6 @@ def patch_names(root: Path, target: str) -> list[str]:
             fail(f"Invalid patch artifact: {path}")
         names.append(path.name)
     return sorted(names)
-
-
-def herdr_manifest(root: Path, names: list[str]) -> tuple[str, re.Match[str]]:
-    path = root / "overlays/herdr/default.nix"
-    require_regular(path)
-    text = path.read_text()
-    matches = list(HERDR_BLOCK.finditer(text))
-    if len(matches) != 1:
-        fail(f"Expected one Herdr patch manifest: {path}")
-
-    listed: list[str] = []
-    body = matches[0].group(2)
-    offset = 0
-    while offset < len(body):
-        line = HERDR_LINE.match(body, offset)
-        if not line:
-            fail(f"Invalid Herdr patch manifest: {path}")
-        listed.append(line.group(1))
-        offset = line.end()
-    if listed != names:
-        fail(f"Herdr patch manifest does not match patches/: {path}")
-    return text, matches[0]
 
 
 def package_manifest(
@@ -123,9 +95,6 @@ def validate(
     names: list[str],
     trusted_metadata: Path | None = None,
 ) -> None:
-    overlay = None
-    if target == "herdr":
-        overlay, _ = herdr_manifest(root, names)
     path, data = package_manifest(root, target, names)
 
     if trusted_metadata is not None:
@@ -137,14 +106,9 @@ def validate(
             if data.get(field) != trusted.get(field):
                 fail(f"{target} package harness {field} differs from trusted base: {path}")
 
-    if target == "herdr":
-        revisions = HERDR_REVISION.findall(overlay or "")
-        if len(revisions) != 1 or data.get("ref") != revisions[0]:
-            fail(f"Herdr package harness ref does not match overlay: {path}")
-    else:
-        source, ref = hunk_lock_pin(root)
-        if data.get("source") != source or data.get("ref") != ref:
-            fail(f"Hunk package harness pin does not match flake.lock: {path}")
+    source, ref = hunk_lock_pin(root)
+    if data.get("source") != source or data.get("ref") != ref:
+        fail(f"Hunk package harness pin does not match flake.lock: {path}")
 
 
 def sync_patches(source: Path, destination: Path, target: str, names: list[str]) -> None:
@@ -161,18 +125,6 @@ def sync_patches(source: Path, destination: Path, target: str, names: list[str])
         destination_path.chmod(0o644)
 
 
-def update_herdr_manifest(root: Path, names: list[str]) -> None:
-    path = root / "overlays/herdr/default.nix"
-    old_names = patch_names(root, "herdr")
-    text, match = herdr_manifest(root, old_names)
-    old_comments = {
-        line.group(1): line.group(2) or ""
-        for line in HERDR_LINE.finditer(match.group(2))
-    }
-    body = "".join(f"      ./patches/{name}{old_comments.get(name, '')}\n" for name in names)
-    path.write_text(text[: match.start(2)] + body + text[match.end(2) :])
-
-
 def update_package_manifest(root: Path, target: str, names: list[str]) -> None:
     old_names = patch_names(root, target)
     path, data = package_manifest(root, target, old_names)
@@ -181,9 +133,9 @@ def update_package_manifest(root: Path, target: str, names: list[str]) -> None:
 
 
 def main() -> int:
-    if len(sys.argv) < 3 or sys.argv[1] not in ("herdr", "hunk"):
+    if len(sys.argv) < 3 or sys.argv[1] != "hunk":
         print(
-            "usage: import-renovate-patch-repair <herdr|hunk> <source> "
+            "usage: import-renovate-patch-repair hunk <source> "
             "[destination | --trusted-metadata <file>]",
             file=sys.stderr,
         )
@@ -200,15 +152,13 @@ def main() -> int:
         return 0
     if len(sys.argv) != 4:
         print(
-            "usage: import-renovate-patch-repair <herdr|hunk> <source> "
+            "usage: import-renovate-patch-repair hunk <source> "
             "[destination | --trusted-metadata <file>]",
             file=sys.stderr,
         )
         return 2
 
     destination = Path(sys.argv[3])
-    if target == "herdr":
-        update_herdr_manifest(destination, names)
     update_package_manifest(destination, target, names)
     sync_patches(source, destination, target, names)
     return 0

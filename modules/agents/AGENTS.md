@@ -4,9 +4,8 @@
 wiring belong in `modules.agents.<runtime>`; shared instruction sources live in
 `config/agents/` and skills in `skills/catalog/`.
 
-Herdr's shell module installs integrations for enabled runtimes during
-activation. Agent modules bootstrap their runtime directories before that step;
-they do not install Herdr integrations themselves.
+Native Herdr uses OSC 7501 agent status. Its shell module removes old socket
+hooks for enabled runtimes without changing native reporting or session state.
 
 `pi-runtime-drift` and `hermes-runtime-drift` pre-push hooks are warning-only,
 read-only checks of mutable state. They neither repair state nor block pushes.

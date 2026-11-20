@@ -43,14 +43,9 @@ in
     };
   };
 
-  config = lib.mkIf (cfg.enable && cfg.backend == "native") (
+  config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
-        env.HERDR_BACKEND = "native";
-        warnings = lib.optional (cfg.projects.enable || cfg.vercelSandbox.enable) ''
-          Herdr native does not load legacy Projects or Vercel Sandbox plugins.
-          Their configuration is retained for backend = "legacy"; see config/herdr/README.md.
-        '';
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-core = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             if [ ! -x ${lib.escapeShellArg cfg.native.coreCommand} ]; then
@@ -62,7 +57,7 @@ in
       (lib.mkIf (legacyCleanupAgents != [ ]) {
         # Native Herdr reads OSC 7501 (rex-agent-status hooks); legacy socket
         # integrations never fire here. Remove what `herdr integration install`
-        # left behind; backend = "legacy" reinstalls it.
+        # left behind, without changing native reporting or runtime state.
         home-manager.users.${config.user.name} = { lib, ... }: {
           home.activation.herdr-native-legacy-cleanup =
             lib.hm.dag.entryAfter [ "claude-settings-bootstrap" "codex-config-bootstrap" "rexAgentStatusHooks" ]

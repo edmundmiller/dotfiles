@@ -97,12 +97,10 @@ class DoneSkillContractTest(unittest.TestCase):
         skill = self.done_contract()
 
         for phrase in (
-            "HERDR_ENV",
-            "HERDR_WORKSPACE_ID",
-            "teardown-herdr-worktree.bend",
+            "Native Herdr has no supported guarded worktree teardown",
             "CODEX_THREAD_ID",
             "set_thread_archived",
-            "without `--force`",
+            "with `--force`",
             "Do not archive a same-directory",
         ):
             with self.subTest(phrase=phrase):
@@ -312,144 +310,6 @@ class DoneSkillContractTest(unittest.TestCase):
             ):
                 with self.subTest(phrase=phrase):
                     self.assertIn(phrase, skill)
-
-    def test_herdr_teardown_script_refuses_unsafe_cleanup(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            repo = root / "repo"
-            worktree = root / "worktree"
-            wrong_worktree = root / "wrong-worktree"
-            mock_herdr = root / "herdr"
-            herdr_log = root / "herdr.log"
-
-            git(root, "init", "-b", "main", str(repo))
-            git(repo, "config", "user.name", "Done Skill Test")
-            git(repo, "config", "user.email", "done-skill@example.invalid")
-            (repo / "state.txt").write_text("base\n")
-            git(repo, "add", "state.txt")
-            git(repo, "commit", "-m", "base")
-            git(repo, "worktree", "add", "-qb", "task", str(worktree))
-
-            mock_herdr.write_text(
-                f"#!{sys.executable}\n"
-                """import json
-import os
-from pathlib import Path
-import sys
-
-args = sys.argv[1:]
-workspace_id = os.environ["HERDR_WORKSPACE_ID"]
-if args == ["worktree", "list", "--workspace", workspace_id, "--json"]:
-    path = os.environ["MOCK_WORKTREE_PATH"]
-    print(json.dumps({
-        "id": "test",
-        "result": {
-            "type": "worktree_list",
-            "source": {
-                "repo_key": "test",
-                "repo_name": "repo",
-                "repo_root": os.environ["MOCK_REPO_ROOT"],
-                "source_checkout_path": os.environ["MOCK_REPO_ROOT"],
-            },
-            "worktrees": [{
-                "path": path,
-                "branch": "task",
-                "is_bare": False,
-                "is_detached": False,
-                "is_prunable": False,
-                "is_linked_worktree": True,
-                "open_workspace_id": workspace_id,
-                "label": "task",
-            }],
-        },
-    }))
-elif args == ["worktree", "remove", "--workspace", workspace_id, "--json"]:
-    Path(os.environ["MOCK_HERDR_LOG"]).write_text(" ".join(args) + "\\n")
-    print(json.dumps({
-        "id": "test",
-        "result": {
-            "type": "worktree_removed",
-            "workspace_id": workspace_id,
-            "path": os.environ["MOCK_WORKTREE_PATH"],
-            "forced": False,
-        },
-    }))
-else:
-    print(f"unexpected herdr arguments: {args}", file=sys.stderr)
-    raise SystemExit(2)
-"""
-            )
-            mock_herdr.chmod(0o755)
-
-            base_env = {
-                key: value
-                for key, value in os.environ.items()
-                if not key.startswith("HERDR_")
-            }
-            base_env.update(
-                {
-                    "HERDR_BIN_PATH": str(mock_herdr),
-                    "MOCK_HERDR_LOG": str(herdr_log),
-                    "MOCK_REPO_ROOT": str(repo),
-                    "MOCK_WORKTREE_PATH": str(worktree),
-                }
-            )
-
-            outside_herdr = subprocess.run(
-                [binary("teardown-herdr-worktree"), str(worktree)],
-                cwd=worktree,
-                env=base_env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(0, outside_herdr.returncode)
-            self.assertIn("HERDR_ENV=1", outside_herdr.stderr)
-
-            herdr_env = base_env | {
-                "HERDR_ENV": "1",
-                "HERDR_WORKSPACE_ID": "workspace-test",
-                "MOCK_WORKTREE_PATH": str(wrong_worktree),
-            }
-            wrong_provenance = subprocess.run(
-                [binary("teardown-herdr-worktree"), str(worktree)],
-                cwd=worktree,
-                env=herdr_env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(0, wrong_provenance.returncode)
-            self.assertIn("does not own", wrong_provenance.stderr)
-            self.assertFalse(herdr_log.exists())
-
-            herdr_env["MOCK_WORKTREE_PATH"] = str(worktree)
-            dirty_file = worktree / "dirty.txt"
-            dirty_file.write_text("dirty\n")
-            dirty = subprocess.run(
-                [binary("teardown-herdr-worktree"), str(worktree)],
-                cwd=worktree,
-                env=herdr_env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertNotEqual(0, dirty.returncode)
-            self.assertIn("not clean", dirty.stderr)
-            self.assertFalse(herdr_log.exists())
-            dirty_file.unlink()
-
-            safe = subprocess.run(
-                [binary("teardown-herdr-worktree"), str(worktree)],
-                cwd=worktree,
-                env=herdr_env,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(0, safe.returncode, safe.stderr)
-            remove_args = herdr_log.read_text().strip()
-            self.assertEqual(
-                "worktree remove --workspace workspace-test --json",
-                remove_args,
-            )
-            self.assertNotIn("--force", remove_args)
 
     def test_verifier_requires_published_default_branch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

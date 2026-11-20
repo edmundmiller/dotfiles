@@ -133,15 +133,11 @@ it does not disable project MCP servers. See [ADR 0013](../../../docs/adr/0013-h
 for ownership and the focused adapter test.
 Do not reinstall `pi-mcp-adapter`: its `/mcp` command replaces native MCP.
 
-Hosts with Herdr 0.7.5+ use `@ogulcancelik/pi-herdr@0.4.0` for pane/layout/agent
-tools and the activation-installed lifecycle extension. Herdr 0.9.1 and 0.9.3 ship
-the same Pi integration version 9. Check the installed marker with
-`rg HERDR_INTEGRATION_VERSION ~/.pi/agent/extensions/herdr-agent-state.ts`.
-Hosts below Herdr 0.7.5 retain plugin 0.2.5 as a compatibility fallback.
-
-The repository's `pi-herdr` package supplies only `/review-box` and
-`herdr_pr_review_workspace`. General layout, pane, and agent tools come from
-the official plugin; Review Box persistence and approval behavior stay local.
+Pi reports native Herdr agent status through OSC 7501. The legacy socket
+integration, pane tools and Review Box package are retired. Existing worktrees
+and review state are not migrated or deleted. The `dotfiles-herdr` and
+`dotfiles-herdr-seqera` palettes remain available as standalone Pi themes;
+Herdr enablement no longer forces a Pi theme.
 
 ## Shell Helpers
 

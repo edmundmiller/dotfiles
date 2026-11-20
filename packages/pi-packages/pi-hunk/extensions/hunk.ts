@@ -6,25 +6,11 @@ import { dirname, isAbsolute, join } from "node:path";
 
 const HUNK_TIMEOUT_MS = 30_000;
 
-const herdrWorkspaceContextSchema = Type.Object({ workspace_id: Type.String() });
-const herdrPaneContextSchema = Type.Object({ focused_pane_id: Type.String() });
-const herdrTabCreateResponseSchema = Type.Object({
-  result: Type.Object({
-    root_pane: Type.Object({ pane_id: Type.String() }),
-  }),
-});
-const herdrPaneCreateResponseSchema = Type.Object({
-  result: Type.Object({
-    pane: Type.Object({ pane_id: Type.String() }),
-  }),
-});
-
 interface JsonObject {
   [key: string]: JsonValue;
 }
 
 type JsonValue = string | number | boolean | null | JsonValue[] | JsonObject;
-type HerdrContextKey = "HERDR_WORKSPACE_ID" | "HERDR_PANE_ID";
 type ExecutedCommand = {
   command: string;
   args: string[];
@@ -94,12 +80,11 @@ async function gitPath(pi: ExtensionAPI, repo: string, path: string): Promise<st
 async function writePiLastTurnMarker(
   pi: ExtensionAPI,
   repo: string,
-  input: { range?: string; staged?: boolean; pathspecs?: string[] }
+  input: { range?: string; pathspecs?: string[] }
 ) {
   const markerPath = await gitPath(pi, repo, "hunk/last-pi-turn.json");
   const patchPath = await gitPath(pi, repo, "hunk/last-pi-turn.patch");
   const diffArgs = ["diff"];
-  if (input.staged) diffArgs.push("--staged");
   if (input.range) diffArgs.push(input.range);
   if (input.pathspecs?.length) diffArgs.push("--", ...input.pathspecs);
   const diff = await runCommand(pi, "git", diffArgs, { cwd: repo });
@@ -115,7 +100,7 @@ async function writePiLastTurnMarker(
         kind: "patch",
         file: patchPath,
         range: input.range,
-        staged: input.staged === true,
+        staged: false,
         pathspecs: input.pathspecs,
       },
       null,
@@ -125,140 +110,7 @@ async function writePiLastTurnMarker(
   return markerPath;
 }
 
-function contextValue(key: HerdrContextKey): string | undefined {
-  const direct = process.env[key];
-  if (direct) return direct;
-  try {
-    const candidate: unknown = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON ?? "{}");
-    if (key === "HERDR_WORKSPACE_ID") {
-      return Value.Check(herdrWorkspaceContextSchema, candidate)
-        ? candidate.workspace_id
-        : undefined;
-    }
-    return Value.Check(herdrPaneContextSchema, candidate) ? candidate.focused_pane_id : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function tabPaneId(response: string): string | undefined {
-  try {
-    const candidate: unknown = JSON.parse(response);
-    return Value.Check(herdrTabCreateResponseSchema, candidate)
-      ? candidate.result.root_pane.pane_id
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function splitPaneId(response: string): string | undefined {
-  try {
-    const candidate: unknown = JSON.parse(response);
-    return Value.Check(herdrPaneCreateResponseSchema, candidate)
-      ? candidate.result.pane.pane_id
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function shellQuote(value: string): string {
-  return `'${value.replaceAll("'", `'"'"'`)}'`;
-}
-
-async function openHunk(
-  pi: ExtensionAPI,
-  repo: string,
-  placement: "pane" | "tab",
-  hunkArgs: string[]
-) {
-  const herdr = process.env.HERDR_BIN_PATH || "herdr";
-  const workspaceId = contextValue("HERDR_WORKSPACE_ID");
-  if (!workspaceId) throw new Error("hunk_diff must run inside a Herdr workspace");
-
-  let paneId: string | undefined;
-  if (placement === "tab") {
-    const created = await runCommand(
-      pi,
-      herdr,
-      ["tab", "create", "--workspace", workspaceId, "--cwd", repo, "--label", "hunk"],
-      { cwd: repo, timeout: 10_000 }
-    );
-    paneId = tabPaneId(created.stdout);
-  } else {
-    const focusedPaneId = contextValue("HERDR_PANE_ID");
-    if (!focusedPaneId) throw new Error("hunk_diff split placement requires a Herdr pane");
-    const created = await runCommand(
-      pi,
-      herdr,
-      ["pane", "split", focusedPaneId, "--direction", "right", "--cwd", repo, "--focus"],
-      { cwd: repo, timeout: 10_000 }
-    );
-    paneId = splitPaneId(created.stdout);
-  }
-  if (!paneId) throw new Error("Herdr created the Hunk target but returned no pane id");
-
-  await runCommand(pi, herdr, ["pane", "rename", paneId, "hunk"], { cwd: repo, timeout: 10_000 });
-  const args = [...hunkArgs];
-  if (process.env.HUNK_THEME) args.push("--theme", process.env.HUNK_THEME);
-  args.push("--no-transparent-bg");
-  const quotedArgs = args.map(shellQuote).join(" ");
-  const command = `if command -v hunk >/dev/null 2>&1; then exec hunk ${quotedArgs}; else exec bunx hunkdiff ${quotedArgs}; fi`;
-  await runCommand(pi, herdr, ["pane", "run", paneId, command], { cwd: repo, timeout: 10_000 });
-  return { herdr, paneId, command };
-}
-
 export default function hunkExtension(pi: ExtensionAPI) {
-  pi.registerTool({
-    name: "hunk_diff",
-    label: "Hunk Diff",
-    description:
-      "Open a Hunk diff review for working-tree or staged changes. Use this to start/refresh the visual human review surface.",
-    parameters: Type.Object({
-      repo: Type.Optional(
-        Type.String({ description: "Repository path. Defaults to Pi's current working directory." })
-      ),
-      target: Type.Optional(
-        Type.String({ description: "Optional diff target/ref, e.g. HEAD or main...HEAD." })
-      ),
-      staged: Type.Optional(
-        Type.Boolean({ description: "Review staged changes instead of working tree changes." })
-      ),
-      watch: Type.Optional(Type.Boolean({ description: "Auto-reload as the diff changes." })),
-      excludeUntracked: Type.Optional(Type.Boolean({ description: "Hide untracked files." })),
-      pathspecs: Type.Optional(
-        Type.Array(Type.String(), { description: "Optional git pathspecs to limit the review." })
-      ),
-      placement: Type.Optional(
-        Type.Union([Type.Literal("pane"), Type.Literal("tab")], {
-          description: "Open in a split pane or new tab. Defaults to split pane.",
-        })
-      ),
-    }),
-    async execute(_id, params) {
-      const repo = repoArg(params.repo);
-      const markerPath = await writePiLastTurnMarker(pi, repo, {
-        range: params.target,
-        staged: params.staged,
-        pathspecs: params.pathspecs,
-      });
-      const args = ["diff"];
-      if (params.staged) args.push("--staged");
-      if (params.watch) args.push("--watch");
-      if (params.excludeUntracked) args.push("--exclude-untracked");
-      if (params.target) args.push(params.target);
-      if (params.pathspecs?.length) args.push("--", ...params.pathspecs);
-      const result = await openHunk(pi, repo, params.placement === "tab" ? "tab" : "pane", args);
-      return textResult("Opened Hunk diff review in Herdr.", {
-        action: "diff",
-        args,
-        markerPath,
-        ...result,
-      });
-    },
-  });
-
   pi.registerTool({
     name: "hunk_reload",
     label: "Hunk Reload",
