@@ -11,7 +11,6 @@ Usage:
 
 from kitty.boss import Boss
 from kittens.tui.handler import result_handler
-import subprocess
 import os
 
 
