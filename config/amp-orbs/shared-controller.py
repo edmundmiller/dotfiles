@@ -24,8 +24,8 @@ SOCKET = "/run/note4c-headset/control.sock"
 OWNER = "amp-01a1f05a-2cb2-73dc-ab1d-7f51b1b4f508"
 PYTHON = "/home/user/.cache/uv/archive-v0/S1184gpX2erfcGlI3QYeM/bin/python"
 PRIVATE = Path("/home/user/workspace/repo/.amp/in/private-note4c-acceptance")
-APP = "a0e2bfa0741847e59a60aa8153151cdc50d2e8ab95b8bd5e635a7f17916ecb0b"
-SOURCE = "81d9769628e054ba4300ba87f990652b3b044283f8f7220fe53f82c7900e9410"
+APP = "c8cdb8c66e01f74a5af31a215ff34e24bbdfa043b6d0b5abf5e5b9d5f086429f"
+SOURCE = "eb9beeb9ac49c74f8800bfb608200b940e6cb4d29bf1f526fe19feb8f6b5b3be"
 GUARD = "106dc89878fd4cfd56f4ebc3f9bbdff8de1a899ec705cb1ab33465a04bf35e8f"
 
 
@@ -159,7 +159,7 @@ def active_application(metadata):
     if not sequences or not apps:
         raise ValueError("No CRC-valid OTA application selection")
     active = apps[(max(sequences) - 1) % len(apps)]
-    if active.subtype != 0x10 or active.offset != 0x20000 or active.size < 0x186f60:
+    if active.subtype != 0x10 or active.offset != 0x20000 or active.size < 0x186f70:
         raise ValueError("Unexpected active application slot")
 
 
@@ -186,7 +186,7 @@ def actor():
         # and lock. Never invoke the historical operator's write entry point.
         with tempfile.TemporaryDirectory(prefix="note4c-provenance-", dir="/dev/shm") as directory:
             for name, before, offset, length in (("metadata", "usb-reset", "0x8000", "0x18000"),
-                    ("application", "no-reset", "0x20000", "0x186f60")):
+                    ("application", "no-reset", "0x20000", "0x186f70")):
                 target = Path(directory) / name
                 with contextlib.redirect_stdout(io.StringIO()):
                     gate["preflight"]()
