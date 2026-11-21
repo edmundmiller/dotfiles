@@ -238,6 +238,11 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.hex = {
+          enable = true;
+          signingIdentity = "FB1CF09F1E90E0A462FDB94ACB2CF9894D760EED";
+          settings = lib.importJSON ../../config/hex/managed-settings.json;
+        };
         apps.tldraw.enable = true;
         apps.neovide.enable = true;
         apps.notion.enable = true;
@@ -444,7 +449,6 @@ in
       my.discrawl-backup
       my.emeraldian
       my.excalidraw-cli
-      my.hex
       my.meat
       my.openwiki
       my.screentime-backup

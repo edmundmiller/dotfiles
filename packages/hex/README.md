@@ -47,6 +47,30 @@ source and replaces the release executable. The resulting bundle is ad-hoc
 signed, not Developer ID signed or notarized. macOS permissions may need to be
 granted again. Login-item and Gatekeeper behavior require runtime validation.
 
+### Stable local signing
+
+`modules.desktop.apps.hex.signingIdentity` accepts the SHA-1 fingerprint of an
+existing code-signing identity from `security find-identity -v -p codesigning`.
+MacTraitor-Pro selects its user's Apple Development identity. Home Manager
+activation copies the package to `~/Applications/Hex.app`, preserves its
+entitlements, signs with the user's Keychain, and verifies the signature before
+replacing an earlier managed copy. The private key never enters Nix builds or
+the store. A missing or inaccessible key fails activation rather than falling
+back to ad-hoc signing.
+
+The installed `hex` command uses this signed copy; the ad-hoc package app is not
+also installed in `/Applications/Nix Apps`. An unchanged package and signing
+identity leave the installed app untouched. Restart Hex after a package change.
+The first switch from ad-hoc signing still needs new macOS permission grants.
+Later versions should retain them while their designated signing requirement
+stays the same. Verify this on the laptop rather than treating a valid signature
+as proof of permission retention. When renewing the certificate, update its
+fingerprint and check that the new signature satisfies the previous requirement.
+
+Preferences are declared separately in `config/hex/managed-settings.json` and
+applied through `hex settings apply` on activation. Unlisted preferences,
+credentials, history, and model downloads stay local and writable.
+
 Upstream's `HEX_LOCAL_BUILD=1` disables update checks and installation actions,
 so it cannot replace the local patch with an upstream binary. This replaces
 the old Sparkle patch. Update through Nix. Model downloads are unaffected.
