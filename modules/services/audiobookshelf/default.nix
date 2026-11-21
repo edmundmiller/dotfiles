@@ -47,7 +47,11 @@ in
       order = 20;
       description = "Audiobooks & podcasts";
       icon = "audiobookshelf.svg";
-      href = "http://nuc.cinnamon-rooster.ts.net:13378";
+      href =
+        if cfg.tailscaleService.enable then
+          "https://${cfg.tailscaleService.serviceName}.cinnamon-rooster.ts.net"
+        else
+          "http://nuc.cinnamon-rooster.ts.net:13378";
     };
   };
 

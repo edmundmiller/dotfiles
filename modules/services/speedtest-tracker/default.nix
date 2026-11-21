@@ -1,8 +1,8 @@
 # Speedtest Tracker - Scheduled internet speed history
-# Dashboard: http://<nuc-tailscale-ip>:8765
+# Dashboard: https://speedtest-tracker.cinnamon-rooster.ts.net
 #
 # Setup (one-time, after first deploy):
-# 1. Open http://nuc.<tailnet>:8765
+# 1. Open https://speedtest-tracker.cinnamon-rooster.ts.net
 # 2. Create admin account
 # 3. Settings -> API -> create token for homepage widget
 # 4. Add token as HOMEPAGE_VAR_SPEEDTEST_API_KEY in homepage-env.age
@@ -18,6 +18,7 @@
 {
   config,
   lib,
+  pkgs,
   isDarwin,
   ...
 }:
@@ -32,6 +33,10 @@ in
   options.modules.services.speedtest-tracker = {
     enable = mkBoolOpt false;
     port = mkOpt types.port 8765;
+    tailscaleService = {
+      enable = mkBoolOpt false;
+      serviceName = mkOpt types.str "speedtest-tracker";
+    };
     environmentFile = mkOption {
       type = types.nullOr types.path;
       default = null;
@@ -54,7 +59,11 @@ in
       order = 40;
       description = "Network speed history";
       icon = "mdi-speedometer";
-      href = "http://nuc.cinnamon-rooster.ts.net:${toString cfg.port}";
+      href =
+        if cfg.tailscaleService.enable then
+          "https://${cfg.tailscaleService.serviceName}.cinnamon-rooster.ts.net"
+        else
+          "http://nuc.cinnamon-rooster.ts.net:${toString cfg.port}";
     };
   };
 
@@ -72,6 +81,9 @@ in
           TZ = cfg.timezone;
           SPEEDTEST_SCHEDULE = cfg.schedule;
           DB_CONNECTION = "sqlite";
+        }
+        // optionalAttrs cfg.tailscaleService.enable {
+          APP_URL = "https://${cfg.tailscaleService.serviceName}.cinnamon-rooster.ts.net";
         };
         environmentFiles = optional (cfg.environmentFile != null) cfg.environmentFile;
       };
@@ -81,6 +93,21 @@ in
       ];
 
       networking.firewall.allowedTCPPorts = [ port ];
+
+      systemd.services.speedtest-tracker-tailscale-serve = mkIf cfg.tailscaleService.enable {
+        description = "Tailscale Service proxy for Speedtest Tracker";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "${config.virtualisation.oci-containers.backend}-speedtest-tracker.service"
+          "tailscaled.service"
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.util-linux}/bin/flock /run/tailscale-serve.lock ${pkgs.bash}/bin/bash -c \"for i in \\$(seq 1 15); do ${pkgs.tailscale}/bin/tailscale serve --bg --service=svc:${cfg.tailscaleService.serviceName} --https=443 http://127.0.0.1:${toString cfg.port} && exit 0; sleep 1; done; exit 1\"'";
+          ExecStop = "${pkgs.bash}/bin/bash -c '${pkgs.tailscale}/bin/tailscale serve clear svc:${cfg.tailscaleService.serviceName} || true'";
+        };
+      };
     }
   );
 }
