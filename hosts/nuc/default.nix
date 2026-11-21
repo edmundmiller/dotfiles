@@ -2646,6 +2646,7 @@ in
       lubelogger = {
         enable = true;
         environmentFile = config.age.secrets.lubelogger-env.path;
+        tailscaleService.enable = true;
       };
       latitude = {
         enable = true;
@@ -2654,21 +2655,31 @@ in
       speedtest-tracker = {
         enable = true;
         environmentFile = config.age.secrets.speedtest-tracker-env.path;
+        tailscaleService.enable = true;
       };
       sparkyfitness = {
         enable = true;
         environmentFile = config.age.secrets.sparkyfitness-env.path;
         tailscaleService.enable = true;
       };
-      prowlarr.enable = true;
+      prowlarr = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       qb = {
         enable = true;
         authKeyFile = "/run/agenix/qb-tailscale-auth";
         webuiCredentialsFile = "/run/agenix/qb-webui";
         mullvadExitNode = "us-dal-wg-601.mullvad.ts.net";
       };
-      radarr.enable = true;
-      sonarr.enable = true;
+      radarr = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
+      sonarr = {
+        enable = true;
+        tailscaleService.enable = true;
+      };
       deploy-rs.enable = true;
       mosh.enable = true;
       ssh.enable = true;
