@@ -143,6 +143,33 @@ SMOKE
     exec /etc/amp-orbs/dispatch
 SERIAL
     ;;
+  dji-capture-enable)
+    # Separate grant and paused-orb migration; never touch the Note4C pin/export.
+    [[ ${2:-} =~ ^[0-9a-f]{40}$ ]]
+    [[ $(nixos-version --configuration-revision) == "dotfiles=$2;"* ]] || {
+      echo 'Deploy the exact approved revision before DJI capture migration' >&2
+      exit 1
+    }
+    test -r /etc/amp-orbs/dji-capture-orb
+    sudo -n systemd-tmpfiles --create --prefix=/run/amp-dji-capture
+    sudo -n systemctl is-active --quiet amp-dji-capture.socket
+    sudo -n -u amp-orbs test -S /run/amp-dji-capture/capture.sock
+    [[ $(sudo -n -u amp-orbs stat -c '%U:%G:%a' /run/amp-dji-capture) == root:amp-orbs:750 ]]
+    [[ $(sudo -n -u amp-orbs stat -c '%U:%G:%a' /run/amp-dji-capture/capture.sock) == root:amp-orbs:660 ]]
+    # Do not connect to the broker here. Access activation does not open ALSA
+    # or start capture, and the receiver need not be plugged in for migration.
+    home=/var/lib/amp-orbs
+    uid=$(id -u amp-orbs)
+    sudo -n -u amp-orbs env HOME="$home" XDG_RUNTIME_DIR="/run/user/$uid" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+      CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf bash -s <<'CAPTURE'
+    set -euo pipefail
+    cd "$HOME"
+    ORB_ID=$(cat /etc/amp-orbs/dji-capture-orb)
+    export ORB_ID ORB_OPERATION=dji-capture-enable
+    exec /etc/amp-orbs/dispatch
+CAPTURE
+    ;;
   diagnostics)
     home=/var/lib/amp-orbs
     uid=$(id -u amp-orbs)
@@ -195,5 +222,5 @@ DIAGNOSTICS
       _UID="$uid" _SYSTEMD_USER_UNIT=amp-orb-provider.service |
       sudo -n -u amp-orbs env HOME="$home" bash -c 'cd "$HOME"; exec .amp/bin/amp orb redact-output'
     ;;
-  *) echo 'Usage: amp-orb-pilot.sh preflight|recover|verify|diagnostics|serial-enable SHA' >&2; exit 2 ;;
+  *) echo 'Usage: amp-orb-pilot.sh preflight|recover|verify|diagnostics|serial-enable|dji-capture-enable SHA' >&2; exit 2 ;;
 esac

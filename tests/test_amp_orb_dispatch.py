@@ -1,13 +1,20 @@
 """Admission and lifecycle behavior through the dispatcher process interface."""
 
+from array import array
 import json
+from itertools import product
 import os
 from pathlib import Path
+import runpy
 import signal
+import socket
+import stat
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 DISPATCH = Path(__file__).resolve().parents[1] / "config/amp-orbs/dispatch.sh"
@@ -136,21 +143,23 @@ elif args[0] != 'exec':
         # The fake backend models stopped container disks, including ignored
         # content, independently of the dispatcher's snapshot/name choices.
         disk = {'tracked': 'dirty', 'untracked/firmware': 'new', '.amp/ignored': 'evidence'}
-        for scenario in ('migrate', 'other orb', 'running', 'mounted', 'absent',
-                         'commit failure', 'create failure', 'unplug during create',
-                         'interrupted rename', 'fresh target', 'fresh unrelated', 'fresh absent',
-                         'missing export'):
-            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+        scenarios = ('migrate', 'other orb', 'running', 'mounted', 'absent',
+                     'commit failure', 'create failure', 'unplug during create',
+                     'interrupted rename', 'fresh target', 'fresh unrelated', 'fresh absent',
+                     'missing export')
+        for scope, scenario in product(('note4c', 'dji-capture'), scenarios):
+            with self.subTest(scope=scope, scenario=scenario), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 tools = root / 'bin'
                 tools.mkdir()
+                scoped_orb = f'amp-{scope}'
                 containers = {
-                    'amp-note4c': dict(running=scenario == 'running',
+                    scoped_orb: dict(running=scenario == 'running',
                         mounts=int(scenario == 'mounted'), disk=disk),
                     'amp-other': dict(running=True, mounts=0, disk={'other': 'untouched'}),
                 }
                 fresh = scenario.startswith('fresh')
-                target = 'amp-other' if scenario in ('other orb', 'fresh unrelated') else 'amp-note4c'
+                target = 'amp-other' if scenario in ('other orb', 'fresh unrelated') else scoped_orb
                 if fresh:
                     containers = {}
                 state = root / 'containers.json'
@@ -160,7 +169,7 @@ elif args[0] != 'exec':
                     'getconf': f'#!{sys.executable}\nprint(8)\n',
                     'df': f"#!{sys.executable}\nprint('fixture 99999999 0 99999999 0% /')\n",
                     'awk': f"#!{sys.executable}\nimport sys\nprint(99999999 if sys.argv[-1] == '/proc/meminfo' else sys.stdin.read().split()[3])\n",
-                    'cat': f"#!{sys.executable}\nimport sys\nassert sys.argv[1:] == ['/etc/amp-orbs/note4c-orb']\nprint('amp-note4c')\n",
+                    'cat': f"#!{sys.executable}\nimport sys\nprint({{'/etc/amp-orbs/note4c-orb': 'amp-note4c', '/etc/amp-orbs/dji-capture-orb': 'amp-dji-capture'}}[sys.argv[1]])\n",
                     'podman': f'#!{sys.executable}\n' + """
 import copy, json, os, sys
 from pathlib import Path
@@ -226,7 +235,7 @@ path.write_text(json.dumps(containers))
                 environment = dict(os.environ, PATH=f"{tools}:{os.environ['PATH']}",
                     HOME=str(root), XDG_STATE_HOME=str(root / 'state'),
                     FIXTURE_ROOT=str(root), SCENARIO=scenario, ORB_ID=target,
-                    ORB_OPERATION='spawn' if fresh else 'serial-enable',
+                    ORB_OPERATION='spawn' if fresh else ('serial-enable' if scope == 'note4c' else 'dji-capture-enable'),
                     ORB_IMAGE='clean-base', ORB_TOKEN='non-secret-fixture')
                 result = subprocess.run(['bash', str(DISPATCH)], env=environment,
                     capture_output=True, text=True, timeout=5)
@@ -238,7 +247,8 @@ path.write_text(json.dumps(containers))
                     self.assertEqual(after[target]['devices'], [])
                     self.assertEqual(after[target]['binds'],
                         [] if scenario == 'fresh unrelated' else
-                        ['type=bind,src=/dev/amp-note4c-port,dst=/dev/note4c,ro=true'])
+                        ['type=bind,src=/dev/amp-note4c-port,dst=/dev/note4c,ro=true'] if scope == 'note4c' else
+                        ['type=bind,src=/run/amp-dji-capture,dst=/run/dji-capture,ro=true'])
                     self.assertEqual(after[target]['groups'],
                         None if scenario == 'fresh unrelated' else 'keep-groups')
                     self.assertEqual(after[target]['runtime'],
@@ -246,7 +256,7 @@ path.write_text(json.dumps(containers))
                     self.assertEqual(after[target]['running'], fresh)
                     if not fresh:
                         self.assertEqual(after[target]['disk'], disk)
-                        backups = [c for name, c in after.items() if name.startswith('amp-note4c-pre-note4c-')]
+                        backups = [c for name, c in after.items() if name.startswith(f'{scoped_orb}-pre-{scope}-')]
                         self.assertEqual(backups, [containers[target]])
                         self.assertEqual(after['amp-other'], containers['amp-other'])
                 elif scenario == 'interrupted rename':
@@ -257,7 +267,8 @@ path.write_text(json.dumps(containers))
                         env=dict(environment, ORB_OPERATION='spawn'),
                         capture_output=True, text=True, timeout=5)
                     self.assertNotEqual(wake.returncode, 0)
-                    self.assertIn('incomplete serial migration', wake.stderr)
+                    self.assertIn('incomplete serial migration' if scope == 'note4c' else
+                        'incomplete DJI capture migration', wake.stderr)
                     self.assertEqual(json.loads(state.read_text()), after)
                 else:
                     # A failed replacement may be retained, but the original
@@ -266,6 +277,126 @@ path.write_text(json.dumps(containers))
                         self.assertEqual(after[name], original)
                     if scenario == 'fresh absent':
                         self.assertEqual(after, {})
+
+    def test_dji_capture_identity_excludes_controls_playback_other_ports_and_products(self):
+        source = DISPATCH.with_name('dji-capture-broker.py')
+        capture_name = runpy.run_path(str(source))['capture_name']
+        cases = [
+            ('pcmC1D0c', '1-4', '2ca3', '4011', 116, '116:10', True),
+            ('pcmC9D0c', '1-4', '2ca3', '4011', 116, '116:10', True),
+            ('pcmC1D0p', '1-4', '2ca3', '4011', 116, '116:10', False),
+            ('controlC1', '1-4', '2ca3', '4011', 116, '116:10', False),
+            ('pcmC1D1c', '1-4', '2ca3', '4011', 116, '116:10', False),
+            ('pcmC1D0c', '1-3', '2ca3', '4011', 116, '116:10', False),
+            ('pcmC1D0c', '1-4', '303a', '4011', 116, '116:10', False),
+            ('pcmC1D0c', '1-4', '2ca3', '831a', 116, '116:10', False),
+            ('pcmC1D0c', '1-4', '2ca3', '4011', 166, '166:10', False),
+            ('pcmC1D0c', '1-4', '2ca3', '4011', 116, '116:11', False),
+        ]
+        for name, port, vendor, product_id, major, reported, allowed in cases:
+            with self.subTest(name=name, port=port, vendor=vendor, product=product_id, major=major, reported=reported):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    usb = root / f'devices/pci0000:00/0000:00:14.0/usb1/{port}'
+                    pcm = usb / f'{port}:1.1/sound/card1/{name}'
+                    pcm.mkdir(parents=True)
+                    (usb / 'idVendor').write_text(vendor)
+                    (usb / 'idProduct').write_text(product_id)
+                    (pcm / 'dev').write_text(reported)
+                    (root / 'dev/char').mkdir(parents=True)
+                    (root / f'dev/char/{major}:10').symlink_to(pcm)
+                    if allowed:
+                        self.assertEqual(capture_name(root, major, 10), name)
+                    else:
+                        with self.assertRaises(ValueError):
+                            capture_name(root, major, 10)
+
+    def test_dji_capture_open_rejects_replaced_identity_and_closes_rejected_handles(self):
+        open_capture = runpy.run_path(str(DISPATCH.with_name('dji-capture-broker.py')))['open_capture']
+        real_open, real_fstat = os.open, os.fstat
+        for scenario in ('stable', 'wrong device number', 'replaced metadata'):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                usb = root / 'devices/pci0000:00/0000:00:14.0/usb1/1-4'
+                pcm = usb / '1-4:1.1/sound/card1/pcmC1D0c'
+                pcm.mkdir(parents=True)
+                (usb / 'idVendor').write_text('2ca3')
+                (usb / 'idProduct').write_text('4011')
+                (pcm / 'dev').write_text('116:10')
+                (root / 'dev/char').mkdir(parents=True)
+                (root / 'dev/char/116:10').symlink_to(pcm)
+                (root / 'class/sound').mkdir(parents=True)
+                (root / 'class/sound/pcmC1D0c').symlink_to(pcm)
+                devices = root / 'audio-fixture'
+                devices.mkdir()
+                (devices / 'pcmC1D0c').write_text('synthetic, never an audio device')
+                opened = []
+
+                def fixture_open(path, flags):
+                    fd = real_open(path, flags)
+                    if path == devices / 'pcmC1D0c':
+                        opened.append(fd)
+                        if scenario == 'replaced metadata':
+                            pcm.rename(pcm.with_name('removed'))
+                            pcm.mkdir()
+                            (pcm / 'dev').write_text('116:10')
+                    return fd
+
+                def fixture_fstat(fd):
+                    if fd in opened:
+                        return SimpleNamespace(st_mode=stat.S_IFCHR,
+                            st_rdev=os.makedev(116, 11 if scenario == 'wrong device number' else 10))
+                    return real_fstat(fd)
+
+                with patch.object(os, 'open', fixture_open), patch.object(os, 'fstat', fixture_fstat):
+                    if scenario == 'stable':
+                        fd = open_capture(root, devices)
+                        os.close(fd)
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'changed during open'):
+                            open_capture(root, devices)
+                self.assertEqual(len(opened), 1)
+                with self.assertRaises(OSError):
+                    real_fstat(opened[0])
+
+    def test_dji_broker_passes_a_handle_not_a_reusable_path(self):
+        serve = runpy.run_path(str(DISPATCH.with_name('dji-capture-broker.py')))['serve']
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Path(directory) / 'approved'
+            fixture.write_bytes(b'original fixture, not audio')
+            server, client = socket.socketpair()
+            with server, client, patch.dict(serve.__globals__,
+                    open_capture=lambda: os.open(fixture, os.O_RDONLY)):
+                client.sendall(b'NOTE4C_DJI_CAPTURE_FD_V1\n')
+                serve(server)
+                server.close()
+                response, ancillary, flags, _ = client.recvmsg(64, socket.CMSG_SPACE(array('i').itemsize))
+                self.assertEqual(response, b'OK capture-fd-v1\n')
+                self.assertEqual(flags, 0)
+                self.assertEqual(len(ancillary), 1)
+                level, kind, data = ancillary[0]
+                self.assertEqual((level, kind), (socket.SOL_SOCKET, socket.SCM_RIGHTS))
+                descriptors = array('i')
+                descriptors.frombytes(data)
+                try:
+                    self.assertEqual(len(descriptors), 1)
+                    fixture.unlink()
+                    fixture.write_bytes(b'replacement must not be read')
+                    self.assertEqual(os.read(descriptors[0], 64), b'original fixture, not audio')
+                finally:
+                    for fd in descriptors:
+                        os.close(fd)
+
+    def test_dji_broker_rejects_caller_selected_targets(self):
+        serve = runpy.run_path(str(DISPATCH.with_name('dji-capture-broker.py')))['serve']
+        for request in (b'controlC1\n', b'/dev/snd/pcmC0D0p\n', b'NOTE4C_DJI_CAPTURE_FD_V2\n'):
+            with self.subTest(request=request):
+                server, client = socket.socketpair()
+                with server, client, patch.dict(serve.__globals__,
+                        open_capture=lambda: self.fail('Rejected request opened hardware')):
+                    client.sendall(request)
+                    serve(server)
+                    self.assertEqual(client.recv(64), b'ERROR request\n')
 
     @unittest.skipUnless(sys.platform == 'linux', 'Rootless Podman dispatcher uses Linux flock')
     def test_pause_after_spawn_with_detached_helper(self):

@@ -19,7 +19,7 @@ max_active=${AMP_ORB_MAX_ACTIVE:-2}
 [[ $max_active == 1 || $max_active == 2 ]] || fail "invalid active orb limit"
 
 [[ ${ORB_ID:-} =~ ^amp-[a-zA-Z0-9_.-]+$ ]] || fail "invalid ORB_ID"
-case "${ORB_OPERATION:-}" in spawn | pause | delete | serial-enable) ;; *) fail "invalid operation" ;; esac
+case "${ORB_OPERATION:-}" in spawn | pause | delete | serial-enable | dji-capture-enable) ;; *) fail "invalid operation" ;; esac
 [[ $(id -u) != 0 ]] || fail "run as a dedicated non-root account"
 [[ $(podman info --format '{{.Host.Security.Rootless}}') == true ]] || fail "rootless Podman required"
 
@@ -30,6 +30,7 @@ flock -x -w 240 9
 
 maintenance="$state/$ORB_ID-serial-migration"
 [[ ! -e $maintenance ]] || fail "inspect incomplete serial migration recorded in $maintenance before continuing"
+[[ ! -e $state/$ORB_ID-dji-capture-migration ]] || fail "inspect incomplete DJI capture migration before continuing"
 
 label=io.dotfiles.amp-orb
 exists=false
@@ -55,14 +56,27 @@ note4c_orb() {
   [[ $ORB_ID == "$authorized" ]]
 }
 
+dji_capture_orb() {
+  local authorized
+  authorized=$(cat /etc/amp-orbs/dji-capture-orb 2>/dev/null) || return 1
+  [[ $ORB_ID == "$authorized" ]]
+}
+
 create_orb() {
   local devices=()
   if note4c_orb; then
     # This root-owned directory exists even while USB is absent. udev adds and
     # removes only the individually pinned device node inside it. A read-only
     # directory bind follows hotplug without exposing /dev or a stale tty inode.
-    devices=(--runtime crun --group-add keep-groups
-      --mount type=bind,src=/dev/amp-note4c-port,dst=/dev/note4c,ro=true)
+    devices+=(--mount "type=bind,src=/dev/amp-note4c-port,dst=/dev/note4c,ro=true")
+  fi
+  if dji_capture_orb; then
+    # A broker passes an already-open, verified capture handle on request.
+    # No reusable ALSA node, control/mixer, playback or USB bus is exported.
+    devices+=(--mount "type=bind,src=/run/amp-dji-capture,dst=/run/dji-capture,ro=true")
+  fi
+  if ((${#devices[@]})); then
+    devices=(--runtime crun --group-add keep-groups "${devices[@]}")
   fi
   podman create --name "$ORB_ID" --label "$label=true" \
     --platform linux/amd64 --init --cpus 2 --memory 2g --memory-swap 2g \
@@ -138,16 +152,23 @@ case "$ORB_OPERATION" in
     export AMP_URL="${AMP_URL:-https://ampcode.com}"
     podman exec --detach --env ORB_TOKEN --env AMP_URL "$ORB_ID" amp orb bootstrap
     ;;
-  serial-enable)
+  serial-enable | dji-capture-enable)
     # Explicit maintenance only, after Amp has paused the thread. Keep its full
     # writable filesystem, including ignored/untracked work, and the original
     # stopped container. Never substitute the project's clean base image.
-    note4c_orb || fail "serial access is not authorized for this orb"
-    [[ $exists == true ]] || fail "Note 4C orb does not exist"
-    [[ $(podman inspect --format '{{.State.Running}}' "$ORB_ID") == false ]] || fail "pause the Note 4C thread first"
+    if [[ $ORB_OPERATION == serial-enable ]]; then
+      note4c_orb || fail "serial access is not authorized for this orb"
+      scope=note4c
+    else
+      dji_capture_orb || fail "DJI capture access is not authorized for this orb"
+      scope=dji-capture
+      maintenance="$state/$ORB_ID-dji-capture-migration"
+    fi
+    [[ $exists == true ]] || fail "authorized orb does not exist"
+    [[ $(podman inspect --format '{{.State.Running}}' "$ORB_ID") == false ]] || fail "pause the authorized thread first"
     [[ $(podman inspect --format '{{len .Mounts}}' "$ORB_ID") == 0 ]] || fail "orb has mounts that a commit would not preserve"
     check_space
-    backup="$ORB_ID-pre-note4c-$(date -u +%Y%m%d-%H%M%S)-$$"
+    backup="$ORB_ID-pre-$scope-$(date -u +%Y%m%d-%H%M%S)-$$"
     snapshot="localhost/$backup:disk"
     podman commit "$ORB_ID" "$snapshot"
     # If interrupted after rename, a later spawn must not create a clean orb
@@ -166,7 +187,11 @@ case "$ORB_OPERATION" in
     fi
     rm -- "$maintenance"
     printf 'PASS: stopped orb replaced from its complete disk snapshot\nrollbackContainer=%s\nsnapshot=%s\n' "$backup" "$snapshot"
-    echo 'Wake the Note 4C thread to bootstrap it; hotplug serial path is /dev/note4c/serial.'
+    if [[ $scope == note4c ]]; then
+      echo 'Wake the Note 4C thread to bootstrap it; hotplug serial path is /dev/note4c/serial.'
+    else
+      echo 'Wake the feedback-loop thread; DJI capture handle requests use /run/dji-capture/capture.sock.'
+    fi
     ;;
   pause)
     if [[ $exists == true ]]; then
