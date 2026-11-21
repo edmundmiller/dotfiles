@@ -356,7 +356,7 @@ class PackagePolicyTest(unittest.TestCase):
         ):
             with self.subTest(slug=slug):
                 pilot = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == slug)
-                self.assertEqual(pilot["matchManagers"], ["npm"])
+                self.assertEqual(pilot["matchManagers"], ["npm", "bun"])
                 self.assertEqual(pilot["matchFileNames"], ["packages/callstack-diff/package.json"])
                 self.assertEqual(pilot["matchDepNames"], [dependency])
                 self.assertEqual(pilot["matchDepTypes"], ["devDependencies"])
