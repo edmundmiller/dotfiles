@@ -8,6 +8,7 @@ from itertools import product
 import math
 import os
 from pathlib import Path
+import queue
 import re
 import runpy
 import signal
@@ -626,14 +627,20 @@ else:
             state = Path(directory)
             for _ in range(10):
                 bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
-                bench['claim_trial'](state, 10000)
+                bench['claim_trials'](state, 10000, ['headset_calibration'])
             with self.assertRaisesRegex(ValueError, 'budget exhausted'):
-                bench['claim_trial'](state, 11799.9)
+                bench['claim_trials'](state, 12099.9, ['headset_calibration'])
             with self.assertRaisesRegex(ValueError, 'backwards'):
-                bench['claim_trial'](state, 9999)
-            ledger, trial = bench['claim_trial'](state, 11800)
+                bench['claim_trials'](state, 9999, ['headset_calibration'])
+            ledger, trials = bench['claim_trials'](state, 12100, ['headset_calibration'])
             self.assertEqual(len(ledger), 1)
-            self.assertEqual(trial['result'], 'reserved')
+            self.assertEqual(trials[0]['result'], 'reserved')
+            for _ in range(8):
+                bench['claim_trials'](state, 12100, ['headset_calibration'])
+            before = (state / 'ledger.json').read_bytes()
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                bench['claim_trials'](state, 12100, ['output', 'input'])
+            self.assertEqual((state / 'ledger.json').read_bytes(), before)
 
     def test_scoring_requires_both_reference_tones_above_background_in_same_channel(self):
         bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
@@ -684,6 +691,148 @@ else:
             self.assertLess(time.monotonic() - started, 4)
             with self.assertRaises(ProcessLookupError):
                 os.kill(int((root / 'pid').read_text()), 0)
+
+    def test_shared_protocol_records_separate_directions_and_restores_on_lost_board_reply(self):
+        for lost in (False, True):
+            with self.subTest(lost=lost), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                state = root / 'state'
+                state.mkdir()
+                bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
+                baseline = dict(bench['ROUTE'], **{'Capture Volume': '12,17',
+                    'Master Playback Switch': 'off,on', 'Capture Source': '1'})
+                current = dict(baseline)
+                controls = {name: {'name': name, 'readback': f': values={value}'}
+                    for name, value in baseline.items()}
+                status = {'card_index': 3, 'endpoints': {'c': {'status': 'closed'}, 'p': {'status': 'closed'}},
+                    'controls': {'9': {'name': 'Headphone Jack', 'index': 0, 'readback': ': values=on'}}}
+                samples = array('h')
+                for index in range(8 * 48000):
+                    frequency = 1000 if index < 3 * 48000 else 2000
+                    active = 2 * 48000 <= index < 4 * 48000
+                    value = round(1200 * math.sin(2 * math.pi * frequency * index / 48000)) if active else 0
+                    samples.extend((0, value))
+                if sys.byteorder != 'little':
+                    samples.byteswap()
+                (root / 'fixture').write_bytes(samples.tobytes())
+                for tool in ('arecord', 'aplay'):
+                    executable = root / tool
+                    executable.write_text(f'#!{sys.executable}\nimport sys,time\n' + (
+                        f"assert sys.argv[-2:] == ['--duration', '8']\nsys.stdout.buffer.write(open({str(root / 'fixture')!r}, 'rb').read())\n"
+                        if tool == 'arecord' else
+                        'assert len(sys.stdin.buffer.read()) == 3 * 48000 * 4\ntime.sleep(.4)\n'))
+                    executable.chmod(0o755)
+                events, incoming = [], queue.Queue()
+
+                class Stream:
+                    def write(inner, raw):
+                        item = json.loads(raw)
+                        events.append(item)
+                        if item['event'] == 'reserved':
+                            self.assertEqual(len(json.loads((state / 'ledger.json').read_text())), 2)
+                            incoming.put({'event': 'board_ready', 'provenance': {'synthetic_fixture': True}})
+                        elif item['event'] in ('capture_ready', 'reference_ready'):
+                            now = time.monotonic()
+                            stages = [{'stage': index, 'pa': int(index in (1, 3)),
+                                'samples': 3840, 'rms': 20., 'hz1000': 1., 'hz2000': .1,
+                                'clipped': 0} for index in range(5)]
+                            if item['event'] == 'reference_ready':
+                                stages[0].update(hz1000=200., rms=15.)
+                            incoming.put({'event': 'wrong' if lost else 'board_result', 'result': {
+                                'trial_id': item['trial_id'], 'stages': stages,
+                                'verdict': 'PASS' if item['event'] == 'capture_ready' else 'FAIL',
+                                'muted': True, 'command_monotonic': now,
+                                'codec_ready_monotonic': now + .001, 'complete_monotonic': now + .002}})
+                        elif item['event'] == 'output_measured':
+                            incoming.put({'event': 'run_input'})
+
+                    def flush(inner):
+                        pass
+
+                    def readline(inner, limit):
+                        return json.dumps(incoming.get(timeout=3)).encode() + b'\n'
+
+                def mixer(card, control, new_value=None):
+                    if new_value is not None:
+                        current[control['name']] = new_value
+                    return current[control['name']]
+
+                real_read = Path.read_text
+                with patch.dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH']), \
+                        patch.object(Path, 'read_text', lambda path, *args, **kwargs:
+                            'state: RUNNING' if str(path) == '/proc/asound/card3/pcm0p/sub0/status'
+                            else real_read(path, *args, **kwargs)), \
+                        patch.dict(bench['independent_paths'].__globals__, inspect_headset=lambda: status,
+                            selected_controls=lambda status: controls, mixer=mixer), redirect_stdout(io.StringIO()):
+                    if lost:
+                        with self.assertRaisesRegex(ValueError, 'Unexpected controller event'):
+                            bench['independent_paths'](state, Stream(), SimpleNamespace(settimeout=lambda _: None))
+                    else:
+                        bench['independent_paths'](state, Stream(), SimpleNamespace(settimeout=lambda _: None))
+                self.assertEqual(current, baseline)
+                self.assertFalse((state / 'restore.json').exists())
+                receipts = json.loads((state / 'ledger.json').read_text())
+                self.assertEqual(len(receipts), 2)
+                self.assertTrue(all(trial['controls_restored'] for trial in receipts))
+                self.assertFalse(any(trial['raw_audio_retained'] for trial in receipts))
+                if lost:
+                    self.assertNotIn('reference_ready', [event['event'] for event in events])
+                    self.assertTrue(all(trial['result'] == 'unknown_or_not_started' for trial in receipts))
+                else:
+                    self.assertTrue(all(trial['signal_detected'] for trial in receipts))
+                    self.assertEqual(receipts[1]['board_result']['verdict'], 'FAIL')
+                    self.assertEqual(events[-1]['event'], 'complete')
+
+    def test_input_score_rejects_uncovered_wrong_frequency_and_loud_background(self):
+        bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
+        quiet = {'stages': [{'hz1000': 2.}]}
+        sample = {'stages': [{'hz1000': 200., 'hz2000': 1., 'rms': 15.}],
+            'command_monotonic': 101., 'codec_ready_monotonic': 101.1, 'complete_monotonic': 103.}
+        self.assertTrue(bench['input_score'](quiet, sample, {'started': 100., 'ended': 104.})['signal_detected'])
+        self.assertFalse(bench['input_score'](quiet, sample, {'started': 100., 'ended': 102.9})['signal_detected'])
+        self.assertFalse(bench['input_score']({'stages': [{'hz1000': 20.}]}, sample,
+            {'started': 100., 'ended': 104.})['signal_detected'])
+        wrong = dict(sample, stages=[{'hz1000': 200., 'hz2000': 60., 'rms': 15.}])
+        self.assertFalse(bench['input_score'](quiet, wrong, {'started': 100., 'ended': 104.})['signal_detected'])
+
+    def test_actor_never_replays_unknown_or_expired_commands_or_accepts_stored_results(self):
+        actor = runpy.run_path(str(DISPATCH.with_name('shared-controller.py')))
+        for case in ('valid', 'expired', 'partial_write', 'reboot', 'stored_result'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                writes = []
+
+                def write(data):
+                    writes.append(data)
+                    return 1 if case == 'partial_write' else len(data)
+
+                good = ('NOTE4C selftest: local microphone plus two capped tones; maximum 5s; no saved audio\n'
+                    'NOTE4C speaker volume=70 before_dac=0x00 before_mute=0x00 dac=0x2a muted=0\n'
+                    'NOTE4C codec reg=0x44 value=0x00\n'
+                    + ''.join(f'NOTE4C selftest stage={index} pa={int(index in (1, 3))} samples=3840 rms=15.0 hz1000=200.0 hz2000=1.0 clipped=0\n'
+                        for index in range(5))
+                    + 'NOTE4C selftest result=PASS; muted; no recording retained\n').encode()
+                chunks = [good if case == 'valid' else b'ESP-ROM:esp32s3\n' if case == 'reboot' else
+                    b'{"stored":"NOTE4C selftest result=PASS; muted; no recording retained"}\n']
+
+                def read(_):
+                    if not chunks:
+                        raise TimeoutError('Synthetic serial deadline')
+                    return chunks.pop()
+
+                port = SimpleNamespace(write=write, flush=lambda: None, read=read)
+                marker = Path(directory) / 'command'
+                if case == 'valid':
+                    result = actor['selftest'](port, 'a' * 32, time.monotonic() + 1, marker)
+                    self.assertEqual(result['result']['verdict'], 'PASS')
+                    self.assertEqual(len(result['result']['stages']), 5)
+                else:
+                    with self.assertRaises(TimeoutError if case == 'stored_result' else ValueError):
+                        actor['selftest'](port, 'a' * 32,
+                            time.monotonic() + (-1 if case == 'expired' else 1), marker)
+                if case != 'expired':
+                    with self.assertRaises(FileExistsError):
+                        actor['selftest'](port, 'a' * 32, time.monotonic() + 1, marker)
+                self.assertEqual(len(writes), 0 if case == 'expired' else 1)
 
 
 if __name__ == '__main__':

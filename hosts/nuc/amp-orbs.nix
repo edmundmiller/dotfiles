@@ -30,6 +30,7 @@ in
     amp-01a1fc7c-f023-7099-bc09-aeec0b45eb37
   '';
   environment.etc."note4c/headset-bench.py".source = ../../config/amp-orbs/headset-bench.py;
+  environment.etc."note4c/shared-controller.py".source = ../../config/amp-orbs/shared-controller.py;
 
   # Explicit one-shot tests only. No timer, listener, raw audio grant or boot run.
   # The trusted host service restores mixer state even after its main process dies.
@@ -47,6 +48,40 @@ in
       TimeoutStartSec = 25;
       # Up to 13 inspection reads at 5s, then 12 restore calls at 3s.
       # This does not extend the recorder's independent 8s kill deadline.
+      TimeoutStopSec = 120;
+      KillMode = "control-group";
+      DevicePolicy = "closed";
+      DeviceAllow = [ "char-alsa rw" ];
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+      PrivateNetwork = true;
+      RestrictAddressFamilies = [ "AF_UNIX" ];
+      LimitCORE = 0;
+      CoredumpFilter = "0x0";
+      MemorySwapMax = 0;
+      MemoryMax = "128M";
+    };
+  };
+
+  # The host coordinator uses rootless Podman outside this sandbox. The bench
+  # accepts its root-only connection during an explicit, finite invocation.
+  # Both services use the same durable lock, budget and recovery snapshot.
+  systemd.services.note4c-independent-paths = {
+    description = "Two reserved independent Note4C acoustic path measurements";
+    restartIfChanged = false;
+    path = [ pkgs.alsa-utils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../config/amp-orbs/headset-bench.py} --shared";
+      ExecStopPost = "${pkgs.python3}/bin/python3 ${../../config/amp-orbs/headset-bench.py} --restore";
+      StateDirectory = "note4c-headset";
+      StateDirectoryMode = "0700";
+      RuntimeDirectory = "note4c-headset";
+      RuntimeDirectoryMode = "0700";
+      UMask = "0077";
+      TimeoutStartSec = 300;
       TimeoutStopSec = 120;
       KillMode = "control-group";
       DevicePolicy = "closed";

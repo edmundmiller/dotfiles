@@ -118,18 +118,23 @@ def save_json(path, data):
         os.close(descriptor)
 
 
-def claim_trial(state, now):
+def claim_trials(state, now, kinds):
     path = state / "ledger.json"
     ledger = json.loads(path.read_text()) if path.exists() else []
     if any(entry["started"] > now for entry in ledger):
         raise ValueError("Trial clock moved backwards")
-    ledger = [entry for entry in ledger if now - entry["started"] < 1800]
-    if len(ledger) >= 10:
+    # Count pending/unknown reservations until 30m after their last possible
+    # admission, not merely 30m after a potentially slow boot preparation.
+    ledger = [entry for entry in ledger
+        if now - entry.get("last_possible_start", entry["started"] + 300) < 1800]
+    if len(ledger) + len(kinds) > 10:
         raise ValueError("Ten-trial rolling 30-minute budget exhausted")
-    trial = {"trial_id": uuid.uuid4().hex, "started": now, "result": "reserved"}
-    ledger.append(trial)
+    trials = [{"trial_id": uuid.uuid4().hex, "started": now,
+        "result": "reserved", "last_possible_start": now + 300,
+        "kind": kind} for kind in kinds]
+    ledger.extend(trials)
     save_json(path, ledger)
-    return ledger, trial
+    return ledger, trials
 
 
 def mixer(card, control, new_value=None):
@@ -184,9 +189,9 @@ def restore(state):
         os.close(descriptor)
 
 
-def tone():
+def tone(frequencies=(1000, 2000)):
     samples = array("h")
-    for frequency in (1000, 2000):
+    for frequency in frequencies:
         for index in range(RATE):
             # Fixed peak -18 dBFS; master raw 60 is -20.25 dB, below 70%.
             amplitude = round(4096 * math.sin(2 * math.pi * frequency * index / RATE))
@@ -196,9 +201,9 @@ def tone():
     return samples.tobytes()
 
 
-def score(raw):
-    if len(raw) != RATE * SECONDS * 4:
-        raise ValueError("Incomplete six-second stereo capture")
+def score(raw, seconds=SECONDS):
+    if len(raw) != RATE * seconds * 4:
+        raise ValueError("Incomplete stereo capture")
     samples = array("h", raw)
     if sys.byteorder != "little":
         samples.byteswap()
@@ -218,7 +223,7 @@ def score(raw):
                 powers.append(max(0, previous ** 2 + older ** 2
                     - coefficient * previous * older) * 2 / len(block) ** 2)
             background = max([*powers[:3], *powers[-4:]], default=0)
-            signal = max(powers[4:16])
+            signal = max(powers[4:16] if seconds == SECONDS else powers[4:-4])
             measurements[str(frequency)] = {
                 "signal_dbfs": round(10 * math.log10(max(signal, 1e-20) / 32768 ** 2), 2),
                 "rise_db": round(10 * math.log10(max(signal, 1e-20)
@@ -230,7 +235,7 @@ def score(raw):
             "tones": measurements,
             "detected": not clipped and all(item["detected"] for item in measurements.values())})
     return {"channels": channels, "signal_detected": any(item["detected"] for item in channels),
-        "sample_rate": RATE, "capture_seconds": SECONDS,
+        "sample_rate": RATE, "capture_seconds": seconds,
         "raw_audio_retained": False, "intelligibility_verified": False,
         "note4c_path_verified": False}
 
@@ -303,7 +308,8 @@ def calibrate(state):
     if len(jacks) != 1 or values(jacks[0]) != "on":
         raise ValueError("Headphone jack is not connected")
     reference = tone()
-    ledger, trial = claim_trial(state, time.time())
+    ledger, trials = claim_trials(state, time.time(), ["headset_calibration"])
+    trial = trials[0]
     trial.update({"kind": "headset_calibration", "card_index": status["card_index"],
         "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "fixture_sha256": hashlib.sha256(reference).hexdigest(),
@@ -335,18 +341,233 @@ def calibrate(state):
             print(json.dumps(trial, sort_keys=True), flush=True)
 
 
+CONTROL_SOCKET = "/run/note4c-headset/control.sock"
+
+
+def send(stream, data):
+    stream.write(json.dumps(data, allow_nan=False).encode() + b"\n")
+    stream.flush()
+
+
+def receive(stream, event):
+    line = stream.readline(32769)
+    if len(line) > 32768 or not line.endswith(b"\n"):
+        raise ValueError("Missing or oversized controller message")
+    message = json.loads(line)
+    if message.get("event") != event:
+        raise ValueError("Unexpected controller event")
+    return message
+
+
+def board_result(stream, trial):
+    result = receive(stream, "board_result")["result"]
+    stages = result["stages"]
+    if (result["trial_id"] != trial["trial_id"] or not result["muted"]
+            or result["verdict"] not in ("PASS", "FAIL") or len(stages) != 5):
+        raise ValueError("Missing matched board completion")
+    for index, stage in enumerate(stages):
+        if (stage["stage"] != index or stage["pa"] != int(index in (1, 3))
+                or stage["samples"] < 3200 or stage["clipped"] != 0
+                or any(not math.isfinite(stage[name]) or stage[name] < 0
+                    for name in ("rms", "hz1000", "hz2000"))):
+            raise ValueError("Invalid or clipped board measurements")
+    return result
+
+
+def input_score(baseline, injected, playing):
+    quiet, signal = baseline["stages"][0], injected["stages"][0]
+    # Bound the whole run rather than assuming wall-clock stage durations from
+    # nominal sample counts. The first PA-off window is strictly inside it.
+    covered = (playing["started"] <= injected["command_monotonic"]
+        < injected["codec_ready_monotonic"] < injected["complete_monotonic"]
+        <= playing["ended"])
+    power = signal["hz1000"]
+    detected = (covered and power > 64 and power > 10 * (quiet["hz1000"] + 1)
+        and power > 4 * signal["hz2000"] and power > 0.35 * signal["rms"] ** 2)
+    return {"signal_detected": detected, "reference_covered_window": covered,
+        "initial_pa_off_baseline": quiet, "initial_pa_off_reference": signal,
+        "rise_db": round(10 * math.log10(max(power, 1e-20)
+            / max(quiet["hz1000"], 1)), 2), "intelligibility_verified": False}
+
+
+def independent_paths(state, stream, connection):
+    if (state / "restore.json").exists():
+        raise ValueError("Previous routing restoration unresolved; no new batch")
+    status = inspect_headset()
+    controls = selected_controls(status)
+    card = status["card_index"]
+    if any(endpoint["status"] != "closed" for endpoint in status["endpoints"].values()):
+        raise ValueError("An analog stream is already open")
+    jacks = [control for control in status["controls"].values()
+        if control["name"] == "Headphone Jack" and control["index"] == 0]
+    if len(jacks) != 1 or values(jacks[0]) != "on":
+        raise ValueError("Headphone jack is not connected")
+    reference = tone((1000, 1000, 1000))
+    ledger, trials = claim_trials(state, time.time(),
+        ["board_speaker_to_headset_mic", "headset_speaker_to_board_mic"])
+    for trial in trials:
+        trial.update({"source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "fixture_sha256": hashlib.sha256(reference).hexdigest(),
+            "raw_audio_retained": False, "controls_restored": False})
+    save_json(state / "ledger.json", ledger)
+    processes, timers = [], []
+    executor = ThreadPoolExecutor(max_workers=2)
+    try:
+        send(stream, {"event": "reserved", "trials": trials,
+            "expires": time.monotonic() + 240})
+        provenance = receive(stream, "board_ready")["provenance"]
+        connection.settimeout(10)
+        for trial in trials:
+            trial["board_provenance"] = provenance
+        save_json(state / "ledger.json", ledger)
+        save_json(state / "restore.json", {name: values(control) for name, control in controls.items()})
+        for name, planned in ROUTE.items():
+            if mixer(card, controls[name]) != values(controls[name]):
+                raise ValueError("Headset controls changed before setup")
+            if mixer(card, controls[name], planned) != planned:
+                raise ValueError("Headset setup readback failed")
+
+        def route(capturing):
+            for name, planned in ROUTE.items():
+                expected = "on,on" if capturing and name == "Capture Switch" else planned
+                if mixer(card, controls[name]) != expected:
+                    raise ValueError("Headset routing changed during shared trial")
+
+        def spawn(command, **kwargs):
+            process = subprocess.Popen(command, stderr=subprocess.DEVNULL, **kwargs)
+            processes.append(process)
+            timer = threading.Timer(9, lambda: process.kill() if process.poll() is None else None)
+            timers.append(timer)
+            timer.start()
+            return process
+
+        def await_board(trial, capturing):
+            observed = executor.submit(board_result, stream, trial)
+            while not observed.done():
+                route(capturing)
+                time.sleep(0.1)
+            return observed.result()
+
+        common = ["--device", f"hw:{card},0", "--quiet", "--file-type", "raw",
+            "--format", "S16_LE", "--rate", str(RATE), "--channels", "2"]
+        if mixer(card, controls["Capture Switch"], "on,on") != "on,on":
+            raise ValueError("Headset capture enable failed")
+        # No headset playback in this trial. Prefix samples prove recording is
+        # running before the only board command is admitted.
+        capture = spawn(["arecord", *common, "--duration", "8"], stdout=subprocess.PIPE, bufsize=0)
+        prefix, ready_by = bytearray(), time.monotonic() + 3
+        while len(prefix) < RATE * 4:
+            remaining = ready_by - time.monotonic()
+            if remaining <= 0 or not select.select([capture.stdout], [], [], remaining)[0]:
+                raise ValueError("Capture readiness timed out")
+            part = capture.stdout.read(RATE * 4 - len(prefix))
+            if not part:
+                raise ValueError("Capture did not start")
+            prefix.extend(part)
+        reading = executor.submit(capture.communicate, timeout=9)
+        route(True)
+        send(stream, {"event": "capture_ready", "trial_id": trials[0]["trial_id"],
+            "deadline": time.monotonic() + 0.5})
+        baseline = await_board(trials[0], True)
+        while not reading.done():
+            route(True)
+            time.sleep(0.1)
+        raw, _ = reading.result()
+        if capture.returncode:
+            raise ValueError("External capture failed")
+        trials[0].update(score(prefix + raw, seconds=8))
+        trials[0].update({"board_result": baseline, "result": "measured"})
+        del raw, prefix
+        if any(channel["clipped_samples"] for channel in trials[0]["channels"]):
+            raise ValueError("External capture clipped; stopping batch")
+        if baseline["verdict"] != "PASS":
+            raise ValueError("Unmodified board SELFTEST failed; stopping batch")
+        save_json(state / "ledger.json", ledger)
+        send(stream, {"event": "output_measured", "trial": trials[0]})
+        receive(stream, "run_input")
+        if mixer(card, controls["Capture Switch"], "off,off") != "off,off":
+            raise ValueError("External capture disable failed")
+        route(False)
+        playback = spawn(["aplay", *common], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+
+        def play():
+            playback.communicate(reference, timeout=5)
+            return time.monotonic()
+
+        playing = executor.submit(play)
+        ready_by = time.monotonic() + 1
+        pcm = Path(f"/proc/asound/card{card}/pcm0p/sub0/status")
+        while "state: RUNNING" not in pcm.read_text():
+            if playing.done() or time.monotonic() >= ready_by:
+                raise ValueError("Reference playback did not start")
+            time.sleep(0.01)
+        started = time.monotonic()
+        send(stream, {"event": "reference_ready", "trial_id": trials[1]["trial_id"],
+            "deadline": started + 0.5})
+        injected = await_board(trials[1], False)
+        ended = playing.result()
+        if playback.returncode:
+            raise ValueError("Reference playback failed")
+        route(False)
+        trials[1].update(input_score(baseline, injected, {"started": started, "ended": ended}))
+        trials[1].update({"board_result": injected, "result": "measured"})
+        # The second SELFTEST intentionally violates its quiet control. Its
+        # overall verdict is retained, never mistaken for this path's score.
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        for trial in trials:
+            if trial["result"] == "reserved":
+                trial.update({"result": "unknown_or_not_started", "error": str(error)})
+        raise
+    finally:
+        for process in reversed(processes):
+            if process.poll() is None:
+                process.kill()
+            process.wait(timeout=2)
+        for timer in timers:
+            timer.cancel()
+            timer.join()
+        executor.shutdown(wait=True)
+        try:
+            restore(state)
+            for trial in trials:
+                trial["controls_restored"] = True
+        finally:
+            save_json(state / "ledger.json", ledger)
+            print(json.dumps({"independent_paths": trials}, sort_keys=True), flush=True)
+    send(stream, {"event": "complete", "trials": trials})
+
+
+def shared_server(state):
+    # Root coordinator only; manually started service, no standing listener or
+    # mounted socket in either orb. No caller-selected command, path or level.
+    with socket.socket(socket.AF_UNIX) as server:
+        server.bind(CONTROL_SOCKET)
+        os.chmod(CONTROL_SOCKET, 0o600)
+        server.listen(1)
+        server.settimeout(20)
+        connection, _ = server.accept()
+        with connection:
+            import struct
+            _, uid, _ = struct.unpack("3i", connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+            if uid != 0:
+                raise ValueError("Shared controller requires root")
+            connection.settimeout(260)
+            with connection.makefile("rwb", buffering=0) as stream:
+                independent_paths(state, stream, connection)
+
+
 if __name__ == "__main__":
     try:
         if socket.gethostname() != "nuc":
             raise ValueError("Run only on the NUC host")
-        if sys.argv[1:] in (["--calibrate"], ["--restore"]):
+        if sys.argv[1:] in (["--calibrate"], ["--restore"], ["--shared"]):
             with (STATE / "bench.lock").open("a") as lock:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                (calibrate if sys.argv[1] == "--calibrate" else restore)(STATE)
+                {"--calibrate": calibrate, "--restore": restore, "--shared": shared_server}[sys.argv[1]](STATE)
         elif not sys.argv[1:]:
             print(json.dumps(inspect_headset(), sort_keys=True))
         else:
-            raise ValueError("Expected no arguments, --calibrate, or --restore")
+            raise ValueError("Expected no arguments, --calibrate, --restore, or --shared")
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"Headset bench failed: {error}", file=sys.stderr)
         sys.exit(1)

@@ -29,6 +29,7 @@ on:
           - orb-dji-capture
           - headset-diagnostics
           - headset-calibration
+          - note4c-independent-paths
       email_test_family_revision:
         description: Email operations only; exact deployed Family SHA requires separately verified readiness
         type: string
@@ -671,6 +672,49 @@ jobs:
           sudo -n systemctl start "$unit" || result=$?
           sudo -n journalctl -u "$unit" --after-cursor="$cursor" --no-pager -o json
           systemctl show "$unit" -p ActiveState -p Result -p ExecMainStatus
+          exit "$result"
+          NUC
+      - name: Measure both Note4C acoustic directions with one durable budget
+        if: inputs.operation == 'note4c-independent-paths'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bench_hash=$(sha256sum config/amp-orbs/headset-bench.py | cut -d ' ' -f 1)
+          controller_hash=$(sha256sum config/amp-orbs/shared-controller.py | cut -d ' ' -f 1)
+          nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
+          [[ "$nixpkgs" =~ ^[0-9a-f]{40}$ ]]
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$DEPLOY_SHA' '$bench_hash' '$controller_hash' '$nixpkgs'" <<'NUC'
+          set -euo pipefail
+          test "$(hostname)" = nuc
+          uname -a
+          revision=$(nixos-version --configuration-revision)
+          [[ "$revision" == "dotfiles=$1;"* ]]
+          test "$(sha256sum /etc/note4c/headset-bench.py | cut -d ' ' -f 1)" = "$2"
+          test "$(sha256sum /etc/note4c/shared-controller.py | cut -d ' ' -f 1)" = "$3"
+          unit=note4c-independent-paths.service
+          test "$(systemctl show "$unit" -p NeedDaemonReload --value)" = no
+          for candidate in "$unit" note4c-headset-calibration.service; do
+            case $(systemctl show "$candidate" -p ActiveState --value) in
+              inactive|failed) ;;
+              *) echo 'An audio batch is already running; no join or retry'; exit 1 ;;
+            esac
+          done
+          cursor=$(sudo -n journalctl -n 1 --show-cursor -o cat | sed -n 's/^-- cursor: //p')
+          test -n "$cursor"
+          # Realize the public pinned interpreter before the finite socket window.
+          sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command python3 --version
+          sudo -n systemctl start --no-block "$unit"
+          result=0
+          sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command \
+            python3 /etc/note4c/shared-controller.py --coordinate || result=$?
+          # Joining the existing job is safe; this cannot start a second batch.
+          while test "$(systemctl show "$unit" -p ActiveState --value)" = activating ||
+                test "$(systemctl show "$unit" -p ActiveState --value)" = deactivating; do
+            sleep 1
+          done
+          sudo -n journalctl -u "$unit" --after-cursor="$cursor" --no-pager -o json
+          systemctl show "$unit" -p ActiveState -p Result -p ExecMainStatus
+          test "$(systemctl show "$unit" -p Result --value)" = success || result=1
           exit "$result"
           NUC
       - name: Enable approved Note 4C serial access preserving its paused orb disk
