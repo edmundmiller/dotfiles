@@ -274,6 +274,7 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertTrue(config["lockFileMaintenance"]["enabled"])
         self.assertEqual(config["timezone"], "America/Chicago")
         self.assertEqual(config["schedule"], ["* 4-8 * * 1"])
+        self.assertFalse(config["updateNotScheduled"])
         self.assertEqual(config["lockFileMaintenance"]["schedule"], config["schedule"])
         self.assertEqual(config["minimumReleaseAge"], "3 days")
         self.assertEqual(config["prHourlyLimit"], 2)
@@ -345,15 +346,24 @@ class PackagePolicyTest(unittest.TestCase):
         self.assertIn("digest", actions["matchUpdateTypes"])
         hunk = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == "hunk")
         self.assertFalse(hunk["automerge"])
-        pilot = config["packageRules"][-1]
-        self.assertEqual(pilot["matchFileNames"], ["packages/callstack-diff/package.json"])
-        self.assertEqual(pilot["matchDepNames"], ["@types/bun"])
-        self.assertEqual(pilot["matchDepTypes"], ["devDependencies"])
-        self.assertEqual(pilot["matchUpdateTypes"], ["minor", "patch"])
-        self.assertFalse(pilot["dependencyDashboardApproval"])
-        self.assertEqual(pilot["groupSlug"], "callstack-types-patches")
-        self.assertEqual(pilot["prConcurrentLimit"], 0)
-        self.assertEqual(pilot["branchConcurrentLimit"], 0)
+        self.assertEqual(
+            {rule["groupSlug"] for rule in config["packageRules"] if rule.get("dependencyDashboardApproval") is False},
+            {"callstack-types-patches", "callstack-tsgolint-patches"},
+        )
+        for slug, dependency, updates, label in (
+            ("callstack-types-patches", "@types/bun", ["minor", "patch"], "renovate-types-pilot"),
+            ("callstack-tsgolint-patches", "oxlint-tsgolint", ["patch"], "renovate-lint-pilot"),
+        ):
+            with self.subTest(slug=slug):
+                pilot = next(rule for rule in config["packageRules"] if rule.get("groupSlug") == slug)
+                self.assertEqual(pilot["matchManagers"], ["npm"])
+                self.assertEqual(pilot["matchFileNames"], ["packages/callstack-diff/package.json"])
+                self.assertEqual(pilot["matchDepNames"], [dependency])
+                self.assertEqual(pilot["matchDepTypes"], ["devDependencies"])
+                self.assertEqual(pilot["matchUpdateTypes"], updates)
+                self.assertEqual(pilot["labels"], ["dependencies", "javascript", label])
+                self.assertEqual(pilot["prConcurrentLimit"], 0)
+                self.assertEqual(pilot["branchConcurrentLimit"], 0)
         self.assertEqual(config["prConcurrentLimit"], 4)
 
         digest_rule = next(
@@ -380,6 +390,8 @@ class PackagePolicyTest(unittest.TestCase):
         majors = next(rule for rule in config["packageRules"] if rule.get("matchUpdateTypes") == ["major"])
         self.assertTrue(majors["dependencyDashboardApproval"])
         self.assertFalse(majors["automerge"])
+        self.assertTrue(config["separateMajorMinor"])
+        self.assertFalse(config["separateMultipleMajor"])
 
 
 if __name__ == "__main__":

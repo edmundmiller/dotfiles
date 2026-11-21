@@ -1,4 +1,4 @@
-name: Renovate types admission
+name: Renovate candidate admission
 
 on:
   workflow_dispatch:
@@ -43,7 +43,7 @@ jobs:
         with:
           extra-conf: accept-flake-config = true
       - id: select
-        name: Select only the requested types update or a new unheld proposal
+        name: Select an allowlisted proposal or the requested Bun types update
         env:
           GH_TOKEN: ${{ github.token }}
           TYPES_VERSION: ${{ inputs.version }}

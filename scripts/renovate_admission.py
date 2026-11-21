@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The callstack types-only pilot. Preparation never has a write credential.
+"""Admit allowlisted callstack development updates after exact-candidate CI.
 
 Run only from trusted main. Existing PRs, merge APIs and deployment are excluded.
 """
@@ -14,13 +14,22 @@ import re
 import subprocess
 import sys
 import tempfile
+from urllib.parse import quote
 
 import candidate_ci as ci
 
 PACKAGE = Path("packages/callstack-diff")
 FILES = {"package.json", "bun.lock", "bun.nix"}
-BRANCH = "renovate/callstack-types-patches"
-LABELS = {"dependencies", "javascript", "renovate-types-pilot"}
+BUN_TYPES = "@types/bun"
+TSGOLINT = "oxlint-tsgolint"
+LANES = {
+    BUN_TYPES: ("callstack-types-patches", "renovate-types-pilot"),
+    TSGOLINT: ("callstack-tsgolint-patches", "renovate-lint-pilot"),
+}
+TSGOLINT_BINARIES = {
+    f"@oxlint-tsgolint/{os_name}-{cpu}"
+    for os_name in ("darwin", "linux", "win32") for cpu in ("arm64", "x64")
+}
 WORKFLOW = ".github/workflows/renovate-admission.yml"
 VERSION = r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
 
@@ -55,48 +64,75 @@ def lock_data(text, bun):
                           input=text, env=isolated_env()))
 
 
-def manifest_version(before, after):
-    old = before["devDependencies"]["@types/bun"]
-    new = after["devDependencies"]["@types/bun"]
+def manifest_version(before, after, dependency):
+    if dependency not in LANES:
+        raise ValueError("Dependency is not allowlisted for admission")
+    old = before["devDependencies"][dependency]
+    new = after["devDependencies"][dependency]
     versions = [re.fullmatch(VERSION, v) for v in (old, new)]
     if not all(versions):
-        raise ValueError("Types versions must be exact stable versions")
+        raise ValueError("Versions must be exact stable versions")
     a, b = [tuple(map(int, match.groups())) for match in versions]
     expected = copy.deepcopy(before)
-    expected["devDependencies"]["@types/bun"] = new
-    if a[0] != b[0] or b <= a or expected != after:
-        raise ValueError("Only an increasing @types/bun minor or patch is allowed")
+    expected["devDependencies"][dependency] = new
+    components = 1 if dependency == BUN_TYPES else 2
+    if a[:components] != b[:components] or b <= a or expected != after:
+        raise ValueError(f"Not an allowed {dependency} update")
     return new
 
 
-def validate_lock(before, after, version):
+def updated_manifest(before, dependency, version):
+    after = copy.deepcopy(before)
+    after["devDependencies"][dependency] = version
+    manifest_version(before, after, dependency)
+    return after
+
+
+def replace_lock_entry(expected, after, name, metadata, version):
+    entry = after["packages"][name]
+    if (len(entry) != 4 or entry[:3] != [f"{name}@{version}", "", metadata]
+            or not re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", entry[3])):
+        raise ValueError(f"Unexpected dependency metadata or registry for {name}")
+    expected["packages"][name] = entry
+
+
+def validate_lock(before, after, version, dependency):
     expected = copy.deepcopy(before)
-    expected["workspaces"][""]["devDependencies"]["@types/bun"] = version
-    for name in ("@types/bun", "bun-types"):
-        entry = after["packages"][name]
-        metadata = copy.deepcopy(before["packages"][name][2])
-        if name == "@types/bun":
-            metadata["dependencies"]["bun-types"] = version
-        elif ("undici-types" in before["packages"]
-              and entry[2] == metadata | {"dependencies": metadata["dependencies"] | {"undici-types": "*"}}):
-            # Bun 1.4 types also reference the already-pinned undici types.
-            metadata = entry[2]
-        if (len(entry) != 4 or entry[:3] != [f"{name}@{version}", "", metadata]
-                or not re.fullmatch(r"sha512-[A-Za-z0-9+/]{86}==", entry[3])):
-            raise ValueError("Unexpected types dependency metadata or registry")
-        expected["packages"][name] = entry
+    expected["workspaces"][""]["devDependencies"][dependency] = version
+    if dependency == BUN_TYPES:
+        for name in (BUN_TYPES, "bun-types"):
+            metadata = copy.deepcopy(before["packages"][name][2])
+            if name == BUN_TYPES:
+                metadata["dependencies"]["bun-types"] = version
+            elif ("undici-types" in before["packages"]
+                  and after["packages"][name][2] == metadata | {
+                      "dependencies": metadata["dependencies"] | {"undici-types": "*"},
+                  }):
+                # Bun 1.4 types also reference the already-pinned undici types.
+                metadata = after["packages"][name][2]
+            replace_lock_entry(expected, after, name, metadata, version)
+    elif dependency == TSGOLINT:
+        metadata = copy.deepcopy(before["packages"][TSGOLINT][2])
+        if set(metadata["optionalDependencies"]) != TSGOLINT_BINARIES:
+            raise ValueError("Unexpected platform packages for oxlint-tsgolint")
+        metadata["optionalDependencies"] = dict.fromkeys(TSGOLINT_BINARIES, version)
+        replace_lock_entry(expected, after, TSGOLINT, metadata, version)
+        for name in sorted(TSGOLINT_BINARIES):
+            replace_lock_entry(expected, after, name, before["packages"][name][2], version)
+    else:
+        raise ValueError("Dependency is not allowlisted for admission")
     if expected != after:
-        raise ValueError("Lock drift outside @types/bun and bun-types is held")
+        raise ValueError(f"Unrelated lock drift is held for {dependency}")
 
 
 def read_at(ref, name):
     return ci.git("show", f"{ref}:{PACKAGE / name}")
 
 
-def validate_tree(base, bun):
+def validate_tree(base, bun, dependency):
     changes = ci.git("diff", "--name-only", base).splitlines()
     if not changes or not set(changes) <= {str(PACKAGE / f) for f in FILES}:
-        raise ValueError("Candidate changes files outside the types lane")
+        raise ValueError("Candidate changes files outside the callstack dependency lane")
     for name in FILES:
         path = PACKAGE / name
         if path.is_symlink() or not path.is_file():
@@ -105,9 +141,9 @@ def validate_tree(base, bun):
         if mode != "100644" or path.stat().st_mode & 0o111:
             raise ValueError("Executable dependency files are not allowed")
     version = manifest_version(json.loads(read_at(base, "package.json")),
-                               json.loads((PACKAGE / "package.json").read_text()))
+                               json.loads((PACKAGE / "package.json").read_text()), dependency)
     validate_lock(lock_data(read_at(base, "bun.lock"), bun),
-                  lock_data((PACKAGE / "bun.lock").read_text(), bun), version)
+                  lock_data((PACKAGE / "bun.lock").read_text(), bun), version, dependency)
     return version
 
 
@@ -128,72 +164,99 @@ def generated_matches(binary):
             raise ValueError("bun.nix does not reproduce from the pinned generator")
 
 
-def proposal(number):
+def proposal(number, dependency):
     pr = ci.github(f"pulls/{number}")
-    introduced = ci.git("log", "--diff-filter=A", "--format=%cI", "--", WORKFLOW)
+    slug, label = LANES[dependency]
+    if dependency == BUN_TYPES:
+        introduced = ci.git("log", "--diff-filter=A", "--format=%cI", "--", WORKFLOW)
+    else:
+        introduced = ci.git("log", "-1", "--format=%cI", "-S", f'"groupSlug": "{slug}"',
+                            "--", "renovate.json")
     if (not introduced or datetime.fromisoformat(pr["created_at"])
             <= datetime.fromisoformat(introduced.splitlines()[-1])
             or pr["state"] != "open" or pr["draft"] or pr.get("auto_merge")
-            or pr["head"]["ref"] != BRANCH
+            or pr["base"]["ref"] != "main"
+            or pr["head"]["ref"] != f"renovate/{slug}"
             or pr["head"]["repo"]["full_name"] != ci.REPOSITORY
-            or {label["name"] for label in pr["labels"]} != LABELS):
-        raise ValueError("Only new, unheld, dedicated types proposals are eligible")
+            or {entry["name"] for entry in pr["labels"]} != {"dependencies", "javascript", label}):
+        raise ValueError(f"Only new, unheld, dedicated {dependency} proposals are eligible")
     pages = ci.github(f"pulls/{number}/files?per_page=100", paginate=True)
     paths = {item["filename"] for page in pages for item in page}
     if (str(PACKAGE / "package.json") not in paths
             or not paths <= {str(PACKAGE / f) for f in FILES}):
-        raise ValueError("Proposal contains files outside the types lane")
+        raise ValueError("Proposal contains files outside the callstack dependency lane")
     source = pr["head"]["sha"]
     status = ci.github(f"commits/{source}/status")
     if any(s["context"] == "renovate/artifacts" and s["state"] != "success"
            for s in status["statuses"]):
         raise ValueError("Renovate artifact failure is held")
     ci.git("fetch", "--no-tags", "origin", source)
-    version = manifest_version(json.loads(read_at("HEAD", "package.json")),
-                               json.loads(read_at(source, "package.json")))
-    release_age(version)
-    return source
+    merge_base = ci.git("merge-base", "HEAD", source)
+    version = manifest_version(json.loads(read_at(merge_base, "package.json")),
+                               json.loads(read_at(source, "package.json")), dependency)
+    updated_manifest(json.loads(read_at("HEAD", "package.json")), dependency, version)
+    release_age(dependency, version)
+    return source, version
 
 
-def release_age(version):
-    for name in ("@types%2fbun", "bun-types"):
+def release_age(dependency, version):
+    companions = ["bun-types"] if dependency == BUN_TYPES else sorted(TSGOLINT_BINARIES)
+    for name in [dependency, *companions]:
         metadata = json.loads(run("curl", "--fail", "--silent", "--show-error",
-                                  "--max-time", "30", f"https://registry.npmjs.org/{name}",
+                                  "--max-time", "30", f"https://registry.npmjs.org/{quote(name, safe='@')}",
                                   env=isolated_env()))
         released = datetime.fromisoformat(metadata["time"][version])
         if datetime.now(timezone.utc) - released < timedelta(days=3):
-            raise ValueError("Types release has not passed the three-day stability window")
+            raise ValueError(f"{name} has not passed the three-day stability window")
+
+
+def open_proposals(dependency):
+    slug, _ = LANES[dependency]
+    return ci.github(f"pulls?state=open&head=edmundmiller:renovate/{slug}&per_page=100")
 
 
 def manual_release(version):
-    if ci.github(f"pulls?state=open&head=edmundmiller:{BRANCH}&per_page=100"):
+    if open_proposals(BUN_TYPES):
         raise ValueError("Manual admission must not bypass an existing types proposal or hold")
-    release_age(version)
+    release_age(BUN_TYPES, version)
+
+
+def select_proposal(before):
+    held = []
+    for dependency in LANES:
+        prs = open_proposals(dependency)
+        if not prs:
+            continue
+        try:
+            if len(prs) != 1:
+                raise ValueError(f"Ambiguous {dependency} proposal")
+            number = prs[0]["number"]
+            source = prs[0]["head"]["sha"]
+            ci.git("fetch", "--no-tags", "origin", source)
+            after = json.loads(read_at(source, "package.json"))
+            if before["devDependencies"][dependency] == after["devDependencies"][dependency]:
+                # A retained proposal already applied to main is a no-op.
+                continue
+            source, version = proposal(number, dependency)
+            return dependency, number, source, version
+        except ValueError as error:
+            held.append(str(error))
+    if held:
+        raise ValueError("; ".join(held))
+    return None
 
 
 def select(version=None):
     base = ci.git("rev-parse", "HEAD")
+    before = json.loads(read_at(base, "package.json"))
     if version is None:
-        prs = ci.github(f"pulls?state=open&head=edmundmiller:{BRANCH}&per_page=100")
-        if not prs:
+        selected = select_proposal(before)
+        if selected is None:
             return {"selected": False}
-        if len(prs) != 1:
-            raise ValueError("Ambiguous types proposal")
-        number = prs[0]["number"]
-        source = prs[0]["head"]["sha"]
-        ci.git("fetch", "--no-tags", "origin", source)
-        if json.loads(read_at(base, "package.json")) == json.loads(read_at(source, "package.json")):
-            # A retained proposal already applied to main is a no-op, not a daily failure.
-            return {"selected": False}
-        source = proposal(number)
-        version = manifest_version(json.loads(read_at(base, "package.json")),
-                                   json.loads(read_at(source, "package.json")))
+        dependency, number, source, version = selected
     else:
-        number, source = None, base
-        before = json.loads(read_at(base, "package.json"))
-        after = copy.deepcopy(before)
-        after["devDependencies"]["@types/bun"] = version
-        manifest_version(before, after)
+        dependency, number, source = BUN_TYPES, None, base
+        updated_manifest(before, dependency, version)
         manual_release(version)
     if ci.remote_sha("refs/heads/main") != base:
         raise ValueError("Main moved; wait for the next Renovate run")
@@ -201,7 +264,7 @@ def select(version=None):
     if ci.github(f"git/matching-refs/heads/candidate/{base}/"):
         raise ValueError("An outstanding candidate already owns this base")
     return {"selected": True, "base": base, "source": source,
-            "pr": number, "version": version}
+            "pr": number, "version": version, "dependency": dependency}
 
 
 def prepare(selection, output):
@@ -210,13 +273,12 @@ def prepare(selection, output):
     binary = tools()
     manifest = PACKAGE / "package.json"
     before = json.loads(manifest.read_text())
-    after = copy.deepcopy(before)
-    after["devDependencies"]["@types/bun"] = selection["version"]
-    manifest_version(before, after)
+    dependency = selection["dependency"]
+    after = updated_manifest(before, dependency, selection["version"])
     manifest.write_text(json.dumps(after, indent=2) + "\n")
     subprocess.run([str(binary / "bun"), "install", "--lockfile-only", "--ignore-scripts"],
                    cwd=PACKAGE, check=True, env=isolated_env(), stdout=sys.stderr)
-    validate_tree(selection["base"], binary / "bun")
+    validate_tree(selection["base"], binary / "bun", dependency)
     generate(binary, PACKAGE / "bun.nix")
     output.mkdir(parents=True)
     for name in FILES:
@@ -230,29 +292,27 @@ def stage(bundle):
     if any(not p.is_file() or p.is_symlink() for p in bundle.iterdir()):
         raise ValueError("Generation artifact must contain only regular files")
     record = json.loads((bundle / "selection.json").read_text())
-    if set(record) != {"selected", "base", "source", "pr", "version"} or not record["selected"]:
+    if set(record) != {"selected", "base", "source", "pr", "version", "dependency"} or record["selected"] is not True:
         raise ValueError("Invalid proposal record")
+    dependency = record["dependency"]
+    if dependency not in LANES:
+        raise ValueError("Dependency is not allowlisted for admission")
     if (ci.git("status", "--porcelain") or ci.git("rev-parse", "HEAD") != record["base"]
             or ci.remote_sha("refs/heads/main") != record["base"]):
         raise ValueError("Main or proposal moved, or proposal is held")
     if record["pr"] is None:
-        if (os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
+        if (dependency != BUN_TYPES or os.environ.get("GITHUB_EVENT_NAME") != "workflow_dispatch"
                 or os.environ.get("GITHUB_REF") != "refs/heads/main"
                 or os.environ.get("TYPES_VERSION") != record["version"]
                 or record["source"] != record["base"]):
             raise ValueError("Manual selection must bind the trusted main dispatch and version")
         manual_release(record["version"])
-    else:
-        if proposal(record["pr"]) != record["source"]:
-            raise ValueError("Proposal moved or is held")
-        proposed = manifest_version(json.loads(read_at(record["base"], "package.json")),
-                                    json.loads(read_at(record["source"], "package.json")))
-        if proposed != record["version"]:
-            raise ValueError("Artifact version differs from the selected proposal")
+    elif proposal(record["pr"], dependency) != (record["source"], record["version"]):
+        raise ValueError("Proposal moved, is held or differs from the artifact")
     for name in FILES:
         (PACKAGE / name).write_bytes((bundle / name).read_bytes())
     binary = tools()
-    if validate_tree(record["base"], binary / "bun") != record["version"]:
+    if validate_tree(record["base"], binary / "bun", dependency) != record["version"]:
         raise ValueError("Generated version does not match the proposal")
     generated_matches(binary)
     record["run"] = int(os.environ["GITHUB_RUN_ID"])
@@ -260,9 +320,9 @@ def stage(bundle):
     ci.git("add", "--", *[str(PACKAGE / f) for f in sorted(FILES)])
     source = (f"Source-PR: https://github.com/{ci.REPOSITORY}/pull/{record['pr']}"
               if record["pr"] is not None else "Source: isolated manual types dispatch")
-    ci.git("-c", "user.name=Renovate types admission", "-c",
+    ci.git("-c", "user.name=Renovate candidate admission", "-c",
            "user.email=renovate@users.noreply.github.com", "commit", "--no-gpg-sign", "-m",
-           f"chore(callstack-diff): update Bun types to {record['version']}\n\n"
+           f"chore(callstack-diff): update {dependency} to {record['version']}\n\n"
            f"Renovate-Types-Run: {record['run']}/{record['attempt']}\n"
            f"{source}")
     record["sha"] = ci.git("rev-parse", "HEAD")
@@ -303,11 +363,16 @@ def land(event):
     if (record["base"] != base or record["sha"] != sha or record["run"] != run_id
             or record["attempt"] != attempt):
         raise ValueError("Publisher record does not bind this candidate and current proposal")
+    # Publisher records created before the second lane only describe Bun types.
+    dependency = record.get("dependency", BUN_TYPES)
+    if dependency not in LANES:
+        raise ValueError("Dependency is not allowlisted for admission")
     if record["pr"] is None:
-        if origin["event"] != "workflow_dispatch" or record["source"] != base:
+        if dependency != BUN_TYPES or origin["event"] != "workflow_dispatch" or record["source"] != base:
             raise ValueError("Manual candidate requires the trusted main dispatch")
         manual_release(record["version"])
-    elif origin["event"] != "workflow_run" or proposal(record["pr"]) != record["source"]:
+    elif (origin["event"] != "workflow_run"
+          or proposal(record["pr"], dependency) != (record["source"], record["version"])):
         raise ValueError("Scheduled candidate requires its current unheld proposal")
     if ci.remote_sha("refs/heads/main") != base:
         raise ValueError("Main moved; regenerate on the next Renovate run")
@@ -319,7 +384,7 @@ def land(event):
                    for page in pages for check in page["check_runs"]):
             raise ValueError("Missing Actions-provider-bound candidate check")
     ci.git("checkout", "--detach", sha)
-    if validate_tree(base, tools() / "bun") != record["version"]:
+    if validate_tree(base, tools() / "bun", dependency) != record["version"]:
         raise ValueError("Candidate version differs from publisher record")
     return ci.publish("land", base, sha)
 
@@ -361,7 +426,7 @@ def main():
             print(json.dumps(result, sort_keys=True))
         return 0
     except (ValueError, KeyError, IndexError, TypeError, OSError, subprocess.SubprocessError) as error:
-        print(f"Types admission held: {error}", file=sys.stderr)
+        print(f"Renovate admission held: {error}", file=sys.stderr)
         return 1
 
 
