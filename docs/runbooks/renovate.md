@@ -2,7 +2,7 @@
 purpose: Explain how self-hosted Renovate runs in this repo and how to verify it.
 applies_to: Renovate config, the scheduled Action, or dependency-update PR triage.
 entrypoint: Read renovate.json, then .github/workflows/renovate.yml.
-verification: Run the Renovate config validator and tests.test_package_policy, then inspect hosted runs after publication.
+verification: Run the Renovate config validator and policy/admission tests, then inspect hosted runs after publication.
 update_when: The runner, token owner, schedules, grouping, or hash-refresh command changes.
 ---
 
@@ -16,10 +16,9 @@ a second runner would duplicate PRs.
 
 - Schedule: Actions cron `17 10 * * *`. That is 04:17 CST and 05:17 CDT.
 - Config schedule: Monday 04:00 through 08:59 America/Chicago. The daily Action
-  still runs. Existing branches can update outside that window. Routine updates
-  need Dependency Dashboard approval before Renovate creates a branch or PR.
-  The types-only pilot below is the sole routine exception. Dashboard selection
-  chooses work to prepare; it is not a required safety gate for pilot admission.
+  still runs. Routine branches are created and refreshed on Mondays unless
+  explicitly requested. Routine proposals need Dependency Dashboard approval
+  except for the two allowlisted callstack-diff updates below.
 - Auth: repository secret `RENOVATE_TOKEN` (a fine-grained PAT). Pull requests
   and the Dependency Dashboard issue are authored as that token's user
   (`edmundmiller` today), **not** `app/renovate`.
@@ -32,19 +31,20 @@ a second runner would duplicate PRs.
 
 ## Expected PR shape
 
-These are update proposals. Only the types-only pilot can be admitted automatically.
+Only the allowlisted callstack-diff proposals can land automatically.
 
-| Branch / group                            | Contents                                            |
-| ----------------------------------------- | --------------------------------------------------- |
-| `renovate/lock-file-maintenance`          | Weekly lock maintenance, including `flake.lock`     |
-| `<manifest directory> dependencies`       | Non-major npm/bun runtime and development updates   |
-| `renovate/pi-workspace-dependencies`      | Pi workspace updates sharing the root `bun.lock`    |
-| `renovate/github-actions`                 | Non-major Actions and digest pins                   |
-| `renovate/nix-flake-inputs`               | Versioned flake inputs                              |
-| `renovate/repo-local-nix-package-patches` | Regex-managed Nix package patches plus hash refresh |
-| `renovate/hunk`                           | Patch harness and flake tag                         |
-| `renovate/callstack-types-patches`        | Future stable callstack `@types/bun` minors/patches |
-| Major updates                             | Explicit dashboard selection, separate from minors  |
+| Branch / group                            | Contents                                                |
+| ----------------------------------------- | ------------------------------------------------------- |
+| `renovate/lock-file-maintenance`          | Weekly lock maintenance, including `flake.lock`         |
+| `<manifest directory> dependencies`       | Non-major npm/bun runtime and development updates       |
+| `renovate/pi-workspace-dependencies`      | Pi workspace updates sharing the root `bun.lock`        |
+| `renovate/github-actions`                 | Non-major Actions and digest pins                       |
+| `renovate/nix-flake-inputs`               | Versioned flake inputs                                  |
+| `renovate/repo-local-nix-package-patches` | Regex-managed Nix package patches plus hash refresh     |
+| `renovate/hunk`                           | Patch harness and flake tag                             |
+| `renovate/callstack-types-patches`        | Future stable callstack `@types/bun` minors/patches     |
+| `renovate/callstack-tsgolint-patches`     | Future stable callstack `oxlint-tsgolint` patches       |
+| Major updates                             | Latest eligible major per dependency; approval required |
 
 Grouping runtime and development dependencies together avoids competing updates
 to the same lockfile. Pi subpackages share one group even where legacy npm locks
@@ -70,7 +70,10 @@ individual PRs. Bump those with `hey upgrade` when the PAT cannot see the repo.
 
 ## Admission and automerge
 
-Renovate automerge is disabled for every update class, including lock maintenance and security fixes. Agent-reviewed updates follow [main-first publication](candidate-ci.md). A dependency PR is an optional review artifact, not a required landing route. The unattended types-only pilot below keeps its own exact-candidate checks; this change does not expand bot authority.
+Native Renovate automerge is disabled, including for lock maintenance and
+security fixes. Only the allowlisted callstack-diff updates can land unattended,
+through exact-candidate CI. Agent-reviewed updates follow
+[main-first publication](candidate-ci.md).
 
 Disabling Renovate automerge does not cancel existing GitHub auto-merge requests.
 Inspect those separately and cancel them only with explicit approval.
@@ -80,26 +83,28 @@ requires checks on its branch, but `ci.yml` only handles main/candidate pushes
 and PR events. It does not submit `candidate/BASE/SHA` or verify that candidate's
 latest workflow attempt. Adding CI on Renovate branches alone would still omit
 that admission step. GitHub PR squash/rebase/merge methods create or rewrite
-commits rather than normally fast-forwarding main to the tested candidate SHA. They are not substitutes for the types-only pilot's exact-candidate admission. Other repairs remain proposals until authorized publication.
+commits rather than normally fast-forwarding main to the tested candidate SHA.
+They are not substitutes for exact-candidate admission.
 
 There is also a package evidence gap. The hash-refresh command detects changed
 Nix files, not JavaScript-only manifest or lock changes. It neither regenerates
 all `bun.nix` files nor refreshes every `npmDepsHash` after lock-only updates.
 The portable validation selector does not build every affected Nix package.
 An artifact error or manifest-only green PR must not be admitted unchanged.
-Package integration must regenerate the owner's actual locks, generated Nix dependencies and hashes, run focused tests and build the affected package before publication. The unattended types pilot additionally runs fresh candidate CI. This policy change does not repair existing PRs.
+Package integration must regenerate the owner's locks, generated Nix dependencies
+and hashes, run focused tests and build the affected package before publication.
 
-## Types-only candidate pilot
+## Callstack candidate admission
 
-Only future stable same-major `@types/bun` minors and patches in callstack-diff
-and their matching `bun-types` dependency skip Dashboard selection and can land unattended.
+Only future stable `@types/bun` minors and patches and `oxlint-tsgolint` patches
+in callstack-diff skip Dashboard selection and can land unattended.
 Native Renovate automerge remains off. `.github/workflows/renovate-admission.yml`
 uses trusted default-branch code and `scripts/candidate_ci.py` for exact-candidate
 submission and normal fast-forward landing. No merge API or deployment is used.
 
-Only this fixed proposal branch is exempt from concurrent proposal limits so a
-held backlog above the ordinary cap cannot starve the pilot. The ordinary
-four-PR cap, two-per-hour limit, release age and schedule remain unchanged.
+Both fixed proposal branches are exempt from the concurrent proposal cap so
+the existing backlog cannot starve them. They retain the hourly limit and
+release-age checks. Existing Bun types branches can refresh outside Mondays.
 
 After a successful Renovate run, preparation reconstructs the allowed manifest
 edit on current main, resolves `bun.lock` with pinned Bun and regenerates
@@ -109,12 +114,13 @@ and commits only those three files before supplying the publishing credential.
 
 Scheduled admission requires the dedicated proposal branch and exact pilot labels,
 but labels and author identity are not authorization. The controller checks the
-semantic manifest and lock diff, increasing same-major stable version and three-day
-registry release age of both packages. Bun types may add a reference to the existing
-unchanged `undici-types` lock entry. Other extra dependencies, registry changes,
-production changes, scripts or extra files are held. Any additional hold/security
-label blocks admission. Proposals created before the workflow's introduction,
-including #266/#236 and #271, are excluded. No existing PR is merged or closed.
+semantic manifest and lock diff, version increase and three-day registry
+release age for the dependency and its companion packages. Bun types may
+reference the unchanged `undici-types` entry. Lint patches can only update
+`oxlint-tsgolint` and its six matching platform binaries; their metadata must
+stay the same apart from the version pins. Unrelated dependencies, registry
+changes, extra files, added labels and proposals older than the corresponding
+policy are held. No existing PR is merged or closed.
 
 For an authorized immediate run, dispatch `renovate-admission.yml` on `main` with
 the exact stable `version` input. This reconstructs only that types update without
@@ -124,8 +130,7 @@ Selection, staging and landing all recheck that exclusion and release age. The
 publisher record must bind the trusted main dispatch and requested version.
 Generation, package builds, provider-bound checks and exact-SHA landing are the
 same as scheduled admission. Missing permissions stop the run without changing
-credentials or settings. The historical `callstack-types-patches` branch name stays
-unchanged so this expansion does not replace existing proposal branches.
+credentials or settings. Manual dispatch only supports Bun types.
 
 The shared selector routes callstack manifest/lock/generated-file changes to a
 Nix check with frozen development installation, `lint:setup`, deterministic lint
@@ -154,9 +159,10 @@ Darwin activation or deployment is included.
 
 ## Verify
 
-Locally run `renovate-config-validator --strict --no-global renovate.json` with the runner's
-Renovate version, `python3 -m unittest tests.test_package_policy`, and
-`hey check renovate.json .github/workflows/renovate-patch-repair.yml docs/runbooks/renovate.md tests/test_package_policy.py`.
+Locally run `renovate-config-validator --strict --no-global renovate.json` with
+the runner's Renovate version, then run
+`python3 -m unittest tests.test_package_policy tests.test_renovate_admission`
+and `hey check` on the changed files.
 Configuration validation does not prove artifact generation, hosted builds, or
 automatic admission. Do not run Renovate against the live repository just to
 validate local configuration.

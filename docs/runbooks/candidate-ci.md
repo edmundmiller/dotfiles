@@ -68,7 +68,10 @@ Native Darwin and service VMs stay opt-in. Run affected native validation before
 
 ## Renovate candidate pilot
 
-The [types-only Renovate pilot](renovate.md#types-only-candidate-pilot) retains its independent, unattended candidate admission. It still uses `candidate/BASE/SHA`, `scripts/candidate_ci.py` and exact successful latest-attempt checks before a normal fast-forward. This exception is not the route for agent task publication and grants no general bot automerge authority. No existing dependency PR is merged, closed or rearranged by this change.
+The [callstack Renovate allowlist](renovate.md#callstack-candidate-admission)
+uses `candidate/BASE/SHA`, `scripts/candidate_ci.py` and exact successful
+latest-attempt checks before a normal fast-forward. This path is only for
+allowlisted dependency updates, not for ordinary task publication.
 
 Candidate CI keeps its encoded base planner so a newly created bot branch does not accidentally select the whole repository from GitHub's zero before-SHA. Private-input isolation and the existing optional candidate-output transport remain unchanged.
 

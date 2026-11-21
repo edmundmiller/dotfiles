@@ -12,6 +12,10 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 URL = "https://github.com/edmundmiller/dotfiles.git"
 PACKAGE = "packages/callstack-diff/"
+LINT = "oxlint-tsgolint"
+LINT_BRANCH = "renovate/callstack-tsgolint-patches"
+LINT_BINARIES = {f"@oxlint-tsgolint/{platform}-{arch}": {"os": platform, "cpu": arch}
+                 for platform in ("darwin", "linux", "win32") for arch in ("arm64", "x64")}
 
 
 class TypesAdmissionTests(unittest.TestCase):
@@ -29,8 +33,9 @@ class TypesAdmissionTests(unittest.TestCase):
         for name in ("candidate_ci.py", "renovate_admission.py"):
             self.write("scripts/" + name, (ROOT / "scripts" / name).read_text())
         self.write(".github/workflows/renovate-admission.yml", "trusted workflow\n")
+        self.write("renovate.json", (ROOT / "renovate.json").read_text())
         self.write(PACKAGE + "package.json", json.dumps({
-            "devDependencies": {"@types/bun": "1.3.13"},
+            "devDependencies": {"@types/bun": "1.3.13", LINT: "7.0.2001"},
             "dependencies": {"runtime": "2.0.0"}, "scripts": {"test": "trusted"},
         }))
         self.lock = {"workspaces": {"": {"devDependencies": {"@types/bun": "1.3.13"}}},
@@ -39,6 +44,13 @@ class TypesAdmissionTests(unittest.TestCase):
                                       ("@types/bun", {"dependencies": {"bun-types": "1.3.13"}}),
                                       ("bun-types", {"dependencies": {"@types/node": "*"}}))}}
         self.lock["packages"]["undici-types"] = ["undici-types@8.3.0", "", {}, "sha512-" + "b" * 86 + "=="]
+        self.lock["workspaces"][""]["devDependencies"][LINT] = "7.0.2001"
+        for name, metadata in LINT_BINARIES.items():
+            self.lock["packages"][name] = [f"{name}@7.0.2001", "", metadata, "sha512-" + "c" * 86 + "=="]
+        self.lock["packages"][LINT] = [
+            f"{LINT}@7.0.2001", "", {"optionalDependencies": dict.fromkeys(LINT_BINARIES, "7.0.2001"),
+                                   "bin": {"tsgolint": "./bin/tsgolint.js"}}, "sha512-" + "d" * 86 + "==",
+        ]
         self.write(PACKAGE + "bun.lock", json.dumps(self.lock))
         self.write(PACKAGE + "bun.nix", "generated 1.3.13\n")
         self.git("add", ".")
@@ -59,7 +71,7 @@ class TypesAdmissionTests(unittest.TestCase):
         self.git("reset", "--hard", self.base)
         self.state = {
             "pr": {"number": 301, "created_at": "2024-01-02T00:00:00Z", "state": "open",
-                   "draft": False, "auto_merge": None,
+                   "draft": False, "auto_merge": None, "base": {"ref": "main"},
                    "head": {"ref": "renovate/callstack-types-patches", "sha": source,
                             "repo": {"full_name": "edmundmiller/dotfiles"}},
                    "labels": [{"name": n} for n in ("dependencies", "javascript", "renovate-types-pilot")]},
@@ -80,27 +92,40 @@ assert not os.environ.get('GH_TOKEN'), 'credential escaped into dependency tooli
 if '-e' in sys.argv:
     print(json.dumps(json.load(sys.stdin)))
 else:
-    version = json.loads(Path('package.json').read_text())['devDependencies']['@types/bun']
+    deps = json.loads(Path('package.json').read_text())['devDependencies']
     lock = json.loads(Path('bun.lock').read_text())
-    lock['workspaces']['']['devDependencies']['@types/bun'] = version
-    for name in ('@types/bun', 'bun-types'):
-        lock['packages'][name][0] = name + '@' + version
-    lock['packages']['@types/bun'][2]['dependencies']['bun-types'] = version
-    if version == '1.4.4':
-        lock['packages']['bun-types'][2]['dependencies']['undici-types'] = '*'
+    before = lock['workspaces']['']['devDependencies']
+    if deps['@types/bun'] != before['@types/bun']:
+        version = deps['@types/bun']
+        before['@types/bun'] = version
+        for name in ('@types/bun', 'bun-types'):
+            lock['packages'][name][0] = name + '@' + version
+        lock['packages']['@types/bun'][2]['dependencies']['bun-types'] = version
+        if version == '1.4.4':
+            lock['packages']['bun-types'][2]['dependencies']['undici-types'] = '*'
+    if deps['oxlint-tsgolint'] != before['oxlint-tsgolint']:
+        version = deps['oxlint-tsgolint']
+        before['oxlint-tsgolint'] = version
+        lock['packages']['oxlint-tsgolint'][0] = 'oxlint-tsgolint@' + version
+        optional = lock['packages']['oxlint-tsgolint'][2]['optionalDependencies']
+        for name in optional:
+            optional[name] = version
+            lock['packages'][name][0] = name + '@' + version
     Path('bun.lock').write_text(json.dumps(lock))
 ''')
         self.tool("bun2nix", common + '''
 assert not os.environ.get('GH_TOKEN'), 'credential escaped into generation'
 args = sys.argv
 lock = json.loads(Path(args[args.index('-l') + 1]).read_text())
-version = lock['workspaces']['']['devDependencies']['@types/bun']
-Path(args[args.index('-o') + 1]).write_text('generated ' + version + '\\n')
+deps = lock['workspaces']['']['devDependencies']
+Path(args[args.index('-o') + 1]).write_text('generated ' + json.dumps(deps, sort_keys=True) + '\\n')
 ''')
         for name in ("deadnix", "nixfmt"):
             self.tool(name, common + "assert not os.environ.get('GH_TOKEN')\n")
-        self.tool("curl", common + f"state=json.loads(Path({str(self.temp / 'github.json')!r}).read_text())\n"
-                  "print(json.dumps({'time': {v:state['released'] for v in ('1.3.14','1.4.0','1.4.4')}}))\n")
+        self.tool("curl", common + f"state=json.loads(Path({str(self.temp / 'github.json')!r}).read_text())\n" + '''
+release = state.get('registry_times', {}).get(sys.argv[-1].split('registry.npmjs.org/')[-1], state['released'])
+print(json.dumps({'time': {v: release for v in ('1.3.14', '1.4.0', '1.4.4', '7.0.2002')}}))
+''')
         self.tool("gh", common + '''
 state = json.loads(Path(os.environ['TYPES_FIXTURE']).read_text())
 args = sys.argv[1:]
@@ -109,8 +134,11 @@ if args[:2] == ['run','download']:
     sys.exit(0)
 assert args[:3] == ['api','--hostname','github.com'], args
 endpoint = args[3]
-if '/pulls?' in endpoint: result = state.get('prs', [state['pr']])
+if 'head=edmundmiller:renovate/callstack-tsgolint-patches' in endpoint:
+    result = [state['lint_pr']] if 'lint_pr' in state else []
+elif '/pulls?' in endpoint: result = state.get('prs', [state['pr']])
 elif '/files?' in endpoint: result = [state['files']]
+elif endpoint.endswith('/pulls/302'): result = state['lint_pr']
 elif '/pulls/' in endpoint: result = state['pr']
 elif endpoint.endswith('/status'): result = {'statuses':state['statuses']}
 elif '/matching-refs/' in endpoint: result = state['outstanding']
@@ -198,6 +226,25 @@ print(json.dumps(result))
     def remote_main(self):
         return self.git("ls-remote", "origin", "refs/heads/main").split()[0]
 
+    def lint_proposal(self, version="7.0.2002"):
+        if "lint_pr" in self.state:
+            self.git("checkout", LINT_BRANCH)
+        else:
+            self.git("checkout", "-b", LINT_BRANCH, self.base)
+        manifest = json.loads((self.repo / PACKAGE / "package.json").read_text())
+        manifest["devDependencies"][LINT] = version
+        self.write(PACKAGE + "package.json", json.dumps(manifest))
+        self.git("commit", "--quiet", "-am", "lint patch proposal")
+        source = self.git("rev-parse", "HEAD")
+        self.git("push", "origin", f"HEAD:refs/heads/{LINT_BRANCH}")
+        self.state["lint_pr"] = copy.deepcopy(self.state["pr"])
+        self.state["lint_pr"].update(number=302, labels=[
+            {"name": name} for name in ("dependencies", "javascript", "renovate-lint-pilot")
+        ])
+        self.state["lint_pr"]["head"].update(ref=LINT_BRANCH, sha=source)
+        self.git("checkout", "--detach", self.base)
+        self.save()
+
     def test_prepare_submit_and_exact_land_without_merge_or_credential_escape(self):
         sha = self.candidate()
         self.assertEqual(self.remote_main(), self.base)
@@ -262,7 +309,7 @@ print(json.dumps(result))
             with self.subTest(version=version):
                 result = self.cli("select")
                 self.assertNotEqual(result.returncode, 0)
-                self.assertRegex(result.stderr, "Only an increasing|Types versions must")
+                self.assertRegex(result.stderr, "Not an allowed|Versions must")
                 self.assertEqual(self.remote_main(), self.base)
 
     def test_scheduled_minor_reuses_existing_undici_without_other_lock_drift(self):
@@ -282,6 +329,74 @@ print(json.dumps(result))
         lock = json.loads((self.repo / PACKAGE / "bun.lock").read_text())
         self.assertEqual(lock["packages"]["undici-types"], self.lock["packages"]["undici-types"])
         self.assertEqual(lock["packages"]["bun-types"][2]["dependencies"]["undici-types"], "*")
+
+    def test_lint_patch_lands_only_after_exact_ci_and_cannot_bypass_a_hold(self):
+        self.lint_proposal()
+        self.state["pr"]["labels"].append({"name": "hold"})
+        manifest = json.loads((self.repo / PACKAGE / "package.json").read_text())
+        manifest["description"] = "Updated on main after the proposal opened"
+        self.write(PACKAGE + "package.json", json.dumps(manifest))
+        self.git("commit", "--quiet", "-am", "update package description on main")
+        self.git("push", "origin", "HEAD:refs/heads/main")
+        self.base = self.git("rev-parse", "HEAD")
+        self.state["origin"]["head_sha"] = self.base
+        self.save()
+        sha = self.candidate()
+        record = self.state["record"]
+        self.assertEqual((record["dependency"], record["pr"]), (LINT, 302))
+        self.assertEqual(self.remote_main(), self.base)
+        self.state["run"]["conclusion"] = "failure"
+        self.assertNotEqual(self.landing().returncode, 0)
+        self.state["run"]["conclusion"] = "success"
+        self.state["lint_pr"]["labels"].append({"name": "hold"})
+        self.assertNotEqual(self.landing().returncode, 0)
+        self.state["lint_pr"]["labels"].pop()
+        self.assertEqual(self.remote_main(), self.base)
+        landed = self.landing()
+        self.assertEqual(landed.returncode, 0, landed.stderr)
+        self.assertEqual(self.remote_main(), sha)
+        after = json.loads((self.repo / PACKAGE / "package.json").read_text())
+        self.assertEqual(after["description"], manifest["description"])
+        lock = json.loads((self.repo / PACKAGE / "bun.lock").read_text())
+        for name in (*LINT_BINARIES, LINT):
+            self.assertEqual(lock["packages"][name][0], f"{name}@7.0.2002")
+        self.assertEqual(lock["packages"]["@types/bun"], self.lock["packages"]["@types/bun"])
+
+    def test_lint_lane_holds_nonpatch_existing_or_young_proposals(self):
+        self.state["prs"] = []
+        for version in ("7.0.2000", "7.1.0", "8.0.0", "7.0.2002-beta.1"):
+            with self.subTest(version=version):
+                self.lint_proposal(version)
+                self.assertNotEqual(self.cli("select").returncode, 0)
+        self.lint_proposal()
+        self.state["registry_times"] = {"@oxlint-tsgolint%2Flinux-x64": "2099-01-01T00:00:00Z"}
+        self.save()
+        self.assertIn("linux-x64 has not passed", self.cli("select").stderr)
+        self.state["registry_times"] = {}
+        self.state["lint_pr"]["created_at"] = "2023-12-31T23:59:59Z"
+        self.save()
+        self.assertNotEqual(self.cli("select").returncode, 0)
+        self.assertEqual(self.remote_main(), self.base)
+
+    def test_lint_lane_holds_unrelated_lock_changes_and_unexpected_platform_updates(self):
+        self.state["prs"] = []
+        self.lint_proposal()
+        bundle = self.prepare()
+        path = bundle / "bun.lock"
+        original = path.read_text()
+        for name, index, value in (
+            ("undici-types", 0, "undici-types@9.0.0"),
+            ("@oxlint-tsgolint/linux-x64", 1, "https://example.invalid/lint.tgz"),
+            ("@oxlint-tsgolint/darwin-arm64", 2, {"os": "linux", "cpu": "arm64"}),
+            ("oxlint-tsgolint", 2, {"optionalDependencies": {"other": "*"}}),
+        ):
+            with self.subTest(package=name, field=index):
+                data = json.loads(original)
+                data["packages"][name][index] = value
+                path.write_text(json.dumps(data))
+                self.assertNotEqual(self.cli("stage", "--bundle", str(bundle)).returncode, 0)
+                self.assertEqual(self.remote_main(), self.base)
+                self.git("reset", "--hard", self.base)
 
     def test_manual_minor_lands_only_with_dispatch_provenance_and_no_proposal(self):
         self.state["prs"] = []
