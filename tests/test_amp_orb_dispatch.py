@@ -756,8 +756,8 @@ else:
         self.assertTrue(report['detail'])
 
     def test_shared_protocol_records_separate_directions_and_restores_on_lost_board_reply(self):
-        for lost in (False, True):
-            with self.subTest(lost=lost), tempfile.TemporaryDirectory() as directory:
+        for outcome in ('measured', 'lost', 'clipped', 'undersampled'):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 state = root / 'state'
                 state.mkdir()
@@ -801,7 +801,11 @@ else:
                                 'clipped': 0} for index in range(5)]
                             if item['event'] == 'reference_ready':
                                 stages[0].update(hz1000=200., rms=15.)
-                            incoming.put({'event': 'wrong' if lost else 'board_result', 'result': {
+                            if outcome == 'clipped':
+                                stages[1]['clipped'] = 1
+                            elif outcome == 'undersampled':
+                                stages[1]['samples'] = 3199
+                            incoming.put({'event': 'wrong' if outcome == 'lost' else 'board_result', 'result': {
                                 'trial_id': item['trial_id'], 'stages': stages,
                                 'verdict': 'PASS' if item['event'] == 'capture_ready' else 'FAIL',
                                 'muted': True, 'command_monotonic': now,
@@ -827,8 +831,11 @@ else:
                             else real_read(path, *args, **kwargs)), \
                         patch.dict(bench['independent_paths'].__globals__, inspect_headset=lambda: status,
                             selected_controls=lambda status: controls, mixer=mixer), redirect_stdout(io.StringIO()):
-                    if lost:
+                    if outcome == 'lost':
                         with self.assertRaisesRegex(ValueError, 'Unexpected controller event'):
+                            bench['independent_paths'](state, Stream(), SimpleNamespace(settimeout=lambda _: None))
+                    elif outcome in ('clipped', 'undersampled'):
+                        with self.assertRaisesRegex(ValueError, 'Invalid or clipped board measurements'):
                             bench['independent_paths'](state, Stream(), SimpleNamespace(settimeout=lambda _: None))
                     else:
                         bench['independent_paths'](state, Stream(), SimpleNamespace(settimeout=lambda _: None))
@@ -838,9 +845,18 @@ else:
                 self.assertEqual(len(receipts), 2)
                 self.assertTrue(all(trial['controls_restored'] for trial in receipts))
                 self.assertFalse(any(trial['raw_audio_retained'] for trial in receipts))
-                if lost:
+                if outcome != 'measured':
                     self.assertNotIn('reference_ready', [event['event'] for event in events])
-                    self.assertTrue(all(trial['result'] == 'unknown_or_not_started' for trial in receipts))
+                    self.assertEqual(receipts[1]['result'], 'unknown_or_not_started')
+                    if outcome == 'lost':
+                        self.assertEqual(receipts[0]['result'], 'unknown_or_not_started')
+                        self.assertNotIn('board_result', receipts[0])
+                    else:
+                        self.assertEqual(receipts[0]['result'], 'rejected_board_measurements')
+                        self.assertTrue(receipts[0]['board_result']['muted'])
+                        stage = receipts[0]['board_result']['stages'][1]
+                        self.assertEqual(stage['clipped'], int(outcome == 'clipped'))
+                        self.assertEqual(stage['samples'], 3199 if outcome == 'undersampled' else 3840)
                 else:
                     self.assertTrue(all(trial['signal_detected'] for trial in receipts))
                     self.assertEqual(receipts[1]['board_result']['verdict'], 'FAIL')

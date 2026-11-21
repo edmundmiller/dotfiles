@@ -365,12 +365,17 @@ def board_result(stream, trial):
     if (result["trial_id"] != trial["trial_id"] or not result["muted"]
             or result["verdict"] not in ("PASS", "FAIL") or len(stages) != 5):
         raise ValueError("Missing matched board completion")
+    # A completed but rejected measurement is evidence, not a lost command.
+    # Retain only the actor's aggregate receipt, never PCM or serial logs.
+    trial["board_result"] = result
     for index, stage in enumerate(stages):
         if (stage["stage"] != index or stage["pa"] != int(index in (1, 3))
                 or stage["samples"] < 3200 or stage["clipped"] != 0
                 or any(not math.isfinite(stage[name]) or stage[name] < 0
                     for name in ("rms", "hz1000", "hz2000"))):
-            raise ValueError("Invalid or clipped board measurements")
+            error = f"Invalid or clipped board measurements at stage {index}"
+            trial.update({"result": "rejected_board_measurements", "error": error})
+            raise ValueError(error)
     return result
 
 
