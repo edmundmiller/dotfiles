@@ -1,0 +1,45 @@
+[package]
+name = "tinytype"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "MIT"
+description = "Local, contextual autocorrect for macOS, built with Rune"
+
+[dependencies]
+rune = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef", default-features = false, features = [
+  "accessibility",
+  "metal-backend",
+  "tooling",
+] }
+rune-kit = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef", default-features = false }
+rune-theme-opencode = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+objc2-foundation = "0.3"
+
+[patch.crates-io]
+winit = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+sctk-adwaita = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+parley_engine = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+wgpu-hal = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+accesskit_windows = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+accesskit_macos = { git = "https://github.com/anomalyco/rune.git", rev = "c853811c8e0e60a632eaa2e72992f871225737ef" }
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+# Stripping proc-macro dylibs can remove metadata needed by macOS Rust builds.
+strip = "none"
+
+[profile.release]
+strip = true
+
+[profile.release.package."*"]
+strip = "none"
