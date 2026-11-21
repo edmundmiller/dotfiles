@@ -247,18 +247,23 @@ def coordinate():
     if Path("/etc/amp-orbs/note4c-orb").read_text().strip() != OWNER:
         raise ValueError("Serial custody pin changed")
     import pwd
-    uid = pwd.getpwnam("amp-orbs").pw_uid
-    podman = ["sudo", "-n", "-u", "amp-orbs", "env", "HOME=/var/lib/amp-orbs",
+    account = pwd.getpwnam("amp-orbs")
+    uid, home = account.pw_uid, account.pw_dir
+    podman = ["sudo", "-n", "-u", "amp-orbs", "env", f"HOME={home}",
         f"XDG_RUNTIME_DIR=/run/user/{uid}", f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus",
         "CONTAINERS_STORAGE_CONF=/etc/amp-orbs/storage.conf", "podman"]
+    # Match the host dispatcher: rootless Podman must not inherit the SSH
+    # caller's working directory, which this dedicated account cannot traverse.
     running = subprocess.run([*podman, "inspect", "--format", '{{.State.Running}} {{index .Config.Labels "io.dotfiles.amp-orb"}}', OWNER],
-        capture_output=True, check=True, timeout=10, text=True)
+        capture_output=True, cwd=home, timeout=10, text=True)
+    if running.returncode:
+        raise ValueError(f"Owner container inspection failed (exit {running.returncode}); no reservation or device open")
     if running.stdout.strip() != "true true":
         raise ValueError("Existing device-owning orb is not running; do not wake or migrate it")
     source = Path(__file__).read_text()
     digest = hashlib.sha256(source.encode()).hexdigest()
     probe = subprocess.run([*podman, "exec", "--user", "1000:1000", "-i", OWNER,
-        PYTHON, "-u", "-c", source, "--probe"], capture_output=True, timeout=10)
+        PYTHON, "-u", "-c", source, "--probe"], capture_output=True, cwd=home, timeout=10)
     if probe.returncode or json.loads(probe.stdout) != {"event": "owner_probe", "ready": True}:
         raise ValueError("Device-owner environment probe failed; no reservation or device open")
     process = None
@@ -280,7 +285,7 @@ def coordinate():
                 # ordinary UID. No TTY, listener, new grant or persisted actor.
                 process = subprocess.Popen([*podman, "exec", "--user", "1000:1000", "-i", OWNER,
                     PYTHON, "-u", "-c", source, "--actor"], stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0)
+                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0, cwd=home)
                 send(process.stdin, {"event": "reservation", "actor_sha256": digest,
                     "trial_ids": [trial["trial_id"] for trial in reservation["trials"]],
                     "expires": reservation["expires"]})

@@ -692,6 +692,37 @@ else:
             with self.assertRaises(ProcessLookupError):
                 os.kill(int((root / 'pid').read_text()), 0)
 
+    def test_coordinator_probes_from_owner_home_before_reserving(self):
+        import pwd
+
+        controller = runpy.run_path(str(DISPATCH.with_name('shared-controller.py')))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / 'owner-home'
+            home.mkdir()
+            sudo = root / 'sudo'
+            sudo.write_text(f'#!{sys.executable}\n' + '''
+import json, os, sys
+from pathlib import Path
+home = next(arg.removeprefix('HOME=') for arg in sys.argv if arg.startswith('HOME='))
+assert Path.cwd() == Path(home), 'inherited inaccessible caller directory'
+if 'inspect' in sys.argv:
+    print('true true')
+else:
+    print(json.dumps({'event': 'owner_probe', 'ready': False}))
+''')
+            sudo.chmod(0o755)
+            read_text = Path.read_text
+            with patch.dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH']), \
+                    patch.object(os, 'geteuid', return_value=0), \
+                    patch.object(socket, 'gethostname', return_value='nuc'), \
+                    patch.object(pwd, 'getpwnam', return_value=SimpleNamespace(pw_uid=985, pw_dir=str(home))), \
+                    patch.object(Path, 'read_text', lambda path, *args, **kwargs:
+                        controller['OWNER'] if str(path) == '/etc/amp-orbs/note4c-orb'
+                        else read_text(path, *args, **kwargs)):
+                with self.assertRaisesRegex(ValueError, 'Device-owner environment probe failed'):
+                    controller['coordinate']()
+
     def test_shared_protocol_records_separate_directions_and_restores_on_lost_board_reply(self):
         for lost in (False, True):
             with self.subTest(lost=lost), tempfile.TemporaryDirectory() as directory:
