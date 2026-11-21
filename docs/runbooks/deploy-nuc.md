@@ -52,6 +52,18 @@ The older cron-ownership and Buzz-rollout sections below are recovery history
 for the parked patch stack, not instructions for this configuration. Do not
 run their cutover or timer-health procedures on the Cadu-focused deployment.
 
+## Note4C wired-headset inspection
+
+The separately authorized `headset-diagnostics` operation in **Deploy NUC**
+reads the NUC combo jack's controller, ALC256 identity, PCM stream status and
+allowlisted headset/source/level controls. It runs the exact published
+`config/amp-orbs/headset-status.py` after the workflow's normal exact-main CI
+guards, using ALSA tools and Python from the public locked Nixpkgs revision.
+It opens the sound control interface for reads only. It does not open a PCM,
+record, play, change a mixer setting, activate NixOS or migrate an orb.
+Its default workflow title is not evidence of a host deployment. A jack flag
+or selected source is metadata, not proof of a working acoustic signal.
+
 ## HA-preserving diagnostic deployments
 
 For a separately authorized diagnostic deployment that must not interrupt HA,

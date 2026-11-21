@@ -27,6 +27,7 @@ on:
           - orb-diagnostics
           - orb-note4c-serial
           - orb-dji-capture
+          - headset-diagnostics
       email_test_family_revision:
         description: Email operations only; exact deployed Family SHA requires separately verified readiness
         type: string
@@ -627,6 +628,23 @@ jobs:
         run: |
           set -euo pipefail
           tailscale ssh emiller@nuc.cinnamon-rooster.ts.net 'bash -s -- diagnostics' < scripts/amp-orb-pilot.sh
+      - name: Inspect approved analog headset controls without PCM or setting changes
+        if: inputs.operation == 'headset-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
+          [[ "$nixpkgs" =~ ^[0-9a-f]{40}$ ]]
+          # Only this public pinned tool closure is realized; no host activation.
+          # shellcheck disable=SC2029
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "
+            set -eu
+            test \"\$(hostname)\" = nuc
+            uname -a
+            nixos-version --configuration-revision
+            exec sudo -n nix shell 'github:NixOS/nixpkgs/$nixpkgs#alsa-utils' \
+              'github:NixOS/nixpkgs/$nixpkgs#python3' --command python3 -
+          " < config/amp-orbs/headset-status.py
       - name: Enable approved Note 4C serial access preserving its paused orb disk
         if: inputs.operation == 'orb-note4c-serial'
         shell: bash

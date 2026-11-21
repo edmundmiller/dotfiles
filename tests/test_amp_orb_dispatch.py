@@ -470,5 +470,65 @@ elif args[0] != 'exec':
                     os.kill(int((root / 'helper-pid').read_text()), signal.SIGTERM)
 
 
+class HeadsetStatusTests(unittest.TestCase):
+    def test_readonly_status_tracks_controller_not_card_index_and_keeps_control_indices(self):
+        inspect_headset = runpy.run_path(str(DISPATCH.with_name('headset-status.py')))['inspect_headset']
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pci = root / 'sys/devices/pci0000:00/0000:00:1f.3'
+            card = pci / 'sound/card2'
+            card.mkdir(parents=True)
+            (pci / 'vendor').write_text('0x8086\n')
+            (pci / 'device').write_text('0x02c8\n')
+            driver = root / 'sys/bus/pci/drivers/snd_hda_intel'
+            driver.mkdir(parents=True)
+            (pci / 'driver').symlink_to(driver)
+            sound = root / 'sys/class/sound'
+            sound.mkdir(parents=True)
+            (sound / 'card2').symlink_to(card)
+            proc = root / 'proc/asound/card2'
+            proc.mkdir(parents=True)
+            (proc / 'codec#0').write_text('Codec: Realtek ALC256\n')
+            for direction, minor in (('c', 3), ('p', 2)):
+                pcm = card / f'pcmC2D0{direction}'
+                pcm.mkdir()
+                (pcm / 'dev').write_text(f'116:{minor}\n')
+                (sound / pcm.name).symlink_to(pcm)
+                status = proc / f'pcm0{direction}/sub0'
+                status.mkdir(parents=True)
+                (status / 'status').write_text('closed\n')
+            amixer = root / 'amixer'
+            amixer.write_text(f'#!{sys.executable}\n' + """
+import sys
+assert sys.argv[1:3] == ['--card', '2']
+if sys.argv[3:] == ['controls']:
+    print("numid=1,iface=MIXER,name='Capture Volume'")
+    print("numid=2,iface=MIXER,name='Capture Volume',index=1")
+    print("numid=3,iface=CARD,name='Headphone Jack'")
+    print("numid=4,iface=MIXER,name='IEC958 Playback Default'")
+elif sys.argv[3] == 'cget' and sys.argv[4] in ('numid=1', 'numid=2', 'numid=3'):
+    print({'numid=1': ': values=0,0', 'numid=2': ': values=17,19',
+        'numid=3': ': values=on'}[sys.argv[4]])
+else:
+    sys.exit('Refusing nonallowlisted read or any write')
+""")
+            amixer.chmod(0o755)
+            result = inspect_headset(root, str(amixer))
+            self.assertEqual(result['card_index'], 2)
+            self.assertEqual(result['endpoints']['p'],
+                {'name': 'pcmC2D0p', 'dev': '116:2', 'status': 'closed'})
+            self.assertEqual(result['controls'], {
+                '1': {'name': 'Capture Volume', 'index': 0, 'readback': ': values=0,0'},
+                '2': {'name': 'Capture Volume', 'index': 1, 'readback': ': values=17,19'},
+                '3': {'name': 'Headphone Jack', 'index': 0, 'readback': ': values=on'},
+            })
+            self.assertFalse(result['pcm_opened'])
+            self.assertFalse(result['settings_changed'])
+            self.assertFalse(result['acoustic_signal_verified'])
+            (pci / 'device').write_text('0x1234\n')
+            with self.assertRaisesRegex(ValueError, 'controller'):
+                inspect_headset(root, '/must-not-run-on-wrong-controller')
+
+
 if __name__ == '__main__':
     unittest.main()
