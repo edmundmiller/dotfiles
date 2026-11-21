@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key><string>dev.edmundmiller.tinytype</string>
+  <key>CFBundleName</key><string>TinyType</string>
+  <key>CFBundleDisplayName</key><string>TinyType</string>
+  <key>CFBundleExecutable</key><string>tinytype</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>0.1.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSMinimumSystemVersion</key><string>15.0</string>
+  <key>LSMultipleInstancesProhibited</key><true/>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSAccessibilityUsageDescription</key>
+  <string>TinyType corrects new typing in accessible text inputs across apps only when you enable autocorrect.</string>
+</dict>
+</plist>
