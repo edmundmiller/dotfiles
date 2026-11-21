@@ -13,6 +13,26 @@ child process rather than reimplementing its candidate scoring in Rust. Node,
 ONNX Runtime's WASM files, and the model ship inside the app. No server or
 first-launch downloads are required.
 
+## Approved icon
+
+The app uses the approved TinyFix Insert artwork for its Finder/Dock icon and
+menu-bar symbol. The app name, executable, bundle identifier, and signing
+identity remain TinyType's. Icon integration does not rename the app.
+
+The original `TinyFix.icns` and black-alpha `TinyFixTemplate.png` / `@2x.png`
+live under `app/`. Both local and Nix builds copy them into the bundle before
+signing. AppKit loads the menu image at 18 points with both resolutions and
+template tinting, so macOS supplies its light/dark appearance. The menu retains
+the TinyType accessibility label and tooltip. Unbundled development launches
+fall back to the existing `Tt` title if the image cannot be found.
+
+Assets are copied without resizing, masking, or flattening from the approved
+[Insert handoff](https://ampcode.com/threads/T-01a2001e-50d2-7235-8c64-b57acaadf27a).
+The source `TinyFix-Insert.zip` has SHA-256
+`9b2c92baf2c39904b8f999299af6158d591d3b70db7bcf9189feb603b823a730`.
+See the [brandbook](https://ampcode.com/artifacts/tinyfix-brandbook-13160279-ddc7-4015-bd60-c23e8c9b1609)
+for the approved geometry and palette. No font or wordmark is bundled.
+
 ## Behavior and boundaries
 
 - Autocorrect starts paused on every launch. The sentence playground works

@@ -13,6 +13,8 @@ if [ -e "$app" ]; then
 fi
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/engine" "$app/Contents/Resources/models"
 cp "$root/app/Info.plist" "$app/Contents/Info.plist"
+cp "$root/app/TinyFix.icns" "$root/app/TinyFixTemplate.png" \
+  "$root/app/TinyFixTemplate@2x.png" "$app/Contents/Resources/"
 install -m755 "$1" "$app/Contents/MacOS/tinytype"
 install -m755 "$2" "$app/Contents/Resources/focused-text"
 install -m755 "$3" "$app/Contents/Resources/node"

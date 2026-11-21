@@ -2,8 +2,11 @@ use std::cell::RefCell;
 
 use objc2::runtime::{AnyObject, NSObjectProtocol};
 use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send, rc::Retained, sel};
-use objc2_app_kit::{NSMenu, NSMenuItem, NSStatusBar, NSStatusItem, NSVariableStatusItemLength};
-use objc2_foundation::{MainThreadMarker, NSObject, NSString};
+use objc2_app_kit::{
+    NSAccessibility, NSImage, NSMenu, NSMenuItem, NSStatusBar, NSStatusItem,
+    NSVariableStatusItemLength,
+};
+use objc2_foundation::{MainThreadMarker, NSObject, NSSize, NSString};
 
 use crate::{host::Request, ui::Ui};
 
@@ -70,7 +73,16 @@ pub fn install(handle: rune::AppHandle<Ui>) {
         }
         let item = NSStatusBar::systemStatusBar().statusItemWithLength(NSVariableStatusItemLength);
         if let Some(button) = item.button(mtm) {
-            button.setTitle(&NSString::from_str("Tt"));
+            button.setToolTip(Some(&NSString::from_str("TinyType")));
+            button.setAccessibilityLabel(Some(&NSString::from_str("TinyType")));
+            // AppKit loads both bundled PNG scales and supplies the menu-bar tint.
+            if let Some(image) = NSImage::imageNamed(&NSString::from_str("TinyFixTemplate")) {
+                image.setSize(NSSize::new(18.0, 18.0));
+                image.setTemplate(true);
+                button.setImage(Some(&image));
+            } else {
+                button.setTitle(&NSString::from_str("Tt"));
+            }
         }
         item.setMenu(Some(&menu));
         *stored.borrow_mut() = Some((item, target));
