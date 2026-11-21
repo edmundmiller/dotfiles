@@ -28,6 +28,7 @@ on:
           - orb-note4c-serial
           - orb-dji-capture
           - headset-diagnostics
+          - headset-calibration
       email_test_family_revision:
         description: Email operations only; exact deployed Family SHA requires separately verified readiness
         type: string
@@ -644,7 +645,34 @@ jobs:
             nixos-version --configuration-revision
             exec sudo -n nix shell 'github:NixOS/nixpkgs/$nixpkgs#alsa-utils' \
               'github:NixOS/nixpkgs/$nixpkgs#python3' --command python3 -
-          " < config/amp-orbs/headset-status.py
+          " < config/amp-orbs/headset-bench.py
+      - name: Run one bounded headset calibration on the exact deployed source
+        if: inputs.operation == 'headset-calibration'
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_hash=$(sha256sum config/amp-orbs/headset-bench.py | cut -d ' ' -f 1)
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$DEPLOY_SHA' '$source_hash'" <<'NUC'
+          set -euo pipefail
+          test "$(hostname)" = nuc
+          uname -a
+          revision=$(nixos-version --configuration-revision)
+          [[ "$revision" == "dotfiles=$1;"* ]]
+          test "$(sha256sum /etc/note4c/headset-bench.py | cut -d ' ' -f 1)" = "$2"
+          unit=note4c-headset-calibration.service
+          test "$(systemctl show "$unit" -p NeedDaemonReload --value)" = no
+          case $(systemctl show "$unit" -p ActiveState --value) in
+            inactive|failed) ;;
+            *) echo 'A calibration is already running; do not join or retry it'; exit 1 ;;
+          esac
+          cursor=$(sudo -n journalctl -n 1 --show-cursor -o cat | sed -n 's/^-- cursor: //p')
+          test -n "$cursor"
+          result=0
+          sudo -n systemctl start "$unit" || result=$?
+          sudo -n journalctl -u "$unit" --after-cursor="$cursor" --no-pager -o json
+          systemctl show "$unit" -p ActiveState -p Result -p ExecMainStatus
+          exit "$result"
+          NUC
       - name: Enable approved Note 4C serial access preserving its paused orb disk
         if: inputs.operation == 'orb-note4c-serial'
         shell: bash

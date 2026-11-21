@@ -29,6 +29,41 @@ in
   environment.etc."amp-orbs/dji-capture-orb".text = ''
     amp-01a1fc7c-f023-7099-bc09-aeec0b45eb37
   '';
+  environment.etc."note4c/headset-bench.py".source = ../../config/amp-orbs/headset-bench.py;
+
+  # Explicit one-shot tests only. No timer, listener, raw audio grant or boot run.
+  # The trusted host service restores mixer state even after its main process dies.
+  systemd.services.note4c-headset-calibration = {
+    description = "Bounded local-only Note4C headset calibration";
+    restartIfChanged = false;
+    path = [ pkgs.alsa-utils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../config/amp-orbs/headset-bench.py} --calibrate";
+      ExecStopPost = "${pkgs.python3}/bin/python3 ${../../config/amp-orbs/headset-bench.py} --restore";
+      StateDirectory = "note4c-headset";
+      StateDirectoryMode = "0700";
+      UMask = "0077";
+      TimeoutStartSec = 25;
+      # Up to 13 inspection reads at 5s, then 12 restore calls at 3s.
+      # This does not extend the recorder's independent 8s kill deadline.
+      TimeoutStopSec = 120;
+      KillMode = "control-group";
+      DevicePolicy = "closed";
+      DeviceAllow = [ "char-alsa rw" ];
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+      PrivateNetwork = true;
+      RestrictAddressFamilies = [ "AF_UNIX" ];
+      LimitCORE = 0;
+      CoredumpFilter = "0x0";
+      MemorySwapMax = 0;
+      MemoryMax = "128M";
+    };
+  };
+
   # A stable, root-owned devtmpfs directory allows hotplug without binding /dev.
   systemd.tmpfiles.rules = [
     "d /dev/amp-note4c-port 0750 root amp-orbs -"

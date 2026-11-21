@@ -1,10 +1,14 @@
 """Admission and lifecycle behavior through the dispatcher process interface."""
 
 from array import array
+from contextlib import redirect_stdout
+import io
 import json
 from itertools import product
+import math
 import os
 from pathlib import Path
+import re
 import runpy
 import signal
 import socket
@@ -12,6 +16,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -472,7 +477,7 @@ elif args[0] != 'exec':
 
 class HeadsetStatusTests(unittest.TestCase):
     def test_readonly_status_tracks_controller_not_card_index_and_keeps_control_indices(self):
-        inspect_headset = runpy.run_path(str(DISPATCH.with_name('headset-status.py')))['inspect_headset']
+        inspect_headset = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))['inspect_headset']
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             pci = root / 'sys/devices/pci0000:00/0000:00:1f.3'
@@ -528,6 +533,157 @@ else:
             (pci / 'device').write_text('0x1234\n')
             with self.assertRaisesRegex(ValueError, 'controller'):
                 inspect_headset(root, '/must-not-run-on-wrong-controller')
+
+    def test_calibration_restores_asymmetric_baseline_on_success_and_recording_failure(self):
+        bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
+        baseline = {
+            'Capture Switch': 'on,off', 'Capture Source': '1',
+            'Capture Volume': '12,17', 'Headset Mic Boost Volume': '1,2',
+            'Master Playback Volume': '31,42', 'Master Playback Switch': 'off,on',
+        }
+        gains = {
+            'Master Playback Volume': (87, '-65.25dB,step=0.75dB'),
+            'Capture Volume': (63, '-17.25dB,step=0.75dB'),
+            'Headset Mic Boost Volume': (3, '0.00dB,step=10.00dB'),
+        }
+        unit = (DISPATCH.parents[2] / 'hosts/nuc/amp-orbs.nix').read_text()
+        stop_timeout = int(re.search(
+            r'note4c-headset-calibration = .*?TimeoutStopSec = (\d+);', unit, re.DOTALL)[1])
+        for outcome in ('success', 'recording_failure', 'slow_restore', 'restoration_conflict'):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                state = Path(directory)
+                current = dict(baseline)
+                recovering = False
+                elapsed = 0
+
+                def inspect():
+                    nonlocal recovering, elapsed
+                    if (state / 'restore.json').exists():
+                        recovering = True
+                        # The evidenced host has thirteen serial control reads.
+                        elapsed += 13 * 0.65
+                    controls = {}
+                    for number, (name, value) in enumerate(current.items(), 1):
+                        text = f': values={value}\n'
+                        if name in gains:
+                            maximum, scale = gains[name]
+                            text += f'; values=2,min=0,max={maximum},step=0\n| dBscale-min={scale}\n'
+                        if name == 'Capture Source':
+                            text += "; Item #0 'Internal Mic'\n; Item #1 'Internal Mic 1'\n; Item #2 'Headset Mic'\n"
+                        controls[str(number)] = {'name': name, 'index': 0, 'readback': text.strip()}
+                    controls['12'] = {'name': 'Headphone Jack', 'index': 0, 'readback': ': values=on'}
+                    return {'card_index': 3, 'controls': controls,
+                        'endpoints': {'c': {'status': 'closed'}, 'p': {'status': 'closed'}}}
+
+                def mixer(card, control, new_value=None):
+                    nonlocal elapsed
+                    if recovering and outcome == 'slow_restore':
+                        elapsed += 0.65
+                        if elapsed > stop_timeout:
+                            raise TimeoutError('Recovery killed at service stop deadline')
+                    self.assertEqual(card, 3)
+                    if new_value is not None:
+                        current[control['name']] = new_value
+                    return current[control['name']]
+
+                def record(card, controls, reference):
+                    self.assertEqual(current['Capture Source'], '2')
+                    self.assertEqual(current['Capture Switch'], 'on,on')
+                    self.assertEqual(len(json.loads((state / 'ledger.json').read_text())), 1)
+                    self.assertTrue((state / 'restore.json').exists())
+                    if outcome == 'recording_failure':
+                        raise ValueError('Recording failed')
+                    if outcome == 'restoration_conflict':
+                        current['Master Playback Volume'] = '55,55'
+                    return {'signal_detected': True}
+
+                with patch.dict(bench['calibrate'].__globals__,
+                        inspect_headset=inspect, mixer=mixer, record_tones=record), redirect_stdout(io.StringIO()):
+                    if outcome == 'recording_failure':
+                        with self.assertRaisesRegex(ValueError, 'Recording failed'):
+                            bench['calibrate'](state)
+                    elif outcome == 'restoration_conflict':
+                        with self.assertRaisesRegex(ValueError, 'Restoration conflict'):
+                            bench['calibrate'](state)
+                        with self.assertRaisesRegex(ValueError, 'Previous routing restoration unresolved'):
+                            bench['calibrate'](state)
+                    else:
+                        bench['calibrate'](state)
+                if outcome == 'restoration_conflict':
+                    self.assertEqual(current, dict(baseline, **{'Master Playback Volume': '55,55'}))
+                    self.assertTrue((state / 'restore.json').exists())
+                    self.assertEqual(len(json.loads((state / 'ledger.json').read_text())), 1)
+                    continue
+                self.assertEqual(current, baseline)
+                self.assertFalse((state / 'restore.json').exists())
+                receipt = json.loads((state / 'ledger.json').read_text())[0]
+                self.assertEqual(receipt['result'], 'failed' if outcome == 'recording_failure' else 'measured')
+                self.assertTrue(receipt['controls_restored'])
+                self.assertEqual({path.name for path in state.iterdir()}, {'ledger.json'})
+
+    def test_durable_budget_survives_reload_and_reserves_before_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory)
+            for _ in range(10):
+                bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
+                bench['claim_trial'](state, 10000)
+            with self.assertRaisesRegex(ValueError, 'budget exhausted'):
+                bench['claim_trial'](state, 11799.9)
+            with self.assertRaisesRegex(ValueError, 'backwards'):
+                bench['claim_trial'](state, 9999)
+            ledger, trial = bench['claim_trial'](state, 11800)
+            self.assertEqual(len(ledger), 1)
+            self.assertEqual(trial['result'], 'reserved')
+
+    def test_scoring_requires_both_reference_tones_above_background_in_same_channel(self):
+        bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
+        rate = 48000
+        for case, detected in (('reference', True), ('steady_noise', False),
+                ('single_tone', False), ('split_channels', False), ('clipped', False)):
+            with self.subTest(case=case):
+                samples = array('h')
+                for index in range(6 * rate):
+                    frequency = 1000 if index < 2 * rate else 2000
+                    active = rate <= index < 3 * rate
+                    if case == 'steady_noise':
+                        active = True
+                    if case == 'single_tone':
+                        frequency = 1000
+                    amplitude = round(1500 * math.sin(2 * math.pi * frequency * index / rate)) if active else 0
+                    left = amplitude if case == 'split_channels' and frequency == 1000 else 0
+                    right = 0 if case == 'split_channels' and frequency == 1000 else amplitude
+                    if case == 'clipped' and index == rate + 100:
+                        right = 32767
+                    samples.extend((left, right))
+                if sys.byteorder != 'little':
+                    samples.byteswap()
+                result = bench['score'](samples.tobytes())
+                self.assertEqual(result['signal_detected'], detected)
+                self.assertFalse(result['raw_audio_retained'])
+                self.assertFalse(result['intelligibility_verified'])
+                self.assertFalse(result['note4c_path_verified'])
+        with self.assertRaisesRegex(ValueError, 'Incomplete'):
+            bench['score'](b'\0' * 64)
+
+    def test_route_drift_kills_capture_before_waiting_for_collector(self):
+        bench = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ('arecord', 'aplay'):
+                executable = root / name
+                executable.write_text(f'#!{sys.executable}\n' + (
+                    f'import os, time\nopen({str(root / "pid")!r}, "w").write(str(os.getpid()))\n'
+                    'os.write(1, bytes(192000))\ntime.sleep(30)\n' if name == 'arecord' else
+                    'import sys\nsys.stdin.buffer.read()\n'))
+                executable.chmod(0o755)
+            started = time.monotonic()
+            with patch.dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH']), \
+                    patch.dict(bench['record_tones'].__globals__, mixer=lambda *args: 'wrong source'):
+                with self.assertRaisesRegex(ValueError, 'routing changed'):
+                    bench['record_tones'](0, {name: {} for name in bench['ROUTE']}, bench['tone']())
+            self.assertLess(time.monotonic() - started, 4)
+            with self.assertRaises(ProcessLookupError):
+                os.kill(int((root / 'pid').read_text()), 0)
 
 
 if __name__ == '__main__':

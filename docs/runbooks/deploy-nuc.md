@@ -57,12 +57,20 @@ run their cutover or timer-health procedures on the Cadu-focused deployment.
 The separately authorized `headset-diagnostics` operation in **Deploy NUC**
 reads the NUC combo jack's controller, ALC256 identity, PCM stream status and
 allowlisted headset/source/level controls. It runs the exact published
-`config/amp-orbs/headset-status.py` after the workflow's normal exact-main CI
+`config/amp-orbs/headset-bench.py` after the workflow's normal exact-main CI
 guards, using ALSA tools and Python from the public locked Nixpkgs revision.
 It opens the sound control interface for reads only. It does not open a PCM,
 record, play, change a mixer setting, activate NixOS or migrate an orb.
 Its default workflow title is not evidence of a host deployment. A jack flag
 or selected source is metadata, not proof of a working acoustic signal.
+
+The `headset-calibration` operation starts the Nix-owned `note4c-headset-calibration.service` once, only after exact deployed-revision, source-hash and loaded-unit checks. Deploy the source first through the ordinary guarded NUC path. The unit has no timer, boot dependency or listener. It grants the orb no sound-device access and requires no orb migration. Edmund has given standing approval for this scoped local bench's reversible tests, routing, publication and deployment. Do not request approval for each run. Preserve the limits below and ask only for an irreversible risk or a different scope such as purchases, cameras, cloud speech or the voice gateway.
+
+Calibration requires the pinned Intel controller, ALC256, connected headphone jack, known gain/source contract and closed analog streams. It snapshots six controls, selects only `Headset Mic`, disables boost, sets capture to 0 dB, and limits master playback to raw 60/87 at -20.25 dB. It captures six seconds at 48 kHz/S16_LE/stereo and plays one second each of 1 kHz and 2 kHz at digital peak 4096. No Note4C serial action or recording is included. Reference playback waits for one second of captured samples. A separate eight-second watchdog kills the recorder if necessary. These are software limits, not an independent hard-real-time hardware cutoff.
+
+The root-only durable ledger reserves a trial before mixer writes and permits at most ten starts in any rolling 30 minutes, including failed or interrupted reservations. A lock excludes overlapping service/recovery operations. Capture stays in RAM; the program writes no raw audio or transcripts. The service disables core dumps and swap for its cgroup and returns only aggregate channel levels, clipping and tone-rise measurements. Both tones must exceed their background by more than 6 dB in the same unclipped channel. A successful workflow means measurement and cleanup completed, not that a signal was detected, speech was intelligible, or the Note4C path worked. Check those separate JSON fields. Only records after the pre-start journal cursor are returned.
+
+Normal and failed runs close child processes and restore saved controls. `ExecStopPost` also attempts restoration after abnormal process exit. Restoration refuses open streams or an unrecognized external control change, retains its recovery snapshot and blocks new trials. It never overwrites a different setting to manufacture a clean result. Route polling stops and discards a trial on observed drift; it cannot make the host mixer exclusive against an unrelated privileged writer. This ledger currently counts this host calibration only. Reserve all future coordinated Note4C stimuli against the same budget before starting a combined trial. Never run an independent second budget or automatically repeat an uncertain device command.
 
 ## HA-preserving diagnostic deployments
 
