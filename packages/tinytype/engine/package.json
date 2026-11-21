@@ -1,0 +1,13 @@
+{
+  "name": "tinytype-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tinyfix-worker.test.mjs",
+    "models": "node download-models.mjs"
+  },
+  "dependencies": {
+    "tinyfix": "0.1.1"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "revision": "8efdf5cd91b32584f4077aa0e8ecaf48f7651bef",
+  "files": {
+    "words.txt": "f84bfae717ff3a4a3b90c824ed06ea08e4b2ed2746f7bba63d4e52f2c8bf85c3",
+    "wrong-word.onnx": "35d76c0f2cc1fbb5450188a749f4c10b0d569d8806bb939bd66fa926561b47e9",
+    "wrong-word-vocab.txt": "14ddd048052cf547d570c5c75b18843527916f892d2650fd0c3009b783b976a1",
+    "wrong-word-confusions.txt": "9924ff7ed577595ae1b632adbbf3324779a6857d3eb102715e63abf5981d06d3"
+  }
+}
