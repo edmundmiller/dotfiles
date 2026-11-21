@@ -63,6 +63,9 @@ It opens the sound control interface for reads only. It does not open a PCM,
 record, play, change a mixer setting, activate NixOS or migrate an orb.
 Its default workflow title is not evidence of a host deployment. A jack flag
 or selected source is metadata, not proof of a working acoustic signal.
+The same read-only report includes the last ten aggregate trial receipts,
+pending restoration status, both bench units' state and their last twenty
+journal messages within thirty minutes. It never starts recovery or a trial.
 
 The `headset-calibration` operation starts the Nix-owned `note4c-headset-calibration.service` once, only after exact deployed-revision, source-hash and loaded-unit checks. Deploy the source first through the ordinary guarded NUC path. The unit has no timer, boot dependency or listener. It grants the orb no sound-device access and requires no orb migration. Edmund has given standing approval for this scoped local bench's reversible tests, routing, publication and deployment. Do not request approval for each run. Preserve the limits below and ask only for an irreversible risk or a different scope such as purchases, cameras, cloud speech or the voice gateway.
 
@@ -77,6 +80,8 @@ Normal and failed runs close child processes and restore saved controls. `ExecSt
 The explicitly dispatched `note4c-independent-paths` operation runs two directions separately. It reserves both trials atomically before any reset, mixer write or stimulus. Reservations count even if preparation fails. Each admission expires within four minutes. Budget entries remain counted for 30 minutes after the latest possible start, with a conservative five-minute allowance for preparation and interrupted jobs. An uncertain command is never resent.
 
 The sandboxed host bench opens a root-only Unix socket for this invocation, not at boot. The fixed host coordinator uses rootless Podman to execute its exact source as UID1000 inside the already-running, pinned device-owner orb. It does not wake or migrate an orb, grant new devices, or transfer serial custody. A read-only owner probe checks the private identity guard and interpreter before reservation. The private source guard is SHA-pinned and narrowed in memory to avoid reading unrelated USB serial attributes. Its accepted identity, exclusion, mount and competing-open checks remain. No private guard source enters this repository.
+
+Podman inspection and the owner probe receive closed stdin. The workflow also closes coordinator stdin so an interactive child cannot consume the remote shell's remaining cleanup and exit checks. Actor failures return structured errors rather than a silent pipe closure. A green Actions result without matched measurement receipts and successful restoration is not a completed bench run.
 
 The actor holds one named lock across read-only ROM provenance and the serial session. It verifies the live partition table, CRC-valid active OTA selection and exact application bytes, then requires a fresh healthy boot, mounted filesystem, completed native panel update, muted audio startup and USB maintenance. This procedure resets the application but never flashes it. Its application/source pins intentionally reject a later firmware revision until updated against new owner evidence. The UV-cache interpreter and private guard are existing owner-orb dependencies, not durable Nix deployments. A missing dependency fails closed. Other device controllers must remain stopped for this shared batch; the named lock cannot exclude a legacy controller that ignores it.
 

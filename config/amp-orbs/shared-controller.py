@@ -40,6 +40,8 @@ def message(stream, event, timeout):
     if len(raw) > 32768 or not raw.endswith(b"\n"):
         raise ValueError("Controller disconnected or exceeded message limit")
     item = json.loads(raw)
+    if item.get("event") == "owner_error":
+        raise ValueError("Device-owner execution failed: " + item["detail"])
     if item.get("event") != event:
         raise ValueError("Unexpected controller event")
     return item
@@ -116,7 +118,7 @@ def selftest(port, trial_id, deadline, marker):
         terminal = re.fullmatch(r"NOTE4C selftest result=(PASS|FAIL); muted; no recording retained", text)
         if terminal:
             if not speaker or codec_at is None or len(stages) != 5:
-                raise ValueError("Incomplete matched SELFTEST evidence")
+                raise ValueError(f"Incomplete matched SELFTEST evidence: speaker={speaker}, codec={codec_at is not None}, stages={len(stages)}")
             return {"event": "board_result", "result": {"trial_id": trial_id,
                 "verdict": terminal[1], "muted": True, "stages": stages,
                 "command_monotonic": sent, "codec_ready_monotonic": codec_at,
@@ -255,7 +257,7 @@ def coordinate():
     # Match the host dispatcher: rootless Podman must not inherit the SSH
     # caller's working directory, which this dedicated account cannot traverse.
     running = subprocess.run([*podman, "inspect", "--format", '{{.State.Running}} {{index .Config.Labels "io.dotfiles.amp-orb"}}', OWNER],
-        capture_output=True, cwd=home, timeout=10, text=True)
+        stdin=subprocess.DEVNULL, capture_output=True, cwd=home, timeout=10, text=True)
     if running.returncode:
         raise ValueError(f"Owner container inspection failed (exit {running.returncode}); no reservation or device open")
     if running.stdout.strip() != "true true":
@@ -263,7 +265,8 @@ def coordinate():
     source = Path(__file__).read_text()
     digest = hashlib.sha256(source.encode()).hexdigest()
     probe = subprocess.run([*podman, "exec", "--user", "1000:1000", "-i", OWNER,
-        PYTHON, "-u", "-c", source, "--probe"], capture_output=True, cwd=home, timeout=10)
+        PYTHON, "-u", "-c", source, "--probe"], stdin=subprocess.DEVNULL,
+        capture_output=True, cwd=home, timeout=10)
     if probe.returncode or json.loads(probe.stdout) != {"event": "owner_probe", "ready": True}:
         raise ValueError("Device-owner environment probe failed; no reservation or device open")
     process = None
@@ -332,7 +335,9 @@ if __name__ == "__main__":
             coordinate()
         else:
             raise ValueError("Expected --actor, --probe or --coordinate")
-    except (OSError, ValueError, KeyError, subprocess.SubprocessError, AssertionError) as error:
+    except Exception as error:
         detail = str(error) if isinstance(error, (ValueError, AssertionError)) else type(error).__name__
+        if sys.argv[1:] in (["--actor"], ["--probe"]):
+            emit({"event": "owner_error", "detail": detail})
         print("Shared controller failed: " + detail, file=sys.stderr)
         sys.exit(1)

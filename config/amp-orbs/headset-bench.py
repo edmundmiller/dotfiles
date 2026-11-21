@@ -565,7 +565,22 @@ if __name__ == "__main__":
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 {"--calibrate": calibrate, "--restore": restore, "--shared": shared_server}[sys.argv[1]](STATE)
         elif not sys.argv[1:]:
-            print(json.dumps(inspect_headset(), sort_keys=True))
+            status = inspect_headset()
+            # Fixed read-only bench receipts, including failed/unknown trials.
+            # Never start/recover a service or open PCM while inspecting.
+            status["recovery_pending"] = (STATE / "restore.json").exists()
+            ledger = STATE / "ledger.json"
+            status["bench_trials"] = json.loads(ledger.read_text())[-10:] if ledger.exists() else []
+            units = ["note4c-headset-calibration.service", "note4c-independent-paths.service"]
+            status["bench_units"] = {unit: subprocess.run(["systemctl", "show", unit,
+                "-p", "ActiveState", "-p", "Result", "-p", "ExecMainStatus"],
+                stdin=subprocess.DEVNULL, capture_output=True, text=True, check=True, timeout=5).stdout.strip()
+                for unit in units}
+            # These units emit only fixed state/errors and aggregate metrics.
+            status["bench_journal"] = subprocess.run(["journalctl", "--no-pager",
+                "--since=-30 min", "-n", "20", "-o", "cat", "-u", units[0], "-u", units[1]],
+                stdin=subprocess.DEVNULL, capture_output=True, text=True, check=True, timeout=5).stdout.splitlines()
+            print(json.dumps(status, sort_keys=True))
         else:
             raise ValueError("Expected no arguments, --calibrate, --restore, or --shared")
     except (OSError, ValueError, subprocess.SubprocessError) as error:

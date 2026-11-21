@@ -706,7 +706,7 @@ jobs:
           sudo -n systemctl start --no-block "$unit"
           result=0
           sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command \
-            python3 /etc/note4c/shared-controller.py --coordinate || result=$?
+            python3 /etc/note4c/shared-controller.py --coordinate </dev/null || result=$?
           # Joining the existing job is safe; this cannot start a second batch.
           while test "$(systemctl show "$unit" -p ActiveState --value)" = activating ||
                 test "$(systemctl show "$unit" -p ActiveState --value)" = deactivating; do

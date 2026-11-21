@@ -709,6 +709,7 @@ assert Path.cwd() == Path(home), 'inherited inaccessible caller directory'
 if 'inspect' in sys.argv:
     print('true true')
 else:
+    assert not sys.stdin.buffer.read(), 'probe consumed its caller input'
     print(json.dumps({'event': 'owner_probe', 'ready': False}))
 ''')
             sudo.chmod(0o755)
@@ -720,8 +721,39 @@ else:
                     patch.object(Path, 'read_text', lambda path, *args, **kwargs:
                         controller['OWNER'] if str(path) == '/etc/amp-orbs/note4c-orb'
                         else read_text(path, *args, **kwargs)):
-                with self.assertRaisesRegex(ValueError, 'Device-owner environment probe failed'):
-                    controller['coordinate']()
+                with tempfile.TemporaryFile() as caller_input:
+                    caller_input.write(b'caller readback and failure checks\n')
+                    caller_input.seek(0)
+                    saved_stdin = os.dup(0)
+                    try:
+                        os.dup2(caller_input.fileno(), 0)
+                        with self.assertRaisesRegex(ValueError, 'Device-owner environment probe failed'):
+                            controller['coordinate']()
+                    finally:
+                        os.dup2(saved_stdin, 0)
+                        os.close(saved_stdin)
+                    self.assertEqual(caller_input.tell(), 0, 'probe swallowed caller checks')
+
+    def test_failed_coordinator_cannot_swallow_workflow_readback_or_exit(self):
+        workflow = (DISPATCH.parents[2] / '.github/workflows/deploy-nuc.yml').read_text()
+        command = re.search(r'          sudo -n nix shell [^\n]+ --command \\\n'
+            r'            python3 /etc/note4c/shared-controller.py --coordinate[^\n]+', workflow)[0]
+        script = ('set -euo pipefail\nset -- a b c pinned\nresult=0\n'
+            f'sudo() {{ {sys.executable} -c "import sys; sys.stdin.read(); sys.exit(1)"; }}\n'
+            + command + '\nprintf "cleanup-readback\\n"\nexit "$result"\n')
+        result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=3)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, 'cleanup-readback\n')
+
+    def test_actor_reports_admission_failure_without_opening_hardware(self):
+        # EOF is rejected before the guard or any device access, regardless of
+        # whether optional owner-only serial imports are installed here.
+        result = subprocess.run([sys.executable, str(DISPATCH.with_name('shared-controller.py')), '--actor'],
+            input='', text=True, capture_output=True, timeout=3)
+        self.assertEqual(result.returncode, 1)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['event'], 'owner_error')
+        self.assertTrue(report['detail'])
 
     def test_shared_protocol_records_separate_directions_and_restores_on_lost_board_reply(self):
         for lost in (False, True):
