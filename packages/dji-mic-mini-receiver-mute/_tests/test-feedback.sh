@@ -37,11 +37,13 @@ make_fixture() {
     --argjson beforeMuted "$before" \
     --arg writeMode "$write_mode" \
     --arg readbackMode "$readback_mode" \
+    --argjson feedbackFails "${fixture_feedback_fails:-false}" \
     '{
       receiverMatches: $receiverMatches,
       beforeMuted: $beforeMuted,
       writeMode: $writeMode,
-      readbackMode: $readbackMode
+      readbackMode: $readbackMode,
+      feedbackFails: $feedbackFails
     }' >"$destination"
 }
 
@@ -52,11 +54,12 @@ run_fixture() {
   local output="$test_tmp/$name-output.json"
   shift 2
 
-  make_fixture "$input" "$@"
+  make_fixture "$input" "$1" "$2" "$3" "$4"
+  shift 4
   set +e
   DJI_RECEIVER_MUTE_FIXTURE_INPUT="$input" \
     DJI_RECEIVER_MUTE_FIXTURE_OUTPUT="$output" \
-    "$fixture_binary" toggle >/dev/null 2>&1
+    "$fixture_binary" "$@" >/dev/null 2>&1
   local actual_exit=$?
   set -e
 
@@ -71,24 +74,77 @@ run_fixture() {
   fi
 }
 
-run_fixture mute 0 1 false success verified
-jq -e '.afterMuted == true and .sounds == ["Basso.aiff"]' "$test_tmp/mute-output.json" >/dev/null
-jq -e '.events == ["lock", "resolve", "read:false", "write:true", "readback:true:300", "unlock", "sound:Basso.aiff"]' "$test_tmp/mute-output.json" >/dev/null
+run_fixture mute 0 1 false success verified toggle
+jq -e '.afterMuted == true and .sounds == ["mic_mute.caf"] and .stderr == []' "$test_tmp/mute-output.json" >/dev/null
+jq -e '.events == ["lock", "resolve", "read:false", "write:true", "readback:true:300", "unlock", "sound:mic_mute.caf"]' "$test_tmp/mute-output.json" >/dev/null
 
-run_fixture unmute 0 1 true success verified
-jq -e '.afterMuted == false and .sounds == ["Tink.aiff"]' "$test_tmp/unmute-output.json" >/dev/null
-jq -e '.events == ["lock", "resolve", "read:true", "write:false", "readback:false:300", "unlock", "sound:Tink.aiff"]' "$test_tmp/unmute-output.json" >/dev/null
+run_fixture unmute 0 1 true success verified toggle
+jq -e '.afterMuted == false and .sounds == ["mic_unmute.caf"] and .stderr == []' "$test_tmp/unmute-output.json" >/dev/null
+jq -e '.events == ["lock", "resolve", "read:true", "write:false", "readback:false:300", "unlock", "sound:mic_unmute.caf"]' "$test_tmp/unmute-output.json" >/dev/null
 
-run_fixture missing 1 0 false success verified
-run_fixture ambiguous 1 2 false success verified
-run_fixture setter-failure 1 1 false failure verified
-run_fixture mismatch 1 1 false success mismatch
-run_fixture no-op 1 1 false no-op verified
-run_fixture timeout 1 1 false success timeout
+run_fixture missing 1 0 false success verified toggle
+run_fixture ambiguous 1 2 false success verified toggle
+run_fixture setter-failure 1 1 false failure verified toggle
+run_fixture mismatch 1 1 false success mismatch toggle
+run_fixture no-op 1 1 false no-op verified toggle
+run_fixture timeout 1 1 false success timeout toggle
 
 for failure in missing ambiguous setter-failure mismatch no-op timeout; do
-  jq -e '.sounds == []' "$test_tmp/$failure-output.json" >/dev/null
+  jq -e '.sounds == ["Sosumi.aiff"] and .stdout == [] and (.stderr | length) == 1' "$test_tmp/$failure-output.json" >/dev/null
 done
+
+# Explicit commands must wait for hardware readback too. A delayed device
+# distinguishes a verified change from an immediate, stale read after a write.
+for command in mute on unmute off; do
+  if [[ "$command" == mute || "$command" == on ]]; then
+    before=false
+    expected=true
+    sound=mic_mute.caf
+  else
+    before=true
+    expected=false
+    sound=mic_unmute.caf
+  fi
+  run_fixture "$command-delayed" 0 1 "$before" delayed verified "$command"
+  jq -e --argjson expected "$expected" --arg sound "$sound" \
+    '.afterMuted == $expected and .sounds == [$sound] and .stderr == []' \
+    "$test_tmp/$command-delayed-output.json" >/dev/null
+
+  run_fixture "$command-no-op" 1 1 "$before" no-op verified "$command"
+  jq -e '.sounds == ["Sosumi.aiff"] and .stdout == []' "$test_tmp/$command-no-op-output.json" >/dev/null
+
+  # Repeated mute/unmute requests are idempotent, even if writes would fail.
+  run_fixture "$command-already-set" 0 1 "$expected" failure verified "$command"
+  jq -e --argjson expected "$expected" \
+    '.afterMuted == $expected and .sounds == [] and .stderr == [] and
+     (.events | any(startswith("write")) | not)' \
+    "$test_tmp/$command-already-set-output.json" >/dev/null
+done
+
+run_fixture status 0 1 true failure timeout status
+run_fixture default-status 0 1 false failure timeout
+for name in status default-status; do
+  jq -e '.sounds == [] and .stderr == [] and (.stdout | length) == 1 and
+    (.events | any(startswith("write")) | not)' "$test_tmp/$name-output.json" >/dev/null
+done
+jq -e '.stdout[0] | endswith(" mute=on")' "$test_tmp/status-output.json" >/dev/null
+jq -e '.stdout[0] | endswith(" mute=off")' "$test_tmp/default-status-output.json" >/dev/null
+
+run_fixture help 0 0 false failure timeout --help
+run_fixture short-help 0 0 false failure timeout -h
+run_fixture invalid 1 0 false failure timeout typo
+run_fixture extra-argument 1 1 false success verified toggle extra
+for name in help short-help invalid extra-argument; do
+  jq -e '.events == [] and .sounds == [] and .afterMuted == false' "$test_tmp/$name-output.json" >/dev/null
+done
+jq -e '.stdout[0] | contains("Usage:")' "$test_tmp/help-output.json" >/dev/null
+jq -e '.stderr[0] | contains("Usage:")' "$test_tmp/invalid-output.json" >/dev/null
+
+# A failed sound must not turn a verified toggle into an apparent failure.
+fixture_feedback_fails=true run_fixture feedback-failure 0 1 false success verified toggle
+jq -e '.afterMuted == true and (.stdout[0] | endswith(" mute=on")) and
+  (.stderr[0] | contains("mute change verified, but feedback failed"))' \
+  "$test_tmp/feedback-failure-output.json" >/dev/null
 
 if grep -F 'kAudioObjectPropertyScopeOutput' "$source_root/receiver-mute.swift" >/dev/null; then
   echo "production helper references CoreAudio output scope" >&2

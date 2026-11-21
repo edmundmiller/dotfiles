@@ -5,6 +5,7 @@ struct FixtureInput: Decodable {
     let beforeMuted: Bool
     let writeMode: String
     let readbackMode: String
+    let feedbackFails: Bool?
 }
 
 struct FixtureOutput: Encodable {
@@ -42,6 +43,7 @@ final class FixtureEvents {
 
 final class FixtureAudioState {
     var inputMuted: Bool
+    var pendingMuted: Bool?
 
     init(inputMuted: Bool) {
         self.inputMuted = inputMuted
@@ -83,6 +85,9 @@ final class FixtureAudio: ReceiverAudio {
             throw FixtureFailure.setterFailed
         case "no-op":
             events.values.append("write-noop:\(requested)")
+        case "delayed":
+            events.values.append("write-pending:\(requested)")
+            state.pendingMuted = requested
         default:
             events.values.append("write:\(requested)")
             state.inputMuted = requested
@@ -103,6 +108,10 @@ final class FixtureAudio: ReceiverAudio {
             events.values.append("readback:\(mismatch):\(timeoutMilliseconds)")
             return mismatch
         default:
+            if let pending = state.pendingMuted {
+                state.inputMuted = pending
+                state.pendingMuted = nil
+            }
             events.values.append("readback:\(state.inputMuted):\(timeoutMilliseconds)")
             return state.inputMuted
         }
@@ -111,13 +120,18 @@ final class FixtureAudio: ReceiverAudio {
 
 final class FixtureFeedback: MuteFeedback {
     private let events: FixtureEvents
+    private let fails: Bool
     private(set) var sounds: [String] = []
 
-    init(events: FixtureEvents) {
+    init(events: FixtureEvents, fails: Bool) {
         self.events = events
+        self.fails = fails
     }
 
     func play(path: String) throws {
+        if fails || !FileManager.default.fileExists(atPath: path) {
+            throw CocoaError(.fileReadNoSuchFile)
+        }
         let sound = URL(fileURLWithPath: path).lastPathComponent
         events.values.append("sound:\(sound)")
         sounds.append(sound)
@@ -158,7 +172,7 @@ struct ReceiverMuteFixtureMain {
         let events = FixtureEvents()
         let state = FixtureAudioState(inputMuted: input.beforeMuted)
         let audio = FixtureAudio(input: input, events: events, state: state)
-        let feedback = FixtureFeedback(events: events)
+        let feedback = FixtureFeedback(events: events, fails: input.feedbackFails ?? false)
         let lock = FixtureLock(events: events)
         var stdout: [String] = []
         var stderr: [String] = []

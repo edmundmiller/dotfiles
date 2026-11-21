@@ -8,8 +8,10 @@ typealias ReceiverDeviceID = AudioDeviceID
 let targetUID = "AppleUSBAudioEngine:DJI Technology Co., Ltd.:Wireless Mic Rx:XSP12345678B:3"
 let targetName = "Wireless Mic Rx"
 let targetManufacturer = "DJI Technology Co., Ltd."
-let mutedFeedbackPath = "/System/Library/Sounds/Basso.aiff"
-let liveFeedbackPath = "/System/Library/Sounds/Tink.aiff"
+let feedbackDirectory = "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system"
+let mutedFeedbackPath = "\(feedbackDirectory)/mic_mute.caf"
+let liveFeedbackPath = "\(feedbackDirectory)/mic_unmute.caf"
+let failedFeedbackPath = "/System/Library/Sounds/Sosumi.aiff"
 
 enum ReceiverMuteError: LocalizedError {
     case unableToEnumerateDevices
@@ -50,7 +52,7 @@ enum ReceiverMuteError: LocalizedError {
         case .unableToAcquireLock:
             "Unable to acquire receiver mute lock"
         case .usage:
-            "Usage: receiver-mute [status|toggle|on|off]"
+            "Usage: receiver-mute [status|toggle|mute|unmute|on|off|--help]"
         }
     }
 }
@@ -245,32 +247,31 @@ struct AfplayMuteFeedback: MuteFeedback {
     }
 }
 
-private func verifiedToggle(
+private func verifiedMute(
+    command: String,
     audio: ReceiverAudio,
-    feedback: MuteFeedback,
     lock: ReceiverMuteLocking
-) throws -> (device: ReceiverDeviceID, muted: Bool) {
-    let transition = try { () throws -> (device: ReceiverDeviceID, muted: Bool) in
-        try lock.lock()
-        defer { lock.unlock() }
+) throws -> (device: ReceiverDeviceID, muted: Bool, changed: Bool) {
+    try lock.lock()
+    defer { lock.unlock() }
 
-        let device = try audio.receiver()
-        let before = try audio.readMute(device)
-        let expected = !before
-        try audio.writeMute(expected, to: device)
-        let after = try audio.readMuteUntil(
-            expected,
-            device: device,
-            timeoutMilliseconds: 300
-        )
-        guard after == expected, after != before else {
-            throw ReceiverMuteError.transitionMismatch
-        }
-        return (device, after)
-    }()
+    let device = try audio.receiver()
+    let before = try audio.readMute(device)
+    let expected = command == "toggle" ? !before : command == "mute" || command == "on"
+    guard expected != before else {
+        return (device, before, false)
+    }
 
-    try feedback.play(path: transition.muted ? mutedFeedbackPath : liveFeedbackPath)
-    return transition
+    try audio.writeMute(expected, to: device)
+    let after = try audio.readMuteUntil(
+        expected,
+        device: device,
+        timeoutMilliseconds: 300
+    )
+    guard after == expected else {
+        throw ReceiverMuteError.transitionMismatch
+    }
+    return (device, after, true)
 }
 
 func runReceiverMuteCLI(
@@ -281,33 +282,51 @@ func runReceiverMuteCLI(
     stdout: (String) -> Void,
     stderr: (String) -> Void
 ) -> Int {
-    do {
-        let command = arguments.dropFirst().first ?? "status"
-        let result: (device: ReceiverDeviceID, muted: Bool)
+    let command = arguments.dropFirst().first ?? "status"
+    let changesMute = ["toggle", "mute", "unmute", "on", "off"].contains(command)
+    guard arguments.count <= 2, changesMute || ["status", "--help", "-h"].contains(command) else {
+        stderr("receiver-mute: \(ReceiverMuteError.usage.localizedDescription)")
+        return 1
+    }
+    if command == "--help" || command == "-h" {
+        stdout("""
+        Usage: receiver-mute [status|toggle|mute|unmute|on|off|--help]
+        Controls only the exact DJI Wireless Mic Rx input, never the system default.
+          status   Read mute state without changing it (the default command).
+          toggle   Switch between muted and live.
+          mute     Mute the input (alias: on).
+          unmute   Make the input live (alias: off).
+        Native macOS microphone sounds confirm muted/live; Sosumi means the command failed.
+        Already in the requested state: no write and no sound.
+        """)
+        return 0
+    }
 
-        if command == "toggle" {
-            result = try verifiedToggle(audio: audio, feedback: feedback, lock: lock)
+    do {
+        let result: (device: ReceiverDeviceID, muted: Bool, changed: Bool)
+
+        if changesMute {
+            result = try verifiedMute(command: command, audio: audio, lock: lock)
         } else {
             let device = try audio.receiver()
-            switch command {
-            case "status":
-                break
-            case "on":
-                try audio.writeMute(true, to: device)
-            case "off":
-                try audio.writeMute(false, to: device)
-            default:
-                throw ReceiverMuteError.usage
-            }
-
-            let after = try audio.readMute(device)
-            result = (device, after)
+            result = (device, try audio.readMute(device), false)
         }
 
         stdout("device=\(result.device) uid=\(targetUID) mute=\(result.muted ? "on" : "off")")
+        if result.changed {
+            do {
+                try feedback.play(path: result.muted ? mutedFeedbackPath : liveFeedbackPath)
+            } catch {
+                // A confirmed mute change must not look like a failed toggle and invite a retry.
+                stderr("receiver-mute: mute change verified, but feedback failed: \(error.localizedDescription)")
+            }
+        }
         return 0
     } catch {
         stderr("receiver-mute: \(error.localizedDescription)")
+        if changesMute {
+            try? feedback.play(path: failedFeedbackPath)
+        }
         return 1
     }
 }
