@@ -74,6 +74,22 @@ views:
                   target:
                     entity_id: script.everything_off
 
+          - type: markdown
+            title: Trash pickup
+            content: |-
+              {% set today = now() %}
+              {% set days_until = 6 - today.weekday() if today.weekday() in [4, 5] else 0 %}
+              {% set pickup = today + timedelta(days=days_until) %}
+              ## {{ 'Today' if days_until == 0 else 'Tomorrow' if days_until == 1 else pickup.strftime('%A') }} · {{ pickup.strftime('%b %-d') }}
+              **Valet pickup Sunday–Thursday.** Place bags in the valet trash bin by the front door on pickup days.
+
+              {% if days_until > 0 %}
+              **No valet pickup today.** Friday–Saturday: self-dispose in designated areas.
+              {% endif %}
+              Keep trash out of stairwells and hallways.
+
+              <small>Regular schedule from Apple Notes, "Trash Disposal Guidelines" (Oct 25, 2024). Property not named; current schedule unconfirmed. Pickup times, recycling, bulk pickup and holiday exceptions not listed.</small>
+
       # ── Living Room ──
       - cards:
           - type: heading

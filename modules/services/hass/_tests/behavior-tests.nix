@@ -79,5 +79,6 @@ pkgs.runCommand "ha-behavior-tests" { nativeBuildInputs = [ python ]; } ''
   python3 ${./test_entrance_night_light.py} ${automationConfig "entrance_night_light_off_when_clear"} -v
   python3 ${./test_pets.py} ${petsConfig} -v
   python3 ${./test_monica_routine.py} ${monicaConfig} -v
+  python3 ${./test_dashboard.py} ${../dashboard.yaml} -v
   touch "$out"
 ''

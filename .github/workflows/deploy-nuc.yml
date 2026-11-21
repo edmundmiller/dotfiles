@@ -458,6 +458,51 @@ jobs:
               raise SystemExit('Notion runtime read-only authentication/schema check failed; details suppressed') from None
           print('Notion runtime credential authenticated and incident schema matched; no data written.')
           PY
+      - name: Refresh and verify the declarative HA dashboard without restarting HA
+        if: inputs.operation == 'deploy' || (inputs.operation == 'rollout' && steps.activate.outcome == 'success')
+        env:
+          TARGET: ${{ steps.select.outputs.target || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          dashboard_sha=$(git show "$TARGET:modules/services/hass/dashboard.yaml" | sha256sum | cut -d ' ' -f 1)
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "sudo -n uv run --no-project --with websockets --with pyyaml python - '$dashboard_sha'" <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import subprocess
+          import sys
+          import yaml
+          from websockets.sync.client import connect
+
+          def runtime():
+              return subprocess.check_output([
+                  'systemctl', 'show', 'home-assistant.service',
+                  '-p', 'MainPID', '-p', 'ExecMainStartTimestampMonotonic', '-p', 'ActiveState',
+              ], text=True)
+
+          try:
+              before = runtime()
+              assert 'ActiveState=active\n' in before and 'MainPID=0\n' not in before
+              source = Path('/var/lib/hass/ui-lovelace.yaml').read_bytes()
+              assert hashlib.sha256(source).hexdigest() == sys.argv[1]
+              token = Path('/run/agenix/ha-hermes-token').read_text().strip()
+              with connect('ws://127.0.0.1:8123/api/websocket', open_timeout=10,
+                           close_timeout=1, max_size=16 * 1024 * 1024, proxy=None) as socket:
+                  assert json.loads(socket.recv(timeout=10))['type'] == 'auth_required'
+                  socket.send(json.dumps({'type': 'auth', 'access_token': token}))
+                  assert json.loads(socket.recv(timeout=10))['type'] == 'auth_ok'
+                  # Nix store mtimes cannot invalidate HA's YAML dashboard cache.
+                  socket.send(json.dumps({'id': 1, 'type': 'lovelace/config',
+                                          'url_path': 'nixos-lovelace', 'force': True}))
+                  reply = json.loads(socket.recv(timeout=20))
+                  assert reply['id'] == 1 and reply['success']
+                  assert reply['result'] == yaml.safe_load(source)
+              assert runtime() == before
+          except Exception:
+              raise SystemExit('HA dashboard refresh/readback failed; details suppressed') from None
+          print('HA dashboard matched published YAML; cache refreshed with unchanged HA PID/start.')
+          PY
       - name: Read back the active generation and affected services
         if: always() && inputs.operation == 'rollout' && steps.select.outputs.target != ''
         env:
