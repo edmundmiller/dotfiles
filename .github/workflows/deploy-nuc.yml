@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'orb-dji-capture' && 'Enable DJI capture' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-homekit-retry' && 'Retry one HomeKit entry' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'orb-dji-capture' && 'Enable DJI capture' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -16,6 +16,7 @@ on:
           - deploy
           - rollout
           - ha-diagnostics
+          - ha-homekit-retry
           - ha-climate-diagnostics
           - ha-climate-recurrence
           - ha-plant-diagnostics
@@ -61,6 +62,9 @@ on:
         description: Stop only dedicated pilot containers, preserving disks, before pilot deployment (requires approval and orb_pilot)
         default: false
         type: boolean
+      homekit_entry_id:
+        description: ha-homekit-retry only; exact failed HomeKit config-entry ID with explicit retry approval
+        type: string
       restart_bluetooth:
         description: Restart Bluetooth once before HA diagnostics (requires explicit approval)
         default: false
@@ -620,7 +624,7 @@ jobs:
           '
           sleep 280
       - name: Inspect labelled health routes and bounded incident journal
-        if: inputs.operation == 'ha-diagnostics'
+        if: inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry'
         shell: bash
         run: |
           set -euo pipefail
@@ -632,8 +636,38 @@ jobs:
             printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
             exec sudo -n uv run --no-project python - incident
           ' < modules/services/hass/monitor-gatus.py | jq .
+      - name: Retry exactly one approved failing HomeKit entry without restarting HA
+        id: homekit_retry
+        if: inputs.operation == 'ha-homekit-retry'
+        env:
+          ENTRY_ID: ${{ inputs.homekit_entry_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$ENTRY_ID" =~ ^[A-Za-z0-9]{1,64}$ ]]
+          # The validated identifier is the only runner-expanded remote argument.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            systemctl is-active --quiet home-assistant.service
+            before=$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)
+            printf "haBefore=%s\n" "$before" >&2
+            result=0
+            sudo -n uv run --no-project --script - homekit-entry \
+              --url http://127.0.0.1:8123 --token-file /run/agenix/ha-hermes-token \
+              --timeout 30 --entry-id '"$ENTRY_ID"' --reload --json || result=$?
+            after=$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)
+            printf "haAfter=%s\n" "$after" >&2
+            systemctl is-active --quiet home-assistant.service
+            test "$before" = "$after"
+            exit "$result"
+          ' < modules/services/hass/hass-health.py | jq .
+      - name: Allow existing monitor samples after the HomeKit retry
+        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && inputs.operation == 'ha-homekit-retry'
+        run: sleep 280
       - name: Inspect Gatus history and privacy-filtered HA runtime aggregates
-        if: (inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics'
+        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && ((inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics' || inputs.operation == 'ha-homekit-retry')
         env:
           REQUIRE_LIVE: ${{ inputs.operation == 'deploy' && inputs.ha_monitor && '--require-live' || '' }}
         shell: bash
@@ -840,7 +874,7 @@ jobs:
               --recovered-at '$RECOVERED_AT'
           " < modules/services/hass/climate-entity-diagnostics.py
       - name: Inspect retained critical entity failures without activation
-        if: inputs.operation == 'ha-diagnostics'
+        if: inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry'
         shell: bash
         run: |
           set -euo pipefail
@@ -854,7 +888,7 @@ jobs:
             exec sudo -n uv run --no-project python -
           ' < modules/services/hass/critical-entity-history.py
       - name: Inspect running HA without activation
-        if: inputs.operation == 'ha-diagnostics'
+        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry')
         shell: bash
         run: |
           set -euo pipefail

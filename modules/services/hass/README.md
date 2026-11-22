@@ -143,6 +143,18 @@ messages and unexpected response bodies stay on the host. The live integration
 report identifies unloaded entries and known failure-reason codes without
 exporting titles, addresses or raw reasons. This operation does not retry or
 reload entries. It uses the existing HA runtime credential only on the host.
+
+With explicit approval to retry one failed HomeKit entry, use the separate
+`operation=ha-homekit-retry` and `homekit_entry_id`. The helper identifies only
+that entry's device manufacturer/model and entity IDs, refuses other domains,
+disabled entries and loaded entries, and issues one supported config-entry
+reload. It never restarts HA or replays an uncertain POST. The workflow compares
+HA PID/start before and after, then lets existing monitor samples run before
+reading health again. The diagnostic journal also categorizes systemd lifecycle,
+upgrade and OOM events. No raw message, name, address or pairing data leaves NUC.
+NixOS's HA reload sends SIGHUP, which HA handles as a full restart; it is not an
+acceptable substitute for this single-entry retry.
+
 An unhealthy HA report can make the workflow fail even when diagnostic capture
 succeeded; inspect its separate JSON reports rather than treating workflow
 success as the health result.

@@ -514,11 +514,50 @@ gh() {
                 if change_ha == "false":
                     self.assertEqual((self.root / "ha-pid").read_text(), "200\n")
 
+    def test_homekit_retry_preserves_ha_start_and_rejects_unsafe_targets(self):
+        setup = r"""
+            tailscale() { bash -c "$3"; }
+            hostname() { printf '%s\n' "$TARGET_HOST"; }
+            systemctl() {
+              case "$*" in
+                'is-active --quiet home-assistant.service') return 0 ;;
+                'show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic')
+                  cat "$GITHUB_FIXTURE/ha-start" ;;
+                *) return 77 ;;
+              esac
+            }
+            sudo() {
+              test "$*" = '-n uv run --no-project --script - homekit-entry --url http://127.0.0.1:8123 --token-file /run/agenix/ha-hermes-token --timeout 30 --entry-id target --reload --json' || return 78
+              cat > /dev/null
+              touch "$GITHUB_FIXTURE/retried"
+              if test "$CHANGE_HA_START" = true; then
+                printf 'MainPID=200\nExecMainStartTimestampMonotonic=999\n' > "$GITHUB_FIXTURE/ha-start"
+              fi
+              printf '{"status":"healthy"}\n'
+            }
+            export -f hostname systemctl sudo
+        """
+        for host, identifier, changed, accepted in (
+            ("nuc", "target", "false", True),
+            ("nuc", "target", "true", False),
+            ("another-host", "target", "false", False),
+            ("nuc", "target;false", "false", False),
+        ):
+            with self.subTest(host=host, identifier=identifier, changed=changed):
+                (self.root / "retried").unlink(missing_ok=True)
+                (self.root / "ha-start").write_text("MainPID=200\nExecMainStartTimestampMonotonic=123\n")
+                result = self.workflow_shell(
+                    "Retry exactly one approved failing HomeKit entry without restarting HA",
+                    setup=textwrap.dedent(setup) + f'export TARGET_HOST="{host}" ENTRY_ID="{identifier}" CHANGE_HA_START="{changed}"\n',
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                self.assertEqual((self.root / "retried").exists(), host == "nuc" and identifier == "target")
+
     def test_diagnostics_preserve_unhealthy_and_unknown_results_without_activation(self):
         workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
         self.assertIn(
             "- name: Inspect running HA without activation\n"
-            "        if: inputs.operation == 'ha-diagnostics'\n",
+            "        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry')\n",
             workflow,
         )
         for code, status in ((0, "healthy"), (1, "unhealthy"), (2, "unknown")):
@@ -1212,6 +1251,8 @@ class HaMonitorTests(unittest.TestCase):
         if args[:2] == ["systemctl", "show"]:
             return subprocess.CompletedProcess(args, 0, "ActiveState=active\nMainPID=0\nNRestarts=0")
         if args[0] == "journalctl":
+            if "-k" in args:
+                return subprocess.CompletedProcess(args, 0, "")
             records = self.reports + self.samples if args[2] == "hass-health.service" else self.alert_logs
             return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, records)))
         active = self.timer_active if args[-1] == "hass-health.timer" else self.server_active

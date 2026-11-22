@@ -117,10 +117,12 @@ def incident_diagnostics():
             item["error_type"] = type(error).__name__
         result["http"][str(port)] = item
     for unit in ("gatus.service", "gatus-email.service", "home-assistant.service", "hass-health-http.service"):
-        properties = "ActiveState,SubState,MainPID,NRestarts,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainStartTimestampMonotonic"
+        properties = "ActiveState,SubState,MainPID,NRestarts,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainStartTimestampMonotonic,ExecReload"
         command = subprocess.run(["systemctl", "show", unit, "--property=" + properties],
                                  check=True, capture_output=True, text=True, timeout=5)
         metadata = dict(line.split("=", 1) for line in command.stdout.splitlines() if "=" in line)
+        reload_command = metadata.pop("ExecReload", "")
+        metadata["reload_sends_sighup"] = bool(re.search(r"\bkill\s+-HUP\b", reload_command))
         pid = metadata.get("MainPID", "0")
         if pid.isdecimal() and int(pid) > 0:
             try:
@@ -136,6 +138,7 @@ def incident_diagnostics():
     ]
     records = subprocess.run(
         ["journalctl", "-u", "home-assistant.service", "-u", "gatus.service", "-u", "gatus-email.service",
+         "-u", "nixos-upgrade.service", "-u", "systemd-oomd.service",
          "--since", since.isoformat(), "--until", now.isoformat(), "--all", "-o", "json", "--no-pager"],
         check=True, capture_output=True, text=True, timeout=20,
     )
@@ -149,11 +152,25 @@ def incident_diagnostics():
         "bluetooth": r"org\.bluez|bluetooth|dbus", "setup_retry": r"not ready yet|setup_retry",
         "setup_error": r"error setting up|setup failed|setup_error",
         "delivery_error": r"email delivery:|receiver rejected pending transition",
+        "service_reload": r"\bReload(?:ing|ed)\b",
+        "service_start": r"\bStart(?:ing|ed)\b",
+        "service_stop": r"\bStopp?(?:ing|ed)\b|Deactivated successfully",
+        "process_exit": r"Main process exited|Failed with result|Scheduled restart job",
+        "oom": r"out of memory|oom.kill|killed process",
     }
-    for line in records.stdout.splitlines():
+    kernel = subprocess.run(
+        ["journalctl", "-k", "--since", since.isoformat(), "--until", now.isoformat(),
+         "--all", "-o", "json", "--no-pager"],
+        check=True, capture_output=True, text=True, timeout=20,
+    )
+    for line in (records.stdout + kernel.stdout).splitlines():
         record = json.loads(line)
         unit = record.get("UNIT", record.get("_SYSTEMD_UNIT"))
-        if unit not in {"home-assistant.service", "gatus.service", "gatus-email.service"}:
+        is_kernel = record.get("_TRANSPORT") == "kernel"
+        if is_kernel:
+            unit = "kernel"
+        if unit not in {"home-assistant.service", "gatus.service", "gatus-email.service",
+                        "nixos-upgrade.service", "systemd-oomd.service", "kernel"}:
             continue
         retained[unit] += 1
         message = record.get("MESSAGE", "")
@@ -162,7 +179,9 @@ def incident_diagnostics():
         if not isinstance(message, str):
             nontext += 1
             continue
-        categories = [code for code, pattern in signatures.items() if re.search(pattern, message, re.I)]
+        categories = [code for code, pattern in signatures.items() if re.search(pattern, message, re.I)
+                      and (not is_kernel or code == "oom")
+                      and (not code.startswith("service_") or record.get("_PID") == "1")]
         if not categories:
             continue
         events.append({

@@ -2,13 +2,15 @@
 # /// script
 # dependencies = ["websockets>=15,<17"]
 # ///
-"""Read-only Home Assistant health and privacy-filtered automation traces."""
+"""Home Assistant health, private-data-filtered traces and explicit HomeKit retry."""
 
 import argparse
 import json
 import math
 import os
 import sys
+import time
+from urllib.request import Request, urlopen
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
@@ -287,6 +289,65 @@ def health(ha, args, now):
     }
 
 
+def homekit_entry(ha, args, token, now):
+    """Identify one HomeKit device; reload only on explicit opt-in and failed state."""
+    def entry():
+        matches = [item for item in ha.request("config_entries/get")
+                   if item["entry_id"] == args.entry_id]
+        if len(matches) != 1 or matches[0]["domain"] != "homekit_controller":
+            raise InspectionError("The requested entry is not a known HomeKit Controller entry.")
+        return matches[0]
+
+    if not args.entry_id.isascii() or not args.entry_id.isalnum() or len(args.entry_id) > 64:
+        raise InspectionError("Use the exact alphanumeric config-entry ID.")
+    before = entry()
+    devices = [device for device in ha.request("config/device_registry/list")
+               if args.entry_id in device.get("config_entries", [])]
+    entities = [item for item in ha.request("config/entity_registry/list")
+                if item.get("config_entry_id") == args.entry_id]
+    states = {item["entity_id"]: item["state"] for item in ha.request("get_states")}
+    result = {
+        "schema_version": 1, "observed_at": now.isoformat(),
+        "entry_id": args.entry_id, "domain": "homekit_controller",
+        "state_before": before["state"],
+        "devices": [{key: device.get(key) for key in ("manufacturer", "model")}
+                    for device in devices],
+        "entities": [{"entity_id": item["entity_id"],
+                      "state": states.get(item["entity_id"], "missing")}
+                     for item in entities],
+        "reload_requested": args.reload,
+        "omitted": ["titles", "names", "addresses", "identifiers", "pairing_data", "raw_errors"],
+    }
+    if args.reload:
+        if before.get("disabled_by") or before.get("source") == "ignore" or before["state"] not in {"setup_retry", "setup_error"}:
+            raise InspectionError("Reload refused: the enabled HomeKit entry must be in setup_retry or setup_error.")
+        request = Request(
+            args.url.rstrip("/") + "/api/config/config_entries/entry/" + args.entry_id + "/reload",
+            data=b"", headers={"Authorization": "Bearer " + token}, method="POST",
+        )
+        # Exactly one POST. A lost response is indeterminate, never replayed.
+        try:
+            with urlopen(request, timeout=args.timeout) as response:
+                reply = json.load(response)
+            if not isinstance(reply, dict) or type(reply.get("require_restart")) is not bool:
+                raise ValueError("Unexpected reload response")
+            result["reload_result"] = "restart_required" if reply["require_restart"] else "accepted"
+        except (OSError, ValueError, AttributeError) as error:
+            result["reload_result"] = "indeterminate"
+            result["reload_error_type"] = type(error).__name__
+        for attempt in range(7):
+            after = entry()
+            if after["state"] == "loaded" or attempt == 6:
+                break
+            time.sleep(5)
+    else:
+        after = before
+    result["state_after"] = after["state"]
+    result["status"] = "healthy" if after["state"] == "loaded" else "unhealthy"
+    result["completed_at"] = datetime.now(UTC).isoformat()
+    return result
+
+
 def positive_number(value):
     number = float(value)
     if not math.isfinite(number) or number <= 0:
@@ -317,7 +378,7 @@ def parser():
     root = argparse.ArgumentParser(
         prog="hass-health",
         description=__doc__,
-        epilog="Exit codes: 0 healthy/success, 1 unhealthy, 2 unknown/error. Never sends service calls.",
+        epilog="Exit codes: 0 healthy/success, 1 unhealthy, 2 unknown/error. Only homekit-entry --reload writes to HA.",
     )
     commands = root.add_subparsers(dest="command", required=True)
     status = commands.add_parser(
@@ -365,6 +426,10 @@ def parser():
         "--limit", type=int, choices=range(1, 101), default=20, metavar="1..100"
     )
     detail.add_argument("--run-id", required=True)
+    homekit = commands.add_parser("homekit-entry", parents=[common],
+                                  help="Identify one HomeKit entry; optionally retry it with explicit approval.")
+    homekit.add_argument("--entry-id", required=True)
+    homekit.add_argument("--reload", action="store_true", help="Reload this failed HomeKit entry once, never HA itself.")
     return root
 
 
@@ -419,6 +484,11 @@ def run(args):
                 "HA rejected the token; supply a valid token through HASS_TOKEN or --token-file."
             )
         now = datetime.now(UTC)
+        if args.command == "homekit-entry":
+            try:
+                return homekit_entry(ha, args, token, now)
+            except InspectionError as error:
+                return {"schema_version": 1, "status": "unknown", "error": str(error)}
         if args.command == "health":
             if args.entity is None:
                 args.entity = os.getenv("HASS_CRITICAL_ENTITIES", "").split()

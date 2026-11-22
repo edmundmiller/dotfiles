@@ -150,6 +150,30 @@ class HassHealthTest(unittest.TestCase):
         self.assertNotIn("private", process.stdout)
         return process.returncode, json.loads(process.stdout)
 
+    def test_homekit_identity_filters_other_devices_and_private_fields(self):
+        self.responses["config_entries/get"][0].update(domain="homekit_controller", state="setup_retry")
+        self.responses["config/device_registry/list"] = [
+            {"config_entries": ["enabled"], "manufacturer": "Example", "model": "Outlet", "name": "private name", "identifiers": ["private identifier"]},
+            {"config_entries": ["unrelated"], "manufacturer": "private", "model": "private"},
+        ]
+        self.responses["config/entity_registry/list"] = [
+            {"config_entry_id": "enabled", "entity_id": "switch.outlet"},
+            {"config_entry_id": "unrelated", "entity_id": "sensor.private"},
+        ]
+        self.responses["get_states"] = [{"entity_id": "switch.outlet", "state": "unavailable", "attributes": {"private": "private"}}]
+        code, report = self.invoke("homekit-entry", "--entry-id", "enabled")
+        self.assertEqual(code, 1)
+        self.assertEqual(report["devices"], [{"manufacturer": "Example", "model": "Outlet"}])
+        self.assertEqual(report["entities"], [{"entity_id": "switch.outlet", "state": "unavailable"}])
+        self.assertFalse(report["reload_requested"])
+        self.assertEqual(report["state_after"], "setup_retry")
+        for domain, state, disabled in (("matter", "setup_retry", None), ("homekit_controller", "loaded", None), ("homekit_controller", "setup_retry", "user")):
+            with self.subTest(domain=domain, state=state, disabled=disabled):
+                self.responses["config_entries/get"][0].update(domain=domain, state=state, disabled_by=disabled)
+                code, report = self.invoke("homekit-entry", "--entry-id", "enabled", "--reload")
+                self.assertEqual(code, 2)
+                self.assertEqual(report["status"], "unknown")
+
     def health(self, *extra):
         return self.invoke(
             "health",
