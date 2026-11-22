@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-homekit-retry' && 'Retry one HomeKit entry' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'orb-dji-capture' && 'Enable DJI capture' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-homebridge-recovery' && 'Recover Homebridge dependency' || inputs.operation == 'ha-homekit-retry' && 'Retry one HomeKit entry' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'orb-dji-capture' && 'Enable DJI capture' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -17,6 +17,7 @@ on:
           - rollout
           - ha-diagnostics
           - ha-homekit-retry
+          - ha-homebridge-recovery
           - ha-climate-diagnostics
           - ha-climate-recurrence
           - ha-plant-diagnostics
@@ -624,7 +625,7 @@ jobs:
           '
           sleep 280
       - name: Inspect labelled health routes and bounded incident journal
-        if: inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry'
+        if: inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery'
         shell: bash
         run: |
           set -euo pipefail
@@ -636,6 +637,55 @@ jobs:
             printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
             exec sudo -n uv run --no-project python - incident
           ' < modules/services/hass/monitor-gatus.py | jq .
+      - name: Restart only Homebridge when its configured HAP listener is missing
+        id: homebridge_recovery
+        if: inputs.operation == 'ha-homebridge-recovery'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Fixed service/port, no caller-selected command and no pairing data.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            systemctl is-active --quiet home-assistant.service
+            before=$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)
+            printf "haBefore=%s\n" "$before"
+            listeners=$(ss -H -ltn "sport = :51826")
+            test -z "$listeners"
+            result=0
+            sudo -n systemctl restart homebridge.service || result=$?
+            listening=0
+            for attempt in $(seq 1 30); do
+              listeners=$(ss -H -ltn "sport = :51826")
+              if test -n "$listeners"; then
+                listening=1
+                break
+              fi
+              sleep 2
+            done
+            after=$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)
+            printf "haAfter=%s\nhomebridge_hap_listening=%s\n" "$after" "$listening"
+            systemctl is-active --quiet home-assistant.service
+            test "$before" = "$after"
+            test "$listening" = 1
+            systemctl is-active --quiet homebridge.service
+            exit "$result"
+          '
+      - name: Inspect Homebridge dependency after the single restart
+        if: (success() || (failure() && steps.homebridge_recovery.outcome == 'failure')) && inputs.operation == 'ha-homebridge-recovery'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            exec sudo -n uv run --no-project python - incident
+          ' < modules/services/hass/monitor-gatus.py | jq .
+      - name: Allow automatic HomeKit retry and existing monitor samples
+        if: (success() || (failure() && steps.homebridge_recovery.outcome == 'failure')) && inputs.operation == 'ha-homebridge-recovery'
+        run: sleep 280
       - name: Retry exactly one approved failing HomeKit entry without restarting HA
         id: homekit_retry
         if: inputs.operation == 'ha-homekit-retry'
@@ -667,7 +717,7 @@ jobs:
         if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && inputs.operation == 'ha-homekit-retry'
         run: sleep 280
       - name: Inspect Gatus history and privacy-filtered HA runtime aggregates
-        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && ((inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics' || inputs.operation == 'ha-homekit-retry')
+        if: (success() || (failure() && (steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && ((inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')
         env:
           REQUIRE_LIVE: ${{ inputs.operation == 'deploy' && inputs.ha_monitor && '--require-live' || '' }}
         shell: bash
@@ -874,7 +924,7 @@ jobs:
               --recovered-at '$RECOVERED_AT'
           " < modules/services/hass/climate-entity-diagnostics.py
       - name: Inspect retained critical entity failures without activation
-        if: inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry'
+        if: inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery'
         shell: bash
         run: |
           set -euo pipefail
@@ -888,7 +938,7 @@ jobs:
             exec sudo -n uv run --no-project python -
           ' < modules/services/hass/critical-entity-history.py
       - name: Inspect running HA without activation
-        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry')
+        if: (success() || (failure() && (steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')
         shell: bash
         run: |
           set -euo pipefail

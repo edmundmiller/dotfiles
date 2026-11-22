@@ -553,11 +553,63 @@ gh() {
                 self.assertEqual(result.returncode == 0, accepted, result.stderr)
                 self.assertEqual((self.root / "retried").exists(), host == "nuc" and identifier == "target")
 
+    def test_homebridge_recovery_requires_missing_listener_and_preserves_ha(self):
+        setup = r"""
+            tailscale() { bash -c "$3"; }
+            hostname() { printf '%s\n' "$TARGET_HOST"; }
+            sleep() { :; }
+            ss() {
+              test "$*" = '-H -ltn sport = :51826' || return 77
+              if test "$LISTENER_READ_FAILED" = true; then return 79; fi
+              if test -f "$GITHUB_FIXTURE/hap-listening"; then printf 'LISTEN\n'; fi
+            }
+            systemctl() {
+              case "$*" in
+                'is-active --quiet home-assistant.service'|'is-active --quiet homebridge.service') return 0 ;;
+                'show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic') cat "$GITHUB_FIXTURE/ha-start" ;;
+                *) return 77 ;;
+              esac
+            }
+            sudo() {
+              test "$*" = '-n systemctl restart homebridge.service' || return 78
+              printf 'restart\n' >> "$GITHUB_FIXTURE/homebridge-restarts"
+              if test "$RECOVER_HAP" = true; then touch "$GITHUB_FIXTURE/hap-listening"; fi
+              if test "$CHANGE_HA_START" = true; then
+                printf 'MainPID=200\nExecMainStartTimestampMonotonic=999\n' > "$GITHUB_FIXTURE/ha-start"
+              fi
+              return 0
+            }
+            export -f hostname sleep ss systemctl sudo
+        """
+        for host, already_listening, recover, changed, read_failed, accepted in (
+            ("nuc", False, "true", "false", "false", True),
+            ("nuc", True, "true", "false", "false", False),
+            ("another-host", False, "true", "false", "false", False),
+            ("nuc", False, "false", "false", "false", False),
+            ("nuc", False, "true", "true", "false", False),
+            ("nuc", False, "true", "false", "true", False),
+        ):
+            with self.subTest(host=host, listening=already_listening, recover=recover, changed=changed):
+                listener = self.root / "hap-listening"
+                listener.unlink(missing_ok=True)
+                if already_listening:
+                    listener.touch()
+                restarts = self.root / "homebridge-restarts"
+                restarts.unlink(missing_ok=True)
+                (self.root / "ha-start").write_text("MainPID=200\nExecMainStartTimestampMonotonic=123\n")
+                result = self.workflow_shell(
+                    "Restart only Homebridge when its configured HAP listener is missing",
+                    setup=textwrap.dedent(setup) + f'export TARGET_HOST="{host}" RECOVER_HAP="{recover}" CHANGE_HA_START="{changed}" LISTENER_READ_FAILED="{read_failed}"\n',
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                expected = "restart\n" if host == "nuc" and not already_listening and read_failed == "false" else ""
+                self.assertEqual(restarts.read_text() if restarts.exists() else "", expected)
+
     def test_diagnostics_preserve_unhealthy_and_unknown_results_without_activation(self):
         workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
         self.assertIn(
             "- name: Inspect running HA without activation\n"
-            "        if: (success() || (failure() && steps.homekit_retry.outcome == 'failure')) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry')\n",
+            "        if: (success() || (failure() && (steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')\n",
             workflow,
         )
         for code, status in ((0, "healthy"), (1, "unhealthy"), (2, "unknown")):
