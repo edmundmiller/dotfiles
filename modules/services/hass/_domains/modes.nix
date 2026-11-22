@@ -29,6 +29,16 @@ in
       description = "Kill all lights, TV, close blinds. No bedtime state — safe to call any time of day.";
       sequence = [
         {
+          action = "switch.turn_off";
+          target.entity_id = [
+            "switch.living_room_christmas_tree"
+            "switch.white_icicles"
+            "switch.christmas_tree_forest"
+          ];
+          # A disconnected seasonal plug must not block the ordinary lights/TV.
+          continue_on_error = true;
+        }
+        {
           action = "light.turn_off";
           target.entity_id = [
             "light.kitchen_trashcan" # Trashcan

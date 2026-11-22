@@ -15,6 +15,7 @@ areas:
   entrance:
     - "Night Light"
     - "Frontdoor"
+    - "christmas tree forest"
   kitchen:
     - "Kitchen"
     - "Trashcan"
@@ -25,6 +26,8 @@ areas:
     - "Living Room (3)"
     - "TV"
     - "Couch Lamp"
+    - "Christmas Tree"
+    - "White icicles"
     - "Plant Glow Light"
     # Exact HA device name, including its trailing space
     - "Top plant light "

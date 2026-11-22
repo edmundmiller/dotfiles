@@ -3,6 +3,11 @@
 { lib, ... }:
 let
   inherit (import ../_lib.nix) ensureEnabled;
+  christmasLights = [
+    "switch.living_room_christmas_tree"
+    "switch.white_icicles"
+    "switch.christmas_tree_forest"
+  ];
 in
 {
   services.home-assistant.config = {
@@ -128,6 +133,106 @@ in
     };
 
     automation = lib.mkAfter (ensureEnabled [
+      {
+        alias = "Christmas lights";
+        id = "christmas_lights";
+        description = "November 15 through January 6: lights before sunset while home, off at bedtime or 11 PM";
+        mode = "restart";
+        trigger = [
+          {
+            platform = "sun";
+            event = "sunset";
+            offset = "-00:30:00";
+          }
+          {
+            platform = "sun";
+            event = "sunrise";
+          }
+          {
+            platform = "time";
+            at = [
+              "23:00:00"
+              "00:00:00"
+            ];
+          }
+          {
+            platform = "state";
+            entity_id = [
+              "person.edmund_miller"
+              "person.moni"
+              "sensor.edmunds_iphone_ssid"
+              "sensor.monicas_iphone_ssid"
+              "input_boolean.goodnight"
+              "input_boolean.vacation_mode"
+            ];
+            # Ignore attribute-only updates so manual off stays off.
+            to = null;
+          }
+          {
+            platform = "state";
+            entity_id = christmasLights;
+            from = "unavailable";
+            not_to = [
+              "unknown"
+              "unavailable"
+            ];
+          }
+          {
+            platform = "homeassistant";
+            event = "start";
+          }
+        ];
+        action = [
+          {
+            choose = [
+              {
+                conditions = [
+                  {
+                    condition = "template";
+                    value_template = "{{ (now().month == 11 and now().day >= 15) or now().month == 12 or (now().month == 1 and now().day <= 6) }}";
+                  }
+                  {
+                    condition = "sun";
+                    after = "sunset";
+                    after_offset = "-00:30:00";
+                  }
+                  {
+                    condition = "time";
+                    before = "23:00:00";
+                  }
+                  {
+                    condition = "state";
+                    entity_id = "input_boolean.goodnight";
+                    state = "off";
+                  }
+                  {
+                    condition = "state";
+                    entity_id = "input_boolean.vacation_mode";
+                    state = "off";
+                  }
+                  {
+                    condition = "template";
+                    value_template = "{{ is_state('person.edmund_miller', 'home') or is_state('person.moni', 'home') or is_state('sensor.edmunds_iphone_ssid', 'Aviato') or is_state('sensor.monicas_iphone_ssid', 'Aviato') }}";
+                  }
+                ];
+                sequence = [
+                  {
+                    action = "switch.turn_on";
+                    target.entity_id = christmasLights;
+                  }
+                ];
+              }
+            ];
+            default = [
+              {
+                action = "switch.turn_off";
+                target.entity_id = christmasLights;
+              }
+            ];
+          }
+        ];
+      }
+
       # --- Sun-based ---
       # Follows Good Morning — once natural light fills the west-facing
       # apartment, artificial lights are unnecessary.
