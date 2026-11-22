@@ -1355,17 +1355,28 @@ class HaMonitorTests(unittest.TestCase):
         self.assertEqual(incident["homebridge_advertisements"], [{"name": "Homebridge CAD8", "port": 51826}])
         self.assertEqual(incident["journal"]["events"][0]["categories"], ["homebridge_listening"])
         log = self.key.parent / "homebridge.log"
+        package_frame = "/nix/store/" + "a" * 32 + "-homebridge-2.1.0/lib/node_modules/homebridge/lib/server.js"
         log.write_bytes(b"EADDRINUSE before bounded tail\n" + b"x" * 70000 +
-                        b"\nCould not find Homebridge. private PIN 123-45-678\nCannot find module private\n")
+                        ("\nCould not find Homebridge. private PIN 123-45-678\nCannot find module private\n"
+                         "\x1b[32mHomebridge\x1b[0m is running on port \x1b[36m51826\x1b[0m\n"
+                         "TypeError: private\n    at " + package_frame + ":123:45\n"
+                         "Error: ENOENT private /var/lib/homebridge/private.js:1:2\n"
+                         "Homebridge process ended. Code: 1, signal: null.\n").encode())
         original_open = Path.open
         def bounded_log(path, *args, **kwargs):
             return original_open(log if str(path) == "/var/lib/homebridge/homebridge.log" else path, *args, **kwargs)
         with patch("pathlib.Path.open", bounded_log):
             code, incident = self.invoke("incident")
         self.assertEqual(code, 0)
-        self.assertEqual(incident["homebridge_log"]["categories"], {"homebridge_missing": 1, "module_missing": 1})
+        self.assertEqual(incident["homebridge_log"]["categories"], {
+            "homebridge_missing": 1, "module_missing": 1, "bridge_listening": 1, "child_exit": 1, "startup_error": 2})
         self.assertNotIn("123-45-678", json.dumps(incident))
         self.assertEqual(incident["homebridge_log"]["advertisements"], [])
+        self.assertEqual(incident["homebridge_log"]["advertised_ports"], [51826])
+        self.assertEqual(incident["homebridge_log"]["error_codes"], ["ENOENT"])
+        self.assertEqual(incident["homebridge_log"]["child_exit_codes"], [["1", "null"]])
+        self.assertEqual(incident["homebridge_log"]["exception_classes"], ["Error", "TypeError"])
+        self.assertEqual(incident["homebridge_log"]["package_frames"], [{"path": package_frame, "line": 123, "column": 45}])
 
     def test_status_identifies_allowlisted_failures_without_exposing_journals(self):
         self.reports[0]["checks"]["critical_entities"] = {

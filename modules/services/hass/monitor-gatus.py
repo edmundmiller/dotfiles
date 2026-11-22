@@ -221,6 +221,22 @@ def incident_diagnostics():
             if size > 65536:
                 tail = tail.partition("\n")[2]
             log_summary["modified_at"] = datetime.fromtimestamp(os.fstat(stream.fileno()).st_mtime, UTC).isoformat()
+        tail = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", tail)
+        log_summary["exception_classes"] = sorted(set(re.findall(
+            r"\b(Error|TypeError|RangeError|ReferenceError|SyntaxError|AssertionError)\b", tail)))
+        codes = {"EACCES", "EPERM", "EADDRINUSE", "EADDRNOTAVAIL", "ENOTFOUND", "ENOENT",
+                 "ENETUNREACH", "EHOSTUNREACH", "ECONNREFUSED", "ERR_REQUIRE_ESM", "ERR_ASSERTION",
+                 "MODULE_NOT_FOUND", "ERR_MODULE_NOT_FOUND", "ERR_INVALID_ARG_TYPE", "ERR_SOCKET_BAD_PORT",
+                 "ERR_SOCKET_DGRAM_NOT_RUNNING", "EAI_AGAIN", "EAI_NONAME", "EAFNOSUPPORT", "EPROTONOSUPPORT",
+                 "ENODEV", "ENETDOWN", "ECONNRESET", "ETIMEDOUT"}
+        log_summary["error_codes"] = sorted(code for code in codes if re.search(r"\b" + code + r"\b", tail))
+        log_summary["package_frames"] = [
+            {"path": path, "line": int(line), "column": int(column)}
+            for path, line, column in re.findall(
+                r"(/nix/store/[a-z0-9]{32}-homebridge[^\s():]+):(\d+):(\d+)", tail)[-20:]
+        ]
+        log_summary["advertised_ports"] = [int(port) for port in re.findall(r"\brunning on port (\d{1,5})", tail)[-10:]]
+        log_summary["child_exit_codes"] = re.findall(r"Homebridge process ended\. Code: (null|\d+), signal: (null|SIG[A-Z0-9]+)\.", tail)[-10:]
         patterns = {
             "homebridge_missing": r"Could not find Homebridge|Cannot find.*homebridge",
             "module_missing": r"Cannot find module|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND",
