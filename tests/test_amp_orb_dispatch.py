@@ -550,8 +550,9 @@ else:
         unit = (DISPATCH.parents[2] / 'hosts/nuc/amp-orbs.nix').read_text()
         stop_timeout = int(re.search(
             r'note4c-headset-calibration = .*?TimeoutStopSec = (\d+);', unit, re.DOTALL)[1])
-        for outcome in ('success', 'recording_failure', 'slow_restore', 'restoration_conflict'):
-            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+        for mode, outcome in product(('calibrate', 'probe_quiet', 'probe_tone'),
+                ('success', 'recording_failure', 'slow_restore', 'restoration_conflict')):
+            with self.subTest(mode=mode, outcome=outcome), tempfile.TemporaryDirectory() as directory:
                 state = Path(directory)
                 current = dict(baseline)
                 recovering = False
@@ -587,9 +588,15 @@ else:
                         current[control['name']] = new_value
                     return current[control['name']]
 
-                def record(card, controls, reference):
+                def record(card, controls, reference, **options):
                     self.assertEqual(current['Capture Source'], '2')
                     self.assertEqual(current['Capture Switch'], 'on,on')
+                    if mode != 'calibrate':
+                        for name in ('Capture Volume', 'Headset Mic Boost Volume', 'Master Playback Volume'):
+                            self.assertEqual(current[name], baseline[name])
+                        self.assertEqual(current['Master Playback Switch'],
+                            'on,on' if mode == 'probe_tone' else 'off,off')
+                        self.assertEqual(reference is None, mode == 'probe_quiet')
                     self.assertEqual(len(json.loads((state / 'ledger.json').read_text())), 1)
                     self.assertTrue((state / 'restore.json').exists())
                     if outcome == 'recording_failure':
@@ -598,18 +605,24 @@ else:
                         current['Master Playback Volume'] = '55,55'
                     return {'signal_detected': True}
 
+                def run_measurement():
+                    if mode == 'calibrate':
+                        bench['calibrate'](state)
+                    else:
+                        bench['capture_probe'](state, stimulus=mode == 'probe_tone')
+
                 with patch.dict(bench['calibrate'].__globals__,
                         inspect_headset=inspect, mixer=mixer, record_tones=record), redirect_stdout(io.StringIO()):
                     if outcome == 'recording_failure':
                         with self.assertRaisesRegex(ValueError, 'Recording failed'):
-                            bench['calibrate'](state)
+                            run_measurement()
                     elif outcome == 'restoration_conflict':
                         with self.assertRaisesRegex(ValueError, 'Restoration conflict'):
-                            bench['calibrate'](state)
+                            run_measurement()
                         with self.assertRaisesRegex(ValueError, 'Previous routing restoration unresolved'):
-                            bench['calibrate'](state)
+                            run_measurement()
                     else:
-                        bench['calibrate'](state)
+                        run_measurement()
                 if outcome == 'restoration_conflict':
                     self.assertEqual(current, dict(baseline, **{'Master Playback Volume': '55,55'}))
                     self.assertTrue((state / 'restore.json').exists())
@@ -621,6 +634,67 @@ else:
                 self.assertEqual(receipt['result'], 'failed' if outcome == 'recording_failure' else 'measured')
                 self.assertTrue(receipt['controls_restored'])
                 self.assertEqual({path.name for path in state.iterdir()}, {'ledger.json'})
+
+    def test_capture_probe_separates_dc_from_variation_and_reports_quarter_second_windows(self):
+        statistics = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))['capture_statistics']
+        samples = array('h')
+        for index in range(288000):
+            samples.extend(((-3 if index % 2 == 0 else 5) if index < 12000 else 2, -7))
+        if sys.byteorder != 'little':
+            samples.byteswap()
+        result = statistics(samples.tobytes())
+        left, right = result['channels']
+        self.assertEqual(left['sample_count'], 288000)
+        self.assertEqual(left['peak'], 5)
+        self.assertAlmostEqual(left['rms'], math.sqrt(109 / 24), places=5)
+        self.assertAlmostEqual(left['ac_rms'], math.sqrt(407) / 24, places=5)
+        self.assertEqual(left['peak_to_peak'], 8)
+        self.assertEqual(len(left['windows']), 24)
+        self.assertAlmostEqual(left['windows'][0]['rms'], math.sqrt(17), places=5)
+        self.assertEqual(left['windows'][0]['ac_rms'], 4)
+        self.assertEqual(left['windows'][1]['rms'], 2)
+        self.assertEqual(left['windows'][-1]['start_seconds'], 5.75)
+        self.assertAlmostEqual(left['window_rms_range'], math.sqrt(17) - 2, places=5)
+        self.assertEqual((right['peak'], right['rms'], right['mean'], right['ac_rms']), (7, 7, -7, 0))
+        self.assertEqual(right['window_rms_range'], 0)
+        self.assertFalse(result['digital_silence'])
+        self.assertFalse(result['acoustic_response_verified'])
+        self.assertFalse(result['raw_audio_retained'])
+        self.assertTrue(statistics(bytes(1152000))['digital_silence'])
+        with self.assertRaisesRegex(ValueError, 'Incomplete'):
+            statistics(b'\0' * 32)
+
+    def test_capture_probe_requires_live_headset_pin_and_excludes_internal_mixer_inputs(self):
+        verify = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))['headset_capture_path']
+        text = '''Codec: Realtek ALC256
+Node 0x08 [Audio Input]
+  Amp-In vals: [0x0c 0x11]
+  Converter: stream=1, channel=0
+  Connection: 1
+    0x23
+Node 0x19 [Pin Complex]
+  Amp-In vals: [0x00 0x00]
+  Pin-ctls: 0x24: IN VREF_80
+Node 0x23 [Audio Mixer]
+  Amp-In vals: [0x80 0x80] [0x00 0x00] [0x80 0x80] [0x80 0x80] [0x80 0x80] [0x80 0x80]
+  Connection: 6
+    0x18 0x19 0x1a 0x1b 0x1d 0x12
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            proc = root / 'proc/asound/card2'
+            (proc / 'pcm0c/sub0').mkdir(parents=True)
+            (proc / 'pcm0c/sub0/hw_params').write_text('format: S16_LE\nchannels: 2\nrate: 48000 (48000/1)\n')
+            route = {'Capture Volume': '12,17', 'Headset Mic Boost Volume': '0,0'}
+            for old, new in (('stream=1', 'stream=0'), ('0x23\n', '0x24\n'),
+                    ('[0x0c 0x11]', '[0x8c 0x91]'), ('IN VREF_80', 'OUT'),
+                    ('[0x80 0x80] [0x00 0x00]', '[0x00 0x00] [0x80 0x80]')):
+                with self.subTest(change=(old, new)):
+                    (proc / 'codec#0').write_text(text.replace(old, new))
+                    with self.assertRaises(ValueError):
+                        verify(2, route, root)
+            (proc / 'codec#0').write_text(text)
+            self.assertEqual(verify(2, route, root)['only_unmuted_input'], '0x19')
 
     def test_durable_budget_survives_reload_and_reserves_before_execution(self):
         with tempfile.TemporaryDirectory() as directory:

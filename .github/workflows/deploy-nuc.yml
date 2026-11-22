@@ -31,6 +31,8 @@ on:
           - orb-dji-capture
           - headset-diagnostics
           - headset-calibration
+          - headset-probe-quiet
+          - headset-probe-tone
           - note4c-independent-paths
       note4c_host_sha:
         description: Independent paths only; exact approved active dotfiles revision, not the workflow revision
@@ -816,20 +818,31 @@ jobs:
             exec sudo -n nix shell 'github:NixOS/nixpkgs/$nixpkgs#alsa-utils' \
               'github:NixOS/nixpkgs/$nixpkgs#python3' --command python3 -
           " < config/amp-orbs/headset-bench.py
-      - name: Run one bounded headset calibration on the exact deployed source
-        if: inputs.operation == 'headset-calibration'
+      - name: Run one bounded host-only headset measurement on the exact deployed source
+        if: inputs.operation == 'headset-calibration' || inputs.operation == 'headset-probe-quiet' || inputs.operation == 'headset-probe-tone'
+        env:
+          HEADSET_OPERATION: ${{ inputs.operation }}
         shell: bash
         run: |
           set -euo pipefail
           source_hash=$(sha256sum config/amp-orbs/headset-bench.py | cut -d ' ' -f 1)
-          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$DEPLOY_SHA' '$source_hash'" <<'NUC'
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$DEPLOY_SHA' '$source_hash' '$HEADSET_OPERATION'" <<'NUC'
           set -euo pipefail
           test "$(hostname)" = nuc
           uname -a
           revision=$(nixos-version --configuration-revision)
           [[ "$revision" == "dotfiles=$1;"* ]]
           test "$(sha256sum /etc/note4c/headset-bench.py | cut -d ' ' -f 1)" = "$2"
-          unit=note4c-headset-calibration.service
+          case "$3" in
+            headset-calibration) unit=note4c-headset-calibration.service ;;
+            headset-probe-quiet) unit=note4c-headset-probe@quiet.service ;;
+            headset-probe-tone) unit=note4c-headset-probe@tone.service ;;
+            *) exit 1 ;;
+          esac
+          systemctl is-active --quiet home-assistant.service
+          ha_before=$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)
+          printf 'headset_host_revision=%s\nbench_sha256=%s\n' "$revision" "$2"
+          test "$(systemctl show "$unit" -p LoadState --value)" = loaded
           test "$(systemctl show "$unit" -p NeedDaemonReload --value)" = no
           case $(systemctl show "$unit" -p ActiveState --value) in
             inactive|failed) ;;
@@ -841,6 +854,10 @@ jobs:
           sudo -n systemctl start "$unit" || result=$?
           sudo -n journalctl -u "$unit" --after-cursor="$cursor" --no-pager -o json
           systemctl show "$unit" -p ActiveState -p Result -p ExecMainStatus
+          systemctl is-active --quiet home-assistant.service
+          test "$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)" = "$ha_before"
+          test "$(nixos-version --configuration-revision)" = "$revision"
+          printf 'ha_continuity=verified\n%s\n' "$ha_before"
           exit "$result"
           NUC
       - name: Measure both Note4C acoustic directions with one durable budget

@@ -32,6 +32,36 @@ in
   environment.etc."note4c/headset-bench.py".source = ../../config/amp-orbs/headset-bench.py;
   environment.etc."note4c/shared-controller.py".source = ../../config/amp-orbs/shared-controller.py;
 
+  # No board access. Instances quiet/tone preserve the current gains and boost.
+  systemd.services."note4c-headset-probe@" = {
+    description = "Aggregate-only headset capture probe (%i)";
+    restartIfChanged = false;
+    path = [ pkgs.alsa-utils ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.python3}/bin/python3 ${../../config/amp-orbs/headset-bench.py} --probe-%i";
+      ExecStopPost = "${pkgs.python3}/bin/python3 ${../../config/amp-orbs/headset-bench.py} --restore";
+      StateDirectory = "note4c-headset";
+      StateDirectoryMode = "0700";
+      UMask = "0077";
+      TimeoutStartSec = 120;
+      TimeoutStopSec = 120;
+      KillMode = "control-group";
+      DevicePolicy = "closed";
+      DeviceAllow = [ "char-alsa rw" ];
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+      PrivateNetwork = true;
+      RestrictAddressFamilies = [ "AF_UNIX" ];
+      LimitCORE = 0;
+      CoredumpFilter = "0x0";
+      MemorySwapMax = 0;
+      MemoryMax = "128M";
+    };
+  };
+
   # Explicit one-shot tests only. No timer, listener, raw audio grant or boot run.
   # The trusted host service restores mixer state even after its main process dies.
   systemd.services.note4c-headset-calibration = {

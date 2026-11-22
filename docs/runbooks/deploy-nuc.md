@@ -64,8 +64,26 @@ record, play, change a mixer setting, activate NixOS or migrate an orb.
 Its default workflow title is not evidence of a host deployment. A jack flag
 or selected source is metadata, not proof of a working acoustic signal.
 The same read-only report includes the last ten aggregate trial receipts,
-pending restoration status, both bench units' state and their last twenty
+pending restoration status, bench units' state and their last twenty
 journal messages within thirty minutes. It never starts recovery or a trial.
+
+The `headset-probe-quiet` and `headset-probe-tone` operations each start one
+six-second capture through the deployed `note4c-headset-probe@` unit. They
+temporarily select and enable Headset Mic without writing capture gain, headset
+boost or master volume. Quiet disables output. Tone enables only the existing
+output switch and plays the same finite left-only 1/2 kHz fixture, at its fixed
+digital peak 4096 and the unchanged current master level, never above raw 60.
+Neither operation opens the Note4C or requires its owner orb awake.
+
+During capture, the probe verifies live ADC 0x08 and mixer 0x23 with only headset
+pin 0x19 unmuted, pin input/VREF80, physical gain readback and stereo 48 kHz format.
+It returns sample count, peak, RMS, DC mean, AC RMS and peak-to-peak variation
+overall and in quarter-second windows. Raw PCM stays in unswappable service RAM
+and is discarded. Tone detection is retained separately and cannot exclude
+electrical crosstalk. Both modes share the existing durable budget, lock and
+crash-recovery snapshot, and verify all inspected controls restored and PCM
+closed. Dispatch only after HA-preserving deployment and exact-head CI; each
+operation checks deployed revision/source and HA PID/start-time continuity.
 
 The `headset-calibration` operation starts the Nix-owned `note4c-headset-calibration.service` once, only after exact deployed-revision, source-hash and loaded-unit checks. Deploy the source first through the ordinary guarded NUC path. The unit has no timer, boot dependency or listener. It grants the orb no sound-device access and requires no orb migration. Edmund has given standing approval for this scoped local bench's reversible tests, routing, publication and deployment. Do not request approval for each run. Preserve the limits below and ask only for an irreversible risk or a different scope such as purchases, cameras, cloud speech or the voice gateway.
 

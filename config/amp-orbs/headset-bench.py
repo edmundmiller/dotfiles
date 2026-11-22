@@ -167,7 +167,9 @@ def restore(state):
     for name in [*names, "Capture Switch"]:
         control = controls[name]
         baseline = snapshot[name]
-        planned = "on,on" if name == "Capture Switch" else ROUTE[name]
+        planned = snapshot.get("_planned", ROUTE)[name]
+        if name == "Capture Switch":
+            planned = "on,on"
         try:
             current = mixer(status["card_index"], control)
             if current not in (baseline, planned, "off,off" if name == "Capture Switch" else baseline):
@@ -241,7 +243,67 @@ def score(raw, seconds=SECONDS):
         "note4c_path_verified": False}
 
 
-def record_tones(card, controls, reference):
+def headset_capture_path(card, route, root=Path("/")):
+    """Require the active ADC to contain only the physical headset pin input."""
+    proc = root / f"proc/asound/card{card}"
+    text = (proc / "codec#0").read_text()
+    nodes = dict(re.findall(r"^Node (0x[0-9a-f]+)[^\n]*\n(.*?)(?=^Node |\Z)",
+        text, re.MULTILINE | re.DOTALL))
+    adc, input_mixer, pin = (nodes[node] for node in ("0x08", "0x23", "0x19"))
+    if not re.search(r"Converter: stream=[1-9][0-9]*, channel=0", adc):
+        raise ValueError("Headset ADC is not streaming")
+    if not re.search(r"Connection: 1\s+0x23\s", adc):
+        raise ValueError("Headset ADC does not select mixer 0x23")
+    if not re.search(r"Connection: 6\s+0x18 0x19 0x1a 0x1b 0x1d 0x12\s", input_mixer):
+        raise ValueError("Headset mixer input identities changed")
+    amps = re.findall(r"\[(0x[0-9a-f]+) (0x[0-9a-f]+)\]",
+        re.search(r"Amp-In vals:([^\n]+)", input_mixer)[1])
+    if amps != [("0x80", "0x80"), ("0x00", "0x00")] + [("0x80", "0x80")] * 4:
+        raise ValueError("Headset mixer contains a muted or non-headset input")
+    if "Pin-ctls: 0x24: IN VREF_80" not in pin:
+        raise ValueError("Headset pin is not an input with VREF80")
+    for node, name in ((adc, "Capture Volume"), (pin, "Headset Mic Boost Volume")):
+        actual = re.findall(r"0x[0-9a-f]+", re.search(r"Amp-In vals:([^\n]+)", node)[1])
+        if [int(value, 16) for value in actual] != [int(value) for value in route[name].split(",")]:
+            raise ValueError("Physical headset gain/mute differs from saved controls")
+    parameters = (proc / "pcm0c/sub0/hw_params").read_text()
+    if not all(field in parameters.splitlines() for field in (
+            "format: S16_LE", "channels: 2", "rate: 48000 (48000/1)")):
+        raise ValueError("Headset capture format changed")
+    return {"adc": "0x08", "mixer": "0x23", "only_unmuted_input": "0x19",
+        "pin_input_vref80": True, "physical_gains_match": True,
+        "hardware_parameters": parameters.strip()}
+
+
+def capture_statistics(raw):
+    if len(raw) != RATE * SECONDS * 4:
+        raise ValueError("Incomplete stereo capture")
+    samples = array("h", raw)
+    if sys.byteorder != "little":
+        samples.byteswap()
+
+    def statistics(channel):
+        mean = sum(channel) / len(channel)
+        power = sum(sample * sample for sample in channel) / len(channel)
+        return {"sample_count": len(channel), "peak": max(map(abs, channel)),
+            "rms": round(math.sqrt(power), 6), "mean": round(mean, 6),
+            "ac_rms": round(math.sqrt(max(0, power - mean * mean)), 6),
+            "peak_to_peak": max(channel) - min(channel)}
+
+    channels = []
+    for channel in (samples[::2], samples[1::2]):
+        windows = [{"start_seconds": start / RATE, **statistics(channel[start:start + RATE // 4])}
+            for start in range(0, len(channel), RATE // 4)]
+        channels.append({**statistics(channel), "windows": windows,
+            "window_rms_range": round(max(item["rms"] for item in windows)
+                - min(item["rms"] for item in windows), 6)})
+    return {"channels": channels, "sample_rate": RATE, "capture_seconds": SECONDS,
+        "window_seconds": 0.25, "units": "signed S16_LE PCM counts",
+        "digital_silence": all(channel["peak"] == 0 for channel in channels),
+        "raw_audio_retained": False, "acoustic_response_verified": False}
+
+
+def record_tones(card, controls, reference, route=ROUTE, probe=False):
     processes = []
     deadline = None
     executor = ThreadPoolExecutor(max_workers=2)
@@ -267,24 +329,33 @@ def record_tones(card, controls, reference):
                 raise ValueError("Capture did not start")
             prefix.extend(part)
         reading = executor.submit(capture.communicate, timeout=8)
-        playback = subprocess.Popen(["aplay", "--device", f"hw:{card},0", "--quiet",
-            "--file-type", "raw", "--format", "S16_LE", "--rate", str(RATE),
-            "--channels", "2"], stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        processes.append(playback)
-        playing = executor.submit(playback.communicate, reference, timeout=4)
+        path = headset_capture_path(card, route) if probe else None
+        if reference is not None:
+            playback = subprocess.Popen(["aplay", "--device", f"hw:{card},0", "--quiet",
+                "--file-type", "raw", "--format", "S16_LE", "--rate", str(RATE),
+                "--channels", "2"], stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            processes.append(playback)
+            playing = executor.submit(playback.communicate, reference, timeout=4)
         while not reading.done():
             # Route drift invalidates this trial. No internal-mic fallback.
-            for name, planned in ROUTE.items():
+            for name, planned in route.items():
                 expected = "on,on" if name == "Capture Switch" else planned
                 if mixer(card, controls[name]) != expected:
                     raise ValueError("Headset routing changed during capture")
             time.sleep(0.2)
         raw, _ = reading.result()
-        playing.result()
-        if capture.returncode or playback.returncode:
+        if reference is not None:
+            playing.result()
+        if capture.returncode or (reference is not None and playback.returncode):
             raise ValueError("Analog recording/playback failed")
-        return score(prefix + raw)
+        raw = prefix + raw
+        if not probe:
+            return score(raw)
+        result = {**capture_statistics(raw), "physical_capture_path": path}
+        if reference is not None:
+            result["tone_score"] = score(raw)
+        return result
     finally:
         # Kill before joining collector threads, including on routing drift.
         for process in reversed(processes):
@@ -295,6 +366,61 @@ def record_tones(card, controls, reference):
             deadline.cancel()
             deadline.join()
         executor.shutdown(wait=True)
+
+
+def capture_probe(state, stimulus=False):
+    if (state / "restore.json").exists():
+        raise ValueError("Previous routing restoration unresolved; no new trial")
+    status = inspect_headset()
+    controls = selected_controls(status)
+    if any(endpoint["status"] != "closed" for endpoint in status["endpoints"].values()):
+        raise ValueError("An analog stream is already open")
+    snapshot = {name: values(control) for name, control in controls.items()}
+    route = {**snapshot, "Capture Source": "2", "Capture Switch": "on,on",
+        "Master Playback Switch": "on,on" if stimulus else "off,off"}
+    if stimulus and max(map(int, route["Master Playback Volume"].split(","))) > 60:
+        raise ValueError("Current master exceeds the existing quiet reference limit")
+    if stimulus and not any(control["name"] == "Headphone Jack" and values(control) == "on"
+            for control in status["controls"].values()):
+        raise ValueError("Headphone jack is not connected")
+    reference = tone() if stimulus else None
+    ledger, trials = claim_trials(state, time.time(), ["headset_probe_tone" if stimulus else "headset_probe_quiet"])
+    trial = trials[0]
+    trial.update({"route": route, "baseline_controls": snapshot,
+        "controls_restored": False, "raw_audio_retained": False,
+        "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "fixture_sha256": hashlib.sha256(reference).hexdigest() if stimulus else None})
+    save_json(state / "ledger.json", ledger)
+    save_json(state / "restore.json", {**snapshot, "_planned": route})
+    try:
+        for name, baseline in snapshot.items():
+            if mixer(status["card_index"], controls[name]) != baseline:
+                raise ValueError("Headset controls changed before setup")
+        # Never write a gain or boost. Mute capture while selecting its source.
+        for name, planned in (("Capture Switch", "off,off"), ("Capture Source", "2"),
+                ("Master Playback Switch", route["Master Playback Switch"]), ("Capture Switch", "on,on")):
+            if mixer(status["card_index"], controls[name], planned) != planned:
+                raise ValueError("Headset setup readback failed")
+        for name, planned in route.items():
+            if mixer(status["card_index"], controls[name]) != planned:
+                raise ValueError("Headset controls changed before capture")
+        trial.update(record_tones(status["card_index"], controls, reference, route=route, probe=True))
+        trial["result"] = "measured"
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        trial.update({"result": "failed", "error": str(error)})
+        raise
+    finally:
+        try:
+            restore(state)
+            after = inspect_headset()
+            if ({key: values(control) for key, control in after["controls"].items()}
+                    != {key: values(control) for key, control in status["controls"].items()}
+                    or any(endpoint["status"] != "closed" for endpoint in after["endpoints"].values())):
+                raise ValueError("Headset controls/endpoints did not restore exactly")
+            trial["controls_restored"] = True
+        finally:
+            save_json(state / "ledger.json", ledger)
+            print(json.dumps(trial, sort_keys=True), flush=True)
 
 
 def calibrate(state):
@@ -566,10 +692,13 @@ if __name__ == "__main__":
     try:
         if socket.gethostname() != "nuc":
             raise ValueError("Run only on the NUC host")
-        if sys.argv[1:] in (["--calibrate"], ["--restore"], ["--shared"]):
+        if sys.argv[1:] in (["--calibrate"], ["--restore"], ["--shared"], ["--probe-quiet"], ["--probe-tone"]):
             with (STATE / "bench.lock").open("a") as lock:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                {"--calibrate": calibrate, "--restore": restore, "--shared": shared_server}[sys.argv[1]](STATE)
+                if sys.argv[1].startswith("--probe-"):
+                    capture_probe(STATE, stimulus=sys.argv[1] == "--probe-tone")
+                else:
+                    {"--calibrate": calibrate, "--restore": restore, "--shared": shared_server}[sys.argv[1]](STATE)
         elif not sys.argv[1:]:
             status = inspect_headset()
             # Fixed read-only bench receipts, including failed/unknown trials.
@@ -577,18 +706,19 @@ if __name__ == "__main__":
             status["recovery_pending"] = (STATE / "restore.json").exists()
             ledger = STATE / "ledger.json"
             status["bench_trials"] = json.loads(ledger.read_text())[-10:] if ledger.exists() else []
-            units = ["note4c-headset-calibration.service", "note4c-independent-paths.service"]
+            units = ["note4c-headset-calibration.service", "note4c-independent-paths.service",
+                "note4c-headset-probe@quiet.service", "note4c-headset-probe@tone.service"]
             status["bench_units"] = {unit: subprocess.run(["systemctl", "show", unit,
                 "-p", "ActiveState", "-p", "Result", "-p", "ExecMainStatus"],
                 stdin=subprocess.DEVNULL, capture_output=True, text=True, check=True, timeout=5).stdout.strip()
                 for unit in units}
             # These units emit only fixed state/errors and aggregate metrics.
             status["bench_journal"] = subprocess.run(["journalctl", "--no-pager",
-                "--since=-30 min", "-n", "20", "-o", "cat", "-u", units[0], "-u", units[1]],
+                "--since=-30 min", "-n", "20", "-o", "cat", *[arg for unit in units for arg in ("-u", unit)]],
                 stdin=subprocess.DEVNULL, capture_output=True, text=True, check=True, timeout=5).stdout.splitlines()
             print(json.dumps(status, sort_keys=True))
         else:
-            raise ValueError("Expected no arguments, --calibrate, --restore, or --shared")
+            raise ValueError("Expected no arguments, --calibrate, --restore, --shared, --probe-quiet, or --probe-tone")
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"Headset bench failed: {error}", file=sys.stderr)
         sys.exit(1)
