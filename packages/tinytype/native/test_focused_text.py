@@ -196,7 +196,9 @@ class FocusedTextProtocolTests(unittest.TestCase):
         def feedback_windows():
             result = fixture_request(op="feedback", pid=self.helper.pid)
             self.assertEqual(
-                result["frontmost"], fixture.pid, "Feedback stole app focus"
+                result["frontmost"],
+                fixture.pid,
+                "Fixture lost focus during feedback check",
             )
             return result["windows"]
 
@@ -330,7 +332,14 @@ class FocusedTextProtocolTests(unittest.TestCase):
                     e.value = {json.dumps(before)}; e.focus(); e.setSelectionRange({caret}, {caret});
                 }})()""")
                 time.sleep(0.3)
-                snapshot = self.request('{"op":"snapshot"}')["snapshot"]
+                reply = self.request('{"op":"snapshot"}')
+                snapshot = reply["snapshot"]
+                self.assertIsNotNone(snapshot, reply)
+                self.assertEqual(
+                    snapshot["bundle"], "dev.edmundmiller.tinytype-fixture"
+                )
+                self.assertEqual(snapshot["text"], before)
+                self.assertEqual(snapshot["caret"], caret)
                 edit = dict(
                     snapshot,
                     op="replace",
@@ -359,7 +368,12 @@ class FocusedTextProtocolTests(unittest.TestCase):
             }, {once: true});
         })()""")
         time.sleep(0.3)
-        snapshot = self.request('{"op":"snapshot"}')["snapshot"]
+        reply = self.request('{"op":"snapshot"}')
+        snapshot = reply["snapshot"]
+        self.assertIsNotNone(snapshot, reply)
+        self.assertEqual(snapshot["bundle"], "dev.edmundmiller.tinytype-fixture")
+        self.assertEqual(snapshot["text"], "😀 goood later")
+        self.assertEqual(snapshot["caret"], 9)
         edit = dict(snapshot, op="replace", to=8, original="goood", replacement="good")
         edit["from"] = 3
         reply = self.request(json.dumps(edit))
