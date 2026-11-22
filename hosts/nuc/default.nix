@@ -2563,6 +2563,9 @@ in
           expectedWarnings = [ "backup/automatic_backup_failed@2026-04-17T04:28:36.370422+00:00" ];
         };
         homebridge.enable = true;
+        # ciao includes every interface address in one unsplittable probe.
+        # Advertise on the home LAN, not container bridges and tailnet interfaces.
+        homebridge.settings.bridge.bind = [ "eno1" ];
         homebridge.tailscaleService.enable = true;
         tailscaleService.enable = true;
         customLovelaceModules = with pkgs.home-assistant-custom-lovelace-modules; [
