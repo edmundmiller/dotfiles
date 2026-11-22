@@ -783,7 +783,14 @@ else:
                     executable.write_text(f'#!{sys.executable}\nimport sys,time\n' + (
                         f"assert sys.argv[-2:] == ['--duration', '8']\nsys.stdout.buffer.write(open({str(root / 'fixture')!r}, 'rb').read())\n"
                         if tool == 'arecord' else
-                        'assert len(sys.stdin.buffer.read()) == 3 * 48000 * 4\ntime.sleep(.4)\n'))
+                        'from array import array\n'
+                        'raw = sys.stdin.buffer.read()\n'
+                        'assert len(raw) == 3 * 48000 * 4\n'
+                        'samples = array("h", raw)\n'
+                        'if sys.byteorder != "little": samples.byteswap()\n'
+                        'assert max(map(abs, samples[::2])) == 4096\n'
+                        'assert not any(samples[1::2])\n'
+                        'time.sleep(.4)\n'))
                     executable.chmod(0o755)
                 events, incoming = [], queue.Queue()
 

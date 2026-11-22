@@ -195,7 +195,8 @@ def tone(frequencies=(1000, 2000)):
         for index in range(RATE):
             # Fixed peak -18 dBFS; master raw 60 is -20.25 dB, below 70%.
             amplitude = round(4096 * math.sin(2 * math.pi * frequency * index / RATE))
-            samples.extend((amplitude, amplitude))
+            # Only the left earpiece is positioned at the board microphone.
+            samples.extend((amplitude, 0))
     if sys.byteorder != "little":
         samples.byteswap()
     return samples.tobytes()
