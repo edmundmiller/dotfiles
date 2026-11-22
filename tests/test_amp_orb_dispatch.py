@@ -745,6 +745,65 @@ else:
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout, 'cleanup-readback\n')
 
+    def test_acoustic_workflow_pins_active_host_sources_and_fixture_before_start(self):
+        workflow = (DISPATCH.parents[2] / '.github/workflows/deploy-nuc.yml').read_text()
+        step = workflow.split('      - name: Measure both Note4C acoustic directions', 1)[1]
+        body = step.split('        run: |\n', 1)[1].split('      - name:', 1)[0]
+        script = '\n'.join(line[10:] for line in body.splitlines())
+        host = 'b' * 40
+        fixture = 'f5ecdb7b1b898735ea7e29afdda7b1ed7d9d67444db074845627686233aeb0ba'
+        for case in ('valid', 'host drift', 'bench drift', 'controller drift',
+                'fixture drift', 'missing host', 'invalid host', 'missing fixture', 'invalid fixture'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                deployed = root / 'deployed'
+                deployed.mkdir()
+                for name in ('headset-bench.py', 'shared-controller.py'):
+                    source = DISPATCH.with_name(name).read_text()
+                    if case == ('bench drift' if name == 'headset-bench.py' else 'controller drift'):
+                        source += '\n# changed deployed source\n'
+                    (deployed / name).write_text(source)
+                tools = root / 'bin'
+                tools.mkdir()
+                programs = {
+                    'hostname': "print('nuc')",
+                    'nixos-version': f"print('dotfiles={'c' * 40 if case == 'host drift' else host};agents-workspace=unchanged')",
+                    'jq': f"print({'d' * 40!r})",
+                    'tailscale': "os.execvp('bash', ['bash', '-c', sys.argv[3]])",
+                    'sudo': "os.execvp(sys.argv[2], sys.argv[2:])",
+                    'journalctl': "print('-- cursor: fixture')",
+                    'nix': f"os.execv({sys.executable!r}, [{sys.executable!r}] + sys.argv[sys.argv.index('--command') + 2:])",
+                    'systemctl': f"""
+if sys.argv[1] == 'start':
+    Path({str(root / 'started')!r}).write_text('started')
+    sys.exit(73)  # Stop this harness before the coordinator or any real hardware.
+print('no' if 'NeedDaemonReload' in sys.argv else 'inactive')
+""",
+                }
+                for name, body in programs.items():
+                    executable = tools / name
+                    executable.write_text(f'#!{sys.executable}\nimport os, sys\nfrom pathlib import Path\n{body}\n')
+                    executable.chmod(0o755)
+                env = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ['PATH'],
+                    DEPLOY_SHA='a' * 40, NOTE4C_HOST_SHA=host, NOTE4C_FIXTURE_SHA256=fixture)
+                if case == 'fixture drift':
+                    env['NOTE4C_FIXTURE_SHA256'] = '0' * 64
+                for field, key in (('host', 'NOTE4C_HOST_SHA'), ('fixture', 'NOTE4C_FIXTURE_SHA256')):
+                    if case == f'missing {field}':
+                        env[key] = ''
+                    elif case == f'invalid {field}':
+                        env[key] = "'; exit 0; #"
+                result = subprocess.run(['bash'],
+                    input=script.replace('/etc/note4c', str(deployed)),
+                    cwd=DISPATCH.parents[2], env=env, text=True, capture_output=True, timeout=10)
+                if case == 'valid':
+                    self.assertEqual(result.returncode, 73, result.stderr)
+                    self.assertTrue((root / 'started').exists(), result.stderr)
+                    self.assertIn(fixture, result.stdout)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertFalse((root / 'started').exists(), result.stderr)
+
     def test_actor_reports_admission_failure_without_opening_hardware(self):
         # EOF is rejected before the guard or any device access, regardless of
         # whether optional owner-only serial imports are installed here.

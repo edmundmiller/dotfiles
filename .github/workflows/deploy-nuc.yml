@@ -32,6 +32,12 @@ on:
           - headset-diagnostics
           - headset-calibration
           - note4c-independent-paths
+      note4c_host_sha:
+        description: Independent paths only; exact approved active dotfiles revision, not the workflow revision
+        type: string
+      note4c_fixture_sha256:
+        description: Independent paths only; approved SHA256 of the three-second left-only reference PCM
+        type: string
       email_test_family_revision:
         description: Email operations only; exact deployed Family SHA requires separately verified readiness
         type: string
@@ -835,14 +841,20 @@ jobs:
           NUC
       - name: Measure both Note4C acoustic directions with one durable budget
         if: inputs.operation == 'note4c-independent-paths'
+        env:
+          NOTE4C_HOST_SHA: ${{ inputs.note4c_host_sha }}
+          NOTE4C_FIXTURE_SHA256: ${{ inputs.note4c_fixture_sha256 }}
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$NOTE4C_HOST_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$NOTE4C_FIXTURE_SHA256" =~ ^[0-9a-f]{64}$ ]]
           bench_hash=$(sha256sum config/amp-orbs/headset-bench.py | cut -d ' ' -f 1)
           controller_hash=$(sha256sum config/amp-orbs/shared-controller.py | cut -d ' ' -f 1)
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
           [[ "$nixpkgs" =~ ^[0-9a-f]{40}$ ]]
-          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$DEPLOY_SHA' '$bench_hash' '$controller_hash' '$nixpkgs'" <<'NUC'
+          # Observe the pinned active host; never deploy merely to match workflow main.
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$NOTE4C_HOST_SHA' '$bench_hash' '$controller_hash' '$nixpkgs' '$NOTE4C_FIXTURE_SHA256'" <<'NUC'
           set -euo pipefail
           test "$(hostname)" = nuc
           uname -a
@@ -850,6 +862,7 @@ jobs:
           [[ "$revision" == "dotfiles=$1;"* ]]
           test "$(sha256sum /etc/note4c/headset-bench.py | cut -d ' ' -f 1)" = "$2"
           test "$(sha256sum /etc/note4c/shared-controller.py | cut -d ' ' -f 1)" = "$3"
+          printf 'acoustic_host_revision=%s\nbench_sha256=%s\ncontroller_sha256=%s\n' "$revision" "$2" "$3"
           unit=note4c-independent-paths.service
           test "$(systemctl show "$unit" -p NeedDaemonReload --value)" = no
           for candidate in "$unit" note4c-headset-calibration.service; do
@@ -862,6 +875,19 @@ jobs:
           test -n "$cursor"
           # Realize the public pinned interpreter before the finite socket window.
           sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command python3 --version
+          # Generate the exact deployed reference in RAM, without invoking its CLI.
+          sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command python3 - "$5" <<'PY'
+          import hashlib
+          import runpy
+          import sys
+
+          bench = runpy.run_path('/etc/note4c/headset-bench.py')
+          digest = hashlib.sha256(bench['tone']((1000, 1000, 1000))).hexdigest()
+          if digest != sys.argv[1]:
+              raise SystemExit('Reference fixture hash mismatch; no bench started')
+          print('fixture_sha256=' + digest)
+          PY
+          test "$(nixos-version --configuration-revision)" = "$revision"
           sudo -n systemctl start --no-block "$unit"
           result=0
           sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command \
