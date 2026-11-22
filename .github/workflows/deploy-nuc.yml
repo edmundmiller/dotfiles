@@ -38,6 +38,10 @@ on:
       note4c_fixture_sha256:
         description: Independent paths only; approved SHA256 of the three-second left-only reference PCM
         type: string
+      note4c_probe_only:
+        description: Independent paths only; verify host/source/fixture pins without starting the bench or touching the board
+        default: false
+        type: boolean
       email_test_family_revision:
         description: Email operations only; exact deployed Family SHA requires separately verified readiness
         type: string
@@ -844,17 +848,19 @@ jobs:
         env:
           NOTE4C_HOST_SHA: ${{ inputs.note4c_host_sha }}
           NOTE4C_FIXTURE_SHA256: ${{ inputs.note4c_fixture_sha256 }}
+          NOTE4C_PROBE_ONLY: ${{ inputs.note4c_probe_only }}
         shell: bash
         run: |
           set -euo pipefail
           [[ "$NOTE4C_HOST_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$NOTE4C_FIXTURE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$NOTE4C_PROBE_ONLY" == true || "$NOTE4C_PROBE_ONLY" == false ]]
           bench_hash=$(sha256sum config/amp-orbs/headset-bench.py | cut -d ' ' -f 1)
           controller_hash=$(sha256sum config/amp-orbs/shared-controller.py | cut -d ' ' -f 1)
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
           [[ "$nixpkgs" =~ ^[0-9a-f]{40}$ ]]
           # Observe the pinned active host; never deploy merely to match workflow main.
-          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$NOTE4C_HOST_SHA' '$bench_hash' '$controller_hash' '$nixpkgs' '$NOTE4C_FIXTURE_SHA256'" <<'NUC'
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net "bash -s -- '$NOTE4C_HOST_SHA' '$bench_hash' '$controller_hash' '$nixpkgs' '$NOTE4C_FIXTURE_SHA256' '$NOTE4C_PROBE_ONLY'" <<'NUC'
           set -euo pipefail
           test "$(hostname)" = nuc
           uname -a
@@ -871,8 +877,6 @@ jobs:
               *) echo 'An audio batch is already running; no join or retry'; exit 1 ;;
             esac
           done
-          cursor=$(sudo -n journalctl -n 1 --show-cursor -o cat | sed -n 's/^-- cursor: //p')
-          test -n "$cursor"
           # Realize the public pinned interpreter before the finite socket window.
           sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command python3 --version
           # Generate the exact deployed reference in RAM, without invoking its CLI.
@@ -888,6 +892,12 @@ jobs:
           print('fixture_sha256=' + digest)
           PY
           test "$(nixos-version --configuration-revision)" = "$revision"
+          if [[ "$6" == true ]]; then
+            echo 'acoustic_probe_only=verified; no bench started or device opened'
+            exit 0
+          fi
+          cursor=$(sudo -n journalctl -n 1 --show-cursor -o cat | sed -n 's/^-- cursor: //p')
+          test -n "$cursor"
           sudo -n systemctl start --no-block "$unit"
           result=0
           sudo -n nix shell "github:NixOS/nixpkgs/$4#python3" --command \

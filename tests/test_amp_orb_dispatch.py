@@ -752,8 +752,9 @@ else:
         script = '\n'.join(line[10:] for line in body.splitlines())
         host = 'b' * 40
         fixture = 'f5ecdb7b1b898735ea7e29afdda7b1ed7d9d67444db074845627686233aeb0ba'
-        for case in ('valid', 'host drift', 'bench drift', 'controller drift',
-                'fixture drift', 'missing host', 'invalid host', 'missing fixture', 'invalid fixture'):
+        for case in ('valid', 'probe only', 'probe fixture drift', 'invalid probe',
+                'host drift', 'bench drift', 'controller drift', 'fixture drift',
+                'missing host', 'invalid host', 'missing fixture', 'invalid fixture'):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 deployed = root / 'deployed'
@@ -785,8 +786,11 @@ print('no' if 'NeedDaemonReload' in sys.argv else 'inactive')
                     executable.write_text(f'#!{sys.executable}\nimport os, sys\nfrom pathlib import Path\n{body}\n')
                     executable.chmod(0o755)
                 env = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ['PATH'],
-                    DEPLOY_SHA='a' * 40, NOTE4C_HOST_SHA=host, NOTE4C_FIXTURE_SHA256=fixture)
-                if case == 'fixture drift':
+                    DEPLOY_SHA='a' * 40, NOTE4C_HOST_SHA=host, NOTE4C_FIXTURE_SHA256=fixture,
+                    NOTE4C_PROBE_ONLY='true' if case.startswith('probe ') else 'false')
+                if case == 'invalid probe':
+                    env['NOTE4C_PROBE_ONLY'] = 'yes'
+                if case in ('fixture drift', 'probe fixture drift'):
                     env['NOTE4C_FIXTURE_SHA256'] = '0' * 64
                 for field, key in (('host', 'NOTE4C_HOST_SHA'), ('fixture', 'NOTE4C_FIXTURE_SHA256')):
                     if case == f'missing {field}':
@@ -799,6 +803,10 @@ print('no' if 'NeedDaemonReload' in sys.argv else 'inactive')
                 if case == 'valid':
                     self.assertEqual(result.returncode, 73, result.stderr)
                     self.assertTrue((root / 'started').exists(), result.stderr)
+                    self.assertIn(fixture, result.stdout)
+                elif case == 'probe only':
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertFalse((root / 'started').exists(), result.stderr)
                     self.assertIn(fixture, result.stdout)
                 else:
                     self.assertNotEqual(result.returncode, 0, result.stdout)
