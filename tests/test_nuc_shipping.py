@@ -1354,6 +1354,18 @@ class HaMonitorTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(incident["homebridge_advertisements"], [{"name": "Homebridge CAD8", "port": 51826}])
         self.assertEqual(incident["journal"]["events"][0]["categories"], ["homebridge_listening"])
+        log = self.key.parent / "homebridge.log"
+        log.write_bytes(b"EADDRINUSE before bounded tail\n" + b"x" * 70000 +
+                        b"\nCould not find Homebridge. private PIN 123-45-678\nCannot find module private\n")
+        original_open = Path.open
+        def bounded_log(path, *args, **kwargs):
+            return original_open(log if str(path) == "/var/lib/homebridge/homebridge.log" else path, *args, **kwargs)
+        with patch("pathlib.Path.open", bounded_log):
+            code, incident = self.invoke("incident")
+        self.assertEqual(code, 0)
+        self.assertEqual(incident["homebridge_log"]["categories"], {"homebridge_missing": 1, "module_missing": 1})
+        self.assertNotIn("123-45-678", json.dumps(incident))
+        self.assertEqual(incident["homebridge_log"]["advertisements"], [])
 
     def test_status_identifies_allowlisted_failures_without_exposing_journals(self):
         self.reports[0]["checks"]["critical_entities"] = {

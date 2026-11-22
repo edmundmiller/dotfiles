@@ -210,6 +210,40 @@ def incident_diagnostics():
             "component_domains": sorted(set(re.findall(r"homeassistant\.components\.([a-z0-9_]+)", message))),
             "exception_classes": sorted(set(re.findall(r"\b([A-Za-z]+(?:Error|Exception))\b", message))),
         })
+    # hb-service redirects both its own and its child process output here,
+    # rather than to journald. Never read its config, pairing or startup files.
+    log_summary = {"byte_limit": 65536}
+    try:
+        with Path("/var/lib/homebridge/homebridge.log").open("rb") as stream:
+            size = stream.seek(0, os.SEEK_END)
+            stream.seek(max(0, size - 65536))
+            tail = stream.read(65536).decode("utf-8", errors="replace")
+            if size > 65536:
+                tail = tail.partition("\n")[2]
+            log_summary["modified_at"] = datetime.fromtimestamp(os.fstat(stream.fileno()).st_mtime, UTC).isoformat()
+        patterns = {
+            "homebridge_missing": r"Could not find Homebridge|Cannot find.*homebridge",
+            "module_missing": r"Cannot find module|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND",
+            "node_incompatible": r"unsupported.*node|node.*not supported|EBADENGINE|NODE_MODULE_VERSION",
+            "permission_denied": r"EACCES|EPERM|permission denied",
+            "address_in_use": r"EADDRINUSE|address already in use",
+            "invalid_config": r"invalid.*config|config.*invalid|SyntaxError|error.*parsing",
+            "child_exit": r"Homebridge.*(?:exited|exit code|not running|process ended)",
+            "bridge_listening": r"Homebridge.*running on port",
+            "startup_error": r"error|fatal|crash|failed",
+        }
+        log_summary["categories"] = {code: len(re.findall(pattern, tail, re.I))
+                                     for code, pattern in patterns.items() if re.search(pattern, tail, re.I)}
+        log_summary["advertisements"] = [
+            {"name": name, "port": int(port)}
+            for name, port in re.findall(r"\((Homebridge [A-Fa-f0-9]{4})\).*running on port (\d+)", tail)[-10:]
+        ]
+        log_summary["package_paths"] = sorted(set(re.findall(
+            r"/nix/store/[a-z0-9]{32}-(?:homebridge|nodejs)[A-Za-z0-9._+-]*", tail)))[:10]
+        log_summary["coverage"] = "Bounded log tail; category counts are not time-windowed or proof of health. No raw messages, addresses, pairing payloads or credentials exported."
+    except OSError as error:
+        log_summary["error_type"] = type(error).__name__
+    result["homebridge_log"] = log_summary
     result["journal"] = {"retained_records": dict(retained), "nontext_omissions": nontext,
                          "matched_records": len(events), "events": events[-300:],
                          "events_not_exported": max(0, len(events) - 300),
