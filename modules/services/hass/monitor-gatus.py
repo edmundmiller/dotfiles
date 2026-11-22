@@ -116,7 +116,7 @@ def incident_diagnostics():
         except (OSError, ValueError, TypeError, AttributeError) as error:
             item["error_type"] = type(error).__name__
         result["http"][str(port)] = item
-    for unit in ("gatus.service", "gatus-email.service", "home-assistant.service", "hass-health-http.service"):
+    for unit in ("gatus.service", "gatus-email.service", "home-assistant.service", "hass-health-http.service", "homebridge.service"):
         properties = "ActiveState,SubState,MainPID,NRestarts,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainStartTimestampMonotonic,ExecReload"
         command = subprocess.run(["systemctl", "show", unit, "--property=" + properties],
                                  check=True, capture_output=True, text=True, timeout=5)
@@ -136,9 +136,17 @@ def incident_diagnostics():
         {"name": name, "pid": int(pid)}
         for name, pid in re.findall(r'\("([A-Za-z0-9_-]+)",pid=(\d+),', listeners.stdout)
     ]
+    result["homebridge_listeners"] = {}
+    for port in (51826, 8581):
+        listeners = subprocess.run(["ss", "-H", "-ltnp", f"sport = :{port}"],
+                                   check=True, capture_output=True, text=True, timeout=5)
+        result["homebridge_listeners"][str(port)] = [
+            {"name": name, "pid": int(pid)}
+            for name, pid in re.findall(r'\("([A-Za-z0-9_-]+)",pid=(\d+),', listeners.stdout)
+        ]
     records = subprocess.run(
         ["journalctl", "-u", "home-assistant.service", "-u", "gatus.service", "-u", "gatus-email.service",
-         "-u", "nixos-upgrade.service", "-u", "systemd-oomd.service",
+         "-u", "homebridge.service", "-u", "nixos-upgrade.service", "-u", "systemd-oomd.service",
          "--since", since.isoformat(), "--until", now.isoformat(), "--all", "-o", "json", "--no-pager"],
         check=True, capture_output=True, text=True, timeout=20,
     )
@@ -156,6 +164,10 @@ def incident_diagnostics():
         "service_start": r"\bStart(?:ing|ed)\b",
         "service_stop": r"\bStopp?(?:ing|ed)\b|Deactivated successfully",
         "process_exit": r"Main process exited|Failed with result|Scheduled restart job",
+        "homebridge_listening": r"Homebridge.*running on port",
+        "address_in_use": r"EADDRINUSE|address already in use",
+        "dependency_missing": r"Cannot find module|ERR_MODULE_NOT_FOUND|ENOENT",
+        "homebridge_error": r"error|fatal|crash|failed",
         "oom": r"out of memory|oom.kill|killed process",
     }
     kernel = subprocess.run(
@@ -170,7 +182,7 @@ def incident_diagnostics():
         if is_kernel:
             unit = "kernel"
         if unit not in {"home-assistant.service", "gatus.service", "gatus-email.service",
-                        "nixos-upgrade.service", "systemd-oomd.service", "kernel"}:
+                        "homebridge.service", "nixos-upgrade.service", "systemd-oomd.service", "kernel"}:
             continue
         retained[unit] += 1
         message = record.get("MESSAGE", "")
@@ -181,7 +193,15 @@ def incident_diagnostics():
             continue
         categories = [code for code, pattern in signatures.items() if re.search(pattern, message, re.I)
                       and (not is_kernel or code == "oom")
+                      and (code not in {"homebridge_listening", "homebridge_error", "address_in_use", "dependency_missing"}
+                           or unit == "homebridge.service")
                       and (not code.startswith("service_") or record.get("_PID") == "1")]
+        if unit == "homebridge.service":
+            names = re.findall(r"\((Homebridge [A-Fa-f0-9]{4})\).*running on port (\d+)", message)
+            if names:
+                result.setdefault("homebridge_advertisements", []).extend(
+                    {"name": name, "port": int(port)} for name, port in names
+                )
         if not categories:
             continue
         events.append({

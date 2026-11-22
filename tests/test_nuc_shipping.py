@@ -1247,7 +1247,12 @@ class HaMonitorTests(unittest.TestCase):
 
     def command(self, args, **_kwargs):
         if args[0] == "ss":
-            return subprocess.CompletedProcess(args, 0, 'LISTEN 127.0.0.1:8084 users:(("gatus",pid=123,fd=4))')
+            listeners = {
+                "sport = :8084": 'LISTEN 127.0.0.1:8084 users:(("gatus",pid=123,fd=4))',
+                "sport = :51826": 'LISTEN *:51826 users:(("node",pid=456,fd=7))',
+                "sport = :8581": "",
+            }
+            return subprocess.CompletedProcess(args, 0, listeners[args[-1]])
         if args[:2] == ["systemctl", "show"]:
             return subprocess.CompletedProcess(args, 0, "ActiveState=active\nMainPID=0\nNRestarts=0")
         if args[0] == "journalctl":
@@ -1285,7 +1290,18 @@ class HaMonitorTests(unittest.TestCase):
         self.assertIn("connection_refused", event["categories"])
         self.assertEqual(event["exception_classes"], ["ConnectionRefusedError"])
         self.assertEqual(incident["journal"]["nontext_omissions"], 0)
+        self.assertEqual(incident["homebridge_listeners"], {"51826": [{"name": "node", "pid": 456}], "8581": []})
+        self.assertIn("homebridge.service", incident["units"])
         self.assertEqual(datetime.fromisoformat(incident["until"]) - datetime.fromisoformat(incident["since"]), timedelta(hours=2))
+        self.alert_logs = [{
+            "_SYSTEMD_UNIT": "homebridge.service",
+            "__REALTIME_TIMESTAMP": str(int(self.now.timestamp() * 1_000_000)),
+            "MESSAGE": "Homebridge v1.11.1 (HAP v0.14.0) (Homebridge CAD8) is running on port 51826. private",
+        }]
+        code, incident = self.invoke("incident")
+        self.assertEqual(code, 0)
+        self.assertEqual(incident["homebridge_advertisements"], [{"name": "Homebridge CAD8", "port": 51826}])
+        self.assertEqual(incident["journal"]["events"][0]["categories"], ["homebridge_listening"])
 
     def test_status_identifies_allowlisted_failures_without_exposing_journals(self):
         self.reports[0]["checks"]["critical_entities"] = {
