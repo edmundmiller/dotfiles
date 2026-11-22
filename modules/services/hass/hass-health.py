@@ -150,6 +150,21 @@ def health(ha, args, now):
                     )
                     if signature in reason
                 ]
+            if entry["state"] != "loaded" and entry["domain"] != "bluetooth":
+                reason = (entry.get("reason") or "").lower()
+                reason_codes = [
+                    code for code, signatures in (
+                        ("connection_refused", ("connection refused", "connectionrefusederror")),
+                        ("connection_failed", ("cannot connect", "failed to connect", "cannotconnect", "connect call failed")),
+                        ("timeout", ("timed out", "timeout")),
+                        ("authentication", ("authentication", "unauthorized", "invalid auth")),
+                        ("missing_dependency", ("no module named", "cannot import name", "importerror")),
+                        ("dependency_failed", ("dependency", "dependencies")),
+                        ("bluetooth_not_ready", ("org.bluez.error.notready", "dbus service not found")),
+                    ) if any(signature in reason for signature in signatures)
+                ]
+                if reason_codes:
+                    summary["failure_reason_codes"] = reason_codes
             entries.append(summary)
         failures = [entry for entry in entries if entry["state"] != "loaded"]
         return check(

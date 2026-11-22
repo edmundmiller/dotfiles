@@ -266,6 +266,17 @@ class HassHealthTest(unittest.TestCase):
             [{"entry_id": "enabled", "domain": "test", "state": "not_loaded"}],
         )
 
+    def test_integration_failure_reason_codes_omit_private_parameters(self):
+        self.responses["config_entries/get"][0].update(
+            domain="matter", state="setup_retry",
+            reason="Cannot connect to host private.example:5580: Connect call failed private password",
+        )
+        code, report = self.health()
+        self.assertEqual(code, 1)
+        failure = report["checks"]["integrations"]["failures"][0]
+        self.assertEqual(failure["domain"], "matter")
+        self.assertEqual(failure["failure_reason_codes"], ["connection_failed"])
+
     def test_bluetooth_retry_signatures_do_not_expose_error_parameters(self):
         for reason, expected in (
             (

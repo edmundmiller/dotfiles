@@ -134,6 +134,19 @@ is a possible false negative. Missing samples or reports are coverage gaps, not
 proof of either. Failed completion samples never seen by Gatus are counted too;
 a just-completed check may not have been probed yet.
 
+For an active incident, `operation=ha-diagnostics` also reads each loopback
+health route separately: Gatus on 8084, the HA monitor on 8124 and the email
+receiver on 8126. It exports labelled HTTP statuses and allowlisted health
+fields, service start/restart metadata, the Gatus listener PID and executable,
+and categorized retained journals bounded to the preceding two hours. Raw
+messages and unexpected response bodies stay on the host. The live integration
+report identifies unloaded entries and known failure-reason codes without
+exporting titles, addresses or raw reasons. This operation does not retry or
+reload entries. It uses the existing HA runtime credential only on the host.
+An unhealthy HA report can make the workflow fail even when diagnostic capture
+succeeded; inspect its separate JSON reports rather than treating workflow
+success as the health result.
+
 Diagnostics also report `probe_coverage`: the requested interval, probe count,
 leading/trailing gaps and internal gaps over 90 seconds. `complete` means the
 one-minute probes cover that interval within this allowance, not continuous

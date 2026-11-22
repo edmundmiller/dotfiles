@@ -619,6 +619,19 @@ jobs:
             exec sudo -n systemctl start hass-health.timer
           '
           sleep 280
+      - name: Inspect labelled health routes and bounded incident journal
+        if: inputs.operation == 'ha-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Expand hostname and provenance on NUC, never on the GitHub runner.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
+            exec sudo -n uv run --no-project python - incident
+          ' < modules/services/hass/monitor-gatus.py | jq .
       - name: Inspect Gatus history and privacy-filtered HA runtime aggregates
         if: (inputs.operation == 'deploy' && inputs.ha_monitor) || inputs.operation == 'ha-monitor-diagnostics'
         env:

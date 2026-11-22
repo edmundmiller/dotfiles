@@ -89,6 +89,95 @@ def fetch(url):
         return json.load(response)
 
 
+def incident_diagnostics():
+    """Fixed loopback reads and categorized two-hour journals; no raw log export."""
+    now = datetime.now(UTC)
+    since = now - timedelta(hours=2)
+    result = {"since": since.isoformat(), "until": now.isoformat(), "http": {}, "units": {}}
+    for port in (8084, 8124, 8126):
+        item = {"observed_at": datetime.now(UTC).isoformat()}
+        try:
+            try:
+                response = urlopen(f"http://127.0.0.1:{port}/health", timeout=5)
+            except HTTPError as error:
+                response = error
+            with response:
+                item["http_status"] = response.status
+                item["content_type"] = response.headers.get("Content-Type")
+                body = json.load(response)
+                # These fixed health routes contain no credentials. Still allowlist
+                # values rather than exporting an unexpected proxy/error body.
+                item["body"] = {
+                    key: value for key, value in body.items()
+                    if (key == "status" and value in {"UP", "DOWN", "healthy", "unhealthy", "unknown"})
+                    or (key in {"pending", "delivery_errors", "oldest_pending_seconds", "queue_used"}
+                        and type(value) in {int, float})
+                }
+        except (OSError, ValueError, TypeError, AttributeError) as error:
+            item["error_type"] = type(error).__name__
+        result["http"][str(port)] = item
+    for unit in ("gatus.service", "gatus-email.service", "home-assistant.service", "hass-health-http.service"):
+        properties = "ActiveState,SubState,MainPID,NRestarts,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainStartTimestampMonotonic"
+        command = subprocess.run(["systemctl", "show", unit, "--property=" + properties],
+                                 check=True, capture_output=True, text=True, timeout=5)
+        metadata = dict(line.split("=", 1) for line in command.stdout.splitlines() if "=" in line)
+        pid = metadata.get("MainPID", "0")
+        if pid.isdecimal() and int(pid) > 0:
+            try:
+                metadata["executable"] = str(Path(f"/proc/{pid}/exe").resolve(strict=True))
+            except OSError:
+                metadata["executable"] = "unavailable"
+        result["units"][unit] = metadata
+    listeners = subprocess.run(["ss", "-H", "-ltnp", "sport = :8084"],
+                               check=True, capture_output=True, text=True, timeout=5)
+    result["gatus_listener_processes"] = [
+        {"name": name, "pid": int(pid)}
+        for name, pid in re.findall(r'\("([A-Za-z0-9_-]+)",pid=(\d+),', listeners.stdout)
+    ]
+    records = subprocess.run(
+        ["journalctl", "-u", "home-assistant.service", "-u", "gatus.service", "-u", "gatus-email.service",
+         "--since", since.isoformat(), "--until", now.isoformat(), "--all", "-o", "json", "--no-pager"],
+        check=True, capture_output=True, text=True, timeout=20,
+    )
+    events, retained, nontext = [], Counter(), 0
+    signatures = {
+        "timeout": r"timed? out|timeout", "connection_refused": r"connection refused|connectionrefusederror",
+        "connection_failed": r"connect call failed|cannot connect|failed to connect",
+        "connection_lost": r"connection.*(?:reset|closed|broken)|network.*unreachable",
+        "authentication": r"unauthori[sz]ed|authentication|invalid.auth|forbidden",
+        "missing_dependency": r"no module named|modulenotfounderror|importerror|cannot import name",
+        "bluetooth": r"org\.bluez|bluetooth|dbus", "setup_retry": r"not ready yet|setup_retry",
+        "setup_error": r"error setting up|setup failed|setup_error",
+        "delivery_error": r"email delivery:|receiver rejected pending transition",
+    }
+    for line in records.stdout.splitlines():
+        record = json.loads(line)
+        unit = record.get("UNIT", record.get("_SYSTEMD_UNIT"))
+        if unit not in {"home-assistant.service", "gatus.service", "gatus-email.service"}:
+            continue
+        retained[unit] += 1
+        message = record.get("MESSAGE", "")
+        if isinstance(message, list) and all(type(byte) is int and 0 <= byte <= 255 for byte in message):
+            message = bytes(message).decode("utf-8", errors="replace")
+        if not isinstance(message, str):
+            nontext += 1
+            continue
+        categories = [code for code, pattern in signatures.items() if re.search(pattern, message, re.I)]
+        if not categories:
+            continue
+        events.append({
+            "observed_at": datetime.fromtimestamp(int(record["__REALTIME_TIMESTAMP"]) / 1_000_000, UTC).isoformat(),
+            "unit": unit, "categories": categories,
+            "component_domains": sorted(set(re.findall(r"homeassistant\.components\.([a-z0-9_]+)", message))),
+            "exception_classes": sorted(set(re.findall(r"\b([A-Za-z]+(?:Error|Exception))\b", message))),
+        })
+    result["journal"] = {"retained_records": dict(retained), "nontext_omissions": nontext,
+                         "matched_records": len(events), "events": events[-300:],
+                         "events_not_exported": max(0, len(events) - 300),
+                         "coverage": "Categorized retained messages only; raw reasons, addresses, titles and credentials never exported. No matching event is not proof of health."}
+    return result
+
+
 def inspect(args):
     if args.action == "setup":
         if not args.token_file.read_text().strip():
@@ -244,7 +333,7 @@ def inspect(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("setup", "status", "publish", "serve"))
+    parser.add_argument("action", choices=("setup", "status", "incident", "publish", "serve"))
     parser.add_argument("--gatus-url", default="http://127.0.0.1:8084")
     parser.add_argument("--token-file", type=Path, default=Path("/run/agenix/ha-hermes-token"))
     parser.add_argument("--ready-file", type=Path, default=READY)
@@ -257,7 +346,10 @@ def main():
         if args.action == "serve":
             serve(args)
             return 0
-        result = publish(args) if args.action == "publish" else inspect(args)
+        if args.action == "incident":
+            result = incident_diagnostics()
+        else:
+            result = publish(args) if args.action == "publish" else inspect(args)
         print(json.dumps(result, sort_keys=True))
         if args.require_live:
             cutoff = datetime.now(UTC) - timedelta(minutes=5)

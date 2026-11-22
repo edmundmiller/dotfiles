@@ -1186,6 +1186,12 @@ class HaMonitorTests(unittest.TestCase):
 
     def api(self, url, **_kwargs):
         self.assertIsInstance(url, str)  # No Request carrying a POST or credentials.
+        if url in {"http://127.0.0.1:8084/health", "http://127.0.0.1:8126/health"}:
+            if self.api_failure:
+                raise HTTPError(url, 503, "private-reason", {}, io.BytesIO(b"private-response"))
+            response = io.StringIO(json.dumps({"status": "UP", "pending": 0, "credential": "private"}))
+            response.status, response.headers = 200, {"Content-Type": "application/json"}
+            return response
         if url == "http://127.0.0.1:8124/health":
             body = json.dumps({"status": self.served_status, "extra": "private-response"})
             if self.served_status != "healthy":
@@ -1201,6 +1207,10 @@ class HaMonitorTests(unittest.TestCase):
         return response
 
     def command(self, args, **_kwargs):
+        if args[0] == "ss":
+            return subprocess.CompletedProcess(args, 0, 'LISTEN 127.0.0.1:8084 users:(("gatus",pid=123,fd=4))')
+        if args[:2] == ["systemctl", "show"]:
+            return subprocess.CompletedProcess(args, 0, "ActiveState=active\nMainPID=0\nNRestarts=0")
         if args[0] == "journalctl":
             records = self.reports + self.samples if args[2] == "hass-health.service" else self.alert_logs
             return subprocess.CompletedProcess(args, 0, "\n".join(map(json.dumps, records)))
@@ -1214,6 +1224,27 @@ class HaMonitorTests(unittest.TestCase):
                 runpy.run_path(str(ROOT / "modules/services/hass/monitor-gatus.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
         return exit_status.exception.code, json.loads(output.getvalue())
+
+    def test_incident_distinguishes_ports_and_filters_bounded_journal(self):
+        self.served_status = "unhealthy"
+        self.alert_logs = [{
+            "_SYSTEMD_UNIT": "home-assistant.service",
+            "__REALTIME_TIMESTAMP": str(int(self.now.timestamp() * 1_000_000)),
+            "MESSAGE": list(b"[homeassistant.components.matter] ConnectionRefusedError: connection refused private 192.0.2.42"),
+        }]
+        code, incident = self.invoke("incident")
+        self.assertEqual(code, 0)
+        self.assertEqual(incident["http"]["8084"]["http_status"], 200)
+        self.assertEqual(incident["http"]["8084"]["body"]["status"], "UP")
+        self.assertEqual(incident["http"]["8124"]["http_status"], 503)
+        self.assertEqual(incident["http"]["8124"]["body"], {"status": "unhealthy"})
+        self.assertEqual(incident["gatus_listener_processes"], [{"name": "gatus", "pid": 123}])
+        event = incident["journal"]["events"][0]
+        self.assertEqual(event["component_domains"], ["matter"])
+        self.assertIn("connection_refused", event["categories"])
+        self.assertEqual(event["exception_classes"], ["ConnectionRefusedError"])
+        self.assertEqual(incident["journal"]["nontext_omissions"], 0)
+        self.assertEqual(datetime.fromisoformat(incident["until"]) - datetime.fromisoformat(incident["since"]), timedelta(hours=2))
 
     def test_status_identifies_allowlisted_failures_without_exposing_journals(self):
         self.reports[0]["checks"]["critical_entities"] = {
