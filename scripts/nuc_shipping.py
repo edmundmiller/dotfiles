@@ -106,20 +106,38 @@ def shipping_command(args, receipt, path):
     if not re.fullmatch(r"[0-9a-f]{40}", args.sha):
         raise ValueError("NUC shipping requires an exact 40-character lowercase SHA")
     if args.recover_orb_pilot and not args.orb_pilot:
-        raise ValueError("Pilot recovery requires --orb-pilot capacity and backend checks")
+        raise ValueError(
+            "Pilot recovery requires --orb-pilot capacity and backend checks"
+        )
+    if args.preserve_ha and args.ha_restart_authority.strip():
+        raise ValueError(
+            "Choose HA preservation or specific restart authority, not both"
+        )
+    args.preserve_ha = not bool(args.ha_restart_authority.strip())
     if shipping:
         if (shipping["sha"], shipping["ownerThread"]) != (args.sha, args.thread):
             raise ValueError(
                 "NUC shipping already recorded for another revision or owner"
             )
         if shipping.get("orbPilot", False) != args.orb_pilot:
-            raise ValueError("NUC shipping already recorded with different pilot checks")
+            raise ValueError(
+                "NUC shipping already recorded with different pilot checks"
+            )
         if shipping.get("recoverOrbPilot", False) != args.recover_orb_pilot:
-            raise ValueError("NUC shipping already recorded with different pilot recovery")
+            raise ValueError(
+                "NUC shipping already recorded with different pilot recovery"
+            )
         if shipping.get("haMonitor", False) != args.ha_monitor:
-            raise ValueError("NUC shipping already recorded with different HA monitor setup")
-        if shipping.get("preserveHa", False) != args.preserve_ha:
-            raise ValueError("NUC shipping already recorded with different HA continuity requirements")
+            raise ValueError(
+                "NUC shipping already recorded with different HA monitor setup"
+            )
+        if (
+            shipping.get("preserveHa", False) != args.preserve_ha
+            or shipping.get("haRestartAuthority", "") != args.ha_restart_authority
+        ):
+            raise ValueError(
+                "NUC shipping already recorded with different HA continuity requirements"
+            )
         if args.no_deploy and shipping["state"] in ("dispatch_unknown", "dispatched"):
             raise ValueError(
                 "NUC shipping already submitted: cancel the identified GitHub run to revoke it"
@@ -152,6 +170,7 @@ def shipping_command(args, receipt, path):
             "recoverOrbPilot": args.recover_orb_pilot,
             "haMonitor": args.ha_monitor,
             "preserveHa": args.preserve_ha,
+            "haRestartAuthority": args.ha_restart_authority,
             "state": "request_pending",
             "nextAction": "Submit the authorized request after confirming GitHub access and exact main.",
         }
@@ -183,8 +202,9 @@ def shipping_command(args, receipt, path):
         inputs["recover_orb_pilot"] = "true"
     if shipping.get("haMonitor", False):
         inputs["ha_monitor"] = "true"
-    if shipping.get("preserveHa", False):
-        inputs["preserve_ha"] = "true"
+    inputs["preserve_ha"] = "true" if shipping["preserveHa"] else "false"
+    if not shipping["preserveHa"]:
+        inputs["ha_restart_authority"] = shipping["haRestartAuthority"]
     github_api(
         f"{API_ROOT}/actions/workflows/deploy-nuc.yml/dispatches",
         {"ref": "main", "inputs": inputs},
@@ -223,7 +243,12 @@ def main():
     request.add_argument(
         "--preserve-ha",
         action="store_true",
-        help="Refuse activation if the selected closure or dry plan may interrupt HA.",
+        help="Preserve HA, the default for every deployment.",
+    )
+    request.add_argument(
+        "--ha-restart-authority",
+        default="",
+        help="Reference Edmund's approval for this exact deployment's HA downtime; never infer it from deployment approval.",
     )
     request.add_argument(
         "--no-deploy",

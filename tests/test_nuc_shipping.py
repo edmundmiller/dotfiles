@@ -65,15 +65,15 @@ elif path.endswith("ci.yml/runs"):
     result = responses[min(index, len(responses) - 1)]
 elif path.endswith("deploy-nuc.yml/dispatches"):
     payload = json.load(sys.stdin)
-    inputs = {"expected_sha": "a" * 40}
+    inputs = {"expected_sha": "a" * 40, "preserve_ha": "true"}
+    if state.get("ha_restart_authority"):
+        inputs.update(preserve_ha="false", ha_restart_authority=state["ha_restart_authority"])
     if state.get("orb_pilot"):
         inputs["orb_pilot"] = "true"
     if state.get("recover_orb_pilot"):
         inputs["recover_orb_pilot"] = "true"
     if state.get("ha_monitor"):
         inputs["ha_monitor"] = "true"
-    if state.get("preserve_ha"):
-        inputs["preserve_ha"] = "true"
     assert payload == {"ref": "main", "inputs": inputs}
     with (root / "dispatches").open("a") as out:
         out.write(json.dumps(payload) + "\n")
@@ -175,7 +175,9 @@ class NucShippingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(json.loads(result.stdout)["recoverOrbPilot"])
         self.assertNotEqual(self.request("--orb-pilot").returncode, 0)
-        self.assertEqual(self.request("--orb-pilot", "--recover-orb-pilot").returncode, 0)
+        self.assertEqual(
+            self.request("--orb-pilot", "--recover-orb-pilot").returncode, 0
+        )
         self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
 
     def test_ha_monitor_setup_is_opt_in_and_cannot_change_on_replay(self):
@@ -189,14 +191,41 @@ class NucShippingTests(unittest.TestCase):
         self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
 
     def test_ha_continuity_requirement_survives_dispatch_and_cannot_be_dropped(self):
-        self.github["preserve_ha"] = True
-        self.save_github()
-        result = self.request("--preserve-ha")
+        result = self.request()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(json.loads(result.stdout)["preserveHa"])
-        self.assertNotEqual(self.request().returncode, 0)
+        self.assertNotEqual(
+            self.request("--ha-restart-authority", "new approval").returncode, 0
+        )
         self.assertEqual(self.request("--preserve-ha").returncode, 0)
         self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
+
+    def test_specific_ha_restart_authority_is_bound_to_the_request(self):
+        self.github["ha_restart_authority"] = "Edmund's approval for this exact restart"
+        self.save_github()
+        result = self.request(
+            "--ha-restart-authority", self.github["ha_restart_authority"]
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(json.loads(result.stdout)["preserveHa"])
+        self.assertNotEqual(self.request().returncode, 0)
+        self.assertNotEqual(
+            self.request("--ha-restart-authority", "different approval").returncode, 0
+        )
+        self.assertEqual(len((self.root / "dispatches").read_text().splitlines()), 1)
+
+    def test_ha_downtime_gate_refuses_missing_approval_and_automatic_rollout(self):
+        for operation, authority, accepted in (
+            ("deploy", "", False),
+            ("deploy", "  ", False),
+            ("rollout", "approval", False),
+            ("deploy", "approval", True),
+        ):
+            result = self.workflow_shell(
+                "Require specific approval before HA downtime",
+                setup=f'export OPERATION="{operation}" HA_RESTART_AUTHORITY="{authority}"\n',
+            )
+            self.assertEqual(result.returncode == 0, accepted, result.stderr)
 
     def test_no_deploy_is_offline_and_cannot_be_rearmed_by_replay(self):
         self.github["auth_error"] = True

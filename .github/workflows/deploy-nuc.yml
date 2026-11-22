@@ -52,9 +52,12 @@ on:
         default: false
         type: boolean
       preserve_ha:
-        description: Deploy only if the exact target closure and dry activation preserve the running HA service
-        default: false
+        description: Preserve HA process and dependencies; disabling requires Edmund's approval for this restart
+        default: true
         type: boolean
+      ha_restart_authority:
+        description: Reference to Edmund's approval for this exact deployment's HA downtime, only with preserve_ha=false
+        type: string
       orb_pilot:
         description: Run NUC orb capacity preflight and live container-backend smoke tests
         default: false
@@ -103,6 +106,18 @@ jobs:
                 ( "${OPERATION:-deploy}" != rollout && "$EXPECTED_SHA" != "$DEPLOY_SHA" ) ]]; then
             echo "NUC deployment revision mismatch: expected_sha must be the exact captured main commit" >&2
             exit 1
+          fi
+      - name: Require specific approval before HA downtime
+        if: (inputs.operation == 'deploy' || inputs.operation == 'rollout') && !inputs.preserve_ha
+        env:
+          OPERATION: ${{ inputs.operation }}
+          HA_RESTART_AUTHORITY: ${{ inputs.ha_restart_authority }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$OPERATION" != deploy || -z "${HA_RESTART_AUTHORITY//[[:space:]]/}" ]]; then
+            echo "HA restart required: preserve-HA is the default. Ask Edmund to approve this exact deployment's HA restart, then use a manual deployment with that approval reference." >&2
+            exit 65
           fi
       - name: Require standing rollout authority
         if: inputs.operation == 'rollout'
@@ -329,6 +344,7 @@ jobs:
           TARGET: ${{ steps.select.outputs.target }}
           GH_TOKEN: ${{ github.token }}
           PYTHONDONTWRITEBYTECODE: "1"
+          NUC_PRESERVE_HA: "true"
         shell: bash
         run: |
           set -euo pipefail
@@ -358,6 +374,7 @@ jobs:
         if: inputs.operation == 'deploy'
         env:
           NUC_PRESERVE_HA: ${{ inputs.preserve_ha && 'true' || 'false' }}
+          NUC_HA_RESTART_AUTHORITY: ${{ inputs.ha_restart_authority }}
         shell: bash
         run: |
           set -euo pipefail

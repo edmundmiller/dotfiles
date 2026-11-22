@@ -6,7 +6,9 @@ deploy_source_head=""
 deploy_source_base=""
 deploy_expected_main=""
 deploy_published=""
-preserve_ha=0
+preserve_ha=1
+preserve_ha_requested=0
+ha_restart_authority=""
 deploy_source_owner="${SUDO_USER:-${USER:-unknown}}"
 deploy_allow_stale="${NIXOS_DEPLOY_ALLOW_STALE:-0}"
 
@@ -29,7 +31,16 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --nuc-deploy-preserve-home-assistant)
-      preserve_ha=1
+      preserve_ha_requested=1
+      shift
+      ;;
+    --nuc-deploy-ha-restart-authority=*)
+      ha_restart_authority="${1#*=}"
+      if [[ -z "${ha_restart_authority//[[:space:]]/}" ]]; then
+        echo "nix-private-github: HA downtime needs Edmund's approval for this deployment" >&2
+        exit 64
+      fi
+      preserve_ha=0
       shift
       ;;
     --nuc-deploy-source-head=*)
@@ -53,6 +64,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$preserve_ha_requested" == 1 && -n "$ha_restart_authority" ]]; then
+  echo "nix-private-github: choose HA preservation or specific restart authority, not both" >&2
+  exit 64
+fi
 
 if [[ $# -eq 0 ]]; then
   echo "nix-private-github: missing command" >&2
@@ -98,6 +114,10 @@ if [[ -n "$deploy_expected_main" && -n "$deploy_published" ]]; then
   exit 64
 fi
 deploy_approved="${deploy_expected_main:-$deploy_published}"
+if [[ -n "$deploy_published" && "$preserve_ha" != 1 ]]; then
+  echo "nix-private-github: published-ancestry rollout must preserve HA; an approved restart needs a manual exact-main deployment" >&2
+  exit 64
+fi
 
 # These options bind the fetched source as well as live main. A matching approval
 # must not accidentally accompany another flake, a local tree, or rollback.
@@ -122,8 +142,8 @@ if [[ -n "$deploy_approved" ]]; then
   fi
 fi
 
-if [[ "$preserve_ha" == 1 && ( -z "$deploy_expected_main" || "$deploy_mutation" != 1 || " $* " != *" switch "* ) ]]; then
-  echo "nix-private-github: HA preservation requires an exact-main switch" >&2
+if [[ "$preserve_ha" == 1 && "$deploy_mutation" == 1 && ( -z "$deploy_approved" || " $* " != *" switch "* ) ]]; then
+  echo "nix-private-github: HA preservation requires an exact pinned switch; use the guarded NUC revision deployment. HA downtime requires Edmund's specific approval." >&2
   exit 64
 fi
 
@@ -304,7 +324,7 @@ if [[ "$preserve_ha" == 1 ]]; then
   test "$(systemctl show home-assistant.service -p NeedDaemonReload --value)" = no
   ha_before="$(systemctl show home-assistant.service -p MainPID -p ActiveEnterTimestampMonotonic)"
   target="$(nix build --no-link --print-out-paths --accept-flake-config --max-jobs 1 \
-    "github:edmundmiller/dotfiles/${deploy_expected_main}#nixosConfigurations.nuc.config.system.build.toplevel")"
+    "github:edmundmiller/dotfiles/${deploy_approved}#nixosConfigurations.nuc.config.system.build.toplevel")"
   test -f "$old_system/etc/systemd/system/home-assistant.service"
   for service in home-assistant.service gatus.service gatus-email.service gatus-notion.service; do
     for directory in "$service" "$service.d" "multi-user.target.wants/$service"; do
@@ -312,6 +332,9 @@ if [[ "$preserve_ha" == 1 ]]; then
       new="$target/etc/systemd/system/$directory"
       if [[ -e "$old" || -e "$new" ]] && ! diff -qr "$old" "$new" >/dev/null 2>&1; then
         echo "nix-private-github: protected unit $service would change; refusing activation" >&2
+        if [[ "$service" == home-assistant.service ]]; then
+          echo "HA restart required: HA's systemd reload sends SIGHUP and restarts HA. Ask Edmund to approve this exact deployment's HA restart." >&2
+        fi
         exit 65
       fi
     done
@@ -324,14 +347,14 @@ if [[ "$preserve_ha" == 1 ]]; then
   done
   if ! plan="$("$target/bin/switch-to-configuration" dry-activate 2>&1)" ||
     grep -Eq '(home-assistant|postgresql[^ ]*|dbus|bluetooth|networking|systemd-udevd|systemd-networkd|NetworkManager|systemd-resolved)\.service' <<<"$plan"; then
-    echo "nix-private-github: activation plan may interrupt HA or its dependencies; refusing activation" >&2
+    echo "nix-private-github: activation plan may interrupt HA or its dependencies; refusing activation. HA reload is a restart; ask Edmund for specific downtime approval." >&2
     exit 65
   fi
   test "$(readlink -f /run/current-system)" = "$old_system"
   test "$(systemctl show home-assistant.service -p MainPID -p ActiveEnterTimestampMonotonic)" = "$ha_before"
   main_now="$("$deploy_git" ls-remote https://github.com/edmundmiller/dotfiles.git refs/heads/main)"
   read -r main_sha _ <<<"$main_now"
-  test "$main_sha" = "$deploy_expected_main"
+  test "$main_sha" = "$remote_main"
   printf 'ha_preservation_guard=passed target=%s\n' "$target"
 fi
 

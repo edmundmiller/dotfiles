@@ -15,6 +15,11 @@ their inventories.
 
 - Host activation, deployment, publication, secret rotation, and destructive
   cleanup need explicit authorization. Local edits and checks do not imply it.
+- Every NUC deployment preserves HA by default. A systemd HA reload sends SIGHUP
+  and restarts HA. If the guard refuses a restart-requiring change, ask Edmund
+  for that exact deployment's HA restart, not general deployment approval.
+  Reloadable automation/script/scene changes use HA's own reload services after
+  switch. Keep SIGHUP unchanged. See [HA deployment safety](docs/runbooks/deploy-nuc.md#ha-preservation-and-configuration-reloads).
 - Publication follows the [main-first workflow](docs/runbooks/candidate-ci.md):
   affected local checks, a normal main push, then hosted CI. NUC rollout selects
   only green main revisions. No PR or cross-task publication slot is required.

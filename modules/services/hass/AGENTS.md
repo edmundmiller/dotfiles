@@ -12,6 +12,11 @@ owns infrastructure, core config, and custom components; explicitly imported
   avoid tokens in SSH command arguments or printed state.
 - Native HA backup integration is intentionally disabled: nightly restic covers
   `/var/lib/hass`; see [README.md](README.md). Removing that config is not a fix.
+- Deploy with HA preservation enabled. A systemd HA reload sends SIGHUP and
+  restarts HA; it needs Edmund's specific downtime approval. Nix-owned
+  automation/script/scene changes use `hass-reload-config.service` and HA's own
+  reload APIs. Core/package changes refuse by default. See the
+  [deployment contract](../../../docs/runbooks/deploy-nuc.md#ha-preservation-and-configuration-reloads).
 - `.storage` is HA's state database, not an editing interface. Use supported APIs
   for live state and config-entry operations; Nix remains declarative source.
 - ZHA uses ZBT-2; sleepy devices need a mesh router before pairing. See

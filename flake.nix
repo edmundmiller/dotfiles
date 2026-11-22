@@ -1785,6 +1785,7 @@
                   ''
                     export PYTHONDONTWRITEBYTECODE=1
                     python3 ${./modules/services/hass/_tests/test_hass_health.py} ${./modules/services/hass/hass-health.py}
+                    python3 ${./modules/services/hass/_tests/test_reload_config.py} ${./modules/services/hass/reload-config.py}
                     touch "$out"
                   '';
             }

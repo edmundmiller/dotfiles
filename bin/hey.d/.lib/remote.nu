@@ -101,22 +101,27 @@ export def nuc-revision-deploy [revision: string, guard: string = "exact"] {
     error make {msg: "approved revision lacks an exact agents-workspace pin"}
   }
   let expected = $"dotfiles=($revision);agents-workspace=($agents_revision)"
-  let preserve_ha = (($env.NUC_PRESERVE_HA? | default "false") == "true")
-  if $preserve_ha and ($guard != "exact") {
-    error make {msg: "HA-preserving deployment requires exact-main authority"}
+  let preserve_ha = (($env.NUC_PRESERVE_HA? | default "true") == "true")
+  let restart_authority = ($env.NUC_HA_RESTART_AUTHORITY? | default "" | str trim)
+  if not $preserve_ha and (($guard != "exact") or ($restart_authority | is-empty)) {
+    error make {msg: "HA restart required: ask Edmund to approve this exact deployment's HA downtime; provide NUC_HA_RESTART_AUTHORITY with a manual exact-main deployment"}
   }
-  # Bootstrap the guard from the exact CI-tested source; the live wrapper may
-  # predate this option. It still acquires the canonical host deployment lock.
-  let source_command = if $preserve_ha {
-    [
-      'source_json="$(sudo -n nix-private-github nix flake prefetch --json github:edmundmiller/dotfiles/REVISION)"'
-      'source="$(printf %s "$source_json" | jq -er .storePath)"'
-      'test -f "$source/bin/nix-private-github"'
-    ] | str join "\n" | str replace 'REVISION' $revision
-  } else { ':' }
+  # Use the dispatching source's guard even if rollout selects an older target.
+  # The target flake, ancestry checks and canonical host lock remain unchanged.
+  let guard_revision = (^git -C $ctx.flake_dir rev-parse HEAD | str trim)
+  if not ($guard_revision =~ '^[0-9a-f]{40}$') {
+    error make {msg: "could not identify the deployment guard source"}
+  }
+  let encoded_authority = ($restart_authority | encode base64)
+  let source_command = ([
+    'source_json="$(sudo -n nix-private-github nix flake prefetch --json github:edmundmiller/dotfiles/REVISION)"'
+    'source="$(printf %s "$source_json" | jq -er .storePath)"'
+    'test -f "$source/bin/nix-private-github"'
+    ('ha_restart_authority="$(printf %s AUTHORITY | base64 --decode)"' | str replace 'AUTHORITY' $encoded_authority)
+  ] | str join "\n" | str replace 'REVISION' $guard_revision)
   let wrapper = if $preserve_ha {
     'bash "$source/bin/nix-private-github" --nuc-deploy-preserve-home-assistant'
-  } else { 'nix-private-github' }
+  } else { 'bash "$source/bin/nix-private-github" "--nuc-deploy-ha-restart-authority=$ha_restart_authority"' }
   let script = ([
     'set -eu'
     'export PATH="/run/wrappers/bin:$PATH"'

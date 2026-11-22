@@ -150,6 +150,7 @@ in
     ./_domains/tv.nix
     ./_domains/vacation.nix
     ./_observability.nix
+    ./_reload.nix
     ./sweep-unmanaged.nix
     ./validate-config.nix
   ];

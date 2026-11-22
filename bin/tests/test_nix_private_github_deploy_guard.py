@@ -43,7 +43,7 @@ class NucDeployGuardTest(unittest.TestCase):
             'exit "${FAKE_GIT_ANCESTOR_STATUS:-1}" ;;\n'
             "  ls-remote)\n"
             '    if [[ -n "${FAKE_GIT_REMOTE_MAIN:-}" ]]; then\n'
-            '      printf \'%s\\trefs/heads/main\\n\' "$FAKE_GIT_REMOTE_MAIN"\n'
+            "      printf '%s\\trefs/heads/main\\n' \"$FAKE_GIT_REMOTE_MAIN\"\n"
             "    fi\n"
             '    exit "${FAKE_GIT_LS_REMOTE_STATUS:-0}"\n'
             "    ;;\n"
@@ -58,13 +58,13 @@ class NucDeployGuardTest(unittest.TestCase):
         self.command.write_text(
             f"#!{bash}\n"
             "set -euo pipefail\n"
-            "touch \"$COMMAND_READY\"\n"
-            "if [[ \"${COMMAND_HOLD:-0}\" == 1 ]]; then\n"
+            'touch "$COMMAND_READY"\n'
+            'if [[ "${COMMAND_HOLD:-0}" == 1 ]]; then\n'
             "  trap 'exit 143' TERM\n"
             "  while :; do sleep 0.05; done\n"
             "fi\n"
-            "sleep \"${COMMAND_SLEEP:-0}\"\n"
-            "printf '%s\\n' \"$*\" >>\"$COMMAND_MARKER\"\n",
+            'sleep "${COMMAND_SLEEP:-0}"\n'
+            'printf \'%s\\n\' "$*" >>"$COMMAND_MARKER"\n',
             encoding="utf-8",
         )
         self.command.chmod(0o755)
@@ -80,6 +80,7 @@ class NucDeployGuardTest(unittest.TestCase):
             "FAKE_ACTIVE_SHA": "d" * 40,
             "FAKE_ACTIVE_REVISION": f"dotfiles={'d' * 40};agents-workspace={'e' * 40}",
         }
+        self.prepare_ha_system()
 
     def run_wrapper(
         self,
@@ -111,12 +112,14 @@ class NucDeployGuardTest(unittest.TestCase):
     @staticmethod
     def source_args(base: str = "main-sha") -> list[str]:
         return [
+            # Legacy snapshot tests exercise explicit, separately approved downtime.
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
             "--nuc-deploy-source-head=topic-sha",
             f"--nuc-deploy-source-base={base}",
             "--nuc-deploy-source-owner=test-owner",
         ]
 
-    def test_ha_preserving_switch_rejects_changed_closure_and_dependency_restart(self) -> None:
+    def prepare_ha_system(self) -> None:
         bash = shutil.which("bash")
         real_readlink = shutil.which("readlink")
         old = self.root / "active"
@@ -127,7 +130,9 @@ class NucDeployGuardTest(unittest.TestCase):
             unit.write_text("[Service]\nExecStart=/same/ha\n")
         (target / "bin").mkdir()
         plan = target / "bin/switch-to-configuration"
-        plan.write_text(f"#!{bash}\nprintf '%s\\n' \"${{FAKE_ACTIVATION_PLAN:-unchanged}}\"\n")
+        plan.write_text(
+            f"#!{bash}\nprintf '%s\\n' \"${{FAKE_ACTIVATION_PLAN:-unchanged}}\"\n"
+        )
         plan.chmod(0o755)
         commands = {
             "readlink": f'if [[ "$*" == "-f /run/current-system" ]]; then echo "{old}"; else exec "{real_readlink}" "$@"; fi',
@@ -138,15 +143,28 @@ class NucDeployGuardTest(unittest.TestCase):
             command = self.git_bin / name
             command.write_text(f"#!{bash}\nset -eu\n{body}\n")
             command.chmod(0o755)
+        # Packaged applications prepend runtimeInputs. Stub only OS boundaries.
+        self.env.update(
+            {
+                f"BASH_FUNC_{name}%%": f'() {{ "{self.git_bin / name}" "$@"; }}'
+                for name in commands
+            }
+        )
+
+    def test_ha_preserving_switch_rejects_changed_closure_and_dependency_restart(
+        self,
+    ) -> None:
+        old, target = self.root / "active", self.root / "target"
         sha = "a" * 40
-        args = [f"--nuc-deploy-expected-main={sha}", "--nuc-deploy-preserve-home-assistant",
-                *self.source_args(), str(self.command), "switch", "--flake", f"github:edmundmiller/dotfiles/{sha}#nuc"]
-        # The packaged application prepends coreutils to PATH. Export shell
-        # boundary stubs so the test never inspects the build host's generation.
-        env = {"FAKE_GIT_REMOTE_MAIN": sha, "NIXOS_DEPLOY_GIT": str(self.fake_git)} | {
-            f"BASH_FUNC_{name}%%": f'() {{ "{self.git_bin / name}" "$@"; }}'
-            for name in commands
-        }
+        # No preservation flag: the guard must run by default.
+        args = [
+            f"--nuc-deploy-expected-main={sha}",
+            str(self.command),
+            "switch",
+            "--flake",
+            f"github:edmundmiller/dotfiles/{sha}#nuc",
+        ]
+        env = {"FAKE_GIT_REMOTE_MAIN": sha, "NIXOS_DEPLOY_GIT": str(self.fake_git)}
         result = self.run_wrapper(*args, env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.marker.exists())
@@ -156,9 +174,13 @@ class NucDeployGuardTest(unittest.TestCase):
         target_unit.write_text("[Service]\nExecStart=/different/ha\n")
         result = self.run_wrapper(*args, env=env)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("protected unit home-assistant.service would change", result.stderr)
+        self.assertIn(
+            "protected unit home-assistant.service would change", result.stderr
+        )
         self.assertFalse(self.marker.exists())
-        target_unit.write_text((old / "etc/systemd/system/home-assistant.service").read_text())
+        target_unit.write_text(
+            (old / "etc/systemd/system/home-assistant.service").read_text()
+        )
         alert_unit = target_unit.with_name("gatus-notion.service")
         alert_unit.write_text("[Service]\nExecStart=/unrelated/new/receiver\n")
         result = self.run_wrapper(*args, env=env)
@@ -166,12 +188,45 @@ class NucDeployGuardTest(unittest.TestCase):
         self.assertIn("protected unit gatus-notion.service would change", result.stderr)
         self.assertFalse(self.marker.exists())
         alert_unit.unlink()
-        result = self.run_wrapper(*args, env=env | {"FAKE_ACTIVATION_PLAN": "would restart postgresql.service"})
+        for plan in (
+            "would restart postgresql.service",
+            "reloading the following units: home-assistant.service",
+        ):
+            result = self.run_wrapper(*args, env=env | {"FAKE_ACTIVATION_PLAN": plan})
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("may interrupt HA", result.stderr)
+            self.assertFalse(self.marker.exists())
+        # The same default also protects a green trailing rollout target.
+        args[0] = f"--nuc-deploy-published={sha}"
+        env["FAKE_GIT_ANCESTOR_STATUS"] = "0"
+        self.assertEqual(self.run_wrapper(*args, env=env).returncode, 0)
+        self.marker.unlink()
+        result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=approval", *args, env=env
+        )
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("may interrupt HA", result.stderr)
         self.assertFalse(self.marker.exists())
 
+    def test_restart_authority_cannot_override_explicit_preservation(self) -> None:
+        for flags in (
+            [
+                "--nuc-deploy-preserve-home-assistant",
+                "--nuc-deploy-ha-restart-authority=approval",
+            ],
+            [
+                "--nuc-deploy-ha-restart-authority=approval",
+                "--nuc-deploy-preserve-home-assistant",
+            ],
+            ["--nuc-deploy-ha-restart-authority= "],
+        ):
+            result = self.run_wrapper(*flags, str(self.command), "switch")
+            self.assertEqual(result.returncode, 64)
+            self.assertFalse(self.marker.exists())
+
     def test_current_main_snapshot_runs(self) -> None:
+        refused = self.run_wrapper(str(self.command), "switch")
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertFalse(self.marker.exists())
         result = self.run_wrapper(*self.source_args(), str(self.command), "switch")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(self.marker.exists())
@@ -243,13 +298,18 @@ class NucDeployGuardTest(unittest.TestCase):
 
     def test_remote_flake_mutation_needs_no_worktree_metadata(self) -> None:
         result = self.run_wrapper(
-            str(self.command), "switch", "--flake", "github:owner/repo#nuc"
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
+            str(self.command),
+            "switch",
+            "--flake",
+            "github:owner/repo#nuc",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_dotfiles_remote_flake_is_pinned_to_current_main(self) -> None:
         remote_main = "a" * 40
         result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
             str(self.command),
             "switch",
             "--refresh",
@@ -272,6 +332,7 @@ class NucDeployGuardTest(unittest.TestCase):
     def test_dotfiles_remote_flake_equals_form_is_pinned(self) -> None:
         remote_main = "b" * 40
         result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
             str(self.command),
             "switch",
             "--flake=github:edmundmiller/dotfiles#nuc",
@@ -290,6 +351,7 @@ class NucDeployGuardTest(unittest.TestCase):
 
     def test_dotfiles_remote_flake_rejects_non_commit_remote_main(self) -> None:
         result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
             str(self.command),
             "switch",
             "--flake",
@@ -308,6 +370,7 @@ class NucDeployGuardTest(unittest.TestCase):
         stale_main = "c" * 40
         current_main = "d" * 40
         result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
             str(self.command),
             "switch",
             "--flake",
@@ -329,6 +392,7 @@ class NucDeployGuardTest(unittest.TestCase):
 
     def test_dotfiles_remote_flake_rejects_failed_remote_lookup(self) -> None:
         result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
             str(self.command),
             "switch",
             "--flake",
@@ -345,7 +409,9 @@ class NucDeployGuardTest(unittest.TestCase):
         self.assertIn("could not resolve current dotfiles origin/main", result.stderr)
         self.assertFalse(self.marker.exists())
 
-    def test_approved_revision_requires_live_main_even_with_stale_override(self) -> None:
+    def test_approved_revision_requires_live_main_even_with_stale_override(
+        self,
+    ) -> None:
         approved = "a" * 40
         for current, lookup_status, allowed in [
             (approved, "0", True),
@@ -392,7 +458,9 @@ class NucDeployGuardTest(unittest.TestCase):
                 result = self.run_wrapper(
                     f"--nuc-deploy-published={approved}",
                     "--nuc-deploy-allow-stale",
-                    str(self.command), "switch", "--flake",
+                    str(self.command),
+                    "switch",
+                    "--flake",
                     f"github:edmundmiller/dotfiles/{approved}#nuc",
                     env={
                         "FAKE_GIT_REMOTE_MAIN": current,
@@ -413,18 +481,36 @@ class NucDeployGuardTest(unittest.TestCase):
     def test_published_revision_keeps_exact_flake_binding(self) -> None:
         approved = "a" * 40
         for args in [
-            [f"--nuc-deploy-published={approved}", str(self.command), "switch",
-             "--flake", "github:edmundmiller/dotfiles/" + "b" * 40 + "#nuc"],
-            [f"--nuc-deploy-published={approved}", str(self.command), "--rollback", "switch"],
-            [f"--nuc-deploy-published={approved}", f"--nuc-deploy-expected-main={approved}",
-             str(self.command), "switch", "--flake",
-             f"github:edmundmiller/dotfiles/{approved}#nuc"],
+            [
+                f"--nuc-deploy-published={approved}",
+                str(self.command),
+                "switch",
+                "--flake",
+                "github:edmundmiller/dotfiles/" + "b" * 40 + "#nuc",
+            ],
+            [
+                f"--nuc-deploy-published={approved}",
+                str(self.command),
+                "--rollback",
+                "switch",
+            ],
+            [
+                f"--nuc-deploy-published={approved}",
+                f"--nuc-deploy-expected-main={approved}",
+                str(self.command),
+                "switch",
+                "--flake",
+                f"github:edmundmiller/dotfiles/{approved}#nuc",
+            ],
             ["--nuc-deploy-published=main", str(self.command), "switch"],
         ]:
             with self.subTest(args=args):
                 result = self.run_wrapper(
-                    *args, env={"FAKE_GIT_REMOTE_MAIN": approved,
-                                "NIXOS_DEPLOY_GIT": str(self.fake_git)},
+                    *args,
+                    env={
+                        "FAKE_GIT_REMOTE_MAIN": approved,
+                        "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                    },
                 )
                 self.assertEqual(result.returncode, 64, result.stderr)
                 self.assertFalse(self.marker.exists())
@@ -439,12 +525,17 @@ class NucDeployGuardTest(unittest.TestCase):
             with self.subTest(revision=revision, ancestor=ancestor):
                 self.marker.unlink(missing_ok=True)
                 result = self.run_wrapper(
-                    f"--nuc-deploy-published={approved}", str(self.command), "switch", "--flake",
+                    f"--nuc-deploy-published={approved}",
+                    str(self.command),
+                    "switch",
+                    "--flake",
                     f"github:edmundmiller/dotfiles/{approved}#nuc",
-                    env={"FAKE_GIT_REMOTE_MAIN": approved,
-                         "FAKE_ACTIVE_REVISION": revision,
-                         "FAKE_ACTIVE_ANCESTOR_STATUS": ancestor,
-                         "NIXOS_DEPLOY_GIT": str(self.fake_git)},
+                    env={
+                        "FAKE_GIT_REMOTE_MAIN": approved,
+                        "FAKE_ACTIVE_REVISION": revision,
+                        "FAKE_ACTIVE_ANCESTOR_STATUS": ancestor,
+                        "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                    },
                 )
                 self.assertEqual(result.returncode == 0, allowed, result.stderr)
                 self.assertEqual(self.marker.exists(), allowed)
@@ -467,15 +558,25 @@ class NucDeployGuardTest(unittest.TestCase):
             with self.subTest(flake=flake):
                 result = self.run_wrapper(
                     f"--nuc-deploy-expected-main={approved}",
-                    str(self.command), "switch", "--flake", flake,
-                    env={"FAKE_GIT_REMOTE_MAIN": approved,
-                         "NIXOS_DEPLOY_GIT": str(self.fake_git)},
+                    str(self.command),
+                    "switch",
+                    "--flake",
+                    flake,
+                    env={
+                        "FAKE_GIT_REMOTE_MAIN": approved,
+                        "NIXOS_DEPLOY_GIT": str(self.fake_git),
+                    },
                 )
                 self.assertEqual(result.returncode, 64, result.stderr)
                 self.assertFalse(self.marker.exists())
 
     def test_rollback_takes_lock_without_worktree_metadata(self) -> None:
-        result = self.run_wrapper(str(self.command), "--rollback", "switch")
+        result = self.run_wrapper(
+            "--nuc-deploy-ha-restart-authority=fixture-specific-approval",
+            str(self.command),
+            "--rollback",
+            "switch",
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
 
 

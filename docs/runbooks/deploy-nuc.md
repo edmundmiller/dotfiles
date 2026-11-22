@@ -91,15 +91,17 @@ Second, with external capture disabled, the headset plays three seconds of cappe
 
 Both commands require the matched five-stage aggregate set, volume70 readback and explicit muted terminal. A post-command reboot, partial write, missing start or terminal, clipping, route drift or restoration conflict stops the batch. Independent nine-second child watchdogs and the service cgroup limit bound host execution. Raw capture exists only in RAM and is never persisted or exported, including on failure. Only aggregate measurements enter the root-only ledger and workflow journal. No speech recognizer, provider, gateway or camera is involved; these tone checks do not establish speech intelligibility or calibrated loudness.
 
-## HA-preserving diagnostic deployments
+## HA preservation and configuration reloads
 
-For a separately authorized diagnostic deployment that must not interrupt HA,
-pass `--preserve-ha` to `scripts/nuc_shipping.py request`, or set the manual
-workflow input `preserve_ha=true`. `hey nuc revision` receives
-`NUC_PRESERVE_HA=true`. Ordinary deployments keep their existing behavior.
+Every NUC deployment preserves HA by default, including continuous rollout.
+HA's systemd `ExecReload` sends SIGHUP, which stops and restarts HA. Keep that
+signal behavior unchanged. Deployment approval alone never authorizes this
+interruption. The manual workflow defaults `preserve_ha=true`; shipping requests
+and `hey nuc revision` do the same. The legacy `--preserve-ha` flag remains valid.
+Unpinned worktree activation refuses by default; builds remain available.
 
-The exact published source supplies the preservation guard so this also works
-when the installed wrapper predates it. Under the existing deployment lock, the
+The dispatching published source supplies the preservation guard even when the
+installed wrapper or selected green rollout target predates it. Under the existing deployment lock, the
 guard builds the selected whole-system closure, compares HA and Gatus/receiver
 units, drop-ins and activation membership with `/run/current-system`, rejects
 pending HA daemon reloads and protected-unit runtime overrides, and checks a dry
@@ -108,6 +110,35 @@ activation or alert-configuration changes bundled into intervening main commits.
 It rechecks live main after building and verifies HA's unchanged PID/start after
 switch. A refusal is not deployment success and does not authorize disabling
 restarts, modifying the live generation or resetting an observation window.
+
+Only automation, script and scene configuration, including labeled domain keys,
+can change without changing the HA unit. `hass-reload-config.service` validates
+the configuration through HA's API after switch, then calls only changed domains'
+`automation.reload`, `script.reload` or `scene.reload` services. Core YAML,
+packages, integration dependencies, themes, Lovelace and HA unit changes remain
+restart-requiring. Reloading a domain can cancel its running actions, but does
+not restart the HA process. Inspect this oneshot's result as well as HA health.
+
+The reload helper retains per-domain applied hashes in its private systemd state
+directory. Before each reload POST it records a pending operation. An uncertain
+or failed response blocks automatic replay, including on the next deployment.
+Inspect the local receipt and HA state before an authorized manual retry; do not
+delete the receipt merely to make deployment green. Credentials and raw API
+responses are not exported.
+
+The first activation of this reload-trigger policy changes the HA unit and is
+therefore refused by the same guard. It needs Edmund's approval for one HA
+restart. Until that migration is activated, workflow preservation is effective
+but reloadable configuration still refuses if the old unit would reload HA.
+
+When a change truly needs a restart, ask Edmund to approve that exact revision's
+HA restart. Submit a manual exact-main request with
+`--ha-restart-authority=<approval-reference>` after approval. This binds the
+reference in the shipping receipt and sets `preserve_ha=false` explicitly. A bare
+false input without a reference fails closed. Direct guarded revision execution
+uses `NUC_PRESERVE_HA=false` with `NUC_HA_RESTART_AUTHORITY`. Continuous rollout
+cannot opt out. Neither path verifies human consent automatically; the operator
+must obtain and retain the actual approval. Do not rerun an uncertain dispatch.
 
 The system-level climate capture hook can install without a changed HA package.
 Actual HomeKit connection/characteristic internals still require HA-side
