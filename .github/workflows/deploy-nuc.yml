@@ -852,7 +852,8 @@ jobs:
           test -n "$cursor"
           result=0
           sudo -n systemctl start "$unit" || result=$?
-          sudo -n journalctl -u "$unit" --after-cursor="$cursor" --no-pager -o json
+          # Windowed aggregate receipts exceed journald's default 4096-byte field limit.
+          sudo -n journalctl -u "$unit" --after-cursor="$cursor" --no-pager --all -o json
           systemctl show "$unit" -p ActiveState -p Result -p ExecMainStatus
           systemctl is-active --quiet home-assistant.service
           test "$(systemctl show home-assistant.service -p MainPID -p ExecMainStartTimestampMonotonic)" = "$ha_before"
