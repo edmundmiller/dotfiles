@@ -2,7 +2,6 @@
 let
   inherit (builtins)
     all
-    attrNames
     attrValues
     concatStringsSep
     elem
@@ -19,14 +18,20 @@ let
     (candidate.environmentFile or null) == (dailyBackup.environmentFile or null)
     && (candidate.pruneOpts or [ ]) != [ ]
   ) (attrValues cfg.services.restic.backups);
-  profiles = cfg.services.hermes-agent.profiles;
-  expectedPaths = map (profile: "${profiles.${profile}.stateDir}/.hermes") (attrNames profiles);
+  expectedPaths = [
+    "/var/lib/hermes-amosburton/.hermes"
+    "/var/lib/hermes-anne/.hermes"
+    "/var/lib/hermes-betty/.hermes"
+    "/var/lib/hermes-finn/.hermes"
+    "/var/lib/hermes-orchestrator/.hermes"
+    "/var/lib/hermes-scintillate/.hermes"
+  ];
   timer = backup.timerConfig or { };
 
   assertions = [
     {
-      test = expectedPaths != [ ] && (backup.paths or [ ]) == expectedPaths;
-      msg = "Hermes profile backup must cover every configured profile home";
+      test = (backup.paths or [ ]) == expectedPaths;
+      msg = "Hermes profile backup must retain all six retired homes independently of service configuration";
     }
     {
       test =

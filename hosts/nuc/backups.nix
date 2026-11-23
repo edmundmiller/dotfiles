@@ -6,9 +6,15 @@
 }:
 let
   restic-backup-id = "c351536f-39a4-4725-9d92-04fcb26b6306";
-  hermesProfileHomes = map (
-    profile: "${config.services.hermes-agent.profiles.${profile}.stateDir}/.hermes"
-  ) (builtins.attrNames config.services.hermes-agent.profiles);
+  # Retired profile homes stay backed up independently of service enablement.
+  hermesProfileHomes = map (profile: "/var/lib/hermes-${profile}/.hermes") [
+    "amosburton"
+    "anne"
+    "betty"
+    "finn"
+    "orchestrator"
+    "scintillate"
+  ];
 
   commonBackupOptions = {
     initialize = true;
@@ -100,10 +106,8 @@ in
       };
     };
 
-    # Preserve runtime-installed skills, config edits, sessions, databases, and
-    # other mutable profile state. Canonical config still belongs in
-    # agents-workspace; these snapshots provide rollback and diff evidence for
-    # changes made by or through a running Hermes agent between deployments.
+    # Preserve retired skills, config edits, sessions, and databases. Disabling
+    # Hermes must not drop these paths or change their existing retention.
     hermes-profile-state = nucR2Backup // {
       paths = hermesProfileHomes;
       extraBackupArgs = [
