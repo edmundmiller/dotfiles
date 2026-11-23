@@ -117,7 +117,7 @@ in
       registryInputs = mapAttrs (_: v: { flake = v; }) filteredInputs;
     in
     {
-      package = pkgs.nixVersions.latest;
+      package = pkgs.nix;
       extraOptions = "experimental-features = nix-command flakes";
       nixPath = nixPathInputs ++ [
         "nixpkgs-overlays=${dotFilesDir}/overlays"

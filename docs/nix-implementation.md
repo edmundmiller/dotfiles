@@ -22,11 +22,16 @@ This is a recommendation for this fleet, not a claim that one implementation
 has the lowest failure rate in general.
 
 For NixOS, upstream Nix is already declaratively managed. Switching to Lix
-would not gain daemon ownership. For a conservative baseline, prefer the
-nixpkgs default `pkgs.nix` over an explicit `nixVersions.latest` selection unless
-a workload needs the newer release. The repo currently selects the latter and
-carries a targeted fix. Review that selection and the fix together during a
-separate runtime update, rather than silently changing it in documentation.
+would not gain daemon ownership. Use the nixpkgs default `pkgs.nix` unless a
+workload needs a newer release. At this pin it selects upstream Nix 2.34.8,
+rather than the 2.35.1 selected by `nixVersions.latest`.
+
+The former `latest` selection was introduced for the skills catalog's relative
+path input. Nix added that support in 2.26. The 2.34.8 evaluator resolved the
+current catalog and evaluated both NUC and UNAS system derivations with the
+default package selected. No current requirement for 2.35 was found. The local
+2.35-only build-slot wakeup backport was removed with the selection change.
+Evaluation is not proof that a replacement daemon has passed runtime acceptance.
 
 For Darwin, keep Determinate while its Keychain integration and other macOS
 services are useful. Seqeratop needs corporate CA handling. Stable Lix is the
@@ -44,18 +49,18 @@ match the servers.
 
 ## What this repo uses today
 
-| Systems                       | Implementation and selection                                                                                                                                                                                                                                | Runtime owner                                                                                                                                                                                |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NixOS, including NUC and UNAS | Upstream Nix, explicitly `pkgs.nixVersions.latest` in [default.nix](../default.nix). At the current pin this is 2.35.1, with the repo's [build-slot wakeup backport](../overlays/nix-worker-wakeups/README.md). It is not an implicit `pkgs.nix` selection. | NixOS manages the package, systemd daemon and Nix configuration through `nix.*`.                                                                                                             |
-| MacTraitor-Pro and Seqeratop  | Determinate Nix. [flake.nix](../flake.nix) imports its Darwin module; [darwin-base.nix](../modules/darwin-base.nix) enables it and declares policy.                                                                                                         | The separately installed Determinate runtime and Nixd own the daemon and main `nix.conf`. nix-darwin supplies custom settings, registry, Nixd configuration and the repo's maintenance jobs. |
-| Other Linux environments      | Meshify's current desktop is [Omarchy](../hosts/meshify/omarchy/README.md), not a supported NixOS deployment. The [Orb setup](../.agents/setup) preserves an available Nix installation and bootstraps one with Determinate's installer only when missing.  | Do not infer NixOS daemon ownership or an installed implementation from a Linux kernel or the installer's name. Inspect that environment separately.                                         |
+| Systems                       | Implementation and selection                                                                                                                                                                                                                               | Runtime owner                                                                                                                                                                                |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NixOS, including NUC and UNAS | Upstream Nix, explicitly `pkgs.nix` in [default.nix](../default.nix). At the current pin this aliases `nixVersions.stable`, version 2.34.8.                                                                                                                | NixOS manages the package, systemd daemon and Nix configuration through `nix.*`.                                                                                                             |
+| MacTraitor-Pro and Seqeratop  | Determinate Nix. [flake.nix](../flake.nix) imports its Darwin module; [darwin-base.nix](../modules/darwin-base.nix) enables it and declares policy.                                                                                                        | The separately installed Determinate runtime and Nixd own the daemon and main `nix.conf`. nix-darwin supplies custom settings, registry, Nixd configuration and the repo's maintenance jobs. |
+| Other Linux environments      | Meshify's current desktop is [Omarchy](../hosts/meshify/omarchy/README.md), not a supported NixOS deployment. The [Orb setup](../.agents/setup) preserves an available Nix installation and bootstraps one with Determinate's installer only when missing. | Do not infer NixOS daemon ownership or an installed implementation from a Linux kernel or the installer's name. Inspect that environment separately.                                         |
 
 The root nixpkgs input resolves to lock node `nixpkgs_8`, revision
 `18b9261cb3294b6d2a06d03f96872827b8fe2698`. Its
 [`lixPackageSets.stable.lix` is 2.95.2](https://github.com/NixOS/nixpkgs/blob/18b9261cb3294b6d2a06d03f96872827b8fe2698/pkgs/tools/package-management/lix/default.nix).
 The [upstream Nix package set](https://github.com/NixOS/nixpkgs/blob/18b9261cb3294b6d2a06d03f96872827b8fe2698/pkgs/tools/package-management/nix/default.nix)
-maps `latest` to 2.35.1. These are pin-specific facts, not promises about future
-versions. Before any migration, check release support and security status.
+maps `stable` to 2.34.8 and `latest` to 2.35.1. These are pin-specific facts,
+not promises about future versions. Before any migration, check release support and security status.
 The current Lix website illustrates 2.96.0, which this pin does not select.
 
 The locked Determinate module is 3.24.2. That pins integration code, not the
@@ -229,6 +234,9 @@ Linux integration must be reviewed on its own terms if ever proposed.
 
 External guidance checked 2026-11-22, alongside the locked sources linked above:
 
+- [Original latest-selection rationale](https://github.com/edmundmiller/dotfiles/commit/086ba0cf950fe4833050e8f0c1eafa3bd310e97c),
+  [Nix 2.26 relative-input support](https://github.com/NixOS/nix/blob/2.34.8/doc/manual/source/release-notes/rl-2.26.md),
+  and [the 2.35 wakeup regression](https://github.com/NixOS/nix/issues/16005).
 - [nix-darwin README](https://github.com/nix-darwin/nix-darwin#prerequisites)
   and [option manual](https://nix-darwin.github.io/nix-darwin/manual/).
 - [Lix stable switching guidance](https://lix.systems/add-to-config/),
