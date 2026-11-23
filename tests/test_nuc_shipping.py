@@ -322,6 +322,39 @@ class NucShippingTests(unittest.TestCase):
             timeout=120,
         )
 
+    def test_hermes_readback_uses_active_host_revision_without_activation(self):
+        active = "b" * 40
+        sudo = self.root / "sudo"
+        sudo.write_text(f"#!{sys.executable}\n" + textwrap.dedent('''
+            import os, sys
+            # Only the read-only reader is allowed on this fake host.
+            assert sys.argv[1:] == ['-n', 'python3', '-', os.environ['EXPECTED_HOST_SHA']]
+            sys.stdin.read()
+            print('reader_accepted=' + sys.argv[4])
+        '''))
+        sudo.chmod(0o755)
+        for hostname, revision, accepted in (
+            ("nuc", f"dotfiles={active};agents-workspace={SHA}", True),
+            ("other-host", f"dotfiles={active};agents-workspace={SHA}", False),
+            ("nuc", "unknown", False),
+            ("nuc", "dotfiles=" + "z" * 40 + f";agents-workspace={SHA}", False),
+        ):
+            setup = f'''
+                export TEST_HOST={hostname} TEST_REVISION='{revision}' EXPECTED_HOST_SHA={active}
+                hostname() {{ printf '%s\\n' "$TEST_HOST"; }}
+                nixos-version() {{ printf '%s\\n' "$TEST_REVISION"; }}
+                tailscale() {{
+                    test "$1" = ssh && test "$2" = emiller@nuc.cinnamon-rooster.ts.net || return 98
+                    bash -c "$3"
+                }}
+                export -f hostname nixos-version tailscale
+            '''
+            result = self.workflow_shell(
+                "Verify Hermes retirement without activation", setup=setup
+            )
+            self.assertEqual(result.returncode == 0, accepted, result.stderr)
+            self.assertEqual(f"reader_accepted={active}" in result.stdout, accepted)
+
     def test_workflow_waits_for_missing_and_running_ci_then_succeeds(self):
         self.github["ci_responses"] = [
             {"workflow_runs": []},

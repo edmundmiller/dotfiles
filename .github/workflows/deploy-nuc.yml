@@ -1,5 +1,5 @@
 name: Deploy NUC
-run-name: ${{ (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-homebridge-recovery' && 'Recover Homebridge dependency' || inputs.operation == 'ha-homekit-retry' && 'Retry one HomeKit entry' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'orb-dji-capture' && 'Enable DJI capture' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
+run-name: ${{ inputs.operation == 'hermes-retirement-diagnostics' && 'Verify Hermes retirement' || (inputs.operation == 'gatus-email-diagnostic' || inputs.operation == 'gatus-email-client-diagnostic') && 'Diagnose Gatus email preflight' || (inputs.operation == 'gatus-email-acceptance' || inputs.operation == 'gatus-email-client-acceptance') && 'Test synthetic Gatus email' || inputs.operation == 'ha-plant-diagnostics' && 'Inspect HA plant lights' || inputs.operation == 'ha-climate-recurrence' && 'Inspect HA climate recurrence' || inputs.operation == 'ha-climate-diagnostics' && 'Inspect HA climate' || inputs.operation == 'ha-homebridge-recovery' && 'Recover Homebridge dependency' || inputs.operation == 'ha-homekit-retry' && 'Retry one HomeKit entry' || inputs.operation == 'ha-diagnostics' && (inputs.restart_bluetooth && 'Recover Bluetooth' || 'Inspect HA') || inputs.operation == 'ha-monitor-diagnostics' && 'Inspect HA monitor' || inputs.operation == 'orb-diagnostics' && 'Inspect orbs' || inputs.operation == 'orb-note4c-serial' && 'Enable Note 4C serial' || inputs.operation == 'orb-dji-capture' && 'Enable DJI capture' || inputs.operation == 'rollout' && 'Roll out NUC' || 'Deploy NUC' }} ${{ inputs.expected_sha }}
 
 on:
   workflow_dispatch:
@@ -15,6 +15,7 @@ on:
         options:
           - deploy
           - rollout
+          - hermes-retirement-diagnostics
           - ha-diagnostics
           - ha-homekit-retry
           - ha-homebridge-recovery
@@ -393,6 +394,24 @@ jobs:
           nixpkgs=$(jq -er '.nodes[.nodes[.root].inputs.nixpkgs].locked.rev' flake.lock)
           nix shell "github:NixOS/nixpkgs/$nixpkgs#nushell" "github:NixOS/nixpkgs/$nixpkgs#mise" --command \
             env MISE_TRUSTED_CONFIG_PATHS="$PWD" mise run nuc revision "$DEPLOY_SHA"
+      - name: Verify Hermes retirement without activation
+        if: inputs.operation == 'hermes-retirement-diagnostics'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Inspect the active source, which may predate this reader-only fix.
+          # shellcheck disable=SC2016
+          tailscale ssh emiller@nuc.cinnamon-rooster.ts.net '
+            set -eu
+            test "$(hostname)" = nuc
+            revision=$(nixos-version --configuration-revision)
+            printf "configurationRevision=%s\n" "$revision"
+            sha=${revision#dotfiles=}
+            sha=${sha%%;*}
+            test "${#sha}" -eq 40
+            case "$sha" in *[!0-9a-f]*) exit 1 ;; esac
+            exec sudo -n python3 - "$sha"
+          ' < scripts/verify_hermes_retirement.py
       - name: Verify automatic climate capture from the existing checker
         if: inputs.operation == 'deploy' && inputs.preserve_ha
         shell: bash

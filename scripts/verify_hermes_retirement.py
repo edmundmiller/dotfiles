@@ -15,8 +15,12 @@ def output(*command):
 
 
 def main():
-    check = "declared service selection"
+    check = "active revision"
     try:
+        revision = output("nixos-version", "--configuration-revision").strip()
+        if not revision.startswith(f"dotfiles={sys.argv[1]};"):
+            raise ValueError("Active revision does not match the inspected source")
+        check = "declared service selection"
         enabled = json.loads(output(
             "nix-private-github", "nix", "eval", "--json", "--accept-flake-config",
             "--no-write-lock-file",
@@ -60,12 +64,12 @@ def main():
             raise ValueError("A retained home is missing")
         output("systemctl", "is-active", "--quiet", "restic-backups-hermes-profile-state.timer")
 
-        check = "surviving services"
         for service in (
             "home-assistant.service",
-            "music-assistant.service", "amp-nascent-manuscript-runner.service",
+            "podman-music-assistant.service", "amp-nascent-manuscript-runner.service",
             "mill-docs-agents-tailscale-serve.service",
         ):
+            check = f"surviving service: {service}"
             output("systemctl", "is-active", "--quiet", service)
 
         check = "live HA service registry"
@@ -80,6 +84,9 @@ def main():
         with urlopen(request, timeout=20) as response:
             if json.load(response)["entity_id"] != "script.good_morning":
                 raise ValueError("Good Morning script is missing")
+        check = "unchanged active revision"
+        if output("nixos-version", "--configuration-revision").strip() != revision:
+            raise ValueError("Active revision changed during verification")
     except Exception:
         print(json.dumps({"hermesRetirement": "failed", "check": check}))
         return 1

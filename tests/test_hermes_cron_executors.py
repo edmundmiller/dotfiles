@@ -484,6 +484,8 @@ class HermesRetirementReadbackTests(unittest.TestCase):
         cases = [
             {"name": "healthy", "exit": 0},
             {"name": "enabled deployment", "enable": True, "exit": 0},
+            {"name": "wrong active revision", "revision": "dotfiles=" + "b" * 40 + ";agents-workspace=" + "c" * 40, "exit": 1},
+            {"name": "concurrent activation", "revision_change": True, "exit": 1},
             {"name": "invalid selection", "enable": "false", "exit": 1},
             {"name": "running gateway", "active": "hermes-gateway-betty.service active running", "exit": 1},
             {"name": "enabled timer", "installed": "hermes-betty-cron-tick.timer enabled enabled", "exit": 1},
@@ -491,13 +493,21 @@ class HermesRetirementReadbackTests(unittest.TestCase):
             {"name": "remaining listener", "listeners": "LISTEN 0 128 [::]:9121 [::]:*", "exit": 1},
             {"name": "missing home", "missing_home": True, "exit": 1},
             {"name": "stopped backups", "inactive": "restic-backups-hermes-profile-state.timer", "exit": 1},
-            {"name": "stopped Music Assistant", "inactive": "music-assistant.service", "exit": 1},
+            {"name": "stopped Music Assistant", "inactive": "podman-music-assistant.service", "exit": 1},
             {"name": "registered DJ", "dj": True, "exit": 1},
             {"name": "missing Good Morning", "good_morning": "script.other", "exit": 1},
         ]
         for case in cases:
             with self.subTest(case=case["name"]):
+                revision = "dotfiles=" + "a" * 40 + ";agents-workspace=" + "c" * 40
+                revisions = iter([
+                    case.get("revision", revision),
+                    "changed-revision" if case.get("revision_change") else revision,
+                ])
+
                 def command_output(command, **kwargs):
+                    if command[0] == "nixos-version":
+                        return next(revisions)
                     if command[0] == "nix-private-github":
                         return json.dumps(case.get("enable", False))
                     if command[:2] == ("tailscale", "serve"):
@@ -509,7 +519,7 @@ class HermesRetirementReadbackTests(unittest.TestCase):
                     if command[:2] == ("systemctl", "list-unit-files"):
                         return case.get("installed", "")
                     if command[:2] == ("systemctl", "is-active"):
-                        if command[-1] == case.get("inactive"):
+                        if command[-1] == "music-assistant.service" or command[-1] == case.get("inactive"):
                             raise subprocess.CalledProcessError(3, command)
                         return ""
                     raise AssertionError(command)
@@ -538,6 +548,8 @@ class HermesRetirementReadbackTests(unittest.TestCase):
                 self.assertEqual(case["exit"], stopped.exception.code)
                 report = json.loads(result.getvalue())
                 self.assertEqual(report["hermesRetirement"] == "failed", case["exit"] != 0)
+                if case.get("inactive", "").endswith(".service"):
+                    self.assertIn(case["inactive"], report["check"])
                 self.assertNotIn("private-test-token", result.getvalue())
 
 
