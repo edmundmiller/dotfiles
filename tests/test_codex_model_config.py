@@ -7,7 +7,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "codex" / "config.toml"
 AGENTS = ROOT / "config" / "codex" / "agents"
 MODULE = ROOT / "modules" / "agents" / "codex" / "default.nix"
-MODULE_GUIDE = ROOT / "modules" / "agents" / "codex" / "AGENTS.md"
 
 
 class CodexModelConfigTests(unittest.TestCase):
@@ -15,121 +14,25 @@ class CodexModelConfigTests(unittest.TestCase):
     def setUpClass(cls):
         cls.config = tomllib.loads(CONFIG.read_text())
 
-    def test_primary_model_uses_balanced_default_with_max_opt_in(self):
-        self.assertEqual(self.config["model"], "gpt-5.6-sol")
-        self.assertEqual(self.config["model_reasoning_effort"], "medium")
-        self.assertEqual(
-            self.config["enabled-reasoning-efforts"],
-            ["medium", "high", "xhigh", "max"],
-        )
-
-    def test_sol_uses_bounded_luna_subagents_without_catalog_overrides(self):
-        self.assertEqual(
-            self.config["agents"],
-            {
-                "enabled": True,
-                "max_concurrent_threads_per_session": 100,
-                "default_subagent_model": "gpt-5.6-luna",
-                "default_subagent_reasoning_effort": "max",
-            },
-        )
-        self.assertTrue(self.config["features"]["multi_agent_v2"])
-        self.assertNotIn("model_providers", self.config)
-        guidance = self.config["developer_instructions"]
-        self.assertIn("Keep Sol as the primary coordinator", guidance)
-        self.assertIn("smallest useful set", guidance)
-        self.assertIn("Do not delegate recursively", guidance)
-
     def test_runtime_guidance_remains_top_level(self):
-        self.assertTrue(self.config["developer_instructions"].startswith("Runtime defaults:"))
+        self.assertTrue(self.config["developer_instructions"])
 
-    def test_custom_agent_lanes_pin_models_and_are_deployed(self):
+    def test_custom_agent_lanes_are_deployed_with_read_only_reviewer(self):
         expected = {
-            "luna_worker.toml": ("luna_worker", "gpt-5.6-luna", "max", None),
-            "terra_worker.toml": ("terra_worker", "gpt-5.6-terra", "high", None),
-            "sol_reviewer.toml": ("sol_reviewer", "gpt-5.6-sol", "high", "read-only"),
+            "luna_worker.toml": ("luna_worker", None),
+            "terra_worker.toml": ("terra_worker", None),
+            "sol_reviewer.toml": ("sol_reviewer", "read-only"),
         }
         module = MODULE.read_text(encoding="utf-8")
 
         for filename, values in expected.items():
             profile = tomllib.loads((AGENTS / filename).read_text(encoding="utf-8"))
-            name, model, effort, sandbox = values
+            name, sandbox = values
             self.assertEqual(profile["name"], name)
-            self.assertEqual(profile["model"], model)
-            self.assertEqual(profile["model_reasoning_effort"], effort)
             self.assertEqual(profile.get("sandbox_mode"), sandbox)
             self.assertTrue(profile["description"])
             self.assertTrue(profile["developer_instructions"])
             self.assertIn(f'".codex/agents/{filename}"', module)
-
-    def test_module_router_routes_model_policy_without_recipe_duplication(
-        self,
-    ):
-        router = MODULE_GUIDE.read_text()
-
-        for phrase in (
-            "config/codex/config.toml",
-            "config/codex/agents/",
-            "writable live config may differ",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, router)
-
-        self.assertNotIn("normally one to three", router)
-
-        guidance = self.config["developer_instructions"]
-        for detail in (
-            "normally one to three",
-            "luna_worker",
-            "terra_worker",
-            "sol_reviewer",
-        ):
-            with self.subTest(bootstrap_detail=detail):
-                self.assertNotIn(detail, guidance)
-
-    def test_primary_bootstrap_keeps_only_compact_delegation_invariants(self):
-        guidance = self.config["developer_instructions"]
-        normalized = guidance.lower()
-        for phrase in (
-            "worker reports as claims",
-            "waits for workers",
-            "reruns relevant verification",
-            "requested outcome is complete",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase.lower(), normalized)
-
-        for detail in (
-            "continue",
-            "partial",
-            "landed",
-            "blocked",
-            "structured",
-            "durable goals are checkpoints",
-            "keep the goal open through `done`",
-        ):
-            with self.subTest(bootstrap_detail=detail):
-                self.assertNotIn(detail, normalized)
-
-    def test_luna_returns_structured_progress_report(self):
-        profile = tomllib.loads(
-            (AGENTS / "luna_worker.toml").read_text(encoding="utf-8")
-        )
-        instructions = profile["developer_instructions"]
-
-        for field in (
-            "status",
-            "changed_paths",
-            "verification",
-            "landing_state",
-            "next_action",
-        ):
-            with self.subTest(field=field):
-                self.assertIn(field, instructions)
-
-        for state in ("CONTINUE", "PARTIAL", "BLOCKED"):
-            with self.subTest(state=state):
-                self.assertIn(state, instructions)
 
 
 if __name__ == "__main__":

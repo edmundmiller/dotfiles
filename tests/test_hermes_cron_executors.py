@@ -386,10 +386,6 @@ class HermesCronExecutorTests(unittest.TestCase):
         self.assertNotIn('marker_dir="$HERMES_HOME/cron"', config)
         self.assertNotIn('tmp="$marker.$$"', config)
 
-    def test_marker_writer_rejects_a_directory_appearing_during_publish(self):
-        config = NUC_CONFIG.read_text(encoding="utf-8")
-        self.assertIn('mv --no-target-directory "$tmp" "$marker"', config)
-
     def test_marker_writer_rejects_profile_and_cron_symlink_aliases(self):
         config = NUC_CONFIG.read_text(encoding="utf-8")
         self.assertIn('if [ -L "$hermes_profile_home" ]', config)

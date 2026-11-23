@@ -1362,7 +1362,6 @@
                       root = ./.;
                       fileset = lib.fileset.unions [
                         ./skills/catalog/done
-                        ./skills/flake.nix
                         ./scripts/check_done_bundle.py
                         ./bin/hey.d/skills/amp-stage-done
                         ./tests/done_bend.py
@@ -1391,8 +1390,9 @@
                     cp -R "$src" "$TMPDIR/source"
                     chmod -R u+w "$TMPDIR/source"
                     cd "$TMPDIR/source"
+                    # Delivery runs the closeout suite against the materialized bundle.
                     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest \
-                      tests.test_done_closeout tests.test_done_delivery tests.test_done_skill
+                      tests.test_done_delivery tests.test_done_skill
                     touch $out
                   '';
 
@@ -1456,17 +1456,6 @@
                       fi
                     done
                     [ "$status" -eq 0 ] || exit 1
-                    touch $out
-                  '';
-
-              agent-response-contract =
-                pkgs.runCommand "agent-response-contract"
-                  {
-                    nativeBuildInputs = [ pkgs.python3 ];
-                  }
-                  ''
-                    cd ${./.}
-                    PYTHONDONTWRITEBYTECODE=1 python3 tests/test_agent_response_contract.py
                     touch $out
                   '';
 

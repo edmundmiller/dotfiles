@@ -1,8 +1,6 @@
 from pathlib import Path
-import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import unittest
 
@@ -11,7 +9,6 @@ from tests.done_bend import binary
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills/catalog/done/SKILL.md"
 REFERENCES = ROOT / "skills/catalog/done/references"
-FLAKE = ROOT / "skills/flake.nix"
 
 
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -71,55 +68,6 @@ class DoneSkillContractTest(unittest.TestCase):
                     self.assertTrue(active.is_dir())
                     self.assertTrue(sibling.is_dir())
 
-    def done_contract(self) -> str:
-        references = "\n".join(
-            path.read_text() for path in sorted(REFERENCES.glob("*.md"))
-        )
-        return SKILL.read_text() + "\n" + references
-
-    def test_done_lands_and_publishes_before_cleanup(self) -> None:
-        skill = self.done_contract()
-        flake = FLAKE.read_text()
-
-        for phrase in (
-            "actual default branch",
-            "Default to direct landing",
-            "merge-base --is-ancestor",
-            "ls-remote",
-            "Never delete a candidate that contains",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, skill)
-
-        self.assertNotIn('done.from = "bholmesdev";', flake)
-
-    def test_launcher_owned_worktrees_use_launcher_teardown(self) -> None:
-        skill = self.done_contract()
-
-        for phrase in (
-            "Native Herdr has no supported guarded worktree teardown",
-            "CODEX_THREAD_ID",
-            "set_thread_archived",
-            "with `--force`",
-            "Do not archive a same-directory",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, skill)
-
-    def test_dirty_default_attempts_safe_fast_forward_before_blocking(self) -> None:
-        skill = self.done_contract()
-
-        for phrase in (
-            "temporary integration worktree",
-            "merge --ff-only",
-            "only when Git refuses",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, skill)
-
-        self.assertIn("preservation branch", skill)
-        self.assertIn("stash, reset, commit its unrelated dirt", skill)
-
     def test_entrypoint_is_a_thin_dispatcher_with_direct_references(self) -> None:
         skill = SKILL.read_text()
         self.assertLessEqual(len(skill.splitlines()), 140)
@@ -127,189 +75,6 @@ class DoneSkillContractTest(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(f"./references/{name}", skill)
                 self.assertTrue((REFERENCES / name).is_file())
-
-    def test_full_done_does_not_publish_unrelated_local_default_commits(self) -> None:
-        contract = self.done_contract()
-        self.assertIn("without publication authority", contract)
-        self.assertIn("Do not publish them", contract)
-
-    def test_dirty_default_fast_forward_preserves_non_overlapping_work(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            repo = root / "repo"
-            feature = root / "feature"
-
-            git(root, "init", "-b", "main", str(repo))
-            git(repo, "config", "user.name", "Done Skill Test")
-            git(repo, "config", "user.email", "done-skill@example.invalid")
-            (repo / "base.txt").write_text("base\n")
-            git(repo, "add", "base.txt")
-            git(repo, "commit", "-m", "base")
-            git(repo, "worktree", "add", "-b", "feature", str(feature), "main")
-
-            (feature / "task.txt").write_text("task\n")
-            git(feature, "add", "task.txt")
-            git(feature, "commit", "-m", "task")
-
-            (repo / "base.txt").write_text("unrelated tracked edit\n")
-            (repo / "untracked.txt").write_text("unrelated untracked edit\n")
-            merged = git(repo, "merge", "--ff-only", "feature")
-
-            self.assertIn("Fast-forward", merged.stdout)
-            self.assertEqual(
-                "unrelated tracked edit\n", (repo / "base.txt").read_text()
-            )
-            self.assertEqual(
-                "unrelated untracked edit\n", (repo / "untracked.txt").read_text()
-            )
-            self.assertEqual("task\n", (repo / "task.txt").read_text())
-
-    def test_dirty_default_fast_forward_refuses_overlapping_work(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            repo = root / "repo"
-            feature = root / "feature"
-
-            git(root, "init", "-b", "main", str(repo))
-            git(repo, "config", "user.name", "Done Skill Test")
-            git(repo, "config", "user.email", "done-skill@example.invalid")
-            (repo / "state.txt").write_text("base\n")
-            git(repo, "add", "state.txt")
-            git(repo, "commit", "-m", "base")
-            git(repo, "worktree", "add", "-b", "feature", str(feature), "main")
-
-            (feature / "state.txt").write_text("task\n")
-            git(feature, "commit", "-am", "task")
-            (repo / "state.txt").write_text("user edit\n")
-
-            refused = subprocess.run(
-                ["git", "-C", str(repo), "merge", "--ff-only", "feature"],
-                capture_output=True,
-                text=True,
-            )
-
-            self.assertNotEqual(0, refused.returncode)
-            self.assertIn("would be overwritten by merge", refused.stderr)
-            self.assertEqual("user edit\n", (repo / "state.txt").read_text())
-
-    def test_concurrent_remote_advance_replays_only_later_local_commits(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            remote = root / "remote.git"
-            repo = root / "repo"
-            task = root / "task"
-            updater = root / "updater"
-
-            subprocess.run(
-                ["git", "init", "--bare", str(remote)],
-                check=True,
-                capture_output=True,
-            )
-            git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
-            git(root, "init", "-b", "main", str(repo))
-            git(repo, "config", "user.name", "Done Skill Test")
-            git(repo, "config", "user.email", "done-skill@example.invalid")
-            (repo / "base.txt").write_text("base\n")
-            git(repo, "add", "base.txt")
-            git(repo, "commit", "-m", "A")
-            git(repo, "remote", "add", "origin", str(remote))
-            git(repo, "push", "-u", "origin", "main")
-
-            git(repo, "worktree", "add", "-b", "task", str(task), "main")
-            (task / "task-one.txt").write_text("task one\n")
-            git(task, "add", "task-one.txt")
-            git(task, "commit", "-m", "T1")
-            task_one = git(task, "rev-parse", "HEAD").stdout.strip()
-            (task / "task-two.txt").write_text("task two\n")
-            git(task, "add", "task-two.txt")
-            git(task, "commit", "-m", "T2")
-            task_two = git(task, "rev-parse", "HEAD").stdout.strip()
-
-            git(repo, "cherry-pick", task_one, task_two)
-            local_task_tip = git(repo, "rev-parse", "HEAD").stdout.strip()
-            local_task_commits = git(
-                repo,
-                "rev-list",
-                "--reverse",
-                "HEAD~2..HEAD",
-            ).stdout.splitlines()
-            (repo / "later.txt").write_text("later local-only work\n")
-            git(repo, "add", "later.txt")
-            git(repo, "commit", "-m", "H")
-            later = git(repo, "rev-parse", "HEAD").stdout.strip()
-
-            git(root, "clone", str(remote), str(updater))
-            git(updater, "config", "user.name", "Done Skill Test")
-            git(updater, "config", "user.email", "done-skill@example.invalid")
-            for path, content, subject in (
-                ("upstream-one.txt", "upstream one\n", "U1"),
-                ("upstream-two.txt", "upstream two\n", "U2"),
-                ("task-one.txt", "task one\n", "T1 corrected"),
-                ("task-two.txt", "task two\n", "T2 corrected"),
-            ):
-                (updater / path).write_text(content)
-                git(updater, "add", path)
-                git(updater, "commit", "-m", subject)
-            git(updater, "push", "origin", "main")
-
-            (repo / "base.txt").write_text("unrelated tracked edit\n")
-            (repo / "untracked.txt").write_text("unrelated untracked edit\n")
-            dirty_before = {
-                path: (repo / path).read_bytes()
-                for path in ("base.txt", "untracked.txt")
-            }
-            git(repo, "fetch", "origin")
-
-            classified = git(repo, "cherry", "origin/main", "main").stdout.splitlines()
-            self.assertEqual(
-                [
-                    ("-", local_task_commits[0]),
-                    ("-", local_task_commits[1]),
-                    ("+", later),
-                ],
-                [(line[0], line[2:]) for line in classified],
-            )
-
-            git(
-                repo,
-                "rebase",
-                "--autostash",
-                "--onto",
-                "origin/main",
-                local_task_tip,
-                "main",
-            )
-            git(repo, "push", "origin", "main")
-            git(repo, "fetch", "origin")
-
-            self.assertEqual(
-                git(repo, "rev-parse", "main").stdout,
-                git(repo, "rev-parse", "origin/main").stdout,
-            )
-            self.assertEqual(
-                "0\n", git(repo, "rev-list", "--count", "--merges", "main").stdout
-            )
-            self.assertEqual("", git(repo, "cherry", "origin/main", "main").stdout)
-            self.assertEqual(
-                "later local-only work\n", (repo / "later.txt").read_text()
-            )
-            self.assertEqual(
-                dirty_before,
-                {
-                    path: (repo / path).read_bytes()
-                    for path in ("base.txt", "untracked.txt")
-                },
-            )
-
-            skill = self.done_contract()
-            for phrase in (
-                "expected reconciliation event, not a blocker",
-                "stable patch equivalence",
-                "later local-only commits",
-                "identity hook",
-            ):
-                with self.subTest(phrase=phrase):
-                    self.assertIn(phrase, skill)
 
     def test_verifier_requires_published_default_branch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

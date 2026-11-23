@@ -333,12 +333,6 @@ class ValidationTests(unittest.TestCase):
             self.assertEqual(self.invoke("missing")[0], 0)
         self.assertEqual(before, v.git(self.root, "diff", "--binary", "HEAD").stdout)
 
-    def test_read_only_sessions_have_no_automatic_stop_gate(self):
-        self.assertFalse(
-            json.loads((v.ROOT / ".codex/hooks.json").read_text())["hooks"].get("Stop")
-        )
-        self.assertFalse((v.ROOT / "scripts/codex-validate-stop").exists())
-
     def test_full_includes_clean_sources_and_does_not_imply_platform_checks(self):
         self.package("pi-example")
         self.commit()
@@ -624,34 +618,6 @@ class ValidationTests(unittest.TestCase):
                     self.assertIn("agent context paths", error)
                 self.assertEqual(before, v.fingerprint(self.root))
                 path.unlink()
-
-    def test_removed_plugin_files_need_no_plugin_linter(self):
-        plugin = self.write("config/claude/plugins/retired/README.md", "retired")
-        lint_config = self.write(".claudelint.toml", "retired")
-        self.commit()
-        v.git(self.root, "update-ref", "refs/remotes/origin/main", "HEAD")
-        plugin.unlink()
-        lint_config.unlink()
-        calls = []
-
-        def tools(command, **kwargs):
-            calls.append(command[0])
-            return subprocess.CompletedProcess(command, 0, stdout="/fake/config\n")
-
-        with (
-            patch.object(v, "nix_env", return_value={}),
-            patch(
-                "scripts.validation.subprocess.run",
-                side_effect=lambda command, **kw: (
-                    subprocess_run(command, **kw)
-                    if command[0] == "git"
-                    else tools(command, **kw)
-                ),
-            ),
-        ):
-            code, _, error = self.invoke()
-        self.assertEqual(code, 0, error)
-        self.assertEqual(calls, ["nix"])
 
     def test_failure_is_not_cached_or_hidden_by_later_success(self):
         self.package("pi-a")

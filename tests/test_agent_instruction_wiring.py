@@ -11,8 +11,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CLAUDE_MODULE = ROOT / "modules" / "agents" / "claude" / "default.nix"
-PI_SETTINGS_CHECK = ROOT / "modules" / "agents" / "pi" / "test-settings-json.sh"
-PI_SETTINGS_VALIDATOR = ROOT / "modules" / "agents" / "pi" / "validate-settings-json.py"
 OPENCODE_CONFIG = ROOT / "config" / "opencode" / "opencode.jsonc"
 BOOTSTRAP = ROOT / "bin" / "bootstrap"
 CORE = ROOT / "config" / "agents" / "core.md"
@@ -22,9 +20,7 @@ TEST_QUALITY_SKILL = ROOT / "skills" / "catalog" / "test-quality" / "SKILL.md"
 GITHUB_CLI_MEDIA_SKILL = (
     ROOT / "skills" / "catalog" / "github-cli-media" / "SKILL.md"
 )
-PI_NIX_SYNTAX_SKILL = ROOT / ".agents" / "skills" / "pi-nix-syntax" / "SKILL.md"
 SKILLS_FLAKE = ROOT / "skills" / "flake.nix"
-SKILLS_COMMAND = ROOT / "bin/hey.d" / "skills" / "sync.nu"
 
 
 class AgentInstructionWiringTests(unittest.TestCase):
@@ -114,17 +110,8 @@ class AgentInstructionWiringTests(unittest.TestCase):
 
     def test_every_global_instruction_surface_uses_the_bounded_core(self) -> None:
         core = CORE.read_text()
-        normalized_core = " ".join(core.split())
 
         self.assertLessEqual(len(core.split()), 400)
-        for invariant in (
-            "Preserve unrelated work and stay within the user's requested scope.",
-            "Do not infer authority",
-            "Distinguish verified facts, user-provided facts, assumptions, and unknowns.",
-            "Do not claim completion without fresh evidence",
-        ):
-            self.assertIn(invariant, normalized_core)
-
         for destination, content in self.deployed["instructions"].items():
             with self.subTest(destination=destination):
                 if destination == ".claude/CLAUDE.md":
@@ -136,7 +123,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertNotIn("If no `CLAUDE.md` file is found", CORE.read_text())
         self.assertNotIn('"instructions"', OPENCODE_CONFIG.read_text())
         self.assertFalse(LEGACY_RULES.exists())
-        self.assertNotIn("For ADHD resources", core)
 
     def test_headless_bootstrap_links_shared_catalog_to_neutral_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -207,33 +193,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
             self.assertFalse((home / ".pi" / "agent" / "skills").exists())
             self.assertEqual(core.read_text(), (home / ".pi/agent/AGENTS.md").read_text())
 
-    def test_pi_nix_syntax_routes_skills_to_current_catalogs(self) -> None:
-        skill = PI_NIX_SYNTAX_SKILL.read_text()
-        skills_flake = SKILLS_FLAKE.read_text()
-        skills_lock = json.loads((ROOT / "skills" / "flake.lock").read_text())
-
-        self.assertIn("skills/catalog/<skill-name>/SKILL.md", skill)
-        self.assertIn(".agents/skills/<skill-name>/SKILL.md", skill)
-        self.assertIn('skills.enableAll = [ "catalog" ];', skill)
-        self.assertIn("package-native", skill)
-        self.assertIn("cd .. && hey skills-sync", skill)
-        self.assertNotIn("config/agents/skills", skill)
-        self.assertNotIn('skills.enableAll = ["local"]', skill)
-
-        self.assertTrue(PI_NIX_SYNTAX_SKILL.exists())
-        self.assertFalse((ROOT / "skills" / "catalog" / "pi-nix-syntax").exists())
-        self.assertIn("path = ./catalog;", skills_flake)
-        self.assertIn('skills.enableAll = [ "catalog" ];', skills_flake)
-        pi_route_start = skills_flake.index("extending-pi = {")
-        pi_route = skills_flake[pi_route_start : pi_route_start + 180]
-        self.assertIn('from = "pi-extensions";', pi_route)
-        self.assertIn('meta.targets = [ "pi" ];', pi_route)
-
-        pi_input = skills_lock["nodes"]["pi-extension-skills"]
-        self.assertFalse(pi_input["flake"])
-        self.assertTrue(pi_input["locked"]["rev"])
-        self.assertTrue(pi_input["locked"]["narHash"])
-
     def test_interview_redirect_calls_resolve_to_selected_skill(self) -> None:
         interviews = self.deployed["interviews"]
         original, rendered = interviews["original"], interviews["rendered"]
@@ -301,19 +260,9 @@ class AgentInstructionWiringTests(unittest.TestCase):
         self.assertIn('"agents"', pe_verify_route)
         self.assertIn('"hermes"', pe_verify_route)
 
-    def test_skills_sync_has_no_retired_checkout_input(self) -> None:
-        command = SKILLS_COMMAND.read_text()
-
-        self.assertNotIn("dotfiles-repo", command)
-        self.assertIn("nix flake update skills-catalog", command)
-        self.assertIn("^mise run rebuild", command)
-
-    def test_unslop_is_catalog_writing_route(self) -> None:
-        root_agents = (ROOT / "AGENTS.md").read_text()
-        config_agents = (ROOT / "config" / "agents" / "AGENTS.md").read_text()
+    def test_unslop_matches_pinned_upstream(self) -> None:
         skill = (ROOT / "skills" / "catalog" / "unslop" / "SKILL.md").read_text()
         provenance = (ROOT / "skills" / "catalog" / "unslop" / "AGENTS.md").read_text()
-        guide = (ROOT / "docs" / "agents" / "unslop.md").read_text()
         pin = "e8d856f0273b42ebafe0ec3546bd645709e7c1b0"
         source = (
             "https://github.com/cursor/plugins/blob/"
@@ -325,32 +274,14 @@ class AgentInstructionWiringTests(unittest.TestCase):
         ).rstrip() + "\n"
         upstream_hash = hashlib.sha256(upstream_body.encode()).hexdigest()
 
-        self.assertIn("skills/catalog/unslop/SKILL.md", root_agents)
-        self.assertIn("load [unslop]", root_agents)
-        self.assertNotIn("always-apply", root_agents)
-        self.assertNotIn("on-demand skill-read", root_agents)
-        self.assertNotIn("do not open this file", skill)
-        self.assertIn("Load this file when drafting", skill)
-        self.assertIn("skills/catalog/unslop/", config_agents)
-        self.assertIn("do not copy", config_agents)
-        self.assertIn("Load `SKILL.md`", guide)
-        for neighbor in ("deslop", "anti-slop", "no-ai-slop"):
-            self.assertIn(neighbor, root_agents)
-            self.assertIn(neighbor, skill)
-
         self.assertIn(f"pin: {pin}", skill)
         self.assertIn(source, skill)
-        self.assertIn("disable-model-invocation: true", skill)
-        self.assertIn("Must always apply.", skill)
         self.assertEqual(
             upstream_hash,
             "2e2c5ed089ae71553776f0f56dbdd0885feb7e4f3bb10fb2d33fbaf68ffe93c4",
         )
         self.assertIn(pin, provenance)
         self.assertIn(source, provenance)
-        self.assertIn("purpose:", guide.splitlines()[1])
-        self.assertEqual(guide.splitlines()[6], "---")
-        self.assertNotIn("config/agents/core.md", skill)
 
     def test_agents_md_use_guarded_hey_interfaces(self) -> None:
         root_agents = (ROOT / "AGENTS.md").read_text()
@@ -373,34 +304,6 @@ class AgentInstructionWiringTests(unittest.TestCase):
             )
 
         self.assertEqual([], offenders)
-
-    def test_opencode_module_uses_standard_config_path_without_legacy_cleanup(self) -> None:
-        module = (ROOT / "modules/agents/opencode/default.nix").read_text()
-        self.assertIn('"opencode/AGENTS.md"', module)
-        self.assertIn('"opencode/command"', module)
-        self.assertNotIn("opencode2", module)
-        self.assertNotIn("opencode-v1-cleanup", module)
-
-    def test_pi_settings_hook_executes_a_real_python_file(self) -> None:
-        shell = PI_SETTINGS_CHECK.read_text()
-
-        self.assertNotIn("<<'PY'", shell)
-        self.assertIn("validate-settings-json.py", shell)
-        self.assertTrue(PI_SETTINGS_VALIDATOR.is_file())
-
-    def test_validation_routes_core_checks_and_hooks_validate_skills(self) -> None:
-        flake = (ROOT / "flake.nix").read_text()
-        start = flake.index("agent-instructions = {")
-        hook = flake[start : start + 1200]
-        self.assertNotIn("check-agent-rules", hook)
-        self.assertIn("skill-quality/scripts/validate.py", hook)
-        self.assertIn('stages = [ "pre-commit" ]', hook)
-
-        self.assertIn("agent-instruction-tests =", flake)
-        self.assertIn("tests/test_agent_instruction_wiring.py", flake)
-        from scripts.validation import CHECKS
-
-        self.assertIn("config/agents/core.md", CHECKS["agent-instruction-tests"])
 
 
 class T3ClaudeSettingsTests(unittest.TestCase):

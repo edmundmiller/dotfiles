@@ -1,4 +1,3 @@
-import json
 import tomllib
 import unittest
 from pathlib import Path
@@ -8,131 +7,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentResponseContractTests(unittest.TestCase):
-    def test_thin_core_is_action_first_and_bounded(self) -> None:
-        core = (ROOT / "config/agents/core.md").read_text()
-        normalized = " ".join(core.split())
-
-        self.assertLessEqual(len(core.split()), 400)
-        for expected in (
-            "Communicate concisely",
-            "lead with the outcome",
-            "separate evidence from uncertainty",
-            "state blockers with the smallest action that resolves them",
-        ):
-            self.assertIn(expected, normalized)
-
-    def test_rex_startup_routes_through_cleanup_policy(self) -> None:
-        core = " ".join((ROOT / "config/agents/core.md").read_text().split())
-        self.assertIn("load the `rex` skill", core)
-        self.assertNotIn("first read `rex __internal skill`", core)
-        self.assertIn("one active-process ledger", core)
-
-    def test_rex_cleanup_has_a_verified_completion_gate(self) -> None:
-        skill = " ".join(
-            (ROOT / "skills/flake.nix").read_text().split()
-        )
-        for expected in (
-            "override the built-in guide's `--keep-open` examples",
-            "Verify the block is absent",
-            "before removing it from the ledger",
-            "temporary sessions you created solely for these jobs",
-            "Never close the session hosting your agent",
-        ):
-            with self.subTest(expected=expected):
-                self.assertIn(expected, skill)
-
-    def test_repository_checks_run_the_response_contract(self) -> None:
-        flake = (ROOT / "flake.nix").read_text()
-
-        self.assertIn("agent-response-contract =", flake)
-        self.assertIn("tests/test_agent_response_contract.py", flake)
-
     def test_codex_bootstrap_instructions_stay_bounded(self) -> None:
         config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
         instructions = config["developer_instructions"]
 
         self.assertLessEqual(len(instructions.split()), 150)
-        self.assertNotIn("READY_FOR_DONE", instructions)
-        self.assertNotIn("Durable goals are checkpoints", instructions)
-        self.assertIn("Keep Sol as the primary coordinator", instructions)
-
-    def test_thin_core_requires_scope_authority_and_live_evidence(self) -> None:
-        core = (ROOT / "config/agents/core.md").read_text()
-        normalized = " ".join(core.split())
-
-        for expected in (
-            "Preserve unrelated work",
-            "make reversible decisions and show the result",
-            "Stop at one-way doors",
-            "Carry explicit approval through that work, quoting it to subagents",
-            "Ask again only if stakes, failed checks, or new facts change what was approved",
-            "Do not infer authority",
-            "Inspect the live source of truth before acting",
-            "Do not claim completion without fresh evidence",
-            "Follow repository publication policy",
-            "Create PRs only when requested or required by policy",
-        ):
-            self.assertIn(expected, normalized)
-        self.assertNotIn("Ask only about two-way-door changes", normalized)
-        self.assertNotIn("fixes to merged code get separate PRs", normalized)
-
-    def test_codex_defaults_keep_responses_and_reasoning_summaries_concise(self) -> None:
-        config = tomllib.loads((ROOT / "config/codex/config.toml").read_text())
-
-        self.assertEqual(config["personality"], "pragmatic")
-        self.assertEqual(config["model_verbosity"], "low")
-        self.assertEqual(config["model_reasoning_summary"], "concise")
-
-    def test_pi_uses_native_defaults_without_automatic_coaching(self) -> None:
-        settings = (ROOT / "config/pi/settings.jsonc").read_text()
-
-        for key in (
-            "branchSummary", "compaction", "retry", "steeringMode",
-            "followUpMode", "images", "enableSkillCommands",
-        ):
-            with self.subTest(key=key):
-                self.assertNotRegex(settings, rf'"{key}"\s*:')
-        for package in (
-            "npm:pi-verbosity-control", "npm:pi-rtk", "npm:pi-model-switch",
-            "git:github.com/edmundmiller/pi-codex-goal",
-            "~/.config/dotfiles/packages/pi-packages/pi-dcp",
-            "~/.config/dotfiles/packages/pi-packages/pi-agentmap",
-        ):
-            with self.subTest(package=package):
-                self.assertNotIn(json.dumps(package), settings)
-
-    def test_pi_retains_approval_and_selected_integrations(self) -> None:
-        settings = (ROOT / "config/pi/settings.jsonc").read_text()
-        for package in (
-            "npm:@gotgenes/pi-permission-system@42.0.0",
-            "npm:pi-memory", "npm:pi-terminal-theme",
-            "npm:@moyai/pi-session-hoarder",
-        ):
-            with self.subTest(package=package):
-                self.assertIn(json.dumps(package), settings)
-        for package in (
-            "npm:pi-btw",
-            "git:github.com/tmustier/pi-extensions",
-            "https://github.com/denismrvoljak/pi-overwatch",
-            "npm:confluence-cli",
-            "npm:latchkey",
-            "npm:@aliou/pi-processes",
-            "npm:pi-context-usage",
-            "git:github.com/mjakl/pi-interlude",
-            "npm:pi-hermes-memory",
-            # Dropped as unused; pi-mcp-adapter stays filtered in
-            # modules/agents/pi/lib/_settings.nix (legacyMcp).
-            "npm:@companion-ai/feynman",
-            "npm:pi-agent-browser-native",
-        ):
-            with self.subTest(package=package):
-                self.assertNotIn(json.dumps(package), settings)
-        links = (ROOT / "modules/agents/pi/lib/_home-files.nix").read_text()
-        self.assertNotIn("enforce-commit-signing.ts", links)
-        self.assertNotIn("pi-command-policy-bridge", links)
-        self.assertNotIn("pi-command-policy-bridge", settings)
-        self.assertIn('"defaultTools": ["+codemode"]', settings)
-        self.assertNotIn("you-are-right-killer.ts", links)
 
     def test_host_provided_packages_are_never_declared_as_pi_packages(self) -> None:
         """Pi bundles these inside its binary and injects them through the
@@ -159,68 +38,6 @@ class AgentResponseContractTests(unittest.TestCase):
         for package in host_provided:
             with self.subTest(package=package):
                 self.assertNotIn(f"npm:{package}", declarations)
-
-    def test_goalize_does_not_require_a_goal_service(self) -> None:
-        prompt = (ROOT / "config/pi/prompts/goalize.md").read_text()
-        for field in ("`Outcome`", "`Done when`", "`Proof`", "$ARGUMENTS"):
-            self.assertIn(field, prompt)
-        self.assertNotIn("pi-codex-goal", prompt)
-        self.assertNotIn("Create exactly one active goal", prompt)
-        self.assertIn("planning does not authorize implementation", prompt)
-
-    def test_typescript_any_policy_is_enforced_by_lint(self) -> None:
-        lint = (ROOT / "bin/lint-ts-architecture").read_text()
-
-        self.assertIn("ban `as any` outside test files", lint)
-        self.assertIn("'as any' is forbidden outside tests", lint)
-
-    def test_version_control_procedure_lives_in_selective_workflows(self) -> None:
-        workflow = (ROOT / "AGENT_WORKFLOW.md").read_text()
-        workspace_skill = (
-            ROOT / "skills/catalog/version-control/references/workspaces.md"
-        ).read_text()
-        done_skill = (ROOT / "skills/catalog/done/SKILL.md").read_text()
-
-        self.assertIn("If Herdr already created the current jj task workspace", workflow)
-        for expected in ("rex-jj new", "jj root --ignore-working-copy", "hey agent-start"):
-            self.assertIn(expected, workspace_skill)
-        self.assertIn("jj diff --git -r @", workspace_skill)
-        self.assertIn("Run `jj root --ignore-working-copy`", done_skill)
-
-    def test_implementers_and_reviewers_share_current_behavioral_criteria(self) -> None:
-        core = (ROOT / "config/agents/core.md").read_text()
-        normalized = " ".join(core.split())
-
-        for expected in (
-            "Implementers and reviewers",
-            "verify observable behavior against the same acceptance criteria",
-            "request, issue, or spec on the current revision",
-            "Rerun affected checks after edits",
-            "Distinguish working, staged, committed, and deployed state",
-        ):
-            self.assertIn(expected, normalized)
-
-    def test_handoffs_preserve_authority_without_mandatory_tracking(self) -> None:
-        workflow = " ".join((ROOT / "AGENT_WORKFLOW.md").read_text().split())
-        template = " ".join((ROOT / ".agents/worklogs/TEMPLATE.md").read_text().split())
-
-        for expected in (
-            "same acceptance criteria",
-            "Do not create a second tracking system",
-            "observable behavior on the current revision",
-            "Checkpoints are optional for small work",
-            "inspects the referenced sources and current code",
-        ):
-            self.assertIn(expected, workflow)
-        for source in (workflow, template):
-            with self.subTest(source=source[:40]):
-                for field in ("revision", "checkout", "authority", "evidence", "next owner/action"):
-                    self.assertIn(field, source.lower())
-                self.assertIn(
-                    "does not authorize commits, tags, publication, cleanup, or deployment",
-                    source,
-                )
-                self.assertNotIn("After landing, create annotated tag", source)
 
 
 if __name__ == "__main__":

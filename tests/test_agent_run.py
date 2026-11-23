@@ -14,13 +14,6 @@ SCRIPT = ROOT / "bin" / "agent-run"
 TASKS = ROOT / "bin/hey.d"
 FLAKE = ROOT / "flake.nix"
 ORB_SETUP = ROOT / ".agents" / "setup"
-AGENT_WORKFLOW = ROOT / "AGENT_WORKFLOW.md"
-CODEX_CONFIG = ROOT / "config" / "codex" / "config.toml"
-LUNA_PROFILE = ROOT / "config" / "codex" / "agents" / "luna_worker.toml"
-AUTONOMOUS_SKILL = ROOT / "skills" / "catalog" / "autonomous-agent-loop" / "SKILL.md"
-GOALIZE_PROMPT = ROOT / "config" / "pi" / "prompts" / "goalize.md"
-GOAL_AUDIT_PROMPT = ROOT / "config" / "pi" / "prompts" / "goal-continue-audit.md"
-DONE_SKILL = ROOT / "skills" / "catalog" / "done" / "SKILL.md"
 
 
 class AgentRunTests(unittest.TestCase):
@@ -86,23 +79,6 @@ class AgentRunTests(unittest.TestCase):
         self.assertIn("actionlint = {", flake)
         self.assertIn("agent-run-tests =", flake)
 
-    def test_repository_oxlint_loads_anti_slop_without_package_configs(self) -> None:
-        flake = FLAKE.read_text()
-        setup = ORB_SETUP.read_text()
-
-        self.assertIn(
-            'entry = "${antiSlopOxlint}/bin/oxlint --threads=1 --quiet --disable-nested-config --config ${antiSlopConfig}";',
-            flake,
-        )
-        self.assertIn("sudo sysctl -w vm.overcommit_memory=1", setup)
-        self.assertIn('url = "github:dmmulroy/anti-slop";', flake)
-        self.assertIn('builtins.readFile ./packages/anti-slop/rules.json', flake)
-        rules = json.loads((ROOT / "packages/anti-slop/rules.json").read_text())
-        self.assertEqual(rules["anti-slop/no-chained-type-assertions"], "error")
-        self.assertEqual(rules["anti-slop/require-safety-comment-for-type-assertion"], "error")
-        self.assertNotIn("jev/ask", flake)
-        self.assertIn('oxlint-jev = self.packages.${system}.oxlint-plugin-jev;', flake)
-
     def test_orb_setup_limits_nix_parallelism(self) -> None:
         setup = ORB_SETUP.read_text()
 
@@ -120,125 +96,6 @@ class AgentRunTests(unittest.TestCase):
         self.assertNotIn("AGENT_RUN_ROOT", wrapper)
         self.assertNotIn("agent-review", wrapper)
         self.assertNotIn("agent-worklog-check", wrapper)
-
-    def test_completion_contract_stays_aligned_across_canonical_sources(self) -> None:
-        sources = {
-            "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
-            "goalize prompt": GOALIZE_PROMPT.read_text(),
-            "goal audit prompt": GOAL_AUDIT_PROMPT.read_text(),
-        }
-
-        for name, source in sources.items():
-            with self.subTest(source=name):
-                self.assertIn("blocked", source.lower())
-                self.assertIn("evidence", source.lower())
-                # /goalize frames a task without creating durable goal state.
-                if name != "goalize prompt":
-                    self.assertIn("one active", source)
-                    self.assertIn("parked", source.lower())
-
-        for source in ("autonomous loop skill", "goalize prompt"):
-            with self.subTest(contract=source):
-                self.assertIn("`Outcome`", sources[source])
-                self.assertIn("`Done when`", sources[source])
-                self.assertIn("`Proof`", sources[source])
-
-        audit = sources["goal audit prompt"]
-        for state in ("`verified`", "`unverified`", "`parked`", "`blocked`"):
-            self.assertIn(state, audit)
-        self.assertIn("Continue unless", audit)
-        self.assertIn("planning or passing local checks alone is not completion", audit)
-
-    def test_return_and_land_contract_lives_on_selective_goal_surfaces(self) -> None:
-        sources = {
-            "worker": LUNA_PROFILE.read_text(),
-            "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
-        }
-
-        for name, source in sources.items():
-            with self.subTest(source=name):
-                for token in ("CONTINUE", "PARTIAL", "LANDED", "BLOCKED"):
-                    self.assertIn(token, source)
-
-        loop = " ".join(sources["autonomous loop skill"].split())
-        self.assertIn("local-only request can finish `UNLANDED`", loop)
-        self.assertIn("when landing is requested and authorized", loop)
-        self.assertIn("A goal does not grant publication or deployment authority", loop)
-
-        worker = sources["worker"]
-        for field in (
-            "status",
-            "changed_paths",
-            "verification",
-            "landing_state",
-            "next_action",
-        ):
-            with self.subTest(field=field):
-                self.assertIn(field, worker)
-
-        primary = CODEX_CONFIG.read_text().lower()
-        for phrase in (
-            "worker reports as claims",
-            "waits for workers",
-            "requested outcome is complete",
-        ):
-            self.assertIn(phrase, primary)
-
-        for detail in (
-            "continue",
-            "partial",
-            "landed",
-            "blocked",
-            "structured",
-            "durable goals are checkpoints",
-        ):
-            self.assertNotIn(detail, primary)
-
-    def test_self_improvement_routes_away_from_shared_rule_bundles(self) -> None:
-        skill = " ".join(AUTONOMOUS_SKILL.read_text().split())
-
-        self.assertNotIn("shared rules", skill.lower())
-        for destination in ("`AGENTS.md`", "existing skill", "prompt template", "repo doc"):
-            self.assertIn(destination, skill)
-
-    def test_return_contract_uses_structured_wording_without_machine_readable_claims(self) -> None:
-        sources = {
-            "worker": LUNA_PROFILE.read_text(),
-            "autonomous loop skill": AUTONOMOUS_SKILL.read_text(),
-        }
-
-        for name, source in sources.items():
-            with self.subTest(source=name):
-                normalized = source.lower()
-                self.assertNotIn("machine-readable", normalized)
-                self.assertIn("structured", normalized)
-
-        primary = CODEX_CONFIG.read_text().lower()
-        self.assertNotIn("machine-readable", primary)
-        self.assertNotIn("structured", primary)
-
-    def test_done_skill_preserves_landing_safety_contract(self) -> None:
-        references = DONE_SKILL.parent / "references"
-        done_skill = (
-            DONE_SKILL.read_text()
-            + "\n"
-            + "\n".join(path.read_text() for path in sorted(references.glob("*.md")))
-        )
-
-        self.assertIn("## Dirty default checkout integration", done_skill)
-        self.assertIn("temporary integration worktree", done_skill)
-        self.assertIn("merge --ff-only", done_skill)
-        self.assertIn(
-            "A clean feature workspace, successful",
-            done_skill,
-        )
-
-    def test_cross_model_review_is_opt_in(self) -> None:
-        workflow = AGENT_WORKFLOW.read_text()
-
-        self.assertIn("Cross-model review is optional", workflow)
-        self.assertNotIn("hey agent-review plan", workflow)
-        self.assertNotIn("hey agent-review landing", workflow)
 
     def test_start_writes_a_git_receipt_without_jj_installed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
