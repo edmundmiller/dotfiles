@@ -8,6 +8,39 @@ update_when: NUC authentication, build location, commands, or verification chang
 
 # Runbook: Deploy to NUC
 
+## Hermes retirement
+
+Hermes is disabled in the checked-in NUC configuration through
+`modules.services.hermes.enable = false`. Gateways, the dashboard, Tailscale
+Serve unit, manual cron/DJ executors, and host activation writers follow that
+switch. The existing cron timers remain disabled. Home Assistant's Good
+Morning scene and guarded ten-minute desk timer remain, without invoking Betty.
+The older enabled-dashboard and runtime checks use an explicitly enabled test
+fixture, not the production configuration.
+
+Retirement does not delete profile homes, the shared Hermes home, container
+storage, OAuth state, encrypted secrets, or 1Password records. The existing
+hourly `hermes-profile-state` backup retains all six original `.hermes` paths
+and retention settings independently of service enablement. It does not add
+coverage for the shared home or sibling `.codex` directories.
+
+Local source changes do not stop a running deployment. After a separately
+authorized deployment, verify `nuc-hermes-retired` and
+`nuc-hermes-profile-backups`, confirm all Hermes and associated Buzz units and
+timers are inactive, and confirm the Hermes Tailscale Serve mapping is gone.
+Do not clear unrelated Tailscale mappings or remove stored data. Check that HA,
+Music Assistant, and Amp remain healthy. Existing credentials are retained,
+not revoked. Removing credentials, state, or the tailnet service registration
+requires a separate decision.
+
+Removing the DJ `shell_command` changes HA's core configuration, not only its
+reloadable scripts. This deployment needs Edmund's explicit approval for an HA
+restart. Keep the preservation guard enabled until that approval is given.
+
+The Hermes sections below describe the former deployment and recovery history,
+not the current service selection. Do not run their restart or cutover steps
+as part of retirement. The Mac's separate local Hermes installation is unchanged.
+
 ## Hermes 2026.9.14: Cadu-focused configuration
 
 The current candidate uses Hermes 0.21.3 (2026.9.14), retaining only the Nix
