@@ -204,6 +204,7 @@ CHECKS = {
     ],
     "hermes-cron-executor-source-tests": [
         "tests/test_hermes_cron_executors.py",
+        "scripts/verify_hermes_retirement.py",
         "hosts/nuc/*",
         "modules/agents/hermes/*",
     ],

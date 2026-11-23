@@ -1,10 +1,15 @@
+from contextlib import redirect_stdout
+import io
 import json
 import os
 import re
+import runpy
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -472,6 +477,68 @@ class HermesCronExecutorTests(unittest.TestCase):
         )
         self.assertNotIn("amosburtonHermesLauncher =", config)
         self.assertIn("systemd.timers.hermes-amosburton-cron-tick", config)
+
+
+class HermesRetirementReadbackTests(unittest.TestCase):
+    def test_release_readback_rejects_incomplete_retirement(self):
+        cases = [
+            {"name": "healthy", "exit": 0},
+            {"name": "enabled deployment", "enable": True, "exit": 0},
+            {"name": "invalid selection", "enable": "false", "exit": 1},
+            {"name": "running gateway", "active": "hermes-gateway-betty.service active running", "exit": 1},
+            {"name": "enabled timer", "installed": "hermes-betty-cron-tick.timer enabled enabled", "exit": 1},
+            {"name": "remaining Serve mapping", "serve": {"Services": {"svc:hermes": {}}}, "exit": 1},
+            {"name": "remaining listener", "listeners": "LISTEN 0 128 [::]:9121 [::]:*", "exit": 1},
+            {"name": "missing home", "missing_home": True, "exit": 1},
+            {"name": "stopped backups", "inactive": "restic-backups-hermes-profile-state.timer", "exit": 1},
+            {"name": "stopped Music Assistant", "inactive": "music-assistant.service", "exit": 1},
+            {"name": "registered DJ", "dj": True, "exit": 1},
+            {"name": "missing Good Morning", "good_morning": "script.other", "exit": 1},
+        ]
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                def command_output(command, **kwargs):
+                    if command[0] == "nix-private-github":
+                        return json.dumps(case.get("enable", False))
+                    if command[:2] == ("tailscale", "serve"):
+                        return json.dumps(case.get("serve", {"Services": {"svc:mill-docs": {}}}))
+                    if command[0] == "ss":
+                        return case.get("listeners", "LISTEN 0 128 127.0.0.1:8123 0.0.0.0:*")
+                    if command[:2] == ("systemctl", "list-units"):
+                        return case.get("active", "")
+                    if command[:2] == ("systemctl", "list-unit-files"):
+                        return case.get("installed", "")
+                    if command[:2] == ("systemctl", "is-active"):
+                        if command[-1] == case.get("inactive"):
+                            raise subprocess.CalledProcessError(3, command)
+                        return ""
+                    raise AssertionError(command)
+
+                def api_response(request, **kwargs):
+                    if request.full_url.endswith("/api/services"):
+                        data = [{"domain": "shell_command", "services": {
+                            "unrelated": {},
+                            **({"hermes_betty_good_morning_dj": {}} if case.get("dj") else {}),
+                        }}]
+                    else:
+                        data = {"entity_id": case.get("good_morning", "script.good_morning")}
+                    return io.StringIO(json.dumps(data))
+
+                result = io.StringIO()
+                with (
+                    patch("subprocess.check_output", side_effect=command_output),
+                    patch("pathlib.Path.is_dir", side_effect=lambda: not case.get("missing_home")),
+                    patch("pathlib.Path.read_text", return_value="private-test-token"),
+                    patch("urllib.request.urlopen", side_effect=api_response),
+                    patch.object(sys, "argv", ["verify_hermes_retirement.py", "a" * 40]),
+                    redirect_stdout(result),
+                    self.assertRaises(SystemExit) as stopped,
+                ):
+                    runpy.run_path(str(ROOT / "scripts/verify_hermes_retirement.py"), run_name="__main__")
+                self.assertEqual(case["exit"], stopped.exception.code)
+                report = json.loads(result.getvalue())
+                self.assertEqual(report["hermesRetirement"] == "failed", case["exit"] != 0)
+                self.assertNotIn("private-test-token", result.getvalue())
 
 
 if __name__ == "__main__":

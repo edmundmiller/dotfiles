@@ -662,6 +662,7 @@ let host_commands = {
   '#
   nixos-version: 'printf "%s\n" "$NUC_TEST_PROVENANCE"'
   systemctl: 'if [[ "$*" == *nixos-upgrade.timer* ]]; then exit "$NUC_TEST_TIMER_STATUS"; fi; if [[ "$*" == "is-active sshd.service" ]]; then exit "$NUC_TEST_SSH_STATUS"; fi; exit 0'
+  python3: 'test "$1" = "$NUC_TEST_SOURCE/scripts/verify_hermes_retirement.py" || exit 2; exit "${NUC_TEST_RETIREMENT_STATUS:-0}"'
 }
 for command in ($host_commands | transpose name body) {
   $"#!($bash_path)\nset -eu\n($command.body)\n" | save ($revision_bin | path join $command.name)
@@ -674,6 +675,7 @@ for case in [
   {host: "nuc", actual: "old-generation", rebuild: "0", timer: "4", success: false, activated: true}
   {host: "nuc", actual: $deployed_provenance, rebuild: "0", timer: "0", success: false, activated: true}
   {host: "nuc", actual: $deployed_provenance, rebuild: "0", timer: "4", ssh: "3", success: false, activated: true}
+  {host: "nuc", actual: $deployed_provenance, rebuild: "0", timer: "4", retirement: "1", success: false, activated: true}
 ] {
   rm -f $revision_marker
   let succeeded = (with-env {
@@ -685,6 +687,7 @@ for case in [
     NUC_TEST_REBUILD_STATUS: $case.rebuild
     NUC_TEST_TIMER_STATUS: $case.timer
     NUC_TEST_SSH_STATUS: ($case.ssh? | default "0")
+    NUC_TEST_RETIREMENT_STATUS: ($case.retirement? | default "0")
   } { (^$nu.current-exe --no-config-file $nuc_task revision $deploy_revision | complete).exit_code == 0 })
   assert equal $succeeded $case.success
   assert equal ($revision_marker | path exists) $case.activated

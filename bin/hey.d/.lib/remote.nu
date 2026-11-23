@@ -135,6 +135,7 @@ export def nuc-revision-deploy [revision: string, guard: string = "exact"] {
     'systemctl is-active tailscaled.service'
     'systemctl is-active sshd.service'
     'if systemctl is-active --quiet nixos-upgrade.timer || systemctl is-enabled --quiet nixos-upgrade.timer; then echo "unexpected automatic upgrade timer" >&2; exit 1; fi'
+    $"sudo -n python3 \"$source/scripts/verify_hermes_retirement.py\" ($revision)"
     'systemctl --failed --no-pager'
   ] | str join "\n")
   ^tailscale ssh emiller@nuc.cinnamon-rooster.ts.net $script
