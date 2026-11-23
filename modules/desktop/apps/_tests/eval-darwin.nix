@@ -1,4 +1,4 @@
-# Pure Nix eval: enabled Darwin hosts install Tinybar beside CodexBar.
+# Darwin hosts install Tinybar and provide Spaceman to Home Manager's copyApps.
 {
   macTraitorConfig,
   seqeratopConfig,
@@ -18,6 +18,11 @@ let
   personal = macTraitorConfig.config;
   work = seqeratopConfig.config;
 
+  spacemanPackage =
+    findFirst (package: (package.pname or "") == "spaceman")
+      (throw "MacTraitor-Pro must provide Spaceman through Home Manager")
+      personal.home-manager.users.${personal.user.name}.home.packages;
+
   tinybarCask = "thiloreintjes/tinybar/tinybar";
   tinybarTap = "thiloreintjes/tinybar";
 
@@ -28,6 +33,16 @@ let
   brewfileLine = needle: host: findFirst (line: hasInfix needle line) "" (brewfileLines host);
 
   hostAssertions = host: name: [
+    {
+      test = host.modules.desktop.apps.spaceman.enable or false;
+      msg = "${name} must enable Spaceman";
+    }
+    {
+      test = any (
+        package: (package.pname or "") == "spaceman"
+      ) host.home-manager.users.${host.user.name}.home.packages;
+      msg = "${name} must install Spaceman through Home Manager so copyApps provides the startup bundle";
+    }
     {
       test = host.modules.desktop.apps.tinybar.enable or false;
       msg = "${name} must enable the Tinybar module";
@@ -99,6 +114,7 @@ pkgs.runCommand "tinybar-darwin-assertions"
       '') failures}
       exit 1
     fi
+    ${spacemanPackage}/bin/spaceman config-check ${../../../../config/spaceman/config.toml}
     mkdir -p "$out"
     echo "All Tinybar Darwin assertions passed." > "$out/result"
   ''

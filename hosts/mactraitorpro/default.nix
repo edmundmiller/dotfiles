@@ -238,6 +238,7 @@ in
         apps.audioPriorityBar.enable = true;
         apps.djiMicMiniReceiverMute.enable = true;
         apps.handy.enable = true;
+        apps.spaceman.enable = true;
         apps.hex = {
           enable = true;
           signingIdentity = "FB1CF09F1E90E0A462FDB94ACB2CF9894D760EED";

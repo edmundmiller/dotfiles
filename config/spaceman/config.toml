@@ -1,0 +1,92 @@
+# BSPWM-style numbered desktops and application placement.
+# Shortcuts are built into Spaceman: Option+H/J/K/L focuses, Shift moves.
+version = 1
+
+[settings]
+hud = true
+hud_style = "icons"
+update_channel = "dev"
+
+# Like the old bspwmrc, keep desktops on the primary display instead of
+# Spaceman's default split of 1-5 on main and 6-10 on secondary.
+[[workspaces]]
+workspace = 1
+monitor = "main"
+
+[[workspaces]]
+workspace = 2
+monitor = "main"
+
+[[workspaces]]
+workspace = 3
+monitor = "main"
+
+[[workspaces]]
+workspace = 4
+monitor = "main"
+
+[[workspaces]]
+workspace = 5
+monitor = "main"
+
+[[workspaces]]
+workspace = 6
+monitor = "main"
+
+[[workspaces]]
+workspace = 7
+monitor = "main"
+
+[[workspaces]]
+workspace = 8
+monitor = "main"
+
+[[workspaces]]
+workspace = 9
+monitor = "main"
+
+[[workspaces]]
+workspace = 10
+monitor = "main"
+
+[[rules]]
+bundle_id = "com.apple.systempreferences"
+action = "float"
+
+[[rules]]
+bundle_id = "io.mpv"
+action = "float"
+
+[[rules]]
+bundle_id = "org.videolan.vlc"
+action = "float"
+
+[[rules]]
+bundle_id = "com.ampcode.amp.macos"
+action = "route"
+workspace = 2
+
+[[rules]]
+bundle_id = "com.tinyspeck.slackmacgap"
+action = "route"
+workspace = 4
+
+[[rules]]
+bundle_id = "com.superlogical.rex"
+action = "route"
+workspace = 3
+
+[[rules]]
+bundle_id = "com.t3tools.t3code"
+action = "route"
+workspace = 2
+
+[[rules]]
+bundle_id = "net.imput.helium"
+action = "route"
+workspace = 1
+
+[[rules]]
+bundle_id = "org.ladybird.Ladybird"
+action = "route"
+workspace = 1
