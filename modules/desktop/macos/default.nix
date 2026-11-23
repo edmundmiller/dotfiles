@@ -31,6 +31,7 @@ in
           orientation = "left";
           show-process-indicators = false;
           show-recents = false;
+          mru-spaces = false;
           static-only = true;
           tilesize = 36;
           # disable hot corners
@@ -43,7 +44,9 @@ in
         # a finder that tells me what I want to know and lets me work
         finder = {
           _FXShowPosixPathInTitle = true;
+          _FXSortFoldersFirst = true;
           AppleShowAllExtensions = true;
+          FXDefaultSearchScope = "SCcf";
           FXEnableExtensionChangeWarning = false;
           QuitMenuItem = true;
           ShowPathbar = true;
@@ -85,14 +88,20 @@ in
           SHOWFULLNAME = true;
         };
 
-        CustomUserPreferences = {
-          # keep external/Bluetooth trackpads aligned with built-in gesture settings
-          "com.apple.driver.AppleBluetoothMultitouch.trackpad" = {
-            TrackpadThreeFingerDrag = false;
-            TrackpadThreeFingerHorizSwipeGesture = 2;
-            TrackpadThreeFingerVertSwipeGesture = 2;
-          };
+        screencapture = {
+          location = "~/Desktop";
+          type = "png";
+        };
 
+        # lock screen immediately after screensaver
+        screensaver = {
+          askForPassword = true;
+          askForPasswordDelay = 0;
+        };
+
+        WindowManager.EnableStandardClickToShowDesktop = false;
+
+        CustomUserPreferences = {
           # disable Siri
           "com.apple.assistant.support"."Assistant Enabled" = false;
           "com.apple.Siri" = {
@@ -108,23 +117,6 @@ in
           };
           # don't auto-open Photos when plugging in devices
           "com.apple.ImageCapture".disableHotPlug = true;
-          # screencapture defaults
-          "com.apple.screencapture" = {
-            location = "~/Desktop";
-            type = "png";
-          };
-          # lock screen immediately after screensaver
-          "com.apple.screensaver" = {
-            askForPassword = 1;
-            askForPasswordDelay = 0;
-          };
-          # finder extras
-          "com.apple.finder" = {
-            _FXSortFoldersFirst = true;
-            FXDefaultSearchScope = "SCcf";
-          };
-          # disable click-wallpaper-to-reveal-desktop
-          "com.apple.WindowManager".EnableStandardClickToShowDesktop = 0;
         };
       };
     }

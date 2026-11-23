@@ -89,6 +89,10 @@ with lib;
     launchd.daemons = {
       nix-gc = {
         command = "/nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-older-than 7d";
+        serviceConfig.ProcessType = "Background";
+        serviceConfig.LowPriorityIO = true;
+        serviceConfig.StandardOutPath = "/var/log/nix-gc.log";
+        serviceConfig.StandardErrorPath = "/var/log/nix-gc.err.log";
         serviceConfig.RunAtLoad = false;
         serviceConfig.StartCalendarInterval = {
           Weekday = 0;
@@ -98,6 +102,10 @@ with lib;
       };
       nix-optimise = {
         command = "/nix/var/nix/profiles/default/bin/nix-store --optimise";
+        serviceConfig.ProcessType = "Background";
+        serviceConfig.LowPriorityIO = true;
+        serviceConfig.StandardOutPath = "/var/log/nix-optimise.log";
+        serviceConfig.StandardErrorPath = "/var/log/nix-optimise.err.log";
         serviceConfig.RunAtLoad = false;
         serviceConfig.StartCalendarInterval = [
           {
@@ -108,6 +116,17 @@ with lib;
         ];
       };
     };
+
+    # Use macOS's existing rotation service. Rotate at 1 MiB; keep seven archives.
+    # No signal or compression: a running one-shot job may still hold the old
+    # file open, and launchd opens the current path on its next scheduled run.
+    environment.etc."newsyslog.d/nix-maintenance.conf".text = ''
+      # logfilename                 owner:group mode count size when flags
+      /var/log/nix-gc.log           root:wheel  640  7     1024 *    N
+      /var/log/nix-gc.err.log       root:wheel  640  7     1024 *    N
+      /var/log/nix-optimise.log     root:wheel  640  7     1024 *    N
+      /var/log/nix-optimise.err.log root:wheel  640  7     1024 *    N
+    '';
 
     # Darwin state version
     system.stateVersion = 4;
