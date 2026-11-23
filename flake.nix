@@ -573,6 +573,11 @@
               ''
             else
               pkgs.firefox;
+          # Retained runtime contracts use an explicitly enabled test fixture,
+          # never the retired production selection.
+          nucHermesTestConfig = self.nixosConfigurations.nuc.extendModules {
+            modules = [ { modules.services.hermes.enable = lib.mkForce true; } ];
+          };
           # Preserve the original gate; the additive hook enables only approved
           # zero-conflict rules and Fowler advisories. Semantic review is opt-in.
           antiSlopOxlint = inputs.nixpkgs-anti-slop.legacyPackages.${system}.oxlint;
@@ -1915,10 +1920,14 @@
                 inherit pkgs;
               };
 
-              # Pure Nix eval: keep the Desktop dashboard enabled across
-              # automatic NUC upgrades from the default branch.
-              nuc-hermes-dashboard-enabled = import ./hosts/nuc/_tests/hermes-dashboard-enabled.nix {
+              nuc-hermes-retired = import ./hosts/nuc/_tests/hermes-retired.nix {
                 nixosConfig = self.nixosConfigurations.nuc;
+                inherit pkgs;
+              };
+
+              # Preserve rollback coverage without enabling production Hermes.
+              nuc-hermes-dashboard-enabled = import ./hosts/nuc/_tests/hermes-dashboard-enabled.nix {
+                nixosConfig = nucHermesTestConfig;
                 inherit pkgs;
               };
 
@@ -1934,7 +1943,7 @@
               # Pure Nix eval: assert Scintillate keeps vault write access and
               # packaged tnote access in its NUC Hermes runtime.
               nuc-scintillate-runtime-access = import ./hosts/nuc/_tests/scintillate-runtime-access.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
+                nixosConfig = nucHermesTestConfig;
                 inherit pkgs;
               };
 
@@ -1956,7 +1965,7 @@
               nuc-betty-mcp-secret-materialization =
                 import ./hosts/nuc/_tests/betty-mcp-secret-materialization.nix
                   {
-                    nixosConfig = self.nixosConfigurations.nuc;
+                    nixosConfig = nucHermesTestConfig;
                     inherit pkgs;
                     bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
                   };
@@ -2004,7 +2013,7 @@
               };
 
               nuc-hermes-cron-executors = import ./hosts/nuc/_tests/hermes-cron-executors.nix {
-                nixosConfig = self.nixosConfigurations.nuc;
+                nixosConfig = nucHermesTestConfig;
                 inherit pkgs;
                 bettyAgentSpec = import (inputs.agents-workspace + /agents/betty) { inherit (pkgs) lib; };
                 buzzBindings = import (inputs.agents-workspace + /deployments/nuc/buzz-bindings.nix) {

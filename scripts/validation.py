@@ -240,6 +240,7 @@ PACKAGE_BUILD_CHECKS = {
 }
 
 LINUX_CHECKS = {
+    "nuc-hermes-retired": ["hosts/nuc/*", "modules/services/hass/*"],
     "ha-automation-assertions": [
         "modules/services/hass/*",
         "hosts/nuc/*",

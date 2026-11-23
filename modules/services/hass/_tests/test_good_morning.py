@@ -28,7 +28,8 @@ class GoodMorningTest(unittest.IsolatedAsyncioTestCase):
         self.calls = []
         scripts = copy.deepcopy(CONFIG["script"])
         morning = scripts["good_morning"]
-        desk = morning["sequence"][-1]["parallel"][1]["sequence"]
+        self.assertEqual(len(morning["sequence"][-1]["parallel"]), 1)
+        desk = morning["sequence"][-1]["parallel"][0]["sequence"]
         self.assertEqual(desk[0], {"delay": "00:10:00"})
         desk[0] = {"delay": {"milliseconds": 100}}
         self.assertIs(
@@ -86,7 +87,6 @@ class GoodMorningTest(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(
                     self.calls,
                     [
-                        ("shell_command", "hermes_betty_good_morning_dj", {}),
                         (
                             "switch",
                             "turn_on",
@@ -101,8 +101,7 @@ class GoodMorningTest(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.05)
         self.hass.states.async_set("input_boolean.goodnight", "on")
         await task
-        self.assertFalse(any(domain == "switch" for domain, _, _ in self.calls))
-        self.assertTrue(any(domain == "shell_command" for domain, _, _ in self.calls))
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == "__main__":

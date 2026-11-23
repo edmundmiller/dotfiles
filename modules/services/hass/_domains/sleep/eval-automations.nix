@@ -258,14 +258,6 @@ let
               parallel = [
                 {
                   sequence = [
-                    {
-                      action = "shell_command.hermes_betty_good_morning_dj";
-                      continue_on_error = true;
-                    }
-                  ];
-                }
-                {
-                  sequence = [
                     { delay = "00:10:00"; }
                     {
                       condition = "state";
@@ -284,7 +276,7 @@ let
               ];
             }
           ];
-      msg = "Manual Good Morning must apply the scene without a Focus gate, then launch the DJ and guarded 10-minute desk timer";
+      msg = "Manual Good Morning must apply the scene and guarded 10-minute desk timer without invoking retired Hermes";
     }
 
     {

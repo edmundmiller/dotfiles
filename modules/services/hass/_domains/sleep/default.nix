@@ -28,7 +28,12 @@
 #
 # Good Morning is manual/voice only. Wake heuristics cannot tell whether someone
 # intends to sleep in, so they must not open the shade or power on the desk.
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   inherit (import ../../_lib.nix) ensureEnabled notificationPalette;
 
@@ -315,7 +320,9 @@ in
         ];
       }
     ];
-    shell_command.hermes_betty_good_morning_dj = "/run/wrappers/bin/sudo -n ${pkgs.systemd}/bin/systemctl start --no-block hermes-betty-good-morning-dj.service";
+    shell_command.hermes_betty_good_morning_dj =
+      lib.mkIf (config.modules.services.hermes.enable or false)
+        "/run/wrappers/bin/sudo -n ${pkgs.systemd}/bin/systemctl start --no-block hermes-betty-good-morning-dj.service";
 
     # ── Input helpers (sleep/wake lifecycle) ──────────────────────────────
     # ISO timestamps restore across restarts and start unset, unlike input_datetime.
@@ -549,8 +556,8 @@ in
             target.entity_id = "scene.good_morning";
           }
           {
-            parallel = [
-              {
+            parallel =
+              lib.optional (config.modules.services.hermes.enable or false) {
                 sequence = [
                   {
                     action = "shell_command.hermes_betty_good_morning_dj";
@@ -558,24 +565,25 @@ in
                   }
                 ];
               }
-              {
-                sequence = [
-                  { delay = "00:10:00"; }
-                  {
-                    condition = "state";
-                    entity_id = "input_boolean.goodnight";
-                    state = "off";
-                  }
-                  {
-                    action = "switch.turn_on";
-                    target.entity_id = [
-                      "switch.desk_monitor"
-                      "switch.desk_pop"
-                    ];
-                  }
-                ];
-              }
-            ];
+              ++ [
+                {
+                  sequence = [
+                    { delay = "00:10:00"; }
+                    {
+                      condition = "state";
+                      entity_id = "input_boolean.goodnight";
+                      state = "off";
+                    }
+                    {
+                      action = "switch.turn_on";
+                      target.entity_id = [
+                        "switch.desk_monitor"
+                        "switch.desk_pop"
+                      ];
+                    }
+                  ];
+                }
+              ];
           }
         ];
       };

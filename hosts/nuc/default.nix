@@ -8,6 +8,9 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
+  # Retire the NUC deployment without deleting profile state or credentials.
+  # All host-side entry points follow the canonical module's enable switch.
+  hermesEnabled = config.modules.services.hermes.enable;
   ampRunnerBinary = "/home/emiller/.amp/bin/amp";
   ampRunnerWorkingDirectory = "/home/emiller/src";
   ampNascentManuscriptRunner = pkgs.writeShellScript "amp-nascent-manuscript-runner" ''
@@ -1096,7 +1099,7 @@ in
       '';
     };
 
-    bootstrapLinearToken = {
+    bootstrapLinearToken = lib.mkIf hermesEnabled {
       text = ''
         TOKEN_FILE="/home/emiller/.local/state/hermes-linear/token"
         if [ ! -s "$TOKEN_FILE" ]; then
@@ -1112,7 +1115,7 @@ in
       ];
     };
 
-    hermesSharedProfilesAggregate = {
+    hermesSharedProfilesAggregate = lib.mkIf hermesEnabled {
       deps = [ "canonical-hermes-profiles-materialize" ];
       text = ''
         SHARED_HOME=${lib.escapeShellArg hermesSharedHome}
@@ -1144,7 +1147,7 @@ in
       '';
     };
 
-    hermesAmosburtonSecretsMaterialize = {
+    hermesAmosburtonSecretsMaterialize = lib.mkIf hermesEnabled {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -1152,7 +1155,7 @@ in
       text = hermesAmosburtonSecretsMaterializeText;
     };
 
-    hermesScintillateSecretsMaterialize = {
+    hermesScintillateSecretsMaterialize = lib.mkIf hermesEnabled {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -1204,7 +1207,7 @@ in
       '';
     };
 
-    hermesAnneSecretsMaterialize = {
+    hermesAnneSecretsMaterialize = lib.mkIf hermesEnabled {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -1267,7 +1270,7 @@ in
       '';
     };
 
-    hermesBettySecretsMaterialize = {
+    hermesBettySecretsMaterialize = lib.mkIf hermesEnabled {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -1380,7 +1383,7 @@ in
       '';
     };
 
-    hermesOrchestratorSecretsMaterialize = {
+    hermesOrchestratorSecretsMaterialize = lib.mkIf hermesEnabled {
       deps = [
         "agenixInstall"
         "agenixChown"
@@ -1430,7 +1433,7 @@ in
       '';
     };
 
-    hermesBettyWorkspaceCompat = {
+    hermesBettyWorkspaceCompat = lib.mkIf hermesEnabled {
       deps = [ ];
       text = ''
         BETTY_HOME="/var/lib/hermes-betty"
@@ -1583,7 +1586,7 @@ in
           map (profile: {
             name = "hermes-gateway-${profile}";
             value = {
-              enable = builtins.elem profile buzzNativeProfiles;
+              enable = hermesEnabled && builtins.elem profile buzzNativeProfiles;
               serviceConfig = {
                 EnvironmentFile = config.services.hermes-agent.profiles.${profile}.environmentFiles;
                 ExecStartPre = lib.mkBefore [ (mkNativeGatewayStateCleanup profile) ];
@@ -1612,6 +1615,7 @@ in
   ];
 
   services.hermes-agent = {
+    enable = hermesEnabled;
     package = hermesAgentBase;
     user = "emiller";
     group = "users";
@@ -1779,7 +1783,7 @@ in
   # Shared Hermes input churn must not interrupt Orchestrator mid-turn. Apply
   # package and unit changes on its next explicit restart instead.
   systemd.services.hermes-gateway-orchestrator.restartIfChanged = false;
-  systemd.services.hermes-gateway-orchestrator.enable = true;
+  systemd.services.hermes-gateway-orchestrator.enable = hermesEnabled;
 
   systemd.services.hermes-gateway-anne.serviceConfig = {
     ExecStartPre = lib.mkBefore [
@@ -1875,13 +1879,13 @@ in
   # unrestricted local interface; eno1 is the NUC's private home LAN.
   networking.firewall.trustedInterfaces = [ "eno1" ];
 
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = lib.optionals hermesEnabled [
     hermesScintillateWebuiPort
     hermesScintillateDesktopDashboardPort
   ];
 
   systemd.services.hermes-scintillate-desktop-dashboard = {
-    enable = true;
+    enable = hermesEnabled;
     # The service PATH is a plugin capability boundary. Apply wrapper changes
     # immediately rather than leaving an older, broader command set running.
     restartIfChanged = true;
@@ -1941,6 +1945,7 @@ in
   };
 
   systemd.services.hermes-tailscale-serve = {
+    enable = hermesEnabled;
     description = "Expose the Hermes Desktop dashboard via Tailscale Service";
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -2036,6 +2041,7 @@ in
   };
 
   systemd.services.hermes-amosburton-secrets-materialize = {
+    enable = hermesEnabled;
     description = "Materialize Amos Burton cron secrets after OpNix";
     wantedBy = [ "multi-user.target" ];
     after = [ "opnix-secrets.service" ];
@@ -2049,6 +2055,7 @@ in
   };
 
   systemd.services.hermes-amosburton-cron-tick = {
+    enable = hermesEnabled;
     description = "Run Amos Burton cron jobs without an interactive gateway";
     after = [
       "hermes-amosburton-secrets-materialize.service"
@@ -2107,6 +2114,7 @@ in
   };
 
   systemd.timers.hermes-amosburton-cron-tick = {
+    enable = false;
     description = "Run Amos Burton background cron jobs on a timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -2119,6 +2127,7 @@ in
   };
 
   systemd.services.hermes-betty-cron-tick = {
+    enable = hermesEnabled;
     description = "Run Betty cron jobs without an interactive gateway";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
@@ -2172,6 +2181,7 @@ in
   };
 
   systemd.services.hermes-betty-good-morning-dj = {
+    enable = hermesEnabled;
     description = "Have Betty start and curate the Good Morning playlist";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
@@ -2216,7 +2226,7 @@ in
     };
   };
 
-  security.sudo.extraRules = [
+  security.sudo.extraRules = lib.optionals hermesEnabled [
     {
       users = [ "hass" ];
       commands = [
@@ -2229,6 +2239,7 @@ in
   ];
 
   systemd.timers.hermes-betty-cron-tick = {
+    enable = false;
     description = "Run Betty background cron jobs on a timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -2241,6 +2252,7 @@ in
   };
 
   systemd.services.hermes-scintillate-cron-tick = {
+    enable = hermesEnabled;
     description = "Run Scintillate cron jobs without an interactive gateway";
     after = [
       "network-online.target"
@@ -2302,6 +2314,7 @@ in
   };
 
   systemd.timers.hermes-scintillate-cron-tick = {
+    enable = false;
     description = "Run Scintillate background cron jobs on a timer";
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -2478,7 +2491,7 @@ in
         tailscaleService.enable = true;
       };
       hermes = {
-        enable = true;
+        enable = false;
         agentSkillBundles = [
           config.home-manager.users.${config.user.name}.programs.dotfiles-agent-skills.bundles.hermes
         ];
@@ -3008,7 +3021,7 @@ in
       githubNixToken = {
         reference = "op://Agents/dl3jytukonjoafedy7rqxisiue/token";
       };
-      amosburtonLinearApiKey = {
+      amosburtonLinearApiKey = lib.mkIf hermesEnabled {
         reference = amosburtonAgentSpec.hermes.dotenvReferences.LINEAR_API_KEY;
       };
       millDocsCodingAgentLinearToken = {
