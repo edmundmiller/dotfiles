@@ -477,6 +477,212 @@ elif args[0] != 'exec':
 
 
 class HeadsetStatusTests(unittest.TestCase):
+    def probe_process_fixture(self, root):
+        baseline = {
+            'Capture Switch': 'on,off', 'Capture Source': '1',
+            'Capture Volume': '12,17', 'Headset Mic Boost Volume': '1,2',
+            'Master Playback Volume': '31,42', 'Master Playback Switch': 'off,on',
+        }
+        (root / 'controls.json').write_text(json.dumps(baseline))
+        (root / 'state').mkdir()
+        runner = root / 'probe.py'
+        runner.write_text('''
+import fcntl
+import json
+import os
+from pathlib import Path
+import runpy
+import signal
+import subprocess
+import sys
+from types import SimpleNamespace
+
+root = Path(__file__).parent
+action, scenario = sys.argv[1:3]
+control_path = root / 'controls.json'
+
+def write_controls(current):
+    temporary = control_path.with_suffix('.tmp')
+    temporary.write_text(json.dumps(current))
+    temporary.replace(control_path)
+
+if action == 'arecord':
+    if scenario == 'readiness_eof':
+        sys.exit(2)
+    if scenario == 'readiness_timeout':
+        signal.pause()
+    # Synthetic stereo PCM only. No sound endpoint is opened.
+    sys.stdout.buffer.write(b'\\x11\\x00\\xf7\\xff' * 48000)
+    sys.stdout.buffer.flush()
+    if scenario in ('route_drift', 'path_rejection'):
+        signal.pause()
+    sys.stdout.buffer.write(b'\\x11\\x00\\xf7\\xff' * 240000)
+    sys.stdout.buffer.flush()
+    sys.exit(3 if scenario == 'capture_failure' else 0)
+elif action == 'aplay':
+    sys.stdin.buffer.read()
+    if scenario == 'route_drift':
+        current = json.loads(control_path.read_text())
+        current['Capture Source'] = '1'
+        write_controls(current)
+        signal.pause()
+    sys.exit(4 if scenario == 'playback_failure' else 0)
+
+bench = runpy.run_path(sys.argv[3])
+children = []
+
+def inspect():
+    gains = {
+        'Master Playback Volume': (87, '-65.25dB,step=0.75dB'),
+        'Capture Volume': (63, '-17.25dB,step=0.75dB'),
+        'Headset Mic Boost Volume': (3, '0.00dB,step=10.00dB'),
+    }
+    controls = {}
+    for number, (name, value) in enumerate(json.loads(control_path.read_text()).items(), 1):
+        text = f': values={value}\\n'
+        if name in gains:
+            maximum, scale = gains[name]
+            text += f'; values=2,min=0,max={maximum},step=0\\n| dBscale-min={scale}\\n'
+        if name == 'Capture Source':
+            text += "; Item #2 'Headset Mic'\\n"
+        controls[str(number)] = {'name': name, 'index': 0, 'readback': text}
+    controls['12'] = {'name': 'Headphone Jack', 'index': 0, 'readback': ': values=on'}
+    return {'card_index': 3, 'controls': controls,
+        'endpoints': {'c': {'status': 'closed'}, 'p': {'status': 'closed'}}}
+
+def mixer(card, control, new_value=None):
+    assert card == 3
+    current = json.loads(control_path.read_text())
+    if new_value is not None:
+        current[control['name']] = new_value
+        write_controls(current)
+    return current[control['name']]
+
+def capture_path(card, route):
+    if scenario == 'path_rejection':
+        raise ValueError('Fixture rejects physical capture path')
+    return {'only_unmuted_input': '0x19'}
+
+def launch(command, **options):
+    assert command[0] in ('arecord', 'aplay'), command
+    if scenario == 'crash':
+        # The real probe has saved its snapshot and changed routing by now.
+        os.kill(os.getpid(), signal.SIGKILL)
+    process = subprocess.Popen([sys.executable, __file__, command[0], scenario], **options)
+    children.append((command[0], process))
+    return process
+
+bench['capture_probe'].__globals__.update(inspect_headset=inspect, mixer=mixer,
+    headset_capture_path=capture_path, subprocess=SimpleNamespace(Popen=launch,
+        PIPE=subprocess.PIPE, DEVNULL=subprocess.DEVNULL, SubprocessError=subprocess.SubprocessError))
+result = 0
+try:
+    with (root / 'state/bench.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if action == 'restore':
+            bench['restore'](root / 'state')
+        else:
+            assert action in ('quiet', 'tone')
+            bench['capture_probe'](root / 'state', stimulus=action == 'tone')
+except (OSError, ValueError, subprocess.SubprocessError) as error:
+    print(str(error), file=sys.stderr)
+    result = 1
+finally:
+    # Observe production cleanup before cleaning up any leaked fixture children.
+    (root / 'children.json').write_text(json.dumps([
+        {'command': command, 'returncode': process.returncode} for command, process in children]))
+    for _, process in children:
+        if process.poll() is None:
+            process.kill()
+        process.wait(timeout=2)
+sys.exit(result)
+''')
+        return [sys.executable, str(runner)], baseline
+
+    def test_probe_reaps_pcm_processes_and_restores_controls_on_success_and_failure(self):
+        cases = (
+            ('quiet', 'success', None),
+            ('tone', 'success', None),
+            ('tone', 'readiness_eof', 'Capture did not start'),
+            ('tone', 'readiness_timeout', 'Capture readiness timed out'),
+            ('tone', 'path_rejection', 'Fixture rejects physical capture path'),
+            ('tone', 'route_drift', 'Headset routing changed during capture'),
+            ('tone', 'capture_failure', 'Analog recording/playback failed'),
+            ('tone', 'playback_failure', 'Analog recording/playback failed'),
+        )
+        for mode, scenario, error in cases:
+            with self.subTest(mode=mode, scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                command, baseline = self.probe_process_fixture(root)
+                result = subprocess.run([*command, mode, scenario, str(DISPATCH.with_name('headset-bench.py'))],
+                    capture_output=True, text=True, timeout=15)
+                self.assertEqual(result.returncode, 1 if error else 0, result.stderr)
+                if error:
+                    self.assertIn(error, result.stderr)
+                children = json.loads((root / 'children.json').read_text())
+                expected = ['arecord'] if mode == 'quiet' or scenario in (
+                    'readiness_eof', 'readiness_timeout', 'path_rejection') else ['arecord', 'aplay']
+                self.assertEqual([child['command'] for child in children], expected)
+                self.assertTrue(all(child['returncode'] is not None for child in children), children)
+                if scenario == 'route_drift':
+                    self.assertTrue(all(child['returncode'] < 0 for child in children), children)
+                self.assertEqual(json.loads((root / 'controls.json').read_text()), baseline)
+                self.assertFalse((root / 'state/restore.json').exists())
+                receipt, = json.loads((root / 'state/ledger.json').read_text())
+                self.assertEqual(receipt['result'], 'failed' if error else 'measured')
+                self.assertTrue(receipt['controls_restored'])
+                self.assertFalse(receipt['raw_audio_retained'])
+                if not error:
+                    self.assertEqual([channel['sample_count'] for channel in receipt['channels']], [288000, 288000])
+                    self.assertEqual([channel['peak'] for channel in receipt['channels']], [17, 9])
+
+    def test_probe_crash_restores_durable_routing_in_a_fresh_process_without_overwriting_conflicts(self):
+        for mode, conflict in product(('quiet', 'tone'), (False, True)):
+            with self.subTest(mode=mode, conflict=conflict), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                command, baseline = self.probe_process_fixture(root)
+                source = str(DISPATCH.with_name('headset-bench.py'))
+                crashed = subprocess.run([*command, mode, 'crash', source],
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(crashed.returncode, -signal.SIGKILL, crashed.stderr)
+                routed = dict(baseline, **{'Capture Source': '2', 'Capture Switch': 'on,on',
+                    'Master Playback Switch': 'on,on' if mode == 'tone' else 'off,off'})
+                self.assertEqual(json.loads((root / 'controls.json').read_text()), routed)
+                self.assertTrue((root / 'state/restore.json').exists())
+                reservation, = json.loads((root / 'state/ledger.json').read_text())
+                self.assertEqual(reservation['result'], 'reserved')
+                self.assertFalse(reservation['controls_restored'])
+
+                # A crashed trial retains its budget and blocks another capture.
+                blocked = subprocess.run([*command, mode, 'success', source],
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(blocked.returncode, 1, blocked.stderr)
+                self.assertIn('Previous routing restoration unresolved', blocked.stderr)
+                self.assertEqual(json.loads((root / 'children.json').read_text()), [])
+                if conflict:
+                    routed['Master Playback Volume'] = '55,55'
+                    (root / 'controls.json').write_text(json.dumps(routed))
+
+                recovered = subprocess.run([*command, 'restore', 'success', source],
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(recovered.returncode, 1 if conflict else 0, recovered.stderr)
+                expected = dict(baseline, **{'Master Playback Volume': '55,55'}) if conflict else baseline
+                self.assertEqual(json.loads((root / 'controls.json').read_text()), expected)
+                self.assertEqual((root / 'state/restore.json').exists(), conflict)
+                if conflict:
+                    self.assertIn('Restoration conflict/failure: Master Playback Volume', recovered.stderr)
+                    # The other actor resolves its setting before recovery retries.
+                    (root / 'controls.json').write_text(json.dumps(baseline))
+
+                again = subprocess.run([*command, 'restore', 'success', source],
+                    capture_output=True, text=True, timeout=10)
+                self.assertEqual(again.returncode, 0, again.stderr)
+                self.assertEqual(json.loads((root / 'controls.json').read_text()), baseline)
+                self.assertFalse((root / 'state/restore.json').exists())
+                self.assertEqual(json.loads((root / 'state/ledger.json').read_text()), [reservation])
+                self.assertEqual(json.loads((root / 'children.json').read_text()), [])
+                self.assertEqual({path.name for path in (root / 'state').iterdir()}, {'ledger.json', 'bench.lock'})
+
     def test_readonly_status_tracks_controller_not_card_index_and_keeps_control_indices(self):
         inspect_headset = runpy.run_path(str(DISPATCH.with_name('headset-bench.py')))['inspect_headset']
         with tempfile.TemporaryDirectory() as directory:
