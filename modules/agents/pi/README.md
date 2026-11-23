@@ -31,11 +31,21 @@ package-native resources. Session Hoarder archives sessions locally by default.
 Plannotator comes from its owning module.
 Existing Hermes memory files are retained, but `pi-memory` does not read them.
 
-This is not a hook-free setup. `pi-markdown-workflows` retains nested AGENTS.md
-discovery and also injects automatic workflow-selection guidance in projects
-with `.pi/workflows`. Browser activation, memory, and permission hooks remain.
+This is not a hook-free setup. `pi-subdir-agents` loads nested AGENTS.md guidance
+at discovery time without changing the system prompt or injecting workflow-selection
+advice. Browser activation, memory, and permission hooks remain.
 The image helper preserves attachments without modifying the system prompt.
 `/goalize` is an explicit task-framing prompt, not a persistent goal service.
+
+`pi-ask` owns interactive decisions, review triage, human handoffs, and nonblocking
+steering questions. It replaces the previous ask-user-question package.
+`pi-cache-hit-predictor` shows UI-only estimates when switching models or reasoning
+levels; provider usage remains the source for actual cache hits.
+
+`/observatory` opens local session, tool-outcome, and skill-usage diagnostics on
+demand. Its viewer defaults to loopback, has no authentication, and can expose
+session text containing secrets. Keep it on loopback and use SSH forwarding for
+remote access. Pausing collection does not stop the extension's local event recording.
 
 Use `modules.agents.pi.extraPackages` for deliberately opted-in packages rather
 than growing the shared defaults. Local package sources remain available for

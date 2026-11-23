@@ -101,13 +101,16 @@
     // Keep Pi's native tools rather than Codex conversion overrides.
     // Image attachments helper - vendored local copy to match current pi-tui keybinding API
     "~/.config/dotfiles/packages/pi-packages/pi-image-attachments",
-    // Ask-user-question tool variant - install equivalent: pi install npm:@juicesharp/rpiv-ask-user-question
-    "npm:@juicesharp/rpiv-ask-user-question@2.15.0",
+    // Decisions, review triage, human handoffs, and nonblocking steering questions.
+    "npm:@howaboua/pi-ask@0.0.22",
     // Markdown memory with optional QMD search; replaces pi-hermes-memory.
     "npm:pi-memory",
-    // Retain nested AGENTS.md discovery. This package also injects workflow
-    // selection guidance when a project contains .pi/workflows (not explicit-only).
-    "npm:@howaboua/pi-markdown-workflows",
+    // Nested AGENTS.md discovery without workflow-selection or system-prompt rewriting.
+    "npm:@howaboua/pi-subdir-agents@0.0.10",
+    // On-demand local session/tool/skill diagnostics; viewer defaults to loopback only.
+    "npm:@howaboua/pi-observatory@0.0.6",
+    // UI-only estimates when switching model or reasoning level, not measured cache hits.
+    "npm:@howaboua/pi-cache-hit-predictor@0.0.1",
     { "source": "npm:@plannotator/pi-extension@0.28.66", "extensions": [] },
   ],
 }

@@ -255,7 +255,7 @@ EOF
 
 # pi package/update shortcuts
 # Default to extension/package updates because the pi binary itself is Nix-managed.
-# Pass a package source to update one package, e.g. `piu npm:@howaboua/pi-markdown-workflows`.
+# Pass a package source to update one package, e.g. `piu npm:@howaboua/pi-subdir-agents@0.0.10`.
 piu() {
   local pi_bin
   pi_bin=$(_pi_resolve_bin "${PI_BIN:-pi}" \
