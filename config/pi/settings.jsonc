@@ -53,6 +53,12 @@
     // Rex location, installed guide, pane captures, and native task status.
     // Automatic integration stays dormant outside Rex terminals.
     "~/.config/dotfiles/packages/pi-packages/pi-rex",
+    // Effect-native Rex API 18 tools for codemode; registers only with Rex env vars.
+    {
+      "source": "git:github.com/dmmulroy/rex-sdk@35cdfedeaaa86787702523cc5248086699ba511c",
+      "extensions": ["pi/index.ts"],
+      "skills": [],
+    },
     // Thimble's Pi-native TypeScript evidence, labeling, and coverage tools.
     "~/.pi/agent/packages/pi-thimble",
     // Force non-interactive bash defaults + block interactive hang patterns

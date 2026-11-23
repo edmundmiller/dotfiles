@@ -210,7 +210,9 @@ test("injects installed guidance and process location without replacing precedin
   expect(result?.systemPrompt).toStartWith("Existing system instructions\n");
   expect(result?.systemPrompt).toContain("Installed Rex guide");
   expect(result?.systemPrompt).toContain('"session":"session:agent","block":"block:agent"');
+  expect(result?.systemPrompt).toContain("tools.rex_search({})");
   expect(result?.systemPrompt).toContain("existing Bash tool");
+  expect(result?.systemPrompt).toContain("Do not use them to bypass command permissions");
   delete process.env.REX_SESSION;
   delete process.env.REX_BLOCK;
   await app.emit("session_shutdown", { reason: "resume" });

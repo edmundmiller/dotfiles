@@ -28,9 +28,22 @@ Start the dev server beside you. Keep focus here and inspect its output for read
 Run the tests in a split, keep their output visible, and fix the failures.
 ```
 
-These requests use Pi's existing Bash tool and the installed Rex guide.
-The extension does not add an alternative command executor or bypass Bash hooks.
-It does not install skills or change Rex configuration.
+The dotfiles also load [Dillon Mulroy's rex-sdk Pi extension](https://github.com/dmmulroy/rex-sdk/tree/35cdfedeaaa86787702523cc5248086699ba511c/pi).
+Pi can discover its typed tools through `tools.rex_search({})` in codemode,
+then create panes, write commands, wait for output, and read results through the
+Effect-native SDK. Only search is listed initially; operation tools are deferred.
+This package keeps terminal awareness, captures, forks, and task status.
+
+SDK tools call the Rex server directly and do not pass through Bash hooks.
+The guidance tells Pi not to use them to bypass command permissions or approvals.
+Without SDK tools, Pi uses its existing Bash tool and the installed Rex guide.
+Neither extension installs skills or changes Rex configuration.
+
+The pinned SDK requires Rex API revision 18, verified upstream against
+`0.1.0-preview.21`, and Node.js 22.18 or newer. It rejects other API revisions.
+Tools register when `REX_SESSION`, `REX_BLOCK`, or `REX_SERVER` is set and connect
+lazily on the first server operation. `PI_REX_CODEMODE=1` forces registration
+outside Rex; `PI_REX_CODEMODE=0` disables SDK tools without disabling this package.
 
 ## Terminal awareness
 
