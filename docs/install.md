@@ -11,6 +11,10 @@ update_when: Host provisioning, redeployment, or disk execution policy changes.
 This repo is a nix-darwin + NixOS flake. Keep upstream install/reference docs
 linkable instead of copying them into always-loaded agent context.
 
+See [Nix implementation choice](nix-implementation.md) for the current Linux and
+Darwin runtime owners, the upstream Nix/Determinate/Lix comparison, and the gates
+for any future migration. Installer choice and runtime choice are separate.
+
 ## NixOS host setup and redeployment
 
 Before setting up a new host or redeploying an existing one, inspect its host

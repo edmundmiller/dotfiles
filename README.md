@@ -24,6 +24,10 @@ server configurations. Linux desktop work is Omarchy-first; Meshify's
 its retired NixOS fallback. Optional desktop modules are not an
 inventory of installed tools.
 
+The [Nix implementation guide](docs/nix-implementation.md) explains why the
+NixOS hosts use upstream Nix while the Macs use Determinate, compares stable Lix,
+and records the requirements for any future runtime handover.
+
 ---
 
 ## Quick start
