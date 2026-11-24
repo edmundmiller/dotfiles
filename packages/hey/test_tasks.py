@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -215,7 +216,8 @@ class NativeTaskTests(unittest.TestCase):
                    '  *) echo fixture ;;\nesac',
         }
         for name, body in bodies.items():
-            (remote / name).write_text(f"#!/bin/bash\n{body}\n")
+            # The Nix build sandbox has no /bin/bash.
+            (remote / name).write_text(f"#!{shutil.which('bash')}\n{body}\n")
             (remote / name).chmod(0o755)
         environment = os.environ | {"PATH": f"{remote}{os.pathsep}{os.environ['PATH']}", "QUOTA_STATE": str(state)}
         for host, before, success, after in (("nuc", "103079215104", True, "187904819200"),
