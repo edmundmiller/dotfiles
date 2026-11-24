@@ -93,6 +93,7 @@ in
     gitbutler.enable = mkBoolOpt false;
     gitnexus.enable = mkBoolOpt false;
     lazydiff.enable = mkBoolOpt false;
+    diffs.enable = mkBoolOpt false;
     diffity.enable = mkBoolOpt false;
     stack.enable = mkBoolOpt false;
   };
@@ -122,6 +123,7 @@ in
           (mkIf cfg.gitnexus.enable llm-agents.gitnexus)
           (mkIf cfg.hunk.enable hunkPackageWrapped)
           (mkIf cfg.lazydiff.enable my.lazydiff)
+          (mkIf cfg.diffs.enable my.diffs-rs)
           (mkIf cfg.stack.enable my.stack)
         ]
         ++ lib.optionals stdenv.hostPlatform.isDarwin (

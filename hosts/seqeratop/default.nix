@@ -41,6 +41,7 @@
         };
         git.enable = true;
         git.hunk.enable = true;
+        git.diffs.enable = true;
         jj.enable = true;
         acpx.enable = true;
         cliamp.enable = true;
