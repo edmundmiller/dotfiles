@@ -364,6 +364,23 @@ show the Mac app connected. Select a session listed by `rex -S nuc ls --json`
 through that remote app client, then verify its session attachment. In a new
 terminal, `whoami` and `pwd` should report `emiller` and `/home/emiller`.
 
+## Verify a host
+
+`rex hosts add` saves a host for the CLI only; the Mac app keeps its own list
+(**Add Remote Host…** or `rex.host{}` in `init.lua`). A CLI connection alone
+does not prove the app connected: `rex -S HOST client ls --json` must also show
+the app, and the app must list the host, before telling anyone to pick it there.
+
+## Writing `rex do` scripts
+
+- The runtime is gopher-lua 5.1 without `io.popen`; run programs with
+  `rex.exec(argv, {stdin=..., env=...})`, which returns `{code, ok, stdout, stderr}`.
+- Arguments are `KEY=VALUE` and arrive in `rex.args`.
+- A returned value prints JSON-encoded; use `print` for human output.
+- Session labels are not unique: look one up with `rex ls --json` before
+  `rex new`, and run the script twice to prove reruns don't duplicate.
+- `rex send` has no Enter flag; follow it with `rex send-key ... enter`.
+
 ## Appearance
 
 The Rex module pins vertical tabs on both Macs and selects themes using the

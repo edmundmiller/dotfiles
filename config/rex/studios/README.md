@@ -66,6 +66,13 @@ there, so they can use and read it.
 - One `Include` line at the top of `~/.ssh/config`.
 - One entry in `rex hosts` (the CLI's list; the Mac app's list is separate).
 
+## Maintainer notes
+
+- Before starting or creating a Studio, check its compute environment exists
+  and is compatible (`/studios/{id}/compatible-ce`), or reuse a running Studio's.
+  Studios reject AWS Fargate and Google Batch compute environments.
+- Set `lifespanHours` on every Studio an agent creates.
+
 ## Limits
 
 - Rex runs inside the Studio container. Stopping the Studio ends every Rex
