@@ -671,7 +671,7 @@ gh() {
         workflow = (ROOT / ".github/workflows/deploy-nuc.yml").read_text()
         self.assertIn(
             "- name: Inspect running HA without activation\n"
-            "        if: (success() || (failure() && (steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')\n",
+            "        if: (success() || (failure() && (steps.critical_history.outcome == 'failure' || steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')\n",
             workflow,
         )
         for code, status in ((0, "healthy"), (1, "unhealthy"), (2, "unknown")):
@@ -810,12 +810,17 @@ gh() {
 
 
 class CriticalEntityHistoryTests(unittest.TestCase):
-    def invoke(self, lines=(), error=None):
+    def invoke(self, lines=(), error=None, now="2026-11-11T02:51:59+00:00"):
+        class Clock(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return datetime.fromisoformat(now).astimezone(tz)
+
         output = io.StringIO()
         journal = subprocess.CompletedProcess(
             [], 0, "private journal text\n" + "\n".join(map(json.dumps, lines))
         )
-        with patch("subprocess.run", return_value=journal, side_effect=error), patch("sys.stdout", output):
+        with patch("subprocess.run", return_value=journal, side_effect=error), patch("sys.stdout", output), patch("datetime.datetime", Clock):
             with self.assertRaises(SystemExit) as exit_status:
                 runpy.run_path(str(ROOT / "modules/services/hass/critical-entity-history.py"), run_name="__main__")
         self.assertNotIn("private", output.getvalue())
@@ -850,6 +855,23 @@ class CriticalEntityHistoryTests(unittest.TestCase):
             {"observed_at": "2026-11-10T02:51:59+00:00", "status": "unhealthy", "failures": [{"entity_id": "script.good_morning", "state": "unknown"}]},
             {"observed_at": "2026-11-10T06:21:00+00:00", "status": "unhealthy", "failures": [{"entity_id": "climate.master_suite", "state": "unavailable"}]},
         ])
+
+    def test_history_tracks_current_day_instead_of_a_fixed_assessment(self):
+        def report(at):
+            return {"schema_version": 1, "observed_at": at,
+                    "checks": {"critical_entities": {"status": "healthy"}}}
+
+        code, result = self.invoke([
+            report("2026-11-10T16:59:00Z"),
+            report("2026-11-23T23:15:59Z"),
+            report("2026-11-23T23:16:00Z"),
+            report("2026-11-24T23:16:00Z"),
+            report("2026-11-24T23:16:01Z"),
+        ], now="2026-11-24T23:16:00+00:00")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["window_start"], "2026-11-23T23:16:00+00:00")
+        self.assertEqual(result["window_end"], "2026-11-24T23:16:00+00:00")
+        self.assertEqual(result["retained_reports"], 2)
 
     def test_empty_or_unreadable_history_is_not_reported_as_healthy(self):
         self.assertEqual(self.invoke()[0], 2)
