@@ -567,10 +567,15 @@
                   if [ ! -e "$entry" ] && [ ! -L "$entry" ]; then
                     continue
                   fi
-                  # Claude Code keeps its own claude.ai skill sync in synced/.
-                  if [ "''${entry##*/}" = synced ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
-                    continue
-                  fi
+                  # Claude Code keeps its claude.ai skill sync in synced/ and
+                  # removed skills in .trash/.
+                  case "''${entry##*/}" in
+                    synced | .trash)
+                      if [ -d "$entry" ] && [ ! -L "$entry" ]; then
+                        continue
+                      fi
+                      ;;
+                  esac
                   # Rex installs its own stub skill here via "rex skill setup".
                   if [ "''${entry##*/}" = rex ] && [ -d "$entry" ] && [ ! -L "$entry" ]; then
                     continue

@@ -186,6 +186,24 @@ class LegacyClaudeSkillsActivationTest(unittest.TestCase):
             self.assertEqual((skills / "rex" / "SKILL.md").read_text(), "rex stub\n")
             self.assertEqual((backup / "old.txt").read_text(), "old\n")
 
+    def test_claude_code_trash_dir_survives_an_existing_backup(self) -> None:
+        """Claude Code moves removed skills into ~/.claude/skills/.trash."""
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            shared = home / ".agents" / "skills" / "lore"
+            shared.mkdir(parents=True)
+            (shared / "SKILL.md").write_text("shared skill\n")
+            skills = home / ".claude" / "skills"
+            (skills / ".trash" / "old-skill").mkdir(parents=True)
+            (skills / "lore").symlink_to(shared)
+            backup = home / ".claude" / "skills.pre-dotfiles-agent-skills"
+            backup.mkdir()
+
+            result = self.run_activation(home)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((skills / ".trash" / "old-skill").is_dir())
+
     def test_foreign_symlink_in_skills_dir_still_gets_preserved(self) -> None:
         """Only links into ~/.agents/skills count as module output."""
         with tempfile.TemporaryDirectory() as tmp:
