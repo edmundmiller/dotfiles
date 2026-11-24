@@ -62,7 +62,31 @@ with lib;
       # Keep the existing seven-day generation retention policy and one GC
       # owner. Disk-pressure GC does not prune generations the same way.
       determinateNixd.garbageCollector.strategy = "disabled";
+      # Work-machine policy: no crash reports or usage telemetry.
+      determinateNixd.telemetry.sentry.endpoint = null;
+      envVars.DETSYS_IDS_TELEMETRY = "disabled";
     };
+
+    # Nixd runs from the installer's plist, which shell variables never reach.
+    # Determinate upgrades rewrite it; the next activation patches it again.
+    system.activationScripts.postActivation.text = ''
+      plist=/Library/LaunchDaemons/systems.determinate.nix-daemon.plist
+      pb=/usr/libexec/PlistBuddy
+      if [[ -f $plist ]] &&
+         [[ "$($pb -c 'Print :EnvironmentVariables:DETSYS_IDS_TELEMETRY' "$plist" 2>/dev/null)" != disabled ]]; then
+        echo "disabling Determinate Nixd telemetry..." >&2
+        $pb -c 'Add :EnvironmentVariables dict' "$plist" 2>/dev/null || true
+        $pb -c 'Add :EnvironmentVariables:DETSYS_IDS_TELEMETRY string disabled' "$plist" 2>/dev/null ||
+          $pb -c 'Set :EnvironmentVariables:DETSYS_IDS_TELEMETRY disabled' "$plist"
+        # kickstart keeps the cached job definition; reload to apply the env.
+        launchctl bootout system/systems.determinate.nix-daemon || true
+        for _ in 1 2 3 4 5; do
+          launchctl bootstrap system "$plist" && break
+          sleep 1
+        done
+        launchctl print system/systems.determinate.nix-daemon >/dev/null
+      fi
+    '';
 
     # Adopt only the exact generated policy staged before the installer starts.
     environment.etc."determinate/config.json".knownSha256Hashes = [
