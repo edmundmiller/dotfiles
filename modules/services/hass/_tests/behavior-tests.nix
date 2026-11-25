@@ -23,6 +23,9 @@ let
         builtins.head (builtins.filter (automation: automation.id == id) haConfig.automation)
       )
     );
+  puraConfig = pkgs.writeText "pura-arrival-config.json" (
+    builtins.toJSON haConfig.script.pura_arrive_home_freshen
+  );
   christmasConfig = pkgs.writeText "christmas-config.json" (
     builtins.toJSON {
       automation = builtins.filter (automation: automation.id == "christmas_lights") haConfig.automation;
@@ -83,6 +86,7 @@ pkgs.runCommand "ha-behavior-tests" { nativeBuildInputs = [ python ]; } ''
   python3 ${./test_good_morning.py} ${morningConfig} -v
   python3 ${./test_bedtime_audio.py} ${automationConfig "white_noise_with_bedtime_audiobook"} -v
   python3 ${./test_entrance_night_light.py} ${automationConfig "entrance_night_light_off_when_clear"} -v
+  python3 ${./test_pura.py} ${puraConfig} -v
   python3 ${./test_christmas_lights.py} ${christmasConfig} -v
   python3 ${./test_pets.py} ${petsConfig} -v
   python3 ${./test_monica_routine.py} ${monicaConfig} -v

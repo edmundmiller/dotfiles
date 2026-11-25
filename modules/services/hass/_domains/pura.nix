@@ -3,10 +3,6 @@
 let
   inherit (import ../_lib.nix) ensureEnabled notificationPalette;
 
-  # Update these area IDs after confirming your Pura device areas in HA.
-  # Examples: "living_room", "bedroom".
-  puraAreaIds = [ "living_room" ];
-
   puraIntensity = 5; # Balanced (1-10)
   puraDuration = {
     hours = 0;
@@ -30,8 +26,8 @@ in
         sequence = [
           {
             action = "pura.start_timer";
+            target.entity_id = "binary_sensor.entryway_diffuser_connected";
             data = {
-              area_id = puraAreaIds;
               intensity = puraIntensity;
               duration = puraDuration;
             };

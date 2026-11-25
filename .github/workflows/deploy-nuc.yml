@@ -1060,6 +1060,14 @@ jobs:
             printf "configurationRevision=%s\n" "$(nixos-version --configuration-revision)" >&2
             systemctl show home-assistant.service -p ActiveState -p SubState -p MainPID -p ActiveEnterTimestamp >&2
             systemctl show home-assistant.service -p User -p SupplementaryGroups -p CapabilityBoundingSet -p AmbientCapabilities -p PrivateDevices -p PrivateNetwork >&2
+            systemctl show hass-reload-config.service -p LoadState -p ActiveState -p Result -p ExecMainStatus -p ExecMainStartTimestamp -p ExecMainStartTimestampMonotonic >&2
+            reload_invocation=$(systemctl show hass-reload-config.service -p InvocationID --value)
+            if test -n "$reload_invocation"; then
+              # Only fixed acceptance markers from this invocation, never raw logs.
+              sudo -n journalctl --no-pager -o cat -n 100 \
+                -u hass-reload-config.service "_SYSTEMD_INVOCATION_ID=$reload_invocation" |
+                sed -n -E "/^ha_config_reload=(automation|script|scene) accepted$/p" >&2
+            fi
             systemctl show bluetooth.service -p LoadState -p ActiveState -p SubState >&2
             adapters=0
             for adapter in /sys/class/bluetooth/hci*; do
