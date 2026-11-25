@@ -359,8 +359,18 @@ enabled integration states and active Repairs, without dismissing them. With
 `--failure-details`, this diagnostic also reads at most ten failed retained traces
 and exports step metadata and categorized errors, never error text or variables.
 A denied or evicted detail remains unknown without clearing the trace failure.
-The timer-driven checker does not request these extra reads. The
-workflow summary preserves the JSON report. Exit codes remain `0` for healthy,
+The timer-driven checker does not request these extra reads. `--pura-area AREA`
+additionally reads current Pura registry targeting prerequisites for that area.
+Manual workflow input `pura_target_diagnostics=true` opts into inspecting
+`living_room`, the arrival script's configured area; its default is false.
+It compares that area with the latest retained arrival-script trace and reports
+current entity membership, enablement, area-target eligibility and serial-number
+presence. Hidden and non-primary entities are excluded from area candidates, as
+in HA's area expansion. A different trace target remains unknown. No raw trace
+configuration, serial values, fragrance state or device IDs are exported. This
+is not a service call or proof of incident-time registry membership. Normal
+timer checks are unchanged.
+The workflow summary preserves the JSON report. Exit codes remain `0` for healthy,
 `1` for observed failures, and `2` for incomplete inspection. A retained Backup
 Repair can therefore make a successful inspection report an unhealthy result.
 Physical device behavior and restic freshness still need separate checks.

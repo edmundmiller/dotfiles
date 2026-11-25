@@ -289,6 +289,44 @@ def health(ha, args, now):
             coverage="Retained traces only; evicted or never-recorded runs cannot be inspected.",
         )
 
+    def pura_targets():
+        runs = ha.request("trace/list", domain="script", item_id="pura_arrive_home_freshen")
+        latest = max(runs, key=lambda trace: trace["timestamp"]["start"])
+        trace = ha.request("trace/get", domain="script", item_id="pura_arrive_home_freshen", run_id=latest["run_id"])
+        action = next(iter(trace["config"]["sequence"]), {})
+        target = (action.get("data") or {}) | (action.get("target") or {})
+        matches_trace = (action.get("action", action.get("service")) == "pura.start_timer"
+                         and target.get("area_id") in (args.pura_area, [args.pura_area]))
+        entries = {entry["entry_id"]: entry for entry in ha.request("config_entries/get")
+                   if entry["domain"] == "pura"}
+        devices = {device["id"]: device for device in ha.request("config/device_registry/list")}
+        states = {state["entity_id"]: state["state"] for state in ha.request("get_states")}
+        targets = []
+        for entity in ha.request("config/entity_registry/list"):
+            if entity.get("config_entry_id") not in entries:
+                continue
+            device = devices.get(entity.get("device_id"), {})
+            in_area = (entity.get("area_id") or device.get("area_id")) == args.pura_area
+            enabled = (not entity.get("disabled_by") and not device.get("disabled_by")
+                       and not entries[entity["config_entry_id"]].get("disabled_by"))
+            has_serial = bool(device.get("serial_number"))
+            targets.append({
+                "entity_id": entity["entity_id"], "in_requested_area": in_area,
+                "area_candidate": in_area and not entity.get("hidden_by") and not entity.get("entity_category"),
+                "enabled": enabled, "has_device": bool(device), "has_serial_number": has_serial,
+                "state_available": states.get(entity["entity_id"], "unavailable") not in {"unavailable", "unknown"},
+            })
+        targets.sort(key=lambda target: target["entity_id"])
+        return check(
+            "unknown" if not matches_trace else
+            "healthy" if any(target["area_candidate"] and target["has_serial_number"]
+                             for target in targets) else "unhealthy",
+            requested_area=args.pura_area, latest_trace_run_id=latest["run_id"],
+            latest_trace_has_error="error" in trace, latest_trace_area_matches=matches_trace,
+            entities=targets[:100], omitted_entities=max(0, len(targets) - 100),
+            coverage="Current registry targeting prerequisites only, not incident-time mapping or a service/device test. No serial values, device IDs, credentials or fragrance state exported.",
+        )
+
     for name, operation in (
         ("version", version),
         ("integrations", integrations),
@@ -297,6 +335,8 @@ def health(ha, args, now):
         ("recent_traces", traces),
     ):
         inspect(name, operation)
+    if args.pura_area is not None:
+        inspect("pura_targets", pura_targets)
     statuses = {value["status"] for value in checks.values()}
     status = (
         "unhealthy"
@@ -427,6 +467,9 @@ def parser():
         help="Report this exact dated Repair warning without failing; repeat as needed. Errors always fail.",
     )
     status.add_argument("--since-hours", type=positive_number, default=24)
+    status.add_argument(
+        "--pura-area", help="Inspect current Pura entity/device target prerequisites for this area without calling a service.",
+    )
     status.add_argument(
         "--failure-details", action="store_true",
         help="Read at most ten failed retained traces, with step metadata and categorized errors only.",

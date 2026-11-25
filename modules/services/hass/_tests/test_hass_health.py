@@ -205,6 +205,45 @@ class HassHealthTest(unittest.TestCase):
                 self.assertEqual(request_path.stat().st_mode & 0o777, 0o644)
                 self.assertNotIn("private", request_path.read_text())
 
+    def test_pura_area_diagnosis_distinguishes_overrides_hidden_categories_and_missing_serial(self):
+        self.responses["trace/get"] = self.trace("new", 1, config={"sequence": [{
+            "action": "pura.start_timer", "data": {"area_id": ["living_room"], "private": "private"},
+        }]})
+        self.responses["config_entries/get"].append({
+            "entry_id": "pura", "domain": "pura", "state": "loaded", "disabled_by": None,
+        })
+        self.responses["config/device_registry/list"] = [
+            {"id": "diffuser", "area_id": "living_room", "serial_number": "private serial"},
+        ]
+        self.responses["config/entity_registry/list"] = [
+            {"entity_id": "sensor.diffuser", "config_entry_id": "pura", "device_id": "diffuser", "area_id": "entrance"},
+            {"entity_id": "switch.disabled", "config_entry_id": "pura", "device_id": "diffuser", "disabled_by": "user", "entity_category": "config"},
+            {"entity_id": "switch.hidden", "config_entry_id": "pura", "device_id": "diffuser", "hidden_by": "user"},
+            {"entity_id": "sensor.unrelated", "config_entry_id": "enabled", "device_id": "diffuser"},
+        ]
+        code, report = self.health("--pura-area", "living_room")
+        self.assertEqual(code, 1)
+        targets = report["checks"]["pura_targets"]
+        self.assertEqual(targets["status"], "unhealthy")
+        self.assertEqual([target["entity_id"] for target in targets["entities"]], ["sensor.diffuser", "switch.disabled", "switch.hidden"])
+        self.assertTrue(targets["latest_trace_area_matches"])
+        self.assertFalse(any(target["area_candidate"] for target in targets["entities"]))
+        self.assertFalse(targets["entities"][0]["in_requested_area"])
+        self.responses["trace/get"]["config"]["sequence"][0]["target"] = {"area_id": "kitchen"}
+        code, report = self.health("--pura-area", "living_room")
+        self.assertEqual((code, report["checks"]["pura_targets"]["status"]), (2, "unknown"))
+        self.responses["trace/get"]["config"]["sequence"][0].pop("target")
+        self.responses["config/entity_registry/list"][0]["area_id"] = None
+        code, report = self.health("--pura-area", "living_room")
+        self.assertEqual((code, report["checks"]["pura_targets"]["status"]), (0, "healthy"))
+        self.responses["config/device_registry/list"][0]["serial_number"] = None
+        code, report = self.health("--pura-area", "living_room")
+        self.assertEqual(code, 1)
+        self.assertFalse(report["checks"]["pura_targets"]["entities"][0]["has_serial_number"])
+        self.denied = "config/device_registry/list"
+        code, report = self.health("--pura-area", "living_room")
+        self.assertEqual((code, report["checks"]["pura_targets"]["status"]), (2, "unknown"))
+
     def test_failed_trace_details_are_bounded_private_and_preserve_failure(self):
         self.trace_responses = {
             "automation": [],

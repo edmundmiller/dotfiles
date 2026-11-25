@@ -674,8 +674,9 @@ gh() {
             "        if: (success() || (failure() && (steps.critical_history.outcome == 'failure' || steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')\n",
             workflow,
         )
-        for code, status in ((0, "healthy"), (1, "unhealthy"), (2, "unknown")):
+        for code, status, pura_args in ((0, "healthy", ""), (1, "unhealthy", "--pura-area living_room"), (2, "unknown", "")):
             with self.subTest(status=status):
+                self.env["PURA_TARGET_ARGS"] = pura_args
                 report = {
                     "schema_version": 1,
                     "status": status,
@@ -684,7 +685,7 @@ gh() {
                 setup = (
                     f'export RUNNER_TEMP="{self.root}"\n'
                     f'export GITHUB_STEP_SUMMARY="{self.root / "summary"}"\n'
-                    "tailscale() { cat > /dev/null; "
+                    "tailscale() { printf '%s' \"${@: -1}\" > \"$RUNNER_TEMP/remote-command\"; cat > /dev/null; "
                     f"printf '%s\\n' '{json.dumps(report)}'; return {code}; }}\n"
                 )
                 result = self.workflow_shell(
@@ -693,6 +694,8 @@ gh() {
                 self.assertEqual(result.returncode, code, result.stderr)
                 self.assertEqual(json.loads(result.stdout), report)
                 self.assertIn("backup_repair", (self.root / "summary").read_text())
+                command = (self.root / "remote-command").read_text()
+                self.assertEqual("--pura-area living_room" in command, bool(pura_args))
 
     def test_monitor_observation_requires_one_aggregate_report(self):
         report = {

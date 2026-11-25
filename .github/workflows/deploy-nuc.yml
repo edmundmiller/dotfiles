@@ -51,6 +51,10 @@ on:
       email_diagnostic_family_version:
         description: Email diagnostic or fresh acceptance; verified live Family version UUID
         type: string
+      pura_target_diagnostics:
+        description: HA diagnostics only; compare arrival trace and current Pura area targeting without service calls
+        type: boolean
+        default: false
       climate_entity:
         description: Recurrence only; registry-linked thermostat to inspect without recovery
         type: choice
@@ -1040,6 +1044,8 @@ jobs:
       - name: Inspect running HA without activation
         if: (success() || (failure() && (steps.critical_history.outcome == 'failure' || steps.homekit_retry.outcome == 'failure' || steps.homebridge_recovery.outcome == 'failure'))) && (inputs.operation == 'ha-diagnostics' || inputs.operation == 'ha-homekit-retry' || inputs.operation == 'ha-homebridge-recovery')
         shell: bash
+        env:
+          PURA_TARGET_ARGS: ${{ inputs.pura_target_diagnostics && '--pura-area living_room' || '' }}
         run: |
           set -euo pipefail
           # Stream the tested reader, not a new host configuration. Token stays on NUC.
@@ -1073,7 +1079,7 @@ jobs:
             exec sudo -n uv run --no-project --script - health \
               --url http://127.0.0.1:8123 --token-file /run/agenix/ha-hermes-token \
               --expected-version 2026.11.0 --entity climate.main_floor --entity climate.master_suite \
-              --entity script.goodnight --entity script.good_morning --entity script.get_ready_for_bed --failure-details --json
+              --entity script.goodnight --entity script.good_morning --entity script.get_ready_for_bed --failure-details '"$PURA_TARGET_ARGS"' --json
           ' < modules/services/hass/hass-health.py > "$RUNNER_TEMP/ha-health.json" || result=$?
           # Includes observed failures and unknowns; neither is silently made healthy.
           jq -e '.schema_version == 1 and (.status | IN("healthy", "unhealthy", "unknown"))' \
