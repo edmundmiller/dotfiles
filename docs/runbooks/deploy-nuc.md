@@ -355,7 +355,11 @@ this can populate the tool cache but does not activate a system configuration.
 
 The existing HA token stays in `/run/agenix/ha-hermes-token`. The report omits
 config-entry titles and data, trace payloads, and free-form errors. It includes
-enabled integration states and active Repairs, without dismissing them. The
+enabled integration states and active Repairs, without dismissing them. With
+`--failure-details`, this diagnostic also reads at most ten failed retained traces
+and exports step metadata and categorized errors, never error text or variables.
+A denied or evicted detail remains unknown without clearing the trace failure.
+The timer-driven checker does not request these extra reads. The
 workflow summary preserves the JSON report. Exit codes remain `0` for healthy,
 `1` for observed failures, and `2` for incomplete inspection. A retained Backup
 Repair can therefore make a successful inspection report an unhealthy result.
@@ -387,8 +391,11 @@ mutation flags false. One dispatch takes one snapshot; no automatic waiting,
 second snapshot, retry, schedule, or monitor is added. A recovery snapshot needs
 its own allowance, with at most two snapshots for an explicitly approved incident.
 
-Use existing checker evidence naming `climate.master_suite` or a human-reported
-recurrence, not aggregate failures alone. Supply `incident_start` and
+Use existing checker evidence naming the thermostat or a human-reported
+recurrence, not aggregate failures alone. `climate_entity` selects
+`climate.master_suite` by default or `climate.main_floor` for a floor incident.
+The automatic checker-triggered capture remains fixed to `climate.master_suite`.
+Supply `incident_start` and
 `incident_cutoff` as explicit UTC ISO timestamps ending in `Z` or `+00:00`.
 Neither bound may be in the future. Optional `recovered_at` must fall within
 those bounds. The reader adds a five-minute lead and, when recovery is reported,

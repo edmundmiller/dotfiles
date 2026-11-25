@@ -88,6 +88,20 @@ def trace_detail(trace):
         for path, steps in trace.get("trace", {}).items()
         for step in steps
     ]
+    error = str(trace.get("error", "")).lower()
+    result["error_codes"] = [
+        code for code, signatures in (
+            ("invalid_service_data", ("extra keys not allowed", "required key not provided", "expected int", "expected float", "not a valid value")),
+            ("service_not_found", ("service not found", "action not found", "unable to find service")),
+            ("unavailable", ("unavailable", "not available")),
+            ("authentication", ("unauthorized", "authentication", "invalid auth")),
+            ("connection_failure", ("cannot connect", "connection refused", "failed to connect")),
+            ("timeout", ("timed out", "timeout")),
+            ("no_devices_targeted", ("no valid pura devices were targeted",)),
+            ("fragrance_missing", ("does not have any fragrances", "does not have a fragrance installed")),
+            ("away_mode_active", ("away mode is currently active",)),
+        ) if any(signature in error for signature in signatures)
+    ]
     result["omitted"] = ["config", "variables", "payloads", "error_text", "user_id"]
     return result
 
@@ -251,6 +265,16 @@ def health(ha, args, now):
                 incomplete_domains.append(domain)
         failures = [trace_summary(trace) for trace in recent if "error" in trace]
         failures.sort(key=lambda trace: trace["timestamp"]["start"], reverse=True)
+        details = {}
+        if args.failure_details:
+            selected = []
+            for failure in failures[:10]:
+                fields = {key: failure[key] for key in ("domain", "item_id", "run_id")}
+                try:
+                    selected.append(trace_detail(ha.request("trace/get", **fields)))
+                except (InspectionError, OSError, WebSocketException, ValueError, KeyError, TypeError) as error:
+                    selected.append({**fields, "status": "unknown", "error_type": type(error).__name__})
+            details = {"failure_details": selected, "failure_details_omitted": max(0, len(failures) - 10)}
         return check(
             "unhealthy"
             if failures
@@ -260,6 +284,7 @@ def health(ha, args, now):
             since=cutoff.isoformat(),
             retained_runs=len(recent),
             failures=failures,
+            **details,
             incomplete_domains=incomplete_domains,
             coverage="Retained traces only; evicted or never-recorded runs cannot be inspected.",
         )
@@ -402,6 +427,10 @@ def parser():
         help="Report this exact dated Repair warning without failing; repeat as needed. Errors always fail.",
     )
     status.add_argument("--since-hours", type=positive_number, default=24)
+    status.add_argument(
+        "--failure-details", action="store_true",
+        help="Read at most ten failed retained traces, with step metadata and categorized errors only.",
+    )
     status.add_argument(
         "--climate-capture-request",
         help="Atomically queue only the fixed climate entity's availability for a separate system unit.",

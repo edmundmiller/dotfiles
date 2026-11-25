@@ -413,7 +413,9 @@ def automatic_capture(args):
 
 
 def main():
+    global ENTITY
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--entity", choices=("climate.master_suite", "climate.main_floor"), default=ENTITY)
     parser.add_argument("--incident-start")
     parser.add_argument("--incident-cutoff")
     parser.add_argument("--recovered-at", default="")
@@ -424,9 +426,10 @@ def main():
     args = parser.parse_args()
     recurrence = any((args.incident_start, args.incident_cutoff, args.recovered_at))
     if args.automatic_request:
-        if recurrence or not args.state_directory:
-            raise ValueError("Automatic capture requires a state directory, not incident arguments")
+        if recurrence or not args.state_directory or args.entity != ENTITY:
+            raise ValueError("Automatic capture requires its fixed entity and state directory, not incident arguments")
         return automatic_capture(args)
+    ENTITY = args.entity
     if recurrence and not (args.incident_start and args.incident_cutoff):
         raise ValueError("Both incident bounds required")
     windows, incident = (incident_window(args.incident_start, args.incident_cutoff,

@@ -784,7 +784,7 @@ gh() {
             "import os, sys\n"
             "assert sys.argv[1:] == ['-n', 'uv', 'run', '--no-project', '--script', '-', "
             "'--incident-start', os.environ['INCIDENT_START'], '--incident-cutoff', os.environ['INCIDENT_CUTOFF'], "
-            "'--recovered-at', os.environ['RECOVERED_AT']]\n"
+            "'--recovered-at', os.environ['RECOVERED_AT'], '--entity', os.environ['CLIMATE_ENTITY']]\n"
             "sys.stdin.read()\n"
             "print('{\"snapshot\":1}')\n"
             "sys.exit(int(os.environ['READ_CODE']))\n"
@@ -796,7 +796,7 @@ gh() {
             nixos-version() { printf 'unchanged-revision\n'; }
             export -f hostname nixos-version
         """
-        self.env.update(INCIDENT_START="2026-11-01T06:59:00.123456Z", INCIDENT_CUTOFF="2026-11-01T07:12:00+00:00", RECOVERED_AT="")
+        self.env.update(INCIDENT_START="2026-11-01T06:59:00.123456Z", INCIDENT_CUTOFF="2026-11-01T07:12:00+00:00", RECOVERED_AT="", CLIMATE_ENTITY="climate.main_floor")
         for host, code in (("nuc", 0), ("nuc", 2), ("another-host", 0)):
             with self.subTest(host=host, code=code):
                 result = self.workflow_shell(name, setup=textwrap.dedent(setup) + f'export TARGET_HOST="{host}" READ_CODE={code}\n')
@@ -962,7 +962,8 @@ class PlantEntityDiagnosticsTests(unittest.TestCase):
 
 class ClimateEntityDiagnosticsTests(unittest.TestCase):
     def invoke(self, lines=(), error=None, denied=False, args=(), state_error=None, state=None,
-               diagnostics=None, diagnostics_error=None, device_id="d" * 32):
+               diagnostics=None, diagnostics_error=None, device_id="d" * 32,
+               entity="climate.master_suite"):
         socket = MagicMock()
         socket.__enter__.return_value = socket
 
@@ -970,14 +971,14 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             message = json.loads(raw)
             if message["type"] not in ("auth", "config/entity_registry/get", "config_entries/get"):
                 raise PermissionError("Fixture rejects non-read commands")
-            if message["type"] == "config/entity_registry/get" and message.get("entity_id") != "climate.master_suite":
+            if message["type"] == "config/entity_registry/get" and message.get("entity_id") != entity:
                 raise PermissionError("Fixture rejects unrelated entities")
 
         socket.send.side_effect = receive_command
         socket.recv.side_effect = list(map(json.dumps, [
             {"type": "auth_required"}, {"type": "auth_ok"},
             {"id": 1, "type": "result", "success": not denied, "result": {
-                "entity_id": "climate.master_suite", "platform": "homekit_controller",
+                "entity_id": entity, "platform": "homekit_controller",
                 "config_entry_id": "a" * 32, "disabled_by": None,
                 "device_id": device_id, "unique_id": "private-device", "name": "private-title",
             }, "error": {"message": "private-error"}},
@@ -1003,7 +1004,7 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
             return subprocess.CompletedProcess(command, 0, "\n".join(map(json.dumps, records)))
 
         state = state if state is not None else {
-            "entity_id": "climate.master_suite", "state": "heat",
+            "entity_id": entity, "state": "heat",
             "last_changed": "2026-11-01T07:02:00Z", "last_updated": "2026-11-01T07:03:00Z",
             "attributes": {"private": "192.0.2.42"}, "context": {"user_id": "private"},
         }
@@ -1022,7 +1023,7 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
         def state_response(request, **_kwargs):
             if request.get_method() != "GET":
                 raise PermissionError("Fixture rejects writes")
-            if request.full_url == "http://127.0.0.1:8123/api/states/climate.master_suite":
+            if request.full_url == "http://127.0.0.1:8123/api/states/" + entity:
                 if state_error:
                     raise state_error
                 body = state
@@ -1052,6 +1053,20 @@ class ClimateEntityDiagnosticsTests(unittest.TestCase):
 
     def record(self, at, message):
         return {"__REALTIME_TIMESTAMP": str(round(datetime.fromisoformat(at).timestamp() * 1_000_000)), "MESSAGE": message}
+
+    def test_main_floor_read_uses_its_own_mapping_without_changing_automatic_capture(self):
+        code, result = self.invoke(
+            lines=[self.record("2026-11-01T07:00:00+00:00", "unrelated")],
+            entity="climate.main_floor",
+            args=["--entity", "climate.main_floor", "--incident-start", "2026-11-01T07:00:00Z",
+                  "--incident-cutoff", "2026-11-01T07:01:00Z"],
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(result["mapping"]["entity_id"], "climate.main_floor")
+        self.assertEqual(result["current_state"]["entity_id"], "climate.main_floor")
+        self.assertEqual(result["mapping"]["integration_domain"], "homekit_controller")
+        code, result = self.invoke(args=["--entity", "climate.main_floor", "--automatic-request", "unused", "--state-directory", "unused"])
+        self.assertEqual((code, result["status"]), (2, "unknown"))
 
     def test_automatic_capture_bounds_incidents_preserves_recovery_and_rejects_stale_requests(self):
         with tempfile.TemporaryDirectory() as directory:

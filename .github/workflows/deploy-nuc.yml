@@ -51,8 +51,15 @@ on:
       email_diagnostic_family_version:
         description: Email diagnostic or fresh acceptance; verified live Family version UUID
         type: string
+      climate_entity:
+        description: Recurrence only; registry-linked thermostat to inspect without recovery
+        type: choice
+        default: climate.master_suite
+        options:
+          - climate.master_suite
+          - climate.main_floor
       incident_start:
-        description: Recurrence only; UTC time of human/checker-confirmed climate.master_suite incident
+        description: Recurrence only; UTC time of the human/checker-confirmed thermostat incident
         type: string
       incident_cutoff:
         description: Recurrence only; explicit UTC capture cutoff, never in the future
@@ -996,8 +1003,10 @@ jobs:
           INCIDENT_START: ${{ inputs.incident_start }}
           INCIDENT_CUTOFF: ${{ inputs.incident_cutoff }}
           RECOVERED_AT: ${{ inputs.recovered_at }}
+          CLIMATE_ENTITY: ${{ inputs.climate_entity || 'climate.master_suite' }}
         run: |
           set -euo pipefail
+          case "$CLIMATE_ENTITY" in climate.master_suite|climate.main_floor) ;; *) exit 2 ;; esac
           # Restrict shell transport to timestamp characters; the reader validates UTC and bounds.
           for value in "$INCIDENT_START" "$INCIDENT_CUTOFF"; do
             [[ "$value" =~ ^[0-9T:+.Z-]+$ ]] || exit 2
@@ -1011,7 +1020,7 @@ jobs:
             printf 'configurationRevision=%s\n' \"\$(nixos-version --configuration-revision)\" >&2
             exec sudo -n uv run --no-project --script - \\
               --incident-start '$INCIDENT_START' --incident-cutoff '$INCIDENT_CUTOFF' \\
-              --recovered-at '$RECOVERED_AT'
+              --recovered-at '$RECOVERED_AT' --entity '$CLIMATE_ENTITY'
           " < modules/services/hass/climate-entity-diagnostics.py
       - name: Inspect retained critical entity failures without activation
         id: critical_history
@@ -1064,7 +1073,7 @@ jobs:
             exec sudo -n uv run --no-project --script - health \
               --url http://127.0.0.1:8123 --token-file /run/agenix/ha-hermes-token \
               --expected-version 2026.11.0 --entity climate.main_floor --entity climate.master_suite \
-              --entity script.goodnight --entity script.good_morning --entity script.get_ready_for_bed --json
+              --entity script.goodnight --entity script.good_morning --entity script.get_ready_for_bed --failure-details --json
           ' < modules/services/hass/hass-health.py > "$RUNNER_TEMP/ha-health.json" || result=$?
           # Includes observed failures and unknowns; neither is silently made healthy.
           jq -e '.schema_version == 1 and (.status | IN("healthy", "unhealthy", "unknown"))' \

@@ -205,6 +205,38 @@ class HassHealthTest(unittest.TestCase):
                 self.assertEqual(request_path.stat().st_mode & 0o777, 0o644)
                 self.assertNotIn("private", request_path.read_text())
 
+    def test_failed_trace_details_are_bounded_private_and_preserve_failure(self):
+        self.trace_responses = {
+            "automation": [],
+            "script": [self.trace(str(index), 1, error="private error") for index in range(12)],
+        }
+        self.responses["trace/get"] = self.trace(
+            "detail", 1, error="extra keys not allowed @ data['private payload']",
+            config={"password": "private"}, variables={"secret": "private"},
+            trace={"sequence/0": [{"error": "private", "timestamp": self.now.isoformat()}]},
+        )
+        code, report = self.health("--failure-details")
+        self.assertEqual((code, report["status"]), (1, "unhealthy"))
+        traces = report["checks"]["recent_traces"]
+        self.assertEqual(len(traces["failure_details"]), 10)
+        self.assertEqual(traces["failure_details_omitted"], 2)
+        self.assertEqual(traces["failure_details"][0]["error_codes"], ["invalid_service_data"])
+        self.assertEqual(traces["failure_details"][0]["steps"][0]["path"], "sequence/0")
+        self.assertTrue(traces["failure_details"][0]["steps"][0]["has_error"])
+        for error, expected in (
+            ("Unable to start timer(s) - no valid Pura devices were targeted", ["no_devices_targeted"]),
+            ("Away mode is currently active. private", ["away_mode_active"]),
+            ("private unrecognized error", []),
+        ):
+            self.responses["trace/get"]["error"] = error
+            code, report = self.health("--failure-details")
+            self.assertEqual(code, 1)
+            self.assertEqual(report["checks"]["recent_traces"]["failure_details"][0]["error_codes"], expected)
+        self.denied = "trace/get"
+        code, report = self.health("--failure-details")
+        self.assertEqual((code, report["status"]), (1, "unhealthy"))
+        self.assertEqual(report["checks"]["recent_traces"]["failure_details"][0]["status"], "unknown")
+
     def test_healthy_ignores_disabled_integrations_dismissed_repairs_and_old_errors(
         self,
     ):
