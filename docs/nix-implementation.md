@@ -8,45 +8,36 @@ update_when: Nix ownership, package selection, pins, or host migration acceptanc
 
 # Nix implementation choice
 
-Decision updated 2026-11-26: retain Determinate on both Macs and do not proceed
-with the Lix migration. The compatibility findings below supersede the earlier
-proposal to migrate. No Lix runtime was activated. The configuration inventory
-and upstream guidance were originally reviewed 2026-11-22.
+Decision updated 2026-11-26: stay on Determinate Nix on both Linux and Darwin.
+Do not proceed with the Lix migration or substitute upstream Nix as the migration
+target. This decision supersedes the earlier mixed-fleet recommendation. No Lix
+runtime was activated. The configuration inventory and upstream guidance were
+originally reviewed 2026-11-22.
 
 ## Recommendation
 
-Keep upstream Nix on the NixOS hosts and Determinate Nix on the existing Macs
-for now. Prefer a supported, nixpkgs-tested release over chasing implementation
-features. Fewer ownership transitions and retaining working corporate TLS are
-more valuable here than making every host report the same implementation.
-This is a recommendation for this fleet, not a claim that one implementation
-has the lowest failure rate in general.
+Keep Determinate Nix as the chosen implementation on Linux and Darwin. Lix
+2.95.4 and 2.96.0 reject the repository's relative-path skills lock, and no fix
+has been demonstrated in Lix. Preserve skills loading rather than rewriting
+the lock to accommodate a runtime migration. Seqeratop also relies on
+Determinate's Keychain integration for corporate certificates.
 
-For NixOS, upstream Nix is already declaratively managed. Switching to Lix
-would not gain daemon ownership. Use the nixpkgs default `pkgs.nix` unless a
-workload needs a newer release. At this pin it selects upstream Nix 2.34.8,
-rather than the 2.35.1 selected by `nixVersions.latest`.
+Upstream `pkgs.nix` was considered. It would let nix-darwin and NixOS own the
+package, daemon and configuration again, but a Darwin handover needs nearly the
+same migration work as Lix and loses Determinate's corporate certificate
+handling on Seqeratop. It is not a low-cost substitute for the blocked Lix
+migration.
 
-The former `latest` selection was introduced for the skills catalog's relative
-path input. Nix added that support in 2.26. The 2.34.8 evaluator resolved the
-current catalog and evaluated both NUC and UNAS system derivations with the
-default package selected. No current requirement for 2.35 was found. The local
-2.35-only build-slot wakeup backport was removed with the selection change.
-Evaluation is not proof that a replacement daemon has passed runtime acceptance.
+This is the implementation decision, not a claim that every host declaration
+or running daemon already matches it. The NixOS declarations still select
+upstream `pkgs.nix`, as recorded below. This documentation-only update does not
+change those declarations, install a runtime or activate any host.
 
-For Darwin, keep Determinate while its Keychain integration and other macOS
-services are useful. Seqeratop needs corporate CA handling. Stable Lix is the
-preferred alternative if returning package, daemon and configuration ownership
-to nix-darwin becomes the deciding requirement. Upstream `pkgs.nix` offers that
-same declarative ownership without choosing a fork. Neither choice removes the
-need to replace Nixd's macOS responsibilities first.
-
-If a future decision favors community governance and declarative ownership over
-Determinate's integration, use stable Lix from nixpkgs, not Lix main. Prove the
-handover on MacTraitor-Pro before considering Seqeratop. Keep Seqeratop on
-Determinate until an approved replacement for corporate CA handling works.
-Do not migrate healthy servers just to match the Macs, or healthy Macs just to
-match the servers.
+Revisit Lix when [issue 641](https://git.lix.systems/lix-project/lix/issues/641)
+lands. Before reconsidering migration, require a supported release that passes
+the unchanged skills-lock tests and the recovery and ownership gates below.
+Lix's flakes feature freeze makes the timing uncertain. Retaining Determinate
+is not a claim that it has the lowest failure rate in general.
 
 ## Why the Lix migration was dropped
 
@@ -79,14 +70,20 @@ open. A nixpkgs bump, source override to that main, or `lix-module` cannot suppl
 the missing semantics. Adding a child hash changes the contract and is not an
 accepted workaround.
 
-[CppNix PR 10089](https://github.com/NixOS/nix/pull/10089) provides a reference,
-but Lix needs adaptation across lock validation/serialization, parent-source
-resolution, overrides and evaluation. Dropping the parser rejection alone is
+[Upstream Nix PR 10089](https://github.com/NixOS/nix/pull/10089) merged support
+for these relative inputs and provides a reference implementation. Lix still
+needs adaptation across lock validation/serialization, parent-source resolution,
+overrides and evaluation. Dropping the parser rejection alone is
 insufficient. A maintainable port was estimated at 5–10 focused engineer-days,
 plus review and possibly a separate 2.95.4 backport. This is an engineering
 estimate, not implemented or tested work. It would create a carried runtime
 patch, compilation and ongoing regression-testing costs. Upstream acceptance
 is uncertain under Lix's [flakes feature freeze](https://wiki.lix.systems/books/development/page/flakes-feature-freeze).
+
+The [Lix lock compatibility evidence](https://ampcode.com/artifacts/lix-lock-compatibility-6ae766b8-9c14-4923-8d49-5a646f9288bd)
+records the executable tests, exact inspected source revision and port assessment.
+It requires existing Amp access; the findings needed for this decision are
+summarized here.
 
 There are independent migration costs even after a lock fix. Nixd currently
 owns daemon sockets, configuration and macOS integration. Returning ownership
@@ -112,6 +109,9 @@ rollback are not established safe substitutes. Keeping Determinate requires no
 runtime transfer, skills rewrite, new Lix pin or activation.
 
 ## What this repo uses today
+
+This configuration inventory is separate from the Determinate-on-both-platforms
+decision above. It does not verify the currently running daemons.
 
 | Systems                       | Implementation and selection                                                                                                                                                                                                                               | Runtime owner                                                                                                                                                                                |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
