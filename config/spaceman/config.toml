@@ -1,11 +1,21 @@
 # BSPWM-style numbered desktops and application placement.
-# Shortcuts are built into Spaceman: Option+H/J/K/L focuses, Shift moves.
+# Spaceman's Hyper modifier focuses; adding Shift moves windows.
 version = 1
 
 [settings]
 hud = true
 hud_style = "icons"
 update_channel = "dev"
+mouse_follows_focus = "window"
+hud_position = "top"
+pause_on_builtin_display = true
+
+[settings.gaps]
+inner = 2
+top = 2
+bottom = 2
+left = 2
+right = 2
 
 # Like the old bspwmrc, keep desktops on the primary display instead of
 # Spaceman's default split of 1-5 on main and 6-10 on secondary.
@@ -90,3 +100,22 @@ workspace = 1
 bundle_id = "org.ladybird.Ladybird"
 action = "route"
 workspace = 1
+
+[labs]
+scratchpad = true
+portrait_edge_rows = true
+route_all_windows = true
+single_window_height = true
+float_follows_display = true
+swipe_switch = true
+physical_displays = true
+menu_bar_icon_style = true
+activity = true
+empty_workspace_focus = true
+
+[shortcuts]
+# Spaceman's Hyper preset is Ctrl+Option+Command, without Shift.
+# Hold Hyper + 1..0 to switch workspaces, or H/J/K/L to focus tiles.
+# Add Shift to move a window instead. Conventional four-modifier Hyper
+# would already hold Shift and trigger those Move shortcuts.
+modifier = "ctrl+alt+cmd"

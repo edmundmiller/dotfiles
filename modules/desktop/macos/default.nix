@@ -53,14 +53,15 @@ in
           ShowStatusBar = true;
         };
 
-        # trackpad: tap to click, two-finger right click, three-finger swipe gestures
+        # Leave three-finger horizontal swipes to Spaceman; macOS Spaces uses four.
         trackpad = {
           Clicking = true;
           TrackpadRightClick = true;
-          # keep drag OFF so 3-finger swipes (Mission Control / app switching) work reliably
+          # Three-finger dragging would consume Spaceman's workspace gesture.
           TrackpadThreeFingerDrag = false;
           # nix-darwin expects 0 (off) or 2 (on) for these gesture enums.
-          TrackpadThreeFingerHorizSwipeGesture = 2;
+          TrackpadThreeFingerHorizSwipeGesture = 0;
+          TrackpadFourFingerHorizSwipeGesture = 2;
           TrackpadThreeFingerVertSwipeGesture = 2;
         };
 
@@ -102,6 +103,14 @@ in
         WindowManager.EnableStandardClickToShowDesktop = false;
 
         CustomUserPreferences = {
+          # keep external/Bluetooth trackpads aligned with built-in gesture settings
+          "com.apple.driver.AppleBluetoothMultitouch.trackpad" = {
+            TrackpadThreeFingerDrag = false;
+            TrackpadThreeFingerHorizSwipeGesture = 0;
+            TrackpadFourFingerHorizSwipeGesture = 2;
+            TrackpadThreeFingerVertSwipeGesture = 2;
+          };
+
           # disable Siri
           "com.apple.assistant.support"."Assistant Enabled" = false;
           "com.apple.Siri" = {

@@ -13,7 +13,8 @@ signed, notarized release and exposes the `spaceman` CLI. Home Manager copies
 the app to `~/Applications/Home Manager Apps/Spaceman.app`. A one-shot LaunchAgent
 opens it at login without reconciling or removing other login items.
 Do not install Homebrew's `spaceman` cask. It is an unrelated Spaces indicator.
-The configuration selects Spaceman's `dev` update channel.
+The package pins `0.0.0-dev-226` to support the managed Labs and shortcut settings.
+The configuration also selects Spaceman's `dev` update channel.
 
 Before activation, run the affected `hey check` paths and `hey check --platform
 darwin` on the exact candidate. Activation needs separate authorization and
@@ -24,20 +25,31 @@ grant it. Leave the app's own Launch at Login toggle off, since launchd owns sta
 
 ## BSPWM conventions
 
-Spaceman tiles automatically. Its built-in shortcuts use Option rather than
-Super, leaving Command shortcuts available to Mac applications.
+Spaceman tiles automatically. The managed `[shortcuts]` modifier is
+Control+Option+Command, called Hyper in Spaceman. It excludes Shift so adding
+Shift selects move actions. Ordinary Command shortcuts remain available to Mac
+applications.
 
-| Action                               | Shortcut                              |
-| ------------------------------------ | ------------------------------------- |
-| Focus left/down/up/right             | Option+H/J/K/L                        |
-| Move or nest tile left/down/up/right | Option+Shift+H/J/K/L                  |
-| Switch workspace 1 through 10        | Option+1 through Option+0             |
-| Send window without following        | Option+Shift+1 through Option+Shift+0 |
-| Previous workspace                   | Option+Tab                            |
-| Next tiled window                    | Option+`                              |
-| Flip root split                      | Option+/                              |
-| Shrink/grow focused tile             | Option+- / Option+=                   |
-| Workspace-wide fullscreen layout     | Option+Shift+F                        |
+| Action                               | Shortcut                            |
+| ------------------------------------ | ----------------------------------- |
+| Focus left/down/up/right             | Hyper+H/J/K/L                       |
+| Move or nest tile left/down/up/right | Hyper+Shift+H/J/K/L                 |
+| Switch workspace 1 through 10        | Hyper+1 through Hyper+0             |
+| Send window without following        | Hyper+Shift+1 through Hyper+Shift+0 |
+| Previous workspace                   | Hyper+Tab                           |
+| Next tiled window                    | Hyper+`                             |
+| Flip root split                      | Hyper+/                             |
+| Shrink/grow focused tile             | Hyper+- / Hyper+=                   |
+| Workspace-wide fullscreen layout     | Hyper+Shift+F                       |
+
+On the ErgoDox, hold the Hyper key between Alt and Home. The Caps Lock-position
+key remains Escape on tap and Control on hold.
+
+Three-finger horizontal swipes switch Spaceman workspaces through
+`labs.swipe_switch`. Managed macOS trackpad preferences reserve native Spaces
+switching for four fingers and disable three-finger dragging. The configuration
+sets `pause_on_builtin_display = true`, so Spaceman pauses on the built-in display;
+workspace gestures do not act while paused.
 
 All ten workspaces belong to the main display, extending the old BSPWM
 primary-display convention. Helium and Ladybird start on 1, Amp Desktop and
@@ -45,10 +57,9 @@ T3 Code on 2, Rex on 3, and Slack on 4.
 System Settings, mpv and VLC float. Bundle-only routes affect the initial app
 window; secondary windows stay on the active workspace.
 
-This is not exact BSPWM parity. Version 0.3.2 has fixed shortcuts, no directional
-preselection, and no keyboard toggle for an individual window's floating state.
-Fullscreen Layout applies to the workspace, not a single BSPWM node. Move/nest
-is not guaranteed to be the old swap operation.
+This is not exact BSPWM parity. The pinned dev build supports the configurable
+shortcut modifier above. Fullscreen Layout applies to the workspace, not a single
+BSPWM node. Move/nest is not guaranteed to be the old swap operation.
 
 ## Configuration and recovery
 
