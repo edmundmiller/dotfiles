@@ -22,6 +22,10 @@ with the AVR cross-toolchain. Build artifacts are cached by nix for fast rebuild
 The build-only QMK CLI excludes flashing tools and optional Pillow text shaping.
 This avoids unrelated graphics dependencies without disabling dependency tests.
 
+`hey ergodox-draw` uses keyboard geometry from the same pinned ZSA source. It
+does not require `qmk setup` or a local QMK checkout. The YAML lists exactly 76
+keys per layer in `LAYOUT_ergodox_pretty` order, without spacer entries.
+
 ```bash
 # Build firmware
 hey ergodox-build

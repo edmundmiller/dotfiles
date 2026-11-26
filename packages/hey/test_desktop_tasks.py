@@ -80,7 +80,8 @@ class NativeDesktopTaskTests(unittest.TestCase):
             "if os.environ.get('HEY_FAIL_ARG') in sys.argv[1:]: raise SystemExit(23)\n"
         )
         self.executable("nix", self.recorder +
-            "if sys.argv[1:2] == ['repl']: (root / 'repl-expression').write_text(pathlib.Path(sys.argv[-1]).read_text())\n")
+            "if sys.argv[1:2] == ['repl']: (root / 'repl-expression').write_text(pathlib.Path(sys.argv[-1]).read_text())\n"
+            "if sys.argv[-1].endswith('#ergodox-firmware.src'): print(root / 'qmk source')\n")
         for name in ("uvx", "open", "launchctl", "systemctl", "editor"):
             self.executable(name, self.recorder)
         self.executable("git", self.recorder +
@@ -175,11 +176,20 @@ class NativeDesktopTaskTests(unittest.TestCase):
         config.write_text("#define DEBOUNCE 7\n#define TAPPING_TERM 180\n")
         drawn = self.run_task("ergodox:draw")
         self.assertEqual(drawn.returncode, 0, drawn.stderr)
-        self.assertEqual(self.operations()[0][:2], ["uvx", ["--from", "keymap-drawer", "keymap", "draw", str(self.root / "config/ergodox/keymap.yaml"), "-o", str(self.root / "config/ergodox/layout.svg")]])
+        self.assertEqual(self.operations()[0][:2], ["nix", ["build", "--no-link", "--print-out-paths", str(self.root) + "#ergodox-firmware.src"]])
+        self.assertEqual(self.operations()[1][:2], ["uvx", ["--from", "keymap-drawer", "keymap", "draw", str(self.root / "config/ergodox/keymap.yaml"), "-j", str(self.root / "qmk source/keyboards/zsa/ergodox_ez/info.json"), "-o", str(self.root / "config/ergodox/layout.svg")]])
         info = self.run_task("ergodox:info")
         self.assertEqual(info.returncode, 0, info.stderr)
         self.assertIn("#define DEBOUNCE 7", info.stdout)
         self.assertIn("#define TAPPING_TERM 180", info.stdout)
+
+    def test_draw_stops_when_pinned_layout_source_is_unavailable(self):
+        self.env["HEY_FAIL_ARG"] = str(self.root) + "#ergodox-firmware.src"
+        drawn = self.run_task("ergodox:draw")
+        self.assertEqual(drawn.returncode, 23, drawn.stderr)
+        self.assertFalse((self.root / "config/ergodox/layout.svg").exists())
+        self.assertNotIn("Generated:", drawn.stdout)
+        self.assertEqual([row[0] for row in self.operations()], ["nix"])
 
     def test_repl_uses_a_private_expression_and_cleans_it_after_exit(self):
         result = self.run_task("repl")

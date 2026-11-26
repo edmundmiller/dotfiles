@@ -358,7 +358,8 @@ def execute_context_task(ctx: Context.TaskContext, task: ContextDesktopTask) -> 
     case Context.TaskContext{+root, host, platform} DrawFirmware{}:
       do IO<Unit>:
         IO.print("Generating keymap visualization...")
-        OS.checked(["uvx", "--from", "keymap-drawer", "keymap", "draw", root ++ "/config/ergodox/keymap.yaml", "-o", root ++ "/config/ergodox/layout.svg"])
+        qmk_source : String <- OS.output(["nix", "build", "--no-link", "--print-out-paths", root ++ "#ergodox-firmware.src"])
+        OS.checked(["uvx", "--from", "keymap-drawer", "keymap", "draw", root ++ "/config/ergodox/keymap.yaml", "-j", qmk_source ++ "/keyboards/zsa/ergodox_ez/info.json", "-o", root ++ "/config/ergodox/layout.svg"])
         IO.print("Generated: " ++ root ++ "/config/ergodox/layout.svg")
     case Context.TaskContext{root, host, platform} FirmwareInfo{}:
       firmware_info(root)
