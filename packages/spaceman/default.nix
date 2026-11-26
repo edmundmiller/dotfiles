@@ -6,13 +6,13 @@
 }:
 stdenvNoCC.mkDerivation {
   pname = "spaceman";
-  version = "0.3.3";
+  version = "0.0.0-dev-226";
 
   # The Homebrew cask named spaceman is an unrelated menu-bar app.
-  # Use the immutable, signed Anomaly release rather than the latest redirect.
+  # Pin the installed dev build so the shared Labs/Hyper config stays supported.
   src = fetchurl {
-    url = "https://anoma.ly/release/spaceman/files/8540e3ba79340425d3605dbc7ac97c428ea19669b5c05b45a6b6d795ed566681/Spaceman.zip";
-    hash = "sha256-hUDjunk0BCXTYF28esl8Qo6hlmm1wFtFprbXle1WZoE=";
+    url = "https://anoma.ly/release/spaceman/files/920a24506c377dd8d9aed900febece86ed8c5acc2e3b7e3925d6acd6dbcb5c25/Spaceman.zip";
+    hash = "sha256-kgokUGw3fdjZrtkA/r7Ohu2MWswuO345Jdas1tvLXCU=";
   };
 
   nativeBuildInputs = [ unzip ];
