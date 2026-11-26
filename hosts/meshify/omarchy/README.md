@@ -98,6 +98,18 @@ record its version, URL, and checksum together. After `hermes update`, record
 check. Normal system upgrades or Hermes self-updates can cause reported drift;
 `./manage update` only advances plugin locks, not these application locks.
 
+## Ladybird
+
+Meshify uses the AUR `ladybird-bin` package instead of Ladybird's recommended
+Flatpak. It repackages the official signed Ubuntu alpha binary; the AUR package
+is community-maintained. Install it with `omarchy pkg aur add ladybird-bin`.
+The manifest declares it so `./manage restore` reinstalls it and
+`./manage check` checks the package and `ladybird` command. Updates follow the
+AUR package rather than Ladybird's Flatpak channel.
+
+Ladybird is an alpha; upstream does not yet promise security. Avoid relying on
+it for sensitive browsing.
+
 ## Focused recovery guides
 
 - [Bluetooth and AirPods](docs/bluetooth-airpods.md): read when the adapter or

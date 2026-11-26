@@ -199,6 +199,11 @@
       "command": "jq"
     },
     {
+      "name": "ladybird-bin",
+      "manager": "aur",
+      "command": "ladybird"
+    },
+    {
       "name": "libpulse",
       "manager": "repo",
       "command": "pactl"
