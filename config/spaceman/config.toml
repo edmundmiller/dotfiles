@@ -8,7 +8,7 @@ hud_style = "icons"
 update_channel = "dev"
 mouse_follows_focus = "window"
 hud_position = "top"
-pause_on_builtin_display = true
+pause_on_builtin_display = false
 
 [settings.gaps]
 inner = 2

@@ -48,8 +48,9 @@ key remains Escape on tap and Control on hold.
 Three-finger horizontal swipes switch Spaceman workspaces through
 `labs.swipe_switch`. Managed macOS trackpad preferences reserve native Spaces
 switching for four fingers and disable three-finger dragging. The configuration
-sets `pause_on_builtin_display = true`, so Spaceman pauses on the built-in display;
-workspace gestures do not act while paused.
+sets `pause_on_builtin_display = false`, so the built-in display does not
+automatically pause Spaceman. Keep the running app paused until configuration
+is complete; workspace gestures do not act while paused.
 
 All ten workspaces belong to the main display, extending the old BSPWM
 primary-display convention. Helium and Ladybird start on 1, Amp Desktop and
