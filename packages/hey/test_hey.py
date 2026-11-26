@@ -243,6 +243,31 @@ int main(void) {
         self.assertEqual(result.stdout, data)
         self.assertEqual(result.stderr, b"error\x00bytes")
 
+    def test_freshness_warning_preserves_task_arguments_output_and_status(self):
+        self.env["PATH"] = os.environ["PATH"]
+        self.env.pop("HEY_FRESHNESS", None)
+        self.fixture("import sys\nprint(repr(sys.argv[1:]))\nsys.exit(23)\n")
+        git = ["git", "-C", str(self.root), "-c", "core.hooksPath=/dev/null",
+               "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+               "-c", "commit.gpgsign=false"]
+        def run(*args):
+            return subprocess.check_output([*git, *args], env=self.env, stderr=subprocess.PIPE).strip()
+        run("init", "-q", "-b", "main")
+        (self.root / "packages/hey").mkdir(parents=True)
+        (self.root / "packages/hey/default.nix").touch()
+        (self.root / "flake.nix").write_text("{}\n")
+        run("add", ".")
+        run("commit", "-q", "-m", "base")
+        base = run("rev-parse", "HEAD")
+        run("commit", "-q", "--allow-empty", "-m", "upstream")
+        run("update-ref", "refs/remotes/origin/main", "HEAD")
+        run("reset", "--soft", base)
+        result = self.run_hey("task", "a b", "")
+        self.assertEqual(result.returncode, 23, result.stderr)
+        self.assertEqual(result.stdout, b"['run', 'task', 'a b', '']\n")
+        self.assertIn(b"1 commit(s) behind cached origin/main", result.stderr)
+        self.assertEqual(run("rev-parse", "HEAD"), base)
+
     def test_exec_keeps_pid_and_streams_before_stdin_closes(self):
         self.fixture(
             "import os, sys\n"
@@ -287,6 +312,36 @@ int main(void) {
             self.assertEqual(result.returncode, 0)
             self.assertTrue(select.select([master], [], [], 5)[0])
             self.assertEqual(os.read(master, 1024), b"[True, True, True]\r\n")
+        finally:
+            os.close(master)
+            os.close(slave)
+
+    def test_python_startup_settings_do_not_block_dispatch_or_change_task_environment(self):
+        self.mise.write_text(
+            f"#!{shutil.which('bash')}\n"
+            "printf '%s\\n' \"$PYTHONINSPECT\" \"$PYTHONPATH\"\nexit 23\n"
+        )
+        self.mise.chmod(0o755)
+        self.env.update(PYTHONINSPECT="1", PYTHONPATH=str(self.root), HEY_FRESHNESS="0")
+        marker = self.root / "python-startup-ran"
+        (self.root / "sitecustomize.py").write_text(
+            f"from pathlib import Path\nPath({str(marker)!r}).touch()\n"
+        )
+        master, slave = pty.openpty()
+        try:
+            with subprocess.Popen(
+                [self.binary, "task"], cwd=self.root, env=self.env,
+                stdin=slave, stdout=slave, stderr=slave, start_new_session=True,
+            ) as child:
+                try:
+                    self.assertEqual(child.wait(timeout=3), 23)
+                finally:
+                    if child.poll() is None:
+                        os.killpg(child.pid, signal.SIGKILL)
+                        child.wait()
+            self.assertTrue(select.select([master], [], [], 3)[0])
+            self.assertEqual(os.read(master, 4096), f"1\r\n{self.root}\r\n".encode())
+            self.assertFalse(marker.exists())
         finally:
             os.close(master)
             os.close(slave)

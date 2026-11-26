@@ -22,19 +22,13 @@ trap 'rm -rf "$build_dir"' EXIT
 export BEND_NO_TELEMETRY=1
 
 # Encode pathname bytes, not shell syntax, into a C string literal.
-mise_literal=$(
+literal() {
+  local value=$1
   LC_ALL=C
-  for ((i = 0; i < ${#mise}; i++)); do
-    printf '\\%03o' "'${mise:i:1}"
+  for ((i = 0; i < ${#value}; i++)); do
+    printf '\\%03o' "'${value:i:1}"
   done
-)
-
-move_literal=$(
-  LC_ALL=C
-  for ((i = 0; i < ${#move}; i++)); do
-    printf '\\%03o' "'${move:i:1}"
-  done
-)
+}
 
 # Bend runs on Bun and recurses deeply: snapshot-main.bend needs ~4.4 MiB of the
 # default 8 MiB stack, and a busy CI runner overflowed it. Raise the soft limit.
@@ -50,6 +44,19 @@ stack_words=4096
 if [[ $entrypoint != main.bend ]]; then
   stack_words=1048576 # 8 MiB for bounded OS text inputs in the task engine.
 fi
+cflags=(
+  "-DHEY_STACK_BASE_WORDS=$stack_words"
+  "-DHEY_MISE=\"$(literal "$mise")\""
+  "-DHEY_MV=\"$(literal "$move")\""
+)
+if [[ $entrypoint == main.bend ]]; then
+  python="${HEY_BUILD_PYTHON:-$(command -v python3)}"
+  freshness="${HEY_BUILD_FRESHNESS:-$(realpath "$source_dir/freshness.py")}"
+  cflags+=(
+    "-DHEY_PYTHON=\"$(literal "$python")\""
+    "-DHEY_FRESHNESS=\"$(literal "$freshness")\""
+  )
+fi
 clang -O2 -pthread -I"$build_dir" -I"$source_dir" \
-  "-DHEY_STACK_BASE_WORDS=$stack_words" "-DHEY_MISE=\"$mise_literal\"" "-DHEY_MV=\"$move_literal\"" \
+  "${cflags[@]}" \
   "$source_dir/launcher.c" -o "$output" -lm

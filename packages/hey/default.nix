@@ -31,6 +31,7 @@ stdenvNoCC.mkDerivation {
 
   buildPhase = ''
     runHook preBuild
+    HEY_BUILD_PYTHON=${lib.getExe python3} HEY_BUILD_FRESHNESS=${./freshness.py} \
     bash build hey ${misePath}
     bash build hey-task ${misePath} task-main.bend
     bash build hey-desktop ${misePath} desktop-main.bend
@@ -48,6 +49,7 @@ stdenvNoCC.mkDerivation {
     runHook preCheck
     # Exercise the same native boundary with a disposable mise executable.
     HEY_TEST_LAUNCHER=${../../bin/hey} python3 -B test_hey.py
+    python3 -B -m unittest test_freshness
     python3 -B test_process.py
     python3 -B test_posix.py
     python3 -B test_gateway_status.py

@@ -42,6 +42,41 @@ build on the NUC or activate a host. Publication follows candidate CI and requir
 separate authority, as does deployment. See the
 [NUC runbook](../../docs/runbooks/deploy-nuc.md).
 
+## Checkout freshness
+
+Before dispatch, `hey` checks the caller's dotfiles checkout against `origin/main`.
+It fetches only main, at most once per 15 minutes across linked worktrees, with
+a one-second timeout and no credential prompts. Advisory fetches skip Git hooks.
+On timeout or cancellation, Git gets 200 ms to clean up before forced termination.
+Other projects are ignored.
+The cache lives at `hey-freshness` inside the common Git directory. Known stale
+source produces a warning on stderr, including when an agent invokes `hey`.
+An unsuccessful fetch uses the recorded remote ref and labels it cached.
+If the cache is busy or unavailable, comparisons still run against cached refs
+and active-system provenance without waiting for the cache or starting a fetch.
+Missing Git, unavailable history, or a failed preflight never blocks the task.
+
+`hey` never pulls, stashes, rebases, changes branches, builds a host, or activates
+a system as part of this check. Clean main with no commits ahead of main gets an
+explicit fetch and fast-forward command. Dirty, detached, feature, and diverged
+checkouts get a warning to reconcile their work instead. Unknown ancestry in a
+shallow clone is not treated as proof of divergence.
+
+When active-system provenance records an ancestor of the checkout, a separate
+warning reports how far that active revision trails the source. It reads Darwin's
+`darwin-version.json` or NixOS's active `nixos-version --configuration-revision`.
+NUC provenance uses the labeled `dotfiles` revision. Missing or dirty dotfiles
+revisions are not guessed, and a `result` link is not evidence of activation.
+This comparison still runs when remote main is unavailable or unrelated.
+This does not check whether individual installed tools match their source.
+
+Use `HEY_FRESHNESS=0` to skip the advisory. Direct `mise run` calls bypass it.
+Existing installed versions need a one-time package update before they can warn;
+using an updated checkout's `bin/hey` builds the new dispatcher without host
+activation. Python is pinned by the package; Git comes from the caller's PATH.
+The advisory uses isolated Python startup, ignoring settings such as
+`PYTHONINSPECT` and `PYTHONPATH` without changing the eventual task's environment.
+
 ## Build and check
 
 Nix pins Bend 2.0.40 and compiles the dispatcher and task programs to native code:
@@ -67,6 +102,7 @@ With Bend and clang on PATH, local dispatcher development is:
 bend packages/hey/PROOF.bend
 bash packages/hey/build /tmp/hey /absolute/path/to/mise
 python3 -B packages/hey/test_hey.py
+python3 -B -m unittest discover -s packages/hey -p test_freshness.py
 ```
 
 `LAWS.bend` states only the pure dispatcher routing contract; `PROOF.bend` supplies

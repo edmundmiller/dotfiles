@@ -3,12 +3,24 @@
 #define main bend_runtime_main
 #include "generated.c"
 #undef main
+#include <sys/wait.h>
 
 #ifndef HEY_STACK_BASE_WORDS
 #define HEY_STACK_BASE_WORDS 4096
 #endif
 
 int main(int argc, char** argv) {
+#ifdef HEY_FRESHNESS
+  // The child alone changes signal state. Keep the caller's process contract.
+  pid_t child = fork();
+  if (child == 0) {
+    execl(HEY_PYTHON, HEY_PYTHON, "-I", HEY_FRESHNESS, (char*)NULL);
+    _exit(0); // Advisory only, including when Python is unavailable.
+  }
+  if (child > 0) {
+    while (waitpid(child, NULL, 0) < 0 && errno == EINTR) {}
+  }
+#endif
   io_argc = argc;
   io_argv = argv;
 
