@@ -317,11 +317,21 @@ int main(void) {
             os.close(slave)
 
     def test_python_startup_settings_do_not_block_dispatch_or_change_task_environment(self):
-        self.mise.write_text(
-            f"#!{shutil.which('bash')}\n"
-            "printf '%s\\n' \"$PYTHONINSPECT\" \"$PYTHONPATH\"\nexit 23\n"
+        # Keep the task independent of Python startup settings. A Bash script
+        # can hang on Darwin with PTY descriptors in a new session, even without Hey.
+        subprocess.run(
+            ["clang", "-x", "c", "-", "-o", str(self.mise)],
+            input="""
+#include <stdio.h>
+#include <stdlib.h>
+int main(void) {
+    printf("%s\\n%s\\n", getenv("PYTHONINSPECT"), getenv("PYTHONPATH"));
+    return 23;
+}
+""",
+            text=True,
+            check=True,
         )
-        self.mise.chmod(0o755)
         self.env.update(PYTHONINSPECT="1", PYTHONPATH=str(self.root), HEY_FRESHNESS="0")
         marker = self.root / "python-startup-ran"
         (self.root / "sitecustomize.py").write_text(
@@ -329,16 +339,16 @@ int main(void) {
         )
         master, slave = pty.openpty()
         try:
-            with subprocess.Popen(
+            child = subprocess.Popen(
                 [self.binary, "task"], cwd=self.root, env=self.env,
                 stdin=slave, stdout=slave, stderr=slave, start_new_session=True,
-            ) as child:
-                try:
-                    self.assertEqual(child.wait(timeout=3), 23)
-                finally:
-                    if child.poll() is None:
-                        os.killpg(child.pid, signal.SIGKILL)
-                        child.wait()
+            )
+            try:
+                self.assertEqual(child.wait(timeout=3), 23)
+            finally:
+                if child.poll() is None:
+                    os.killpg(child.pid, signal.SIGKILL)
+                    child.wait(timeout=3)
             self.assertTrue(select.select([master], [], [], 3)[0])
             self.assertEqual(os.read(master, 4096), f"1\r\n{self.root}\r\n".encode())
             self.assertFalse(marker.exists())
