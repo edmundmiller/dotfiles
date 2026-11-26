@@ -16,9 +16,9 @@ layers:
   Base:
     - ["`", "1", "2", "3", "4", "5", "-", "", "=", "6", "7", "8", "9", "0", Bksp]
     - [Tab, Q, W, E, R, T, PrtSc, "", "(", Y, U, I, O, P, '\']
-    - [{ t: Esc, h: Ctl }, A, S, D, F, G, "", "", "", H, J, K, L, ";", "'"]
+    - [{ t: Esc, h: Ctrl }, A, S, D, F, G, "", "", "", H, J, K, L, ";", "'"]
     - [Shift, Z, X, C, V, B, Del, "", ")", N, M, ",", ".", "/", Shift]
-    - [Ctrl, Alt, "", Home, End, "", "", "", "", "[", "]", "{", "}", Ctrl]
+    - [Ctrl, Alt, Hyper, Home, End, "", "", "", "", "[", "]", "{", "}", Ctrl]
     - ["", "", "", "", "", { t: TT, h: L2 }, { t: TT, h: L3 }, VolUp, Mute, "", "", "", "", ""]
     - ["", "", "", "", "", "", Gui, VolDn, "", "", "", "", "", ""]
     - [
@@ -28,8 +28,8 @@ layers:
         "",
         Space,
         { t: "", h: L1 },
-        { t: Esc, h: Alt },
-        RGui,
+        Hyper,
+        Hyper,
         { t: Bksp, h: L1 },
         Enter,
         "",

@@ -9,6 +9,8 @@ enum custom_keycodes {
   RGB_SLD = ZSA_SAFE_RANGE,
 };
 
+// Spaceman's Hyper preset leaves Shift free for moving windows.
+#define SPACEMAN_HYPER LCTL(LALT(KC_LEFT_GUI))
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -17,10 +19,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TAB,         KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,           KC_PSCR,                                        KC_LPRN,        KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,
     MT(MOD_LCTL, KC_ESCAPE),KC_A,           KC_S,           KC_D,           KC_F,           KC_G,                                                                           KC_H,           KC_J,           KC_K,           KC_L,           KC_SCLN,        KC_QUOTE,
     KC_LEFT_SHIFT,  KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,           KC_DELETE,                                      KC_RPRN,        KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       KC_RIGHT_SHIFT,
-    KC_LEFT_CTRL,   KC_LEFT_ALT,    KC_TRANSPARENT, KC_HOME,        KC_END,                                                                                                         KC_LBRC,        KC_RBRC,        KC_LCBR,        KC_RCBR,        KC_RIGHT_CTRL,
+    KC_LEFT_CTRL,   KC_LEFT_ALT,    SPACEMAN_HYPER,  KC_HOME,        KC_END,                                                                                                         KC_LBRC,        KC_RBRC,        KC_LCBR,        KC_RCBR,        KC_RIGHT_CTRL,
                                                                                                     TT(2),          TT(3),          KC_AUDIO_VOL_UP,KC_AUDIO_MUTE,
                                                                                                                     KC_LEFT_GUI,    KC_AUDIO_VOL_DOWN,
-                                                                                    KC_SPACE,       MO(1),          MT(MOD_LALT, KC_ESCAPE),KC_RIGHT_GUI,   LT(1, KC_BSPC), KC_ENTER
+                                                                                    KC_SPACE,       MO(1),          SPACEMAN_HYPER, SPACEMAN_HYPER, LT(1, KC_BSPC), KC_ENTER
   ),
   [1] = LAYOUT_ergodox_pretty(
     KC_ESCAPE,      KC_F1,          KC_F2,          KC_F3,          KC_F4,          KC_F5,          KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_F6,          KC_F7,          KC_F8,          KC_F9,          KC_F10,         KC_BSPC,
@@ -106,4 +108,3 @@ uint8_t layer_state_set_user(uint8_t state) {
   }
   return state;
 };
-

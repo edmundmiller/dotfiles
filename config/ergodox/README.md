@@ -84,12 +84,25 @@ Keymapp (ZSA's official tool) has proper entitlements to handle this.
 
 Primary typing layer with home-row modifiers and thumb cluster optimizations.
 
-| Feature           | Keys               | Notes                                        |
-| ----------------- | ------------------ | -------------------------------------------- |
-| **Home-row Ctrl** | Caps Lock position | Escape on tap, Ctrl on hold                  |
-| **Layer access**  | Thumb clusters     | TT(L2), TT(L3) on left; LT(L1) on both sides |
-| **Thumb Space**   | Left thumb         | Space key for primary typing                 |
-| **Thumb Enter**   | Right thumb        | Enter key with Backspace on LT(L1)           |
+| Feature           | Keys                           | Notes                                        |
+| ----------------- | ------------------------------ | -------------------------------------------- |
+| **Home-row Ctrl** | Caps Lock position             | Escape on tap, Control on hold               |
+| **Thumb Hyper**   | Inner bottom key on each thumb | Ctrl+Option+Command while held               |
+| **Layer access**  | Thumb clusters                 | TT(L2), TT(L3) on left; LT(L1) on both sides |
+| **Thumb Space**   | Left thumb                     | Space key for primary typing                 |
+| **Thumb Enter**   | Right thumb                    | Enter key with Backspace on LT(L1)           |
+
+The bottom-left key between Alt and Home holds Spaceman's Hyper preset,
+Control+Option+Command. Hold it with `1` through `0` to switch workspaces or
+`H/J/K/L` to focus tiles. Add Shift to move a window instead. This deliberately
+omits Shift from conventional four-modifier Hyper so both actions remain usable.
+The two inner-bottom thumb keys use the same Hyper combination, replacing left
+Alt/Escape and right Command. Left-thumb Command and the dedicated Alt and Ctrl
+keys remain available. Mouse-layer thumb overrides are unchanged.
+
+The Caps Lock-position key keeps Escape on tap and Control on hold, so ordinary
+Control shortcuts remain available. The existing 140 ms tapping term and
+hold-on-other-key-press setting still apply.
 
 ### Layer 1: Symbols & Navigation
 
