@@ -1,0 +1,17 @@
+id: lua-argv-escaping
+valid:
+  - "vim.fn.system { 'trash', abs }"
+  - "vim.fn.systemlist({ 'identify', abs, '-format', '%w' })"
+  - "vim.cmd('edit ' .. vim.fn.fnameescape(abs))"
+  - "vim.fn.system('trash ' .. vim.fn.shellescape(abs))"
+  - "vim.fn.system('cat', { vim.fn.shellescape(text) })"
+  - "local argv = { 'trash', abs }; vim.fn.system(argv)"
+invalid:
+  - "vim.fn.system { 'trash', vim.fn.fnameescape(abs) }"
+  - "vim.fn.system({ 'rm', '--', vim.fn.fnameescape(abs), other })"
+  - "vim.fn.systemlist({ 'identify', vim.fn.shellescape(abs), '-format', '%w' })"
+  - |
+    vim.fn.system {
+      'trash',
+      vim.fn.fnameescape(abs),
+    }

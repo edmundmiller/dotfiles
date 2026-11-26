@@ -9,6 +9,8 @@ Use `lib.my.mkBoolOpt` / `mkOpt` and `mkIf cfg.enable` for optional features.
 `optionalAttrs (!isDarwin)`, not a false `mkIf` around nonexistent options.
 The `nix-platform-specific-options` skill explains platform evaluation pitfalls.
 
+Use `lib.escapeShellArg` / `escapeShellArgs` for values entering generated shell syntax. Nix interpolation does not quote shell arguments. Keep declarative option/action nesting unless extracting shared behavior or a shared invariant; indentation alone is not a reason to introduce a helper.
+
 `options.nix` owns `user`, `dotfiles`, `home`, and `env`; `darwin-base.nix` and
 `nixos-base.nix` own platform defaults. Agent runtimes live under `agents/`,
 CLI tools under `shell/`, and hosted services under `services/`.

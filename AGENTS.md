@@ -49,6 +49,7 @@ their inventories.
   Pin and refresh notes: [docs/agents/unslop.md](docs/agents/unslop.md).
 - Oxlint: default hook is anti-slop. Opt-in English Jev rules:
   [docs/agents/oxlint.md](docs/agents/oxlint.md).
+- Incremental code quality: turn repeatable syntactic mistakes found while fixing or reviewing task code into [tested advisory ast-grep rules](docs/validation.md#growing-the-advisory-rules) when existing checks do not cover them.
 - Packages/overlays: use their scoped guides; `pkg-list` shows harnessed units.
 - Host operations: [guardrails](docs/agent-guardrails.md) and the host's scoped
   guide; [NUC runbook](docs/runbooks/deploy-nuc.md) for remote deployment.
@@ -62,7 +63,7 @@ Use the narrowest check that covers the change:
 - `hey check --platform <suite>` adds explicit host or VM validation.
 - `pkg-check <unit>` checks a carried upstream package or patch against fresh source.
 
-All `hey check` modes use a disposable snapshot without changing source or
+All `hey check` validation modes use a disposable snapshot without changing source or
 staging. `hey check --plan` shows routing. See [validation](docs/validation.md)
 for CI parity, setup, and exclusions. Read-only tasks need no completion check.
 Repair task-caused failures, report unrelated or unavailable checks honestly,

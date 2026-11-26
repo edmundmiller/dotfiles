@@ -28,6 +28,48 @@ runner needs Python 3.11+, Git, Nix and Prek; package QA needs Bun/Node.
 CI invokes `python3 scripts/validation.py`, the exact implementation
 behind `hey check`, without starting the host-oriented `hey` environment.
 
+### Local advisory hygiene pilot
+
+`hey check --hygiene [paths...]` runs only the optional ShellCheck/Ruff/ast-grep pilot;
+it does not run validation or certify a change. Ordinary `hey check`, hooks,
+and CI never invoke this mode. It neither installs tools nor adds dependencies
+to the validation environment. Missing tools and lint findings are advisory
+and leave its exit status successful. Invalid arguments or Git baselines still fail.
+
+ShellCheck/Ruff cover changed entrypoints under `bin/`, `scripts/`, and
+`.agents/`, excluding skill trees, symlinks, and deleted files. Python includes
+`.py` files and Python shebangs. ShellCheck selects Bash/sh shebangs, never Zsh
+or Nushell. Ast-grep covers changed `.nix` files under `modules/` and `.lua`
+files under `config/nvim/`, also excluding symlinks and deletions.
+The tools read complete files, but only diagnostics overlapping
+added/replaced lines are reported; syntax failures in changed files are always
+reported. The pilot shares validation's merge-base and path selection, including
+unpublished commits and working changes. Use `--base-ref REF` when needed.
+
+Ruff runs isolated without a cache and selects `F821,F822,F823,E9,B006,B023`.
+ShellCheck selects `SC2086,SC2046,SC2155`. Ast-grep runs one single-threaded batch
+using `ast-grep/advisory.yml`, separate from the blocking `sgconfig.yml` scan:
+
+- `lua-argv-escaping` flags direct `fnameescape`/`shellescape` calls in literal argv tables passed to `vim.fn.system` or `systemlist`. Ex commands and shell command strings stay valid; aliases and argv assembled elsewhere are outside this initial rule.
+- `nix-darwin-mkif-option` flags a direct dotted `users.defaultUserShell` binding inside `mkIf (!isDarwin)` or `lib.mkIf (!isDarwin)`. It suggests `optionalAttrs` for shared Darwin modules. It does not infer option availability generally or cover every spelling of the guard or binding.
+
+Run the advisory rule fixtures explicitly with
+`ast-grep test --config ast-grep/advisory.yml --skip-snapshot-tests`.
+They are outside the default ast-grep rule and fixture directories.
+No existing source findings are fixed automatically. There are no
+whole-tree thresholds, model calls, or new CI jobs. Use installed tools or
+explicitly enter a shell with the pinned tools:
+
+```sh
+nix shell --inputs-from . nixpkgs#ruff nixpkgs#shellcheck nixpkgs-unstable#ast-grep --command python3 scripts/validation.py --hygiene
+```
+
+#### Growing the advisory rules
+
+- Reuse an existing native linter or ast-grep rule before adding a new rule. Encode a demonstrated mistake from the current task, not a subjective style preference or speculative pattern. Routine changes do not need a new rule.
+- Add or extend a focused rule in `ast-grep/advisory-rules/` and its fixtures in `ast-grep/advisory-tests/`. Include the failing example and valid neighboring code that must stay quiet. Run the advisory fixture command above and document the rule's scope and limitations.
+- If the rule needs a new language or path, extend the advisory pilot's explicit file scope and test the public `--hygiene` command. Keep additions local, advisory, and changed-lines-only. Promotion into the blocking scan or CI needs explicit approval; do not add a shipping gate, rule quota, or unrelated whole-tree cleanup.
+
 ### Orb lifecycle checks
 
 `hey check .agents tests/test_orb_setup.py` selects `orb-setup-tests`, which runs

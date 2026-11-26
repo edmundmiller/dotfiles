@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -319,21 +320,23 @@ def fingerprint(root):
     return digest.digest()
 
 
+def comparison_base(root, base=None, head="HEAD"):
+    if base is None:
+        base = (
+            "origin/main"
+            if git(root, "rev-parse", "--verify", "origin/main", check=False).returncode == 0
+            else "HEAD"
+        )
+    return git(root, "merge-base", base, head).stdout.decode().strip()
+
+
 def selected_files(root, base=None, head="HEAD", full=False, scopes=()):
     if full:
         files = source_files(root)
     else:
-        if base is None:
-            base = (
-                "origin/main"
-                if git(
-                    root, "rev-parse", "--verify", "origin/main", check=False
-                ).returncode
-                == 0
-                else "HEAD"
-            )
+        base = comparison_base(root, base, head)
         files = names(
-            git(root, "diff", "--name-only", "--no-renames", "-z", f"{base}...{head}")
+            git(root, "diff", "--name-only", "--no-renames", "-z", base, head)
         )
         files += names(git(root, "diff", "--name-only", "--no-renames", "-z", "HEAD"))
         files += names(git(root, "ls-files", "--others", "--exclude-standard", "-z"))
@@ -351,6 +354,94 @@ def selected_files(root, base=None, head="HEAD", full=False, scopes=()):
             or any(s == "." or f == s or f.startswith(s + "/") for s in normalized)
         }
     )
+
+
+def hygiene(root, files, base):
+    """Local, read-only lint pilot; diagnostics and missing tools are advisory."""
+    batches = {"ruff": [], "shellcheck": [], "ast-grep": []}
+    changed = {}
+    for name in files:
+        path = root / name
+        if not path.is_file() or path.is_symlink() or "/skills/" in name:
+            continue
+        if (name.startswith("modules/") and path.suffix == ".nix") or (
+            name.startswith("config/nvim/") and path.suffix == ".lua"
+        ):
+            tool = "ast-grep"
+        else:
+            # Native linters cover entrypoints, not injected application globals
+            # or interactive Zsh config.
+            if not name.startswith(("bin/", "scripts/", ".agents/")):
+                continue
+            first = path.read_bytes().split(b"\n", 1)[0]
+            if path.suffix == ".py" or re.match(rb"#![^\n]*\bpython[\d.]*\b", first):
+                tool = "ruff"
+            elif re.match(rb"#![^\n]*\b(?:ba)?sh\b", first):
+                tool = "shellcheck"
+            else:
+                continue
+        batches[tool].append(name)
+        if git(root, "cat-file", "-e", f"{base}:{name}", check=False).returncode:
+            changed[name] = [(1, len(path.read_bytes().splitlines()) + 1)]
+        else:
+            diff = git(root, "diff", "--no-ext-diff", "--unified=0", base, "--", name).stdout
+            changed[name] = [
+                (int(start), int(start) + int(count or b"1") - 1)
+                for start, count in re.findall(
+                    rb"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", diff, re.MULTILINE
+                )
+                if count != b"0"
+            ]
+    commands = {
+        "ruff": ["ruff", "check", "--no-cache", "--isolated", "--output-format=json",
+                 "--select=F821,F822,F823,E9,B006,B023"],
+        # --include also hides parse errors. Select from JSON instead.
+        "shellcheck": ["shellcheck", "--norc", "--format=json"],
+        # Separate config: experimental rules never enter the blocking scan.
+        "ast-grep": ["ast-grep", "scan", "--config", "ast-grep/advisory.yml",
+                     "--json=compact", "--threads=1"],
+    }
+    for tool, paths in batches.items():
+        if not paths:
+            continue
+        started = time.monotonic()
+        try:
+            result = subprocess.run(commands[tool] + ["--", *paths], cwd=root,
+                                    capture_output=True, text=True, check=False)
+            if result.returncode not in (0, 1):
+                print(f"ADVISORY {tool}: could not lint: {result.stderr.strip()}")
+                continue
+            diagnostics = json.loads(result.stdout)
+            reported = 0
+            for item in diagnostics:
+                if tool == "ruff":
+                    name = Path(item["filename"]).relative_to(root).as_posix()
+                    line, end = item["location"]["row"], item["end_location"]["row"]
+                    code = item["code"]
+                    syntax = code == "invalid-syntax"
+                elif tool == "ast-grep":
+                    name = Path(item["file"])
+                    name = (name.relative_to(root) if name.is_absolute() else name).as_posix()
+                    line = item["range"]["start"]["line"] + 1
+                    end = item["range"]["end"]["line"] + 1
+                    code, syntax = item["ruleId"], False
+                else:
+                    name, line, end = item["file"], item["line"], item["endLine"]
+                    code = f"SC{item['code']}"
+                    syntax = item["level"] == "error" and 1000 <= item["code"] < 2000
+                    if not syntax and item["code"] not in (2086, 2046, 2155):
+                        continue
+                if syntax or any(line <= last and end >= first for first, last in changed[name]):
+                    print(f"ADVISORY {name}:{line}: {code} {item['message']}")
+                    reported += 1
+            print(f"{tool}: {len(paths)} files, {reported} advisory diagnostics, "
+                  f"{time.monotonic() - started:.3f}s")
+        except FileNotFoundError:
+            print(f"ADVISORY {tool}: not installed; skipped (no automatic install).")
+        except (ValueError, KeyError, TypeError) as error:
+            print(f"ADVISORY {tool}: could not read diagnostics: {error}")
+    print("Hygiene pilot only; no validation ran. Diagnostics do not fail this command.")
+    return 0
 
 
 def matches(files, patterns):
@@ -811,11 +902,18 @@ def main(argv=None):
         help="Print the selection as JSON without running tools or creating a snapshot",
     )
     parser.add_argument(
+        "--hygiene",
+        action="store_true",
+        help="Local advisory lint pilot only; does not run validation",
+    )
+    parser.add_argument(
         "paths",
         nargs="*",
         help="Repository-relative changed-file scopes (task-owned paths)",
     )
     args = parser.parse_args(argv)
+    if args.hygiene and (args.ci or args.full or args.platform or args.package or args.package_builds or args.packages_only or args.plan):
+        parser.error("--hygiene is a local changed-code pilot; use it separately from validation modes")
     # A missing CI baseline expands source coverage, not permission to compile
     # applications. Only an explicit --full or --package-builds does that.
     args.package_builds = args.package_builds or args.full
@@ -852,6 +950,9 @@ def main(argv=None):
         os.environ.pop(key, None)
     os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
     try:
+        if args.hygiene:
+            files = selected_files(ROOT, args.base_ref, args.head_ref, scopes=args.paths)
+            return hygiene(ROOT, files, comparison_base(ROOT, args.base_ref, args.head_ref))
         selection = plan(ROOT, args)
         if args.plan:
             print(json.dumps(selection, indent=2))

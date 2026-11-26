@@ -12,11 +12,13 @@ module discovers them into `envFiles` / `rcFiles` and generated `extra.zshenv` /
 `extra.zshrc`. Machine-local state belongs in untracked `local.zshrc`, not
 installer edits or literal user home paths in managed sources.
 
-Syntax check for startup changes:
+Syntax check for startup changes. Invoke Zsh once per file; extra filenames are script arguments, not additional syntax checks.
 
 ```sh
-zsh -n config/zsh/.zshrc config/zsh/.zshenv config/zsh/config.zsh \
-  config/*/env.zsh config/*/aliases.zsh
+for file in config/zsh/.zshrc config/zsh/.zshenv config/zsh/config.zsh \
+  config/*/env.zsh config/*/aliases.zsh; do
+  zsh -n "$file" || exit 1
+done
 ```
 
 For startup latency, use `hey zbench --iters 1` and the `zbench` skill.

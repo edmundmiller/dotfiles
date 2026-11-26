@@ -1,0 +1,17 @@
+id: nix-darwin-mkif-option
+valid:
+  - "optionalAttrs (!isDarwin) { users.defaultUserShell = pkgs.nu; }"
+  - "lib.optionalAttrs (!isDarwin) { users.defaultUserShell = lib.mkForce pkgs.nu; }"
+  - "mkIf cfg.enable { home.packages = [ pkgs.nu ]; }"
+  - "mkIf (!isDarwin) { home.packages = [ pkgs.nu ]; }"
+  - "mkIf (!isDarwin) { value = users.defaultUserShell; }"
+  - "mkIf (!isDarwin) { config = optionalAttrs (!isDarwin) { users.defaultUserShell = pkgs.nu; }; }"
+invalid:
+  - "mkIf (!isDarwin) { users.defaultUserShell = pkgs.nu; }"
+  - "lib.mkIf (!isDarwin) { home.packages = []; users.defaultUserShell = lib.mkForce pkgs.nu; }"
+  - |
+    mkIf (!isDarwin) {
+      # A false module condition does not remove the option name.
+      users.defaultUserShell = pkgs.nu;
+      home.packages = [];
+    }

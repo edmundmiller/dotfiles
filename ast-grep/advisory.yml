@@ -1,0 +1,4 @@
+ruleDirs:
+  - advisory-rules
+testConfigs:
+  - testDir: advisory-tests

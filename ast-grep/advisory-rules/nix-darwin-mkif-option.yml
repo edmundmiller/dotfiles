@@ -1,0 +1,21 @@
+id: nix-darwin-mkif-option
+language: nix
+severity: warning
+files:
+  - modules/**/*.nix
+message: In shared Darwin modules, use optionalAttrs to omit users.defaultUserShell; mkIf retains the option name.
+rule:
+  all:
+    - any:
+        - pattern: mkIf (!isDarwin) { $$$BODY }
+        - pattern: lib.mkIf (!isDarwin) { $$$BODY }
+    - has:
+        field: argument
+        kind: attrset_expression
+        has:
+          kind: binding_set
+          has:
+            kind: binding
+            has:
+              field: attrpath
+              regex: ^users\.defaultUserShell$

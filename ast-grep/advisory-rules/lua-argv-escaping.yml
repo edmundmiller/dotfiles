@@ -1,0 +1,25 @@
+id: lua-argv-escaping
+language: lua
+severity: warning
+files:
+  - config/nvim/**/*.lua
+message: Pass raw paths to list-form system/systemlist; Ex and shell escaping changes argv bytes.
+rule:
+  all:
+    - kind: function_call
+    - has:
+        field: name
+        regex: ^vim\.fn\.(system|systemlist)$
+    - has:
+        field: arguments
+        kind: arguments
+        has:
+          kind: table_constructor
+          nthChild: 1
+          has:
+            kind: field
+            has:
+              field: value
+              any:
+                - pattern: vim.fn.fnameescape($PATH)
+                - pattern: vim.fn.shellescape($PATH)

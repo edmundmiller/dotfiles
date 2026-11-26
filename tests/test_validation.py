@@ -348,6 +348,108 @@ class ValidationTests(unittest.TestCase):
             self.assertEqual(self.invoke("missing")[0], 0)
         self.assertEqual(before, v.git(self.root, "diff", "--binary", "HEAD").stdout)
 
+    def test_hygiene_is_advisory_and_reports_only_touched_lines_or_syntax(self):
+        # Hunk-like text in removed/added source must not mark line 1 changed.
+        self.write("scripts/space name.py",
+                   "old_problem\n# stable\n# Removed patch template: @@ -1 +1 @@\n")
+        self.commit()
+        v.git(self.root, "update-ref", "refs/remotes/origin/main", "HEAD")
+        self.write("scripts/space name.py",
+                   "old_problem\nnew_problem\n# Added patch template: @@ -1 +1 @@\n")
+        self.commit()  # Include unpublished committed work, not only dirty files.
+        self.write("bin/new-script", "#!/usr/bin/env bash\necho $value\n")
+        self.write("bin/interactive.zsh", "#!/usr/bin/env zsh\necho $value\n")
+        before = v.fingerprint(self.root)
+
+        def tools(command, **kwargs):
+            if command[0] == "git":
+                return subprocess_run(command, **kwargs)
+            if command[0] == "ruff":
+                diagnostics = [
+                    dict(filename=str(self.root / "scripts/space name.py"),
+                         location={"row": row}, end_location={"row": row},
+                         code=code, message=message)
+                    for row, code, message in (
+                        (1, "F821", "old finding"),
+                        (2, "F821", "new finding"),
+                        (3, "invalid-syntax", "syntax after edit"),
+                    )
+                ]
+            elif command[0] == "shellcheck":
+                diagnostics = [
+                    dict(file=name, line=2, endLine=2, level="info",
+                         code=2086, message=f"quote this expansion in {name}")
+                    for name in command[command.index("--") + 1:]
+                ] + [dict(file="bin/new-script", line=1, endLine=1, level="warning",
+                          code=2034, message="unused variable noise")]
+            else:
+                self.fail(f"Advisory mode ran a validation tool: {command}")
+            return subprocess.CompletedProcess(command, 1, stdout=json.dumps(diagnostics))
+
+        with patch("scripts.validation.subprocess.run", side_effect=tools):
+            code, output, error = self.invoke("--hygiene")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("old finding", output)
+        self.assertNotIn("unused variable noise", output)
+        self.assertNotIn("interactive.zsh", output)
+        for text in ("new finding", "syntax after edit", "SC2086", "no validation ran"):
+            self.assertIn(text, output)
+        self.assertEqual(before, v.fingerprint(self.root))
+
+        with patch("scripts.validation.subprocess.run", side_effect=tools):
+            code, output, error = self.invoke("--hygiene", "scripts")
+        self.assertEqual(code, 0, error)
+        self.assertNotIn("SC2086", output)
+
+    def test_hygiene_missing_tools_are_advisory_and_never_install(self):
+        self.write("scripts/new.py", "undefined_name\n")
+        self.write("modules/new.nix", "{}\n")
+
+        def tools(command, **kwargs):
+            if command[0] == "git":
+                return subprocess_run(command, **kwargs)
+            if command[0] in ("ruff", "ast-grep"):
+                raise FileNotFoundError(command[0])
+            self.fail(f"Unexpected installation or validation: {command}")
+
+        with patch("scripts.validation.subprocess.run", side_effect=tools):
+            code, output, error = self.invoke("--hygiene")
+        self.assertEqual(code, 0, error)
+        for tool in ("ruff", "ast-grep"):
+            self.assertIn(f"ADVISORY {tool}: not installed; skipped", output)
+
+    @unittest.skipUnless(shutil.which("ast-grep"), "requires repository ast-grep")
+    def test_hygiene_ast_rules_are_advisory_scoped_and_changed_lines_only(self):
+        shutil.copytree(v.ROOT / "ast-grep", self.root / "ast-grep")
+        old = "vim.fn.system { 'trash', vim.fn.fnameescape(old_path) }\n"
+        argv = "{\n  'identify', vim.fn.shellescape(new_path),\n}\n"
+        self.write("config/nvim/with spaces.lua", old + "-- stable\nother.run " + argv)
+        self.commit()
+        v.git(self.root, "update-ref", "refs/remotes/origin/main", "HEAD")
+        # Only the callee changes; the escaped value is on an untouched line.
+        self.write("config/nvim/with spaces.lua", old + "-- stable\nvim.fn.systemlist " + argv +
+                   "vim.fn.system('trash ' .. vim.fn.shellescape(raw_path))\n")
+        self.write("modules/new.nix",
+                   "lib.mkIf (!isDarwin) { users.defaultUserShell = pkgs.nu; }\n")
+        self.write("config/other.lua", old)
+        self.write("modules/safe.nix",
+                   "optionalAttrs (!isDarwin) { users.defaultUserShell = pkgs.nu; }\n")
+        before = v.fingerprint(self.root)
+
+        code, output, error = self.invoke("--hygiene")
+        self.assertEqual(code, 0, error)
+        self.assertIn("config/nvim/with spaces.lua:3: lua-argv-escaping", output)
+        self.assertIn("modules/new.nix:1: nix-darwin-mkif-option", output)
+        self.assertIn("2 advisory diagnostics", output)
+        self.assertNotIn("with spaces.lua:1:", output)
+        self.assertNotIn("other.lua:", output)
+        self.assertEqual(before, v.fingerprint(self.root))
+
+        code, output, error = self.invoke("--hygiene", "config/nvim")
+        self.assertEqual(code, 0, error)
+        self.assertIn("lua-argv-escaping", output)
+        self.assertNotIn("nix-darwin-mkif-option", output)
+
     def test_full_includes_clean_sources_and_does_not_imply_platform_checks(self):
         self.package("pi-example")
         self.commit()
