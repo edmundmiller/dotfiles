@@ -19,18 +19,20 @@ hey ergodox-info          # Show firmware info and paths
 
 The firmware is built entirely with nix, fetching ZSA's QMK fork and compiling
 with the AVR cross-toolchain. Build artifacts are cached by nix for fast rebuilds.
+The build-only QMK CLI excludes flashing tools and optional Pillow text shaping.
+This avoids unrelated graphics dependencies without disabling dependency tests.
 
 ```bash
 # Build firmware
 hey ergodox-build
 
 # Verify build
-ls config/ergodox/firmware/ergo-drifter/*.hex
+ls config/ergodox/*.hex
 ```
 
 ### Updating ZSA QMK Firmware
 
-The QMK firmware version is pinned to a specific commit in `flake.nix`.
+The QMK firmware version is pinned in `packages/ergodox-firmware/default.nix`.
 To update:
 
 1. Get the latest SHA:
@@ -39,10 +41,9 @@ To update:
    git ls-remote https://github.com/zsa/qmk_firmware.git firmware25
    ```
 
-2. Update `flake.nix`:
-   - Find the `ergodox-firmware` section
-   - Update the `rev` to the new SHA
-   - Set `hash` to `lib.fakeHash`
+2. Update `packages/ergodox-firmware/default.nix`:
+   - Update `zsaRev` to the new SHA
+   - Set `zsaHash` to `lib.fakeHash`
 
 3. Build to get the correct hash:
 
@@ -50,7 +51,7 @@ To update:
    nix build .#ergodox-firmware 2>&1 | grep "got:"
    ```
 
-4. Update `hash` with the correct value and rebuild
+4. Update `zsaHash` with the correct value and rebuild and redraw
 
 ## Flashing Firmware
 
@@ -66,7 +67,7 @@ Opens Keymapp GUI which handles macOS USB permissions correctly.
 
 1. Open Keymapp: `open -a Keymapp`
 2. Click "Flash from file"
-3. Select: `config/ergodox/firmware/ergo-drifter/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex`
+3. Select: `config/ergodox/zsa_ergodox_ez_m32u4_base_ergo-drifter.hex`
 4. Press reset button on keyboard when prompted
 
 ### Why Keymapp?
@@ -151,13 +152,15 @@ config/ergodox/
 ├── README.md              # This file
 ├── keymap.yaml            # Layer documentation for keymap-drawer
 ├── layout.svg             # Visual layout (generated)
-└── firmware/
-    └── ergo-drifter/
-        └── zsa_ergodox_ez_m32u4_base_ergo-drifter-fork-fork_source/
-            ├── keymap.c   # QMK keymap source
-            ├── keymap.json
-            ├── config.h   # DEBOUNCE, TAPPING_TERM settings
-            └── rules.mk
+├── zsa_ergodox_ez_m32u4_base_ergo-drifter.hex  # Built firmware (untracked)
+└── checksum.md5            # Built firmware checksum (untracked)
+
+packages/ergodox-firmware/
+├── default.nix             # Pinned ZSA source and AVR build
+└── src/
+    ├── keymap.c            # QMK keymap source
+    ├── config.h            # DEBOUNCE, TAPPING_TERM settings
+    └── rules.mk
 ```
 
 ## Editing Keymap
@@ -166,7 +169,7 @@ config/ergodox/
 
 1. Edit layout at [configure.zsa.io](https://configure.zsa.io/ergodox-ez/layouts/wagdn/qmvNyL)
 2. Download source from Oryx
-3. Replace files in `firmware/ergo-drifter/zsa_..._source/`
+3. Replace source files in `packages/ergodox-firmware/src/`
 4. Build and flash: `hey ergodox-build-flash`
 
 ### Manually editing config
@@ -205,8 +208,8 @@ hey ergodox-build-flash
 
 **Build fails:**
 
-- Run `hey rebuild` to install dependencies
-- Check nix store: `nix store delete .#ergodox-firmware` and retry
+- Inspect `nix build .#ergodox-firmware --print-build-logs` for the failing derivation.
+- Dependencies are declared by the firmware package. A host rebuild is not needed.
 
 **Keymapp not found:**
 

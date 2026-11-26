@@ -37,6 +37,14 @@ let
     hash = zsaHash;
     fetchSubmodules = true;
   };
+  # Firmware compilation needs neither flashing tools nor Pillow's optional
+  # libraqm text shaping (and its CoreText dependency).
+  qmkForBuild = (qmk.override { python3 = python313; }).overridePythonAttrs (old: {
+    propagatedBuildInputs = map (
+      dependency:
+      if lib.getName dependency == "pillow" then dependency.override { libraqm = null; } else dependency
+    ) (lib.filter python313.pkgs.hasPythonModule old.propagatedBuildInputs);
+  });
 in
 stdenv.mkDerivation {
   pname = "ergodox-ergo-drifter-firmware";
@@ -48,7 +56,7 @@ stdenv.mkDerivation {
     gnumake
     python3
     git
-    (qmk.override { python3 = python313; })
+    qmkForBuild
     avrPkgs.buildPackages.gcc
     avrPkgs.buildPackages.binutils
   ];
