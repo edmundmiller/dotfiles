@@ -8,9 +8,10 @@ update_when: Nix ownership, package selection, pins, or host migration acceptanc
 
 # Nix implementation choice
 
-Reviewed 2026-11-22. This document records the current configuration and a
-recommendation, not an approved or completed migration. Determinate is working;
-there is no current incident that requires replacing it.
+Decision updated 2026-11-26: retain Determinate on both Macs and do not proceed
+with the Lix migration. The compatibility findings below supersede the earlier
+proposal to migrate. No Lix runtime was activated. The configuration inventory
+and upstream guidance were originally reviewed 2026-11-22.
 
 ## Recommendation
 
@@ -46,6 +47,69 @@ handover on MacTraitor-Pro before considering Seqeratop. Keep Seqeratop on
 Determinate until an approved replacement for corporate CA handling works.
 Do not migrate healthy servers just to match the Macs, or healthy Macs just to
 match the servers.
+
+## Why the Lix migration was dropped
+
+The current root `flake.lock` uses a parent-relative skills input:
+
+```json
+{
+  "locked": { "path": "./skills", "type": "path" },
+  "original": { "path": "./skills", "type": "path" },
+  "parent": []
+}
+```
+
+The parent source determines the child's contents. This format needs no separate
+child `narHash`; child edits are visible when the parent source changes. Keep
+the existing skills-loading and child-lock synchronization contract unchanged.
+
+Lix 2.95.4 rejected this lock. Disposable Linux tests also executed nixpkgs-packaged
+Lix 2.96.0 against the unchanged root lock and a minimal root/child fixture. Both
+failed with `lock file contains mutable lock '{"path":"./skills","type":"path"}'`,
+including with `--impure`. In the control fixture, CppNix 2.35.3 returned `before`
+and then `after` following a child edit, without rewriting the lock. Lix 2.96.0
+rejected both evaluations. These are evaluator tests, not daemon acceptance.
+
+Main at `7092827ac04ebf0763aa9cf8375b9d77514758ae` retained the same rejecting
+lock reader and path fetcher as 2.96.0. Main was inspected, not built or executed.
+This finding applies to that revision, not every future Lix release.
+[Upstream issue 641](https://git.lix.systems/lix-project/lix/issues/641) remains
+open. A nixpkgs bump, source override to that main, or `lix-module` cannot supply
+the missing semantics. Adding a child hash changes the contract and is not an
+accepted workaround.
+
+[CppNix PR 10089](https://github.com/NixOS/nix/pull/10089) provides a reference,
+but Lix needs adaptation across lock validation/serialization, parent-source
+resolution, overrides and evaluation. Dropping the parser rejection alone is
+insufficient. A maintainable port was estimated at 5–10 focused engineer-days,
+plus review and possibly a separate 2.95.4 backport. This is an engineering
+estimate, not implemented or tested work. It would create a carried runtime
+patch, compilation and ongoing regression-testing costs. Upstream acceptance
+is uncertain under Lix's [flakes feature freeze](https://wiki.lix.systems/books/development/page/flakes-feature-freeze).
+
+There are independent migration costs even after a lock fix. Nixd currently
+owns daemon sockets, configuration and macOS integration. Returning ownership
+to nix-darwin needs fresh recovery assets, compatible database/derivation
+handling, verified encrypted APFS mounting without Nixd, and a deliberate CA
+replacement for Seqeratop. Read-only checks found no `fixed:git:` or unknown
+content-address categories and no unexplained core DDL differences in the
+inspected MacTraitor-Pro snapshot. They did not prove two-way runtime
+compatibility or rollback. Existing mount helpers likewise did not establish
+independent reboot success.
+
+The root pin's Lix 2.95.2 also predates the
+[October 13 security fixes](https://lix.systems/blog/2026-10-13-lix-cves/).
+The investigated patched baseline was 2.95.4, which still fails the skills lock.
+Do not use the old pin's stable alias as a migration shortcut.
+
+Reconsider only when a supported, security-patched release accepts the unchanged
+lock and preserves live-child, nested-parent and override behavior without
+source-tree escapes. Then repeat the recovery and ownership gates below and
+prove fresh daemon builds and reboot survival on MacTraitor-Pro before touching
+Seqeratop. Generic installer upgrades, uninstalling Nix and a Darwin generation
+rollback are not established safe substitutes. Keeping Determinate requires no
+runtime transfer, skills rewrite, new Lix pin or activation.
 
 ## What this repo uses today
 
