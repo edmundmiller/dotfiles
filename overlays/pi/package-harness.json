@@ -1,0 +1,30 @@
+{
+  "source": "https://github.com/earendil-works/pi.git",
+  "ref": "fb0fe823539f6d04850f6e34748c01f01f212e1f",
+  "patches": ["patches/0001-google-ai-plan.patch"],
+  "checks": [
+    [
+      "curl",
+      "-fsSL",
+      "-o",
+      "packages/coding-agent/src/core/client-identity.ts",
+      "https://raw.githubusercontent.com/earendil-works/pi/628d2ccabbb9df625c2d6035c44172b6776232d2/packages/coding-agent/src/core/client-identity.ts"
+    ],
+    ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"],
+    ["npm", "run", "hydrate:model-data"],
+    ["npm", "run", "build:offline"],
+    [
+      "npm",
+      "exec",
+      "--workspace",
+      "packages/ai",
+      "--",
+      "vitest",
+      "run",
+      "test/google-ai-plan-oauth.test.ts",
+      "test/google-interactions-errors.test.ts",
+      "test/google-interactions-replay.test.ts",
+      "test/google-interactions.test.ts"
+    ]
+  ]
+}

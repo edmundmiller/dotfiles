@@ -1,0 +1,2082 @@
+diff --git a/README.md b/README.md
+index 1cc6a371e..2a6c0dd07 100644
+--- a/README.md
++++ b/README.md
+@@ -199,6 +199,10 @@ I regularly publish my own `pi-mono` work sessions here:
+ 
+ MIT
+ 
++### Forks and the Google AI Ultra plan sign-in
++
++pi's Google AI Ultra plan sign-in uses a Google OAuth client that Google approved for pi only (`PI_GOOGLE_AI_PLAN_CLIENT` in [`packages/coding-agent/src/core/client-identity.ts`](packages/coding-agent/src/core/client-identity.ts)). Forks and other apps built on pi's packages must register their own Google OAuth client and replace pi's. `@earendil-works/pi-ai` ships no client; see "OAuth Providers" in [`packages/ai/README.md`](packages/ai/README.md#oauth-providers).
++
+ <p align="center">
+   <a href="https://pi.dev">pi.dev</a> domain graciously donated by
+   <br /><br />
+diff --git a/packages/ai/README.md b/packages/ai/README.md
+index 52774b5ca..a83b19748 100644
+--- a/packages/ai/README.md
++++ b/packages/ai/README.md
+@@ -1884,6 +1884,7 @@ Several providers support OAuth authentication instead of static API keys:
+ - **OpenAI Codex** (ChatGPT Plus/Pro subscription, access to GPT-5.x Codex models)
+ - **GitHub Copilot** (Copilot subscription)
+ - **OpenRouter** (OAuth PKCE that mints a user-controlled API key)
++- **Google AI Ultra plan** (needs your app's own Google client, see below)
+ 
+ Each of these providers carries an `OAuthAuth` on `provider.auth.oauth` with three operations: `login(interaction)` uses the provider-neutral `AuthInteraction.prompt()`/`notify()` protocol and returns a credential, `refresh(credential, signal)` refreshes expiring credentials when applicable, and `toAuth(credential)` derives request auth (GitHub Copilot's per-account base URL comes from here). Provider login interactions and refresh calls always carry a concrete abort signal. Refresh is automatic: `models.getAuth(providerId)` and request paths refresh expired tokens under a credential-store lock, so concurrent requests and processes cannot double-refresh. OpenRouter's OAuth flow instead returns a permanent API key, so its refresh operation is a no-op.
+ 
+@@ -1921,6 +1922,14 @@ await models.complete(model, context);
+ await models.logout('anthropic');
+ ```
+ 
++The Google AI Ultra plan provider is not part of `builtinProviders()`. Google approves each app's OAuth client separately and does not allow apps to share one, so pi-ai ships none. Register a `Desktop app` client in your own Google Cloud project, have Google approve it, and add the provider with it. Google also identifies apps by `User-Agent` (`<app>/<version>`), so set your app's identity (see [Client identity](#client-identity)):
++
++```typescript
++import { googleAiPlanProvider } from '@earendil-works/pi-ai/providers/google-ai-plan';
++
++models.setProvider(googleAiPlanProvider({ clientId: '<your client id>', clientSecret: '<your client secret>' }));
++```
++
+ ### Vertex AI
+ 
+ Vertex AI models support either a Google Cloud API key or Application Default Credentials (ADC). Its provider-owned API-key login flow can configure either method:
+diff --git a/packages/ai/catalog/providers/google-ai-plan.ts b/packages/ai/catalog/providers/google-ai-plan.ts
+new file mode 100644
+index 000000000..87eafdfc8
+--- /dev/null
++++ b/packages/ai/catalog/providers/google-ai-plan.ts
+@@ -0,0 +1,65 @@
++import type { Model, ThinkingLevelMap } from "../../src/types.ts";
++import { defineProvider, withInputLimits } from "../define.ts";
++
++// Google AI Ultra plan models, served by the Interactions API on the user's plan quota. The plan has no
++// model list endpoint, so the partner docs require this fixed list. Usage is covered by the plan: no cost.
++// Thinking levels per the partner docs: Neon and Hydrogen low..xhigh, Carbon low..high, Flash-Lite minimal..high.
++const GEMINI_4_XHIGH: ThinkingLevelMap = {
++	off: null,
++	minimal: null,
++	low: "low",
++	medium: "medium",
++	high: "high",
++	xhigh: "xhigh",
++	max: null,
++};
++const GEMINI_4: ThinkingLevelMap = {
++	off: null,
++	minimal: null,
++	low: "low",
++	medium: "medium",
++	high: "high",
++	xhigh: null,
++	max: null,
++};
++const FLASH_LITE: ThinkingLevelMap = {
++	off: null,
++	minimal: "minimal",
++	low: "low",
++	medium: "medium",
++	high: "high",
++	xhigh: null,
++	max: null,
++};
++
++const MODELS: { id: string; name: string; thinkingLevelMap: ThinkingLevelMap }[] = [
++	{ id: "gemini-4-hydrogen", name: "Gemini 4 Hydrogen", thinkingLevelMap: GEMINI_4_XHIGH },
++	{ id: "gemini-4-neon", name: "Gemini 4 Neon", thinkingLevelMap: GEMINI_4_XHIGH },
++	{ id: "gemini-4-carbon", name: "Gemini 4 Carbon", thinkingLevelMap: GEMINI_4 },
++	{ id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", thinkingLevelMap: FLASH_LITE },
++];
++
++export default defineProvider({
++	id: "google-ai-plan",
++	models: () =>
++		MODELS.map(
++			({ id, name, thinkingLevelMap }): Model<"google-interactions"> => ({
++				id,
++				name,
++				api: "google-interactions",
++				provider: "google-ai-plan",
++				baseUrl: "https://generativelanguage.googleapis.com/v1beta",
++				reasoning: true,
++				thinkingLevelMap,
++				input: ["text", "image"],
++				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
++				contextWindow: 1048576,
++				maxTokens: 65536,
++			}),
++		),
++	// Interactions API docs: inline data under 100 MB per request (generateContent allows 20 MB), and Gemini models
++	// accept at most 3,600 images per request.
++	// https://ai.google.dev/gemini-api/docs/interactions/file-input-methods
++	// https://ai.google.dev/gemini-api/docs/image-understanding
++	finalize: (model) => withInputLimits(model, { maxRequestBytes: 100 * 1024 * 1024, images: { maxPerRequest: 3600 } }),
++});
+diff --git a/packages/ai/catalog/providers/index.ts b/packages/ai/catalog/providers/index.ts
+index e76299b78..8d7105763 100644
+--- a/packages/ai/catalog/providers/index.ts
++++ b/packages/ai/catalog/providers/index.ts
+@@ -13,6 +13,7 @@ import deepseek from "./deepseek.ts";
+ import fireworks from "./fireworks.ts";
+ import githubCopilot from "./github-copilot.ts";
+ import google from "./google.ts";
++import googleAiPlan from "./google-ai-plan.ts";
+ import googleVertex from "./google-vertex.ts";
+ import groq from "./groq.ts";
+ import huggingface from "./huggingface.ts";
+@@ -59,6 +60,7 @@ export const PROVIDERS: readonly ProviderDefinition[] = [
+ 	githubCopilot,
+ 	googleVertex,
+ 	google,
++	googleAiPlan,
+ 	groq,
+ 	huggingface,
+ 	kimiCoding,
+diff --git a/packages/ai/src/api/google-interactions-errors.ts b/packages/ai/src/api/google-interactions-errors.ts
+new file mode 100644
+index 000000000..8d4491990
+--- /dev/null
++++ b/packages/ai/src/api/google-interactions-errors.ts
+@@ -0,0 +1,146 @@
++/**
++ * Error responses of the Google AI Ultra plan endpoint (`:createPerUserQuota`), turned into messages for the user.
++ *
++ * The message is always Google's own text, plus a hint where that text does not say what to do (sign in again,
++ * upgrade, switch model). Only 429s need a retry decision: a per-minute limit is retried, while a daily limit or a
++ * model the plan does not include must fail at once. Other statuses are not retried by the shared retry rules anyway.
++ *
++ * Bodies come in three shapes: a JSON object, a JSON array of `google.rpc.Status` objects (401 and gateway 403s),
++ * and an SSE `event: error` frame (some errors of streaming requests).
++ */
++
++/** What the user sees, and whether the request fails at once instead of going through the shared retry rules. */
++export interface GoogleInteractionsError {
++	message: string;
++	final: boolean;
++}
++
++interface ErrorBody {
++	message: string;
++	/** `ErrorInfo.reason`, e.g. `ACCESS_TOKEN_SCOPE_INSUFFICIENT`. */
++	reason?: string;
++	/** The `QuotaFailure` violation of a per-day quota, with its limit when Google sends one. */
++	perDayQuota?: { limit?: number };
++}
++
++/** Which kind of 429 a response is, following the classifier in Google's partner docs (errors-and-limits). */
++type RateLimit = { kind: "per-minute" } | { kind: "not-on-plan" } | { kind: "daily"; resetInMessage: boolean };
++
++const PLANS_URL = "https://one.google.com/ai";
++const SIGN_IN_AGAIN = "Run /login to sign in again.";
++
++/** Classify a non-2xx response: Google's message plus a hint, and whether a 429 must not be retried. */
++export function classifyGoogleInteractionsError(input: {
++	status: number;
++	headers: Headers;
++	body: string;
++	modelId: string;
++}): GoogleInteractionsError {
++	const { status, headers, modelId } = input;
++	const error = parseErrorBody(input.body);
++	const message = (hint: string | undefined) => [String(status), error.message, hint].filter(Boolean).join(" ");
++
++	if (status === 429) {
++		const limit = classifyRateLimit(error);
++		switch (limit.kind) {
++			case "per-minute":
++				return { message: message(undefined), final: false };
++			case "not-on-plan":
++				return { message: message(notOnPlan(modelId)), final: true };
++			case "daily": {
++				const reset = limit.resetInMessage ? "" : formatReset(headers);
++				// "Daily limit reached for" marks the message as not retryable for pi's agent-level retry (utils/retry.ts).
++				const hint = `Daily limit reached for ${modelId}${reset}: switch to another model, or use a Gemini API key.`;
++				return { message: message(hint), final: true };
++			}
++		}
++	}
++	return { message: message(hintFor(status, error, modelId)), final: false };
++}
++
++function classifyRateLimit(error: ErrorBody): RateLimit {
++	const dailyMessage = /reached today's .*? limit/i.test(error.message);
++	const perDayMessage = /rate limit exceeded(?: for model \S+)? \(limit: (\d+) (?:tokens|requests) per day\)/i.exec(
++		error.message,
++	);
++	if (!dailyMessage && !perDayMessage && !error.perDayQuota) return { kind: "per-minute" };
++	// A daily limit of zero means the plan does not include the model.
++	if (error.perDayQuota?.limit === 0 || perDayMessage?.[1] === "0") return { kind: "not-on-plan" };
++	return { kind: "daily", resetInMessage: dailyMessage };
++}
++
++function hintFor(status: number, error: ErrorBody, modelId: string): string | undefined {
++	if (status === 400 && /not supported for per-user quota/i.test(error.message)) return notOnPlan(modelId);
++	if (status === 401) return SIGN_IN_AGAIN;
++	// Flat error bodies carry no `ErrorInfo`, so Google's classifier also matches the message.
++	if (
++		status === 403 &&
++		(error.reason === "ACCESS_TOKEN_SCOPE_INSUFFICIENT" || /insufficient authentication scopes/i.test(error.message))
++	) {
++		return SIGN_IN_AGAIN;
++	}
++	// Our project's API is disabled or the client is blocked (the kill switch); the user cannot fix that.
++	if (
++		status === 403 &&
++		(error.reason === "SERVICE_DISABLED" || /oauth client is not authorized/i.test(error.message))
++	) {
++		return "The Google AI Ultra plan is currently unavailable in pi.";
++	}
++	if (status === 402 || status === 403) {
++		return `Your Google account does not have an eligible Google AI Ultra plan. Upgrade at ${PLANS_URL}, or use a Gemini API key.`;
++	}
++	return undefined;
++}
++
++// "is not available on the Google AI Ultra plan" marks the message as not retryable for pi's agent-level retry.
++function notOnPlan(modelId: string): string {
++	return `${modelId} is not available on the Google AI Ultra plan. Choose another model.`;
++}
++
++/** " (resets in 5h 18m)" from `Retry-After` seconds, or "" when absent. */
++function formatReset(headers: Headers): string {
++	const seconds = Number(headers.get("retry-after"));
++	if (!Number.isFinite(seconds) || seconds <= 0) return "";
++	const totalMinutes = Math.ceil(seconds / 60);
++	const hours = Math.floor(totalMinutes / 60);
++	const minutes = totalMinutes % 60;
++	return ` (resets in ${hours > 0 ? `${hours}h ` : ""}${minutes}m)`;
++}
++
++/** Read message, `ErrorInfo.reason` and the per-day quota from any of the three body shapes; falls back to the raw text. */
++function parseErrorBody(body: string): ErrorBody {
++	const trimmed = body.trim();
++	const json = /^[[{]/.test(trimmed)
++		? trimmed
++		: trimmed
++				.split("\n")
++				.find((line) => line.startsWith("data:"))
++				?.slice(5)
++				.trim();
++	let parsed: unknown;
++	try {
++		parsed = JSON.parse(json ?? "");
++	} catch {
++		return { message: trimmed };
++	}
++	const first: unknown = Array.isArray(parsed) ? parsed[0] : parsed;
++	// Wire input: the body shape is not guaranteed.
++	const error = (first as { error?: { message?: unknown; details?: unknown } } | null)?.error;
++	if (typeof error?.message !== "string") return { message: trimmed };
++	const details = Array.isArray(error.details) ? (error.details as Record<string, unknown>[]) : [];
++	const reason = details.find((d) => String(d["@type"]).endsWith("google.rpc.ErrorInfo"))?.reason;
++	const violations = details.find((d) => String(d["@type"]).endsWith("google.rpc.QuotaFailure"))?.violations;
++	const perDay = Array.isArray(violations)
++		? (violations as { quotaId?: unknown; quotaValue?: unknown }[]).find(
++				(v) => typeof v.quotaId === "string" && v.quotaId.includes("PerDay"),
++			)
++		: undefined;
++	// `quotaValue` is an int64, which JSON carries as a string.
++	const value = perDay?.quotaValue;
++	const limit = typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
++	return {
++		message: error.message,
++		...(typeof reason === "string" && { reason }),
++		...(perDay && { perDayQuota: Number.isFinite(limit) ? { limit } : {} }),
++	};
++}
+diff --git a/packages/ai/src/api/google-interactions.lazy.ts b/packages/ai/src/api/google-interactions.lazy.ts
+new file mode 100644
+index 000000000..69865be65
+--- /dev/null
++++ b/packages/ai/src/api/google-interactions.lazy.ts
+@@ -0,0 +1,4 @@
++import type { ProviderStreams } from "../types.ts";
++import { lazyApi } from "./lazy.ts";
++
++export const googleInteractionsApi = (): ProviderStreams => lazyApi(() => import("./google-interactions.ts"));
+diff --git a/packages/ai/src/api/google-interactions.ts b/packages/ai/src/api/google-interactions.ts
+new file mode 100644
+index 000000000..21de4fc5d
+--- /dev/null
++++ b/packages/ai/src/api/google-interactions.ts
+@@ -0,0 +1,466 @@
++/**
++ * Google Interactions API on the Google AI Ultra plan: `POST <baseUrl>/interactions:createPerUserQuota`, with
++ * the OAuth access token in the `Authorization` header (set by the provider's auth).
++ *
++ * Stateless use only: every request sends `store: false` and the full conversation as typed steps
++ * (`user_input`, `thought`, `function_call`, `function_result`, `model_output`). The response is an SSE
++ * stream of step events (`step.start`, `step.delta`, `step.stop`) closed by `interaction.completed`.
++ */
++
++import type { Interactions } from "@google/genai";
++import { calculateCost, clampThinkingLevel } from "../models.ts";
++import type {
++	AssistantMessage,
++	AssistantMessageEvent,
++	ImageContent,
++	Model,
++	SimpleStreamOptions,
++	StopReason,
++	StreamFunction,
++	StreamOptions,
++	TextContent,
++	TranscriptContext,
++} from "../types.ts";
++import { formatProviderError, normalizeProviderError } from "../utils/error-body.ts";
++import { AssistantMessageEventStream } from "../utils/event-stream.ts";
++import { headersToRecord, providerHeadersToRecord } from "../utils/headers.ts";
++import { getIdentityHeaders } from "../utils/identity.ts";
++import { parseToolCallArguments } from "../utils/json-parse.ts";
++import { retryProviderRequest } from "../utils/provider-retry.ts";
++import { sanitizeSurrogates } from "../utils/sanitize-unicode.ts";
++import { SseDecoder } from "../utils/sse.ts";
++import { ToolCallArgumentsStream } from "../utils/streaming-json.ts";
++import { getSystemMessageText } from "../utils/text.ts";
++import {
++	collapseSystemMessages,
++	getCurrentTools,
++	getInitialSystemMessage,
++	withoutInitialSystemMessage,
++} from "../utils/transcript.ts";
++import { getJsonSchemaToolParameters } from "./constrained-sampling.ts";
++import { classifyGoogleInteractionsError } from "./google-interactions-errors.ts";
++import { type ResolvedGoogleThinkingLevel, resolveGoogleThinkingLevel } from "./google-shared.ts";
++import { buildBaseOptions } from "./simple-options.ts";
++import { transformMessages } from "./transform-messages.ts";
++
++export interface GoogleInteractionsOptions extends StreamOptions {
++	toolChoice?: "auto" | "none" | "any";
++	/** Sent as `generation_config.thinking_level`; omitted means the model default. */
++	thinkingLevel?: ResolvedGoogleThinkingLevel;
++}
++
++type Step = Interactions.Step;
++type SseEvent = Interactions.InteractionSSEEvent;
++type InteractionRequest = {
++	model: string;
++	store: false;
++	stream: true;
++	input: Step[];
++	system_instruction?: string;
++	tools?: Interactions.Tool[];
++	generation_config?: Interactions.GenerationConfig;
++};
++
++/**
++ * HTTP failure that `retryProviderRequest` may retry, deciding by `status` and `headers`. Final failures are thrown
++ * as plain errors. No `body` field, so `normalizeProviderError` keeps the readable message.
++ */
++class GoogleInteractionsResponseError extends Error {
++	readonly status: number;
++	readonly headers: Headers;
++
++	constructor(status: number, headers: Headers, message: string) {
++		super(message);
++		this.name = "GoogleInteractionsResponseError";
++		this.status = status;
++		this.headers = headers;
++	}
++}
++
++export const stream: StreamFunction<"google-interactions", GoogleInteractionsOptions> = (
++	model: Model<"google-interactions">,
++	context: TranscriptContext,
++	options?: GoogleInteractionsOptions,
++): AssistantMessageEventStream => {
++	const eventStream = new AssistantMessageEventStream();
++
++	void (async () => {
++		const output: AssistantMessage = {
++			role: "assistant",
++			content: [],
++			api: model.api,
++			provider: model.provider,
++			model: model.id,
++			usage: {
++				input: 0,
++				output: 0,
++				cacheRead: 0,
++				cacheWrite: 0,
++				totalTokens: 0,
++				cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
++			},
++			stopReason: "pending",
++			timestamp: Date.now(),
++		};
++
++		try {
++			const hasAuthorization = Object.keys(options?.headers ?? {}).some(
++				(name) => name.toLowerCase() === "authorization",
++			);
++			if (!hasAuthorization) throw new Error(`No credentials for provider: ${model.provider}`);
++			const url = `${model.baseUrl.replace(/\/+$/u, "")}/interactions:createPerUserQuota`;
++			let payload: unknown = buildRequest(model, context, options);
++			const nextPayload = await options?.onPayload?.(payload, model);
++			if (nextPayload !== undefined) payload = nextPayload;
++
++			const response = await retryProviderRequest(
++				async () => {
++					// `timeoutMs` covers only the wait for the response headers, as in the other APIs: turns can stream for
++					// many minutes, and stalls in the body are left to the HTTP client's idle timeout. The caller's signal
++					// stays attached so an abort still stops the stream.
++					const timeoutMs = options?.timeoutMs;
++					const headerTimeout = new AbortController();
++					const timer =
++						timeoutMs !== undefined && timeoutMs > 0
++							? setTimeout(
++									() =>
++										headerTimeout.abort(new Error(`Google response headers timed out after ${timeoutMs}ms`)),
++									timeoutMs,
++								)
++							: undefined;
++					const signal = options?.signal
++						? AbortSignal.any([options.signal, headerTimeout.signal])
++						: headerTimeout.signal;
++					let res: Response;
++					try {
++						res = await (options?.fetch ?? globalThis.fetch)(url, {
++							method: "POST",
++							headers: providerHeadersToRecord(
++								getIdentityHeaders(model, options?.identity),
++								{ accept: "text/event-stream", "content-type": "application/json" },
++								options?.headers,
++							),
++							body: JSON.stringify(payload),
++							signal,
++						});
++					} finally {
++						clearTimeout(timer);
++					}
++					await options?.onResponse?.({ status: res.status, headers: headersToRecord(res.headers) }, model);
++					if (!res.ok) {
++						const { status, headers } = res;
++						const error = classifyGoogleInteractionsError({
++							status,
++							headers,
++							body: await res.text(),
++							modelId: model.id,
++						});
++						throw error.final
++							? new Error(error.message)
++							: new GoogleInteractionsResponseError(status, headers, error.message);
++					}
++					return res;
++				},
++				{ maxRetries: options?.maxRetries, maxRetryDelayMs: options?.maxRetryDelayMs, signal: options?.signal },
++			);
++			if (!response.body) throw new Error(`${model.provider} response has no body`);
++
++			eventStream.push({ type: "start", partial: output });
++			const converter = new StepConverter(model, output, (event) => eventStream.push(event));
++			for await (const event of readSseEvents(response.body)) {
++				await options?.onProviderStreamEvent?.(event, model);
++				converter.handle(event);
++				if (converter.status !== undefined) break;
++			}
++
++			if (options?.signal?.aborted) throw new Error("Request was aborted");
++			// A stream that closes before interaction.completed is an interrupted turn, not a short answer.
++			if (converter.status === undefined) throw new Error("Google stream ended before interaction.completed");
++			output.rawStopReason = converter.status;
++			const reason = mapStatus(converter.status);
++			if (reason === "error") throw new Error(`Interaction ended with status ${converter.status}`);
++			output.stopReason = reason;
++
++			eventStream.push({ type: "done", reason, message: output });
++			eventStream.end();
++		} catch (error) {
++			output.stopReason = options?.signal?.aborted ? "aborted" : "error";
++			output.errorMessage = formatProviderError(normalizeProviderError(error));
++			eventStream.push({ type: "error", reason: output.stopReason, error: output });
++			eventStream.end();
++		}
++	})();
++
++	return eventStream;
++};
++
++export const streamSimple: StreamFunction<"google-interactions", SimpleStreamOptions> = (
++	model: Model<"google-interactions">,
++	context: TranscriptContext,
++	options?: SimpleStreamOptions,
++): AssistantMessageEventStream => {
++	const base = { ...buildBaseOptions(model, context, options), toolChoice: options?.toolChoice };
++	// Gemini 4 models cannot turn thinking off; clamping picks the nearest supported level.
++	const level = clampThinkingLevel(model, options?.reasoning ?? "off");
++	if (level === "off") return stream(model, context, base);
++	return stream(model, context, { ...base, thinkingLevel: resolveGoogleThinkingLevel(model, level) });
++};
++
++function buildRequest(
++	model: Model<"google-interactions">,
++	context: TranscriptContext,
++	options: GoogleInteractionsOptions | undefined,
++): InteractionRequest {
++	const normalized = collapseSystemMessages(context);
++	const systemMessage = getInitialSystemMessage(normalized.messages);
++	const systemInstruction = systemMessage ? getSystemMessageText(systemMessage) : "";
++	const tools = getCurrentTools(normalized.messages);
++
++	const generationConfig: Interactions.GenerationConfig = {};
++	if (options?.thinkingLevel) {
++		generationConfig.thinking_level = options.thinkingLevel;
++		generationConfig.thinking_summaries = "auto";
++	}
++	if (options?.maxTokens !== undefined) generationConfig.max_output_tokens = options.maxTokens;
++	if (tools.length > 0 && options?.toolChoice) generationConfig.tool_choice = options.toolChoice;
++
++	return {
++		model: model.id,
++		store: false,
++		stream: true,
++		...(systemInstruction && { system_instruction: sanitizeSurrogates(systemInstruction) }),
++		...(tools.length > 0 && {
++			tools: tools.map((tool) => ({
++				type: "function",
++				name: tool.name,
++				description: tool.description,
++				parameters: getJsonSchemaToolParameters(tool, false),
++			})),
++		}),
++		...(Object.keys(generationConfig).length > 0 && { generation_config: generationConfig }),
++		input: convertMessages(model, normalized),
++	};
++}
++
++/** Signature value Google documents for replaying function calls the model did not sign. */
++const SKIP_THOUGHT_SIGNATURE = "skip_thought_signature_validator";
++
++/** Convert the transcript to Interactions steps. Signed thought steps are kept only for the same model. */
++function convertMessages(model: Model<"google-interactions">, context: TranscriptContext): Step[] {
++	const messages = transformMessages(withoutInitialSystemMessage(context.messages), model);
++	const steps: Step[] = [];
++
++	for (const message of messages) {
++		if (message.role === "user") {
++			const content =
++				typeof message.content === "string"
++					? [{ type: "text" as const, text: sanitizeSurrogates(message.content) }]
++					: message.content.map(convertContent);
++			if (content.length > 0) steps.push({ type: "user_input", content });
++		} else if (message.role === "assistant") {
++			// transformMessages already dropped thinking and tool-call signatures from other models.
++			let signed = false;
++			for (const block of message.content) {
++				if (block.type === "thinking") {
++					signed ||= Boolean(block.thinkingSignature);
++					steps.push({
++						type: "thought",
++						...(block.thinkingSignature && { signature: block.thinkingSignature }),
++						...(block.thinking.trim() && {
++							summary: [{ type: "text", text: sanitizeSurrogates(block.thinking) }],
++						}),
++					});
++				} else if (block.type === "text") {
++					if (!block.text) continue;
++					const previous = steps.at(-1);
++					const text = { type: "text" as const, text: sanitizeSurrogates(block.text) };
++					if (previous?.type === "model_output") previous.content = [...(previous.content ?? []), text];
++					else steps.push({ type: "model_output", content: [text] });
++				} else if (block.type === "toolCall") {
++					// Gemini rejects function calls of the current turn without a signed thought step before them, e.g.
++					// after switching from another model mid tool loop. Google's sentinel skips the check.
++					if (!signed) {
++						steps.push({ type: "thought", signature: SKIP_THOUGHT_SIGNATURE });
++						signed = true;
++					}
++					steps.push({ type: "function_call", id: block.id, name: block.name, arguments: block.arguments });
++				}
++			}
++		} else if (message.role === "toolResult") {
++			// transformMessages already replaced images when the model does not support them.
++			const images = message.content.filter((c): c is ImageContent => c.type === "image");
++			const text = message.content
++				.filter((c): c is TextContent => c.type === "text")
++				.map((c) => c.text)
++				.join("\n");
++			steps.push({
++				type: "function_result",
++				call_id: message.toolCallId,
++				name: message.toolName,
++				result:
++					images.length > 0
++						? [
++								...(text ? [{ type: "text" as const, text: sanitizeSurrogates(text) }] : []),
++								...images.map(convertContent),
++							]
++						: sanitizeSurrogates(text),
++				...(message.isError && { is_error: true }),
++			});
++		}
++	}
++	return steps;
++}
++
++function convertContent(content: TextContent | ImageContent): Interactions.TextContent | Interactions.ImageContent {
++	return content.type === "text"
++		? { type: "text", text: sanitizeSurrogates(content.text) }
++		: { type: "image", mime_type: content.mimeType, data: content.data };
++}
++
++/** Builds the assistant message from step events and emits pi stream events. */
++class StepConverter {
++	/** Final interaction status, set by `interaction.completed`. */
++	status: string | undefined;
++	private readonly model: Model<"google-interactions">;
++	private readonly output: AssistantMessage;
++	private readonly emit: (event: AssistantMessageEvent) => void;
++	/** Content index of each open step, keyed by the step index on the wire. */
++	private readonly blocks = new Map<number, number>();
++	private readonly toolArguments = new Map<number, ToolCallArgumentsStream>();
++
++	constructor(
++		model: Model<"google-interactions">,
++		output: AssistantMessage,
++		emit: (event: AssistantMessageEvent) => void,
++	) {
++		this.model = model;
++		this.output = output;
++		this.emit = emit;
++	}
++
++	handle(event: SseEvent): void {
++		switch (event.event_type) {
++			case "step.start":
++				this.start(event.index, event.step);
++				break;
++			case "step.delta":
++				this.delta(event.index, event.delta);
++				break;
++			case "step.stop":
++				this.stop(event.index);
++				break;
++			case "interaction.completed": {
++				const { status, usage, id } = event.interaction;
++				this.output.responseId ||= id;
++				if (usage) this.setUsage(usage);
++				this.status = status;
++				break;
++			}
++			case "error":
++				throw new Error(event.error?.message ?? "Google stream error");
++		}
++	}
++
++	private start(index: number, step: Step): void {
++		const content = this.output.content;
++		if (step.type === "thought") {
++			content.push({ type: "thinking", thinking: "", ...(step.signature && { thinkingSignature: step.signature }) });
++			this.blocks.set(index, content.length - 1);
++			this.emit({ type: "thinking_start", contentIndex: content.length - 1, partial: this.output });
++		} else if (step.type === "model_output") {
++			content.push({ type: "text", text: "" });
++			this.blocks.set(index, content.length - 1);
++			this.emit({ type: "text_start", contentIndex: content.length - 1, partial: this.output });
++		} else if (step.type === "function_call") {
++			content.push({ type: "toolCall", id: step.id, name: step.name, arguments: {} });
++			this.blocks.set(index, content.length - 1);
++			this.toolArguments.set(index, new ToolCallArgumentsStream());
++			this.emit({ type: "toolcall_start", contentIndex: content.length - 1, partial: this.output });
++		}
++		// Server-side tool steps (code execution, URL context, search) are not sent and not shown yet.
++	}
++
++	private delta(index: number, delta: Interactions.StepDelta["delta"]): void {
++		const contentIndex = this.blocks.get(index);
++		if (contentIndex === undefined) return;
++		const block = this.output.content[contentIndex];
++		if (delta.type === "text" && block.type === "text") {
++			block.text += delta.text;
++			this.emit({ type: "text_delta", contentIndex, delta: delta.text, partial: this.output });
++		} else if (delta.type === "thought_summary" && block.type === "thinking") {
++			const text = delta.content?.type === "text" ? delta.content.text : "";
++			if (!text) return;
++			block.thinking += text;
++			this.emit({ type: "thinking_delta", contentIndex, delta: text, partial: this.output });
++		} else if (delta.type === "thought_signature" && block.type === "thinking") {
++			block.thinkingSignature = (block.thinkingSignature ?? "") + (delta.signature ?? "");
++		} else if (delta.type === "arguments_delta" && block.type === "toolCall") {
++			const args = this.toolArguments.get(index);
++			if (!args || !delta.arguments) return;
++			block.arguments = args.append(delta.arguments);
++			this.emit({ type: "toolcall_delta", contentIndex, delta: delta.arguments, partial: this.output });
++		}
++	}
++
++	private stop(index: number): void {
++		const contentIndex = this.blocks.get(index);
++		if (contentIndex === undefined) return;
++		this.blocks.delete(index);
++		const block = this.output.content[contentIndex];
++		if (block.type === "text") {
++			this.emit({ type: "text_end", contentIndex, content: block.text, partial: this.output });
++		} else if (block.type === "thinking") {
++			this.emit({ type: "thinking_end", contentIndex, content: block.thinking, partial: this.output });
++		} else if (block.type === "toolCall") {
++			const args = this.toolArguments.get(index);
++			this.toolArguments.delete(index);
++			Object.assign(block, parseToolCallArguments(args?.text));
++			this.emit({ type: "toolcall_end", contentIndex, toolCall: block, partial: this.output });
++		}
++	}
++
++	private setUsage(usage: Interactions.Usage): void {
++		const cached = usage.total_cached_tokens ?? 0;
++		const thought = usage.total_thought_tokens ?? 0;
++		this.output.usage = {
++			input: (usage.total_input_tokens ?? 0) - cached,
++			output: (usage.total_output_tokens ?? 0) + thought,
++			cacheRead: cached,
++			cacheWrite: 0,
++			reasoning: thought,
++			totalTokens: usage.total_tokens ?? 0,
++			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
++		};
++		calculateCost(this.model, this.output.usage);
++	}
++}
++
++function mapStatus(status: string): Extract<StopReason, "stop" | "toolUse" | "length" | "error"> {
++	switch (status) {
++		case "completed":
++			return "stop";
++		case "requires_action":
++			return "toolUse";
++		case "incomplete":
++			return "length";
++		default:
++			return "error";
++	}
++}
++
++async function* readSseEvents(body: ReadableStream<Uint8Array>): AsyncGenerator<SseEvent> {
++	const reader = body.getReader();
++	const sse = new SseDecoder();
++	try {
++		while (true) {
++			const { done, value } = await reader.read();
++			for (const { data } of done ? sse.end() : sse.push(value)) {
++				// Google sends `[DONE]` after `interaction.completed`.
++				if (data && data !== "[DONE]") yield JSON.parse(data) as SseEvent;
++			}
++			if (done) break;
++		}
++	} finally {
++		reader.releaseLock();
++	}
++}
+diff --git a/packages/ai/src/api/google-shared.ts b/packages/ai/src/api/google-shared.ts
+index 9170973cb..b37f1ecfc 100644
+--- a/packages/ai/src/api/google-shared.ts
++++ b/packages/ai/src/api/google-shared.ts
+@@ -30,7 +30,7 @@ import { collapseSystemMessages, withoutInitialSystemMessage } from "../utils/tr
+ import { getJsonSchemaToolParameters, resolveJsonSchemaStrictSampling } from "./constrained-sampling.ts";
+ import { transformMessages } from "./transform-messages.ts";
+ 
+-type GoogleApiType = "google-generative-ai" | "google-vertex";
++type GoogleApiType = "google-generative-ai" | "google-vertex" | "google-interactions";
+ 
+ /**
+  * Thinking level for Gemini models that use `thinkingLevel` instead of `thinkingBudget`.
+diff --git a/packages/ai/src/auth/oauth/google-ai-plan.ts b/packages/ai/src/auth/oauth/google-ai-plan.ts
+new file mode 100644
+index 000000000..583a8e709
+--- /dev/null
++++ b/packages/ai/src/auth/oauth/google-ai-plan.ts
+@@ -0,0 +1,319 @@
++/**
++ * Google AI Ultra plan sign-in: Google OAuth for a `Desktop app` client with a loopback redirect, PKCE, and
++ * DPoP (RFC 9449). Google binds the refresh token to a key pair created on this machine; every call to the
++ * token endpoint carries a proof signed with that key. Model calls use the access token as a plain Bearer
++ * token, without DPoP.
++ *
++ * NOTE: This module uses node:http through the callback server. It is only reachable through the lazily
++ * loaded OAuth flow modules, never from browser-facing entry points.
++ */
++
++import type { OAuthAuth, OAuthCredential, ProviderAuthInteraction } from "../types.ts";
++import { startOAuthCallbackServer, waitForCallbackOrManualInput } from "./callback-server.ts";
++import { generatePKCE } from "./pkce.ts";
++
++/**
++ * An app's own Google `Desktop app` OAuth client, approved by Google for the AI Ultra plan. Google approves each
++ * app's client separately and does not allow one app to use another's, so pi-ai ships none.
++ */
++export interface GoogleAiPlanClient {
++	clientId: string;
++	clientSecret: string;
++}
++
++const AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
++const TOKEN_URL = "https://oauth2.googleapis.com/token";
++const QUOTA_SCOPE = "https://www.googleapis.com/auth/generative-language.peruserquota";
++const SCOPES = `openid email profile ${QUOTA_SCOPE}`;
++const CALLBACK_PATH = "/oauth2callback";
++// Long enough to finish a plan upgrade checkout in the browser.
++const CALLBACK_TIMEOUT_MS = 10 * 60 * 1000;
++const SIGN_IN_AGAIN = "Your Google AI Ultra plan sign-in is no longer valid. Run /login to sign in again.";
++
++/**
++ * P-256 private key as stored in the credential. The DPoP header gets only the public fields `kty`, `crv`, `x`, `y`;
++ * WebCrypto also exports `ext` and `key_ops`, which Google rejects.
++ */
++interface EcPrivateJwk {
++	kty: string;
++	crv: string;
++	x: string;
++	y: string;
++	d: string;
++}
++
++/** The OAuth credential with the fields this flow stores next to `access`, `refresh` and `expires`. */
++type GoogleAiPlanCredential = OAuthCredential & {
++	dpopKey: EcPrivateJwk;
++	/** Latest `DPoP-Nonce` from a refresh response; saves a `use_dpop_nonce` round trip. */
++	dpopNonce?: string;
++};
++
++interface TokenResponse {
++	access_token?: string;
++	refresh_token?: string;
++	expires_in?: number;
++	scope?: string;
++	id_token?: string;
++	error?: string;
++	error_description?: string;
++}
++
++const encoder = new TextEncoder();
++
++function base64url(bytes: ArrayBuffer | Uint8Array): string {
++	return Buffer.from(new Uint8Array(bytes)).toString("base64url");
++}
++
++function randomToken(byteLength: number): string {
++	return base64url(crypto.getRandomValues(new Uint8Array(byteLength)));
++}
++
++async function createDpopKey(): Promise<EcPrivateJwk> {
++	const { privateKey } = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);
++	const { kty, crv, x, y, d } = await crypto.subtle.exportKey("jwk", privateKey);
++	if (!kty || !crv || !x || !y || !d) throw new Error("Failed to export DPoP key");
++	return { kty, crv, x, y, d };
++}
++
++/**
++ * Sign a DPoP proof for the token endpoint. WebCrypto ECDSA signatures are raw R||S (64 bytes), the format
++ * Google requires; DER signatures are rejected.
++ */
++async function createDpopProof(
++	key: EcPrivateJwk,
++	claims: { jti: string; nonce?: string; iat?: number },
++): Promise<string> {
++	const { kty, crv, x, y } = key;
++	const header = { typ: "dpop+jwt", alg: "ES256", jwk: { kty, crv, x, y } };
++	const { iat = Math.floor(Date.now() / 1000), ...rest } = claims;
++	const payload = { ...rest, htm: "POST", htu: TOKEN_URL, iat };
++	const input = `${base64url(encoder.encode(JSON.stringify(header)))}.${base64url(encoder.encode(JSON.stringify(payload)))}`;
++	const signingKey = await crypto.subtle.importKey("jwk", key, { name: "ECDSA", namedCurve: "P-256" }, false, [
++		"sign",
++	]);
++	const signature = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, signingKey, encoder.encode(input));
++	return `${input}.${base64url(signature)}`;
++}
++
++async function postToken(
++	client: GoogleAiPlanClient,
++	params: Record<string, string>,
++	dpop: string,
++	signal: AbortSignal,
++): Promise<{ status: number; body: TokenResponse; nonce: string | undefined; serverTime: number | undefined }> {
++	const response = await fetch(TOKEN_URL, {
++		method: "POST",
++		headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json", DPoP: dpop },
++		body: new URLSearchParams({ ...params, client_id: client.clientId, client_secret: client.clientSecret }),
++		signal: AbortSignal.any([signal, AbortSignal.timeout(30_000)]),
++	});
++	const text = await response.text();
++	let body: TokenResponse;
++	try {
++		body = JSON.parse(text) as TokenResponse;
++	} catch {
++		body = { error: `HTTP ${response.status}`, error_description: text };
++	}
++	// Google's clock in Unix seconds, from the `Date` header; used when our clock is off.
++	const serverTime = Date.parse(response.headers.get("date") ?? "");
++	return {
++		status: response.status,
++		body,
++		nonce: response.headers.get("dpop-nonce") ?? undefined,
++		serverTime: Number.isNaN(serverTime) ? undefined : Math.floor(serverTime / 1000),
++	};
++}
++
++function describeTokenError(prefix: string, status: number, body: TokenResponse): Error {
++	return new Error(`${prefix}: ${status} ${body.error ?? ""} ${body.error_description ?? ""}`.trim());
++}
++
++/** Check the ID token's issuer, audience, expiry and nonce, as Google's docs require. */
++function checkIdToken(idToken: string | undefined, nonce: string, clientId: string): void {
++	if (!idToken) throw new Error("Google sign-in returned no ID token");
++	// The token comes straight from Google's token endpoint over TLS, so the claims are read without
++	// verifying the signature (OpenID Connect Core 3.1.3.7).
++	const claims = JSON.parse(Buffer.from(idToken.split(".")[1] ?? "", "base64url").toString("utf8")) as {
++		iss?: string;
++		aud?: string;
++		exp?: number;
++		nonce?: string;
++	};
++	const issuerOk = claims.iss === "https://accounts.google.com" || claims.iss === "accounts.google.com";
++	const notExpired = (claims.exp ?? 0) * 1000 > Date.now() - 60_000;
++	if (!issuerOk || claims.aud !== clientId || claims.nonce !== nonce || !notExpired) {
++		throw new Error("Google sign-in returned an ID token that failed validation");
++	}
++}
++
++async function login(client: GoogleAiPlanClient, interaction: ProviderAuthInteraction): Promise<OAuthCredential> {
++	const { verifier, challenge } = await generatePKCE();
++	const state = randomToken(32);
++	const nonce = randomToken(32);
++	const dpopKey = await createDpopKey();
++	const finish = (code: string): Promise<OAuthCredential> =>
++		finishSignIn(client, code, { verifier, nonce, dpopKey, redirectUri: callback.redirectUri }, interaction);
++
++	// Loopback only, on a free port: Desktop app clients accept any port, and 0.0.0.0 is not allowed.
++	const callback = await startOAuthCallbackServer({
++		providerName: "Google",
++		host: "127.0.0.1",
++		port: 0,
++		path: CALLBACK_PATH,
++		state,
++		// Finishing inside the callback lets the browser page show a failed exchange or check instead of "Signed in".
++		complete: finish,
++		signal: interaction.signal,
++		timeoutMs: CALLBACK_TIMEOUT_MS,
++	});
++
++	try {
++		const params = new URLSearchParams({
++			client_id: client.clientId,
++			redirect_uri: callback.redirectUri,
++			response_type: "code",
++			scope: SCOPES,
++			code_challenge: challenge,
++			code_challenge_method: "S256",
++			state,
++			nonce,
++		});
++		interaction.notify({ type: "auth_url", url: `${AUTHORIZE_URL}?${params.toString()}` });
++
++		const result = await waitForCallbackOrManualInput(interaction, callback, {
++			message:
++				"Continue with Google in your browser. If the browser is on another machine, paste the final URL from its address bar here:",
++			placeholder: callback.redirectUri,
++		});
++		if (result.type === "callback") return result.value;
++
++		// The URL the browser was sent to after consent (Google's remote-host "Option B"); a matching `state` proves
++		// it belongs to this sign-in.
++		const url = new URL(result.input.trim());
++		if (url.searchParams.get("state") !== state) throw new Error("Sign-in state mismatch");
++		const error = url.searchParams.get("error");
++		if (error === "access_denied") throw new Error("Sign-in was canceled");
++		if (error) throw new Error(`Google sign-in failed: ${error}`);
++		const code = url.searchParams.get("code");
++		if (!code) throw new Error("Missing authorization code");
++		return await finish(code);
++	} finally {
++		callback.close();
++	}
++}
++
++/** Exchange the authorization code for tokens, check the result, and build the credential. */
++async function finishSignIn(
++	client: GoogleAiPlanClient,
++	code: string,
++	session: { verifier: string; nonce: string; dpopKey: EcPrivateJwk; redirectUri: string },
++	interaction: ProviderAuthInteraction,
++): Promise<OAuthCredential> {
++	interaction.notify({ type: "progress", message: "Finishing sign-in..." });
++	// The code-exchange proof uses the code's hash as jti; a random jti fails and burns the single-use code.
++	const jti = base64url(await crypto.subtle.digest("SHA-256", encoder.encode(code)));
++	// The exchange also returns a `DPoP-Nonce`, but refreshes use a separate nonce, so it is not kept.
++	const { status, body } = await postToken(
++		client,
++		{
++			grant_type: "authorization_code",
++			code,
++			code_verifier: session.verifier,
++			redirect_uri: session.redirectUri,
++		},
++		await createDpopProof(session.dpopKey, { jti }),
++		interaction.signal,
++	);
++	if (status !== 200 || !body.access_token || !body.refresh_token) {
++		throw describeTokenError("Google sign-in failed", status, body);
++	}
++	if (!(body.scope ?? "").split(" ").includes(QUOTA_SCOPE)) {
++		throw new Error("Google did not grant access to the Google AI Ultra plan. Try signing in again.");
++	}
++	checkIdToken(body.id_token, session.nonce, client.clientId);
++	const credential: GoogleAiPlanCredential = {
++		type: "oauth",
++		access: body.access_token,
++		refresh: body.refresh_token,
++		expires: accessExpiry(body),
++		dpopKey: session.dpopKey,
++	};
++	return credential;
++}
++
++async function refresh(
++	client: GoogleAiPlanClient,
++	credential: OAuthCredential,
++	signal: AbortSignal,
++): Promise<OAuthCredential> {
++	const dpopKey = readDpopKey(credential);
++	const proof: { nonce?: string; iat?: number } = {
++		...(typeof credential.dpopNonce === "string" && { nonce: credential.dpopNonce }),
++	};
++	let result = await postRefresh(client, credential.refresh, dpopKey, proof, signal);
++	// Two rejections are fixed by retrying once each, in either order. A stale nonce (and none at all after sign-in)
++	// gets `use_dpop_nonce` with a fresh nonce. A clock more than 10 s ahead of Google's gets `invalid_dpop_proof`;
++	// the retry takes the proof time from the response's `Date` header.
++	for (let retry = 0; retry < 2; retry++) {
++		if (result.body.error === "use_dpop_nonce" && result.nonce && proof.nonce !== result.nonce) {
++			proof.nonce = result.nonce;
++		} else if (result.body.error === "invalid_dpop_proof" && proof.iat === undefined && result.serverTime) {
++			proof.iat = result.serverTime;
++		} else {
++			break;
++		}
++		result = await postRefresh(client, credential.refresh, dpopKey, proof, signal);
++	}
++	const { status, body, nonce } = result;
++	if (status !== 200 || !body.access_token) {
++		// Google's docs name these two as final: the grant expired (7 days) or was revoked, or the client is no longer
++		// allowed for this token.
++		if (body.error === "invalid_grant" || body.error === "unauthorized_client") throw new Error(SIGN_IN_AGAIN);
++		throw describeTokenError("Google token refresh failed", status, body);
++	}
++	// Keep Google's newest nonce, else the one this request just used successfully.
++	const dpopNonce = nonce ?? proof.nonce;
++	return { ...credential, access: body.access_token, expires: accessExpiry(body), ...(dpopNonce && { dpopNonce }) };
++}
++
++/** The DPoP key from a stored credential. auth.json is read from disk, so its shape is checked here. */
++function readDpopKey(credential: OAuthCredential): EcPrivateJwk {
++	const key = credential.dpopKey as Partial<Record<keyof EcPrivateJwk, unknown>> | undefined;
++	const fields = [key?.kty, key?.crv, key?.x, key?.y, key?.d];
++	if (!fields.every((field) => typeof field === "string")) throw new Error(SIGN_IN_AGAIN);
++	return key as EcPrivateJwk;
++}
++
++async function postRefresh(
++	client: GoogleAiPlanClient,
++	refreshToken: string,
++	dpopKey: EcPrivateJwk,
++	claims: { nonce?: string; iat?: number },
++	signal: AbortSignal,
++) {
++	const proof = await createDpopProof(dpopKey, { jti: randomToken(24), ...claims });
++	return postToken(client, { grant_type: "refresh_token", refresh_token: refreshToken }, proof, signal);
++}
++
++/**
++ * When the access token really expires. pi refreshes 5 minutes before that (`resolve.ts`), which is what Google's
++ * docs ask for.
++ */
++function accessExpiry(body: TokenResponse): number {
++	return Date.now() + (body.expires_in ?? 3599) * 1000;
++}
++
++/** The Google AI Ultra plan sign-in for the app's own Google client. */
++export function createGoogleAiPlanOAuth(client: GoogleAiPlanClient): OAuthAuth {
++	return {
++		name: "Google AI Ultra plan",
++		isSubscription: true,
++		loginLabel: "Sign in with Google (AI Ultra)",
++		login: (interaction) => login(client, interaction),
++		refresh: (credential, signal) => refresh(client, credential, signal),
++		async toAuth(credential) {
++			return { headers: { Authorization: `Bearer ${credential.access}` } };
++		},
++	};
++}
+diff --git a/packages/ai/src/auth/oauth/load.ts b/packages/ai/src/auth/oauth/load.ts
+index be63e8acf..99fb6d721 100644
+--- a/packages/ai/src/auth/oauth/load.ts
++++ b/packages/ai/src/auth/oauth/load.ts
+@@ -1,4 +1,5 @@
+ import type { OAuthAuth } from "../types.ts";
++import type { GoogleAiPlanClient } from "./google-ai-plan.ts";
+ 
+ /**
+  * Loads an OAuth flow module through a variable specifier so bundlers cannot
+@@ -19,6 +20,7 @@ type OAuthFlowLoaders = {
+ 	openaiCodex: () => OAuthAuth | Promise<OAuthAuth>;
+ 	openaiChatGPT: () => OAuthAuth | Promise<OAuthAuth>;
+ 	githubCopilot: () => OAuthAuth | Promise<OAuthAuth>;
++	googleAiPlan: (client: GoogleAiPlanClient) => OAuthAuth | Promise<OAuthAuth>;
+ 	openrouter: () => OAuthAuth | Promise<OAuthAuth>;
+ 	kimiCoding: () => OAuthAuth | Promise<OAuthAuth>;
+ 	meta: () => OAuthAuth | Promise<OAuthAuth>;
+@@ -53,6 +55,15 @@ export const loadGitHubCopilotOAuth = async (): Promise<OAuthAuth> => {
+ 	return ((await importOAuthModule("./github-copilot.ts")) as { githubCopilotOAuth: OAuthAuth }).githubCopilotOAuth;
+ };
+ 
++export const loadGoogleAiPlanOAuth = async (client: GoogleAiPlanClient): Promise<OAuthAuth> => {
++	if (bundledLoaders) return bundledLoaders.googleAiPlan(client);
++	return (
++		(await importOAuthModule("./google-ai-plan.ts")) as {
++			createGoogleAiPlanOAuth: (client: GoogleAiPlanClient) => OAuthAuth;
++		}
++	).createGoogleAiPlanOAuth(client);
++};
++
+ export const loadOpenRouterOAuth = async (): Promise<OAuthAuth> => {
+ 	if (bundledLoaders) return bundledLoaders.openrouter();
+ 	return ((await importOAuthModule("./openrouter.ts")) as { openRouterOAuth: OAuthAuth }).openRouterOAuth;
+diff --git a/packages/ai/src/bun-oauth.ts b/packages/ai/src/bun-oauth.ts
+index 5e77cf1b6..be411b30d 100644
+--- a/packages/ai/src/bun-oauth.ts
++++ b/packages/ai/src/bun-oauth.ts
+@@ -1,5 +1,6 @@
+ import { anthropicOAuth } from "./auth/oauth/anthropic.ts";
+ import { githubCopilotOAuth } from "./auth/oauth/github-copilot.ts";
++import { createGoogleAiPlanOAuth } from "./auth/oauth/google-ai-plan.ts";
+ import { kimiCodingOAuth } from "./auth/oauth/kimi-coding.ts";
+ import { registerBundledOAuthFlowLoaders } from "./auth/oauth/load.ts";
+ import { metaOAuth } from "./auth/oauth/meta.ts";
+@@ -16,6 +17,7 @@ export function registerBunOAuthFlows(): void {
+ 		openaiCodex: () => openaiCodexOAuth,
+ 		openaiChatGPT: () => openaiChatGPTOAuth,
+ 		githubCopilot: () => githubCopilotOAuth,
++		googleAiPlan: createGoogleAiPlanOAuth,
+ 		openrouter: () => openRouterOAuth,
+ 		kimiCoding: () => kimiCodingOAuth,
+ 		meta: () => metaOAuth,
+diff --git a/packages/ai/src/compat.ts b/packages/ai/src/compat.ts
+index e41ff083c..5b0c184a6 100644
+--- a/packages/ai/src/compat.ts
++++ b/packages/ai/src/compat.ts
+@@ -14,6 +14,7 @@ export * from "./api/anthropic-messages.lazy.ts";
+ export * from "./api/azure-openai-responses.lazy.ts";
+ export * from "./api/bedrock-converse-stream.lazy.ts";
+ export * from "./api/google-generative-ai.lazy.ts";
++export * from "./api/google-interactions.lazy.ts";
+ export * from "./api/google-vertex.lazy.ts";
+ export * from "./api/mistral-conversations.lazy.ts";
+ export * from "./api/openai-codex-responses.lazy.ts";
+@@ -32,6 +33,7 @@ import { anthropicMessagesApi } from "./api/anthropic-messages.lazy.ts";
+ import { azureOpenAIResponsesApi } from "./api/azure-openai-responses.lazy.ts";
+ import { bedrockConverseStreamApi } from "./api/bedrock-converse-stream.lazy.ts";
+ import { googleGenerativeAIApi } from "./api/google-generative-ai.lazy.ts";
++import { googleInteractionsApi } from "./api/google-interactions.lazy.ts";
+ import { googleVertexApi } from "./api/google-vertex.lazy.ts";
+ import { mistralConversationsApi } from "./api/mistral-conversations.lazy.ts";
+ import { openAICodexResponsesApi } from "./api/openai-codex-responses.lazy.ts";
+@@ -185,6 +187,7 @@ const BUILTIN_APIS: [Api, ProviderStreams][] = [
+ 	["azure-openai-responses", azureOpenAIResponsesApi()],
+ 	["google-generative-ai", googleGenerativeAIApi()],
+ 	["google-vertex", googleVertexApi()],
++	["google-interactions", googleInteractionsApi()],
+ 	["mistral-conversations", mistralConversationsApi()],
+ 	["bedrock-converse-stream", bedrockConverseStreamApi()],
+ 	["pi-messages", piMessagesApi()],
+diff --git a/packages/ai/src/index.ts b/packages/ai/src/index.ts
+index e3cedecc4..ebff33ebc 100644
+--- a/packages/ai/src/index.ts
++++ b/packages/ai/src/index.ts
+@@ -7,6 +7,7 @@ export type { AnthropicEffort, AnthropicOptions, AnthropicThinkingDisplay } from
+ export type { AzureOpenAIResponsesOptions } from "./api/azure-openai-responses.ts";
+ export type { BedrockOptions, BedrockThinkingDisplay } from "./api/bedrock-converse-stream.ts";
+ export type { GoogleOptions } from "./api/google-generative-ai.ts";
++export type { GoogleInteractionsOptions } from "./api/google-interactions.ts";
+ export type { GoogleApiThinkingLevel, ResolvedGoogleThinkingLevel } from "./api/google-shared.ts";
+ export type { GoogleVertexOptions } from "./api/google-vertex.ts";
+ export * from "./api/lazy.ts";
+diff --git a/packages/ai/src/lazy-oauth.ts b/packages/ai/src/lazy-oauth.ts
+index e05bd3bc2..2fc1f17b4 100644
+--- a/packages/ai/src/lazy-oauth.ts
++++ b/packages/ai/src/lazy-oauth.ts
+@@ -14,6 +14,7 @@ export function registerLazyOAuthFlows(): void {
+ 		openaiCodex: async () => (await import("./auth/oauth/openai-codex.ts")).openaiCodexOAuth,
+ 		openaiChatGPT: async () => (await import("./auth/oauth/openai-chatgpt.ts")).openaiChatGPTOAuth,
+ 		githubCopilot: async () => (await import("./auth/oauth/github-copilot.ts")).githubCopilotOAuth,
++		googleAiPlan: async (client) => (await import("./auth/oauth/google-ai-plan.ts")).createGoogleAiPlanOAuth(client),
+ 		openrouter: async () => (await import("./auth/oauth/openrouter.ts")).openRouterOAuth,
+ 		kimiCoding: async () => (await import("./auth/oauth/kimi-coding.ts")).kimiCodingOAuth,
+ 		meta: async () => (await import("./auth/oauth/meta.ts")).metaOAuth,
+diff --git a/packages/ai/src/models.generated.ts b/packages/ai/src/models.generated.ts
+index cdb407555..06afe3dbe 100644
+--- a/packages/ai/src/models.generated.ts
++++ b/packages/ai/src/models.generated.ts
+@@ -13,6 +13,7 @@ import { DEEPSEEK_CLASSIFIER_MODELS, DEEPSEEK_IMAGE_MODELS, DEEPSEEK_MODELS } fr
+ import { FIREWORKS_CLASSIFIER_MODELS, FIREWORKS_IMAGE_MODELS, FIREWORKS_MODELS } from "./providers/fireworks.models.ts";
+ import { GITHUB_COPILOT_CLASSIFIER_MODELS, GITHUB_COPILOT_IMAGE_MODELS, GITHUB_COPILOT_MODELS } from "./providers/github-copilot.models.ts";
+ import { GOOGLE_CLASSIFIER_MODELS, GOOGLE_IMAGE_MODELS, GOOGLE_MODELS } from "./providers/google.models.ts";
++import { GOOGLE_AI_PLAN_CLASSIFIER_MODELS, GOOGLE_AI_PLAN_IMAGE_MODELS, GOOGLE_AI_PLAN_MODELS } from "./providers/google-ai-plan.models.ts";
+ import { GOOGLE_VERTEX_CLASSIFIER_MODELS, GOOGLE_VERTEX_IMAGE_MODELS, GOOGLE_VERTEX_MODELS } from "./providers/google-vertex.models.ts";
+ import { GROQ_CLASSIFIER_MODELS, GROQ_IMAGE_MODELS, GROQ_MODELS } from "./providers/groq.models.ts";
+ import { HUGGINGFACE_CLASSIFIER_MODELS, HUGGINGFACE_IMAGE_MODELS, HUGGINGFACE_MODELS } from "./providers/huggingface.models.ts";
+@@ -58,6 +59,7 @@ export const MODELS: {
+ 	readonly "fireworks": typeof FIREWORKS_MODELS;
+ 	readonly "github-copilot": typeof GITHUB_COPILOT_MODELS;
+ 	readonly "google": typeof GOOGLE_MODELS;
++	readonly "google-ai-plan": typeof GOOGLE_AI_PLAN_MODELS;
+ 	readonly "google-vertex": typeof GOOGLE_VERTEX_MODELS;
+ 	readonly "groq": typeof GROQ_MODELS;
+ 	readonly "huggingface": typeof HUGGINGFACE_MODELS;
+@@ -102,6 +104,7 @@ export const MODELS: {
+ 	"fireworks": FIREWORKS_MODELS,
+ 	"github-copilot": GITHUB_COPILOT_MODELS,
+ 	"google": GOOGLE_MODELS,
++	"google-ai-plan": GOOGLE_AI_PLAN_MODELS,
+ 	"google-vertex": GOOGLE_VERTEX_MODELS,
+ 	"groq": GROQ_MODELS,
+ 	"huggingface": HUGGINGFACE_MODELS,
+@@ -148,6 +151,7 @@ export const IMAGE_MODELS: {
+ 	readonly "fireworks": typeof FIREWORKS_IMAGE_MODELS;
+ 	readonly "github-copilot": typeof GITHUB_COPILOT_IMAGE_MODELS;
+ 	readonly "google": typeof GOOGLE_IMAGE_MODELS;
++	readonly "google-ai-plan": typeof GOOGLE_AI_PLAN_IMAGE_MODELS;
+ 	readonly "google-vertex": typeof GOOGLE_VERTEX_IMAGE_MODELS;
+ 	readonly "groq": typeof GROQ_IMAGE_MODELS;
+ 	readonly "huggingface": typeof HUGGINGFACE_IMAGE_MODELS;
+@@ -192,6 +196,7 @@ export const IMAGE_MODELS: {
+ 	"fireworks": FIREWORKS_IMAGE_MODELS,
+ 	"github-copilot": GITHUB_COPILOT_IMAGE_MODELS,
+ 	"google": GOOGLE_IMAGE_MODELS,
++	"google-ai-plan": GOOGLE_AI_PLAN_IMAGE_MODELS,
+ 	"google-vertex": GOOGLE_VERTEX_IMAGE_MODELS,
+ 	"groq": GROQ_IMAGE_MODELS,
+ 	"huggingface": HUGGINGFACE_IMAGE_MODELS,
+@@ -238,6 +243,7 @@ export const CLASSIFIER_MODELS: {
+ 	readonly "fireworks": typeof FIREWORKS_CLASSIFIER_MODELS;
+ 	readonly "github-copilot": typeof GITHUB_COPILOT_CLASSIFIER_MODELS;
+ 	readonly "google": typeof GOOGLE_CLASSIFIER_MODELS;
++	readonly "google-ai-plan": typeof GOOGLE_AI_PLAN_CLASSIFIER_MODELS;
+ 	readonly "google-vertex": typeof GOOGLE_VERTEX_CLASSIFIER_MODELS;
+ 	readonly "groq": typeof GROQ_CLASSIFIER_MODELS;
+ 	readonly "huggingface": typeof HUGGINGFACE_CLASSIFIER_MODELS;
+@@ -282,6 +288,7 @@ export const CLASSIFIER_MODELS: {
+ 	"fireworks": FIREWORKS_CLASSIFIER_MODELS,
+ 	"github-copilot": GITHUB_COPILOT_CLASSIFIER_MODELS,
+ 	"google": GOOGLE_CLASSIFIER_MODELS,
++	"google-ai-plan": GOOGLE_AI_PLAN_CLASSIFIER_MODELS,
+ 	"google-vertex": GOOGLE_VERTEX_CLASSIFIER_MODELS,
+ 	"groq": GROQ_CLASSIFIER_MODELS,
+ 	"huggingface": HUGGINGFACE_CLASSIFIER_MODELS,
+diff --git a/packages/ai/src/providers/all.ts b/packages/ai/src/providers/all.ts
+index ed872eb81..5aa13c310 100644
+--- a/packages/ai/src/providers/all.ts
++++ b/packages/ai/src/providers/all.ts
+@@ -14,6 +14,7 @@ import { deepseekProvider } from "./deepseek.ts";
+ import { fireworksProvider } from "./fireworks.ts";
+ import { githubCopilotProvider } from "./github-copilot.ts";
+ import { googleProvider } from "./google.ts";
++import { googleAiPlanProvider } from "./google-ai-plan.ts";
+ import { googleVertexProvider } from "./google-vertex.ts";
+ import { groqProvider } from "./groq.ts";
+ import { huggingfaceProvider } from "./huggingface.ts";
+@@ -46,7 +47,7 @@ import { xiaomiTokenPlanSgpProvider } from "./xiaomi-token-plan-sgp.ts";
+ import { zaiProvider } from "./zai.ts";
+ import { zaiCodingCnProvider } from "./zai-coding-cn.ts";
+ 
+-export { radiusProvider };
++export { googleAiPlanProvider, radiusProvider };
+ 
+ /** Providers present in the generated catalog. `KnownProvider` additionally
+  * includes purely dynamic providers (e.g. "radius") that have no static
+@@ -133,7 +134,10 @@ export function getAllBuiltinModels<TProvider extends BuiltinProvider>(provider:
+ 	return [...getBuiltinModels(provider), ...getBuiltinImageModels(provider), ...getBuiltinClassifierModels(provider)];
+ }
+ 
+-/** All built-in providers, freshly constructed. */
++/**
++ * All built-in providers, freshly constructed, except `google-ai-plan`, which needs the app's own Google client
++ * (see `googleAiPlanProvider`).
++ */
+ export function builtinProviders(): Provider[] {
+ 	return [
+ 		amazonBedrockProvider(),
+diff --git a/packages/ai/src/providers/google-ai-plan.models.ts b/packages/ai/src/providers/google-ai-plan.models.ts
+new file mode 100644
+index 000000000..2f57967e5
+--- /dev/null
++++ b/packages/ai/src/providers/google-ai-plan.models.ts
+@@ -0,0 +1,14 @@
++// This file is auto-generated by catalog/generate.ts
++// Do not edit manually - run 'npm run generate-models' to update
++
++import values from "./data/google-ai-plan.json" with { type: "json" };
++import { flattenChatModelCatalog, flattenClassifierModelCatalog, flattenImageModelCatalog, type ChatModelCatalog, type ClassifierModelCatalog, type ImageModelCatalog } from "../model-catalog.ts";
++
++export const GOOGLE_AI_PLAN_MODELS: ChatModelCatalog<typeof values, "google-ai-plan"> =
++	flattenChatModelCatalog("google-ai-plan", values);
++
++export const GOOGLE_AI_PLAN_IMAGE_MODELS: ImageModelCatalog<typeof values, "google-ai-plan"> =
++	flattenImageModelCatalog("google-ai-plan", values);
++
++export const GOOGLE_AI_PLAN_CLASSIFIER_MODELS: ClassifierModelCatalog<typeof values, "google-ai-plan"> =
++	flattenClassifierModelCatalog("google-ai-plan", values);
+diff --git a/packages/ai/src/providers/google-ai-plan.ts b/packages/ai/src/providers/google-ai-plan.ts
+new file mode 100644
+index 000000000..4fa2758b0
+--- /dev/null
++++ b/packages/ai/src/providers/google-ai-plan.ts
+@@ -0,0 +1,30 @@
++import { googleInteractionsApi } from "../api/google-interactions.lazy.ts";
++import { lazyOAuth } from "../auth/helpers.ts";
++import type { GoogleAiPlanClient } from "../auth/oauth/google-ai-plan.ts";
++import { loadGoogleAiPlanOAuth } from "../auth/oauth/load.ts";
++import { createProvider, type Provider } from "../models.ts";
++import { GOOGLE_AI_PLAN_MODELS } from "./google-ai-plan.models.ts";
++
++export type { GoogleAiPlanClient };
++
++/**
++ * Google AI Ultra plan provider, signing in with the app's own Google client. Not part of `builtinProviders()`:
++ * Google approves each app's client separately, so an app must register its own and add this provider itself.
++ */
++export function googleAiPlanProvider(client: GoogleAiPlanClient): Provider<"google-interactions"> {
++	return createProvider({
++		id: "google-ai-plan",
++		name: "Google AI Ultra plan",
++		baseUrl: "https://generativelanguage.googleapis.com/v1beta",
++		auth: {
++			oauth: lazyOAuth({
++				name: "Google AI Ultra plan",
++				isSubscription: true,
++				loginLabel: "Sign in with Google (AI Ultra)",
++				load: () => loadGoogleAiPlanOAuth(client),
++			}),
++		},
++		models: Object.values(GOOGLE_AI_PLAN_MODELS),
++		api: googleInteractionsApi(),
++	});
++}
+diff --git a/packages/ai/src/types.ts b/packages/ai/src/types.ts
+index 87d582711..cb7a08286 100644
+--- a/packages/ai/src/types.ts
++++ b/packages/ai/src/types.ts
+@@ -3,6 +3,7 @@ import type { AnthropicOptions } from "./api/anthropic-messages.ts";
+ import type { AzureOpenAIResponsesOptions } from "./api/azure-openai-responses.ts";
+ import type { BedrockOptions } from "./api/bedrock-converse-stream.ts";
+ import type { GoogleOptions } from "./api/google-generative-ai.ts";
++import type { GoogleInteractionsOptions } from "./api/google-interactions.ts";
+ import type { GoogleVertexOptions } from "./api/google-vertex.ts";
+ import type { MistralOptions } from "./api/mistral-conversations.ts";
+ import type { OpenAICodexResponsesOptions } from "./api/openai-codex-responses.ts";
+@@ -73,6 +74,7 @@ export type KnownApi =
+ 	| "bedrock-converse-stream"
+ 	| "google-generative-ai"
+ 	| "google-vertex"
++	| "google-interactions"
+ 	| "pi-messages";
+ 
+ export type Api = KnownApi | (string & {});
+@@ -95,6 +97,7 @@ export type KnownProvider =
+ 	| "ant-ling"
+ 	| "anthropic"
+ 	| "google"
++	| "google-ai-plan"
+ 	| "google-vertex"
+ 	| "openai"
+ 	| "azure"
+@@ -309,6 +312,7 @@ export interface ApiOptionsMap {
+ 	"azure-openai-responses": AzureOpenAIResponsesOptions;
+ 	"google-generative-ai": GoogleOptions;
+ 	"google-vertex": GoogleVertexOptions;
++	"google-interactions": GoogleInteractionsOptions;
+ 	"mistral-conversations": MistralOptions;
+ 	"bedrock-converse-stream": BedrockOptions;
+ 	"pi-messages": PiMessagesOptions;
+diff --git a/packages/ai/src/utils/retry.ts b/packages/ai/src/utils/retry.ts
+index 829996e8f..3e7c26d30 100644
+--- a/packages/ai/src/utils/retry.ts
++++ b/packages/ai/src/utils/retry.ts
+@@ -32,6 +32,12 @@ const NON_RETRYABLE_PROVIDER_LIMIT_ERROR_PATTERN = buildProviderErrorPattern([
+ 	// Zhipu/Z.ai (open.bigmodel.cn) error code 1308: the plan's usage limit is
+ 	// reached, sent as HTTP 429. It resets after hours, not seconds (#11537).
+ 	'"code"\\s*:\\s*"?1308(?![0-9])',
++
++	// Google AI Ultra plan: a model's daily limit, which resets at midnight Pacific time, and a model the plan
++	// does not include (a 429 with a daily limit of zero). api/google-interactions-errors.ts adds these hints to
++	// Google's text, which may read "429 ... rate limit exceeded".
++	"Daily limit reached for",
++	"is not available on the Google AI Ultra plan",
+ ]);
+ 
+ const RETRYABLE_PROVIDER_ERROR_PATTERN = buildProviderErrorPattern([
+diff --git a/packages/ai/test/google-ai-plan-oauth.test.ts b/packages/ai/test/google-ai-plan-oauth.test.ts
+new file mode 100644
+index 000000000..f4fca1590
+--- /dev/null
++++ b/packages/ai/test/google-ai-plan-oauth.test.ts
+@@ -0,0 +1,151 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { createGoogleAiPlanOAuth } from "../src/auth/oauth/google-ai-plan.ts";
++import type { OAuthCredential } from "../src/auth/types.ts";
++
++const signal = new AbortController().signal;
++const googleAiPlanOAuth = createGoogleAiPlanOAuth({ clientId: "app-client", clientSecret: "app-secret" });
++
++async function credential(): Promise<OAuthCredential> {
++	const { privateKey } = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign"]);
++	const { kty, crv, x, y, d } = await crypto.subtle.exportKey("jwk", privateKey);
++	return { type: "oauth", access: "old", refresh: "refresh-token", expires: 0, dpopKey: { kty, crv, x, y, d } };
++}
++
++/** The claims of the DPoP proof sent with a token request. */
++function proofClaims(init: RequestInit | undefined): { jti: string; nonce?: string; iat: number } {
++	const proof = (init?.headers as Record<string, string>).DPoP;
++	return JSON.parse(Buffer.from(proof.split(".")[1], "base64url").toString("utf8"));
++}
++
++function tokenError(error: string, headers: Record<string, string>): Response {
++	return new Response(JSON.stringify({ error }), { status: 400, headers });
++}
++
++const TOKENS = JSON.stringify({ access_token: "new", expires_in: 3599 });
++
++/** Run `login` with the user pasting a URL built from the sign-in link's `state`. */
++async function loginWithPastedUrl(buildUrl: (redirectUri: string, state: string) => string) {
++	let authUrl = "";
++	return googleAiPlanOAuth.login({
++		signal,
++		notify: (event) => {
++			if (event.type === "auth_url") authUrl = event.url;
++		},
++		prompt: async () => {
++			const params = new URL(authUrl).searchParams;
++			return buildUrl(params.get("redirect_uri")!, params.get("state")!);
++		},
++	});
++}
++
++describe("Google AI Ultra plan sign-in with a pasted URL", () => {
++	afterEach(() => {
++		vi.unstubAllGlobals();
++	});
++
++	it("rejects a URL without the sign-in's state, before exchanging the code", async () => {
++		const fetchMock = vi.fn();
++		vi.stubGlobal("fetch", fetchMock);
++
++		await expect(loginWithPastedUrl((redirectUri) => `${redirectUri}?code=4%2F0Aabc`)).rejects.toThrow(
++			"Sign-in state mismatch",
++		);
++		await expect(
++			loginWithPastedUrl((redirectUri) => `${redirectUri}?code=4%2F0Aabc&state=someone-else`),
++		).rejects.toThrow("Sign-in state mismatch");
++		expect(fetchMock).not.toHaveBeenCalled();
++	});
++
++	it("exchanges the decoded code from a matching URL with the app's client", async () => {
++		let sent = new URLSearchParams();
++		vi.stubGlobal("fetch", async (_url: unknown, init?: RequestInit) => {
++			sent = new URLSearchParams(String(init?.body));
++			return tokenError("invalid_grant", {});
++		});
++
++		await expect(
++			loginWithPastedUrl((redirectUri, state) => `${redirectUri}?state=${state}&code=4%2F0Aabc`),
++		).rejects.toThrow("Google sign-in failed: 400 invalid_grant");
++		expect(sent.get("code")).toBe("4/0Aabc");
++		expect(sent.get("client_id")).toBe("app-client");
++		expect(sent.get("client_secret")).toBe("app-secret");
++	});
++});
++
++describe("Google AI Ultra plan token refresh", () => {
++	afterEach(() => {
++		vi.unstubAllGlobals();
++	});
++
++	it("retries once with Google's time when the local clock is ahead", async () => {
++		const serverDate = "Wed, 25 Nov 2026 12:00:00 GMT";
++		const proofs: ReturnType<typeof proofClaims>[] = [];
++		const responses = [
++			tokenError("invalid_dpop_proof", { date: serverDate }),
++			new Response(TOKENS, { headers: { "dpop-nonce": "n1" } }),
++		];
++		vi.stubGlobal("fetch", async (_url: unknown, init?: RequestInit) => {
++			proofs.push(proofClaims(init));
++			return responses.shift()!;
++		});
++
++		const next = await googleAiPlanOAuth.refresh(await credential(), signal);
++
++		expect(proofs).toHaveLength(2);
++		expect(proofs[1].iat).toBe(Date.parse(serverDate) / 1000);
++		expect(proofs[1].jti).not.toBe(proofs[0].jti);
++		expect(next.access).toBe("new");
++		expect(next.dpopNonce).toBe("n1");
++	});
++
++	it("handles a nonce rejection and a clock rejection in one refresh", async () => {
++		const serverDate = "Wed, 25 Nov 2026 12:00:00 GMT";
++		const proofs: ReturnType<typeof proofClaims>[] = [];
++		const responses = [
++			tokenError("use_dpop_nonce", { "dpop-nonce": "n1", date: serverDate }),
++			tokenError("invalid_dpop_proof", { date: serverDate }),
++			new Response(TOKENS),
++		];
++		vi.stubGlobal("fetch", async (_url: unknown, init?: RequestInit) => {
++			proofs.push(proofClaims(init));
++			return responses.shift()!;
++		});
++
++		const next = await googleAiPlanOAuth.refresh(await credential(), signal);
++
++		expect(proofs.map((p) => p.nonce)).toEqual([undefined, "n1", "n1"]);
++		expect(proofs[2].iat).toBe(Date.parse(serverDate) / 1000);
++		expect(next.access).toBe("new");
++	});
++
++	it("keeps the nonce that worked when the successful response sends none", async () => {
++		const responses = [tokenError("use_dpop_nonce", { "dpop-nonce": "n2" }), new Response(TOKENS)];
++		vi.stubGlobal("fetch", async () => responses.shift()!);
++
++		const next = await googleAiPlanOAuth.refresh({ ...(await credential()), dpopNonce: "n1" }, signal);
++
++		expect(next.dpopNonce).toBe("n2");
++	});
++
++	it.each(["invalid_grant", "unauthorized_client"])("asks to sign in again on %s", async (error) => {
++		vi.stubGlobal("fetch", async () => tokenError(error, {}));
++
++		await expect(googleAiPlanOAuth.refresh(await credential(), signal)).rejects.toThrow(
++			"Run /login to sign in again.",
++		);
++	});
++
++	it("gives up after one clock retry", async () => {
++		const serverDate = "Wed, 25 Nov 2026 12:00:00 GMT";
++		let calls = 0;
++		vi.stubGlobal("fetch", async () => {
++			calls++;
++			return tokenError("invalid_dpop_proof", { date: serverDate });
++		});
++
++		await expect(googleAiPlanOAuth.refresh(await credential(), signal)).rejects.toThrow(
++			"Google token refresh failed: 400 invalid_dpop_proof",
++		);
++		expect(calls).toBe(2);
++	});
++});
+diff --git a/packages/ai/test/google-interactions-errors.test.ts b/packages/ai/test/google-interactions-errors.test.ts
+new file mode 100644
+index 000000000..5d0d84a4b
+--- /dev/null
++++ b/packages/ai/test/google-interactions-errors.test.ts
+@@ -0,0 +1,200 @@
++import { describe, expect, it } from "vitest";
++import { stream } from "../src/api/google-interactions.ts";
++import { classifyGoogleInteractionsError } from "../src/api/google-interactions-errors.ts";
++import { GOOGLE_AI_PLAN_MODELS } from "../src/providers/google-ai-plan.models.ts";
++import type { FetchFunction } from "../src/types.ts";
++import { isRetryableAssistantError } from "../src/utils/retry.ts";
++import { normalizeContext } from "../src/utils/transcript.ts";
++
++const DAILY_LIMIT_BODY = JSON.stringify({
++	error: {
++		code: "too_many_requests",
++		message:
++			"You've reached today's AI Ultra limit for gemini-4-hydrogen in third-party apps. Your daily limit refreshes in 5 hours, 18 minutes. Until then, you can switch to other models.",
++	},
++});
++
++function classify(status: number, body: string, headers: Record<string, string> = {}) {
++	return classifyGoogleInteractionsError({
++		status,
++		headers: new Headers(headers),
++		body,
++		modelId: "gemini-4-hydrogen",
++	});
++}
++
++const PER_DAY_QUOTA_BODY = (quotaValue: string) =>
++	JSON.stringify({
++		error: {
++			message: "Resource exhausted.",
++			details: [
++				{
++					"@type": "type.googleapis.com/google.rpc.QuotaFailure",
++					violations: [{ quotaId: "GenerateRequestsPerDayPerUserPerModel", quotaValue }],
++				},
++			],
++		},
++	});
++
++const ZERO_LIMIT_BODY = JSON.stringify({
++	error: { message: "Rate limit exceeded for model gemini-4-argon (limit: 0 tokens per day)" },
++});
++
++describe("classifyGoogleInteractionsError", () => {
++	it("does not retry a daily-limit 429 and keeps Google's text, which already says when it resets", () => {
++		expect(classify(429, DAILY_LIMIT_BODY, { "retry-after": "19104" })).toEqual({
++			message:
++				"429 You've reached today's AI Ultra limit for gemini-4-hydrogen in third-party apps. Your daily limit refreshes in 5 hours, 18 minutes. Until then, you can switch to other models. Daily limit reached for gemini-4-hydrogen: switch to another model, or use a Gemini API key.",
++			final: true,
++		});
++	});
++
++	it("adds the reset time from Retry-After to a per-day quota violation", () => {
++		expect(classify(429, PER_DAY_QUOTA_BODY("1000000"), { "retry-after": "19104" })).toEqual({
++			message:
++				"429 Resource exhausted. Daily limit reached for gemini-4-hydrogen (resets in 5h 19m): switch to another model, or use a Gemini API key.",
++			final: true,
++		});
++		expect(classify(429, PER_DAY_QUOTA_BODY("1000000"), { "retry-after": "7199" }).message).toContain(
++			"(resets in 2h 0m)",
++		);
++	});
++
++	it("reports a daily limit of zero as a model the plan does not include", () => {
++		const hint = "gemini-4-hydrogen is not available on the Google AI Ultra plan. Choose another model.";
++		expect(classify(429, PER_DAY_QUOTA_BODY("0"))).toEqual({
++			message: `429 Resource exhausted. ${hint}`,
++			final: true,
++		});
++		expect(classify(429, ZERO_LIMIT_BODY)).toEqual({
++			message: `429 Rate limit exceeded for model gemini-4-argon (limit: 0 tokens per day) ${hint}`,
++			final: true,
++		});
++	});
++
++	it("leaves a per-minute 429 to the shared retry rules", () => {
++		const error = classify(429, JSON.stringify({ error: { message: "Too many requests." } }));
++		expect(error).toEqual({ message: "429 Too many requests.", final: false });
++	});
++
++	it("reports models outside the plan", () => {
++		const body = JSON.stringify({
++			error: {
++				message: "Model gemini-4-argon is not supported for per-user quota requests.",
++				code: "invalid_request",
++			},
++		});
++		const error = classifyGoogleInteractionsError({
++			status: 400,
++			headers: new Headers(),
++			body,
++			modelId: "gemini-4-argon",
++		});
++		expect(error.message).toBe(
++			"400 Model gemini-4-argon is not supported for per-user quota requests. gemini-4-argon is not available on the Google AI Ultra plan. Choose another model.",
++		);
++	});
++
++	it("asks to sign in again on 401 bodies sent as JSON arrays", () => {
++		const body = JSON.stringify([
++			{
++				error: { code: 401, message: "Request had invalid authentication credentials.", status: "UNAUTHENTICATED" },
++			},
++		]);
++		expect(classify(401, body).message).toBe(
++			"401 Request had invalid authentication credentials. Run /login to sign in again.",
++		);
++	});
++
++	it("tells scope, disabled-service and plan errors apart", () => {
++		const errorInfo = (reason: string) =>
++			JSON.stringify([
++				{
++					error: {
++						code: 403,
++						message: "Permission denied.",
++						details: [{ "@type": "type.googleapis.com/google.rpc.ErrorInfo", reason }],
++					},
++				},
++			]);
++		expect(classify(403, errorInfo("ACCESS_TOKEN_SCOPE_INSUFFICIENT")).message).toBe(
++			"403 Permission denied. Run /login to sign in again.",
++		);
++		expect(
++			classify(403, JSON.stringify({ error: { message: "Request had insufficient authentication scopes." } }))
++				.message,
++		).toBe("403 Request had insufficient authentication scopes. Run /login to sign in again.");
++		expect(classify(403, errorInfo("SERVICE_DISABLED")).message).toBe(
++			"403 Permission denied. The Google AI Ultra plan is currently unavailable in pi.",
++		);
++		expect(classify(403, JSON.stringify({ error: { message: "Permission denied." } })).message).toBe(
++			"403 Permission denied. Your Google account does not have an eligible Google AI Ultra plan. Upgrade at https://one.google.com/ai, or use a Gemini API key.",
++		);
++	});
++
++	it("reads the message from an SSE error frame", () => {
++		const body =
++			'event: error\ndata: {"error":{"message":"Function call is missing a thought_signature.","code":"invalid_request"},"event_type":"error"}\n\n';
++		expect(classify(400, body)).toEqual({
++			message: "400 Function call is missing a thought_signature.",
++			final: false,
++		});
++	});
++});
++
++describe("google-interactions stream errors", () => {
++	const model = GOOGLE_AI_PLAN_MODELS["gemini-4-hydrogen"];
++	const context = normalizeContext({ messages: [{ role: "user", content: "hi", timestamp: 0 }] });
++
++	async function run(responses: Response[]) {
++		let calls = 0;
++		const fetch: FetchFunction = async () => responses[calls++]!;
++		const result = await stream(model, context, {
++			headers: { Authorization: "Bearer token" },
++			fetch,
++			maxRetries: 2,
++		}).result();
++		return { result, calls };
++	}
++
++	it("does not retry a daily limit, at request or agent level", async () => {
++		const { result, calls } = await run([
++			new Response(DAILY_LIMIT_BODY, { status: 429 }),
++			new Response(DAILY_LIMIT_BODY, { status: 429 }),
++		]);
++		expect(calls).toBe(1);
++		expect(result.stopReason).toBe("error");
++		expect(result.errorMessage).toContain("Daily limit reached for gemini-4-hydrogen");
++		expect(isRetryableAssistantError(result)).toBe(false);
++	});
++
++	it("does not retry a model the plan does not include, at request or agent level", async () => {
++		const { result, calls } = await run([
++			new Response(ZERO_LIMIT_BODY, { status: 429 }),
++			new Response(ZERO_LIMIT_BODY, { status: 429 }),
++		]);
++		expect(calls).toBe(1);
++		expect(result.errorMessage).toContain("is not available on the Google AI Ultra plan");
++		expect(isRetryableAssistantError(result)).toBe(false);
++	});
++
++	it("retries a per-minute 429 and then streams the answer", async () => {
++		const events = [
++			{ event_type: "step.start", index: 0, step: { type: "model_output" } },
++			{ event_type: "step.delta", index: 0, delta: { type: "text", text: "hello" } },
++			{ event_type: "step.stop", index: 0 },
++			{ event_type: "interaction.completed", interaction: { id: "i1", status: "completed" } },
++		];
++		const sse = events.map((event) => `event: ${event.event_type}\ndata: ${JSON.stringify(event)}\n\n`).join("");
++		const { result, calls } = await run([
++			new Response(JSON.stringify({ error: { message: "Too many requests." } }), {
++				status: 429,
++				headers: { "retry-after": "0" },
++			}),
++			new Response(sse, { status: 200 }),
++		]);
++		expect(calls).toBe(2);
++		expect(result.stopReason).toBe("stop");
++		expect(result.content).toEqual([{ type: "text", text: "hello" }]);
++	});
++});
+diff --git a/packages/ai/test/google-interactions-replay.test.ts b/packages/ai/test/google-interactions-replay.test.ts
+new file mode 100644
+index 000000000..229173a12
+--- /dev/null
++++ b/packages/ai/test/google-interactions-replay.test.ts
+@@ -0,0 +1,77 @@
++import { describe, expect, it } from "vitest";
++import { stream } from "../src/api/google-interactions.ts";
++import { GOOGLE_AI_PLAN_MODELS } from "../src/providers/google-ai-plan.models.ts";
++import type { AssistantMessage, FetchFunction, Message } from "../src/types.ts";
++import { normalizeContext } from "../src/utils/transcript.ts";
++
++const model = GOOGLE_AI_PLAN_MODELS["gemini-4-hydrogen"];
++const usage = {
++	input: 0,
++	output: 0,
++	cacheRead: 0,
++	cacheWrite: 0,
++	totalTokens: 0,
++	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
++};
++
++function assistant(source: { api: string; provider: string; model: string }): AssistantMessage {
++	return {
++		role: "assistant",
++		...source,
++		content: [
++			{ type: "thinking", thinking: "Read the file first.", thinkingSignature: "c2lnbmF0dXJl" },
++			{ type: "toolCall", id: "call_1", name: "read_file", arguments: { path: "a.py" } },
++		],
++		usage,
++		stopReason: "toolUse",
++		timestamp: 0,
++	};
++}
++
++const messages = (previous: AssistantMessage): Message[] => [
++	{ role: "user", content: "Read a.py", timestamp: 0 },
++	previous,
++	{
++		role: "toolResult",
++		toolCallId: "call_1",
++		toolName: "read_file",
++		content: [{ type: "text", text: "x = 1" }],
++		isError: false,
++		timestamp: 0,
++	},
++];
++
++async function sentSteps(history: Message[]): Promise<unknown[]> {
++	let body = "";
++	const fetch: FetchFunction = async (_url, init) => {
++		body = String(init?.body);
++		return new Response("", { status: 500 });
++	};
++	await stream(model, normalizeContext({ messages: history }), {
++		headers: { Authorization: "Bearer token" },
++		fetch,
++	}).result();
++	return (JSON.parse(body) as { input: unknown[] }).input;
++}
++
++describe("google-interactions history replay", () => {
++	it("replays the model's own signed thought before its function call", async () => {
++		const steps = await sentSteps(
++			messages(assistant({ api: "google-interactions", provider: model.provider, model: model.id })),
++		);
++		expect(steps.slice(1, 3)).toEqual([
++			{ type: "thought", signature: "c2lnbmF0dXJl", summary: [{ type: "text", text: "Read the file first." }] },
++			{ type: "function_call", id: "call_1", name: "read_file", arguments: { path: "a.py" } },
++		]);
++	});
++
++	it("marks function calls from another model with Google's skip sentinel", async () => {
++		const steps = await sentSteps(
++			messages(assistant({ api: "anthropic-messages", provider: "anthropic", model: "claude-opus-5-5" })),
++		);
++		expect(steps.slice(1, 3)).toEqual([
++			{ type: "thought", signature: "skip_thought_signature_validator" },
++			{ type: "function_call", id: "call_1", name: "read_file", arguments: { path: "a.py" } },
++		]);
++	});
++});
+diff --git a/packages/ai/test/google-interactions.test.ts b/packages/ai/test/google-interactions.test.ts
+new file mode 100644
+index 000000000..c5188ff92
+--- /dev/null
++++ b/packages/ai/test/google-interactions.test.ts
+@@ -0,0 +1,158 @@
++import { Type } from "typebox";
++import { describe, expect, it } from "vitest";
++import { stream, streamSimple } from "../src/api/google-interactions.ts";
++import { GOOGLE_AI_PLAN_MODELS } from "../src/providers/google-ai-plan.models.ts";
++import type { FetchFunction } from "../src/types.ts";
++import { normalizeContext } from "../src/utils/transcript.ts";
++
++const model = GOOGLE_AI_PLAN_MODELS["gemini-4-hydrogen"];
++const context = normalizeContext({ messages: [{ role: "user", content: "Hi", timestamp: 0 }] });
++const headers = { Authorization: "Bearer token" };
++const encoder = new TextEncoder();
++
++/** One SSE frame in the shape Google sends (`event:` line plus `data:` JSON). */
++function frame(data: { event_type: string } & Record<string, unknown>): string {
++	return `event: ${data.event_type}\ndata: ${JSON.stringify(data)}\n\n`;
++}
++
++function sseResponse(frames: string[]): Response {
++	return new Response(frames.join(""), { status: 200, headers: { "content-type": "text/event-stream" } });
++}
++
++const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
++
++describe("google-interactions stream", () => {
++	// Event shapes from a recorded gemini-4-hydrogen tool turn, plus a summary and a text step.
++	it("turns thought, text and function_call steps into one message", async () => {
++		const frames = [
++			frame({ event_type: "step.start", index: 0, step: { type: "thought" } }),
++			frame({
++				event_type: "step.delta",
++				index: 0,
++				delta: { type: "thought_summary", content: { type: "text", text: "Need the file." } },
++			}),
++			frame({ event_type: "step.delta", index: 0, delta: { type: "thought_signature", signature: "c2ln" } }),
++			frame({ event_type: "step.stop", index: 0 }),
++			frame({ event_type: "step.start", index: 1, step: { type: "model_output" } }),
++			frame({ event_type: "step.delta", index: 1, delta: { type: "text", text: "Reading it." } }),
++			frame({ event_type: "step.stop", index: 1 }),
++			frame({
++				event_type: "step.start",
++				index: 2,
++				step: { type: "function_call", id: "call_1", name: "read_file", arguments: {} },
++			}),
++			frame({ event_type: "step.delta", index: 2, delta: { type: "arguments_delta", arguments: '{"path":' } }),
++			frame({ event_type: "step.delta", index: 2, delta: { type: "arguments_delta", arguments: '"a.py"}' } }),
++			frame({ event_type: "step.stop", index: 2 }),
++			frame({
++				event_type: "interaction.completed",
++				interaction: {
++					status: "requires_action",
++					usage: {
++						total_tokens: 184,
++						total_input_tokens: 114,
++						total_cached_tokens: 10,
++						total_output_tokens: 26,
++						total_thought_tokens: 44,
++					},
++				},
++			}),
++			"event: done\ndata: [DONE]\n\n",
++		];
++		const fetch: FetchFunction = async () => sseResponse(frames);
++
++		const message = await stream(model, context, { headers, fetch }).result();
++
++		expect(message.content).toEqual([
++			{ type: "thinking", thinking: "Need the file.", thinkingSignature: "c2ln" },
++			{ type: "text", text: "Reading it." },
++			{ type: "toolCall", id: "call_1", name: "read_file", arguments: { path: "a.py" } },
++		]);
++		expect(message.stopReason).toBe("toolUse");
++		expect(message.usage).toMatchObject({ input: 104, cacheRead: 10, output: 70, reasoning: 44, totalTokens: 184 });
++	});
++
++	it("fails a stream that closes before interaction.completed", async () => {
++		const fetch: FetchFunction = async () =>
++			sseResponse([
++				frame({ event_type: "step.start", index: 0, step: { type: "model_output" } }),
++				frame({ event_type: "step.delta", index: 0, delta: { type: "text", text: "Partial" } }),
++			]);
++
++		const message = await stream(model, context, { headers, fetch, maxRetries: 0 }).result();
++
++		expect(message.stopReason).toBe("error");
++		expect(message.errorMessage).toContain("Google stream ended before interaction.completed");
++	});
++});
++
++describe("google-interactions request", () => {
++	it("sends a stateless request with a supported thinking level and no sampling settings", async () => {
++		let body: Record<string, unknown> = {};
++		const fetch: FetchFunction = async (_url, init) => {
++			body = JSON.parse(String(init?.body));
++			return new Response("", { status: 500 });
++		};
++		const tool = { name: "read_file", description: "Read a file", parameters: Type.Object({ path: Type.String() }) };
++
++		await streamSimple(
++			model,
++			normalizeContext({
++				systemPrompt: "Be brief.",
++				tools: [tool],
++				messages: [{ role: "user", content: "Hi", timestamp: 0 }],
++			}),
++			// Gemini 4 rejects "minimal" with a 400; the nearest supported level is sent instead.
++			{ headers, fetch, reasoning: "minimal", temperature: 0.5, maxRetries: 0 },
++		).result();
++
++		expect(body).toMatchObject({
++			model: "gemini-4-hydrogen",
++			store: false,
++			stream: true,
++			system_instruction: "Be brief.",
++			tools: [{ type: "function", name: "read_file", description: "Read a file" }],
++			generation_config: { thinking_level: "low", thinking_summaries: "auto" },
++		});
++		expect(body.generation_config).not.toHaveProperty("temperature");
++	});
++});
++
++describe("google-interactions request timeout", () => {
++	it("covers only the wait for the response headers, not a long stream", async () => {
++		const body = new ReadableStream<Uint8Array>({
++			async start(controller) {
++				controller.enqueue(
++					encoder.encode(frame({ event_type: "step.start", index: 0, step: { type: "model_output" } })),
++				);
++				await sleep(100);
++				controller.enqueue(
++					encoder.encode(frame({ event_type: "step.delta", index: 0, delta: { type: "text", text: "Hello" } })),
++				);
++				controller.enqueue(encoder.encode(frame({ event_type: "step.stop", index: 0 })));
++				controller.enqueue(
++					encoder.encode(frame({ event_type: "interaction.completed", interaction: { status: "completed" } })),
++				);
++				controller.close();
++			},
++		});
++		const fetch: FetchFunction = async () => new Response(body, { status: 200 });
++
++		const message = await stream(model, context, { headers, fetch, timeoutMs: 20 }).result();
++
++		expect(message.stopReason).toBe("stop");
++		expect(message.content).toEqual([{ type: "text", text: "Hello" }]);
++	});
++
++	it("fails when the response headers do not arrive in time", async () => {
++		const fetch: FetchFunction = (_url, init) =>
++			new Promise((_resolve, reject) => {
++				init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
++			});
++
++		const message = await stream(model, context, { headers, fetch, timeoutMs: 20, maxRetries: 0 }).result();
++
++		expect(message.stopReason).toBe("error");
++		expect(message.errorMessage).toContain("Google response headers timed out after 20ms");
++	});
++});
+diff --git a/packages/coding-agent/README.md b/packages/coding-agent/README.md
+index db40c5e12..ff0e71089 100644
+--- a/packages/coding-agent/README.md
++++ b/packages/coding-agent/README.md
+@@ -93,3 +93,7 @@ Read [CONTRIBUTING.md](https://github.com/earendil-works/pi/blob/main/CONTRIBUTI
+ ## License
+ 
+ MIT
++
++### Forks and the Google AI Ultra plan sign-in
++
++pi's Google AI Ultra plan sign-in uses a Google OAuth client that Google approved for pi only (`PI_GOOGLE_AI_PLAN_CLIENT` in [`packages/coding-agent/src/core/client-identity.ts`](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/src/core/client-identity.ts)). Forks and other apps built on pi's packages must register their own Google OAuth client and replace pi's. `@earendil-works/pi-ai` ships no client; see [OAuth Providers](https://github.com/earendil-works/pi/blob/main/packages/ai/README.md#oauth-providers) in its README.
+diff --git a/packages/coding-agent/src/core/model-resolver.ts b/packages/coding-agent/src/core/model-resolver.ts
+index 33d2bd218..6737a45a2 100644
+--- a/packages/coding-agent/src/core/model-resolver.ts
++++ b/packages/coding-agent/src/core/model-resolver.ts
+@@ -28,6 +28,7 @@ export const defaultModelPerProvider: Partial<Record<KnownProvider, string>> = {
+ 	deepseek: "deepseek-v4-pro",
+ 	google: "gemini-4-argon",
+ 	"google-vertex": "gemini-4-argon",
++	"google-ai-plan": "gemini-4-hydrogen",
+ 	"github-copilot": "gpt-6.1-sol",
+ 	openrouter: "moonshotai/kimi-k2.7-code",
+ 	"vercel-ai-gateway": "zai/glm-5.3",
+diff --git a/packages/coding-agent/src/core/model-runtime.ts b/packages/coding-agent/src/core/model-runtime.ts
+index 7ac69992d..efd47d583 100644
+--- a/packages/coding-agent/src/core/model-runtime.ts
++++ b/packages/coding-agent/src/core/model-runtime.ts
+@@ -70,6 +70,7 @@ import {
+ import { getAgentDir } from "../config.ts";
+ import { operationSignal, raceWithAbortSignal } from "../utils/abort.ts";
+ import { AuthStorage as DefaultAuthStorage } from "./auth-storage.ts";
++import { PI_GOOGLE_AI_PLAN_CLIENT } from "./client-identity.ts";
+ import { ModelConfig } from "./model-config.ts";
+ import { FileModelsStore, InMemoryCodingAgentModelsStore } from "./models-store.ts";
+ import {
+@@ -226,7 +227,10 @@ export class ModelRuntime implements Models {
+ 				? new FileModelsStore(options.modelsStorePath ?? join(dirname(modelsPath), "models-store.json"))
+ 				: new InMemoryCodingAgentModelsStore());
+ 		const builtinModelDataGeneratedAt = builtinProviderCatalog.getBuiltinModelDataGeneratedAt();
+-		const providers = builtinProviderCatalog.builtinProviders().map((provider) => {
++		const providers = [
++			...builtinProviderCatalog.builtinProviders(),
++			builtinProviderCatalog.googleAiPlanProvider(PI_GOOGLE_AI_PLAN_CLIENT),
++		].map((provider) => {
+ 			if (provider.id === "radius") return provider;
+ 			// OpenRouter narrows the catalog to the models, limits and prices of the user's key.
+ 			if (provider.id === "openrouter") {
+diff --git a/scripts/build-coding-agent-bundle.mjs b/scripts/build-coding-agent-bundle.mjs
+index d2f622d6b..7502ae80e 100644
+--- a/scripts/build-coding-agent-bundle.mjs
++++ b/scripts/build-coding-agent-bundle.mjs
+@@ -182,6 +182,7 @@ const lazyEntryPoints = {
+ 	anthropic: join(aiDistDir, "auth", "oauth", "anthropic.js"),
+ 	"bedrock-converse-stream": join(aiDistDir, "api", "bedrock-converse-stream.js"),
+ 	"github-copilot": join(aiDistDir, "auth", "oauth", "github-copilot.js"),
++	"google-ai-plan": join(aiDistDir, "auth", "oauth", "google-ai-plan.js"),
+ 	"image-resize-worker": join(codingAgentDistDir, "utils", "image-resize-worker.js"),
+ 	"kimi-coding": join(aiDistDir, "auth", "oauth", "kimi-coding.js"),
+ 	meta: join(aiDistDir, "auth", "oauth", "meta.js"),
