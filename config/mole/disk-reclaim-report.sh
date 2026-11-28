@@ -10,6 +10,7 @@ trap 'rm -rf -- "$work_dir"' EXIT
 
 export MOLE_TEST_NO_AUTH=1 MO_NO_OPLOG=1 NO_COLOR=1
 status=0
+: >"$work_dir/incomplete.txt"
 {
   printf 'Disk reclaim scan: %s\n\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   df -h "$HOME"
@@ -30,9 +31,19 @@ cat "$work_dir/target.txt" >>"$work_dir/scan.txt"
 # Inventory beyond Mole cleanup rules: personal files, runtimes, VMs, and Nix.
 # Stay on each filesystem to avoid walking mounted simulator images twice.
 inventory_status=0
-timeout --kill-after=10s 12m du -x -k -d 2 \
-  /Library /Applications /private /opt /nix /Users/Shared "$HOME" \
-  >"$work_dir/usage.txt" 2>"$work_dir/usage-errors.txt" || inventory_status=$?
+: >"$work_dir/usage.txt"
+: >"$work_dir/usage-errors.txt"
+printf '\n=== Inventory coverage, per-root budget 90 seconds ===\n' >>"$work_dir/scan.txt"
+for root in /Library /Applications /private /opt /nix /Users/Shared "$HOME"; do
+  root_status=0
+  timeout --kill-after=10s 90s du -x -k -d 2 "$root" \
+    >>"$work_dir/usage.txt" 2>>"$work_dir/usage-errors.txt" || root_status=$?
+  printf '%s: exit %s\n' "$root" "$root_status" >>"$work_dir/scan.txt"
+  if [[ "$root_status" != 0 ]]; then
+    inventory_status=1
+    printf -- '- Inventory %s incomplete (exit %s).\n' "$root" "$root_status" >>"$work_dir/incomplete.txt"
+  fi
+done
 {
   printf '\n=== Largest directories, allocated KiB, overlapping parent/child rows ===\n'
   sort -nr "$work_dir/usage.txt" | sed -n '1,60p'
@@ -43,6 +54,9 @@ if [[ "$inventory_status" != 0 ]]; then
   status=1
 fi
 
+# Large project roots need more than Mole's default 60 seconds. Retain the
+# outer deadline and Mole's incomplete status if a root still cannot finish.
+export MO_PURGE_SCAN_TIMEOUT_SEC=300
 for scan in clean purge; do
   printf '\n=== mole %s --dry-run ===\n' "$scan" >>"$work_dir/scan.txt"
   scan_status=0
@@ -52,6 +66,7 @@ for scan in clean purge; do
   printf '\nScan exit status: %s\n' "$scan_status" >>"$work_dir/scan.txt"
   if [[ "$scan_status" != 0 ]]; then
     status=1
+    printf -- '- Mole %s preview incomplete (exit %s).\n' "$scan" "$scan_status" >>"$work_dir/incomplete.txt"
   fi
 done
 
@@ -96,6 +111,7 @@ if [[ "$amp_status" != 0 || ! -s "$work_dir/report.md" ]]; then
 fi
 if [[ "$status" != 0 ]]; then
   printf '\nWARNING: This run is incomplete. Inspect scan exit statuses and latest-amp.log.\n' >>"$work_dir/report.md"
+  cat "$work_dir/incomplete.txt" >>"$work_dir/report.md"
 fi
 
 # Keep the measured target visible even if Amp fails or omits it.

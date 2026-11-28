@@ -88,6 +88,7 @@ class MoleDiskReportTests(unittest.TestCase):
         report = (self.report / "latest.md").read_text()
         self.assertIn("Amp summary unavailable (exit 7)", report)
         self.assertIn("incomplete", report)
+        self.assertIn("Mole clean preview incomplete (exit 124)", report)
         self.assertNotIn("Old successful", report)
         scan = (self.report / "latest-scan.txt").read_text()
         self.assertIn("Scan exit status: 124", scan)
@@ -115,6 +116,31 @@ class MoleDiskReportTests(unittest.TestCase):
         self.assertIn(
             "Inventory exit status: 1",
             (self.report / "latest-scan.txt").read_text(),
+        )
+
+    def test_inventory_timeout_does_not_skip_later_roots(self):
+        # Model du visiting its operands in order, stopping at a slow Nix tree.
+        self.command(
+            "du",
+            'for path in "$@"; do\n'
+            '  case "$path" in\n'
+            '    /nix) echo "Nix scan timed out" >&2; exit 124 ;;\n'
+            '    /Users/Shared|"$HOME") printf "1024\\t%s\\n" "$path" ;;\n'
+            '  esac\n'
+            'done\n',
+        )
+        result = self.run_report()
+        self.assertEqual(result.returncode, 1)
+        usage = (self.report / "latest-usage.txt").read_text()
+        self.assertIn(f"1024\t{self.env['HOME']}\n", usage)
+        self.assertIn("1024\t/Users/Shared\n", usage)
+        scan = (self.report / "latest-scan.txt").read_text()
+        self.assertIn("/nix: exit 124", scan)
+        self.assertIn("Nix scan timed out", scan)
+        self.assertIn("purge candidate 7GB", scan)
+        self.assertIn(
+            "Inventory /nix incomplete (exit 124)",
+            (self.report / "latest.md").read_text(),
         )
 
     def test_large_scan_is_bounded_for_amp_but_evidence_is_complete(self):
