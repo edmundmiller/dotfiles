@@ -2,6 +2,7 @@
   config,
   options,
   lib,
+  pkgs,
   isDarwin,
   ...
 }:
@@ -106,6 +107,8 @@ with lib.my;
             # On Darwin, system.stateVersion is a number; home-manager needs a string
             stateVersion = if isDarwin then "24.11" else config.system.stateVersion;
           };
+          # See overlays/process-names.nix.
+          programs.man.package = pkgs.man-db-real-name;
           xdg = {
             configFile = mkAliasDefinitions options.home.configFile;
             dataFile = mkAliasDefinitions options.home.dataFile;

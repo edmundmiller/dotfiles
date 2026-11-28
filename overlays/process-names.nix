@@ -27,5 +27,7 @@ in
 {
   bat = showRealName prev.bat;
   gh = showRealName prev.gh;
-  man-db = showRealName prev.man-db;
+  # Build tools depend on man-db, so overriding it rebuilds fonts, Python and
+  # graphics libraries locally. Install this copy through programs.man instead.
+  man-db-real-name = showRealName prev.man-db;
 }
