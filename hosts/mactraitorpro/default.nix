@@ -445,6 +445,7 @@ in
     environment.systemPackages = with pkgs; [
       clinWithVaultEnv
       llm-agents.qmd
+      tmux # Amp runner Terminal tab dependency; no personal configuration.
       my.betteraudio
       my.critique
       my.discrawl-backup

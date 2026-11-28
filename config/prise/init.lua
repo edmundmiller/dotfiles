@@ -33,7 +33,7 @@ ui.setup({
     -- Pane borders (box mode with rounded corners)
     borders = {
         enabled = true,
-        mode = "separator",           -- tmux-style borders between panes only
+        mode = "separator",           -- Borders between panes only
         style = "rounded",            -- Rounded corners
         focused_color = "#89b4fa",    -- Blue for active pane
         unfocused_color = "#585b70",  -- Gray for inactive panes

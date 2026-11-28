@@ -684,7 +684,7 @@ export default class Agents extends View {
             .text_size(12)
             .text_color(t.dim)
             .child(
-              "No agent status yet. Agents show up here when they report their status. Older versions and agents inside tmux may not."
+              "No agent status yet. Agents show up here when they report their status. Older versions may not."
             )
         )
       )

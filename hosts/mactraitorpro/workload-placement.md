@@ -50,8 +50,13 @@ Confirm that the runner is **Running**, that the picker marks it **This Mac**,
 and that **Also Running on This Mac** does not show the retired service.
 
 Keep the app open while using the runner. Quitting stops it. Battery power,
-closing the lid, or choosing Sleep can still suspend the Mac. The app does
-not promise the old service's `--remote-control-terminal` behavior.
+closing the lid, or choosing Sleep can still suspend the Mac.
+
+For the thread's Terminal tab, enable **Allow Terminal Access** in the app's
+Runner settings. It requires tmux, which this host installs as a plain Nix
+package without the retired personal configuration or plugins. The setting
+restarts the runner with `--remote-control-terminal`; reload the thread page
+after enabling it.
 
 ## Amp Orb eligibility rule
 

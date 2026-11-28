@@ -89,7 +89,7 @@ template = 'builtin_log_compact'  # or custom template
 **Theme looks wrong?**
 
 - Ensure terminal supports true color (24-bit)
-- Check `$TERM` is set to something like `xterm-256color` or `tmux-256color`
+- Check `$TERM` matches your terminal, such as `xterm-256color`
 
 **Custom commands failing?**
 
