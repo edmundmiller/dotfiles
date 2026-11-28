@@ -5,8 +5,12 @@
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
-  "showCacheMissNotices": true,
-  "enableInstallTelemetry": false,
+  "notices": {
+    "cacheMisses": true,
+    "cacheWarming": true,
+    "compactionCosts": true,
+    "reasoningDrops": true,
+  },
   // Pi 1.0 native orchestration, alongside the selected model's ordinary tools.
   "defaultTools": ["+codemode"],
   "codemode": { "mode": "on", "inlineBudget": 3000 },
