@@ -69,7 +69,7 @@ modules/
 ├── dev/            # node, python, rust, R, lua, nix, shell, nextflow
 ├── desktop/        # apps, browsers, terminals (ghostty), media, macos
 │   ├── apps/       # raycast, discord, mail
-│   ├── term/       # ghostty, kitty, wezterm
+│   ├── term/       # ghostty, wezterm
 │   └── macos/      # macOS-specific (homebrew, defaults)
 ├── services/       # hass, jellyfin, homepage, containers, tailscale, gatus, …
 ├── hardware/       # bluetooth, filesystem, audio

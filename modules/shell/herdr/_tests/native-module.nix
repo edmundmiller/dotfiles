@@ -71,8 +71,8 @@ let
     && cfg.home.configFile ? "herdr-app/mods/dotfiles-dev"
     && cfg.home.configFile ? "herdr-app/layouts/herdr-t3.json"
     && cfg.home.configFile ? "herdr-app/layouts/herdr-t3.svg"
+    && !(cfg.home.configFile ? "herdr-app/mods/t3-agents")
     && lib.all (name: cfg.home.configFile ? "herdr-app/mods/${name}") [
-      "t3-agents"
       "t3-chrome"
       "t3-focus"
       "t3-new-menu"

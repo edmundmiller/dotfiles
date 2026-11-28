@@ -38,13 +38,6 @@
                   "size": { "weight": 1 },
                   "min": 90,
                   "content": { "mod": "t3-spaces" }
-                },
-                {
-                  "id": "agents",
-                  "type": "block",
-                  "size": { "weight": 1 },
-                  "min": 90,
-                  "content": { "mod": "t3-agents" }
                 }
               ]
             },

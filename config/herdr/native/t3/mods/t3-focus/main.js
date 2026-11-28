@@ -246,7 +246,7 @@ export default class Focus extends View {
     // Busy, or waiting on sub-agents it will hear back from; needing the person comes first.
     const running = (a) =>
       state(a) !== "blocked" && (a.status === "working" || kids.get(a.address).includes("working"));
-    // Pins are the agents list's (t3-agents), one set for both: pinned agents stay up top in pin order, whatever their state.
+    // Pinned agents stay up top in pin order, whatever their state.
     const pins = shared("agents.pins") ?? [];
     this.track(
       every.map((a) => ({
@@ -295,7 +295,7 @@ export default class Focus extends View {
       .sort((x, y) => settledAt(y)[0] - settledAt(x)[0] || byAddress(x, y));
     // Shelves fold by default on this screen; the one in view stays out even folded or past the page, so it's never lost.
     const busyRows = this.workOpen ? work : work.filter((a) => a.focused);
-    // agent.next goes as the list reads. Only while this list shows: the agents list (t3-agents) sets its own.
+    // agent.next follows this list only while Focus is shown.
     const find = (n) =>
       n?.id === "sidebar-lists" ? n : (n?.children ?? []).map(find).find(Boolean);
     if (find(layout())?.active !== "lists")

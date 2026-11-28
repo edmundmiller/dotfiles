@@ -11,7 +11,7 @@ function find(node, id) {
   return null;
 }
 
-// The sidebar shows either Spaces and Agents, or the focus list (t3-focus): a stack in the layout.
+// The sidebar shows either Spaces or the focus list (t3-focus): a stack in the layout.
 const focusing = () => find(layout(), "sidebar-lists")?.active === "focus";
 const switchSidebar = () =>
   run("layout.select", { stack: "sidebar-lists", child: focusing() ? "lists" : "focus" });
@@ -93,7 +93,7 @@ export default class WorkspaceChrome extends View {
           .text_color(t.dim)
           .hover((s) => s.bg(t.hover).text_color(t.foreground))
           .role("button")
-          .accessibility_label(focus ? "Show spaces and agents" : "Show focus list")
+          .accessibility_label(focus ? "Show spaces" : "Show focus list")
           .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
           .on_click(switchSidebar)
           .child(svg(`mods/workspace-chrome/${focus ? "layers" : "circle-check"}.svg`).size(14))

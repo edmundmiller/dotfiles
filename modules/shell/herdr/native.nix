@@ -104,7 +104,6 @@ in
               }
             )
             [
-              "t3-agents"
               "t3-chrome"
               "t3-focus"
               "t3-new-menu"
